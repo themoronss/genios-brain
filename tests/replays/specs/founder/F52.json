@@ -212,19 +212,22 @@
        "claim": "Gautam Varma of Ridgeline Capital wrote that they like the team but that it is slightly early for the fund to come in.",
        "evidence": [
         "evt_c4712b6b8ec4802296eb9578"
-       ]
+       ],
+       "quote": "like the team, but it is slightly early for us to come"
       },
       {
        "claim": "He set the bar himself: re-engage once Nimbus Labs has ten paying customers, and send him a note then.",
        "evidence": [
         "evt_c4712b6b8ec4802296eb9578"
-       ]
+       ],
+       "quote": "re-engage once you have ten paying customers; send me a note"
       },
       {
        "claim": "His mail answers a thread about the Nimbus Labs pre-seed whose earlier mail is not in the file.",
        "evidence": [
         "evt_c4712b6b8ec4802296eb9578"
-       ]
+       ],
+       "quote": "Nimbus Labs - pre-seed"
       },
       {
        "claim": "The file holds only Gautam's mail: the dossier says we have not written in it, and no reply time is measured either way.",
@@ -334,7 +337,12 @@
       "who": "Arjun Rao",
       "what": "Check the current count of paying customers against Gautam's bar of ten; if it is met, send Gautam the short note he asked for with the count, and if not, set the note for the day it is",
       "for_whom": "Gautam Varma at Ridgeline Capital",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
      },
      "alternative": "If the count is close but short of ten, write nothing yet and send the note the week the tenth customer pays.",
      "wait_or_stop": "Wait only while the count is below ten. Once it is met, write within days; if Gautam is silent, one nudge, then stop until there is a bigger step to report.",

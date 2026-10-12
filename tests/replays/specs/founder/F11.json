@@ -220,13 +220,15 @@
        "claim": "Tom Keller, a partner at Northfield Ventures, wrote unprompted that he came across Nimbus Labs in a founder community and that Northfield invests in AI-native productivity at seed.",
        "evidence": [
         "evt_7eabedc7eedd5ae4297eeb1d"
-       ]
+       ],
+       "quote": "came across Nimbus Labs in a founder community. We invest in AI-native productivity"
       },
       {
        "claim": "Tom asked whether Nimbus Labs is raising this year and offered a short call.",
        "evidence": [
         "evt_7eabedc7eedd5ae4297eeb1d"
-       ]
+       ],
+       "quote": "raising this year? Happy to grab 20 minutes. Tom"
       },
       {
        "claim": "The file holds one open ask, Tom's question, waiting on us.",
@@ -377,7 +379,14 @@
       "who": "Arjun",
       "what": "Reply to Tom that you are raising your seed round now, and offer two or three times for a short call",
       "for_whom": "Tom Keller at Northfield Ventures",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Tom",
+      "answers": "loop:loop_1531307971fd8eba4224d4e7"
      },
      "alternative": "If Arjun wants the call to wait until more of the round is in motion, reply now with a yes and the week he can talk, rather than leaving the question open.",
      "wait_or_stop": "Do not wait to answer. After the reply, wait for Tom to pick a time; if he goes quiet, treat it as a first contact that did not take, and send no chase.",

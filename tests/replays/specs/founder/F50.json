@@ -187,14 +187,16 @@
        "claim": "Owen Park of Saltmarsh Ventures asked Arjun two questions to settle before his partner meeting: the current monthly revenue, and how many months of runway Nimbus Labs has.",
        "evidence": [
         "evt_f0b653e0e8fb137bfac6fb27"
-       ]
+       ],
+       "quote": "Arjun, Two quick questions before our partner meeting: what is your current monthly revenue"
       },
       {
        "claim": "Arjun's answer the same day thanked Owen for connecting, sent the deck, a one-pager and the demo link, and offered a call, and gave neither number.",
        "evidence": [
         "evt_1197eb4b54077d67d26d79af",
         "num:your_reply_time:owen@saltmarshvc.test"
-       ]
+       ],
+       "quote": "deck and a one-pager are attached, and the demo"
       },
       {
        "claim": "Owen has not written since Arjun's answer; the dossier says no reply since then may be said.",
@@ -319,7 +321,12 @@
       "who": "Arjun Rao",
       "what": "Write back to Owen with the two numbers he asked for, the current monthly revenue and the months of runway, in plain lines, owning that the last note missed them, and ask when the partner meeting is",
       "for_whom": "Owen Park at Saltmarsh Ventures",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Owen"
      },
      "alternative": "If the numbers need checking first, tell Owen today when they will come and send them then, or offer a short call before the partner meeting to go through both.",
      "wait_or_stop": "Do not wait: the questions are already open. Once the numbers are sent, give Owen until his partner meeting has passed; if he is silent after it, ask once where it landed, then stop.",

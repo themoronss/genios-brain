@@ -114,14 +114,21 @@
       "who": "Arjun",
       "what": "Finish the pilot proposal and send it to Gaurav by Friday, as promised.",
       "for_whom": "Gaurav at Stackfield",
-      "by_when": "2026-09-25"
+      "by_when": "2026-09-25",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Gaurav"
      },
      "facts": [
       {
        "claim": "Arjun wrote to Gaurav at Stackfield that, as he said on WhatsApp, he will send the pilot proposal by Friday.",
        "evidence": [
         "evt_52c42307a01eb918fc307834"
-       ]
+       ],
+       "quote": "Gaurav, As I said on WhatsApp, I'll send the pilot proposal by Friday. Arjun"
       },
       {
        "claim": "The file lists that promise — to send the pilot proposal — as open, due on the twenty-fifth of September.",
@@ -134,7 +141,8 @@
        "evidence": [
         "evt_52c42307a01eb918fc307834",
         "promise:node_61c031c739c1ed41b4297d5a"
-       ]
+       ],
+       "quote": "Pilot proposal Hi Gaurav, As I said on WhatsApp, I'll"
       },
       {
        "claim": "The engine reads the file's one situation as a sales opportunity.",
@@ -193,7 +201,7 @@
       }
      ],
      "frames": {
-      "primary": "A promise of the founder's own, with a date: Arjun told Gaurav, on WhatsApp and again by mail, that the pilot proposal comes by Friday — the work is ours to finish and send.",
+      "primary": "A promise of your own, with a date: you told Gaurav, on WhatsApp and again by mail, that the pilot proposal comes by Friday — the work is ours to finish and send.",
       "rivals": [
        "A sales opportunity where the proposal opens a negotiation, and the content matters more than the day.",
        "A soft date that Gaurav will not hold Arjun to."

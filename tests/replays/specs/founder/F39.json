@@ -106,7 +106,7 @@
     "answer": {
      "facts": [
       {
-       "claim": "On the tenth of September Arjun answered Rohan's quick-call thread with two times he is free, a Thursday afternoon or a Friday morning India time, whichever suits Rohan.",
+       "claim": "On the tenth of September Arjun answered Rohan's quick-call thread with two times he is free, a Thursday afternoon or a Friday morning IST, whichever suits Rohan.",
        "evidence": [
         "evt_89f17bd43ceb4eb323ad5b52"
        ]
@@ -169,7 +169,7 @@
       }
      ],
      "frames": {
-      "primary": "A call being scheduled: the founder offered two times and the choice is Rohan's. Nothing is owed by the founder.",
+      "primary": "A call being scheduled: you offered two times and the choice is Rohan's. Nothing is owed by you.",
       "rivals": [
        "The offered times lapse unused, and the founder will need to offer fresh ones.",
        "Rohan has already accepted somewhere the file cannot see, such as a calendar invite."

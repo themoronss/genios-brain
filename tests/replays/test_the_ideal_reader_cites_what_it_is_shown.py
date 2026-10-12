@@ -160,3 +160,15 @@ def test_a_recording_made_before_the_frame_replays_as_it_was_written():
     old = {cassette_key(SWEPT): {"site": "expert", "parsed": {"evidence": [f"evt_{'a' * 24}"]},
                                  "raw": None, "input_tokens": 1, "output_tokens": 1}}
     assert RecordedLLM(old).call(DOORED).parsed == {"evidence": [f"evt_{'a' * 24}"]}
+
+
+def test_the_ask_a_move_answers_is_a_citation_served_by_its_own_id():
+    """STEP-13 (`yc2_w27_s13` M35.C4.L-data.V0.U01): `next_move.answers` names an ask by its id — a
+    citation like any other, served by the id the dossier in front of the reader shows; left as authored,
+    the check would drop it as an ask that dossier never printed."""
+    answer = {"facts": [{"claim": "Marco asked for a short deck", "evidence": ["evt_aaa"]}], "mode": "act",
+              "next_move": {"what": "Send Marco the deck", "answers": "loop:loop_111"}}
+    assert X.cited(answer) == {"evt_aaa", "loop:loop_111"}
+    spots = {cid: [list(spot)] for cid, spot in X.where(SWEEP).items() if cid in X.cited(answer)}
+    served = X.translate(answer, _prompt(DOOR), spots)
+    assert served["next_move"]["answers"] == "loop:loop_222" and served["facts"][0]["evidence"] == ["evt_bbb"]

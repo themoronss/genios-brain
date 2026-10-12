@@ -493,19 +493,22 @@
        "claim": "Introly introduced Leela Krishnan, who leads product at Ferngrove, to the founder.",
        "evidence": [
         "evt_8bb7bb3d94cabb26707b7abb"
-       ]
+       ],
+       "quote": "Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder"
       },
       {
        "claim": "Leela replied the same day that she had sent an invite for a call the next day at three in the afternoon IST.",
        "evidence": [
         "evt_efcd026d0fe8466b9fb45caa"
-       ]
+       ],
+       "quote": "sent you an invite for tomorrow at 3 pm IST. Leela"
       },
       {
        "claim": "Before the call, Leela wrote that she was looking forward to it and would bring Ferngrove's current onboarding flow so the founder could see where they lose people.",
        "evidence": [
         "evt_77953c8ec9ee4fa5ecf57847"
-       ]
+       ],
+       "quote": "bring our current onboarding flow so you can see where we lose people. Leela"
       },
       {
        "claim": "A meeting with Leela was on the calendar for the thirteenth, and memory holds no words for it.",
@@ -594,7 +597,7 @@
       }
      ],
      "frames": {
-      "primary": "After a call booked with an introduced product lead, nothing on record says whether it took place or what was promised, so the founder must say before anything is sent.",
+      "primary": "After a call booked with an introduced product lead, nothing on record says whether it took place or what was promised, so you must say before anything is sent.",
       "rivals": [
        "The call did not take place or was moved, and it needs rebooking.",
        "A first conversation with a prospective design partner, where a promise of the founder's is now open."
@@ -640,11 +643,17 @@
       "who": "Arjun Rao",
       "what": "Say whether the call with Leela Krishnan took place, and what, if anything, either side promised on it, so the follow-through can be sent",
       "for_whom": "Leela Krishnan at Ferngrove",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ]
      },
      "alternative": "If the call did not take place, write to Leela to find a new time.",
      "wait_or_stop": "Send nothing to Leela until the founder says what was agreed; stop if he says nothing was promised and no next step is wanted.",
-     "done_when": "What was agreed on the call is on record, and any promise of the founder's has gone to Leela or been dropped on purpose.",
+     "done_when": "What was agreed on the call is on record, and any promise of yours has gone to Leela or been dropped on purpose.",
      "draft": null
     }
    },
@@ -659,20 +668,23 @@
        "claim": "Introly introduced Leela Krishnan, who leads product at Ferngrove, to the founder and left the two to take it from there.",
        "evidence": [
         "evt_8bb7bb3d94cabb26707b7abb"
-       ]
+       ],
+       "quote": "Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder"
       },
       {
        "claim": "Leela replied within hours that she had sent an invite for a call the next day at three in the afternoon IST.",
        "evidence": [
         "evt_efcd026d0fe8466b9fb45caa"
-       ]
+       ],
+       "quote": "sent you an invite for tomorrow at 3 pm IST. Leela"
       },
       {
        "claim": "A meeting is booked for the thirteenth, in the slot Leela's invite named.",
        "evidence": [
         "evt_64ef93e8cfdaf91361d9ff65",
         "evt_efcd026d0fe8466b9fb45caa"
-       ]
+       ],
+       "quote": "Re: Arjun <> Leela Krishnan (Ferngrove) Hi Arjun, happy to"
       },
       {
        "claim": "No reply time has been measured with Leela, either way.",
@@ -764,11 +776,16 @@
       "who": "Arjun Rao",
       "what": "Accept Leela's invite if it is not yet accepted, and read a one-page brief on Ferngrove and Leela before the call",
       "for_whom": "Leela Krishnan at Ferngrove",
-      "by_when": "2026-08-13"
+      "by_when": "2026-08-13",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
      },
      "alternative": "If the time no longer works, write to Leela today to move it.",
      "wait_or_stop": "After preparing, wait for the call; reopen the file the day after it to ask what was agreed.",
-     "done_when": "The invite is accepted, and the founder goes into the call knowing what Ferngrove does and what to ask.",
+     "done_when": "The invite is accepted, and you go into the call knowing what Ferngrove does and what to ask.",
      "draft": null
     }
    }

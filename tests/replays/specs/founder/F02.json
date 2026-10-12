@@ -404,7 +404,7 @@
      "next_move": null,
      "alternative": "If the founder wants certainty, sign in to DigiVault once and check the certificate's details.",
      "wait_or_stop": "Nothing to wait for; reopen this file only when an application asks for the certificate.",
-     "done_when": "The founder knows the certificate is in the DigiVault account; nothing else is owed.",
+     "done_when": "You know the certificate is in the DigiVault account; nothing else is owed.",
      "draft": null
     }
    },
@@ -420,19 +420,22 @@
        "claim": "The examiner had asked for a board resolution authorising the applicant, to be uploaded on the StartupSetu portal within the window given, or the application would be closed.",
        "evidence": [
         "evt_8e35d40489af90b4aab3ac5a"
-       ]
+       ],
+       "quote": "board resolution authorising the applicant. Upload it on the StartupSetu portal within"
       },
       {
        "claim": "StartupSetu Support then wrote that it had received the board resolution the founder uploaded, and that the examiner would review it and update the application.",
        "evidence": [
         "evt_9d6c26970b7b45a94b1dbb97"
-       ]
+       ],
+       "quote": "received the board resolution you uploaded. The examiner will review it and update"
       },
       {
        "claim": "StartupSetu then wrote that Nimbus Labs Private Limited is recognised under the StartupSetu programme, with its certificate available on the portal.",
        "evidence": [
         "evt_5848f385e310ba76a3195cda"
-       ]
+       ],
+       "quote": "Nimbus Labs Private Limited is recognised under the StartupSetu programme. Certificate"
       },
       {
        "claim": "The three notices came within about a day of one another.",
@@ -540,7 +543,14 @@
       "who": "Arjun Rao",
       "what": "Download the recognition certificate from the StartupSetu portal, keep it with the company's documents, and mark the brief's StartupSetu recognition goal as met",
       "for_whom": "the StartupSetu recognition file",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:5"
+      ],
+      "answers": "loop:loop_ce191d561f3fa9b81d0efc83"
      },
      "alternative": "If the certificate is not yet downloadable, note where it sits on the portal and come back to it within the week.",
      "wait_or_stop": "Nothing to wait for once the certificate is saved; stop here, and reopen the file only if StartupSetu writes again.",
@@ -559,13 +569,15 @@
        "claim": "StartupSetu wrote that the examiner requires a board resolution authorising the applicant.",
        "evidence": [
         "evt_8e35d40489af90b4aab3ac5a"
-       ]
+       ],
+       "quote": "examiner requires a board resolution authorising the applicant. Upload it on the StartupSetu"
       },
       {
        "claim": "The mail says to upload it on the StartupSetu portal within the window it gives, or the application will be closed.",
        "evidence": [
         "evt_8e35d40489af90b4aab3ac5a"
-       ]
+       ],
+       "quote": "StartupSetu portal within 7 days, or the application will be closed."
       },
       {
        "claim": "The file holds the examiner's ask as an open question that waits on us.",
@@ -684,7 +696,13 @@
       "who": "Arjun Rao",
       "what": "Get a board resolution authorising the applicant signed, or find the one already passed, and upload it on the StartupSetu portal against the recognition application",
       "for_whom": "StartupSetu's examiner",
-      "by_when": "2026-10-06"
+      "by_when": "2026-10-06",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "answers": "loop:loop_ce191d561f3fa9b81d0efc83"
      },
      "alternative": "If the board cannot sign in time, write to StartupSetu through the portal before the window ends to ask for more time.",
      "wait_or_stop": "Do not wait: act now. Once the portal confirms the upload, wait for the examiner; stop when the application shows a decision.",

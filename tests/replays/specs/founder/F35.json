@@ -350,7 +350,7 @@
      "mode": "wait",
      "alternative": "If Arjun cannot be at the campus that day, write to Divya early to ask the programme's rule.",
      "wait_or_stop": "Wait for the review on the thirtieth and prepare in the days before it; stop waiting if the programme moves the date.",
-     "done_when": "Arjun attends the first-phase review on the thirtieth, prepared."
+     "done_when": "You attend the first-phase review on the thirtieth, prepared."
     }
    }
   ]

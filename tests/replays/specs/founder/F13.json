@@ -205,13 +205,15 @@
        "claim": "Mohit Sethi, a partner at Tusker Capital, wrote that it was good to connect last week and asked for current traction metrics before the firm's Monday partners' meeting.",
        "evidence": [
         "evt_e11237c955138c90261649f8"
-       ]
+       ],
+       "quote": "traction metrics? Hi Arjun, Good to connect last week. Before our Monday partners' meeting"
       },
       {
        "claim": "He named the metrics — monthly active teams, revenue run-rate and the pilot pipeline — and said a one-pager is fine.",
        "evidence": [
         "evt_e11237c955138c90261649f8"
-       ]
+       ],
+       "quote": "metrics — monthly active teams, revenue run-rate and the pilot pipeline? A one-pager"
       },
       {
        "claim": "The file holds one open ask, Mohit's request, waiting on us.",
@@ -354,7 +356,14 @@
       "who": "Arjun",
       "what": "Email Mohit a one-page summary of current traction — monthly active teams, revenue run-rate and the pilot pipeline — before Monday's partners' meeting",
       "for_whom": "Mohit Sethi at Tusker Capital",
-      "by_when": "2026-08-09"
+      "by_when": "2026-08-09",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Mohit",
+      "answers": "loop:loop_29f2bf391a481189068fff05"
      },
      "alternative": "If a one-pager cannot be ready in time, put the three figures in the body of a short mail before Monday and follow with the page.",
      "wait_or_stop": "Do not wait: Monday is the deadline. After the meeting, a few quiet days are the partnership's cycle; silence for more than a week after it is a soft no, to be recorded rather than chased.",

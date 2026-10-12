@@ -14,6 +14,12 @@ dossier holds it — the mail's own date, time or number, never one of its own �
 number its dossier does not hold. (Until STEP-12's decided re-record it wrote no digit at all; a card that
 must name *"30 Sep"* or *"Assignment 4"* then could not, M33.C2.L-data.V0.U04.) What the ideal reader then serves, and what the
 review run makes of it, the golden lane and M32.C5.L-integration.V3.U05 measure on the real chain.
+
+STEP-13 (`yc2_w27_s13` M35.C4.L-data.V0.U01): each answer also carries what the check reads — a moving
+move names the facts it rests on (`rests_on`), a draft whom it goes to (`to`), a quote is the mail's own
+words (two or more, no id in it) — and every text that reaches a card speaks to the founder as "you":
+never "the founder", never their name or the company's (`03` F178). That each quote IS in its mail, and
+that every authored review stands the check whole, the golden lane measures (M35.C4.L-integration.V1.U03).
 """
 from __future__ import annotations
 
@@ -72,6 +78,7 @@ def _check(case_id: str) -> None:
                                      f"offered: {sorted(cited - offered)}"
         stage = review.expected_vs_actual.stage
         assert stage is None or stage in files[key]["stages"], f"{case_id} <{key}>: stage {stage!r}"
+        _what_the_check_reads(case_id, key, review)
         digits = set().union(*(number_tokens(t) for t in review.texts()))
         if len(entry["when"]) == 1:
             held = set(files[key]["numbers"])
@@ -83,6 +90,33 @@ def _check(case_id: str) -> None:
     assert not missing, f"{case_id}: files its sweeps review with no expert answer: {sorted(missing)}"
     for key, why in declared.items():
         assert key in files and len(str(why).split()) >= 5, f"{case_id}: <{key}> is declared with a reason"
+
+
+#: Words a card never says of the founder (`03` F178): the phrase, and — per case — their names.
+_THE_FOUNDER = re.compile(r"\bthe founder\b", re.I)
+
+
+def _what_the_check_reads(case_id: str, key: str, review) -> None:
+    from genios_engine.contracts.expert_review import MOVING
+    where = f"{case_id} <{key}>"
+    move = review.next_move
+    if move is not None and review.mode in MOVING:
+        assert move.rests_on, f"{where}: a moving move names the facts it rests on (rests_on)"
+    if review.draft:
+        assert move is not None and move.to, f"{where}: a draft says whom it goes to (to)"
+    for n, fact in enumerate(review.facts, start=1):
+        if fact.quote:
+            assert len(fact.quote.split()) >= 2 and "[" not in fact.quote, \
+                f"{where} fact {n}: a quote is the mail's own words, two or more"
+    founder = CASES[case_id].founder
+    names = [n for n in (founder.name, (founder.name or "").split()[0], founder.company) if n]
+    card = [move.what if move is not None else review.frames.primary, review.frames.primary,
+            review.done_when]
+    for text in card:
+        assert not _THE_FOUNDER.search(text), f"{where}: a card calls you the founder — {text!r}"
+        for name in names:
+            assert not re.search(rf"\b{re.escape(name)}\b", text), \
+                f"{where}: a card names {name!r} as a party — {text!r}"
 
 
 def test_every_case_is_measured():
@@ -112,3 +146,27 @@ def test_a_number_its_first_dossier_does_not_hold_is_refused(monkeypatch):
     monkeypatch.setitem(module.CASES, "F26", case)
     with pytest.raises(AssertionError, match="does not hold"):
         _check("F26")
+
+
+@pytest.mark.parametrize("spoil, says", [
+    (lambda a: a["next_move"].pop("rests_on"), "rests_on"),
+    (lambda a: a["next_move"].pop("to"), "whom it goes to"),
+    (lambda a: a["facts"][0].update(quote="deck"), "two or more"),
+    (lambda a: a["facts"][0].update(quote="send [evt_1] the deck"), "two or more"),
+    (lambda a: a.update(done_when="The founder has sent the deck."), "calls you the founder"),
+    (lambda a: a["frames"].update(primary="Arjun owes Kunal the deck."), "names 'Arjun'"),
+    (lambda a: a["next_move"].update(what="Send the Nimbus Labs deck to Kunal"), "names 'Nimbus Labs'"),
+])
+def test_what_the_check_reads_is_held_on_every_answer(monkeypatch, spoil, says):
+    """⛔ Its teeth (M35.C4.L-data.V0.U01): F05's general answer passes; each spoilt copy of it fails, for
+    the reason it was spoilt."""
+    import copy
+    import sys
+    module = sys.modules[__name__]
+    _check("F05")
+    case = copy.deepcopy(CASES["F05"])
+    entry = next(e for e in case.model["expert"] if e["answer"].get("draft") and e["answer"].get("next_move"))
+    spoil(entry["answer"])
+    monkeypatch.setitem(module.CASES, "F05", case)
+    with pytest.raises(AssertionError, match=re.escape(says)):
+        _check("F05")

@@ -235,21 +235,30 @@
       "who": "Arjun, with whoever can check the agent against Cleanwave's API docs",
       "what": "Check whether our agent can read Cleanwave's webhook events, and reply to Varun with the answer before the call.",
       "for_whom": "Varun Iyer at Cleanwave",
-      "by_when": "2026-10-09"
+      "by_when": "2026-10-09",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Varun",
+      "answers": "loop:loop_1e3c002f29917e093dfec82d"
      },
      "facts": [
       {
        "claim": "Varun Iyer, founder of Cleanwave, wrote after meeting Arjun at a meetup, shared Cleanwave's API docs, and asked Arjun to confirm whether our agent can read Cleanwave's webhook events before they meet.",
        "evidence": [
         "evt_a13904cafbf7099ad45b4a46"
-       ]
+       ],
+       "quote": "confirm whether your agent can read our webhook events before we meet?"
       },
       {
        "claim": "Varun has booked a call for the ninth of October at four in the afternoon IST.",
        "evidence": [
         "evt_a13904cafbf7099ad45b4a46",
         "evt_5cf10818ee5e3a851a602996"
-       ]
+       ],
+       "quote": "booked Thursday 9 Oct, 4 pm IST. Cheers, Varun"
       },
       {
        "claim": "His question is open and waits on us.",

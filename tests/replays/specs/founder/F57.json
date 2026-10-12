@@ -347,7 +347,7 @@
       }
      ],
      "frames": {
-      "primary": "An ask answered in full: Zoya asked for the signed mutual NDA by Thursday, Arjun sent it signed on the third, and the next move is Pinecrest's.",
+      "primary": "An ask answered in full: Zoya asked for the signed mutual NDA by Thursday, you sent it signed on the third, and the next move is Pinecrest's.",
       "rivals": [
        "An NDA that Pinecrest still has to sign on its side before any data moves.",
        "A pilot that has slowed at Pinecrest for reasons that have nothing to do with the NDA."
@@ -405,7 +405,8 @@
        "claim": "Zoya Hameed of Pinecrest wrote on the first of September asking Arjun to send the signed mutual NDA by Thursday, so that Pinecrest can share the pilot data.",
        "evidence": [
         "evt_cb865447ff1df267aeb7634c"
-       ]
+       ],
+       "quote": "signed mutual NDA by Thursday so we can share the pilot data? Zoya Pinecrest"
       },
       {
        "claim": "Her request is an open ask on Arjun's side.",
@@ -498,7 +499,13 @@
       "who": "Arjun",
       "what": "Sign the mutual NDA and send it to Zoya.",
       "for_whom": "Zoya Hameed at Pinecrest",
-      "by_when": "2026-09-03"
+      "by_when": "2026-09-03",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Zoya",
+      "answers": "loop:loop_12328b0430c548e3efb3eaa8"
      },
      "alternative": "If the terms need review, write to Zoya today and name the day she will have it.",
      "wait_or_stop": "Do not wait past Thursday; stop once the signed NDA is with Zoya.",

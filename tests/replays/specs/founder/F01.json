@@ -135,20 +135,23 @@
        "claim": "StartupSetu wrote that the recognition application has moved to the stage Under Examination.",
        "evidence": [
         "evt_1cc07fcda32dffd470f8bdd2"
-       ]
+       ],
+       "quote": "recognition under the StartupSetu programme has moved to the stage: Under Examination."
       },
       {
        "claim": "The notice says the founder will be notified when the examination is complete, points to the StartupSetu portal to track the status, and asks nothing of the founder.",
        "evidence": [
         "evt_1cc07fcda32dffd470f8bdd2"
-       ]
+       ],
+       "quote": "notified when the examination is complete. Track the status on the StartupSetu portal."
       },
       {
        "claim": "The notice is the only touch in this file, and the file has been quiet for less than a day.",
        "evidence": [
         "evt_1cc07fcda32dffd470f8bdd2",
         "num:days_quiet"
-       ]
+       ],
+       "quote": "Application SSR-2026-48213: status updated Dear Applicant, Your application SSR-2026-48213 for"
       },
       {
        "claim": "No reply time has been measured with the portal's updates address, either way.",
@@ -224,7 +227,7 @@
       }
      ],
      "frames": {
-      "primary": "A live government recognition application, one of the brief's goals now, has moved into examination; the next word is the examiner's, and the founder's part is to be ready to answer any query fast.",
+      "primary": "A live government recognition application, one of the brief's goals now, has moved into examination; the next word is the examiner's, and your part is to be ready to answer any query fast.",
       "rivals": [
        "A routine automated status notice that needs nothing from the founder until the examination ends.",
        "The start of a query cycle in which the examiner asks for more before deciding."
@@ -262,11 +265,16 @@
       "who": "Arjun Rao",
       "what": "Sign in to the StartupSetu portal, confirm the application reads Under Examination, and note any query or document request the examiner has raised",
       "for_whom": "the StartupSetu recognition application",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
      },
      "alternative": "Have every StartupSetu mail flagged the day it arrives, so a query is answered within its window.",
      "wait_or_stop": "After the check, wait for the examiner's word; stop waiting and chase StartupSetu only if a query is found, or if silence runs well past what the portal says an examination takes.",
-     "done_when": "The founder knows whether the examiner wants anything, and the application's next notice, a query or a decision, is caught the day it arrives.",
+     "done_when": "You know whether the examiner wants anything, and the application's next notice, a query or a decision, is caught the day it arrives.",
      "draft": null
     }
    }

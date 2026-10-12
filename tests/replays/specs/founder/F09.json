@@ -166,14 +166,16 @@
        "claim": "Arjun wrote to Introly thanking it for the introductions so far and saying he is especially keen on investors in AI tooling.",
        "evidence": [
         "evt_521f2d9ef46d120b8144488e"
-       ]
+       ],
+       "quote": "introductions so far. I'm especially keen on investors in AI tooling. Arjun"
       },
       {
        "claim": "Introly answered in the same minute, asking which stage Nimbus Labs is raising at and how much, and said one line back would let it line up the next introductions.",
        "evidence": [
         "evt_08854ba95ec981eb04a33094",
         "num:usual_gap"
-       ]
+       ],
+       "quote": "much? Reply with one line and I'll line up the next introductions. Introly"
       },
       {
        "claim": "The file holds one open ask: Introly's question, waiting on us.",
@@ -186,7 +188,8 @@
        "evidence": [
         "num:introductions",
         "evt_521f2d9ef46d120b8144488e"
-       ]
+       ],
+       "quote": "Thanks for the introductions so far."
       },
       {
        "claim": "The only situation anchored on this file is typed as an investor's, in the fundraising domain.",
@@ -265,7 +268,7 @@
       }
      ],
      "frames": {
-      "primary": "The founder's own intro agent has asked one bounded question — the stage and size of the raise — and holds the next investor introductions until it is answered.",
+      "primary": "Your own intro agent has asked one bounded question — the stage and size of the raise — and holds the next investor introductions until it is answered.",
       "rivals": [
        "An automated nudge that would line up introductions anyway, making the answer optional.",
        "A data-gathering step by a third-party matcher, where what Arjun shares travels beyond his control."
@@ -301,13 +304,21 @@
      "mode": "act",
      "next_move": {
       "who": "Arjun",
-      "what": "Answer Introly's question in one line: the seed round, and the amount he is raising",
+      "what": "Answer Introly's question in one line: the seed round, and the amount you are raising",
       "for_whom": "Introly, so it can line up the next introductions to investors in AI tooling",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ],
+      "to": "Introly",
+      "answers": "loop:loop_ecf0fdaf98d15926d517352e"
      },
      "alternative": "If Arjun would rather not state an amount to an automated matcher, give the stage alone and the kind of investor he wants, and accept looser matches.",
      "wait_or_stop": "Nothing to wait for on our side. After answering, wait for the introductions Introly lines up, and stop feeding it details if what it lines up does not fit the seed round or AI tooling.",
-     "done_when": "Introly has the stage and the amount from Arjun, and the introductions it lines up next sit on their own files.",
+     "done_when": "Introly has the stage and the amount from you, and the introductions it lines up next sit on their own files.",
      "draft": "Seed round — raising [amount]. As before, I'm most keen on investors in AI tooling. Arjun"
     }
    }

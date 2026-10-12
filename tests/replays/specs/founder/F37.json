@@ -354,20 +354,29 @@
       "who": "Arjun",
       "what": "Reply to Farah directly with the deck, before the twelfth.",
       "for_whom": "Farah Qureshi at Kitepath",
-      "by_when": "2026-09-12"
+      "by_when": "2026-09-12",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Farah",
+      "answers": "loop:loop_3d6f3e81f9289943ea0bc6b7"
      },
      "facts": [
       {
        "claim": "Introly introduced Arjun to Farah Qureshi, who leads investments at Kitepath, and left the two of them to take it from there.",
        "evidence": [
         "evt_dcfe67d4a16fbbc55bf6a2b1"
-       ]
+       ],
+       "quote": "(Kitepath) Arjun, meet Farah Qureshi, who leads investments"
       },
       {
        "claim": "Farah wrote to Arjun directly and asked him to send the deck by Friday the twelfth of September.",
        "evidence": [
         "evt_475e72f774b0be782663b6dc"
-       ]
+       ],
+       "quote": "Arjun, Introly connected us. Can you send your deck by Friday 12 Sep? Farah"
       },
       {
        "claim": "Her ask is open and waits on us.",
@@ -432,7 +441,7 @@
       }
      ],
      "frames": {
-      "primary": "A fresh investor lead from a connector: Farah, who leads investments at Kitepath, asked for the deck by the twelfth, and the answer is Arjun's to send — to her, not to the connector.",
+      "primary": "A fresh investor lead from a connector: Farah, who leads investments at Kitepath, asked for the deck by the twelfth, and the answer is yours to send — to her, not to the connector.",
       "rivals": [
        "A connector's thread, where a thank-you to the connector might look like the next move — though it said it would let the two of them take it from there.",
        "A light first screen, where the deck joins a pile and the date matters less than it seems."

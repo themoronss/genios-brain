@@ -494,14 +494,22 @@
       "who": "Arjun",
       "what": "Send Aman the API pricing sheet now unless it reached him in the calls, and name one next step in the same note.",
       "for_whom": "Aman Verma at Memloop",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Aman",
+      "answers": "loop:loop_4b80cac1219873494671ff75"
      },
      "facts": [
       {
        "claim": "Aman Verma, founder of Memloop, asked for our API pricing sheet before the second of the two calls he set for the fifth of October.",
        "evidence": [
         "evt_7c7f6a51a4aeef4951b61d51"
-       ]
+       ],
+       "quote": "API pricing sheet before the second one? Aman Verma Founder, Memloop"
       },
       {
        "claim": "Both calls were on the calendar for the fifth of October — product in the morning, pricing in the afternoon IST — and memory holds no words for either.",
@@ -509,7 +517,8 @@
         "evt_7c7f6a51a4aeef4951b61d51",
         "evt_f4f199251d9e3c63af1f3b55",
         "evt_b715c09c1dad67711567b551"
-       ]
+       ],
+       "quote": "calls on 5 Oct: product at 11 am and pricing at 4 pm IST."
       },
       {
        "claim": "His ask for the pricing sheet is still listed open, waiting on us.",
@@ -640,14 +649,24 @@
       "who": "Arjun",
       "what": "Send Aman our API pricing sheet before the pricing call on the fifth of October.",
       "for_whom": "Aman Verma at Memloop",
-      "by_when": "2026-10-05"
+      "by_when": "2026-10-05",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Aman",
+      "answers": "loop:loop_4b80cac1219873494671ff75"
      },
      "facts": [
       {
        "claim": "Aman Verma, founder of Memloop, set two calls for the fifth of October — product in the morning, pricing in the afternoon IST — and asked for our API pricing sheet before the second.",
        "evidence": [
-        "evt_7c7f6a51a4aeef4951b61d51"
-       ]
+        "evt_7c7f6a51a4aeef4951b61d51",
+        "evt_f4f199251d9e3c63af1f3b55",
+        "evt_b715c09c1dad67711567b551"
+       ],
+       "quote": "API pricing sheet before the second one? Aman Verma Founder, Memloop"
       },
       {
        "claim": "Both calls are booked for the fifth of October.",

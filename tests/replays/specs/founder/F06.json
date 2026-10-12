@@ -237,20 +237,23 @@
        "claim": "Introly introduced Nikhil Bose, the CTO of Quillstack, to the founder and left the two to take it from there.",
        "evidence": [
         "evt_b5a1dca2622a328e0e7f88fe"
-       ]
+       ],
+       "quote": "Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder"
       },
       {
        "claim": "Nikhil replied about three days later, thanking the founder for the introduction and asking whether he is around on Thursday for a thirty-minute call, or what times work for him next week.",
        "evidence": [
         "evt_c8b1e9f1c3da8857bc625fd0",
         "num:usual_gap"
-       ]
+       ],
+       "quote": "call? If not, what times work for you next week? Nikhil"
       },
       {
        "claim": "Nikhil signs as CTO of Quillstack.",
        "evidence": [
         "evt_c8b1e9f1c3da8857bc625fd0"
-       ]
+       ],
+       "quote": "Nikhil Bose CTO, Quillstack"
       },
       {
        "claim": "His question is open in this file and waits on us.",
@@ -317,7 +320,7 @@
       }
      ],
      "frames": {
-      "primary": "An introduced contact, Quillstack's CTO, has asked for a thirty-minute call on Thursday or a time next week; the answer is owed by the founder.",
+      "primary": "An introduced contact, Quillstack's CTO, has asked for a thirty-minute call on Thursday or a time next week; the answer is owed by you.",
       "rivals": [
        "A prospective design partner reaching out with intent.",
        "A courtesy call to honour the connector's introduction, with no need behind it."
@@ -363,7 +366,15 @@
       "who": "Arjun Rao",
       "what": "Answer Nikhil Bose: confirm Thursday for a thirty-minute call and ask what time suits him, or offer two times next week if Thursday does not work",
       "for_whom": "Nikhil Bose at Quillstack",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ],
+      "to": "Nikhil",
+      "answers": "loop:loop_15045a0e2d2595afc9655cd2"
      },
      "alternative": "If the founder cannot commit a time today, send a short note saying Thursday is being checked and a time will follow by tomorrow.",
      "wait_or_stop": "Do not wait: the move is ours. Once a time is set, wait for the call; if Nikhil does not answer the founder's note within a week, nudge once, then stop.",
@@ -382,7 +393,8 @@
        "claim": "Introly introduced Nikhil Bose, the CTO of Quillstack, to the founder and left the two to take it from there.",
        "evidence": [
         "evt_b5a1dca2622a328e0e7f88fe"
-       ]
+       ],
+       "quote": "Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder"
       },
       {
        "claim": "Nikhil Bose is the person this file's numbers follow, and no reply time has been measured either way.",
@@ -431,7 +443,7 @@
       }
      ],
      "frames": {
-      "primary": "A fresh introduction to Quillstack's CTO; the first move is the founder's, and its purpose is not yet known.",
+      "primary": "A fresh introduction to Quillstack's CTO; the first move is yours, and its purpose is not yet known.",
       "rivals": [
        "A possible design partner, which the brief is looking for.",
        "A courtesy match with no need behind it."
@@ -474,11 +486,15 @@
       "who": "Arjun Rao",
       "what": "Write to Nikhil Bose directly, say in two lines what you are building, and offer a short call",
       "for_whom": "Nikhil Bose at Quillstack",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1"
+      ],
+      "to": "Nikhil"
      },
      "alternative": "Look up what Quillstack builds first, then write by tomorrow with a sharper reason to talk.",
      "wait_or_stop": "Do not wait long: the first move is ours. After the note, wait for Nikhil; follow up once after about a week, then stop.",
-     "done_when": "Nikhil has the founder's note and a call is booked, or he has said there is no need.",
+     "done_when": "Nikhil has your note and a call is booked, or he has said there is no need.",
      "draft": "Hi Nikhil, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and I'd love to hear what you're working on at Quillstack. Would a short call suit you? Best, Arjun"
     }
    }

@@ -372,14 +372,20 @@
       "who": "Arjun",
       "what": "Block time this week to write Assignment 4, the pricing page teardown, and submit it to the programme before 17 Sep, 11:59 pm IST.",
       "for_whom": "Divya Raman and the Lakshya programme",
-      "by_when": "2026-09-17"
+      "by_when": "2026-09-17",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "answers": "loop:loop_a0a5a60c5f2a32c0b4eb999a"
      },
      "facts": [
       {
        "claim": "Divya Raman, Programme Lead at Lakshya Accelerator, wrote that the fourth assignment — a teardown of our pricing page — is due on the seventeenth of September, just before midnight IST.",
        "evidence": [
         "evt_76937e6d81ba18909fb2fed5"
-       ]
+       ],
+       "quote": "due on 17 Sep, 11:59 pm IST. Divya Raman Programme Lead, Lakshya Accelerator"
       },
       {
        "claim": "The ask is open and waits on us.",

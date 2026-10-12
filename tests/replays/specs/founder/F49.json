@@ -211,14 +211,16 @@
        "claim": "On the eighth of July Arjun apologised to Kunal Mehta for missing their slot that morning, asked for the calendar link again, and wrote that he would book it again.",
        "evidence": [
         "evt_c8a90c03e0b5987545789efa"
-       ]
+       ],
+       "quote": "morning. Please resend the calendar link - I will book it again. Arjun"
       },
       {
        "claim": "Kunal answered the same day with his calendar link and told Arjun to block any time that works for him.",
        "evidence": [
         "evt_8e60f7c3ffffdabee3acc83b",
         "num:their_reply_time:kunal@sparkreach.test"
-       ]
+       ],
+       "quote": "calendar: cal.sparkreach.test/kunal. Block any time that works for you. Kunal"
       },
       {
        "claim": "Nothing from Arjun has followed: the file has been quiet for well over a week, longer than any gap it closed before.",
@@ -282,7 +284,7 @@
       }
      ],
      "frames": {
-      "primary": "The founder's own promise, not kept: Arjun said he would book the missed call again, Kunal sent his calendar link the same day, and nothing has followed. The move is ours.",
+      "primary": "Your own promise, not kept: you said you would book the missed call again, Kunal sent his calendar link the same day, and nothing has followed. The move is ours.",
       "rivals": [
        "A booking made through Kunal's calendar that left no mail in this file.",
        "A call that no longer matters to either side, left to lapse."
@@ -326,7 +328,12 @@
       "who": "Arjun",
       "what": "Book a time on Kunal's calendar through the link he sent, then send him a one-line note that it is booked.",
       "for_whom": "Kunal Mehta, Sparkreach",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Kunal"
      },
      "alternative": "If no slot on the link suits, write to Kunal with two times that do, and apologise for the delay.",
      "wait_or_stop": "Do not wait: the move is the founder's and it is late. Once the call is booked, nothing more is needed unless Kunal moves it.",

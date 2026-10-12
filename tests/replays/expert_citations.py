@@ -55,13 +55,17 @@ def where(text: str) -> dict[str, tuple[str, int]]:
 
 def cited(answer: Mapping[str, Any]) -> set[str]:
     """Every id an authored review cites: its facts' evidence, what its inferences and patterns rest on
-    (but the facts they name by number), and its proposed kind's evidence."""
+    (but the facts they name by number), its proposed kind's evidence — and, since STEP-13, the ask its
+    move answers (`NextMove.answers`, M35.C4.L-data.V0.U01)."""
     out = {str(e) for f in answer.get("facts") or () for e in f.get("evidence") or ()}
     for part in ("inferences", "patterns"):
         out |= {str(e) for i in answer.get(part) or () for e in i.get("based_on") or ()
                 if not str(e).startswith("fact:")}
     kind = answer.get("proposed_kind") or {}
     out |= {str(e) for e in kind.get("evidence") or ()}
+    answers = (answer.get("next_move") or {}).get("answers")
+    if answers:
+        out.add(str(answers))
     return out
 
 

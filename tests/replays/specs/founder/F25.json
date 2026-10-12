@@ -345,27 +345,36 @@
       "who": "Arjun",
       "what": "Get the board's approval of the ESOP pool now, and send Kavitha the engagement documents the day it is given — in time for her to read them before the twelfth.",
       "for_whom": "Kavitha Nair",
-      "by_when": "2026-08-12"
+      "by_when": "2026-08-12",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "inboxmail.test"
      },
      "facts": [
       {
        "claim": "Arjun offered Kavitha Nair the Founding AI Engineer role at Nimbus Labs — the salary they discussed and ESOPs vesting over four years — subject to the board approving the ESOP pool.",
        "evidence": [
         "evt_5d126b6651a2fd44c3737382"
-       ]
+       ],
+       "quote": "ESOPs vesting over four years, subject to the board approving the ESOP pool."
       },
       {
        "claim": "The offer asked Kavitha to confirm her acceptance by the twelfth of August, and said the engagement documents will follow once the board approves.",
        "evidence": [
         "evt_5d126b6651a2fd44c3737382"
-       ]
+       ],
+       "quote": "acceptance by 12 Aug; the engagement documents will follow once the board approves."
       },
       {
        "claim": "Kavitha replied, in under two days, that she is excited and will confirm by the twelfth once she has read the documents.",
        "evidence": [
         "evt_f81b74d10a59df3b036b80c0",
         "num:their_reply_time:kavitha.nair@inboxmail.test"
-       ]
+       ],
+       "quote": "excited. I'll confirm by the 12th once I've read the documents. Kavitha"
       }
      ],
      "inferences": [
@@ -469,20 +478,27 @@
       "who": "Arjun",
       "what": "Ask the board to approve the ESOP pool now, and have the engagement documents ready to send Kavitha the day it does.",
       "for_whom": "Kavitha Nair, so she can accept by the twelfth of August",
-      "by_when": "2026-08-12"
+      "by_when": "2026-08-12",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "inboxmail.test"
      },
      "facts": [
       {
        "claim": "Arjun offered Kavitha Nair the Founding AI Engineer role at Nimbus Labs — the salary they discussed and ESOPs vesting over four years — subject to the board approving the ESOP pool.",
        "evidence": [
         "evt_5d126b6651a2fd44c3737382"
-       ]
+       ],
+       "quote": "ESOPs vesting over four years, subject to the board approving the ESOP pool."
       },
       {
        "claim": "The offer asked Kavitha to confirm her acceptance by the twelfth of August, and said the engagement documents will follow once the board approves.",
        "evidence": [
         "evt_5d126b6651a2fd44c3737382"
-       ]
+       ],
+       "quote": "acceptance by 12 Aug; the engagement documents will follow once the board approves."
       },
       {
        "claim": "The file's history holds no earlier card or outcome: the engine sees it for the first time.",

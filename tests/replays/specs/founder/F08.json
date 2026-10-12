@@ -303,7 +303,7 @@
       }
      ],
      "frames": {
-      "primary": "An introduction from the founder's own connector to Simon Hart, partnerships at Lumenpath, that neither side has taken up yet: a line to watch, not a task.",
+      "primary": "An introduction from your own connector to Simon Hart, partnerships at Lumenpath, that neither side has taken up yet: a line to watch, not a task.",
       "rivals": [
        "An introduction Arjun asked for, where the next move is his and the quiet is his own delay.",
        "A match the connector made on its own initiative that neither side needs, which will close quietly."
@@ -346,7 +346,7 @@
      "next_move": null,
      "alternative": "If Arjun wants the conversation, a two-line note from him straight to Simon proposing a short call, with the connector left out of it.",
      "wait_or_stop": "Wait for a word from Simon or a sign from Arjun that he wants the conversation. Once two weeks have passed since the introduction with nothing from either side in mail read through that time, close the file with that reason; the connector is never the one to write to.",
-     "done_when": "The file holds either a first exchange between Arjun and Simon, or a close with its reason.",
+     "done_when": "The file holds either a first exchange between you and Simon, or a close with its reason.",
      "draft": null
     }
    },
@@ -456,7 +456,7 @@
       }
      ],
      "frames": {
-      "primary": "An introduction from the founder's own connector to Omar Haddad of Tidewell, a founder in developer tools, that neither side has taken up yet: a line to watch, not a task.",
+      "primary": "An introduction from your own connector to Omar Haddad of Tidewell, a founder in developer tools, that neither side has taken up yet: a line to watch, not a task.",
       "rivals": [
        "An introduction Arjun asked for, where the next move is his and the quiet is his own delay.",
        "A match the connector made on its own initiative that neither side needs, which will close quietly."
@@ -499,7 +499,7 @@
      "next_move": null,
      "alternative": "If Arjun wants the conversation, a two-line note from him straight to Omar proposing a short call, with the connector left out of it.",
      "wait_or_stop": "Wait for a word from Omar or a sign from Arjun that he wants the conversation. Once two weeks have passed since the introduction with nothing from either side in mail read through that time, close the file with that reason; the connector is never the one to write to.",
-     "done_when": "The file holds either a first exchange between Arjun and Omar, or a close with its reason.",
+     "done_when": "The file holds either a first exchange between you and Omar, or a close with its reason.",
      "draft": null
     }
    }

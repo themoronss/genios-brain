@@ -140,7 +140,8 @@
        "claim": "Arjun wrote to the partners' address at lattice-capital.test that Nimbus Labs is raising a seed round and asked for a short meeting.",
        "evidence": [
         "evt_087eceb326bd232754cc4664"
-       ]
+       ],
+       "quote": "Nimbus Labs is raising a seed round. Could we find 20 minutes? Arjun"
       },
       {
        "claim": "The file's numbers for that address record that our mail to it bounced the same morning it was sent.",
@@ -148,14 +149,16 @@
         "num:their_reply_time:partners@lattice-capital.test",
         "num:your_reply_time:partners@lattice-capital.test",
         "evt_087eceb326bd232754cc4664"
-       ]
+       ],
+       "quote": "Nimbus Labs - raising our seed round Hi Lattice team"
       },
       {
        "claim": "Arjun's mail is the file's only touch.",
        "evidence": [
         "evt_087eceb326bd232754cc4664",
         "num:days_quiet"
-       ]
+       ],
+       "quote": "Nimbus Labs - raising our seed round Hi Lattice team"
       },
       {
        "claim": "The engine holds a situation typed for an investor on this file, in the fundraising domain, on the engine's default window.",
@@ -228,7 +231,7 @@
       }
      ],
      "frames": {
-      "primary": "Arjun's seed-round pitch to Lattice never arrived — the mail bounced — so the fund has not seen the raise, and the next move is ours.",
+      "primary": "Your seed-round pitch to Lattice never arrived — the mail bounced — so the fund has not seen the raise, and the next move is ours.",
       "rivals": [
        "A temporary delivery failure on the fund's side, where the same address would work on a resend.",
        "A fund no longer reachable at that domain, where the path is another address or an introduction."
@@ -272,12 +275,17 @@
       "who": "Arjun",
       "what": "Find Lattice's correct address, a named partner if possible, and resend the seed-round note to it",
       "for_whom": "Lattice's partners",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
      },
      "alternative": "If no working address can be found, ask someone who knows the fund for an introduction to a partner.",
      "wait_or_stop": "Do not wait on Lattice: it has nothing to answer. After a delivered resend, give the fund the usual time a first contact takes; stop if the resend bounces too and no other route exists.",
      "done_when": "A resend reaches Lattice without a bounce, at an address that gets to a partner.",
-     "draft": "Hi Lattice team, Nimbus Labs is raising its seed round — we're building an AI chief of staff for founders. Could we find twenty minutes to talk? Arjun"
+     "draft": null
     }
    }
   ]

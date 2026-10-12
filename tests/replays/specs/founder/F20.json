@@ -270,13 +270,15 @@
        "claim": "Sameer Rana of TechBridge Foundation sent the accelerator's newsletter and an invitation to the TechBridge founders meetup on the twenty-seventh of September.",
        "evidence": [
         "evt_597f2a0e12ec13c67c77487f"
-       ]
+       ],
+       "quote": "accelerator's newsletter and an invite to the TechBridge founders meetup"
       },
       {
        "claim": "The invitation asks for nothing — do drop in if you are around.",
        "evidence": [
         "evt_597f2a0e12ec13c67c77487f"
-       ]
+       ],
+       "quote": "drop in if you are around."
       },
       {
        "claim": "The engine filed the file's situation as an investor relationship and recorded it as unsupported, a misfiled kind, though it still shows as active.",
@@ -347,7 +349,7 @@
       }
      ],
      "frames": {
-      "primary": "A programme the brief says the founder applied to has sent its newsletter with an open invitation to a founders meetup on the twenty-seventh — an optional chance to be in the room.",
+      "primary": "A programme the brief says you applied to has sent its newsletter with an open invitation to a founders meetup on the twenty-seventh — an optional chance to be in the room.",
       "rivals": [
        "A mass mailing to the foundation's whole list, worth no more than a glance at the calendar.",
        "A personal nudge from Sameer to get to know Nimbus Labs, since the mail greets Arjun by name."
@@ -385,11 +387,15 @@
       "who": "Arjun",
       "what": "Decide whether to drop in at the TechBridge founders meetup on the twenty-seventh and, if so, hold the time on the calendar.",
       "for_whom": "Sameer Rana and TechBridge Foundation",
-      "by_when": "2026-09-27"
+      "by_when": "2026-09-27",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ]
      },
      "alternative": "Let it pass and keep an eye on the application's own dates instead.",
      "wait_or_stop": "Nothing to wait for; the decision is the founder's. Once the twenty-seventh has passed, the invitation is done.",
-     "done_when": "The founder has decided, and the meetup is on the calendar or set aside.",
+     "done_when": "You have decided, and the meetup is on the calendar or set aside.",
      "draft": null
     }
    }

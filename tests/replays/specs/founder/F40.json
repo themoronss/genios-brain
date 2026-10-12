@@ -267,7 +267,7 @@
      "next_move": null,
      "alternative": "If the founder wants a record, he can note what was agreed himself; nothing should be presumed for him.",
      "wait_or_stop": "Wait for a signal — a mail from either side, or the founder's own note. Stop if the booked time passes and the file stays quiet with nothing written.",
-     "done_when": "A mail or the founder's note shows what the meeting was for and what follows — or the file stays quiet and is let go.",
+     "done_when": "A mail or your note shows what the meeting was for and what follows — or the file stays quiet and is let go.",
      "draft": null
     }
    }

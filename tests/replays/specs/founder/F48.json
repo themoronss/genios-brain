@@ -196,13 +196,15 @@
        "claim": "Mira Kapoor introduced Arjun and Tarun in one mail to both of them, saying Tarun leads partnerships at Quillstack and is looking for workflow tools for its founder community.",
        "evidence": [
         "evt_148549ace15c34b27f025789"
-       ]
+       ],
+       "quote": "Tarun leads partnerships at Quillstack and is looking for workflow tools for their founder"
       },
       {
        "claim": "Mira handed the conversation over in the same mail: she would let the two of them take it from there.",
        "evidence": [
         "evt_148549ace15c34b27f025789"
-       ]
+       ],
+       "quote": "let you two take it from here. Mira"
       },
       {
        "claim": "The introduction is the file's only touch: no answer from Arjun to Tarun is measured, and the dossier says we have not written in this file.",
@@ -276,7 +278,7 @@
       }
      ],
      "frames": {
-      "primary": "An introduction left unanswered on our side: about two weeks ago Mira put Arjun in touch with Tarun, who leads partnerships at Quillstack and wants workflow tools for its founder community, and the file shows no word from Arjun to Tarun since.",
+      "primary": "An introduction left unanswered on our side: about two weeks ago Mira put you in touch with Tarun, who leads partnerships at Quillstack and wants workflow tools for its founder community, and the file shows no word from you to Tarun since.",
       "rivals": [
        "The conversation moved off this thread, to a call or a direct mail the file does not see, and nothing is missing.",
        "Tarun's interest was more Mira's framing than his own, and a note would land cold whenever it went."
@@ -321,11 +323,16 @@
       "who": "Arjun Rao",
       "what": "Write to Tarun directly: a short note picking up Mira's introduction, saying what you do for founders, and proposing a call",
       "for_whom": "Tarun, who leads partnerships at Quillstack",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Tarun"
      },
      "alternative": "If Tarun does not answer within a week, send one short second note with a specific time for a call, then let it rest.",
      "wait_or_stop": "Do not wait: the introduction is already about two weeks old. After Arjun writes, give Tarun about a week; after one unanswered nudge, stop and keep the file for a later reason to write.",
-     "done_when": "Tarun has heard from Arjun directly, and either a call is set or Tarun has said where Quillstack stands.",
+     "done_when": "Tarun has heard from you directly, and either a call is set or Tarun has said where Quillstack stands.",
      "draft": "Hi Tarun, picking up Mira's introduction, and sorry for the slow start on my side. I run Nimbus Labs; we are building an AI chief of staff for founders. Mira mentioned you are looking at workflow tools for Quillstack's founder community, and I would love to hear what you have in mind. Would a short call next week work? Arjun"
     }
    },
@@ -424,7 +431,7 @@
       }
      ],
      "frames": {
-      "primary": "A connector's file whose work is done: Mira introduced Arjun to Tarun of Quillstack, stepped back, and was thanked the same day; nothing here is owed to her, and what the introduction opened lies with Tarun.",
+      "primary": "A connector's file whose work is done: Mira introduced you to Tarun of Quillstack, stepped back, and was thanked the same day; nothing here is owed to her, and what the introduction opened lies with Tarun.",
       "rivals": [
        "An introduction left half-answered: the thank-you may be the only answer it got, so Tarun has heard nothing; a live risk, but one that lies with Tarun, not in Mira's file.",
        "An account to manage, as the engine files it; nothing in the mail supports that."
@@ -461,7 +468,7 @@
      "next_move": null,
      "alternative": "Make sure Tarun has heard from Arjun directly; that is the introduction's open move, and it lies with Tarun, not here.",
      "wait_or_stop": "Nothing to wait for here: treat Mira's file as closed, and reopen it only if she writes again.",
-     "done_when": "Mira's introduction has become a direct conversation between Arjun and Tarun, and her file needs nothing more.",
+     "done_when": "Mira's introduction has become a direct conversation between you and Tarun, and her file needs nothing more.",
      "draft": null
     }
    }

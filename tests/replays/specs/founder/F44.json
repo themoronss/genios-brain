@@ -164,13 +164,15 @@
        "claim": "Kavita Rao wrote on the eighteenth of September that she is an angel investor in health tech and loved Kitebird's clinic scheduling demo.",
        "evidence": [
         "evt_358ab154b3010d9babc1c0cd"
-       ]
+       ],
+       "quote": "angel investor in health tech and loved your clinic scheduling demo."
       },
       {
        "claim": "She asked for the deck and a time to talk this week.",
        "evidence": [
         "evt_358ab154b3010d9babc1c0cd"
-       ]
+       ],
+       "quote": "deck and a time to talk this week?"
       },
       {
        "claim": "Her ask is open and waits on us, and the file names the move as ours.",
@@ -281,7 +283,14 @@
       "who": "Meera, the founder",
       "what": "Reply to Kavita with your deck and ask her to pick a time to talk.",
       "for_whom": "Kavita Rao, angel investor",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Kavita",
+      "answers": "loop:loop_01e9fe76f30592f7851bc153"
      },
      "alternative": "If the deck is not ready to share, reply now with an offer to talk and say the deck follows after the call.",
      "wait_or_stop": "Do not wait: she asked for this week. After the deck goes, give her a few days; if nothing comes, one short note with something new, then stop.",

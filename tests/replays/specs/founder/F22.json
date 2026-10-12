@@ -111,19 +111,22 @@
        "claim": "The University Startup Cell wrote that applications for the university seed grant close on the thirtieth of September.",
        "evidence": [
         "evt_17c8070e9244db207db3ee56"
-       ]
+       ],
+       "quote": "Applications for the university seed grant close"
       },
       {
        "claim": "The mail says startups incubated on campus may apply.",
        "evidence": [
         "evt_17c8070e9244db207db3ee56"
-       ]
+       ],
+       "quote": "Startups incubated on campus may apply."
       },
       {
        "claim": "The mail is a notice to every founder — Dear Founder — and asks nothing of Nimbus Labs in particular.",
        "evidence": [
         "evt_17c8070e9244db207db3ee56"
-       ]
+       ],
+       "quote": "Dear Founder"
       },
       {
        "claim": "The engine holds the file as an account admin situation in the admin domain.",
@@ -232,11 +235,16 @@
       "who": "Arjun",
       "what": "Find out whether you count as a startup incubated on the university's campus and, if it does, work the seed grant application back from the thirtieth.",
       "for_whom": "Nimbus Labs",
-      "by_when": "2026-09-30"
+      "by_when": "2026-09-30",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
      },
      "alternative": "Ask the cell directly who may apply, and decide from its answer.",
      "wait_or_stop": "Do not wait for the cell; its mail is a notice. Stop if Nimbus Labs is not incubated on campus — close the file with that reason.",
-     "done_when": "The file shows either the application's receipt before the thirtieth, or why Nimbus Labs did not apply.",
+     "done_when": "The file shows either the application's receipt before the thirtieth, or why you did not apply.",
      "draft": null
     }
    }

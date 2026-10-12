@@ -652,13 +652,15 @@
        "claim": "On the ninth of September Meera Shah of Bluepeak Ventures asked whether two of the pilot customers could take a short reference call with Bluepeak.",
        "evidence": [
         "evt_bbf28b40fd18292ad4ade12b"
-       ]
+       ],
+       "quote": "pilot customers take a short reference call with us? Meera Shah Bluepeak Ventures"
       },
       {
        "claim": "On the fifteenth Arjun answered that two pilot leads had agreed, and that he would send their details separately.",
        "evidence": [
         "evt_9ed904c2f51993642f3f7493"
-       ]
+       ],
+       "quote": "two pilot leads have agreed; I will send their details separately. Arjun"
       },
       {
        "claim": "That mail is the file's last word: nothing has followed it, and the file has been quiet for well over a week, longer than any gap it closed before.",
@@ -666,14 +668,16 @@
         "evt_9ed904c2f51993642f3f7493",
         "num:days_quiet",
         "num:longest_gap"
-       ]
+       ],
+       "quote": "Re: Bluepeak x Nimbus - references Hi Meera, Yes"
       },
       {
        "claim": "Before that she asked which tool the pilot teams use instead of Nimbus Labs, and Arjun answered that most of them use shared spreadsheets and a chat channel.",
        "evidence": [
         "evt_55ccbe8ea141878d91d2f87f",
         "evt_9c5be017cef1cccd617fcb0e"
-       ]
+       ],
+       "quote": "use shared spreadsheets and a chat channel today. Arjun"
       },
       {
        "claim": "Her August questions — among them the first engineer after the round and the pipeline — were each answered too, and the file's older exchanges have the same shape: her question, then his answer.",
@@ -686,7 +690,8 @@
         "evt_89f3773f41f73080a1604a6b",
         "evt_aedc2e199c2cf41438d361b1",
         "evt_30ff636b71bfaec385a045b6"
-       ]
+       ],
+       "quote": "Re: Bluepeak x Nimbus - pipeline Hi Meera, Nine teams"
       },
       {
        "claim": "Arjun's answers to her usually take a day and a half over six answers, the same as his normal across every counterparty.",
@@ -701,7 +706,8 @@
        "evidence": [
         "loop:loop_bfcb9b4eee023c29d4eabeb0",
         "evt_e5e50c7bb6f13f5da52a07ae"
-       ]
+       ],
+       "quote": "Re: Bluepeak x Nimbus - hiring Hi Meera, A backend"
       },
       {
        "claim": "The brief names no kind of work for Bluepeak; the engine filed the file under admin, and its pricing exchange as a sales opportunity now marked dormant.",
@@ -777,7 +783,7 @@
       }
      ],
      "frames": {
-      "primary": "An investor at the reference stage of diligence, left without what the founder offered: Meera Shah asked for reference calls with pilot customers, the founder wrote that two pilot leads agreed and that he would send their details separately, and nothing after that is in the file.",
+      "primary": "An investor at the reference stage of diligence, left without what you offered: Meera Shah asked for reference calls with pilot customers, you wrote that two pilot leads agreed and that you would send their details separately, and nothing after that is in the file.",
       "rivals": [
        "The details went by another channel and Bluepeak is quietly making the calls.",
        "Bluepeak has lost interest, and the quiet is a pass that nobody sends."
@@ -821,9 +827,19 @@
      "mode": "act",
      "next_move": {
       "who": "Arjun",
-      "what": "Introduce Meera Shah to the two pilot leads who agreed to a reference call — copying them in, or sending their contact details — as he wrote he would, and ask for Bluepeak's next step.",
+      "what": "Introduce Meera Shah to the two pilot leads who agreed to a reference call — copying them in, or sending their contact details — as you wrote you would, and ask for Bluepeak's next step.",
       "for_whom": "Meera Shah, Bluepeak Ventures",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4",
+       "fact:5",
+       "fact:7"
+      ],
+      "to": "Meera",
+      "answers": "loop:loop_bfcb9b4eee023c29d4eabeb0"
      },
      "alternative": "If the details already went another way, write one line confirming the leads expect her call, and ask for Bluepeak's next step and timing.",
      "wait_or_stop": "Do not wait: the next move is the founder's. Once the details have gone, give Bluepeak a week for the calls; if nothing comes, ask Meera Shah directly where Bluepeak stands, then stop.",
@@ -845,7 +861,8 @@
         "evt_aedc2e199c2cf41438d361b1",
         "evt_7385ef78a5a3fffefe542220",
         "evt_e56b3fb33cd4677d904fcdf4"
-       ]
+       ],
+       "quote": "first engineer you plan to hire after the round? Meera Shah Bluepeak Ventures"
       },
       {
        "claim": "Arjun answered every one: all three pilot teams still active at week eight, per-seat pricing with a floor of five seats, a backend engineer who has built sync pipelines, and nine teams in conversation for next quarter.",
@@ -854,7 +871,8 @@
         "evt_30ff636b71bfaec385a045b6",
         "evt_e5e50c7bb6f13f5da52a07ae",
         "evt_aec38afad58115d6073f0a02"
-       ]
+       ],
+       "quote": "Nine teams are in conversation for next quarter. Arjun"
       },
       {
        "claim": "His answers took a median of one day across four of them — too few to call a normal.",
@@ -868,14 +886,16 @@
         "evt_aec38afad58115d6073f0a02",
         "num:days_quiet",
         "num:usual_gap"
-       ]
+       ],
+       "quote": "Re: Bluepeak x Nimbus - pipeline Hi Meera, Nine teams"
       },
       {
        "claim": "The file still lists the hiring question as an open ask that waits on us, though Arjun's answer to it is in the file.",
        "evidence": [
         "loop:loop_bfcb9b4eee023c29d4eabeb0",
         "evt_e5e50c7bb6f13f5da52a07ae"
-       ]
+       ],
+       "quote": "Re: Bluepeak x Nimbus - hiring Hi Meera, A backend"
       },
       {
        "claim": "The brief names no kind of work for Bluepeak; the engine filed the file under admin and its pricing exchange as a sales opportunity.",
@@ -988,7 +1008,15 @@
       "who": "Arjun",
       "what": "Write to Meera Shah offering a short call to cover whatever Bluepeak still needs, and ask what its next step is and when it expects to decide.",
       "for_whom": "Meera Shah, Bluepeak Ventures",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:4",
+       "fact:5"
+      ],
+      "to": "Meera",
+      "answers": "loop:loop_bfcb9b4eee023c29d4eabeb0"
      },
      "alternative": "If she prefers mail, ask in one line what else Bluepeak needs to reach a decision, and by when.",
      "wait_or_stop": "Between her questions there is nothing to chase. If a gap opens longer than any so far, ask her directly where Bluepeak stands; stop if that draws nothing.",

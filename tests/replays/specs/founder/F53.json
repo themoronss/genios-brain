@@ -260,25 +260,29 @@
        "claim": "Ira Bose of Larkspur Ventures wrote after the demo that she loved it, and asked how many design partners Nimbus Labs has live.",
        "evidence": [
         "evt_c0d691bb8d4aa9af058c9301"
-       ]
+       ],
+       "quote": "Larkspur x Nimbus Labs Hi Arjun, Loved the demo. How many design partners"
       },
       {
        "claim": "Arjun answered the next day: three live and two more starting in April, with an offer to walk her through them.",
        "evidence": [
         "evt_a309eca25989b116aaf6fa80"
-       ]
+       ],
+       "quote": "Three are live, and two more start in April. Happy to walk you through"
       },
       {
        "claim": "Ira wrote back that this was helpful and that she would take it to their Monday meeting.",
        "evidence": [
         "evt_0f723e30ca018dc8761a2dfd"
-       ]
+       ],
+       "quote": "helpful. Let me take it to our Monday meeting. Ira"
       },
       {
        "claim": "Arjun answered that he would be happy to join the meeting if it helped; that mail, on the eleventh of March, is the file's last touch.",
        "evidence": [
         "evt_0629e3d6c4bc8fe263774d01"
-       ]
+       ],
+       "quote": "happy to join the meeting if it helps. Arjun"
       },
       {
        "claim": "The four mails ran both ways within about nine days, none left waiting longer than about a week.",
@@ -426,7 +430,14 @@
       "who": "Arjun Rao",
       "what": "Check the mailbox for anything from Larkspur since March, then write Ira a short note with where the design partners stand now and a plain question about where Larkspur landed after its Monday meeting",
       "for_whom": "Ira Bose at Larkspur Ventures",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ],
+      "to": "Ira"
      },
      "alternative": "If there is no fresh news on the design partners, ask Ira only where the meeting landed and whether Larkspur is looking at the seed round.",
      "wait_or_stop": "Do not wait longer: the file is already far past anything it has known. After the note, give Ira a week or two; one more nudge if she is silent, then stop and keep Larkspur for the next round of updates.",
@@ -445,25 +456,29 @@
        "claim": "Ira Bose of Larkspur Ventures wrote after the demo that she loved it, and asked how many design partners Nimbus Labs has live.",
        "evidence": [
         "evt_c0d691bb8d4aa9af058c9301"
-       ]
+       ],
+       "quote": "Larkspur x Nimbus Labs Hi Arjun, Loved the demo. How many design partners"
       },
       {
        "claim": "Arjun answered the next day: three live and two more starting in April, with an offer to walk her through them.",
        "evidence": [
         "evt_a309eca25989b116aaf6fa80"
-       ]
+       ],
+       "quote": "Three are live, and two more start in April. Happy to walk you through"
       },
       {
        "claim": "Ira wrote back that this was helpful and that she would take it to their Monday meeting.",
        "evidence": [
         "evt_0f723e30ca018dc8761a2dfd"
-       ]
+       ],
+       "quote": "helpful. Let me take it to our Monday meeting. Ira"
       },
       {
        "claim": "Arjun answered that he would be happy to join the meeting if it helped; that mail is the file's last touch.",
        "evidence": [
         "evt_0629e3d6c4bc8fe263774d01"
-       ]
+       ],
+       "quote": "happy to join the meeting if it helps. Arjun"
       },
       {
        "claim": "The four mails ran both ways within about nine days, none left waiting longer than about a week, and the quiet since Arjun's last mail is still within the gaps the file has closed.",
@@ -591,7 +606,13 @@
       "who": "Arjun Rao",
       "what": "If nothing has come from Ira within a week of the Monday meeting, ask her where Larkspur landed and whether a walk-through of the design partners would help",
       "for_whom": "Ira Bose at Larkspur Ventures",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ]
      },
      "alternative": "If Ira asks Arjun to join the meeting, prepare the walk-through of the design partners he offered.",
      "wait_or_stop": "Wait until the Monday meeting has passed and a week more; then ask Ira once. If that also goes unanswered, stop chasing and keep Larkspur for a later update with news.",

@@ -365,7 +365,8 @@
        "claim": "The third assignment, the unit economics sheet, was due on the fifteenth of September, to the cohort folder.",
        "evidence": [
         "evt_4af96cdebc72bdc9f4d52c58"
-       ]
+       ],
+       "quote": "Assignment 3 (the unit economics sheet) is due"
       },
       {
        "claim": "Its ask still shows open in the file.",
@@ -374,10 +375,11 @@
        ]
       },
       {
-       "claim": "Divya then wrote that the Phase-One review presentations are on the thirtieth of September, and asked for the review deck to be uploaded by the twenty-eighth.",
+       "claim": "Divya then wrote that the Phase-1 review presentations are on the thirtieth of September, and asked for the review deck to be uploaded by the twenty-eighth.",
        "evidence": [
         "evt_cbea1730c3a5dd7a254c3ba0"
-       ]
+       ],
+       "quote": "Phase-1 review presentations are on 30 Sep. Please upload your review deck"
       },
       {
        "claim": "The review deck's ask is open and waits on us.",
@@ -447,7 +449,7 @@
       }
      ],
      "frames": {
-      "primary": "The Phase-One review deck is due on the twenty-eighth, days away, for the review presentations on the thirtieth; the sheet's date has passed, and whether it went in is not in the file.",
+      "primary": "The Phase-1 review deck is due on the twenty-eighth, days away, for the review presentations on the thirtieth; the sheet's date has passed, and whether it went in is not in the file.",
       "rivals": [
        "Both deliverables in hand, with only the upload of the deck left.",
        "A review where the sheet's numbers will be asked about, so both need to be in."
@@ -483,9 +485,15 @@
      "mode": "act",
      "next_move": {
       "who": "Arjun",
-      "what": "Upload the Phase-One review deck to the cohort folder by the twenty-eighth, and check the folder holds the unit economics sheet — if it does not, upload it and tell Divya.",
+      "what": "Upload the Phase-1 review deck to the cohort folder by the twenty-eighth, and check the folder holds the unit economics sheet — if it does not, upload it and tell Divya.",
       "for_whom": "Divya Raman and the Lakshya cohort",
-      "by_when": "2026-09-28"
+      "by_when": "2026-09-28",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ]
      },
      "alternative": "If the deck cannot be ready by the twenty-eighth, tell Divya before the date and ask what the programme allows.",
      "wait_or_stop": "Nothing to wait for; the moves are ours. Done when both are in the folder before the review.",
@@ -502,10 +510,11 @@
     "answer": {
      "facts": [
       {
-       "claim": "Assignment Three — the unit economics sheet — is due on the fifteenth of September just before midnight India time, to the cohort folder.",
+       "claim": "The third assignment — the unit economics sheet — is due on the fifteenth of September just before midnight, to the cohort folder.",
        "evidence": [
         "evt_4af96cdebc72bdc9f4d52c58"
-       ]
+       ],
+       "quote": "Assignment 3 (the unit economics sheet) is due"
       },
       {
        "claim": "Both asks are open and wait on us.",
@@ -515,10 +524,11 @@
        ]
       },
       {
-       "claim": "Divya then wrote that the Phase-One review presentations are on the thirtieth of September, and asked for the review deck to be uploaded by the twenty-eighth.",
+       "claim": "Divya then wrote that the Phase-1 review presentations are on the thirtieth of September, and asked for the review deck to be uploaded by the twenty-eighth.",
        "evidence": [
         "evt_cbea1730c3a5dd7a254c3ba0"
-       ]
+       ],
+       "quote": "Phase-1 review presentations are on 30 Sep. Please upload your review deck"
       },
       {
        "claim": "The file's quiet is within the gaps it closed before.",
@@ -565,12 +575,12 @@
        "relevance": "Days remain; a finished sheet needs only the upload."
       },
       {
-       "question": "What the Phase-One review deck must cover.",
+       "question": "What the Phase-1 review deck must cover.",
        "relevance": "It decides how much work the deck is."
       }
      ],
      "frames": {
-      "primary": "The accelerator the founder is in has two dates running: the unit economics sheet due on the fifteenth, days away, and the Phase-One review deck due on the twenty-eighth for the review presentations on the thirtieth.",
+      "primary": "The accelerator you are in has two dates running: the unit economics sheet due on the fifteenth, days away, and the Phase-1 review deck due on the twenty-eighth for the review presentations on the thirtieth.",
       "rivals": [
        "Two routine cohort chores that can be handled one at a time.",
        "A review that the programme will use to judge the company's progress, with the sheet as its groundwork."
@@ -606,9 +616,14 @@
      "mode": "act",
      "next_move": {
       "who": "Arjun",
-      "what": "Finish the unit economics sheet and upload it to the cohort folder before the fifteenth, then start the Phase-One review deck, due on the twenty-eighth.",
+      "what": "Finish the unit economics sheet and upload it to the cohort folder before the fifteenth, then start the Phase-1 review deck, due on the twenty-eighth.",
       "for_whom": "Divya Raman and the Lakshya cohort",
-      "by_when": "2026-09-15"
+      "by_when": "2026-09-15",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
      },
      "alternative": "If the sheet cannot be in by the fifteenth, tell Divya before the date and ask what the programme allows.",
      "wait_or_stop": "Nothing to wait for; both moves are ours. Each is done when it is in the cohort folder.",
@@ -624,10 +639,11 @@
     "answer": {
      "facts": [
       {
-       "claim": "Divya Raman, the Lakshya Accelerator's programme lead, wrote that Assignment Three — the unit economics sheet — is due on the fifteenth of September just before midnight India time, to be uploaded to the cohort folder.",
+       "claim": "Divya Raman, the Lakshya Accelerator's programme lead, wrote that the third assignment — the unit economics sheet — is due on the fifteenth of September just before midnight IST, to be uploaded to the cohort folder.",
        "evidence": [
         "evt_4af96cdebc72bdc9f4d52c58"
-       ]
+       ],
+       "quote": "IST. Please upload it to the cohort folder. Divya Raman Programme Lead, Lakshya"
       },
       {
        "claim": "The ask is open and waits on us.",
@@ -697,7 +713,7 @@
       }
      ],
      "frames": {
-      "primary": "The accelerator the founder is in has set a fixed date for its third assignment, the unit economics sheet — programme work on the programme's clock.",
+      "primary": "The accelerator you are in has set a fixed date for its third assignment, the unit economics sheet — programme work on the programme's clock.",
       "rivals": [
        "Routine cohort admin the founder can leave to its last days.",
        "A first look by the programme at numbers it will test again at its later reviews."
@@ -735,7 +751,12 @@
       "who": "Arjun",
       "what": "Put the unit economics sheet on the calendar now, working back from the fifteenth, and upload it to the cohort folder before the date.",
       "for_whom": "Divya Raman and the Lakshya cohort",
-      "by_when": "2026-09-15"
+      "by_when": "2026-09-15",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "answers": "loop:loop_616f487fd540d48d09b06d31"
      },
      "alternative": "If the sheet cannot be ready by the fifteenth, tell Divya before the date and ask what the programme allows.",
      "wait_or_stop": "Nothing to wait for; the move is ours. Stop once the sheet is in the cohort folder.",

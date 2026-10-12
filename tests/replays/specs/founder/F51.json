@@ -190,22 +190,25 @@
     "answer": {
      "facts": [
       {
-       "claim": "Sana Qureshi of Brightloop offered Arjun two times for a call: Tuesday the fourth of August at three in the afternoon, or Wednesday the fifth at eleven in the morning, India time.",
+       "claim": "Sana Qureshi of Brightloop offered Arjun two times for a call: Tuesday the fourth of August at three in the afternoon, or Wednesday the fifth at eleven in the morning, IST.",
        "evidence": [
         "evt_f35092e97f8fb6735ee225f2"
-       ]
+       ],
+       "quote": "Brightloop Hi Arjun, Happy to chat. Does Tuesday 4 Aug at 3pm or Wednesday"
       },
       {
        "claim": "Sana said she would send an invite once Arjun confirms one of them.",
        "evidence": [
         "evt_f35092e97f8fb6735ee225f2"
-       ]
+       ],
+       "quote": "send an invite once you confirm. Sana"
       },
       {
        "claim": "Her mail answers a thread titled Nimbus Labs x Brightloop, whose earlier mail is not in the file, and opens with happy to chat.",
        "evidence": [
         "evt_f35092e97f8fb6735ee225f2"
-       ]
+       ],
+       "quote": "Nimbus Labs x Brightloop Hi Arjun, Happy to chat."
       },
       {
        "claim": "Her mail is the file's only touch, over three days ago; the dossier says we have not written in the file and marks the move as ours.",
@@ -260,7 +263,7 @@
       }
      ],
      "frames": {
-      "primary": "A call offered and waiting on us: Sana proposed Tuesday afternoon or Wednesday morning and will send the invite once Arjun picks one; nothing is set yet, and the first slot is close.",
+      "primary": "A call offered and waiting on us: Sana proposed Tuesday afternoon or Wednesday morning and will send the invite once you pick one; nothing is set yet, and the first slot is close.",
       "rivals": [
        "The time was settled outside this mailbox and the file only looks open.",
        "Brightloop's interest is light, and an offer left unanswered will be read as Arjun's lack of interest."
@@ -304,11 +307,17 @@
       "who": "Arjun Rao",
       "what": "Take one of Sana's two times — Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST — and tell her so she can send the invite",
       "for_whom": "Sana Qureshi at Brightloop",
-      "by_when": "2026-08-03"
+      "by_when": "2026-08-03",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Sana"
      },
      "alternative": "If neither time suits, answer by Monday with two or three other times this week.",
      "wait_or_stop": "Do not wait: answer before Tuesday afternoon. Once a time is agreed, wait for Sana's invite; if none has come by the evening before the call, ask her once for it.",
-     "done_when": "Arjun has picked a time, Sana's invite is in the calendar, and the call is set.",
+     "done_when": "You have picked a time, Sana's invite is in the calendar, and the call is set.",
      "draft": "Hi Sana, thanks for the two options. Tuesday 4 Aug at 3pm works for me; please send the invite when you can. Looking forward to talking. Arjun"
     }
    }

@@ -432,14 +432,16 @@
        "claim": "Neeraj Joshi of Harbor Point Partners thanked Arjun for an update and asked, before their call, to see how retention looks for the first three pilot customers.",
        "evidence": [
         "evt_6871fbe6d55307337c516bc6"
-       ]
+       ],
+       "quote": "retention looks for your first three pilot customers. Neeraj Joshi Harbor Point Partners"
       },
       {
        "claim": "A meeting is booked for the eighth of October, the date of the call Neeraj names.",
        "evidence": [
         "evt_6c481b4979f8f62bd38e86aa",
         "evt_6871fbe6d55307337c516bc6"
-       ]
+       ],
+       "quote": "Re: Nimbus Labs update Hi Arjun, Thanks for the update."
       },
       {
        "claim": "The file holds one open ask, Neeraj's request, waiting on us.",
@@ -581,7 +583,14 @@
       "who": "Arjun",
       "what": "Send Neeraj retention for the first three pilot customers, with a line of context on each, a day before the call",
       "for_whom": "Neeraj Joshi at Harbor Point Partners",
-      "by_when": "2026-10-07"
+      "by_when": "2026-10-07",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Neeraj",
+      "answers": "loop:loop_2395aea9b1b84fd6d852d4d0"
      },
      "alternative": "If the figures cannot be ready in time, write to Neeraj before the call saying when they will come, and take him through them on the call.",
      "wait_or_stop": "Do not wait: the call is the deadline. After sending, wait for the call itself; at the call, ask for the next step and its date, and confirm both in writing that day.",

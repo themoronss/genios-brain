@@ -284,13 +284,15 @@
        "claim": "On the first of September Arjun wrote to Ravi that Nimbus Labs is raising a seed round to bring calendar-aware planning to small teams, and asked for twenty minutes the following week.",
        "evidence": [
         "evt_97d933041e0609ecbbce82a8"
-       ]
+       ],
+       "quote": "Ravi, Nimbus Labs is raising a seed round to bring calendar-aware planning to small"
       },
       {
        "claim": "On the third Ravi Iyer of Seedfund Partners answered, thanking him and asking for the deck before they speak.",
        "evidence": [
         "evt_fde8a73a37c03df1fe5597c5"
-       ]
+       ],
+       "quote": "deck before we speak? Ravi Iyer Seedfund Partners"
       },
       {
        "claim": "Ravi's ask is open and waits on us, and the file names the move as ours.",
@@ -396,7 +398,14 @@
       "who": "Arjun",
       "what": "Reply to Ravi Iyer with your deck, apologise for the wait, and ask which time suits him for the call.",
       "for_whom": "Ravi Iyer, Seedfund Partners",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Ravi",
+      "answers": "loop:loop_c02f2f668d1ff1d265d1f708"
      },
      "alternative": "If the deck is not ready, reply today saying when it will come, and ask for a time for the call.",
      "wait_or_stop": "Do not wait — the move is ours. After the deck goes, give Ravi a week to propose a time; if nothing comes, send one short note with something new, then stop.",

@@ -421,7 +421,7 @@
       }
      ],
      "frames": {
-      "primary": "A contact from an event on the calendar, with nothing on file since: if Arjun met Kavya there, the moment for an easy follow-up is passing.",
+      "primary": "A contact from an event on the calendar, with nothing on file since: if you met Kavya there, the moment for an easy follow-up is passing.",
       "rivals": [
        "An invitation list, not a conversation: Kavya was on it, Arjun never spoke with her, and nothing is owed.",
        "A follow-up that went by phone or another mailbox, which this file cannot see."
@@ -457,13 +457,17 @@
      "mode": "find_out",
      "next_move": {
       "who": "Arjun",
-      "what": "Say whether he spoke with Kavya at the Bluebay event and what was said; if they spoke, send her a short follow-up note this week.",
+      "what": "Say whether you spoke with Kavya at the Bluebay event and what was said; if you did, send her a short follow-up note this week.",
       "for_whom": "Kavya at FerryPay",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ]
      },
      "alternative": "If Arjun did not speak with her, close the file with no note.",
      "wait_or_stop": "Do not wait for Kavya to write first; stop if Arjun did not meet her or nothing came of it.",
-     "done_when": "Arjun has said whether they met, and either a note to Kavya is in the file or the file is closed.",
+     "done_when": "You have said whether you met, and either a note to Kavya is in the file or the file is closed.",
      "draft": null
     }
    },
@@ -576,7 +580,7 @@
      "next_move": null,
      "alternative": "If the meeting turns out to be a one-to-one about real work, a short brief on Kavya and FerryPay before it.",
      "wait_or_stop": "Wait until the meeting on the twentieth has passed, then look again; stop if nothing comes of it.",
-     "done_when": "After the meeting, the file shows whether Arjun met Kavya and what, if anything, follows.",
+     "done_when": "After the meeting, the file shows whether you met Kavya and what, if anything, follows.",
      "draft": null
     }
    },
@@ -681,7 +685,7 @@
       }
      ],
      "frames": {
-      "primary": "A contact from an event on the calendar, with nothing on file since: if Arjun met Rhea there, the moment for an easy follow-up is passing.",
+      "primary": "A contact from an event on the calendar, with nothing on file since: if you met Rhea there, the moment for an easy follow-up is passing.",
       "rivals": [
        "An invitation list, not a conversation: Rhea was on it, Arjun never spoke with her, and nothing is owed.",
        "A follow-up that went by phone or another mailbox, which this file cannot see."
@@ -717,13 +721,17 @@
      "mode": "find_out",
      "next_move": {
       "who": "Arjun",
-      "what": "Say whether he spoke with Rhea at the Bluebay event and what was said; if they spoke, send her a short follow-up note this week.",
+      "what": "Say whether you spoke with Rhea at the Bluebay event and what was said; if you did, send her a short follow-up note this week.",
       "for_whom": "Rhea at Tallowfin",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ]
      },
      "alternative": "If Arjun did not speak with her, close the file with no note.",
      "wait_or_stop": "Do not wait for Rhea to write first; stop if Arjun did not meet her or nothing came of it.",
-     "done_when": "Arjun has said whether they met, and either a note to Rhea is in the file or the file is closed.",
+     "done_when": "You have said whether you met, and either a note to Rhea is in the file or the file is closed.",
      "draft": null
     }
    },
@@ -836,7 +844,7 @@
      "next_move": null,
      "alternative": "If the meeting turns out to be a one-to-one about real work, a short brief on Rhea and Tallowfin before it.",
      "wait_or_stop": "Wait until the meeting on the twentieth has passed, then look again; stop if nothing comes of it.",
-     "done_when": "After the meeting, the file shows whether Arjun met Rhea and what, if anything, follows.",
+     "done_when": "After the meeting, the file shows whether you met Rhea and what, if anything, follows.",
      "draft": null
     }
    },

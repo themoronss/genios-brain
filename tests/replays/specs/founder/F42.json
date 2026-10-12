@@ -204,13 +204,15 @@
        "claim": "Manav Rao, a partner at Lumen Ventures, wrote on the eighth of August that it was good to meet Meera the week before.",
        "evidence": [
         "evt_02276c72e9d3936cce9a8b3b"
-       ]
+       ],
+       "quote": "Meera Iyer would send a one-pager. Thanks, Manav Rao Partner, Lumen Ventures"
       },
       {
        "claim": "He asked for Kitebird's current traction — clinics live, revenue run-rate and the pilot pipeline — before Lumen's Monday partners' meeting, and told his partners she would send a one-pager.",
        "evidence": [
         "evt_02276c72e9d3936cce9a8b3b"
-       ]
+       ],
+       "quote": "current traction metrics - clinics live, revenue run-rate and the pilot pipeline? I told"
       },
       {
        "claim": "The ask is open and waits on us, and the file names the move as ours.",
@@ -346,7 +348,14 @@
       "who": "Meera, the founder",
       "what": "Reply to Manav with a one-page summary of current traction — clinics live, revenue run-rate and the pilot pipeline — before Lumen's Monday partners' meeting, and offer to answer the partners' questions.",
       "for_whom": "Manav Rao and the Lumen Ventures partners",
-      "by_when": "2026-08-10"
+      "by_when": "2026-08-10",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Manav",
+      "answers": "loop:loop_dd4c4b5f6ea6a242e4ddd70f"
      },
      "alternative": "If the one-pager cannot be ready in time, reply now with the numbers he asked for in the body of the mail, and the one-pager to follow.",
      "wait_or_stop": "Do not wait: the partners meet on Monday. After the meeting, give Lumen its weekly cycle; if a week passes with no word, ask Manav directly what the partners decided.",

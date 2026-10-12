@@ -590,19 +590,22 @@
        "claim": "Naveen Gupta of the Incubation Cell asked Arjun to share the signed incubation agreement so the cell can activate the seat.",
        "evidence": [
         "evt_8050a1c8ddab56f63af89aab"
-       ]
+       ],
+       "quote": "share the signed incubation agreement so we can activate your seat. Naveen Gupta"
       },
       {
        "claim": "Ritika Sharma wrote that the monthly progress report was due on the fifteenth of September, on the portal.",
        "evidence": [
         "evt_737819ca62a1671f48e7a887"
-       ]
+       ],
+       "quote": "monthly progress report is due on 15 Sep. Please submit it on the portal."
       },
       {
        "claim": "Ekta Bhalla of the Incubation Cell wrote that the invoice for the two co-working seats is due on the thirtieth of September, and asked Arjun to confirm the billing name.",
        "evidence": [
         "evt_f6dc49920ee904fdab0e2a4f"
-       ]
+       ],
+       "quote": "due on 30 Sep. Could you confirm the billing name? Ekta Bhalla Incubation Cell"
       },
       {
        "claim": "All three asks are open and wait on us.",
@@ -728,7 +731,14 @@
       "who": "Arjun",
       "what": "Answer the cell's three asks today: send Naveen the signed incubation agreement, confirm the billing name to Ekta before the thirtieth, and check the portal for the monthly report — if it is not there, file it and tell Ritika.",
       "for_whom": "Naveen Gupta, Ekta Bhalla and Ritika Sharma at the Incubation Cell",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ],
+      "to": "Naveen"
      },
      "alternative": "If the agreement cannot go today, tell Naveen when it will, and still answer Ekta and settle the report.",
      "wait_or_stop": "Nothing to wait for — all three moves are ours. Each ask is done when the cell confirms it or the portal shows it.",
@@ -747,13 +757,15 @@
        "claim": "Naveen Gupta of the Incubation Cell asked Arjun to share the signed incubation agreement so the cell can activate the seat.",
        "evidence": [
         "evt_8050a1c8ddab56f63af89aab"
-       ]
+       ],
+       "quote": "share the signed incubation agreement so we can activate your seat. Naveen Gupta"
       },
       {
        "claim": "Ritika Sharma of the Incubation Cell wrote that the monthly progress report is due on the fifteenth of September and is to be submitted on the portal.",
        "evidence": [
         "evt_737819ca62a1671f48e7a887"
-       ]
+       ],
+       "quote": "due on 15 Sep. Please submit it on the portal. Ritika Sharma Incubation Cell"
       },
       {
        "claim": "Both asks are open and wait on us.",
@@ -883,7 +895,13 @@
       "who": "Arjun",
       "what": "Sign and send Naveen the incubation agreement, and put the monthly progress report on the portal before the fifteenth.",
       "for_whom": "Naveen Gupta and Ritika Sharma at the Incubation Cell",
-      "by_when": "2026-09-15"
+      "by_when": "2026-09-15",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Naveen"
      },
      "alternative": "If the agreement needs changes before signing, tell Naveen today what needs changing and when it will come back, and still file the report on time.",
      "wait_or_stop": "Nothing to wait for — both moves are ours. The report is done when the portal shows it; the agreement when Naveen confirms the seat.",

@@ -254,13 +254,15 @@
        "claim": "Kiran Agnihotri, a principal at Banyan Seed Fund, wrote following up on a chat at the demo day and asked Arjun to share the data-room link and the current cap table.",
        "evidence": [
         "evt_0521fdea4d700f0092a756d9"
-       ]
+       ],
+       "quote": "Kiran Agnihotri Principal, Banyan Seed Fund"
       },
       {
        "claim": "Kiran says the fund attached its term-sheet FAQ and a short portfolio note for context.",
        "evidence": [
         "evt_0521fdea4d700f0092a756d9"
-       ]
+       ],
+       "quote": "attached our term-sheet FAQ and a short portfolio note for context. Kiran"
       },
       {
        "claim": "The file holds one open ask, Kiran's question, waiting on us.",
@@ -375,7 +377,7 @@
       }
      ],
      "frames": {
-      "primary": "A seed fund that met Arjun at a demo day is opening diligence: its principal wants the data room and the current cap table, and the reply is ours to send.",
+      "primary": "A seed fund that met you at a demo day is opening diligence: its principal wants the data room and the current cap table, and the reply is ours to send.",
       "rivals": [
        "A principal's early screen of many demo-day companies, where the data room is a filter before any partner looks.",
        "A fund reading the cap table to judge its own fit, with no intent yet to lead the round."
@@ -414,7 +416,14 @@
       "who": "Arjun",
       "what": "Reply to Kiran with the data-room link and the current cap table, and offer a short call to walk through them",
       "for_whom": "Kiran Agnihotri at Banyan Seed Fund",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Kiran",
+      "answers": "loop:loop_8e7ab520ea5e87492baede73"
      },
      "alternative": "If the room or the cap table is not ready, reply to Kiran now with the date both will be in Kiran's hands, and send them by then.",
      "wait_or_stop": "No waiting on our side. Once the room is with Kiran, a few quiet days are the fund's work; stop reading quiet as work if it runs past a date Kiran gives, or if each answer brings a new question.",

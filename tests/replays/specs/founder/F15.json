@@ -446,7 +446,12 @@
       "who": "Arjun",
       "what": "Send Cobalt Peak one last short note on the seed round, saying a quick no is welcome, and close the file if it stays silent.",
       "for_whom": "Cobalt Peak",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Cobalt Peak"
      },
      "alternative": "Close the file now as a quiet pass, if the round has moved on, and spend the time on funds that answered.",
      "wait_or_stop": "Give the last note about a week; then close the file with its reason. Stop at one note.",
@@ -598,7 +603,12 @@
       "who": "Arjun",
       "what": "Send Cobalt Peak one short follow-up to the seed round mail, offering the deck again and a short call.",
       "for_whom": "Cobalt Peak",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Cobalt Peak"
      },
      "alternative": "Ask someone who knows Cobalt Peak for an introduction, and send that in place of a second cold mail.",
      "wait_or_stop": "After the follow-up, give Cobalt Peak about a week; if it stays silent, close the file as a quiet pass and spend the effort on funds that answer.",
@@ -617,7 +627,8 @@
        "claim": "Arjun wrote to the Cobalt Peak team that Nimbus Labs is raising a seed round to build an AI chief of staff for founders, attached the deck, and asked for a short meeting within the next two weeks.",
        "evidence": [
         "evt_c948c90270ed285f6f2b49fc"
-       ]
+       ],
+       "quote": "Cobalt Peak team, Nimbus Labs is raising a seed round to build an AI"
       },
       {
        "claim": "That ask is open, and the move is theirs: we wait on them.",
@@ -707,7 +718,7 @@
       }
      ],
      "frames": {
-      "primary": "A cold first ask to Cobalt Peak for a meeting about the seed round, one fund in a wave, less than a day old — the window the founder set is still open.",
+      "primary": "A cold first ask to Cobalt Peak for a meeting about the seed round, one fund in a wave, less than a day old — the window you set is still open.",
       "rivals": [
        "A wave the funds will read as unsolicited and leave unanswered.",
        "Investor work the brief does not track, which will drift with no one deciding to follow up or to close it."
@@ -751,9 +762,13 @@
      "mode": "wait",
      "next_move": {
       "who": "Arjun",
-      "what": "If the two weeks he asked for pass with no reply, send Cobalt Peak one short follow-up.",
+      "what": "If the two weeks you asked for pass with no reply, send Cobalt Peak one short follow-up.",
       "for_whom": "Cobalt Peak",
-      "by_when": "2026-08-25"
+      "by_when": "2026-08-25",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ]
      },
      "alternative": "Find a warm introduction to a partner at Cobalt Peak and use it in place of a cold follow-up.",
      "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
@@ -898,7 +913,12 @@
       "who": "Arjun",
       "what": "Send Juniper Ridge one last short note on the seed round, saying a quick no is welcome, and close the file if it stays silent.",
       "for_whom": "Juniper Ridge",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Juniper Ridge"
      },
      "alternative": "Close the file now as a quiet pass, if the round has moved on, and spend the time on funds that answered.",
      "wait_or_stop": "Give the last note about a week; then close the file with its reason. Stop at one note.",
@@ -1050,7 +1070,12 @@
       "who": "Arjun",
       "what": "Send Juniper Ridge one short follow-up to the seed round mail, offering the deck again and a short call.",
       "for_whom": "Juniper Ridge",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Juniper Ridge"
      },
      "alternative": "Ask someone who knows Juniper Ridge for an introduction, and send that in place of a second cold mail.",
      "wait_or_stop": "After the follow-up, give Juniper Ridge about a week; if it stays silent, close the file as a quiet pass and spend the effort on funds that answer.",
@@ -1069,7 +1094,8 @@
        "claim": "Arjun wrote to the Juniper Ridge team that Nimbus Labs is raising a seed round to build an AI chief of staff for founders, attached the deck, and asked for a short meeting within the next two weeks.",
        "evidence": [
         "evt_40ab364c4382f76fd81bb665"
-       ]
+       ],
+       "quote": "Juniper Ridge team, Nimbus Labs is raising a seed round to build an AI"
       },
       {
        "claim": "That ask is open, and the move is theirs: we wait on them.",
@@ -1159,7 +1185,7 @@
       }
      ],
      "frames": {
-      "primary": "A cold first ask to Juniper Ridge for a meeting about the seed round, one fund in a wave, less than a day old — the window the founder set is still open.",
+      "primary": "A cold first ask to Juniper Ridge for a meeting about the seed round, one fund in a wave, less than a day old — the window you set is still open.",
       "rivals": [
        "A wave the funds will read as unsolicited and leave unanswered.",
        "Investor work the brief does not track, which will drift with no one deciding to follow up or to close it."
@@ -1203,9 +1229,13 @@
      "mode": "wait",
      "next_move": {
       "who": "Arjun",
-      "what": "If the two weeks he asked for pass with no reply, send Juniper Ridge one short follow-up.",
+      "what": "If the two weeks you asked for pass with no reply, send Juniper Ridge one short follow-up.",
       "for_whom": "Juniper Ridge",
-      "by_when": "2026-08-25"
+      "by_when": "2026-08-25",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ]
      },
      "alternative": "Find a warm introduction to a partner at Juniper Ridge and use it in place of a cold follow-up.",
      "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
@@ -1350,7 +1380,12 @@
       "who": "Arjun",
       "what": "Send Lattice Capital one last short note on the seed round, saying a quick no is welcome, and close the file if it stays silent.",
       "for_whom": "Lattice Capital",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Lattice Capital"
      },
      "alternative": "Close the file now as a quiet pass, if the round has moved on, and spend the time on funds that answered.",
      "wait_or_stop": "Give the last note about a week; then close the file with its reason. Stop at one note.",
@@ -1502,7 +1537,12 @@
       "who": "Arjun",
       "what": "Send Lattice Capital one short follow-up to the seed round mail, offering the deck again and a short call.",
       "for_whom": "Lattice Capital",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Lattice Capital"
      },
      "alternative": "Ask someone who knows Lattice Capital for an introduction, and send that in place of a second cold mail.",
      "wait_or_stop": "After the follow-up, give Lattice Capital about a week; if it stays silent, close the file as a quiet pass and spend the effort on funds that answer.",
@@ -1521,7 +1561,8 @@
        "claim": "Arjun wrote to the Lattice Capital team that Nimbus Labs is raising a seed round to build an AI chief of staff for founders, attached the deck, and asked for a short meeting within the next two weeks.",
        "evidence": [
         "evt_e93045e17f9f8b1f887bebf8"
-       ]
+       ],
+       "quote": "Lattice Capital team, Nimbus Labs is raising a seed round to build an AI"
       },
       {
        "claim": "That ask is open, and the move is theirs: we wait on them.",
@@ -1611,7 +1652,7 @@
       }
      ],
      "frames": {
-      "primary": "A cold first ask to Lattice Capital for a meeting about the seed round, one fund in a wave, less than a day old — the window the founder set is still open.",
+      "primary": "A cold first ask to Lattice Capital for a meeting about the seed round, one fund in a wave, less than a day old — the window you set is still open.",
       "rivals": [
        "A wave the funds will read as unsolicited and leave unanswered.",
        "Investor work the brief does not track, which will drift with no one deciding to follow up or to close it."
@@ -1655,9 +1696,13 @@
      "mode": "wait",
      "next_move": {
       "who": "Arjun",
-      "what": "If the two weeks he asked for pass with no reply, send Lattice Capital one short follow-up.",
+      "what": "If the two weeks you asked for pass with no reply, send Lattice Capital one short follow-up.",
       "for_whom": "Lattice Capital",
-      "by_when": "2026-08-25"
+      "by_when": "2026-08-25",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ]
      },
      "alternative": "Find a warm introduction to a partner at Lattice Capital and use it in place of a cold follow-up.",
      "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
@@ -1802,7 +1847,12 @@
       "who": "Arjun",
       "what": "Send Meridian Seed one last short note on the seed round, saying a quick no is welcome, and close the file if it stays silent.",
       "for_whom": "Meridian Seed",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Meridian Seed"
      },
      "alternative": "Close the file now as a quiet pass, if the round has moved on, and spend the time on funds that answered.",
      "wait_or_stop": "Give the last note about a week; then close the file with its reason. Stop at one note.",
@@ -1954,7 +2004,12 @@
       "who": "Arjun",
       "what": "Send Meridian Seed one short follow-up to the seed round mail, offering the deck again and a short call.",
       "for_whom": "Meridian Seed",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Meridian Seed"
      },
      "alternative": "Ask someone who knows Meridian Seed for an introduction, and send that in place of a second cold mail.",
      "wait_or_stop": "After the follow-up, give Meridian Seed about a week; if it stays silent, close the file as a quiet pass and spend the effort on funds that answer.",
@@ -1973,7 +2028,8 @@
        "claim": "Arjun wrote to the Meridian Seed team that Nimbus Labs is raising a seed round to build an AI chief of staff for founders, attached the deck, and asked for a short meeting within the next two weeks.",
        "evidence": [
         "evt_f7a3274b9b39e353eae26b82"
-       ]
+       ],
+       "quote": "team, Nimbus Labs is raising a seed round to build an AI chief"
       },
       {
        "claim": "That ask is open, and the move is theirs: we wait on them.",
@@ -2063,7 +2119,7 @@
       }
      ],
      "frames": {
-      "primary": "A cold first ask to Meridian Seed for a meeting about the seed round, one fund in a wave, less than a day old — the window the founder set is still open.",
+      "primary": "A cold first ask to Meridian Seed for a meeting about the seed round, one fund in a wave, less than a day old — the window you set is still open.",
       "rivals": [
        "A wave the funds will read as unsolicited and leave unanswered.",
        "Investor work the brief does not track, which will drift with no one deciding to follow up or to close it."
@@ -2107,9 +2163,13 @@
      "mode": "wait",
      "next_move": {
       "who": "Arjun",
-      "what": "If the two weeks he asked for pass with no reply, send Meridian Seed one short follow-up.",
+      "what": "If the two weeks you asked for pass with no reply, send Meridian Seed one short follow-up.",
       "for_whom": "Meridian Seed",
-      "by_when": "2026-08-25"
+      "by_when": "2026-08-25",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ]
      },
      "alternative": "Find a warm introduction to a partner at Meridian Seed and use it in place of a cold follow-up.",
      "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
@@ -2254,7 +2314,12 @@
       "who": "Arjun",
       "what": "Send Northstar Angels one last short note on the seed round, saying a quick no is welcome, and close the file if it stays silent.",
       "for_whom": "Northstar Angels",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Northstar Angels"
      },
      "alternative": "Close the file now as a quiet pass, if the round has moved on, and spend the time on funds that answered.",
      "wait_or_stop": "Give the last note about a week; then close the file with its reason. Stop at one note.",
@@ -2406,7 +2471,12 @@
       "who": "Arjun",
       "what": "Send Northstar Angels one short follow-up to the seed round mail, offering the deck again and a short call.",
       "for_whom": "Northstar Angels",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Northstar Angels"
      },
      "alternative": "Ask someone who knows Northstar Angels for an introduction, and send that in place of a second cold mail.",
      "wait_or_stop": "After the follow-up, give Northstar Angels about a week; if it stays silent, close the file as a quiet pass and spend the effort on funds that answer.",
@@ -2425,7 +2495,8 @@
        "claim": "Arjun wrote to the Northstar Angels team that Nimbus Labs is raising a seed round to build an AI chief of staff for founders, attached the deck, and asked for a short meeting within the next two weeks.",
        "evidence": [
         "evt_f4ce35e222e19ba3448acd67"
-       ]
+       ],
+       "quote": "Northstar Angels team, Nimbus Labs is raising a seed round to build an AI"
       },
       {
        "claim": "That ask is open, and the move is theirs: we wait on them.",
@@ -2515,7 +2586,7 @@
       }
      ],
      "frames": {
-      "primary": "A cold first ask to Northstar Angels for a meeting about the seed round, one fund in a wave, less than a day old — the window the founder set is still open.",
+      "primary": "A cold first ask to Northstar Angels for a meeting about the seed round, one fund in a wave, less than a day old — the window you set is still open.",
       "rivals": [
        "A wave the funds will read as unsolicited and leave unanswered.",
        "Investor work the brief does not track, which will drift with no one deciding to follow up or to close it."
@@ -2559,9 +2630,13 @@
      "mode": "wait",
      "next_move": {
       "who": "Arjun",
-      "what": "If the two weeks he asked for pass with no reply, send Northstar Angels one short follow-up.",
+      "what": "If the two weeks you asked for pass with no reply, send Northstar Angels one short follow-up.",
       "for_whom": "Northstar Angels",
-      "by_when": "2026-08-25"
+      "by_when": "2026-08-25",
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ]
      },
      "alternative": "Find a warm introduction to a partner at Northstar Angels and use it in place of a cold follow-up.",
      "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",

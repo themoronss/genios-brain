@@ -328,7 +328,8 @@
        "claim": "Amira Saleh, Gulf Launchpad's programme manager, wrote that the application has moved to the interview stage and asked Arjun to book a thirty-minute slot through the scheduling link by the tenth of October.",
        "evidence": [
         "evt_489f9174cd14a5b32635a246"
-       ]
+       ],
+       "quote": "slot using the scheduling link by 10 Oct. Amira Saleh Programme Manager, Gulf"
       },
       {
        "claim": "The file holds one open ask from that mail, waiting on us.",
@@ -341,7 +342,8 @@
        "evidence": [
         "evt_b28cdc0da85d9a12960d5eba",
         "num:their_reply_time:amira@gulflaunchpad.test"
-       ]
+       ],
+       "quote": "submitted the application form. Arjun"
       },
       {
        "claim": "The programme playbook, not yet reviewed, says the interview stage is the founders' turn to book, prepare and attend, and that the date an invitation carries is a deadline, not a suggestion.",
@@ -485,7 +487,13 @@
       "who": "Arjun",
       "what": "Book a thirty-minute interview slot through Gulf Launchpad's scheduling link, and put the time on both clocks",
       "for_whom": "Gulf Launchpad's selection team, through Amira Saleh",
-      "by_when": "2026-10-10"
+      "by_when": "2026-10-10",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "answers": "loop:loop_a7971bd8e62872fad4b7cc8d"
      },
      "alternative": "If no slot fits, write to Amira before the tenth of October asking for another time, rather than letting the date pass.",
      "wait_or_stop": "Do not wait to book. After booking, the programme's quiet until the interview is scheduling; after the interview, wait for its decision date and ask once, through its own channel, only once that date has passed.",
@@ -601,7 +609,7 @@
       }
      ],
      "frames": {
-      "primary": "An accelerator application that has just gone in: the founder's part is done, and the programme decides on its own calendar.",
+      "primary": "An accelerator application that has just gone in: your part is done, and the programme decides on its own calendar.",
       "rivals": [
        "An application that never reached the programme, where the quiet would hide a failed submission.",
        "A rolling programme that reads applications as they arrive, where an answer could come any day."

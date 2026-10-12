@@ -352,7 +352,8 @@
        "claim": "Kabir Sethi wrote on the twenty-fifth of August asking whether Arjun is still keen on the pilot.",
        "evidence": [
         "evt_fc8900329eb4ad7be5cd1e8f"
-       ]
+       ],
+       "quote": "Arjun, Are you still keen on the pilot? Kabir"
       },
       {
        "claim": "His question is an open ask on Arjun's side, waiting since that day.",
@@ -461,11 +462,17 @@
       "who": "Arjun",
       "what": "Reply to Kabir with a clear answer on the pilot, or a time this week to settle it.",
       "for_whom": "Kabir Sethi at Orchard",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Kabir",
+      "answers": "loop:loop_f06f6011811c658935b08009"
      },
      "alternative": "If Arjun is no longer keen, a short, courteous no that leaves the door open.",
      "wait_or_stop": "Do not wait: the ask is Arjun's to answer. Stop once Kabir has a clear answer.",
-     "done_when": "Kabir has Arjun's answer on the pilot in writing, and the open ask is closed.",
+     "done_when": "Kabir has your answer on the pilot in writing, and the open ask is closed.",
      "draft": "Hi Kabir, sorry for the slow reply. On the pilot, could we speak this week so I can give you a clear answer? Arjun"
     }
    },
@@ -480,7 +487,8 @@
        "claim": "Rhea Thomas wrote on the twentieth of August asking to move their call to the following week.",
        "evidence": [
         "evt_22d224284fc214bbf70ac0c8"
-       ]
+       ],
+       "quote": "move our call to next week? Rhea"
       },
       {
        "claim": "Her question is an open ask on Arjun's side, waiting since that day.",
@@ -585,7 +593,13 @@
       "who": "Arjun",
       "what": "Reply to Rhea with an apology for the delay and new times for the call.",
       "for_whom": "Rhea Thomas at Pinegrove",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Rhea",
+      "answers": "loop:loop_09e26d117b16268f4d64c703"
      },
      "alternative": "If the call is no longer needed, tell her so in a line, so she is not left in doubt.",
      "wait_or_stop": "Do not wait; stop once a new time is agreed or the call is called off.",
@@ -604,7 +618,8 @@
        "claim": "Dev Malhotra wrote on the sixteenth of August asking Arjun to send the pricing sheet.",
        "evidence": [
         "evt_f7943679d333f11914ee7efa"
-       ]
+       ],
+       "quote": "Arjun, Could you send the pricing sheet? Dev"
       },
       {
        "claim": "His request is an open ask on Arjun's side, waiting since that day.",
@@ -702,7 +717,13 @@
       "who": "Arjun",
       "what": "Send Dev the pricing sheet with a short apology for the delay.",
       "for_whom": "Dev Malhotra at Tanglewood",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Dev",
+      "answers": "loop:loop_8f37654f5e0a1648cd060c90"
      },
      "alternative": "If no sheet is ready, write to Dev today with when it will come, or offer a short call on pricing.",
      "wait_or_stop": "Do not wait; stop once the sheet is with Dev or he says he no longer needs it.",
@@ -830,7 +851,7 @@
      "next_move": null,
      "alternative": "If the round is open now, a short note to Ishaan rather than waiting for the next update.",
      "wait_or_stop": "Wait for the next update or the round's opening, whichever comes first, and tell Ishaan then; stop if Arjun decides Meadow VC is not part of this round.",
-     "done_when": "Ishaan has heard from Arjun whether the round is open.",
+     "done_when": "Ishaan has heard from you whether the round is open.",
      "draft": null
     }
    }

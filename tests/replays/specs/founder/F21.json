@@ -152,14 +152,16 @@
        "claim": "The Awadh Enterprise Centre wrote that applications for its pre-incubation programme are open, and that the programme runs for twelve weeks from November.",
        "evidence": [
         "evt_0616ab6c71c798e70dd44f98"
-       ]
+       ],
+       "quote": "open. The programme runs for twelve weeks from November. Awadh Enterprise Centre"
       },
       {
        "claim": "The notices are addressed to every founder — Dear Founder — and ask nothing of Nimbus Labs in particular.",
        "evidence": [
         "evt_0616ab6c71c798e70dd44f98",
         "evt_a63c89b44c27111f6b8f66f5"
-       ]
+       ],
+       "quote": "Dear Founder"
       },
       {
        "claim": "The engine holds the file as an investor relationship in the fundraising domain.",
@@ -171,7 +173,8 @@
        "claim": "The centre wrote again with a reminder that applications for the programme close soon, naming no date.",
        "evidence": [
         "evt_a63c89b44c27111f6b8f66f5"
-       ]
+       ],
+       "quote": "reminder that applications for the pre-incubation programme close soon. Awadh Enterprise Centre"
       }
      ],
      "inferences": [
@@ -282,11 +285,16 @@
       "who": "Arjun",
       "what": "This week, check whether you applied to the centre's pre-incubation programme — a receipt in the mail or a status with the centre — and, if not, decide before applications close whether it is worth applying.",
       "for_whom": "Nimbus Labs, on its Awadh Enterprise Centre file",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:4"
+      ]
      },
      "alternative": "Write to the centre for its closing date and who the programme is for, then decide.",
      "wait_or_stop": "Do not wait on the centre — its mail is templated. Stop once a receipt is found, or once the founder decides not to apply, and close the file with that reason.",
-     "done_when": "The file shows the application's receipt, or the founder's decision not to apply with its reason.",
+     "done_when": "The file shows the application's receipt, or your decision not to apply with its reason.",
      "draft": null
     }
    },
@@ -301,13 +309,15 @@
        "claim": "The Awadh Enterprise Centre wrote that applications for its pre-incubation programme are open, and that the programme runs for twelve weeks from November.",
        "evidence": [
         "evt_0616ab6c71c798e70dd44f98"
-       ]
+       ],
+       "quote": "open. The programme runs for twelve weeks from November. Awadh Enterprise Centre"
       },
       {
        "claim": "The notice is addressed to every founder — Dear Founder — and asks nothing of Nimbus Labs in particular.",
        "evidence": [
         "evt_0616ab6c71c798e70dd44f98"
-       ]
+       ],
+       "quote": "Dear Founder"
       },
       {
        "claim": "The engine holds the file as an investor relationship in the fundraising domain.",
@@ -424,11 +434,15 @@
       "who": "Arjun",
       "what": "Check whether you applied to the centre's pre-incubation programme — a receipt in the mail or a status with the centre — and, if not, decide whether this earlier-stage programme is worth applying to.",
       "for_whom": "Nimbus Labs, on its Awadh Enterprise Centre file",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ]
      },
      "alternative": "Write to the centre for its closing date and who the programme is for, then decide.",
      "wait_or_stop": "Do not wait on the centre — its mail is templated. Stop once a receipt is found, or once the founder decides not to apply, and close the file with that reason.",
-     "done_when": "The file shows the application's receipt, or the founder's decision not to apply with its reason.",
+     "done_when": "The file shows the application's receipt, or your decision not to apply with its reason.",
      "draft": null
     }
    }

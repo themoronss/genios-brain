@@ -335,13 +335,15 @@
        "claim": "Introly introduced Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, to the founder.",
        "evidence": [
         "evt_c9e60c2e9863426c3d31dbad"
-       ]
+       ],
+       "quote": "Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure."
       },
       {
        "claim": "Introly said it would let the two take it from there, so the next step is between the founder and Rahul.",
        "evidence": [
         "evt_c9e60c2e9863426c3d31dbad"
-       ]
+       ],
+       "quote": "two should talk. I'll let you take it from here. Introly"
       },
       {
        "claim": "Rahul Menon at Kestrel Capital is the person this file's numbers follow, and no reply time has been measured either way.",
@@ -410,7 +412,7 @@
       }
      ],
      "frames": {
-      "primary": "An investor introduction during the seed raise: a partner at a fund that backs early-stage AI infrastructure has been put in front of the founder, and the first move is ours.",
+      "primary": "An investor introduction during the seed raise: a partner at a fund that backs early-stage AI infrastructure has been put in front of you, and the first move is ours.",
       "rivals": [
        "An automated match that may not fit the round, worth a short exploratory call rather than a pitch.",
        "A courtesy introduction Rahul did not seek, where a note may go unanswered."
@@ -455,11 +457,16 @@
       "who": "Arjun Rao",
       "what": "Write to Rahul Menon directly: thank him for taking the introduction, say in two lines what you are building and that the seed round is open, and offer a short call",
       "for_whom": "Rahul Menon at Kestrel Capital",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Rahul"
      },
      "alternative": "If the founder wants to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.",
      "wait_or_stop": "Do not wait: the move is ours. After the note, wait for Rahul's answer; if none comes in about a week, follow up once, then stop.",
-     "done_when": "Rahul has the founder's note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.",
+     "done_when": "Rahul has your note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.",
      "draft": "Hi Rahul, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and we're raising our seed round. Given your focus on early-stage AI infrastructure, I'd value your view on whether we fit what Kestrel backs. Would a short call next week suit you? Happy to work around your calendar. Best, Arjun"
     }
    }

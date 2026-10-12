@@ -328,20 +328,29 @@
       "who": "Arjun",
       "what": "Reply to Neha to confirm Tuesday 30 Sep at 11 am IST, or offer another time if it does not suit.",
       "for_whom": "Neha Kapoor at Orbitly",
-      "by_when": "2026-09-30"
+      "by_when": "2026-09-30",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Neha",
+      "answers": "loop:loop_8683ec3e321d474f05bb9df0"
      },
      "facts": [
       {
        "claim": "Neha Kapoor, CEO of Orbitly, wrote that Orbitly builds scheduling infrastructure and would like to explore an integration with Nimbus Labs.",
        "evidence": [
         "evt_14e41c15781b059f7f694f3e"
-       ]
+       ],
+       "quote": "scheduling infrastructure and would like to explore an integration. Neha Kapoor CEO, Orbitly"
       },
       {
        "claim": "Neha then asked for a call and proposed Tuesday the thirtieth of September at eleven in the morning IST.",
        "evidence": [
         "evt_4ae977e63e76106ac3c70483"
-       ]
+       ],
+       "quote": "call next week? Would Tuesday 30 Sep, 11 am IST work for you? Neha"
       },
       {
        "claim": "Her question is open and waits on us.",
@@ -417,7 +426,7 @@
       }
      ],
      "frames": {
-      "primary": "A warm design-partner lead with a question waiting on us: Neha proposed a time for a call and needs a yes, or another time, from Arjun.",
+      "primary": "A warm design-partner lead with a question waiting on us: Neha proposed a time for a call and needs a yes, or another time, from you.",
       "rivals": [
        "An exploratory integration chat that may never become a design partnership, where a slow answer costs little.",
        "A vendor's pitch dressed as a partnership: scheduling infrastructure looking for a customer."

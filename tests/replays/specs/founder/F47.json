@@ -159,14 +159,16 @@
        "evidence": [
         "evt_eb77193bd00df0b82dd6ca2f",
         "num:their_reply_time:partners@ardentridge.test"
-       ]
+       ],
+       "quote": "raising our seed round Hi Ardent Ridge team, Nimbus Labs"
       },
       {
        "claim": "That mail to partners@ardentridge.test bounced as soon as it was sent.",
        "evidence": [
         "evt_eb77193bd00df0b82dd6ca2f",
         "num:your_reply_time:partners@ardentridge.test"
-       ]
+       ],
+       "quote": "Nimbus Labs - raising our seed round Hi Ardent Ridge"
       },
       {
        "claim": "The partners' address is the only address the file holds for Ardent Ridge, and no person there is named.",
@@ -218,7 +220,7 @@
       }
      ],
      "frames": {
-      "primary": "A pitch that never arrived: the mail to Ardent Ridge bounced, so the fund has nothing to answer and the next move is the founder's.",
+      "primary": "A pitch that never arrived: the mail to Ardent Ridge bounced, so the fund has nothing to answer and the next move is yours.",
       "rivals": [
        "A typo in the address, fixed by resending to the right one.",
        "A fund with no working shared address, where only an introduction to a partner gets in."
@@ -263,7 +265,12 @@
       "who": "Arjun",
       "what": "Find a working address for Ardent Ridge — read the bounce report for its reason, check the fund's site for a named partner — and resend the pitch there.",
       "for_whom": "Ardent Ridge's partners",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Ardent Ridge"
      },
      "alternative": "If no working address turns up, ask someone who knows an Ardent Ridge partner for an introduction.",
      "wait_or_stop": "Nothing to wait for: the fund never got the mail. If a second address bounces too, stop writing cold and look for an introduction.",

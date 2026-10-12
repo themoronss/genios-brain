@@ -446,14 +446,23 @@
       "who": "Arjun",
       "what": "Send Ishita our security questionnaire answers before the call — or, if Novacore has its own form, ask her for it at once.",
       "for_whom": "Ishita Rao and Novacore's IT team",
-      "by_when": "2026-10-08"
+      "by_when": "2026-10-08",
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ],
+      "to": "Ishita",
+      "answers": "loop:loop_5700b577391b57bf0b3634f7"
      },
      "facts": [
       {
        "claim": "Ishita Rao, Head of Partnerships at Novacore, asked Arjun to send our security questionnaire answers before their call on the eighth of October, because Novacore's IT team needs them first.",
        "evidence": [
-        "evt_5185bef9bcda76b11f2c93a0"
-       ]
+        "evt_5185bef9bcda76b11f2c93a0",
+        "evt_0e547359e31864611d4d4363"
+       ],
+       "quote": "security questionnaire answers before then? Our IT team needs them first. Ishita Rao Head"
       },
       {
        "claim": "A call with Ishita is on the calendar for the eighth of October.",

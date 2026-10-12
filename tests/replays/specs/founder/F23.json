@@ -237,20 +237,23 @@
        "claim": "The State Startup Mission wrote that Nimbus Labs' registration on its portal is complete, and gave its registration number.",
        "evidence": [
         "evt_b9151ac8d56114de9e250716"
-       ]
+       ],
+       "quote": "State Startup Mission portal is complete. Your registration number"
       },
       {
        "claim": "Before that it wrote that the sustenance allowance scheme has been extended to March.",
        "evidence": [
         "evt_1a3e736dba0d7ba62c882d66"
-       ]
+       ],
+       "quote": "sustenance allowance scheme has been extended to March."
       },
       {
        "claim": "Its other mail is monthly bulletins addressed to every startup.",
        "evidence": [
         "evt_68047246bb4f2c5c07da44df",
         "evt_3af4b8a1ece6736014cbfa5c"
-       ]
+       ],
+       "quote": "Monthly bulletin Dear Startup"
       },
       {
        "claim": "The mission writes from a no-reply address.",
@@ -356,7 +359,12 @@
       "who": "Arjun",
       "what": "File the registration number from the mission's mail with the company's papers, and move the brief's State Startup Mission line from applied to registered.",
       "for_whom": "Nimbus Labs' records and its brief",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
      },
      "alternative": "Check whether the sustenance allowance scheme the mission extended to March is open to a registered startup.",
      "wait_or_stop": "Nothing to wait for. Stop once the number is filed and the brief reads registered.",
@@ -486,7 +494,7 @@
      "next_move": null,
      "alternative": "Check the mission's portal for the application's status, so the wait has a known state.",
      "wait_or_stop": "Wait for the mission's own notice about Nimbus Labs, or a status change on its portal; read each mail from it for that before filing it as a bulletin.",
-     "done_when": "The mission's word on Nimbus Labs' application is on file.",
+     "done_when": "The mission's word on your application is on file.",
      "draft": null
     }
    }

@@ -234,19 +234,22 @@
        "claim": "Introly introduced Sofia Brandt, who runs operations at Brandt Labs, to the founder and left the two to take it from there.",
        "evidence": [
         "evt_6c884f8bd871b47ff2405481"
-       ]
+       ],
+       "quote": "runs operations at Brandt Labs. Sofia, meet Arjun Rao, the founder"
       },
       {
        "claim": "Sofia replied the same day asking for twenty minutes next week to see the product, and said Tuesday or Wednesday afternoon works for her.",
        "evidence": [
         "evt_e3ca97e0562fb14b8fbaf283"
-       ]
+       ],
+       "quote": "minutes next week to show me the product? Tuesday or Wednesday afternoon works"
       },
       {
        "claim": "She signs as Head of Operations at Brandt Labs.",
        "evidence": [
         "evt_e3ca97e0562fb14b8fbaf283"
-       ]
+       ],
+       "quote": "Head of Operations, Brandt Labs"
       },
       {
        "claim": "Her question is open in this file and waits on us.",
@@ -316,7 +319,7 @@
       }
      ],
      "frames": {
-      "primary": "An introduced contact has asked for a short product demo next week and offered two afternoons; the reply is owed by the founder.",
+      "primary": "An introduced contact has asked for a short product demo next week and offered two afternoons; the reply is owed by you.",
       "rivals": [
        "A prospective design partner or customer at Brandt Labs, worth more than a courtesy demo.",
        "A curious contact with no need behind the ask, where the demo is goodwill only."
@@ -362,7 +365,15 @@
       "who": "Arjun Rao",
       "what": "Reply to Sofia Brandt accepting a twenty-minute product demo and proposing Tuesday or Wednesday afternoon next week, then send an invite once she picks",
       "for_whom": "Sofia Brandt at Brandt Labs",
-      "by_when": null
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ],
+      "to": "Sofia",
+      "answers": "loop:loop_12ad46461f3201eb0c430403"
      },
      "alternative": "If neither afternoon works, reply anyway with two other slots next week.",
      "wait_or_stop": "Do not wait: the move is ours. Once a time is set, wait for the demo; if Sofia does not answer the founder's reply within a week, nudge once, then stop.",
