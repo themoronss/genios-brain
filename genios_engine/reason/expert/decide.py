@@ -262,7 +262,27 @@ def _render(review: ExpertReview, checked: CheckedReview) -> dict[str, Any]:
         or review.frames.primary
     return {"artifact_kind": "draft_message" if words.draft else "none",
             "fallback": {"headline": _braces(headline), "situation": _braces(words.situation or "")},
-            "draft": words.draft}
+            "draft": words.draft, "sources": sources_of(checked)}
+
+
+#: What a card says its situation is: the expert's reading of the file — an inference, said so.
+SITUATION_IS = "the expert's reading of the file — an inference, not a quote"
+
+
+def sources_of(checked: CheckedReview) -> dict[str, Any]:
+    """Where each of the card's sentences came from (STEP-13 §5, M35.C3.L-interface.V3.U03): the headline
+    the ids its move rests on and their quotes — or, a held file, the question and why it is asked; the
+    situation labelled the expert's reading; the draft whom it goes to. Read by `deliver/card_builder`."""
+    words, out = checked.words, {}
+    if checked.fate == HELD:
+        out["headline"] = {"question": checked.question, "because": checked.because}
+    elif words.headline:
+        out["headline"] = {"evidence": list(words.evidence), "quotes": list(words.quotes)}
+    if words.situation:
+        out["situation"] = {"inference": SITUATION_IS}
+    if words.draft:
+        out["draft"] = {"to": words.to}
+    return out
 
 
 def capability_for(review: ExpertReview, checked: CheckedReview, *, root_entity_type: str, domain: str,
@@ -494,5 +514,5 @@ __all__ = ["ADAPTER", "CAPABILITY_ID", "DECIDE_VERSION", "EXPIRY_HOURS", "F_ANSW
            "ONE_EVENT_BP", "OUTCOME_OF", "READER_ID", "READER_SPEC", "ReviewReader", "TRIGGER_KIND",
            "WATCH_PLAY",
            "capability_for", "cited_ids", "context_for", "decide", "is_event", "is_expert",
-           "mode_of", "orchestrator",
+           "mode_of", "orchestrator", "sources_of",
            "request_for"]
