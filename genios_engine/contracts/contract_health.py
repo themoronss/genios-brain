@@ -113,6 +113,14 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "⛔ MOVES WHEN somebody who knows whether `snapshot` is supposed to consult it writes one "
         "line above it. Flagged in `HANDOFF-CODING-AGENT.md` rather than guessed at here"),
 
+    "card_version.version_of": (
+        "STEP-14 · what a version of a file's card is, built before its writer on purpose (bottom-up, "
+        "`yc2_w27_s14` M42.C1.L-contract.V0.U02): the next version a card's new words make and whether it is "
+        "material by s14-D1's one rule. Its tests are its only callers until the one writer of a card's "
+        "signal exists.",
+        "MOVES WITH `yc2_w27_s14/M42.C1.L-data.V1.U03` — `platform/card_lifecycle.version_card` writes each "
+        "version it makes"),
+
 }
 
 
