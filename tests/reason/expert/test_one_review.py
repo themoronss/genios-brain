@@ -27,6 +27,7 @@ from genios_engine.reason.expert import fingerprint as F
 from genios_engine.reason.expert import review as RV
 from genios_engine.reason.expert import store as R
 from genios_engine.reason.expert import triggers as T
+from genios_engine.platform.self_identity import SelfIdentity
 from genios_engine.reason.expert.prompt import PROMPT_VERSION
 from tests.reason.expert.test_the_dossier import _parts, _review
 
@@ -86,8 +87,10 @@ def engine():
 
 
 def _review_with(engine, client, **gate):
+    # STEP-13: the check holds a draft to whom the file's mail shows — the sweep hands it the people.
     return RV.review_file(engine, org_id=ORG, dossier=DOSSIER, fingerprint=FP, inputs=INPUTS,
-                          triggers=TRIGGERS, gate=_gate(client, **gate), at=AT)
+                          triggers=TRIGGERS, gate=_gate(client, **gate), at=AT,
+                          people=D.people_of(PARTS, us=SelfIdentity(), our_names=()))
 
 
 def _row(engine):
@@ -113,10 +116,25 @@ def test_a_refusal_on_substance_is_recorded_with_every_problem_and_never_repaire
     client = _Client(_answer(bad), _answer(GOOD))
     result = _review_with(engine, client)
     assert result.status == R.REFUSED and len(client.prompts) == 1
-    assert "unknown_evidence: fact 1 cites evt_999" in result.reason
-    assert "number_not_in_dossier: 4317" in result.reason
+    # ⛔ MOVED by STEP-13 (`yc2_w27_s13` M35.C3.L-integration.V1.U01, `06` D59): an id never shown drops its
+    # own fact, and the review is refused when NO fact stands — `nothing_stands`, naming each fallen line.
+    assert result.reason.startswith("nothing_stands:"), result.reason
+    assert "fact:1 unknown_evidence (evt_999)" in result.reason
     row = _row(engine)
     assert row.status == R.REFUSED and row.review is None and row.raw == bad      # kept as data
+    assert row.checked is None, "a refusal has no review to check"
+
+
+def test_one_unsupported_fact_drops_and_the_review_stands(engine):
+    """STEP-13 (`06` D59): drop the claim, keep the review — the fact citing an id the dossier never showed
+    is dropped by the check, the rest stands, and the stored row keeps the check that says so."""
+    mixed = dict(GOOD, facts=[*GOOD["facts"],
+                              {"claim": "Kunal's partner wants a deck", "evidence": ["evt_999"]}],
+                 next_move=dict(GOOD["next_move"], rests_on=["fact:1"]))
+    result = _review_with(engine, _Client(_answer(mixed)))
+    assert result.status == R.VALID and result.checked.fate == "shown"
+    assert [(v.line, v.reason) for v in result.checked.dropped] == [("fact:2", "unknown_evidence")]
+    assert _row(engine).checked == result.checked
 
 
 def test_a_misshapen_answer_is_repaired_once_and_then_valid(engine):
@@ -201,3 +219,21 @@ def test_the_force_fail_switch_writes_nothing(engine):
         result = _review_with(engine, client)
     assert result.status is None and result.receipt.outcome == S.OUTCOME_FORCE_FAILED
     assert _row(engine) is None and client.prompts == []
+
+
+def test_a_review_with_no_move_where_one_is_owed_is_refused_whole(engine):
+    """Structure is still refused WHOLE (`verify.STRUCTURAL`): a moving mode that names no move."""
+    result = _review_with(engine, _Client(_answer(dict(GOOD, next_move=None))))
+    assert result.status == R.REFUSED and result.reason.startswith("no_next_move"), result.reason
+
+
+def test_a_standing_review_with_no_check_is_checked_again_without_a_consult(engine):
+    """A valid row from before 0200 answers its fingerprint with no consult — and leaves with its check."""
+    _review_with(engine, _Client(_answer(GOOD)))
+    with engine.begin() as c:
+        c.execute(text("update expert_reviews set checked = null where org_id = :o"), {"o": ORG})
+    client = _Client(_answer(GOOD))
+    again = _review_with(engine, client)
+    assert client.prompts == [] and again.written is False
+    assert again.checked is not None and again.checked.fate == "shown"
+    assert _row(engine).checked == again.checked

@@ -22,6 +22,7 @@ from sqlalchemy import text
 
 from genios_engine.context.llm.client import LLMResult
 from genios_engine.reason import runner
+from genios_engine.reason.expert import dossier as D
 from genios_engine.reason.expert import store as R
 from genios_engine.reason.expert import sweep as P
 
@@ -414,3 +415,121 @@ def test_a_file_carried_for_want_of_budget_is_not_covered(world):
     budget.charge(2_000_000)
     receipt, _ = _pass(store, now, budget=budget)
     assert receipt["carried"] == 1 and receipt["covered"] == {}
+
+
+# ── STEP-13 · M35.C3.L-integration.V1.U01 — every review is checked before it covers ───────────────
+def _checks(store):
+    with store.engine.connect() as c:
+        return {r.file_id: r.checked for r in c.execute(text(
+            "select file_id, checked from expert_reviews where org_id = :o and status = 'valid'"),
+            {"o": ORG})}
+
+
+def test_every_review_the_pass_writes_is_kept_with_its_check(world):
+    store, now = world
+    receipt, _ = _pass(store, now)
+    checks = _checks(store)
+    assert len(checks) == 2 and all(c and c["fate"] == "shown" for c in checks.values()), checks
+    assert receipt["checked"] == {"shown": 2} and len(receipt["covered"]) == 2
+
+
+def test_a_standing_review_with_no_check_is_checked_before_it_covers(world):
+    """A valid row from before 0200 — or checked under an older check version — answers its fingerprint
+    still, but covers nothing until the pass checks it again against the same dossier and keeps the
+    check."""
+    store, now = world
+    first, _ = _pass(store, now)
+    with store.engine.begin() as c:
+        c.execute(text("update expert_reviews set checked = null where org_id = :o"), {"o": ORG})
+    again, expert = _pass(store, now + timedelta(minutes=15))
+    assert expert.prompts == [] and again["unchanged"] == 2, "no model is asked to check"
+    assert all(c and c["fate"] == "shown" for c in _checks(store).values())
+    assert again["covered"] == first["covered"] and again["checked"] == {"shown": 2}
+
+
+def test_an_untouched_files_review_with_no_current_check_covers_nothing(world):
+    """Its dossier is not this one, so the pass cannot check it again faithfully: counted, never trusted."""
+    store, now = world
+    _pass(store, now)
+    with store.engine.begin() as c:
+        c.execute(text("update expert_reviews set checked = null where org_id = :o"), {"o": ORG})
+    quiet, _ = _pass(store, now + timedelta(days=11))
+    assert quiet["untouched"] == 2 and quiet["unchecked"] == 2 and quiet["covered"] == {}
+
+
+def test_a_review_whose_one_fact_falls_is_refused_and_names_it(world):
+    """`06` D59: the review is refused only when NO fact stands — here its one fact cites an id the
+    dossier never printed. The refusal says which line fell, and why."""
+    store, now = world
+
+    class _Unshown(_Expert):
+        def call(self, prompt, *, max_tokens=400):
+            answer = super().call(prompt, max_tokens=max_tokens)
+            answer.parsed["facts"] = [{"claim": "they wrote", "evidence": ["evt_never_shown"]}]
+            return answer
+    receipt, _ = _pass(store, now, llm=_Unshown())
+    assert receipt["reviewed"] == {R.REFUSED: 2} and receipt["covered"] == {}
+    with store.engine.connect() as c:
+        reasons = [r.reason for r in c.execute(text(
+            "select reason from expert_reviews where org_id = :o"), {"o": ORG})]
+    assert all(r.startswith("nothing_stands: fact:1 unknown_evidence (evt_never_shown)") for r in reasons)
+
+
+def test_a_standing_review_its_check_now_refuses_covers_nothing(world):
+    """A valid row checked again (a new check version) and found standing on nothing: never covers."""
+    store, now = world
+    files = _files_of(store)
+    _pass(store, now)
+    kunal = files["evt_k_in"]
+    with store.engine.begin() as c:
+        c.execute(text(
+            "update expert_reviews set checked = null, review = jsonb_set(review, '{facts}', "
+            "'[{\"claim\": \"they wrote\", \"evidence\": [\"evt_never_shown\"]}]'::jsonb) "
+            "where org_id = :o and file_id = :f"), {"o": ORG, "f": kunal})
+    again, _ = _pass(store, now + timedelta(minutes=15))
+    assert again["checked"] == {"refused": 1, "shown": 1} and kunal not in again["covered"]
+    assert len(again["covered"]) == 1, "the other file's check still shows it"
+    assert _checks(store)[kunal]["fate"] == "refused", "the new check is kept, refusal and all"
+
+
+def test_the_pass_checks_a_draft_against_whom_the_files_mail_shows(world):
+    """The pass hands the check the file's people: a draft to Kunal, on Kunal's file, goes — with no
+    people it would be withheld as going to someone the file does not show."""
+    store, now = world
+
+    class _Drafting(_Expert):
+        def call(self, prompt, *, max_tokens=400):
+            answer = super().call(prompt, max_tokens=max_tokens)
+            fact = answer.parsed["facts"][0]
+            # The move rests on its one fact, so the fact quotes the words the dossier printed for it.
+            fact["quote"] = next((dl.words for dl in D.lines_by_id(prompt).get(fact["evidence"][0], ())
+                                  if dl.words), None)
+            answer.parsed.update(mode="act", draft="Hi Kunal, thanks for the note.",
+                                 next_move={"who": "you", "what": "Write back", "for_whom": "Kunal",
+                                            "by_when": None, "to": KUNAL, "rests_on": ["fact:1"]})
+            return answer
+    receipt, _ = _pass(store, now, llm=_Drafting())
+    files = _files_of(store)
+    kunal = _checks(store)[files["evt_k_in"]]
+    assert receipt["checked"] == {"shown": 2}, receipt
+    assert kunal["words"]["draft"] == "Hi Kunal, thanks for the note." and kunal["words"]["to"] == KUNAL
+
+
+def test_a_kind_its_check_drops_is_never_proposed(world, monkeypatch):
+    """The proposal is a line of the review like any other: one citing mail the dossier never showed is
+    dropped by the check, and the founder is asked about nothing."""
+    store, now = world
+
+    class _Unfounded(_Expert):
+        def call(self, prompt, *, max_tokens=400):
+            answer = super().call(prompt, max_tokens=max_tokens)
+            answer.parsed["proposed_kind"] = {"kind": "investor", "why": "a fund",
+                                              "evidence": ["evt_never_shown"]}
+            return answer
+    asked = []
+    monkeypatch.setattr(P, "propose_kind", lambda *a, **kw: asked.append(kw))
+    receipt, _ = _pass(store, now, llm=_Unfounded())
+    assert receipt["reviewed"] == {R.VALID: 2} and receipt["checked"] == {"shown": 2}
+    assert asked == [] and receipt["proposed_kinds"] == 0
+    assert all("kind" in [v["line"] for v in c["verdicts"] if v["verdict"] == "dropped"]
+               for c in _checks(store).values())

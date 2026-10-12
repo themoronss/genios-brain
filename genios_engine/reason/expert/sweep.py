@@ -20,8 +20,14 @@ ONCE, so a switch flipped halfway cannot leave two files of one pass judged unde
      with the expert's own budget (`06` D7: $2 a day). The first refusal for want of budget stops the
      pass: the files it did not reach are CARRIED, counted — "a busy day reviews the nearest deadlines
      first and carries the rest, said";
-  6. a valid review that proposes a kind of work writes the founder a proposal
-     (`kind_proposal.propose_kind`).
+  6. a valid review that proposes a kind of work — the proposal standing its check — writes the founder
+     a proposal (`kind_proposal.propose_kind`).
+
+WHAT IS CHECKED (STEP-13, `yc2_w27_s13` M35.C3.L-integration.V1.U01). Every review is checked before it
+covers anything (`reason/expert/verify`, against the file's people — `dossier.people_of`): a review written
+now is checked by the run that writes it; a standing valid review checked under an older check version is
+checked again, against the same dossier, before it covers; a last review the file has moved past, with no
+current check, covers nothing — it is counted `unchecked`, and the file is decided as before.
 
 WHAT IT COVERS (M33.C1.L-data.V0.U06). The receipt says which files a VALID review now answers —
 `covered`, file → the fingerprint of that review — for the compiled lane to decide each once, from it,
@@ -56,11 +62,13 @@ from genios_engine.reason.bundle.store import BundleStore
 from genios_engine.reason import llm_sites
 
 from . import store as reviews
-from .dossier import build_dossier, read_parts
+from genios_engine.contracts.claim_check import CHECK_VERSION, REFUSED as CHECK_REFUSED
+
+from .dossier import build_dossier, people_of, read_parts
 from .fingerprint import file_fingerprint, fingerprint_inputs, nearest_due
 from .kind_proposal import propose_kind
 from .prompt import PROMPT_VERSION
-from .review import review_file
+from .review import check, review_file
 from .triggers import triggers_for
 
 _log = get_logger("genios.reason.expert.sweep")
@@ -123,7 +131,8 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     from genios_engine.context.workstreams import files_for
     receipt: dict[str, Any] = {"files": 0, "ours": 0, "unchanged": 0, "untouched": 0, "unreadable": 0,
                                "waiting": Counter(), "reviewed": Counter(), "carried": 0,
-                               "proposed_kinds": 0, "cost_micro_usd": 0, "covered": {}, "people": {}}
+                               "proposed_kinds": 0, "cost_micro_usd": 0, "covered": {}, "people": {},
+                               "unchecked": 0, "checked": Counter()}
     due = []
     from sqlalchemy import text
 
@@ -147,12 +156,23 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                     continue
                 inputs = fingerprint_inputs(parts, model=model, prompt_version=PROMPT_VERSION)
                 fp = file_fingerprint(parts, model=model, prompt_version=PROMPT_VERSION)
+                people = people_of(parts, us=us, our_names=our_names)
                 row = reviews.read_review(conn, org_id, work.file_id, fp)
-                if row is not None and row.status in reviews.STANDING:
-                    receipt["unchanged"] += 1
-                    if row.status == reviews.VALID:
+            if row is not None and row.status in reviews.STANDING:
+                receipt["unchanged"] += 1
+                if row.status == reviews.VALID:
+                    checked = row.checked
+                    if checked is None or checked.version != CHECK_VERSION:
+                        # The same fingerprint is the same dossier: check it again, keep the check.
+                        checked = check(row.review, build_dossier(parts), people)
+                        with engine.begin() as conn:
+                            reviews.write_check(conn, org_id=org_id, file_id=work.file_id,
+                                                fingerprint=fp, checked=checked)
+                    receipt["checked"][checked.fate] += 1
+                    if checked.fate != CHECK_REFUSED:
                         _cover(receipt, work.file_id, fp, work.people)
-                    continue
+                continue
+            with engine.connect() as conn:
                 waiting = _waiting(row, now)
                 if waiting:
                     receipt["waiting"][waiting] += 1
@@ -162,9 +182,15 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
             if not found:
                 receipt["untouched"] += 1
                 if last is not None and last.status == reviews.VALID:
-                    _cover(receipt, work.file_id, last.fingerprint, work.people)
+                    # Its dossier is not this one, so it is never checked again here: only its own
+                    # current check lets it cover.
+                    if last.checked is not None and last.checked.version == CHECK_VERSION \
+                            and last.checked.fate != CHECK_REFUSED:
+                        _cover(receipt, work.file_id, last.fingerprint, work.people)
+                    else:
+                        receipt["unchecked"] += 1
                 continue
-            due.append((_hours_to_nearest(parts), order, parts, inputs, fp, found))
+            due.append((_hours_to_nearest(parts), order, parts, inputs, fp, found, people))
         except Exception:      # noqa: BLE001 — one unreadable file is not a failed pass
             _log.exception("the expert pass could not read file=%s org=%s", work.file_id, org_id)
             receipt["unreadable"] += 1
@@ -178,21 +204,23 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                      budget=budget or NarrativeBudget.for_site(SITE_EXPERT, org_id=org_id,
                                                                engine=engine, now=now),
                      cost_recorder=getattr(store, "record_cost", None), eval_time=now)
-    for i, (_hours, _order, parts, inputs, fp, found) in enumerate(due):
+    for i, (_hours, _order, parts, inputs, fp, found, people) in enumerate(due):
         if i >= max_per_pass:
             receipt["carried"] += len(due) - i
             break
         result = review_file(engine, org_id=org_id, dossier=build_dossier(parts), fingerprint=fp,
-                             inputs=inputs, triggers=found, gate=gate, at=now)
+                             inputs=inputs, triggers=found, gate=gate, at=now, people=people)
         receipt["reviewed"][result.status or "skipped"] += 1
         if result.status == reviews.VALID:
+            receipt["checked"][result.checked.fate] += 1
             _cover(receipt, parts.file_id, fp, parts.file.people)
         if result.receipt is not None:
             receipt["cost_micro_usd"] += result.receipt.cost_micro_usd
         if result.status == reviews.OVER_BUDGET:
             receipt["carried"] += len(due) - i - 1
             break
-        if result.status == reviews.VALID and result.review.proposed_kind is not None:
+        if result.status == reviews.VALID and result.review.proposed_kind is not None \
+                and result.checked.stands("kind"):
             try:
                 with engine.begin() as conn:
                     if propose_kind(conn, org_id=org_id, review=result.review, file=parts.file,
@@ -204,6 +232,7 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                 receipt["unreadable"] += 1
     receipt["waiting"] = dict(receipt["waiting"])
     receipt["reviewed"] = dict(receipt["reviewed"])
+    receipt["checked"] = dict(receipt["checked"])
     if receipt["reviewed"] or receipt["carried"]:
         _log.info("the expert pass org=%s %s", org_id, receipt)
     return receipt

@@ -370,9 +370,13 @@ def test_no_brief_says_so():
 
 # ── a review is held to this dossier ───────────────────────────────────────────────────────────
 
-def _review(evidence: str, draft: str) -> ExpertReview:
+def _review(evidence: str, draft: str, *, quote: str | None = "I will book it again tonight") -> ExpertReview:
+    """A review of the file `_parts` builds. Since STEP-13 (`yc2_w27_s13`) it carries what the check reads:
+    its one fact quotes the mail it cites (touch 5's own words by default) and its draft says whom it goes
+    to — so a review the check would refuse is never this fixture by accident."""
     return ExpertReview.from_mapping({
-        "facts": [{"claim": "Kunal sent the link again", "evidence": [evidence]}],
+        "facts": [{"claim": "Kunal sent the link again", "evidence": [evidence],
+                   **({"quote": quote} if quote else {})}],
         "inferences": [{"claim": "the next move is ours", "based_on": ["fact:1"]}],
         "frames": {"primary": "a first call being booked", "rivals": ["a polite brush-off"]},
         "expected_vs_actual": {"stage": "first_call", "expected": "the call booked",
@@ -383,7 +387,7 @@ def _review(evidence: str, draft: str) -> ExpertReview:
         "appraisal": {"stakes": "high", "urgency": "high", "reversibility": "reversible",
                       "reasons": ["our move, nine days quiet"]},
         "mode": "act", "next_move": {"who": "the founder", "what": "book the call",
-                                     "for_whom": "Kunal", "by_when": "2026-10-11"},
+                                     "for_whom": "Kunal", "by_when": "2026-10-11", "to": "Kunal"},
         "wait_or_stop": "if no slot by Friday, ask for another week",
         "done_when": "the call is on the calendar", "draft": draft})
 

@@ -11,8 +11,12 @@ never around it.
                 (`store.reviewed`): the fingerprint's own row is its cache.
   THE ANSWER    parsed into the contract (`ExpertReview.from_mapping`) — an answer that is JSON but not
                 its shape is `malformed`, which the gate repairs ONCE (`repair="syntax"`, M32.C4.U03) —
-                then held to its dossier (`validate`): a refusal on substance stands, never argued into
-                passing.
+                then held to its dossier: `validate` refuses its STRUCTURE whole (`verify.STRUCTURAL`: a
+                moving mode with no move, a move resting on no fact of the review, a stage the playbook
+                lacks), and the CHECK (`reason/expert/verify.check_review`, STEP-13 `yc2_w27_s13`
+                M35.C3.L-integration.V1.U01) holds every claim to its lines — a line that fails drops
+                and the review stays (`06` D59); a review none of whose facts stands is refused
+                `nothing_stands`. A refusal on substance stands, never argued into passing.
   THE RECORD    every consult that reached the model, or was refused one for want of budget, is ONE
                 row of `expert_reviews`: what the file was (the fingerprint's inputs), what triggered
                 the review, the dossier's digest, the model and the prompt version, the cost, and —
@@ -36,7 +40,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
+from genios_engine.contracts.claim_check import CHECK_VERSION, NOTHING_STANDS, REFUSED, CheckedReview
 from genios_engine.contracts.expert_review import REFUSALS, ExpertReview, validate
+from genios_engine.platform.self_identity import SelfIdentity
 from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW
 from genios_engine.reason.bundle.gate import MALFORMED, REPAIR_SYNTAX, RSiteGate
 from genios_engine.reason.bundle.sites import (OUTCOME_FAILED_GENERATION, OUTCOME_FAILED_VALIDATION,
@@ -45,8 +51,12 @@ from genios_engine.reason.bundle.sites import (OUTCOME_FAILED_GENERATION, OUTCOM
 from genios_engine.reason.llm_sites import SiteReceipt, SiteRejection, run_site, tier_model
 
 from . import store
-from .dossier import Dossier
+from .dossier import Dossier, FilePeople, Person
 from .prompt import PROMPT_VERSION, build_prompt
+from .verify import STRUCTURAL, check_review
+
+#: Whom a review is checked against when its caller names nobody: no draft goes anywhere.
+NOBODY = FilePeople(counterparty=Person(None, None), people=(), us=SelfIdentity())
 
 #: What each consult outcome is on the row. A validation refusal is `refused` when it is one of the
 #: contract's refusals (substance) and `failed` otherwise — still misshapen after its one repair, or a
@@ -68,24 +78,42 @@ class ReviewResult:
     review: ExpertReview | None     # only for a valid review
     receipt: SiteReceipt | None     # None when a standing row answered with no consult
     written: bool                   # whether this call wrote the row
+    checked: CheckedReview | None = None    # a valid review's check (STEP-13)
 
 
 def _status(outcome: str, codes: tuple[str, ...]) -> str | None:
     if outcome == OUTCOME_FAILED_VALIDATION:
-        return store.REFUSED if codes and codes[0] in REFUSALS else store.FAILED
+        # Substance: the contract's refusals, and a review none of whose facts stood the check.
+        return store.REFUSED if codes and (codes[0] in REFUSALS or codes[0] == NOTHING_STANDS) \
+            else store.FAILED
     return STATUS_OF.get(outcome)
 
 
+def check(review: ExpertReview, dossier: Dossier, people: FilePeople | None) -> CheckedReview:
+    """`review` checked against the dossier it was written from (`reason/expert/verify`)."""
+    return check_review(review, dossier.text, people or NOBODY,
+                        evidence_ids=dossier.catalogue.evidence_ids)
+
+
 def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inputs: Mapping[str, Any],
-                triggers: Iterable[Any], gate: RSiteGate, at: datetime) -> ReviewResult:
-    """Review one file once for this fingerprint, and keep what came of it."""
+                triggers: Iterable[Any], gate: RSiteGate, at: datetime,
+                people: FilePeople | None = None) -> ReviewResult:
+    """Review one file once for this fingerprint, check it, and keep what came of it. A standing valid
+    row checked under an older check version — or before checks — is checked again, against this same
+    dossier (the fingerprint is the dossier's inputs), and the check written onto it."""
     file_id = dossier.file_id
     with engine.connect() as conn:
         standing = store.read_review(conn, org_id, file_id, fingerprint)
     if standing is not None and standing.status in store.STANDING:
+        checked = standing.checked
+        if standing.status == store.VALID and (checked is None or checked.version != CHECK_VERSION):
+            checked = check(standing.review, dossier, people)
+            with engine.begin() as conn:
+                store.write_check(conn, org_id=org_id, file_id=file_id, fingerprint=fingerprint,
+                                  checked=checked)
         return ReviewResult(file_id=file_id, fingerprint=fingerprint, status=standing.status,
                             reason=standing.reason, review=standing.review, receipt=None,
-                            written=False)
+                            written=False, checked=checked)
 
     last: dict[str, Any] = {}
 
@@ -97,11 +125,17 @@ def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inpu
         except ValueError as exc:
             last["reason"] = f"{MALFORMED}: {exc}"
             raise SiteRejection(MALFORMED, str(exc)) from None
-        verdict = validate(review, dossier.catalogue)
-        if not verdict.ok:
-            last["reason"] = "; ".join(f"{kind}: {detail}" for kind, detail in verdict.problems)
-            raise SiteRejection(verdict.reasons[0], last["reason"])
-        last["review"] = review
+        structure = [(kind, detail) for kind, detail in validate(review, dossier.catalogue).problems
+                     if kind in STRUCTURAL]
+        if structure:
+            last["reason"] = "; ".join(f"{kind}: {detail}" for kind, detail in structure)
+            raise SiteRejection(structure[0][0], last["reason"])
+        checked = check(review, dossier, people)
+        if checked.fate == REFUSED:
+            last["reason"] = f"{NOTHING_STANDS}: " + "; ".join(
+                f"{v.line} {v.reason}" + (f" ({v.detail})" if v.detail else "") for v in checked.dropped)
+            raise SiteRejection(NOTHING_STANDS, last["reason"])
+        last["review"], last["checked"] = review, checked
         return review.as_mapping()
 
     result = run_site(site=SITE_EXPERT, org_id=org_id, seed={"file": file_id, "fingerprint": fingerprint},
@@ -128,9 +162,11 @@ def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inpu
             dossier_digest=dossier.digest, status=status, reason=reason,
             review=review if status == store.VALID else last.get("raw"),
             input_tokens=receipt.input_tokens, output_tokens=receipt.output_tokens,
-            cost_micro_usd=receipt.cost_micro_usd, at=at, inputs=inputs, triggers=triggers)
+            cost_micro_usd=receipt.cost_micro_usd, at=at, inputs=inputs, triggers=triggers,
+            checked=last.get("checked") if status == store.VALID else None)
     return ReviewResult(file_id=file_id, fingerprint=fingerprint, status=status, reason=reason,
-                        review=review, receipt=receipt, written=written)
+                        review=review, receipt=receipt, written=written,
+                        checked=last.get("checked") if status == store.VALID else None)
 
 
-__all__ = ["ReviewResult", "STATUS_OF", "review_file"]
+__all__ = ["NOBODY", "ReviewResult", "STATUS_OF", "check", "review_file"]
