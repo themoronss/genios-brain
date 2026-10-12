@@ -21,6 +21,7 @@ from sqlalchemy import text
 from genios_engine.contracts.expert_review import ExpertReview
 from genios_engine.deliver import pipeline
 from genios_engine.deliver.store import QUESTION_CARD_BUILDER, CardStore
+from genios_engine.reason.expert import asks
 from genios_engine.reason.expert.decide import SITUATION_IS
 from tests.reason.expert.test_a_covered_file_decides_once import (  # noqa: F401 — fixtures
     NOW, _compile, _fund, _open_signals, _review, world)
@@ -95,6 +96,22 @@ def test_a_held_file_asks_its_question_on_its_own_card(world, cards):
     assert _queued(cards, org, NOW) == [card.card_id], "it reaches the queue"
 
 
+def test_a_question_card_says_what_answering_does_and_what_waiting_costs(world, cards):
+    """STEP-11's founder-card clause (`tests/replays/test_every_founder_file_reads_its_playbook`): every founder
+    card says what success looks like and what doing nothing costs — a question card carried NULL for both. It
+    says them in our closed words (M36.C2.L-logic.V2.U10), never model prose; a question has no play window."""
+    store, org, _registry, _anchor, _events = _asked(world)
+    _build(store, cards, org)
+    with store.engine.connect() as c:
+        row = c.execute(text("select success_signal, do_nothing_consequence, outcome_window_days from cards "
+                             "where org_id = :o"), {"o": org}).one()
+    assert (row.success_signal, row.do_nothing_consequence, row.outcome_window_days) == (
+        "you answered: your words are kept on the file and its next review reads them",
+        "nothing on this file moves until you answer", None)
+    assert (row.success_signal, row.do_nothing_consequence) == (pipeline.QUESTION_SUCCESS_SIGNAL,
+                                                                pipeline.QUESTION_DO_NOTHING)
+
+
 def test_a_held_review_asks_the_checks_question_over_the_files_checked_reading(world, cards):
     store, org, registry, _ = world
     anchor, _situations, events = _fund(store, org)
@@ -105,7 +122,9 @@ def test_a_held_review_asks_the_checks_question_over_the_files_checked_reading(w
     _build(store, cards, org)
     [card] = _cards(store, org)
     assert (card.headline, card.situation) == (HELD_Q, held.words.situation)
-    assert card.why[0]["because"] == "misquoted (fact 1)"
+    # ⛔ RESTATED by M36.C2.L-logic.V2.U10 (`03` X10): `because` was the check's internal reason ("misquoted
+    # (fact 1)", and with a real check "misquoted: <the model's quote> (fact 1)"). One closed phrase, for you.
+    assert card.why[0]["because"] == asks.WHY_NOT_CONFIRMED == card.abstained_because
     assert card.why[1] == {"sentence": "situation", "inference": SITUATION_IS, "source": "expert_check"}
 
 
@@ -195,3 +214,151 @@ def test_a_pass_that_cannot_read_its_questions_says_so_and_keeps_going(monkeypat
     out = pipeline.build_cards_for_org(graph=graph, card_store=SimpleNamespace(), org_id="org_q",
                                        registry=object(), eval_time=NOW)
     assert out["questions_unread"] == 1 and out["question_cards"] == 0
+
+
+WITHHELD = "Arjun is deciding whether Tiger Global co-leads the round"
+
+
+def _withheld(world):
+    """A find-out file whose reading the check withheld — a party the file never names (`03` X06's run)."""
+    from genios_engine.contracts import claim_check as C
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    checked = C.CheckedReview(
+        verdicts=(C.LineVerdict("situation", C.DROPPED, C.UNSUPPORTED, "name:Tiger"),), fate=C.SHOWN,
+        cited=(sorted(events)[0],), question=FIND_OUT,
+        words=C.CardWords(headline=FIND_OUT, situation=None, done_when=None, draft=None, to=None,
+                          evidence=(sorted(events)[0],)))
+    _write(store, org, anchor, "ffp-fund-withheld-review-0", events, checked=checked, mode="find_out", draft=None,
+           frames={"primary": WITHHELD, "rivals": ["a polite check-in"]},
+           next_move={"who": "you", "what": FIND_OUT, "for_whom": "Arjun", "by_when": None})
+    _compile(store, org, registry, covered={anchor: "ffp-fund-withheld-review-0"})
+    return store, org, anchor
+
+
+def test_a_find_out_card_never_shows_the_reading_the_check_withheld(world, cards):
+    """⛔ `03` X06 (M36.C2.L-logic.V2.U10): the check dropped the reading (a party the file never names), yet the
+    card's situation was the question's raw `why` — "the expert cannot read this file on without your answer:
+    <that reading>" — unlabelled. With no checked reading, the card says why it asks, in our closed words."""
+    store, org, _anchor = _withheld(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    said = " ".join(str(x) for x in (card.headline, card.situation, card.abstained_because, card.why))
+    assert "Tiger" not in said and WITHHELD not in said
+    assert (card.headline, card.situation) == (FIND_OUT, asks.WHY_FIND_OUT)
+    assert [w["sentence"] for w in card.why] == ["headline"], "no reading, so no inference label for one"
+
+
+def test_a_question_filed_with_raw_words_is_carded_in_closed_ones(world, cards):
+    """A question filed before its words were checked (its `why` the check's reason, or the raw reading) is
+    carded with the closed phrase: no card text is raw prose."""
+    store, org, anchor = _withheld(world)
+    raw = "the expert cannot read this file on without your answer: " + WITHHELD
+    with store.engine.begin() as c:
+        c.execute(text("update founder_questions set why = :w where org_id = :o and file_id = :f"),
+                  {"w": raw, "o": org, "f": anchor})
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    assert card.abstained_because == card.why[0]["because"] == card.situation == asks.WHY_FIND_OUT
+    assert "Tiger" not in " ".join(str(x) for x in (card.situation, card.abstained_because, card.why))
+
+
+# ── M36.C2.L-integration.V2.U11 · a question lives while it is asked (`03` X04, X26, X41) ────────────────────────
+
+def _answer_at(store, cards, org, card_id, at):
+    from genios_engine.deliver import actions
+    return actions.ingest_action(card_store=cards, graph=store, org_id=org, card_id=card_id,
+                                 actor="founder@meridian.test", action="answer", eval_time=at,
+                                 allow_any_assignee=True, words="This quarter's.")
+
+
+def test_a_question_card_lives_past_seven_days_with_the_gate_intact(world, cards):
+    """⛔ `03` X04, at NOW+169 h with the change gate's memory intact: the card died at its first authority (168 h)
+    and was never revived — no card, Answer refused V-09, the question still open. The file is decided again
+    before its window closes, and the card's window moves with its authority: one card, the same card, live."""
+    store, org, registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    covered = {anchor: "ffp-fund-findout-review-000"}
+    renew = NOW + timedelta(hours=150)
+    _compile(store, org, registry, covered=covered, at=renew)
+    assert _build(store, cards, org, at=renew)["question_cards"] == 0, "the same card — never torn down"
+    [moved] = _cards(store, org)
+    assert moved.card_id == card.card_id and moved.expires_at == renew + timedelta(hours=168) > card.expires_at
+    later = NOW + timedelta(hours=169)
+    _compile(store, org, registry, covered=covered, at=later)
+    _build(store, cards, org, at=later)
+    assert _queued(cards, org, later) == [card.card_id]
+    assert _answer_at(store, cards, org, card.card_id, later)["ok"] is True
+
+
+def test_a_question_card_that_lapsed_is_revived_while_its_question_is_asked(world, cards):
+    """No sweep in its last day: the card lapsed (the cron's sweep, `window.lapsed`) with its question still open.
+    The next sweep asks it again — re-bound — and the card comes back: the same card, queued, its window moved."""
+    from genios_engine.platform import card_lifecycle
+    store, org, registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    with store.engine.begin() as c:
+        # The cron's own sweep — every tenant's; this one's card is among what it lapsed.
+        assert (card.card_id, org) in card_lifecycle.expire_lapsed(c, now=NOW + timedelta(hours=168, minutes=1))
+    later = NOW + timedelta(hours=169)
+    assert _answer_at(store, cards, org, card.card_id, later)["code"] == "V-09", "lapsed: nothing to answer"
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"}, at=later)
+    _build(store, cards, org, at=later)
+    [revived] = _cards(store, org)
+    assert (revived.card_id, revived.state) == (card.card_id, "queued") and revived.expires_at > later
+    assert _queued(cards, org, later) == [card.card_id]
+    assert _answer_at(store, cards, org, card.card_id, later)["ok"] is True
+
+
+def test_a_lapsed_decision_card_is_never_revived(world, cards):
+    """⛔ THE NEGATIVE CONTROL: only a question card comes back. A decision card that lapsed while its signal still
+    stands is rebuilt in place (its words), and stays lapsed — its revival is not this unit's to give."""
+    from genios_engine.platform import card_lifecycle
+    from tests.reason.expert.test_a_covered_file_decides_once import _write as _write_act
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _write_act(store, org, anchor, "ffp-fund-act-review-000000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-act-review-000000"})
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    with store.engine.begin() as c:
+        card_lifecycle.expire_cards(c, org_id=org, card_ids=[card.card_id], cause=card_lifecycle.LAPSED,
+                                    kind=card_lifecycle.LAPSED_KIND)
+    later = NOW + timedelta(hours=2)
+    assert _build(store, cards, org, at=later)["refreshed"] == 1, "its signal stands: rebuilt in place"
+    assert [(c.card_id, c.state) for c in _cards(store, org)] == [(card.card_id, "expired")]
+
+
+def test_a_file_that_leaves_coverage_takes_its_question_card_with_it(world, cards):
+    """⛔ `03` X26: the file is decided on its situations again; its question card is not left beside them."""
+    from tests.reason.expert.test_a_held_file_asks import _other_file
+    from tests.reason.expert.test_a_covered_file_decides_once import _write as _write_act
+    store, org, registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    other, other_events = _other_file(store, org)
+    _write_act(store, org, other, "ffp-programme-review-0000", other_events)
+    later = NOW + timedelta(hours=1)
+    _compile(store, org, registry, covered={other: "ffp-programme-review-0000"}, at=later)
+    _build(store, cards, org, at=later)
+    assert [c.state for c in _cards(store, org) if c.builder_version == QUESTION_CARD_BUILDER] == ["expired"]
+
+
+def test_a_rebound_question_card_reads_the_review_asking_it_now(world, cards):
+    """⛔ `03` X41: the same words asked by a later review re-bind the question to the run asking now — and its card
+    was built from the FIRST review's reading. It reads the review the run asking it was triggered by."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
+    later_reading = "a fund that has moved its partner meeting up a week"
+    _write(store, org, anchor, "ffp-fund-findout-review-001", events, mode="find_out", draft=None,
+           frames={"primary": later_reading, "rivals": ["a polite check-in"]},
+           next_move={"who": "you", "what": FIND_OUT, "for_whom": "Arjun", "by_when": None})
+    later = NOW + timedelta(hours=1)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
+    assert counts.get("expert_question_standing") == 1, counts
+    _build(store, cards, org, at=later)
+    [card] = _cards(store, org)
+    assert (card.headline, card.situation) == (FIND_OUT, later_reading)

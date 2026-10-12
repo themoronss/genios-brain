@@ -76,7 +76,10 @@ def test_the_files_people_are_who_its_mail_shows():
     assert people.counterparty == D.Person(name="Marco Ruiz", key=W.MARCO)
     assert D.Person(name="Introly", key=W.INTROLY) in people.people, "a connector who wrote in it"
     assert all(p.key != "arjun@nimbuslabs.test" for p in people.people), "we wrote; we are not its people"
-    assert people.connector == D.Person(name="introly", key=W.INTROLY)
+    # ⛔ RESTATED by M35.C2.L-logic.V0.U13 (`03` X07): the connector was named by its domain's label
+    # ("introly") — which named a person at a company domain after the company. It is named as its own mail
+    # in the file signs it: Introly.
+    assert people.connector == D.Person(name="Introly", key=W.INTROLY)
     assert people.our_names == W.OUR_NAMES and people.us is W.US
     assert people.head.startswith("Counterparty: Marco Ruiz <marco@altavia.test> (person)")
     assert "Introduced by: hello@introly.test" in people.head

@@ -5,9 +5,11 @@
 whose review must find out first, asks the founder ONE question:
 
   * `ask` files it — the same words asked again are the question already open, never a second; a new
-    question retires the file's old one, saying so (`REPLACED`);
+    question retires the file's old one, saying so (`REPLACED`); words the file already answered are
+    that answer, whatever review asks them (M36.C2.L-data.V2.U12);
   * `answer` keeps the founder's words, once;
-  * `retire` closes a file's open question the review no longer asks (`NO_LONGER_ASKED`);
+  * `retire` closes a file's open question the review no longer asks (`NO_LONGER_ASKED`), or one whose
+    file is no longer the expert's to decide (`LEFT_COVERAGE`, M36.C2.L-integration.V2.U11);
   * `open_question` and `answers_for` read a file's open question and the answers it holds; `by_id` one.
 
 A question's id is its content's — the tenant, the file, the review that asks it, the words — so asking
@@ -29,6 +31,7 @@ RETIRED = "retired"
 #: Why a question was retired — closed, so each is counted by kind.
 REPLACED = "a newer question of the file replaced it"
 NO_LONGER_ASKED = "the file's latest review no longer asks it"
+LEFT_COVERAGE = "the file is no longer the expert's to decide"
 
 
 
@@ -97,8 +100,18 @@ def ask(conn, *, org_id: str, file_id: str, fingerprint: str, run_id: str | None
         at: datetime) -> Question:
     """File the file's question. The same words already open are that question — re-bound to the run
     asking it now; any other open one is retired first — the file has one open question (0201's own
-    index). A question this review asked and the founder already answered is not asked again: the
-    answered question is returned."""
+    index). A question this file already ANSWERED is not asked again: the answered question is returned.
+
+    ⛔ WHATEVER REVIEW ASKS IT (STEP-13 M36.C2.L-data.V2.U12, `03` X25). Your answer moves the file's
+    fingerprint (`reason/expert/fingerprint`), so the review that asks the same words again is never the
+    review that asked them first — a dedupe on the asking review's id could never fire. The file's answers
+    are matched on their words, and an open question this review no longer asks retires
+    (`NO_LONGER_ASKED`). Only an ANSWER closes the words: a question retired unanswered may be asked
+    again, by a later review, as its own row (the record of what each review asked stays whole)."""
+    answered = next((a for a in answers_for(conn, org_id, file_id) if a.question == question), None)
+    if answered is not None:
+        retire(conn, org_id=org_id, file_id=file_id, why=NO_LONGER_ASKED, at=at)
+        return answered
     standing = open_question(conn, org_id, file_id)
     if standing is not None and standing.question == question:
         if run_id is not None and run_id != standing.run_id:
@@ -138,5 +151,5 @@ def answer(conn, *, org_id: str, question_id: str, words: str, by: str, at: date
     return _row(r)
 
 
-__all__ = ["ANSWERED", "NO_LONGER_ASKED", "OPEN", "Question", "REPLACED", "RETIRED", "answer", "answers_for",
-           "ask", "by_id", "open_question", "question_id_for", "retire"]
+__all__ = ["ANSWERED", "LEFT_COVERAGE", "NO_LONGER_ASKED", "OPEN", "Question", "REPLACED", "RETIRED", "answer",
+           "answers_for", "ask", "by_id", "open_question", "question_id_for", "retire"]

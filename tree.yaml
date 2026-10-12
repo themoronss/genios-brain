@@ -7818,6 +7818,20 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/dossier.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_dossier_lines.py tests/reason/expert/test_the_dossier.py"
                       depends_on: []
+                    - id: M35.C2.L-logic.V0.U13
+                      what: >
+                        The connector is named as the person (fix-first, crosscheck `03` X07):
+                        `dossier.connector_of` (read by `people_of`) names a connector at an address by the
+                        name its own mail in the file signs (the latest), else by the address's own words
+                        (`pankaj@saka.vc` → "Pankaj", `pankaj.mehta@saka.vc` → "Pankaj Mehta") — never by its
+                        domain's label, which named Pankaj "saka"; a connector known only by its company's
+                        domain keeps that domain's label. So `verify`'s own `matches` (verify unedited) catches
+                        "Send Pankaj the short deck to forward to Marco", to "Pankaj Mehta", as the connector:
+                        the draft never goes to whoever made the introduction. The graph's node name is not
+                        read (the name the connector's mail signs is the one the graph took it from).
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_connector_is_named_as_the_person.py tests/reason/expert/test_the_dossier_lines.py tests/reason/expert/test_verify_people.py"
+                      depends_on: [M35.C2.L-logic.V0.U01, M35.C2.L-logic.V1.U02]
                 - level: 1
                   units:
                     - id: M35.C2.L-logic.V1.U02
@@ -8214,6 +8228,22 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/dossier.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_your_answer_feeds_the_file.py tests/reason/expert/test_the_dossier.py tests/reason/expert/test_the_file_fingerprint.py"
                       depends_on: [M36.C2.L-data.V1.U02]
+                    - id: M36.C2.L-data.V2.U12
+                      what: >
+                        Your answer is your words, and an answered question is not asked again (fix-first,
+                        crosscheck `03` X05, X25): the dossier's answer line prints only your words and the
+                        question's id — never the question's text, which for a held review IS the claim its
+                        check dropped, and never its date (a line of its own, which no fact can cite) — so a
+                        fact citing `answer:` is grounded on your words alone ("No. He asked for the roadmap"
+                        never grounds "Send Neel the deck", pinned on `verify.check_review`, verify unedited);
+                        `founder_questions.ask` returns the ANSWERED question when the file already answered
+                        the same words under any fingerprint, retiring an open other one (`NO_LONGER_ASKED`) —
+                        a question retired unanswered may still be asked again; and `asks.ask_the_founder`
+                        files no signal for it (`answered_already`), the file's open question signal expired
+                        and its card REPLACED.
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_your_answer_feeds_the_file.py tests/context/test_a_file_asks_one_question.py tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_answering_a_question.py"
+                      depends_on: [M36.C2.L-data.V2.U07, M36.C2.L-integration.V2.U03, M36.C2.L-interface.V4.U06]
             - layer: logic
               levels:
                 - level: 1
@@ -8226,6 +8256,27 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/authority.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_a_question_is_authorised.py"
                       depends_on: [M36.C2.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M36.C2.L-logic.V2.U10
+                      what: >
+                        The question is asked in checked words (fix-first, crosscheck `03` X06, X10's asks
+                        part, X34): `asks.question_words` reads only what the check let stand — a held file
+                        asks the check's own question; a find-out file asks YOU a real question: its review's
+                        first unknown when it is a question or reads as one ("Whether…" → "Can you tell us
+                        whether…?") and every name and number in it is in the checked words (the card's words,
+                        the quotes the check matched, the facts it kept — never a dropped fact or a withheld
+                        reading), else its checked move framed "Can you tell us: …?" — never the raw
+                        `frames.primary`, never an instruction. Its `why` is one closed, founder-facing phrase
+                        (`asks.WHYS`, read off the check's verdicts), never the check's internal reason; the
+                        question card's situation is the checked reading or that closed phrase, and a question
+                        filed with any other `why` is carded with the closed one. (Added 12 Oct, found by the
+                        golden lane: STEP-11's founder-card clause.) The question card says what answering does
+                        and what waiting costs — `success_signal` and `do_nothing_consequence`, closed phrases
+                        of ours, never model prose — and has no play window (`outcome_window_days` None).
+                      artifact: "genios_engine/reason/expert/asks.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_a_question_card.py"
+                      depends_on: [M36.C2.L-integration.V2.U03, M36.C2.L-interface.V3.U05, M36.C2.L-data.V2.U12]
             - layer: interface
               levels:
                 - level: 2
@@ -8275,6 +8326,23 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/domain_shadow.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/capture/test_the_needs_queue_gets_worked.py"
                       depends_on: [M36.C2.L-data.V1.U02, M35.C3.L-integration.V2.U02]
+                    - id: M36.C2.L-integration.V2.U11
+                      what: >
+                        A question lives while it is asked (fix-first, crosscheck `03` X04, X26, X27, X41): an
+                        asking run is remembered STANDING on its question's window (never SUPPRESSED, which the
+                        change gate skipped forever) and the file is decided again in the day before that window
+                        closes (`change_gate.QUESTION_RENEW_MARGIN`) — a re-run re-binds the question, and the
+                        re-bind moves its card's `expires_at` with its authority in the same statement; a question
+                        card that lapsed while its question is still open and asked is revived — the same card,
+                        queued (`deliver/store`'s upsert, the question builder's only); a file that leaves
+                        coverage retires its question (`LEFT_COVERAGE`) and its card (`06` D60, the file's one
+                        card) — but a pass whose expert covered nothing takes no question down; on a day the cap
+                        is spent the question is still asked or the old decision cleared (the cap applies after
+                        the outcome, to a decision that would be shown); and a re-bound question card reads the
+                        review asking it now (the run's trigger). Proven at NOW+169 h with the gate intact.
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_a_question_card.py tests/reason/test_change_gate.py"
+                      depends_on: [M36.C2.L-integration.V2.U03, M36.C2.L-interface.V3.U05, M36.C2.L-logic.V2.U10]
                 - level: 6
                   units:
                     - id: M36.C2.L-integration.V6.U08

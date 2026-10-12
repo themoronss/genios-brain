@@ -7,7 +7,8 @@ that asked it, and carried by a question signal — the Investigation lane, boun
 (`reason/authority.QUESTION_SIGNAL_PREDICATE`) and never as a decision. One open question signal per file:
 the same question asked again keeps its signal, RE-BOUND to the run asking it now — its card is not torn
 down and rebuilt; a new question replaces it, its card REPLACED; any other decision retires the file's
-question and expires its signal.
+question and expires its signal. Words the file already ANSWERED are never asked again, whatever review
+asks them (M36.C2.L-data.V2.U12, `03` X25): no signal, and the file's open question signal expires.
 
 ITS OWN MODULE, because it is its own writer of `signals` (`reason/situation_binding.SIGNAL_WRITERS`, one
 function each): a question is not the compiled lane's decision, and folding its insert into
@@ -18,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 
 from sqlalchemy import text
 
@@ -28,23 +30,124 @@ QUESTION_RULE = "founder_question"
 _OPEN_QUESTION_SIGNAL = (
     "select signal_id from signals where org_id = :o and rule_id = 'founder_question' "
     "and subject_node_id = :n and status = 'open'")
+#: Every open question signal of the file, expired — by a decision that is no question, or by a question
+#: the file already answered (`retire_question`, `ask_the_founder`).
+_EXPIRE_QUESTION_SIGNALS = (
+    "update signals set status = 'expired' where org_id = :o and rule_id = 'founder_question' "
+    "and subject_node_id = :n and status = 'open' returning signal_id")
+#: What asking came to: a question filed, the one already open re-bound, or words the file already answered.
+ASKED = "asked"
+STANDING = "standing"
+ANSWERED_ALREADY = "answered_already"
+#: What leaves the file's question standing — what the change gate remembers as STANDING on its window.
+ASKING: frozenset[str] = frozenset({ASKED, STANDING})
+
+
+# ── what is asked, in checked words (STEP-13 M36.C2.L-logic.V2.U10, `03` X06, X10, X34) ──────────────────────────
+#
+# Every word a question card says is a word the check let stand, or one of ours, closed. A held file asks
+# the check's own question (`contracts/claim_check.CheckedReview.question`). A file that must find out first
+# asks YOU a real question: its review's first unknown, when that is a question — or reads as one — and
+# every name and number in it is in the checked words; else its checked move, framed as a question. Never
+# the raw reading (`frames.primary`): a find-out reading is checked like any other, and the check may have
+# withheld it. And WHY is one closed, founder-facing phrase — never the check's internal reason string.
+#
+# One name to a line: `tests/test_no_missing_module_deps` reads a module's names by their assignments.
+WHY_FIND_OUT = "we hold this file until you answer"
+WHY_NOT_CONFIRMED = "we could not confirm what it rests on from what it cites"
+WHY_SAYS_MORE = "its next step says more than the file shows"
+WHY_ADDRESSED_TO_YOU = "its next step is addressed to you"
+WHY_TO_THE_CONNECTOR = "its next step goes to whoever introduced them"
+WHYS: tuple[str, ...] = (WHY_FIND_OUT, WHY_NOT_CONFIRMED, WHY_SAYS_MORE, WHY_ADDRESSED_TO_YOU,
+                         WHY_TO_THE_CONNECTOR)
+#: What a file asks when nothing checked can be asked — ours, closed.
+NOTHING_TO_ASK = "Can you tell us where this file stands?"
+#: An unknown written as an indirect question ("Whether the examiner has raised a query.") reads as one.
+_INDIRECT = re.compile(r"^(?:whether|if|what|which|who|whom|whose|when|where|why|how)\b", re.I)
+_FACT_LINE = re.compile(r"^fact:(\d+)$")
+
+
+def _checked_corpus(review, checked) -> str:
+    """The words the check let stand: the card's words, the quotes it matched, the facts it kept."""
+    kept = {int(m.group(1)) for v in checked.verdicts
+            if v.verdict == "kept" and (m := _FACT_LINE.match(v.line)) is not None}
+    facts = [f.claim for n, f in enumerate(review.facts, start=1) if n in kept]
+    w = checked.words
+    return "\n".join(str(t) for t in (w.headline, w.situation, w.done_when, w.draft, *w.quotes, *facts) if t)
+
+
+def _stands_on(text: str, corpus: str) -> bool:
+    """Is every name and number of `text` in `corpus` — the card validator's own rule
+    (`platform/grounding.invention_ok`)? Its first word is read as the start of a sentence, not a name."""
+    from genios_engine.platform.grounding import corpus_of, digit_runs, invention_ok
+
+    held, nums = corpus_of([corpus])
+    plain = text[:1].lower() + text[1:]
+    # Each number whole — a "1" is not held by a "12" — and each name by the card validator's rule.
+    return digit_runs(plain) <= nums and invention_ok(plain, held, nums)[0]
+
+
+def _as_question(text: str) -> str | None:
+    """`text` as a question to you — as written, when it is one; framed, when it reads as one; else None."""
+    said = " ".join(str(text or "").split()).rstrip(" .;:")
+    if not said:
+        return None
+    if said.endswith("?"):
+        return said
+    if _INDIRECT.match(said):
+        return f"Can you tell us {said[:1].lower()}{said[1:]}?"
+    return None
+
+
+def _find_out_question(review, checked) -> str:
+    """A find-out file's question: its first unknown, or its checked move (see above)."""
+    corpus = _checked_corpus(review, checked) if checked is not None else ""
+    first = " ".join(review.unknowns[0].question.split()) if review.unknowns else ""
+    asked = _as_question(first)
+    if asked is not None and _stands_on(first, corpus):
+        return asked
+    move = checked.words.headline if checked is not None else None
+    if move:
+        said = " ".join(move.split()).rstrip(" .;:")
+        return said if said.endswith("?") else f"Can you tell us: {said}?"
+    return NOTHING_TO_ASK
+
+
+def _why_held(review, checked) -> str:
+    """Why a held file asks, in one closed phrase — read off the check's verdicts in the order its fate is
+    decided (`reason/expert/verify`): a fact the move rests on, then the move's own words, then whom it
+    goes to."""
+    dropped = [(v.line, v.reason) for v in checked.verdicts if v.verdict == "dropped"]
+    move = review.next_move
+    named = {int(m.group(1)) for r in (move.rests_on if move is not None else ())
+             if (m := _FACT_LINE.match(r)) is not None}
+    rested = named or set(range(1, len(review.facts) + 1))
+    if any((m := _FACT_LINE.match(line)) is not None and int(m.group(1)) in rested for line, _ in dropped):
+        return WHY_NOT_CONFIRMED
+    if any(line == "move" for line, _ in dropped):
+        return WHY_SAYS_MORE
+    if ("to", "recipient_is_us") in dropped:
+        return WHY_ADDRESSED_TO_YOU
+    if ("to", "recipient_is_connector") in dropped:
+        return WHY_TO_THE_CONNECTOR
+    return WHY_FIND_OUT
 
 
 def question_words(review) -> tuple[str, str]:
-    """What the file asks, and why — the check's own question and its reason; a review that must find
-    out first asks its own move, because the file cannot be read on without its answer."""
+    """What the file asks, and why — in checked words (see above): a held file the check's own question,
+    a find-out file a real question to you; why, one of `WHYS`."""
     checked = review.checked
-    move = review.review.next_move
-    question = (checked.question if checked is not None and checked.question else None) \
-        or (move.what if move is not None else review.review.frames.primary)
-    why = (checked.because if checked is not None and checked.because else None) \
-        or "the expert cannot read this file on without your answer: " + review.review.frames.primary
-    return question, why
+    if checked is not None and checked.fate == "held" and checked.question:
+        return " ".join(checked.question.split()), _why_held(review.review, checked)
+    return _find_out_question(review.review, checked), WHY_FIND_OUT
 
 
 def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundle: dict, pack: dict,
                      eval_time, situation_id: str | None) -> str:
-    """File the file's question and its signal: `asked`, or `standing` (re-bound to this run)."""
+    """File the file's question and its signal: `asked`, or `standing` (re-bound to this run) — or
+    `answered_already`: words the file already answered are not asked again (M36.C2.L-data.V2.U12, `03`
+    X25), so no signal is filed, and the file's open question signal expires, its card REPLACED — the
+    question it carried is one this review no longer asks (`context/founder_questions.ask` retired it)."""
     from genios_engine.context import founder_questions as questions
 
     run, output = bundle.get("run") or {}, bundle.get("output") or {}
@@ -53,15 +156,27 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
         before = questions.open_question(conn, org_id, file_id)
         asked = questions.ask(conn, org_id=org_id, file_id=file_id, fingerprint=review.fingerprint,
                               run_id=run.get("run_id"), question=question, why=why, at=eval_time)
+        if asked.state == questions.ANSWERED:
+            expired = conn.execute(text(_EXPIRE_QUESTION_SIGNALS), {"o": org_id, "n": file_id}).fetchall()
+            if expired:
+                card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                            signal_ids=[item.signal_id for item in expired])
+            return ANSWERED_ALREADY
         standing = conn.execute(text(_OPEN_QUESTION_SIGNAL), {"o": org_id, "n": file_id}).first()
         bound = {"o": org_id, "run": run.get("run_id"), "dhash": output.get("decision_hash"),
                  "exp": decision.expires_at, "cfg": run.get("config_snapshot_id"), "et": eval_time}
         if standing is not None and before is not None and before.question_id == asked.question_id:
+            # RE-BOUND, ITS CARD'S WINDOW WITH IT (M36.C2.L-integration.V2.U11, `03` X04): one statement, so
+            # the signal's authority and the window of its unresolved card never disagree — a card is never
+            # capped at an authority its signal has since outgrown. A card that already lapsed stays lapsed
+            # here: reviving it is the card builder's (`deliver/store`), and a resolved one is nobody's.
             conn.execute(text(
-                "update signals set reasoning_run_id = :run, reasoning_decision_hash = :dhash, "
+                "with rebound as (update signals set reasoning_run_id = :run, reasoning_decision_hash = :dhash, "
                 "authority_expires_at = :exp, config_snapshot_id = :cfg, eval_time = :et "
-                "where org_id = :o and signal_id = :s"), {**bound, "s": standing.signal_id})
-            return "standing"
+                "where org_id = :o and signal_id = :s returning signal_id) "
+                "update cards set expires_at = :exp where org_id = :o and signal_id = :s "
+                "and resolved_at is null"), {**bound, "s": standing.signal_id})
+            return STANDING
         if standing is not None:
             conn.execute(text("update signals set status = 'expired' where org_id = :o and signal_id = :s"),
                          {"o": org_id, "s": standing.signal_id})
@@ -85,20 +200,18 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
                 "lreason": decision.lane_reason,
                 "cap": decision.capability_id, "capv": decision.capability_version,
                 "sit": (str(situation_id).strip() or None) if situation_id else None})
-    return "asked"
+    return ASKED
 
 
-def retire_question(store, *, org_id: str, file_id: str, eval_time) -> bool:
-    """A decision that is no question: the file's open question retires, and its signal and card with it."""
+def retire_question(store, *, org_id: str, file_id: str, eval_time, why: str | None = None) -> bool:
+    """A decision that is no question — or a file no longer the expert's to decide (`LEFT_COVERAGE`): the
+    file's open question retires, saying why, and its signal and card with it."""
     from genios_engine.context import founder_questions as questions
 
     with store.engine.begin() as conn:
-        retired = questions.retire(conn, org_id=org_id, file_id=file_id, why=questions.NO_LONGER_ASKED,
+        retired = questions.retire(conn, org_id=org_id, file_id=file_id, why=why or questions.NO_LONGER_ASKED,
                                    at=eval_time)
-        expired = conn.execute(text(
-            "update signals set status = 'expired' where org_id = :o and rule_id = 'founder_question' "
-            "and subject_node_id = :n and status = 'open' returning signal_id"),
-            {"o": org_id, "n": file_id}).fetchall()
+        expired = conn.execute(text(_EXPIRE_QUESTION_SIGNALS), {"o": org_id, "n": file_id}).fetchall()
         if expired:
             card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
                                         signal_ids=[item.signal_id for item in expired])

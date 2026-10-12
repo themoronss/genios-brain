@@ -38,7 +38,8 @@ WHAT THE CHECK READS BACK (STEP-13, tree `yc2_w27_s13` M35.C2.L-logic.V0.U01). `
 each claim to the lines it cites, so the dossier is read back by id: `lines_by_id` maps every id the text
 prints to each place it is printed — the line, the item it belongs to (a head line and the lines indented
 under it: a touch's words, a person's numbers) and, for a touch, its words. `people_of` says who the file's
-mail shows, who is us, and which connector introduced its counterparty — whom a draft may go to.
+mail shows, who is us, and which connector introduced its counterparty — whom a draft may go to — named as
+the person it is (`connector_of`, M35.C2.L-logic.V0.U13).
 """
 from __future__ import annotations
 
@@ -266,11 +267,21 @@ def _timeline(p: DossierParts, cite: _Ids) -> Section:
 
 
 def _answers(p: DossierParts, cite: _Ids) -> Section:
-    """What the founder told us, answering a question this file asked: the answer's id (the expert may
-    cite it), what was asked, the words, when. Their words are no mail's — printed on the head line, so
-    no claim is asked to quote them."""
-    lines = [f"- {cite(f'answer:{a.question_id}')} you answered on {_when(a.answered_at)} the question "
-             f"“{a.question}”: “{' '.join(str(a.answer).split())}”" for a in p.answers]
+    """What the founder told us, answering a question this file asked: when, on a line of its own, then the
+    answer's id (the expert may cite it) and the words. Their words are no mail's — printed on the head
+    line, so no claim is asked to quote them.
+
+    ⛔ YOUR ANSWER IS YOUR WORDS (STEP-13 M36.C2.L-data.V2.U12, `03` X05). The answer's line — the item a
+    fact citing `answer:<id>` is held to (`reason/expert/verify`) — carries the id and the words and NOTHING
+    else. Never the question's text: a held review's question IS the claim its check dropped ("Is it so:
+    “…”?"), so a line carrying it let "No. He asked for the roadmap" ground "Send Neel the deck" again.
+    Never its date either: a date's digits would ground any small number, and the invention rule reads a
+    date's own month and day (`platform/grounding.corpus_of`) — so the date heads the answer on a line of
+    its own, which no id prints on and no fact can cite."""
+    lines: list[str] = []
+    for a in p.answers:
+        lines.append(f"You answered on {_when(a.answered_at)}:")
+        lines.append(f"- {cite(f'answer:{a.question_id}')} “{' '.join(str(a.answer).split())}”")
     return Section("answers", "\n".join(lines))
 
 
@@ -677,6 +688,29 @@ def label_of(key: str | None) -> str | None:
     return host.split(".", 1)[0]
 
 
+def connector_of(parts: DossierParts) -> Person | None:
+    """The connector that introduced the file's counterparty, NAMED AS THE PERSON it is (STEP-13
+    M35.C2.L-logic.V0.U13, `03` X07) — None on the connector's own file, and on a file nobody introduced.
+
+    An address is a person: named by the name its own mail in the file signs, else by its own words
+    (`pankaj@saka.vc` is Pankaj, `pankaj.mehta@saka.vc` Pankaj Mehta) — never by its domain's label, which
+    named Pankaj "saka" and let "Send Pankaj the short deck", to Pankaj Mehta, pass the connector check.
+    A connector known only by its company's domain (`boardy.ai`) is named by that domain's first label, as
+    before. ⛔ The graph's own node name is not read: the name the connector's mail signs is the one the
+    graph took it from, and a read here would be the dossier's first of a node it does not print."""
+    f = parts.file
+    if not f.introduced_by or f.kind == "connector":
+        return None
+    key = str(f.introduced_by)
+    signed = next((t.who_name for t in reversed(parts.timeline.touches)
+                   if str(t.who or "").casefold() == key.casefold() and t.who_name
+                   and t.who_name.casefold() != key.casefold()), None)
+    if "@" not in key:
+        return Person(name=signed or label_of(key), key=key)
+    words = [w for w in re.split(r"[._+-]+", key.split("@", 1)[0]) if w]
+    return Person(name=signed or " ".join(w[:1].upper() + w[1:].lower() for w in words) or None, key=key)
+
+
 def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str] = ()) -> FilePeople:
     """The file's people as its dossier shows them (see `FilePeople`). Pure over the parts."""
     f = parts.file
@@ -688,8 +722,7 @@ def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str]
         if t.direction == "in" and (t.who or t.who_name):
             seen.append(Person(name=t.who_name, key=t.who))
     people = tuple(dict.fromkeys(seen))
-    connector = (Person(name=label_of(f.introduced_by), key=f.introduced_by)
-                 if f.introduced_by and f.kind != "connector" else None)
+    connector = connector_of(parts)
     by_node = {p.node_id: Person(name=p.name, key=p.key)
                for p in (getattr(parts.numbers, "people", None) or ()) if getattr(p, "node_id", None)}
     asks = tuple(AskSeen(ref=f"loop:{a.loop_id}", kind=a.kind, ours=a.owed_by == "us",
@@ -716,5 +749,5 @@ __all__ = ["AskSeen", "CLAIMS_LIMIT", "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossi
            "DossierParts", "Seen",
            "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",
            "OPTIONAL", "RELATIVE_WORDS", "SECTIONS", "Section", "TITLES", "TOUCHES_LISTED", "TOUCHES_WHOLE",
-           "WAVES_LIMIT", "build_dossier", "dossier_for", "label_of", "lines_by_id", "people_of",
+           "WAVES_LIMIT", "build_dossier", "connector_of", "dossier_for", "label_of", "lines_by_id", "people_of",
            "read_parts", "read_promises"]
