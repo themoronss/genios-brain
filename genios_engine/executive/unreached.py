@@ -199,6 +199,18 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "template brief, the next unit; until it lands no brief is fitted to its budget.",
         "MOVES WHEN M44.C3.L-logic.V1.U03 (`executive/morning_template`) lands: every brief is fitted there"),
 
+    "morning_store.keep": (
+        "STEP-15 M44.C4.L-data.V0.U01, built bottom-up: the brief written once per seat per local day, a second composer handed the first's — the row is the claim. Its one caller is the composer, M44.C4.L-integration.V1.U02; until it lands no brief is kept.",
+        "MOVES WHEN M44.C4.L-integration.V1.U02 (`executive/morning.compose`) lands: every brief is kept there"),
+
+    "morning_store.last_before": (
+        "STEP-15 M44.C4.L-data.V0.U01, built bottom-up: the seat's last brief before a day — what changed since your last brief is read against it. Its caller is what changed, M44.C3.L-logic.V1.U04; until it lands nothing compares two mornings.",
+        "MOVES WHEN M44.C3.L-logic.V1.U04 (`executive/morning_day`'s changes) lands: the day reads it there"),
+
+    "morning_store.mark_line": (
+        "STEP-15 M44.C4.L-data.V0.U01, built bottom-up: your mark on a line — useful, or not useful with your words — the latest standing, the line naming its brief. Its caller is the mark route, M45.C3.L-interface.V0.U02; until it lands no mark is taken.",
+        "MOVES WHEN M45.C3.L-interface.V0.U02 (`POST /v1/executive/morning/lines/{line_id}/mark`) lands"),
+
 }
 
 #: ⛔ Built, reachable, and only ever PULLED — `{surface: (route, why it is not pushed)}`.
