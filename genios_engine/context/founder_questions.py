@@ -22,7 +22,10 @@ from datetime import datetime
 
 from sqlalchemy import text
 
-OPEN, ANSWERED, RETIRED = "open", "answered", "retired"
+# One name to a line: `tests/test_no_missing_module_deps` reads what a module defines by its assignments.
+OPEN = "open"
+ANSWERED = "answered"
+RETIRED = "retired"
 #: Why a question was retired — closed, so each is counted by kind.
 REPLACED = "a newer question of the file replaced it"
 NO_LONGER_ASKED = "the file's latest review no longer asks it"
