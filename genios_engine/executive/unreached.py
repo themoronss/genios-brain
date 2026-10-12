@@ -184,6 +184,21 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "(`tests/executive/test_a_closed_set_with_two_spellings.py`), so it is no longer in the "
         "weaker of the two states; `blocking_action` was the other and is now wired."),
 
+    # STEP-15 builds bottom-up (tree `yc2_w27_s15`): the morning brief's parts land before the composer that calls
+    # them. Each entry is deleted in the commit that wires its caller, and the pinned set in
+    # `tests/test_the_executive_says_what_it_does_not_call.py` moves with it, said there.
+    "morning_order.order": (
+        "STEP-15 M44.C3.L-logic.V0.U01, built bottom-up: the day ordered by code from the expert's own "
+        "appraisals — today's five with what is always in, then the sections, each capped and its cut "
+        "counted. Its one caller is the template brief, the next unit; until it lands nothing orders a day.",
+        "MOVES WHEN M44.C3.L-logic.V1.U03 (`executive/morning_template`) lands: every brief is ordered there"),
+
+    "morning_order.fit": (
+        "STEP-15 M44.C3.L-logic.V0.U01, built bottom-up: the brief kept inside its six hundred words by "
+        "cutting from the last section back, never an always-in item, the cut counted. Its one caller is the "
+        "template brief, the next unit; until it lands no brief is fitted to its budget.",
+        "MOVES WHEN M44.C3.L-logic.V1.U03 (`executive/morning_template`) lands: every brief is fitted there"),
+
 }
 
 #: ⛔ Built, reachable, and only ever PULLED — `{surface: (route, why it is not pushed)}`.

@@ -95,6 +95,12 @@ def test_every_declared_entry_is_still_unreached():
         "stale silence is worse than none, because somebody will act on it.")
 
 
+#: ⛔ STEP-15 (`yc2_w27_s15`) builds the morning brief bottom-up, so for a few commits a part lands before the
+#: composer that calls it. Each is declared in `executive/unreached.UNREACHED` and named here, and leaves both
+#: in the commit that wires its caller — the ten above are the layer's own and do not move.
+STEP_15_BUILDING = frozenset({"morning_order.order", "morning_order.fit"})
+
+
 def test_the_count_is_ten_and_they_are_the_measured_ten():
     """Pinned so the gap is a number rather than an impression. It may shrink; it may not grow
     without somebody writing down why.
@@ -141,7 +147,7 @@ def test_the_count_is_ten_and_they_are_the_measured_ten():
                                 "execution_store.supersede",
                                 "lifecycle.is_open",
                                 "lifecycle.is_terminal",
-                                "readiness.read"}
+                                "readiness.read"} | STEP_15_BUILDING
     # ⛔ AND NONE OF THE FIVE IS NOW UNTESTED. Two were — `blocking_action` (wired in U3) and
     # `lifecycle.is_terminal`, which got its first tests in
     # `tests/executive/test_a_closed_set_with_two_spellings.py`. Measured there: the guard at
