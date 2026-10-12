@@ -7767,6 +7767,19 @@ yc2_w27_s13:
                       artifact: "genios_engine/contracts/claim_check.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_claim_check_contract.py"
                       depends_on: [M35.C1.L-contract.V0.U01]
+                    - id: M35.C1.L-contract.V0.U04
+                      what: >
+                        A misshapen move field drops its line, not the review (crosscheck X15, `06` D59):
+                        a `rests_on` ref that names no fact of the review, beside the facts it does name,
+                        is named by `validate` (`unknown_evidence`, never `ungrounded_move`) and dropped by
+                        the check on its own `rests_on` line — the move stands on the facts it names; an
+                        `answers` that is no `loop:` id the dossier printed (a mail, a promise, a
+                        calculator) drops the `answers` line `unknown_evidence`, as an unprinted ask already
+                        did, instead of refusing the review STRUCTURAL. A move resting on NO fact of the
+                        review is still refused whole (§8.4.1).
+                      artifact: "genios_engine/contracts/expert_review.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_misshapen_move_field_drops_its_line.py tests/reason/expert/test_the_review_contract.py"
+                      depends_on: [M35.C1.L-contract.V0.U01, M35.C2.L-logic.V1.U02]
                 - level: 1
                   units:
                     - id: M35.C1.L-contract.V1.U03

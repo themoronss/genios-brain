@@ -73,9 +73,12 @@ REFUSED = "refused"
 FATES: tuple[str, ...] = (SHOWN, HELD, SUPPRESSED, REFUSED)
 
 #: The lines a verdict may name: a review's own, by kind and number; what reaches the founder — the
-#: card's words, whom its draft goes to, the ask the move answers, the kind it proposes; and its prose.
+#: card's words, whom its draft goes to, the ask the move answers, the kind it proposes; its prose; and
+#: the facts the move names as its ground (`rests_on`: a ref that names no fact of the review drops
+#: there, M35.C1.L-contract.V0.U04).
 LINE_KINDS: tuple[str, ...] = ("fact", "inference", "pattern")
-CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", "answers", "kind", "prose")
+CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", "answers", "kind", "prose",
+                               "rests_on")
 
 
 def _closed(value: Any, allowed: tuple[str, ...], name: str) -> str:

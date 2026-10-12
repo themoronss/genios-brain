@@ -38,7 +38,9 @@ ONE PASS, IN ONE ORDER.
       Whether the ask a move answers is already ANSWERED is read live (`reason/expert/answered`).
 
 WHAT `validate` STILL REFUSES WHOLE — the structure (`STRUCTURAL`): a moving mode with no move, a move
-resting on a fact the review does not have, a stage the playbook does not name. Grounding is per line here,
+resting on no fact the review has, a stage the playbook does not name. A slip of one optional move field
+drops its own line (M35.C1.L-contract.V0.U04): a `rests_on` ref beside the facts it names that is no fact
+(`rests_on`), an `answers` that is no ask the dossier printed (`answers`). Grounding is per line here,
 and a number in prose no founder is shown — a hypothesis, a scenario, the appraisal's reasons — is NOTED
 (`unheld_number`), not refused: it reaches nobody, and a live model's hypotheses hold numbers.
 
@@ -53,7 +55,7 @@ from dataclasses import dataclass, field
 
 from genios_engine.contracts import claim_check as C
 from genios_engine.contracts.expert_review import (
-    MOVING, NO_NEXT_MOVE, UNGROUNDED_MOVE, UNKNOWN_STAGE, ExpertReview, number_tokens)
+    ASK_PREFIX, MOVING, NO_NEXT_MOVE, UNGROUNDED_MOVE, UNKNOWN_STAGE, ExpertReview, fact_ref, number_tokens)
 from genios_engine.platform.grounding import corpus_of, digit_runs, invention_ok
 from genios_engine.platform.self_identity import names_us
 from genios_engine.reason.expert.decide import is_event
@@ -271,12 +273,20 @@ class _Run:
 
 def _rested_on(review: ExpertReview) -> set[int]:
     """The facts, by number, the move rests on — every fact when it names none; none without a move,
-    for there is nothing to hold."""
+    for there is nothing to hold. A ref that names no fact of the review is no ground (`_strays`)."""
     move = review.next_move
     if move is None:
         return set()
-    named = {int(m.group(1)) for r in move.rests_on if (m := _FACT_REF.match(r)) is not None}
+    named = {n for r in move.rests_on if (n := fact_ref(r, len(review.facts))) is not None}
     return named or set(range(1, len(review.facts) + 1))
+
+
+def _strays(review: ExpertReview) -> list[str]:
+    """The refs of the move's `rests_on` that name no fact of the review — beside facts it does name, a
+    slip of one field (M35.C1.L-contract.V0.U04): that line drops, the move stands on the facts it names.
+    (A `rests_on` naming no fact at all, `validate` refuses whole — `ungrounded_move`.)"""
+    move = review.next_move
+    return [] if move is None else [r for r in move.rests_on if fact_ref(r, len(review.facts)) is None]
 
 
 def _fact(run: _Run, n: int, decisive: bool) -> bool:
@@ -346,6 +356,8 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     dossier cited; without it, every bracketed id of the text counts."""
     run = _Run(review=review, lines=lines_by_id(dossier_text, evidence_ids), people=people)
     rested = _rested_on(review)
+    if strays := _strays(review):
+        run.say("rests_on", C.DROPPED, C.UNKNOWN_EVIDENCE, ", ".join(strays))
     standing = {n for n in range(1, len(review.facts) + 1) if _fact(run, n, n in rested)}
     if not standing:
         return C.CheckedReview(verdicts=tuple(run.verdicts), fate=C.REFUSED, cited=(),
@@ -406,9 +418,10 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
             draft = None                    # its words were for someone it may not go to
     met = None
     if move is not None and move.answers:
-        if move.answers not in run.lines:
-            # An ask its dossier never printed: whether it is answered cannot be read — the line drops,
-            # as a fact citing an unshown id does; the move stands on its facts.
+        if not move.answers.startswith(ASK_PREFIX) or move.answers not in run.lines:
+            # No ask its dossier printed — an unprinted `loop:`, or a mail, a promise, a calculator that is
+            # no ask at all (M35.C1.L-contract.V0.U04): whether it is answered cannot be read — the line
+            # drops, as a fact citing an unshown id does; the move stands on its facts.
             run.say("answers", C.DROPPED, C.UNKNOWN_EVIDENCE, move.answers)
         elif any("we wait on them" in dl.line for dl in run.lines.get(move.answers, ())):
             run.say("answers", C.DROPPED, C.NOT_OURS_TO_ANSWER, move.answers)
