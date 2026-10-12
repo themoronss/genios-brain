@@ -213,12 +213,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "*'Seat every org that has none. Orgs with seats are left completely alone.'* One test caller. ⛔ The idempotence is the load-bearing part — it cannot disturb a configured org — which is what makes it safe to run and uninteresting to schedule",
         "⛔ MOVES WHEN it is run, which needs an operator. Flagged for Harsh with the other backfills"),
 
-    "config.insecure_boot": (
-        "*'Why this configuration may not serve, or None when it may.'* yc2_w27_s18 B7: the shipped JWT "
-        "secret outside a development environment. Test callers only, for one unit",
-        "⛔ MOVES WITH yc2_w27_s18 M49.C3.L-integration.V1.U08 — `main.lifespan` asks it before "
-        "anything boots, and this entry goes"),
-
 }
 
 
