@@ -58,7 +58,10 @@ NOT_SQL: dict[tuple[str, str], str] = {
 #: is +1 and fails until it is made static (a constant the census can resolve) or this number is
 #: raised deliberately; one made static is -1 and fails until the number is lowered — a ceiling only
 #: ratchets while it sits on the actual.
-ASSEMBLED_AT_RUN_TIME = 270
+#: ⛔ MOVED 270 → 272 at the merge of STEP-17 with STEP-13 (12 Oct; crosscheck S17X-B1), both STEP-13's: the
+#: question card's door in `deliver/actions.ingest_action` (`QUESTION_CARD_SQL`, imported inside the function
+#: as the situation door's is) and the queue's third door in `deliver/store.CardStore.queue` (`qq += …`).
+ASSEMBLED_AT_RUN_TIME = 272
 
 #: ⛔ A FLOOR UNDER WHAT IS PLANNED, so a census that stopped reading — an import that broke, a
 #: resolver that regressed — fails rather than passing over less. Measured 2,053 at the build.

@@ -36,6 +36,12 @@ from genios_engine.reason.fingerprint_store import (DEFERRED, EMITTED, INDETERMI
 #: by the golden acceptance on F27. On the first sweep after the authority lapses the lane replaces
 #: the signal, which is what it does today without the gate.
 RENEW_MARGIN = timedelta(0)
+#: …and a QUESTION's window (STEP-13 `yc2_w27_s13` M36.C2.L-integration.V2.U11, `03` X04) is re-decided a day
+#: before it closes. Unlike a decision's, a re-run before expiry DOES renew a question: the file asks it again,
+#: the question is RE-BOUND to the run asking now (`reason/expert/asks`) and its authority and its card's window
+#: move with it — so a margin re-decides it once in its last day, never on every sweep of it, and the question
+#: card the founder may be about to answer never lapses under them.
+QUESTION_RENEW_MARGIN = timedelta(days=1)
 
 NEW = "new"                    # never decided
 CHANGED = "changed"            # what the decision depends on moved
@@ -53,11 +59,14 @@ class GateVerdict:
 
 
 def should_skip(stored: StoredFingerprint | None, fingerprint: str, *, live: bool,
-                standing_expires_at: datetime | None, eval_time: datetime) -> GateVerdict:
+                standing_expires_at: datetime | None, eval_time: datetime,
+                renew_margin: timedelta = RENEW_MARGIN) -> GateVerdict:
     """Whether this sweep may skip the subject's decision, and why.
 
     `standing_expires_at` is the `authority_expires_at` of the subject's open signal, or None when
-    it has none open. Read only for a live subject whose last decision left a card.
+    it has none open. Read only for a live subject whose last decision left a card. `renew_margin`:
+    how long before that the subject is decided again — `RENEW_MARGIN` for a decision,
+    `QUESTION_RENEW_MARGIN` for a question, whose re-run renews it.
     """
     if stored is None:
         return GateVerdict(False, NEW)
@@ -72,7 +81,7 @@ def should_skip(stored: StoredFingerprint | None, fingerprint: str, *, live: boo
             return GateVerdict(False, NOT_STANDING)
         if standing_expires_at.tzinfo is None:
             standing_expires_at = standing_expires_at.replace(tzinfo=timezone.utc)
-        if standing_expires_at <= eval_time + RENEW_MARGIN:
+        if standing_expires_at <= eval_time + renew_margin:
             return GateVerdict(False, EXPIRING)
         return GateVerdict(True, UNCHANGED)
     if stored.outcome in (DEFERRED, SUPPRESSED):

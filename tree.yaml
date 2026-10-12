@@ -7769,6 +7769,19 @@ yc2_w27_s13:
                       artifact: "genios_engine/contracts/claim_check.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_claim_check_contract.py"
                       depends_on: [M35.C1.L-contract.V0.U01]
+                    - id: M35.C1.L-contract.V0.U04
+                      what: >
+                        A misshapen move field drops its line, not the review (crosscheck X15, `06` D59):
+                        a `rests_on` ref that names no fact of the review, beside the facts it does name,
+                        is named by `validate` (`unknown_evidence`, never `ungrounded_move`) and dropped by
+                        the check on its own `rests_on` line — the move stands on the facts it names; an
+                        `answers` that is no `loop:` id the dossier printed (a mail, a promise, a
+                        calculator) drops the `answers` line `unknown_evidence`, as an unprinted ask already
+                        did, instead of refusing the review STRUCTURAL. A move resting on NO fact of the
+                        review is still refused whole (§8.4.1).
+                      artifact: "genios_engine/contracts/expert_review.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_misshapen_move_field_drops_its_line.py tests/reason/expert/test_the_review_contract.py"
+                      depends_on: [M35.C1.L-contract.V0.U01, M35.C2.L-logic.V1.U02]
                 - level: 1
                   units:
                     - id: M35.C1.L-contract.V1.U03
@@ -7807,6 +7820,20 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/dossier.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_dossier_lines.py tests/reason/expert/test_the_dossier.py"
                       depends_on: []
+                    - id: M35.C2.L-logic.V0.U13
+                      what: >
+                        The connector is named as the person (fix-first, crosscheck `03` X07):
+                        `dossier.connector_of` (read by `people_of`) names a connector at an address by the
+                        name its own mail in the file signs (the latest), else by the address's own words
+                        (`pankaj@saka.vc` → "Pankaj", `pankaj.mehta@saka.vc` → "Pankaj Mehta") — never by its
+                        domain's label, which named Pankaj "saka"; a connector known only by its company's
+                        domain keeps that domain's label. So `verify`'s own `matches` (verify unedited) catches
+                        "Send Pankaj the short deck to forward to Marco", to "Pankaj Mehta", as the connector:
+                        the draft never goes to whoever made the introduction. The graph's node name is not
+                        read (the name the connector's mail signs is the one the graph took it from).
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_connector_is_named_as_the_person.py tests/reason/expert/test_the_dossier_lines.py tests/reason/expert/test_verify_people.py"
+                      depends_on: [M35.C2.L-logic.V0.U01, M35.C2.L-logic.V1.U02]
                 - level: 1
                   units:
                     - id: M35.C2.L-logic.V1.U02
@@ -7828,6 +7855,124 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify.py tests/reason/expert/test_verify_claims.py tests/reason/expert/test_verify_numbers.py tests/reason/expert/test_verify_people.py tests/reason/expert/test_an_answered_ask_is_not_raised_again.py"
                       depends_on: [M35.C1.L-contract.V0.U02, M35.C2.L-logic.V0.U01, M35.C2.L-logic.V0.U08]
+                    - id: M35.C2.L-logic.V1.U09
+                      what: >
+                        A quote grounds nothing until it is matched (crosscheck X01, X17, X18): every given
+                        quote is matched against the worded lines of the items its fact cites; one they do
+                        not hold, or one on an item whose words are not shown (a `num:`, `loop:`, `sit:` id,
+                        an older touch past `TOUCHES_WHOLE`), is dropped `misquoted` — on its own `quote:<n>`
+                        line when its fact needs no quote — and kept out of the fact's own lines, the
+                        headline and situation corpus and `CardWords.quotes`. Matching folds a hyphen
+                        ("follow-up" = "follow up", "e-mail" = "email") and a comma grouping digits ("1,400"
+                        = "1400"); a quote holds at least two words that carry anything (`FUNCTION_WORDS`
+                        aside: "a call" proves nothing); a decisive fact's numbers come from its quote, its
+                        mail's head and the readings it cites, never another sentence of the mail. Its
+                        names stay on its items' lines (measured: holding them to the quote alone would drop
+                        23 of the golden set's 118 authored quotes over a sender's company in the
+                        signature).
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_quotes.py tests/reason/expert/test_verify_claims.py"
+                      depends_on: [M35.C2.L-logic.V1.U02]
+                    - id: M35.C2.L-logic.V1.U16
+                      what: >
+                        A decisive claim on words nobody was shown is unquoted (crosscheck X22): a fact the
+                        move rests on that cites no mail whose words are shown, but a mail whose words the
+                        dossier does not print (an older touch, one memory holds no words for), needs a
+                        quote it cannot have — dropped `unquoted`, naming the event; a meeting with no words
+                        likewise when the claim reports what was said there (a verb of saying, no negation
+                        before it). What such an event shows is its own line: a claim about the meeting
+                        itself ("a call is booked for the 25th", "memory holds no words for it") stands on
+                        it — as the golden set's authored answers rest on it (F07, F28, F29, F54: holding
+                        every decisive fact on a wordless event would drop six of them, F28 a passing
+                        must-detect).
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_unquoted.py tests/reason/expert/test_verify_quotes.py"
+                      depends_on: [M35.C2.L-logic.V1.U09]
+                    - id: M35.C2.L-logic.V1.U10
+                      what: >
+                        A number is its value with its unit (crosscheck X02, X45): a text's figures are read
+                        as what they are (`verify.figures_in`) — printed dates and times (the item head
+                        `2026-08-11 09:20 UTC`, "10 Aug", "14:30", "the 11th") are taken out first and held
+                        to the dates and times its lines print, never read as counts; a `num:` id grounds
+                        only its own clause's value (`value_of`), never a sibling calculator printed on the
+                        same line; a value carries its unit or magnitude and currency (days ≠ weeks, lakh ≠
+                        crore, M ≠ K, %, ₹ ≠ $) and needs the same on its lines — a bare count needs none;
+                        a calculator corrects only within its unit, and never a date. Indian digit grouping
+                        `12,50,000` is one number (`contracts/expert_review.number_tokens`, every STEP-12
+                        reading kept). Measured on the golden set's 95 captured checks: none moves.
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_figures.py tests/reason/expert/test_verify_numbers.py tests/reason/expert/test_the_review_contract.py"
+                      depends_on: [M35.C2.L-logic.V1.U09]
+                    - id: M35.C2.L-logic.V1.U11
+                      what: >
+                        A correction rewrites only the sentence that restates the fact (crosscheck X08): a
+                        number a calculator corrected in a fact (`verify.Correction`: its value, unit and
+                        currency — a bare count, the word after it) is swapped into a card text only where
+                        that text writes the same figure as a value — never inside a date, a time or a code,
+                        "9:20", "9 Aug", "Q2" (a code is read whole) — in a sentence that repeats two of the
+                        fact's words (`RESTATES_WORDS`; months and function words aside). "9 slides", "a
+                        call at 9:20" and "within 9 days" in a sentence about something else are left as
+                        written and held to their own lines.
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_corrections.py tests/reason/expert/test_verify_numbers.py"
+                      depends_on: [M35.C2.L-logic.V1.U10]
+                    - id: M35.C2.L-logic.V1.U12
+                      what: >
+                        A name is on its own lines, as a whole word (crosscheck X09, X16, X35, X50): a
+                        fact's names are grounded on its own lines (cited items, matched quote) and our
+                        names — never the file head (a first-touch month grounds nothing) nor every person
+                        on the file; beside them the counterparty (the file is about them), a person of the
+                        file the cited items name (their whole name as the file knows it), and — measured,
+                        holding readings to their own lines moves 15 of the 95 captured checks, 11 to held —
+                        for a fact citing no mail (an ask, a calculator, a situation, a booking, whose line
+                        names nobody) the one person the file has beside its counterparty. Every name, in a
+                        fact or a card text, matches as a whole word or as how a domain on its lines begins
+                        ("Larkspur" for `larkspurvc.test`, at most `LABEL_TAIL` letters after it; never "Avi"
+                        in `altavia`) — inside verify, `platform/grounding`'s shared rule unchanged; an
+                        earned word is ordinary only where it opens a sentence ("copy Block on it" names a
+                        company); `speaks_of_you` also notes the founder's first name. The golden set's 95
+                        captured checks: none moves.
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_names.py tests/reason/expert/test_verify_claims.py tests/reason/expert/test_verify_people.py"
+                      depends_on: [M35.C2.L-logic.V1.U09]
+                    - id: M35.C2.L-logic.V1.U14
+                      what: >
+                        The recipient is checked with or without a draft, and the draft stands on the move's
+                        ground (crosscheck X20, X23): a move goes to its `to` — or, none given, the first
+                        person its headline names (one of our names or an address, the connector, a person
+                        of the file; a capitalised whole word) — and a move to us is held, a move to the
+                        connector on a file that is not the connector's own becomes the review's alternative
+                        or is held, draft or none. The draft is grounded on the move's corpus (its facts'
+                        items and quotes, the file's head and people) and on what the brief says of US
+                        (`verify.about_us`: the company, its address, its goals — the founder's own words
+                        about their company), never on the rest of the dossier (another line of work in
+                        motion, the what-if numbers). The golden set's 95 captured checks: none moves (the
+                        brief's own lines are what two authored drafts rest on, "AI", "Private Limited").
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_recipient.py tests/reason/expert/test_verify_people.py"
+                      depends_on: [M35.C2.L-logic.V1.U12]
+                    - id: M35.C2.L-logic.V1.U15
+                      what: >
+                        An answered ask drops its move, not the file (crosscheck X14, X21): the ask a move
+                        answers is the one it names (`answers`) or, naming none, the one open ask waiting on
+                        us that the facts it rests on cite; it is answered by our reply in its thread after
+                        it was asked (any ask), or — a meeting ask — by a meeting on the file after it that
+                        was BOOKED after it (the calendar's first version, `Touch.booked_at`) and is WITH
+                        THE ASKER (set up by them, or by us on the asker's own file); a meeting never
+                        answers a question. A move whose ask is answered is suppressed when nothing else
+                        waits on us; when another unanswered ask still does, the file keeps its card —
+                        held, asking the next move on that ask. What the check reads (asks with thread and
+                        asker, our mails, meetings with booking and organiser) rides in
+                        `dossier.FilePeople`; nothing is printed, the dossier is unchanged. A fact citing an
+                        ask WITH the event that answered it (a stale open loop) is no ground the move
+                        answers it on. Golden F45 (must-detect) linked its move to exactly such a stale ask
+                        (`answers`), which would suppress its one card: the authored link is removed (the
+                        move answers no owed ask); with the ideal reader serving the authored answers the
+                        board is unchanged (must-detect 22 pass / 11 fail / 12 not expressible,
+                        must-abstain 13/13).
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s13_u15 .venv/bin/python -m pytest -q tests/reason/expert/test_verify_answered.py tests/reason/expert/test_an_answered_ask_is_not_raised_again.py tests/context/test_a_meeting_says_when_it_was_booked.py tests/context/test_a_file_has_a_timeline.py"
+                      depends_on: [M35.C2.L-logic.V1.U14]
         - id: M35.C3
           name: Where the check runs
           layers:
@@ -7891,6 +8036,25 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/decide.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_review_decides.py tests/reason/expert/test_a_covered_file_decides_once.py tests/reason/expert/test_replay_asks_no_model.py"
                       depends_on: [M35.C3.L-integration.V1.U01]
+                    - id: M35.C3.L-integration.V2.U05
+                      what: >
+                        Every text the founder reads is the checked one (crosscheck X03, X19, X24, X10's
+                        `said` part): `scenarios.do_nothing` is checked as a card text (its names and
+                        numbers on the standing facts' lines, "you" noted) and carried in `CardWords`
+                        (`contracts/claim_check`), and `decide` gives the card its cost of ignoring from it
+                        (withheld: a fixed sentence saying so, never the raw words); the proposed kind's
+                        reason is carried as checked (`CardWords.kind`) and the brief's pending line is
+                        written from it (`kind_proposal.propose_kind(why=…)`, none when withheld);
+                        `sources_of` / `card_builder.CARD_SENTENCES` give done_when and do_nothing an
+                        inference entry and the draft its ground (the ids and quotes its move stands on),
+                        not only its recipient — 5 of 5 sentences; the recipient questions name the move in
+                        its CHECKED words; a held `because` is one closed founder-facing phrase
+                        (`claim_check.HELD_BECAUSE`), the check's detail staying in its verdicts. The 22
+                        third-person authored do_nothing texts (F*.json `model.expert`) and the prompt's two
+                        scenario hints speak to "you" (prompt bytes move: the lead re-records).
+                      artifact: "genios_engine/reason/expert/decide.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s13_u05 .venv/bin/python -m pytest -q tests/reason/expert/test_every_text_the_founder_reads_is_checked.py tests/reason/expert/test_the_brief_line_is_the_checked_reason.py tests/reason/expert/test_a_review_may_propose_a_kind.py tests/deliver/test_an_expert_card_is_checked.py tests/reason/expert/test_the_review_decides.py"
+                      depends_on: [M35.C3.L-integration.V2.U02, M35.C3.L-interface.V3.U03, M35.C2.L-logic.V1.U15]
         - id: M35.C4
           name: The golden set
           layers:
@@ -8066,6 +8230,22 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/dossier.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_your_answer_feeds_the_file.py tests/reason/expert/test_the_dossier.py tests/reason/expert/test_the_file_fingerprint.py"
                       depends_on: [M36.C2.L-data.V1.U02]
+                    - id: M36.C2.L-data.V2.U12
+                      what: >
+                        Your answer is your words, and an answered question is not asked again (fix-first,
+                        crosscheck `03` X05, X25): the dossier's answer line prints only your words and the
+                        question's id — never the question's text, which for a held review IS the claim its
+                        check dropped, and never its date (a line of its own, which no fact can cite) — so a
+                        fact citing `answer:` is grounded on your words alone ("No. He asked for the roadmap"
+                        never grounds "Send Neel the deck", pinned on `verify.check_review`, verify unedited);
+                        `founder_questions.ask` returns the ANSWERED question when the file already answered
+                        the same words under any fingerprint, retiring an open other one (`NO_LONGER_ASKED`) —
+                        a question retired unanswered may still be asked again; and `asks.ask_the_founder`
+                        files no signal for it (`answered_already`), the file's open question signal expired
+                        and its card REPLACED.
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_your_answer_feeds_the_file.py tests/context/test_a_file_asks_one_question.py tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_answering_a_question.py"
+                      depends_on: [M36.C2.L-data.V2.U07, M36.C2.L-integration.V2.U03, M36.C2.L-interface.V4.U06]
             - layer: logic
               levels:
                 - level: 1
@@ -8078,6 +8258,27 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/authority.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_a_question_is_authorised.py"
                       depends_on: [M36.C2.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M36.C2.L-logic.V2.U10
+                      what: >
+                        The question is asked in checked words (fix-first, crosscheck `03` X06, X10's asks
+                        part, X34): `asks.question_words` reads only what the check let stand — a held file
+                        asks the check's own question; a find-out file asks YOU a real question: its review's
+                        first unknown when it is a question or reads as one ("Whether…" → "Can you tell us
+                        whether…?") and every name and number in it is in the checked words (the card's words,
+                        the quotes the check matched, the facts it kept — never a dropped fact or a withheld
+                        reading), else its checked move framed "Can you tell us: …?" — never the raw
+                        `frames.primary`, never an instruction. Its `why` is one closed, founder-facing phrase
+                        (`asks.WHYS`, read off the check's verdicts), never the check's internal reason; the
+                        question card's situation is the checked reading or that closed phrase, and a question
+                        filed with any other `why` is carded with the closed one. (Added 12 Oct, found by the
+                        golden lane: STEP-11's founder-card clause.) The question card says what answering does
+                        and what waiting costs — `success_signal` and `do_nothing_consequence`, closed phrases
+                        of ours, never model prose — and has no play window (`outcome_window_days` None).
+                      artifact: "genios_engine/reason/expert/asks.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_a_question_card.py"
+                      depends_on: [M36.C2.L-integration.V2.U03, M36.C2.L-interface.V3.U05, M36.C2.L-data.V2.U12]
             - layer: interface
               levels:
                 - level: 2
@@ -8127,6 +8328,23 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/domain_shadow.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/capture/test_the_needs_queue_gets_worked.py"
                       depends_on: [M36.C2.L-data.V1.U02, M35.C3.L-integration.V2.U02]
+                    - id: M36.C2.L-integration.V2.U11
+                      what: >
+                        A question lives while it is asked (fix-first, crosscheck `03` X04, X26, X27, X41): an
+                        asking run is remembered STANDING on its question's window (never SUPPRESSED, which the
+                        change gate skipped forever) and the file is decided again in the day before that window
+                        closes (`change_gate.QUESTION_RENEW_MARGIN`) — a re-run re-binds the question, and the
+                        re-bind moves its card's `expires_at` with its authority in the same statement; a question
+                        card that lapsed while its question is still open and asked is revived — the same card,
+                        queued (`deliver/store`'s upsert, the question builder's only); a file that leaves
+                        coverage retires its question (`LEFT_COVERAGE`) and its card (`06` D60, the file's one
+                        card) — but a pass whose expert covered nothing takes no question down; on a day the cap
+                        is spent the question is still asked or the old decision cleared (the cap applies after
+                        the outcome, to a decision that would be shown); and a re-bound question card reads the
+                        review asking it now (the run's trigger). Proven at NOW+169 h with the gate intact.
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_a_question_card.py tests/reason/test_change_gate.py"
+                      depends_on: [M36.C2.L-integration.V2.U03, M36.C2.L-interface.V3.U05, M36.C2.L-logic.V2.U10]
                 - level: 6
                   units:
                     - id: M36.C2.L-integration.V6.U08

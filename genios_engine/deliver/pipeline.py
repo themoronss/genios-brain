@@ -206,7 +206,7 @@ _QUESTIONS_WITHOUT_CARDS = (
     "s.reasoning_run_id, s.reasoning_decision_hash, s.authority_expires_at, s.output_lane, s.lane_reason, "
     "s.capability_id, s.capability_version, s.capability_review_state, "
     "question_asked.question_id, question_asked.question, question_asked.why, "
-    "question_asked.fingerprint "
+    "question_asked.fingerprint, question_rr.trigger_ref as asking_review "
     "from signals s " + QUESTION_SIGNAL_JOINS +
     # The same rule as the decision selector's join: an expired card reopens the door, and so does a
     # stale one nobody has touched; any other card is the file's answer already.
@@ -219,6 +219,11 @@ _QUESTIONS_WITHOUT_CARDS = (
 #: What a question card offers: your answer, or later. A question is not an instruction, so there is
 #: nothing to run and nothing to do yourself; `wrong` waits for STEP-16, which learns from it.
 QUESTION_ACTIONS = ("answer", "snooze")
+#: What answering does, and what waiting on the question costs (STEP-11's founder-card clause: every founder
+#: card says both). OURS, CLOSED (STEP-13 M36.C2.L-logic.V2.U10): a question carries no playbook outcome and
+#: no model prose may stand in for one — and no play window either, so its `outcome_window_days` stays None.
+QUESTION_SUCCESS_SIGNAL = "you answered: your words are kept on the file and its next review reads them"
+QUESTION_DO_NOTHING = "nothing on this file moves until you answer"
 
 
 def _open_questions_without_cards(graph, org_id: str, evaluation_time: datetime | None = None) -> list[dict]:
@@ -232,10 +237,16 @@ def _open_questions_without_cards(graph, org_id: str, evaluation_time: datetime 
 def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[dict, dict]:
     """The card a held file asks its question on, and its copy — every word the question's or the file's
     checked review's own; nothing written for it. Its situation is the expert's reading of the file as the
-    check let it stand, labelled an inference; with none, why the file asks."""
+    check let it stand, labelled an inference; with none, why the file asks.
+
+    ⛔ IN CHECKED WORDS, OR OURS (STEP-13 M36.C2.L-logic.V2.U10, `03` X06, X10). Why the file asks is one of
+    `reason/expert/asks.WHYS` — closed, founder-facing — and so is the situation when the check withheld the
+    reading: never the raw reading, never the check's internal reason. A question filed before its words
+    were checked carries some other `why`; it is carded with the closed phrase, never with that prose."""
     from datetime import timedelta
 
     from genios_engine.reason.expert import store as reviews
+    from genios_engine.reason.expert.asks import WHY_FIND_OUT, WHYS
     from genios_engine.reason.expert.decide import SITUATION_IS
 
     from .bands import band
@@ -248,11 +259,15 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
     # WHOEVER THE FILE'S DECISION WOULD REACH: the same routing, so a question goes where its answer is.
     assignee, rule = resolve_assignee(graph, org_id, facts, {**(attrs or {}), **_group_memberships(
         graph, org_id, node)})
+    # THE REVIEW ASKING IT NOW (STEP-13 M36.C2.L-integration.V2.U11, `03` X41): the same words asked by a later
+    # review re-bind the question to the run asking now, whose trigger is that review (`reason/expert/decide`);
+    # the question's own fingerprint is the review that asked it FIRST.
     with graph.engine.connect() as c:
-        review = reviews.read_review(c, org_id, node, str(row["fingerprint"]))
+        review = reviews.read_review(c, org_id, node, str(row.get("asking_review") or row["fingerprint"]))
     checked = review.checked if review is not None else None
     reading = checked.words.situation if checked is not None and checked.words.situation else None
-    why = [{"sentence": "headline", "question": row["question"], "because": row["why"],
+    because = row["why"] if row["why"] in WHYS else WHY_FIND_OUT
+    why = [{"sentence": "headline", "question": row["question"], "because": because,
             "source": "expert_check"}]
     if reading:
         why.append({"sentence": "situation", "inference": SITUATION_IS, "source": "expert_check"})
@@ -266,13 +281,15 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
         "domain": row.get("pack_id") or "founder_office",
         # A QUESTION IS A REQUEST FOR ONE PRECISE ANSWER — `review`, the level that asks and never instructs
         # (`contracts/outcomes`: ASK_DECISION), and says why it does not instruct.
-        "level": "review", "abstained_because": row["why"],
+        "level": "review", "abstained_because": because,
         "urgency_band": band(score, None), "assignee": assignee, "resolved_rule": rule, "co_recipients": [],
         "score": score, "score_block": {"S": score},
         "business_subject": name, "unresolved_item": row["question"],
         "capability_key": row.get("capability_id"), "capability_version": row.get("capability_version"),
         "capability_review_state": str(row.get("capability_review_state") or "unreviewed"),
         "output_lane": lane.lane, "lane_reason": lane.reason,
+        "success_signal": QUESTION_SUCCESS_SIGNAL, "do_nothing_consequence": QUESTION_DO_NOTHING,
+        "outcome_window_days": None,
         "actions": [{"type": "answer", "label": "Answer", "question_id": row["question_id"]},
                     {"type": "snooze", "options": ["4h", "tomorrow_09", "3d", "custom"]}],
         "why": why,
@@ -284,7 +301,7 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
                                 "reasoning_decision_hash": row["reasoning_decision_hash"],
                                 "config_snapshot_id": row.get("config_snapshot_id"),
                                 "question_id": row["question_id"]}}
-    copy = {"headline": row["question"], "situation": reading or row["why"], "artifact": {},
+    copy = {"headline": row["question"], "situation": reading or because, "artifact": {},
             "render_mode": "question"}
     return card, copy
 

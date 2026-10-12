@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_122, (
+    assert r["statements"] == 3_129, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -468,6 +468,10 @@ def test_the_statement_count_did_NOT_move():
     # the lanes that called this week and not in the window (`_silent_lanes`) — one SELECT, a literal.
     # ⛔ MERGED 12 Oct: STEP-18's moves below were measured on its own branch, 3,079 → 3,080 → 3,078 →
     # 3,077 → 3,078 → 3,079 (net 0); on top of 3,113 the merge re-measures 3,113.
+    # ⛔ MOVED 3,113 → 3,120 at the integration (12 Oct; STEP-17's census refused `context/runner.ROAD_COLUMNS`,
+    # a column list that began with `select` and had no FROM): the constant is now the columns alone and
+    # each reader writes `"select " + ROAD_COLUMNS + …`, so this counter renders the drain's and the
+    # rebuild's two statements again (STEP-18 B12 had left them Name-led, rendered by nothing): +7.
     # ⛔ MOVED 3,079 → 3,080 by yc2_w27_s18/M48.C1.L-data.V0.U02 (STEP-18 B4, a review object waits for
     # review): one UPDATE, `feedback/publisher._rest_for_review` — the weekly road's review object rests at
     # `human_review`. A literal at its own call.
@@ -486,6 +490,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,078 → 3,079 by yc2_w27_s18/M48.C3.L-data.V0.U11 (STEP-18 B20's second half): one
     # DELETE, `scripts/gmail_l1.py` — the gmail events' `message_fingerprints`, before the events. A
     # literal in its statement list.
+    # ⛔ MERGED 12 Oct: STEP-15's moves below were measured on its own branch (3,113 → 3,122, net +9); merged with
+    # the integration line at 6650b1c4 (its own 3,113 → 3,120, the STEP-13 fixes) they make 3,129 — re-measured on
+    # the merge, not added by hand.
     # ⛔ MOVED 3,113 → 3,114 by yc2_w27_s15/M44.C2.L-data.V0.U01 (STEP-15, every file's current judgment):
     # one SELECT, `reason/expert/store._CURRENT` — each file's newest standing review and the change gate's
     # record of its decision, for the whole tenant in one read. A literal.

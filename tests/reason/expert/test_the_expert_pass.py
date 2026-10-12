@@ -22,7 +22,6 @@ from sqlalchemy import text
 
 from genios_engine.context.llm.client import LLMResult
 from genios_engine.reason import runner
-from genios_engine.reason.expert import dossier as D
 from genios_engine.reason.expert import store as R
 from genios_engine.reason.expert import sweep as P
 
@@ -500,10 +499,11 @@ def test_the_pass_checks_a_draft_against_whom_the_files_mail_shows(world):
     class _Drafting(_Expert):
         def call(self, prompt, *, max_tokens=400):
             answer = super().call(prompt, max_tokens=max_tokens)
-            fact = answer.parsed["facts"][0]
-            # The move rests on its one fact, so the fact quotes the words the dossier printed for it.
-            fact["quote"] = next((dl.words for dl in D.lines_by_id(prompt).get(fact["evidence"][0], ())
-                                  if dl.words), None)
+            # ⛔ RESTATED by M35.C2.L-logic.V1.U16 (crosscheck X22): the move rests on its one fact, and this
+            # world's mails print no words — a fact resting a move on a mail nobody was shown the words of
+            # is `unquoted` now. It rests on what the dossier does show: the file's quiet, a reading.
+            answer.parsed["facts"] = [{"claim": "the file has gone quiet since our last mail",
+                                       "evidence": ["num:days_quiet"]}]
             answer.parsed.update(mode="act", draft="Hi Kunal, thanks for the note.",
                                  next_move={"who": "you", "what": "Write back", "for_whom": "Kunal",
                                             "by_when": None, "to": KUNAL, "rests_on": ["fact:1"]})

@@ -322,7 +322,7 @@
       "actual": "The connector stepped out at once; the file holds no word from Simon or from Arjun since the introduction."
      },
      "scenarios": {
-      "do_nothing": "The introduction stays an open line; if neither side writes it goes cold and is closed with that reason, at no cost unless Arjun wanted the conversation.",
+      "do_nothing": "The introduction stays an open line; if neither side writes it goes cold and is closed with that reason, at no cost unless you wanted the conversation.",
       "act": "A short note from Arjun straight to Simon would start the conversation, worth it only if Arjun wants what Lumenpath's partnerships lead can offer.",
       "best": "Simon writes, or Arjun chooses to, and a first call is set with a partnerships lead whose interest serves a goal in the brief.",
       "worst": "Arjun wanted this introduction, nobody moves, and it lapses unnoticed.",
@@ -475,7 +475,7 @@
       "actual": "The connector stepped out at once; the file holds no word from Omar or from Arjun since the introduction."
      },
      "scenarios": {
-      "do_nothing": "The introduction stays an open line; if neither side writes it goes cold and is closed with that reason, at no cost unless Arjun wanted the conversation.",
+      "do_nothing": "The introduction stays an open line; if neither side writes it goes cold and is closed with that reason, at no cost unless you wanted the conversation.",
       "act": "A short note from Arjun straight to Omar would start the conversation, worth it only if Arjun wants a founder-to-founder exchange with him.",
       "best": "Omar writes, or Arjun chooses to, and a useful founder-to-founder conversation starts.",
       "worst": "Arjun wanted this introduction, nobody moves, and it lapses unnoticed.",

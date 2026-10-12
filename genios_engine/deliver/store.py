@@ -282,7 +282,16 @@ class CardStore:
                 # A refresh re-reads the signal, so a re-routed decision must be able to
                 # move its card between lanes. Carrying the old lane forward would show a
                 # founder a conclusion the engine has since withdrawn.
-                "output_lane=excluded.output_lane, lane_reason=excluded.lane_reason "
+                "output_lane=excluded.output_lane, lane_reason=excluded.lane_reason, "
+                # ⛔ A QUESTION CARD IS REVIVED (STEP-13 M36.C2.L-integration.V2.U11, `03` X04) — its builder's
+                # and only its: re-proven above on its question's authority, so its question is still open and
+                # asked — re-bound to the run asking it now — and a card that lapsed under it comes back, the
+                # same card, queued, its window the authority's. A decision card is rewritten in place and stays
+                # where its user's side of the row left it, as above.
+                "state=case when cards.state = 'expired' and excluded.builder_version = :question_builder "
+                "then 'queued' else cards.state end, "
+                "expires_at=case when cards.state = 'expired' and excluded.builder_version = :question_builder "
+                "then excluded.expires_at else cards.expires_at end "
                 # Same rule as `_REPLACEABLE`, spelled against `cards.` — an expired card is
                 # replaced whatever wrote it, a live one only when a newer builder has something
                 # better to say. The claim and the write must agree or a claimed signal silently
@@ -326,6 +335,7 @@ class CardStore:
                  "lane": card.get("output_lane") or "unrouted",
                  "lreason": card.get("lane_reason"),
                  "refreshable": list(self.REFRESHABLE_STATES),
+                 "question_builder": QUESTION_CARD_BUILDER,
                  "exp": card["expires_at"]}).first()
             if inserted is None:
                 # The DO UPDATE's WHERE refused: a card exists and is NOT stale — either the

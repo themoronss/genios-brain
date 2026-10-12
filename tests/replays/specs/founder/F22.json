@@ -210,7 +210,7 @@
       "actual": "The cell's only mail is a call for seed grant applications closing on the thirtieth; no receipt or status of an application from Nimbus Labs is in the file."
      },
      "scenarios": {
-      "do_nothing": "The thirtieth passes; if Nimbus Labs could have applied, the grant is lost on a date rather than on merit.",
+      "do_nothing": "The thirtieth passes; if you could have applied, the grant is lost on a date rather than on merit.",
       "act": "One check settles it: if Nimbus Labs is incubated on campus, the application is worked back from the thirtieth; if not, the file closes.",
       "best": "Nimbus Labs may apply, and the application goes in with its receipt before the thirtieth.",
       "worst": "Hours spent on an application the rules do not admit — or a grant the company could have had, lost to an unread notice.",

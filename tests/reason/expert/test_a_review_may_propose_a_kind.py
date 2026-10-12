@@ -50,9 +50,12 @@ def engine():
         c.execute(text("delete from orgs where id = :o"), {"o": ORG})
 
 
-def _propose(engine, *, review=REVIEW, file=UNKINDED, at=AT):
+def _propose(engine, *, review=REVIEW, file=UNKINDED, at=AT, why="unset"):
+    # ⛔ RESTATED by M35.C3.L-integration.V2.U05 (crosscheck X19): the line is written from the reason AS
+    # CHECKED (`CardWords.kind`), passed in — here the review's own, as a check that let it stand would.
+    why = (review.proposed_kind.why if review.proposed_kind is not None else None) if why == "unset" else why
     with engine.begin() as c:
-        return K.propose_kind(c, org_id=ORG, review=review, file=file, fingerprint="ffp-1", at=at)
+        return K.propose_kind(c, org_id=ORG, review=review, file=file, fingerprint="ffp-1", at=at, why=why)
 
 
 def _pending(engine):
@@ -92,7 +95,8 @@ def test_proposing_again_after_the_quiet_window_writes_a_new_line(engine):
         store.reject(c, org_id=ORG, line_id=first.line_id, decided_by="founder", at=AT)
     later = AT + timedelta(days=store.REJECTED_QUIET_DAYS + 1)
     with engine.begin() as c:
-        again = K.propose_kind(c, org_id=ORG, review=REVIEW, file=UNKINDED, fingerprint="ffp-2", at=later)
+        again = K.propose_kind(c, org_id=ORG, review=REVIEW, file=UNKINDED, fingerprint="ffp-2", at=later,
+                               why=REVIEW.proposed_kind.why)
     assert again.line_id and again.line_id != first.line_id
 
 
@@ -150,3 +154,12 @@ def test_a_long_reason_is_cut_at_a_word_to_the_brief_line():
     assert words[:-1].endswith(("again", "fund", "wrote", "the", "because"))
     assert K.words_for("investor", "Larkspur Ventures", "short") == (
         "Investor · Larkspur Ventures — proposed by the expert: short")
+
+
+def test_the_line_is_written_from_the_checked_reason_and_none_without_one(engine):
+    """M35.C3.L-integration.V2.U05 (X19): a corrected reason is the one the brief's line says; a reason the
+    check withheld proposes nothing."""
+    corrected = _propose(engine, why="the fund wrote again after 6 days")
+    [line] = _pending(engine)
+    assert corrected.line_id and "after 6 days" in line["text"]
+    assert _propose(engine, file=UNKINDED, why=None).line_id is None

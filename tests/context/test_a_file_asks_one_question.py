@@ -133,3 +133,40 @@ def test_a_later_review_asking_the_same_words_is_its_own_question(engine):
         later = _ask(c, fingerprint="ffp-9", at=AT + timedelta(days=3))
         assert Q.by_id(c, ORG, first.question_id).state == Q.RETIRED
     assert later.question_id != first.question_id and later.state == Q.OPEN
+
+
+def test_a_question_the_file_already_answered_is_not_asked_again_under_any_review(engine):
+    """⛔ `03` X25 (M36.C2.L-data.V2.U12): the answer moves the file's fingerprint, so the review that asks the
+    same words again is a NEW review — and a dedupe keyed on the asking review's fingerprint never fired. The
+    file answered these words: the answer is returned, whatever review asks them now."""
+    with engine.begin() as c:
+        asked = _ask(c)
+        Q.answer(c, org_id=ORG, question_id=asked.question_id, words="No — the roadmap.", by="u",
+                 at=AT + timedelta(hours=1))
+        again = _ask(c, fingerprint="ffp-after-your-answer", at=AT + timedelta(days=1))
+        assert Q.open_question(c, ORG, FILE) is None
+        count = c.execute(text("select count(*) from founder_questions where org_id = :o"), {"o": ORG}).scalar()
+    assert (again.question_id, again.state, again.answer) == (asked.question_id, Q.ANSWERED, "No — the roadmap.")
+    assert count == 1, "never a second row for words already answered"
+
+
+def test_an_answered_question_asked_again_retires_the_open_one_the_review_no_longer_asks(engine):
+    with engine.begin() as c:
+        asked = _ask(c)
+        Q.answer(c, org_id=ORG, question_id=asked.question_id, words="Yes.", by="u", at=AT + timedelta(hours=1))
+        other = _ask(c, "Who at the fund decides?", fingerprint="ffp-2", at=AT + timedelta(days=1))
+        again = _ask(c, fingerprint="ffp-3", at=AT + timedelta(days=2))
+        retired = Q.by_id(c, ORG, other.question_id)
+        assert Q.open_question(c, ORG, FILE) is None
+    assert (again.question_id, again.state) == (asked.question_id, Q.ANSWERED)
+    assert (retired.state, retired.retired_why, retired.retired_at) == (
+        Q.RETIRED, Q.NO_LONGER_ASKED, AT + timedelta(days=2))
+
+
+def test_only_this_files_answer_counts(engine):
+    """Another file answering the same words answers nothing here."""
+    with engine.begin() as c:
+        elsewhere = _ask(c, file="node_kitepath")
+        Q.answer(c, org_id=ORG, question_id=elsewhere.question_id, words="Yes.", by="u", at=AT)
+        here = _ask(c, fingerprint="ffp-2", at=AT + timedelta(hours=1))
+    assert here.state == Q.OPEN and here.file_id == FILE

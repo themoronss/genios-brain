@@ -209,7 +209,7 @@
       "actual": "The pitch went out on the eleventh of August; nothing has come back yet, and the week the founder named is still running."
      },
      "scenarios": {
-      "do_nothing": "Ira reads the pitch in their own time; if Northwind is interested, an answer comes within the week the founder named.",
+      "do_nothing": "Ira reads the pitch in their own time; if Northwind is interested, an answer comes within the week you named.",
       "act": "Chasing before the week is out would press an investor who has not yet had a fair chance to look.",
       "best": "Ira looks at the deck and asks for a call.",
       "worst": "The pitch goes unread and the week passes in silence.",

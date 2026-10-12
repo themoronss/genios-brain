@@ -20,7 +20,6 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
 
 from genios_engine.api.intelligence_routes import _FB_WRONG_REASONS
 from genios_engine.contracts.learning_attribution import ALL_REASONS, LEGACY_REASONS
@@ -30,9 +29,9 @@ ORG = "org_s17_feedback_reasons"
 AT = datetime(2026, 10, 12, 9, 0, tzinfo=timezone.utc)
 ROUTE = "genios_engine/api/intelligence_routes.py"
 
-#: ⛔ STEP-18 B3 — migration 0034's CHECK admits three reasons; the route accepts eleven.
-B3 = ("STEP-18 B3: migration 0034's CHECK on card_feedback_verdicts admits only not_relevant, "
-      "wrong_facts and bad_timing; STEP-16 §3.1 widens it to every reason the route accepts")
+#: STEP-18 B3 (`yc2_w27_s18` M48.C1.L-contract.V0.U01, migration 0210): 0034's CHECK admitted three reasons
+#: while the route accepts eleven; 0210 admits every reason the route accepts, so each must now be stored —
+#: the eight strict xfails that held B3 came off at the merge (crosscheck S17X-B2 / S18-X01).
 
 
 def _route_statement(prefix: str) -> str:
@@ -74,8 +73,7 @@ def _card(c, reason: str) -> str:
 
 
 def _params():
-    return [pytest.param(r, id=r, marks=() if r in LEGACY_REASONS else pytest.mark.xfail(
-        strict=True, raises=IntegrityError, reason=B3)) for r in sorted(ALL_REASONS)]
+    return [pytest.param(r, id=r) for r in sorted(ALL_REASONS)]
 
 
 @pytest.mark.parametrize("reason", _params())

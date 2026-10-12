@@ -652,8 +652,10 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
     on the LIVE lane — file → its review's fingerprint — whatever the decision said, or standing from an
     earlier pass (M33.C1.L-integration.V2.U12): what a pack rule may stand down for (`reason/runner`)."""
     decided = decided if decided is not None else {}
+    from genios_engine.context.founder_questions import LEFT_COVERAGE
     from genios_engine.platform.canonical import semantic_hash
-    from genios_engine.reason.change_gate import should_skip
+    from genios_engine.reason import fingerprint_store as fs
+    from genios_engine.reason.change_gate import QUESTION_RENEW_MARGIN, RENEW_MARGIN, should_skip
     from genios_engine.reason.expert import asks
     from genios_engine.reason.expert import decide as expert
 
@@ -696,8 +698,17 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             if gate.ready:
                 standing = (gate.expiries.get((pack["pack_id"], pack["version"], rule_id, file_id))
                             if pack else None)
+                margin = RENEW_MARGIN
+                if standing is None and pack:
+                    # STEP-13 (M36.C2.L-integration.V2.U11, `03` X04): a file that asks stands on its
+                    # question's window, and is decided again in the day before it closes — the re-run
+                    # re-binds the question and moves its window (`reason/change_gate`).
+                    standing = gate.expiries.get((pack["pack_id"], pack["version"], asks.QUESTION_RULE,
+                                                  file_id))
+                    margin = QUESTION_RENEW_MARGIN if standing is not None else RENEW_MARGIN
                 verdict = should_skip(gate.stored.get(key), fingerprint, live=live_file,
-                                      standing_expires_at=standing, eval_time=eval_time)
+                                      standing_expires_at=standing, eval_time=eval_time,
+                                      renew_margin=margin)
                 if verdict.skip:
                     counts["expert_unchanged"] += 1
                     gate.skipped.add(key)
@@ -718,11 +729,15 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
                 counts["expert_shadow"] += 1
                 gate.record(key, fingerprint, "shadow", run_id)
                 continue
-            # THE SAME DAILY CAP, the same pool (see the situation loop above).
+            # THE SAME DAILY CAP, the same pool (see the situation loop above) — on what it is for: a
+            # decision that would be SHOWN. ⛔ AFTER THE OUTCOME (STEP-13 M36.C2.L-integration.V2.U11, `03`
+            # X27): a review that names no move now emits nothing — it asks its question, or clears the
+            # file's old decision — and a spent cap stopped both, leaving the old card in the question's
+            # place. A question is no publication.
             if remaining[0] is None:
                 remaining[0] = _daily_allowance(store, org_id, eval_time, pack)
                 counts["budget_allowance"] = remaining[0]
-            if remaining[0] <= 0:
+            if remaining[0] <= 0 and execution.decision.outcome not in _NO_MOVE:
                 counts["budget_exhausted"] += 1
                 gate.record(key, fingerprint, "indeterminate", run_id)
                 continue
@@ -736,6 +751,7 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             counts[f"expert_{outcome}"] += 1
             # STEP-13 (M36.C2.L-integration.V2.U03): a file decided INSUFFICIENT on its answer asks the
             # founder its one question; any other decision retires the question it asked before.
+            asked = None
             if execution.decision.outcome == DecisionOutcome.INSUFFICIENT_CONTEXT:
                 asked = asks.ask_the_founder(
                     store, org_id=org_id, file_id=file_id, review=review, decision=execution.decision,
@@ -749,7 +765,10 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
                 cleared = _clear_file_decision(store, org_id, file_id, review.fingerprint, rule_id)
                 if cleared:
                     counts["expert_cleared"] += cleared
-            gate.record(key, fingerprint, _gate_outcome(execution, outcome), run_id)
+            # An asking run leaves its question standing (U11, `03` X04): remembered as STANDING on the
+            # question's window, never SUPPRESSED — which the gate skips forever, the question lapsing.
+            gate.record(key, fingerprint, fs.STANDING if asked in asks.ASKING else
+                        _gate_outcome(execution, outcome), run_id)
             if outcome == "emitted":
                 remaining[0] -= 1
             counts["covered_signals_replaced"] += _retire_stood_down(
@@ -758,6 +777,22 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             counts["expert_error"] += 1
             logger.exception("domain-compiler: the covered file %s could not be decided org=%s",
                              file_id, org_id)
+    # STEP-13 (M36.C2.L-integration.V2.U11, `03` X26; `06` D60 — the file's one card): a file that asked
+    # and is no longer covered is decided on its situations again, so its question retires and its card
+    # with it — never left beside the cards its situations now make. Read off the gate's own load of the
+    # open signals (no read of its own). ⛔ ONLY WHEN THE EXPERT COVERED SOMETHING: a pass whose expert
+    # failed, or did not run, covers nothing (`reason/runner`) — that is our failure, not the file's, and
+    # it takes no question down (the `if not reviews` above); its window ends it.
+    if gate.ready:
+        for file_id in sorted({key[3] for key in gate.expiries if key[2] == asks.QUESTION_RULE} - set(reviews)):
+            try:
+                if asks.retire_question(store, org_id=org_id, file_id=file_id, eval_time=eval_time,
+                                        why=LEFT_COVERAGE):
+                    counts["expert_question_uncovered"] += 1
+            except Exception:      # noqa: BLE001 — one file's question is never the pass
+                counts["expert_error"] += 1
+                logger.exception("domain-compiler: the uncovered file %s kept its question org=%s",
+                                 file_id, org_id)
 
 
 # =================================================================================================
