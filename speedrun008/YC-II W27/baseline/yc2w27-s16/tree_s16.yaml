@@ -75,17 +75,21 @@ yc2_w27_s16:
                 - level: 0
                   units:
                     - id: M46.C2.L-contract.V0.U01
+                      status: built   # ⛔ 12 Oct, by STEP-18 — `0210` (`61d679ed`), not by this step; see below
                       what: >
-                        `0240_feedback_reasons`: the CHECK on `card_feedback_verdicts` and on
-                        `card_feedback_revisions` admits the eleven reasons of
-                        `contracts/learning_attribution.ALL_REASONS` (three today — measured 12 Oct on a
-                        fresh scratch database: 3 stored, 8 refused). Additive: the image before it writes
-                        three and still runs; rolled back cleanly. STEP-17's eight strict expected failures
-                        (`tests/feedback/test_every_feedback_reason_is_stored_pg.py`, `yc2_w27_s17`
-                        M40.C2.L-integration.V0.U01) lose their markers here, and
-                        `context/correlation_history`'s comment that already says eleven becomes true.
-                      artifact: "migrations/0240_feedback_reasons.sql"
-                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/feedback/test_every_feedback_reason_is_stored_pg.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                        ⛔ BUILT BY `0210_every_wrong_reason_is_kept` (`yc2_w27_s18`
+                        M48.C1.L-contract.V0.U01, `61d679ed`; the STEP-17/18 crosscheck S18-X10) — do
+                        NOT write `0240`. 0210 drops 0034's unnamed reason CHECK on
+                        `card_feedback_verdicts` and `card_feedback_revisions` and adds one NAMED CHECK
+                        per table (`*_reason_vocabulary`) holding the eleven reasons of
+                        `contracts/learning_attribution.ALL_REASONS`; a second migration on these
+                        constraints would be a second writer of one rule, and a drop-by-text could remove
+                        0210's. STEP-17's eight strict expected failures came off at the integration
+                        (`1dcfe511`). M46.C2 keeps its one-writer unit (U02) and the dashboard's door (U03). As planned, before 0210:
+                        `0240_feedback_reasons` — the CHECK admits the eleven (three on 12 Oct: 3 stored,
+                        8 refused); additive; STEP-17's markers off here.
+                      artifact: "migrations/0210_every_wrong_reason_is_kept.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s16_verify .venv/bin/python -m pytest -q tests/feedback/test_every_feedback_reason_is_stored_pg.py tests/feedback/test_every_wrong_reason_is_kept.py tests/platform/test_the_code_can_always_be_rolled_back.py"
                       depends_on: []
             - layer: data
               levels:
