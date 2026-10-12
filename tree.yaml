@@ -1,7 +1,7 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 # ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
 #
-# This file holds SEVENTEEN programme blocks, and three of them number their milestones from M8:
+# This file holds EIGHTEEN programme blocks, and three of them number their milestones from M8:
 #
 #   <root>                            M1  … M7    retired in place
 #   persona_brain_and_layer_repair    M8  … M12
@@ -31,6 +31,7 @@
 #                                                   2026-10-09; M31 after the review); past every other block again
 #   yc2_w27_s12                       M32, M33    ← STEP-12, the expert pass (go 10 Oct, after M34)
 #   yc2_w27_align                     M34         ← before STEP-12, all aligned (built 10 Oct)
+#   yc2_w27_s13                       M35, M36    ← STEP-13, check every claim (planned 12 Oct)
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -7699,3 +7700,411 @@ yc2_w27_align:
                       artifact: "speedrun008/YC-II W27/baseline/yc2w27-align-qa/qa_record.txt"
                       verify: "bash \"speedrun008/YC-II W27/baseline/yc2w27-align-qa/run_align.sh\""
                       depends_on: [M34.C1.L-integration.V2.U06, M34.C2.L-integration.V2.U05, M34.C2.L-integration.V1.U11, M34.C2.L-logic.V1.U02, M34.C2.L-logic.V0.U06, M34.C2.L-logic.V0.U07, M34.C2.L-interface.V1.U08, M34.C2.L-data.V0.U09, M34.C2.L-logic.V0.U10, M34.C2.L-interface.V1.U04, M34.C4.L-contract.V0.U01, M34.C2.L-logic.V0.U12]
+yc2_w27_s13:
+  status: approved_in_progress   # 2026-10-12: Rohit's "13 pe chalte hain aur complete karte hain"; D59-D61 at their recommended answers until he says otherwise
+  source: >
+    speedrun008/YC-II W27/STEP-13 §1-§6, re-checked claim by claim against speedrun008 @ c97155cd
+    (STEP-13 §8) by a read-only worker and by hand, and measured on the golden set's 94 authored expert
+    answers (66 files, 58 cases). STEP-12 already refuses a review whose facts cite nothing the dossier
+    shows or state a number it does not hold — but it refuses the WHOLE review, the file then falls back
+    to the per-situation path; nothing checks that a cited mail says what a fact claims, that a number is
+    the calculator's, whom a draft goes to, or whether the ask is already answered; an expert card skips
+    the card validators; a find-out review is held in Investigation and no card asks it (F01, F52); five
+    signal writers leave the lane NULL; the needs queue has no reader.
+  vision: >
+    Nothing the expert says reaches the founder unchecked. Each claim a move rests on quotes the mail it
+    cites; each number is the calculator's; a draft goes to someone on the file — never to us, never to a
+    connector standing in for the person it introduced; an ask already answered is not raised again. A
+    claim that fails is dropped, not the review; a move that loses its ground becomes one question to the
+    founder, on its own card, and the answer goes back into the file. Every decision carries its lane.
+  order_note: >
+    M35 first: the contract (C1.U01, U02), the pure checks (C2.U01-U05) — then the prompt (C3.U04) and the
+    authored answers (C4.U01) BEFORE anything is wired, re-recorded once (C4.U02), so the golden lane stays
+    green while each check is wired (C1.U03, C3.U01, C2.U06, C3.U02, C3.U03); M35's acceptance (C4.U03)
+    last. M36.C1 (the lanes) any time after; M36.C2 after M35.C4.U02; M36.C3 last. Every unit: its own
+    tests, a mutation run, the repo's guards; the step: a crosscheck and the whole QA tier, awake.
+  milestones:
+    - id: M35
+      name: Nothing the expert says reaches you unchecked (STEP-13 §3.1-§3.4)
+      ships: >
+        On the golden set every authored review stands the check whole, and each mutation of a served
+        answer — a decisive fact unquoted or misquoted, a name its lines do not hold, a wrong number, a
+        draft to us, a draft to a connector, an answered ask — is caught on its case and recorded with its
+        reason, and the card it would have made does not appear; must-detect and must-abstain do not move
+        backwards; every expert card sentence carries its source or an inference label.
+      categories:
+        - id: M35.C1
+          name: What the check reads and writes
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M35.C1.L-contract.V0.U01
+                      what: >
+                        The review contract, second version: a fact may carry `quote` — the words of the
+                        mail it cites, as the dossier prints them; the next move names `rests_on` (the facts
+                        it rests on, by number — a stored review without it rests on every fact), `to`
+                        (whom its draft goes to — required with a draft) and `answers` (the ask it answers,
+                        a `loop:` id, optional). `validate` refuses a move resting on no fact
+                        (`ungrounded_move`) and an `answers` that is no ask, or one the
+                        dossier never showed (`unknown_evidence`) — the prompt's map of rules names the
+                        new refusal's rule (its text unchanged until M35.C3.L-interface.V0.U04). A v1
+                        answer reads, validates and is stored as before.
+                      artifact: "genios_engine/contracts/expert_review.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_review_contract.py"
+                      depends_on: []
+                    - id: M35.C1.L-contract.V0.U02
+                      what: >
+                        The check's verdicts: each checked line kept, corrected (from, to, by which
+                        calculator) or dropped for a closed reason — uncited, unknown_evidence, unquoted,
+                        misquoted, unsupported, wrong_number, ungrounded, no_recipient,
+                        recipient_not_on_file, recipient_is_us, recipient_is_connector,
+                        not_ours_to_answer, answered, nothing_stands — a wording note (speaks_of_you), and
+                        the checked review: what stands, the verdicts, the move's fate (shown, held,
+                        suppressed, refused) and the question a held move asks. Frozen, pure; read back
+                        as stored.
+                      artifact: "genios_engine/contracts/claim_check.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_claim_check_contract.py"
+                      depends_on: [M35.C1.L-contract.V0.U01]
+                - level: 1
+                  units:
+                    - id: M35.C1.L-contract.V1.U03
+                      what: >
+                        `0200_expert_review_checks`: a review's check stored beside it — the checked review,
+                        the check's version, when it ran; the decision reads a review only through its
+                        check, and a review checked under an older version is checked again. Wiped by
+                        `/reset` with its review; rolled back cleanly.
+                      artifact: "migrations/0200_expert_review_checks.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_expert_reviews_table.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: [M35.C1.L-contract.V0.U02]
+        - id: M35.C2
+          name: The checks
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M35.C2.L-logic.V0.U08
+                      what: >
+                        The invention rule is the engine's, not the card's: V-02's `invention_ok` and the
+                        readers it rests on move, byte for byte, from `deliver/render` to the cross-cutting
+                        `platform/grounding` (reasoning may not import delivery — `tests/test_layer_topology`),
+                        with `corpus_of` for plain lines; `deliver/render` re-exports the same objects
+                        under the names its callers import. One rule, one place (the executive layer's own
+                        copy is declared, `03` F180).
+                      artifact: "genios_engine/platform/grounding.py"
+                      verify: ".venv/bin/python -m pytest -q tests/platform/test_the_invention_rule_is_one.py tests/test_delivery.py tests/test_render_compiled_copy.py tests/deliver/test_a_name_with_an_accent_is_not_an_invention.py tests/deliver/test_claims_are_extracted.py tests/test_layer_topology.py"
+                      depends_on: []
+                    - id: M35.C2.L-logic.V0.U01
+                      what: >
+                        The dossier's lines by id — every id the dossier prints, the lines that print it
+                        (a touch's words with it) — and the file's people as the dossier names them, with
+                        which of them are us (STEP-04's identities) and which are connectors (STEP-09's
+                        roles) marked. Pure over the dossier's text and parts.
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_dossier_lines.py tests/reason/expert/test_the_dossier.py"
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M35.C2.L-logic.V1.U02
+                      what: >
+                        The check (`reason/expert/verify.check_review`), one pass in one order. Claims
+                        (§3.1): a fact cites ids the dossier printed; a fact the move rests on that cites a
+                        mail whose words are shown QUOTES them, and they are there; its names are on its
+                        lines by the card validator's own rule — else it drops, the review stays (`06`
+                        D59); an inference or pattern stands while a ground stands. Numbers (§3.2, RULE
+                        08): corrected to the one value the one cited calculator prints, or dropped; the
+                        card's words corrected by the same map, else withheld — a headline that fails holds
+                        the move. People (§3.3): a draft goes to someone the file's mail shows — never us
+                        (held), never the connector that introduced the counterparty (the review's
+                        alternative, else held); a move answers an ask that waits on us; "the founder" on a
+                        card is noted (F178). Not already done (§3.4): a meeting ask the file has a meeting
+                        for since is answered — suppressed, with that meeting; a closed ask cannot be named
+                        (the dossier shows open asks only). The fate: refused when no fact stands, held
+                        with ONE question, suppressed, or shown. Pure.
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify.py tests/reason/expert/test_verify_claims.py tests/reason/expert/test_verify_numbers.py tests/reason/expert/test_verify_people.py tests/reason/expert/test_an_answered_ask_is_not_raised_again.py"
+                      depends_on: [M35.C1.L-contract.V0.U02, M35.C2.L-logic.V0.U01, M35.C2.L-logic.V0.U08]
+        - id: M35.C3
+          name: Where the check runs
+          layers:
+            - layer: interface
+              levels:
+                - level: 0
+                  units:
+                    - id: M35.C3.L-interface.V0.U04
+                      what: >
+                        The checklist asks for what the check reads: a quote for each fact a move rests on,
+                        `rests_on`, `to` with a draft, `answers` when the move answers an ask — and speaks to
+                        the founder as "you", never naming the company or the founder as a party (F178).
+                        The prompt version moves, so each file is reviewed once more (its fingerprint names
+                        the prompt, D48 as built).
+                      artifact: "genios_engine/reason/expert/prompt.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_checklist_prompt.py"
+                      depends_on: [M35.C1.L-contract.V0.U01]
+                - level: 3
+                  units:
+                    - id: M35.C3.L-interface.V3.U03
+                      what: >
+                        An expert card says where each of its sentences came from: built only from the
+                        checked words (`expert.check`), its `why` leads with one line per sentence — the
+                        headline with the mails its move rests on and their quotes, the situation labelled
+                        the expert's reading (an inference), the draft with whom it goes to (STEP-13 §5:
+                        100%). The names were checked against the dossier by the card validator's own rule
+                        (M35.C2); delivery, which never holds the dossier, does not judge them again
+                        against less (STEP-13 §8.3 N1).
+                      artifact: "genios_engine/deliver/card_builder.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_an_expert_card_is_checked.py"
+                      depends_on: [M35.C3.L-integration.V2.U02]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M35.C3.L-integration.V1.U01
+                      what: >
+                        The review run checks before it stores: a valid review is checked against its own
+                        dossier and stored with its check (0200); a review none of whose facts stands is
+                        refused `nothing_stands`, a record like any refusal.
+                      artifact: "genios_engine/reason/expert/review.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_one_review.py tests/reason/expert/test_the_review_store.py"
+                      depends_on: [M35.C2.L-logic.V1.U02, M35.C1.L-contract.V1.U03, M35.C4.L-integration.V0.U02]   # the last: the build order (order_note) — the golden lane stays green
+                - level: 2
+                  units:
+                    - id: M35.C3.L-integration.V2.U02
+                      what: >
+                        The decision reads the checked review: what stands decides — a held move is find
+                        out (Investigation, its question), an answered ask suppresses (no action,
+                        `answered:<event>`, the file's decision cleared); the card speaks only the checked
+                        words; the check travels in the context snapshot, so a replay decides the same.
+                      artifact: "genios_engine/reason/expert/decide.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_review_decides.py tests/reason/expert/test_a_covered_file_decides_once.py tests/reason/expert/test_replay_asks_no_model.py"
+                      depends_on: [M35.C3.L-integration.V1.U01]
+        - id: M35.C4
+          name: The golden set
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M35.C4.L-data.V0.U01
+                      what: >
+                        The authored answers carry what the check reads (`06` D49): a quote for each fact a
+                        move rests on that cites a mail, `rests_on`, `to` with every draft, `answers` where
+                        the move answers an ask, and every card text speaking to you — over all 94 answers,
+                        each standing the check whole against the dossier it is served.
+                      artifact: "tests/replays/specs/founder/expert_files.json"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_every_changed_file_has_an_expert_answer.py"
+                      depends_on: [M35.C2.L-logic.V1.U02, M35.C3.L-interface.V0.U04]
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M35.C4.L-integration.V0.U02
+                      what: >
+                        Re-recorded once, under the new prompt and answers — the sweep, the citations, the
+                        first-connect door, the resync — and the board restated in its five places
+                        (blocked_on, MOVED_AFTER, the Atlas specs, the controls, `03` §F.1).
+                      artifact: "tests/replays/specs/founder/cassettes"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M35.C4.L-data.V0.U01]
+                - level: 1
+                  units:
+                    - id: M35.C4.L-integration.V1.U03
+                      what: >
+                        M35's acceptance: every claim is checked, on the golden set — each authored review
+                        stands whole; each mutation of a served answer is caught on its own case with its
+                        reason and no card shows it; with the check switched off, each mutation reaches a
+                        card (the negative control).
+                      artifact: "tests/replays/test_every_claim_is_checked.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_every_claim_is_checked.py"
+                      depends_on: [M35.C3.L-interface.V3.U03, M35.C3.L-integration.V2.U02]
+        - id: M35.C5
+          name: A claim says what made it
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M35.C5.L-data.V0.U01
+                      what: >
+                        A resolution claim names the brief it was made under (`03` F83): its
+                        `prompt_version` is the judge's with the brief's version, as `l2_model_runs`
+                        already records it.
+                      artifact: "genios_engine/context/lifecycle/resolution.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/lifecycle/test_a_claim_names_its_brief.py"
+                      depends_on: []
+    - id: M36
+      name: Every decision has a lane, and what is missing is asked (STEP-13 §3.5, §3.6)
+      ships: >
+        No new signal has a NULL lane, from any writer; a held file asks you ONE question on its own card
+        and your answer lands in the file, which is reviewed again; the needs queue has its reader; on the
+        golden set F01 and F52 get their question card, every other case holds, and the Atlas replays the
+        check now expresses move from blocked to passing.
+      categories:
+        - id: M36.C1
+          name: The lane on every writer
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M36.C1.L-logic.V0.U01
+                      what: >
+                        The LLM decider routes its lane: its decision carries `output_lane` and
+                        `lane_reason` from `reason/output_lane.route` over its outcome and confidence
+                        (`03` F10).
+                      artifact: "genios_engine/reason/llm_decision_maker.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_the_llm_decider_routes_its_lane.py"
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M36.C1.L-data.V0.U02
+                      what: "The legacy rule lane writes the lane on its signal (`reason/runner._emit`)."
+                      artifact: "genios_engine/reason/runner.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_every_writer_routes_its_lane.py -k legacy"
+                      depends_on: []
+                    - id: M36.C1.L-data.V0.U03
+                      what: "The native publication writes the lane on its signal (`reason/publication.publish_native_signal`)."
+                      artifact: "genios_engine/reason/publication.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_every_writer_routes_its_lane.py -k native"
+                      depends_on: []
+                    - id: M36.C1.L-data.V0.U04
+                      what: "The deal-health composer writes the lane on its signal (`reason/composer.compose_deal_health`)."
+                      artifact: "genios_engine/reason/composer.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_every_writer_routes_its_lane.py -k deal_health"
+                      depends_on: []
+                    - id: M36.C1.L-data.V0.U05
+                      what: "The team emitter writes the lane on its signal (`reason/team/emit.py`)."
+                      artifact: "genios_engine/reason/team/emit.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_every_writer_routes_its_lane.py -k team"
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M36.C1.L-integration.V1.U06
+                      what: >
+                        No signal without a lane: a guard reads every statement that inserts into
+                        `signals` in the engine and requires `output_lane` and `lane_reason` in each; a
+                        health check counts signals written since the deploy with a NULL lane (0 to pass).
+                      artifact: "tests/test_every_signal_has_a_lane.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/test_every_signal_has_a_lane.py"
+                      depends_on: [M36.C1.L-logic.V0.U01, M36.C1.L-data.V0.U02, M36.C1.L-data.V0.U03, M36.C1.L-data.V0.U04, M36.C1.L-data.V0.U05]
+        - id: M36.C2
+          name: What is missing is asked
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M36.C2.L-contract.V0.U01
+                      what: >
+                        `0201_founder_questions`: the one question a file asks the founder — the file, the
+                        review that asks it (fingerprint, the audited run), the question, why it matters, when
+                        asked; answered (the words, by whom, when) or retired (why) — one open question per
+                        file. Not `evidence_needs`: a question to the founder is answered by the founder, and
+                        the needs executor closes for good a need no source can fetch. Wiped by `/reset`;
+                        rolled back cleanly.
+                      artifact: "migrations/0201_founder_questions.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_the_founder_questions_table.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M36.C2.L-data.V1.U02
+                      what: >
+                        The questions, kept (`context/founder_questions`): ask (a file's new question retires
+                        its old one), answer (once, the founder's words), retire (the review no longer asks),
+                        the file's open question, the answers a file holds.
+                      artifact: "genios_engine/context/founder_questions.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_a_file_asks_one_question.py"
+                      depends_on: [M36.C2.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M36.C2.L-data.V2.U07
+                      what: >
+                        Your answer feeds the file: the dossier shows what you told us (`[answer:<id>]`, your
+                        words, when) and the fingerprint names it — so the next sweep reviews the file with
+                        your answer in front of the expert. A file with no answer is printed and fingerprinted
+                        byte for byte as before.
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_your_answer_feeds_the_file.py tests/reason/expert/test_the_dossier.py tests/reason/expert/test_the_file_fingerprint.py"
+                      depends_on: [M36.C2.L-data.V1.U02]
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M36.C2.L-logic.V1.U04
+                      what: >
+                        A question is authorised as a question (`reason/authority`): an audited expert run
+                        that ended insufficient on its answer, unexpired, its question open on the file —
+                        never through the decision's fragment, which needs a selected move.
+                      artifact: "genios_engine/reason/authority.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_a_question_is_authorised.py"
+                      depends_on: [M36.C2.L-contract.V0.U01]
+            - layer: interface
+              levels:
+                - level: 3
+                  units:
+                    - id: M36.C2.L-interface.V3.U05
+                      what: >
+                        The question card: the pipeline builds a card from each open question signal, by its
+                        own authority — the question as its headline, why it matters as its situation, the
+                        lane `investigation`, an Answer action; the file's one card (a new question or a
+                        decision retires it).
+                      artifact: "genios_engine/deliver/pipeline.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_a_question_card.py"
+                      depends_on: [M36.C2.L-logic.V1.U04, M36.C2.L-integration.V2.U03]
+                - level: 4
+                  units:
+                    - id: M36.C2.L-interface.V4.U06
+                      what: >
+                        Your answer: the card's Answer action (`POST /cards/{id}/action`, `answer` with your
+                        words) answers the file's question, once, and resolves its card.
+                      artifact: "genios_engine/deliver/actions.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_answering_a_question.py"
+                      depends_on: [M36.C2.L-interface.V3.U05]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M36.C2.L-integration.V2.U03
+                      what: >
+                        The sweep asks: a covered file decided insufficient on its answer — its review held,
+                        or finding out — files its question and its question signal (lane `investigation`);
+                        any other decision retires the file's open question. And the needs queue has its
+                        reader at last (`capture/acquire/need_executor.run_needs`, the composition root
+                        joining the two halves): with no connector wired it refuses, counted, and closes
+                        nothing (STEP-13 §1 claim 5).
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/capture/test_the_needs_queue_gets_worked.py"
+                      depends_on: [M36.C2.L-data.V1.U02, M35.C3.L-integration.V2.U02]
+                - level: 6
+                  units:
+                    - id: M36.C2.L-integration.V6.U08
+                      what: >
+                        On the golden set: F01 and F52 get their question card (must-detect up by two), every
+                        other find-out file asks once and stays within its case's cards (F07, F21, F22, F54
+                        measured), every must-abstain case holds; the board restated.
+                      artifact: "tests/replays/test_a_held_file_asks_once.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M36.C2.L-data.V2.U07, M36.C2.L-interface.V4.U06, M35.C4.L-integration.V1.U03]
+        - id: M36.C3
+          name: The replays tighten
+          layers:
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M36.C3.L-integration.V0.U01
+                      what: >
+                        The Atlas replays 01, 02, 04, 05, 07 (STEP-13 §6): each mutation the check or the
+                        question now expresses moves from blocked to possible today, and passes — replay
+                        04's closes the exact request, never every loop with that person.
+                      artifact: "tests/replays/atlas_expression.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_golden_replays.py"
+                      depends_on: [M36.C2.L-integration.V6.U08]
