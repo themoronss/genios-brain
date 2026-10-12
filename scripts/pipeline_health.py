@@ -856,6 +856,40 @@ def check_the_expert_says_why_and_stays_in_budget(conn, org: str) -> Check:
         detail=[f"{r.status} × {int(r.n)}: {r.reason}" for r in reasons])
 
 
+def check_every_new_signal_has_a_lane(conn, org: str) -> Check:
+    """⛔ STEP-13 (`yc2_w27_s13` M36.C1.L-integration.V1.U06, `03` F10 and F186). Five writers of
+    `signals` left `output_lane` NULL — the LLM decider's decision, the legacy rule lane (LIVE), the
+    native publication, the deal-health composer and the team emitter — so a card could not say
+    whether it was a thing to do, to find out, to rule on or to watch, and every one of them passed
+    its tests. Each now writes the lane and its reason. On the last day:
+
+      * the signals written, and those of them with no lane, by the rule that wrote them.
+
+    It FAILS while one signal of the last day has no lane — run a day after the deploy (`08`), when
+    every signal of the window was written by the routed writers. No signal in the window is nothing
+    to judge, and passes saying so.
+    """
+    name = "every new signal has a lane"
+    total = _scalar(conn, "select count(*) from signals where org_id = :o "
+                          "and created_at > now() - interval '24 hours'", o=org)
+    if not total:
+        return Check(name=name, ok=True, measured="no signal written in the last 24 hours",
+                     expected="skipped — nothing to judge", fix="")
+    rows = conn.execute(sql(
+        "select coalesce(pack_id, '-') as pack, rule_id, count(*) as n from signals "
+        " where org_id = :o and created_at > now() - interval '24 hours' and output_lane is null "
+        " group by 1, 2 order by count(*) desc, 1, 2 limit 10"), {"o": org}).fetchall()
+    unrouted = sum(int(r.n) for r in rows)
+    return Check(
+        name=name, ok=unrouted == 0,
+        measured=f"{unrouted} of {total} signals written in 24 h have no lane",
+        expected="0 — every writer routes its lane (reason/output_lane), and says why",
+        fix="a writer inserts into signals without output_lane and lane_reason: "
+            "tests/test_every_signal_has_a_lane.py names the five there are — find the sixth, or the "
+            "one whose decision was never routed (reason/decision_maker, reason/llm_decision_maker)",
+        detail=[f"{r.pack} {r.rule_id} × {int(r.n)}" for r in rows])
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -874,6 +908,7 @@ CHECKS = (
     check_every_piece_of_work_has_one_file,
     check_every_normal_says_its_n,
     check_the_expert_says_why_and_stays_in_budget,
+    check_every_new_signal_has_a_lane,
 )
 
 
