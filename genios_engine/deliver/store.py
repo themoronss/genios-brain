@@ -663,6 +663,35 @@ class CardStore:
                            actor=actor_id, detail={"tag": matched_tag}, conn=c)
         return {"ok": True, "surfaced": True, "card_id": card_id}
 
+    #: STEP-14 (M42.C3.L-interface.V3.U04): the open cards a door is asked about — a file's card, or an expert or
+    #: question card from before 0220 that names no file — and each door's own predicate, as the queue reads it.
+    _FILE_CARDS = (" k.org_id=:o and k.state = any(:open) and s.status='open' and k.expires_at > :authority_time "
+                   "and (k.file_id is not null or k.capability_key = 'expert.file_review' "
+                   "     or k.builder_version = :question_builder) ")
+
+    def doors(self, org_id: str, *, eval_time=None) -> dict[str, tuple[str, ...]]:
+        """Which door each open file card passes now (STEP-14 M42.C3.L-interface.V3.U04): `decision` (the
+        decision's authority) or `question` (STEP-13's third door, keyed on the question builder's stamp a version
+        writes) — the doors the queue, the card detail and the actions read for a file's card (a P4 card, the
+        second door's, is no file's). Exactly one each: none and the card vanishes, two and it shows twice."""
+        params = {"o": org_id, "open": list(card_lifecycle.OPEN_STATES), "authority_time": authority_time(eval_time),
+                  "question_builder": QUESTION_CARD_BUILDER}
+        found = {
+            "decision": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id "
+                         "and s.org_id=k.org_id " + AUTHORITATIVE_SIGNAL_JOINS + " where" + self._FILE_CARDS +
+                         "and " + AUTHORITATIVE_SIGNAL_PREDICATE),
+            "question": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id "
+                         "and s.org_id=k.org_id " + QUESTION_SIGNAL_JOINS + " where" + self._FILE_CARDS +
+                         "and " + QUESTION_CARD_SQL),
+        }
+        with self._engine.connect() as c:
+            every = [r.card_id for r in c.execute(text(
+                "select k.card_id from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+                "where" + self._FILE_CARDS), params)]
+            passed = {door: {r.card_id for r in c.execute(text(sql), params)} for door, sql in found.items()}
+        return {card: tuple(door for door in ("decision", "question") if card in passed[door])
+                for card in every}
+
     def queue(self, org_id: str, *, assignee: str | None = None, admin: bool = False,
               states=("queued", "surfaced", "snoozed", "claimed"),
               record_impressions: bool = True, viewer: str | None = None,
