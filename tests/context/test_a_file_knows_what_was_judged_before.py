@@ -151,7 +151,8 @@ def test_each_part_is_read_by_the_file_newest_first(engine):
     assert {(h.field, h.value) for h in got.history} == {
         ("derived.history.times_seen@founder_office", 2),
         ("derived.history.prior_outcome@founder_office", "succeeded")}
-    assert got.cut == {"reviews": 0, "cards": 0, "events": 0, "situations": 0, "history": 0}
+    assert got.cut == {"reviews": 0, "cards": 0, "events": 0, "situations": 0, "history": 0,
+                       "versions": 0}  # ⛔ RESTATED by yc2_w27_s14/M42.C2.L-data.V2.U03: a card's versions are a part
 
 
 def test_every_part_is_bounded_and_the_cut_is_counted(engine):
@@ -198,7 +199,8 @@ def test_a_file_with_no_past_is_empty_not_absent(engine):
     with engine.connect() as c:
         got = J.judgments_for(c, ORG, FILE, people=_people())
     assert (got.reviews, got.cards, got.situations, got.history) == ((), (), (), ())
-    assert got.cut == {"reviews": 0, "cards": 0, "events": 0, "situations": 0, "history": 0}
+    assert got.cut == {"reviews": 0, "cards": 0, "events": 0, "situations": 0, "history": 0,
+                       "versions": 0}  # ⛔ RESTATED by yc2_w27_s14/M42.C2.L-data.V2.U03: a card's versions are a part
     assert got.file_id == FILE
 
 
