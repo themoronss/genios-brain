@@ -939,7 +939,8 @@ class FeedbackBody(BaseModel):
     #: `not_relevant`, so `bad_timing` — the card was right and the MOMENT was wrong — was
     #: unsayable, and every timing complaint arrived as a quality complaint that counted against
     #: a correct rule. Optional, and absent still means `not_relevant`, so an older client's
-    #: bytes mean exactly what they meant before.
+    #: bytes mean exactly what they meant before. (The vocabulary is eleven since the card learned
+    #: to name a layer, and both ledgers keep all eleven since `migrations/0210` — STEP-18 B3.)
     reason: str | None = None
 
 
@@ -950,9 +951,12 @@ class FeedbackBody(BaseModel):
 _FB_CAUSE = {"thumbs_up": "do_it_myself", "edit": "do_it_myself",
              "thumbs_down": "wrong", "never_show": "wrong", "snooze": "snooze"}
 _FB_REASON = {"thumbs_down": "not_relevant", "never_show": "not_relevant"}
-#: The closed vocabulary, read off the delivery lane's own constant rather than respelled — the
-#: database CHECK and the card surface already agree on these three, and a fourth spelling here
-#: would be a value the ledger refuses discovered at INSERT time, inside a human's write.
+#: The closed vocabulary, read off the delivery lane's own constant rather than respelled — a
+#: spelling of its own here would be a value the ledger refuses discovered at INSERT time, inside a
+#: human's write. ⛔ CORRECTED 2026-10-12 (STEP-18 B3, `yc2_w27_s18` M48.C1.L-contract.V0.U01): this
+#: said the database CHECK and the card surface "agree on these three". The card offered eleven
+#: (`contracts/learning_attribution.ALL_REASONS`) while `0034`'s CHECK kept three, so eight of them
+#: were a 500 here; `migrations/0210` holds both ledgers to the eleven.
 _FB_WRONG_REASONS = WRONG_REASONS
 
 
