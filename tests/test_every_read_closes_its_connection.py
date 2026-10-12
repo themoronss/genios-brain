@@ -18,8 +18,6 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
 READS = frozenset({"execute", "scalar", "scalars", "exec_driver_sql"})
 
@@ -59,7 +57,5 @@ def test_name_thread_nodes_closes_its_read():
     assert "genios_engine/context/backfill.py" not in _sites()
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="M48.C2.L-data.V1.U10 closes reason/runner._bulk_load_situations (s18-F1)")
 def test_no_read_leaves_its_connection_open():
     assert _sites() == {}, "a connection opened inside an expression is never closed: use `with`"
