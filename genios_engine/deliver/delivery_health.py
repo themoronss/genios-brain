@@ -234,6 +234,17 @@ UNCUT_OVER: dict[str, tuple[int, str, str | None, str]] = {
 #: and undeclared; L4 learned that when `summary.build_summary` sat in `PULL_ONLY` after quietly
 #: acquiring a producer, and **one direction alone is half a guard.**
 UNREACHED: dict[str, tuple[str, str]] = {
+    "verdicts.binding_of": (
+        "⛔ BUILT AHEAD OF ITS TWO CALLERS, BY THE BUILD'S ORDER (`yc2_w27_s16` M46.C2.L-data.V1.U02). The one "
+        "writer of a verdict reads the card's own authority with it — a decision's, or a question's "
+        "(`reason/authority.QUESTION_SIGNAL_PREDICATE`) — for the dashboard's door (M46.C2.L-integration.V2.U03) "
+        "and a question card's *wrong* (M46.C3.L-integration.V4.U06), both in `deliver/actions.ingest_action`, "
+        "which STEP-14 edits first and this step after it merges. Until then the extension's door binds its "
+        "verdict by its own locking authority SELECT, and the dashboard's verdicts still reach `card_events` only "
+        "(`s16-F1`, open until U03).",
+        "MOVES WHEN M46.C2.L-integration.V2.U03 lands: `ingest_action` reads the card's binding before it acts "
+        "and records the verdict through `verdicts.record` — delete this entry in that commit"),
+
     "push.push_action_to_agents": (
         "⛔ CORRECTLY UNCALLED, AND THE DOCSTRING IS THE REASON: *'External actions go through the "
         "delegation protocol, never through a broadcast. This shim stays fail-closed for its old "
