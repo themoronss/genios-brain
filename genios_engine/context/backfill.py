@@ -677,17 +677,20 @@ def name_thread_nodes(store, org_id: str | None = None, *, limit: int = _NAME_BA
     thread is named by what it is for alone.
     """
     scope = "" if org_id is None else " and t.org_id = :org"
-    rows = store.engine.connect().execute(text(
-        "select t.org_id as org_id, t.node_id as node_id, t.canonical_key as canonical_key, "
-        "       t.display_name as display_name, "
-        "       (select f.value from graph_facts f "
-        "         where f.org_id = t.org_id and f.subject_node_id = t.node_id "
-        "           and f.field = 'thread.objective' and f.status = 'active' "
-        "           and f.valid_to is null limit 1) as objective "
-        "  from graph_nodes t "
-        " where t.node_type = 'thread' and t.valid_to is null"
-        f"{scope} order by t.node_id limit :limit"),
-        {"limit": int(limit), **({} if org_id is None else {"org": org_id})}).mappings().all()
+    # ⛔ `03` F65 (STEP-18, `yc2_w27_s18` M48.C2.L-data.V0.U09): this read opened its connection
+    # inside the expression — `store.engine.connect().execute(...)` — and never closed it.
+    with store.engine.connect() as conn:
+        rows = conn.execute(text(
+            "select t.org_id as org_id, t.node_id as node_id, t.canonical_key as canonical_key, "
+            "       t.display_name as display_name, "
+            "       (select f.value from graph_facts f "
+            "         where f.org_id = t.org_id and f.subject_node_id = t.node_id "
+            "           and f.field = 'thread.objective' and f.status = 'active' "
+            "           and f.valid_to is null limit 1) as objective "
+            "  from graph_nodes t "
+            " where t.node_type = 'thread' and t.valid_to is null"
+            f"{scope} order by t.node_id limit :limit"),
+            {"limit": int(limit), **({} if org_id is None else {"org": org_id})}).mappings().all()
     parties = _oldest_party_not_us(store, rows)
 
     renamed = 0
