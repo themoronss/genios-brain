@@ -66,9 +66,10 @@ except ModuleNotFoundError as _exc:
 async def lifespan(app: FastAPI):
     # ⛔ THE SHIPPED SECRET NEVER SERVES OUTSIDE DEV — asked first, before a migration or a worker
     # starts (STEP-18 B7, `yc2_w27_s18` M49.C3.L-integration.V1.U08). With the default
-    # `GENIOS_JWT_SECRET` anyone can sign a session, so a deployment that names its environment and
-    # carries no secret of its own refuses to boot, loudly, rather than serve. ⛔ Deploy precondition
-    # (Harsh, `08`): production's `GENIOS_JWT_SECRET` is set before this image ships.
+    # `GENIOS_JWT_SECRET` anyone can sign a session, so a deployment outside dev — one that names
+    # another environment, or (`06` D62) names none — that carries no secret of its own refuses to
+    # boot, loudly, rather than serve. ⛔ Deploy precondition (Harsh, `08`): production's
+    # `GENIOS_ENV` and `GENIOS_JWT_SECRET` are set before this image ships.
     refusal = insecure_boot(get_settings())
     if refusal:
         raise RuntimeError(f"refusing to boot: {refusal}")

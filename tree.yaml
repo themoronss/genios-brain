@@ -8868,6 +8868,22 @@ yc2_w27_s18:
                       artifact: "genios_engine/platform/config.py"
                       verify: ".venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py"
                       depends_on: []
+                - level: 1
+                  units:
+                    - id: M49.C3.L-contract.V1.U10
+                      what: >
+                        `06` D62 (Rohit, 12 Oct; crosscheck S18-X03) — U07's unset case closed. An
+                        UNSET `GENIOS_ENV` (`"env" not in model_fields_set`) is not dev
+                        (`config.is_dev_env`), as `platform/egress` always read it, so a production
+                        that never named its environment no longer boots on the public secret;
+                        `change-me-in-prod` (`.env.example`) is refused like the default
+                        (`PUBLIC_JWT_SECRETS`); one `DEV_ENVS` (dev, development, test, local) serves
+                        the boot and egress — egress gains `local`, a laptop's name the device routes
+                        already read as dev. The unset-env test re-pinned, with its negative control
+                        (an unset env with a secret of its own boots).
+                      artifact: "genios_engine/platform/config.py"
+                      verify: ".venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py tests/test_egress.py tests/test_migrate_read_only.py"
+                      depends_on: [M49.C3.L-contract.V0.U07]
             - layer: integration
               levels:
                 - level: 1
