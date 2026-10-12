@@ -15,6 +15,7 @@ from genios_engine.contracts.learning_attribution import (ALL_REASONS as _WRONG_
 from .router import co_recipients_for, resolve_assignee
 from .slots import _fval, compute_slots
 from genios_engine.platform.self_identity import SelfIdentity, names_us
+from genios_engine.reason.expert.decide import is_expert
 
 # E0 · Card Builder (§5.10). Compose the card.v1 draft deterministically from a signal + play +
 # template — NO LLM here (that is E1). Attaches band (E2), owner (E3), the evidence chain (≥2,
@@ -851,6 +852,27 @@ def _sentence_sources(signal: dict) -> list[dict]:
             for part in CARD_SENTENCES if isinstance(sources.get(part), dict)]
 
 
+#: Why an expert card does not instruct (STEP-14 M42.C3.L-logic.V0.U01) — its check's own grade, not a quote gate.
+EXPERT_HELD = "the file asks you one question before any move — answer it on the file's card"
+EXPERT_UNCHECKED = "no check of the expert's review stands behind this move"
+
+
+def _expert_grade(signal: dict) -> str | None:
+    """An expert card is graded BY ITS CHECK (STEP-14 `yc2_w27_s14` M42.C3.L-logic.V0.U01, s14-F1): None when its
+    move was shown — every sentence of it carries its source (`_sentence_sources`) and the headline stands on the
+    ids its check kept — else why it does not instruct: a held file's card is a question, and a decision with no
+    check behind it has nothing to stand on. Never the formula lane's quote gate: an expert move rests on facts the
+    check verified and is often OURS to make, with no sentence of theirs on record."""
+    render = signal.get("capability_render")
+    sources = render.get("sources") if isinstance(render, dict) else None
+    headline = sources.get("headline") if isinstance(sources, dict) else None
+    if not isinstance(headline, dict):
+        return EXPERT_UNCHECKED
+    if headline.get("question"):
+        return EXPERT_HELD
+    return None if headline.get("evidence") else EXPERT_UNCHECKED
+
+
 def _review_label(signal: dict) -> list[dict]:
     """The first `why` entry of a card whose play rests on a founder playbook nobody has reviewed.
 
@@ -1073,10 +1095,18 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     # there, so the list view — the surface anyone actually scans — showed the imperative anyway.
     level = _require_level(signal)
     abstained = signal.get("abstained_because")
+    # ⛔ STEP-14 (M42.C3.L-logic.V0.U01): AN EXPERT CARD IS GRADED BY ITS CHECK — the three gates below are the
+    # formula lane's, and stay for every other card. A shown move keeps the level its decision gave it.
+    expert = is_expert(signal.get("capability_id"))
+    grade = _expert_grade(signal) if expert else None
+    if grade is not None:
+        level = str(_ABSTENTION.REVIEW)
+        abstained = abstained or grade
+        actions = [a for a in actions if a.get("type") in ("wrong", "snooze")]
     grounded, missing, recommended = clarity_verdict(
         reason_code, {str(o.get("kind")) for o in (signal.get("observations") or ())},
         set(facts))
-    if not grounded:
+    if not grounded and not expert:
         level = str(_ABSTENTION.OBSERVATION)
         abstained = abstained or f"missing {missing} — {recommended}"
         # A card that cannot say what to do must not offer a button that claims to do it. `wrong`
@@ -1101,7 +1131,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     # human must look", which names what this card is. Downgrading is not hiding — the card still
     # answers Ask and the API, it just stops claiming the authority to give an order it cannot
     # phrase.
-    has_finding = not states_absence(template)
+    has_finding = expert or not states_absence(template)
     if not has_finding:
         level = str(_ABSTENTION.REVIEW)
         abstained = abstained or (
@@ -1159,7 +1189,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         grounding = [q for q in (quotes or ())
                      if str(q.get("kind") or "") not in _NAMING_ONLY_KINDS
                      and str(q.get("quote") or "").strip()]
-    has_quote = bool(grounding)
+    has_quote = expert or bool(grounding)
     if not has_quote:
         level = str(_ABSTENTION.REVIEW)
         abstained = abstained or (
@@ -1184,6 +1214,8 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
 
     return {
         "signal_id": signal["signal_id"], "org_id": org_id, "subject_node_id": node_id,
+        # STEP-14 (`migrations/0220`): an expert card is its FILE's — the file's decisions and questions version it.
+        "file_id": node_id if expert else None,
         # Fail closed on level: defaulting to "prescriptive" is what let the pipeline's hardcoded
         # literal go unnoticed, turning every predictive risk warning into a direct order.
         "domain": effective.get("pack_id", "sales"), "level": level,
