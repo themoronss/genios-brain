@@ -31,7 +31,7 @@ ASKED = "Is it so: “Marco asked for a short deck”? It is not in what it cite
 def engine():
     url = os.environ.get("GENIOS_TEST_DATABASE_URL")
     if not url:
-        pytest.skip("needs GENIOS_TEST_DATABASE_URL pointing at a scratch database")
+        pytest.skip("GENIOS_TEST_DATABASE_URL not set — needs a scratch Postgres database")
     eng = create_engine(url)
     with eng.begin() as c:
         c.execute(text("delete from orgs where id = :o"), {"o": ORG})
