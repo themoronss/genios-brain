@@ -224,7 +224,7 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
             try:
                 with engine.begin() as conn:
                     if propose_kind(conn, org_id=org_id, review=result.review, file=parts.file,
-                                    fingerprint=fp, at=now).line_id:
+                                    fingerprint=fp, at=now, why=result.checked.words.kind).line_id:
                         receipt["proposed_kinds"] += 1
             except Exception:      # noqa: BLE001 — a proposal that failed is no failed pass
                 _log.exception("the expert's kind proposal failed file=%s org=%s",

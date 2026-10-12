@@ -323,7 +323,7 @@
       "actual": "The first meeting took place the week before; Manav has asked for traction numbers before Monday's partners' meeting and promised his partners a one-pager. Nothing has gone back yet."
      },
      "scenarios": {
-      "do_nothing": "Manav goes into Monday's meeting without the one-pager he promised his partners; at best Kitebird slips a week, at worst it reads as a company losing momentum and quietly drops.",
+      "do_nothing": "Manav goes into Monday's meeting without the one-pager he promised his partners; at best you slip a week, at worst you read as a company losing momentum and the fund quietly drops.",
       "act": "The one-pager reaches Manav before Monday, he carries real numbers into the room, and the partnership can decide on Kitebird in this cycle.",
       "best": "After Monday the partners ask for diligence material or a meeting with the founder.",
       "worst": "The one-pager arrives late or thin, the partners pass, and the pass arrives as silence.",

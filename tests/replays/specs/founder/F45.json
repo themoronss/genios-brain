@@ -804,7 +804,7 @@
       "actual": "No mail carrying the details is in the file, and the file has been quiet for longer than any gap it closed before."
      },
      "scenarios": {
-      "do_nothing": "Bluepeak cannot take its reference calls, the diligence stalls on the founder's side, and the quiet reads to the fund as lost momentum.",
+      "do_nothing": "Bluepeak cannot take its reference calls, the diligence stalls on your side, and the quiet reads to the fund as lost momentum.",
       "act": "The details reach Meera Shah, the reference calls go ahead, and Bluepeak can move toward a decision.",
       "best": "The references speak well of the pilots and Bluepeak names its next step toward an offer.",
       "worst": "Bluepeak reads the delay as a weak signal from the founder and lets the conversation lapse.",
@@ -982,7 +982,7 @@
       "actual": "Four questions asked and four answered; the move is hers, and no call, meeting or decision date has been named."
      },
      "scenarios": {
-      "do_nothing": "The questions keep coming one at a time and the founder keeps answering; Bluepeak's decision drifts with no date while the rest of the round moves.",
+      "do_nothing": "The questions keep coming one at a time and you keep answering; Bluepeak's decision drifts with no date while the rest of the round moves.",
       "act": "A call with Meera Shah turns the single questions into one conversation, and tells the founder what Bluepeak still needs and when it will decide.",
       "best": "Bluepeak names its next step — references, a partners' meeting — and a date.",
       "worst": "The questions stop without a word, and the founder learns of a pass only when the round has moved on.",

@@ -60,9 +60,11 @@ def line_id_for(org_id: str, file: Any, kind: str, fingerprint: str) -> str:
 
 
 def propose_kind(conn, *, org_id: str, review: ExpertReview, file: Any, fingerprint: str,
-                 at: datetime) -> KindProposal:
+                 at: datetime, why: str | None) -> KindProposal:
     """Write the review's proposed kind for `file` (`context/workstreams.WorkFile`) as a pending line of
-    the brief — or say why not."""
+    the brief — or say why not. `why` is the reason AS CHECKED (`contracts/claim_check.CardWords.kind`,
+    M35.C3.L-integration.V2.U05, crosscheck X19): a number the check corrected is the corrected one, and a
+    reason the check withheld (None) proposes nothing — the review's raw words are never written."""
     from genios_engine.platform import company_brief_store as store
 
     pk = review.proposed_kind
@@ -70,11 +72,13 @@ def propose_kind(conn, *, org_id: str, review: ExpertReview, file: Any, fingerpr
         return KindProposal(file.file_id, None, None, "the review proposes no kind")
     if pk.kind == file.work_kind:
         return KindProposal(file.file_id, pk.kind, None, f"the brief already names it {pk.kind}")
+    if not why:
+        return KindProposal(file.file_id, pk.kind, None, "not proposed: its reason did not stand the check")
     key = str(file.counterparty_key or "")
     address, domain = (key, None) if "@" in key else (None, key or None)
     try:
         line_id = store.propose(
-            conn, org_id=org_id, section="in_motion", words=words_for(pk.kind, file.counterparty, pk.why),
+            conn, org_id=org_id, section="in_motion", words=words_for(pk.kind, file.counterparty, why),
             proposed_by=PROPOSED_BY, at=at, address=address, domain=domain, kind=pk.kind,
             evidence=[{"review": fingerprint, "file": file.file_id, "cites": list(pk.evidence)}],
             line_id=line_id_for(org_id, file, pk.kind, fingerprint))

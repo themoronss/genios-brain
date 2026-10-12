@@ -267,12 +267,21 @@ def _render(review: ExpertReview, checked: CheckedReview) -> dict[str, Any]:
 
 #: What a card says its situation is: the expert's reading of the file — an inference, said so.
 SITUATION_IS = "the expert's reading of the file — an inference, not a quote"
+#: What done looks like, and what doing nothing costs: the expert's judgement — inferences, said so.
+DONE_WHEN_IS = "what done looks like, as the expert judges it — an inference, not a quote"
+DO_NOTHING_IS = "what doing nothing costs, as the expert judges it — an inference, not a quote"
+#: The cost of doing nothing when the check withheld the expert's words for it (M35.C3.L-integration.V2.U05,
+#: crosscheck X03): the card still says one — this, never the words that did not stand.
+DO_NOTHING_WITHHELD = "Not stated: what the expert said doing nothing costs did not stand against the file."
 
 
 def sources_of(checked: CheckedReview) -> dict[str, Any]:
     """Where each of the card's sentences came from (STEP-13 §5, M35.C3.L-interface.V3.U03): the headline
     the ids its move rests on and their quotes — or, a held file, the question and why it is asked; the
-    situation labelled the expert's reading; the draft whom it goes to. Read by `deliver/card_builder`."""
+    situation, what done looks like and what doing nothing costs labelled the expert's judgement (an
+    inference); the draft whom it goes to AND what it stands on — the ids and quotes of the move's ground,
+    as the check held it (M35.C3.L-integration.V2.U05, crosscheck X24: a recipient is no source). Read by
+    `deliver/card_builder`."""
     words, out = checked.words, {}
     if checked.fate == HELD:
         out["headline"] = {"question": checked.question, "because": checked.because}
@@ -281,7 +290,11 @@ def sources_of(checked: CheckedReview) -> dict[str, Any]:
     if words.situation:
         out["situation"] = {"inference": SITUATION_IS}
     if words.draft:
-        out["draft"] = {"to": words.to}
+        out["draft"] = {"to": words.to, "evidence": list(words.evidence), "quotes": list(words.quotes)}
+    if words.done_when:
+        out["done_when"] = {"inference": DONE_WHEN_IS}
+    out["do_nothing"] = {"inference": DO_NOTHING_IS} if words.do_nothing else \
+        {"inference": DO_NOTHING_WITHHELD}
     return out
 
 
@@ -302,7 +315,8 @@ def capability_for(review: ExpertReview, checked: CheckedReview, *, root_entity_
         ranking_weights=RANKING_WEIGHTS_V2,
         policies=("read_only",),
         live_delivery_enabled=live_delivery_enabled,
-        do_nothing_consequence=review.scenarios.do_nothing,
+        # The card's "cost of ignoring": the CHECKED words (crosscheck X03), never the review's raw scenario.
+        do_nothing_consequence=checked.words.do_nothing or DO_NOTHING_WITHHELD,
         expiry_hours=EXPIRY_HOURS,
         metadata={
             CONFIDENCE_AUTHORITY_KEY: READER_ID,
@@ -508,7 +522,8 @@ def decide(request: ReasoningRequest) -> ReasoningExecution:
     return _ORCHESTRATOR.execute(request)
 
 
-__all__ = ["ADAPTER", "CAPABILITY_ID", "DECIDE_VERSION", "EXPIRY_HOURS", "F_ANSWER", "F_CHECK",
+__all__ = ["ADAPTER", "CAPABILITY_ID", "DECIDE_VERSION", "DONE_WHEN_IS", "DO_NOTHING_IS", "DO_NOTHING_WITHHELD",
+           "EXPIRY_HOURS", "F_ANSWER", "F_CHECK",
            "KIND_SEPARATOR",
            "ExpertDecisionMaker", "LEVEL_BP", "MODE_MARKER", "MOVE_PLAY", "NO_EVENT_BP",
            "ONE_EVENT_BP", "OUTCOME_OF", "READER_ID", "READER_SPEC", "ReviewReader", "TRIGGER_KIND",

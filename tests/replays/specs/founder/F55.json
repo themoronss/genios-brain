@@ -692,7 +692,7 @@
       "actual": "Nearly four weeks on, no sheet and no reply are in the file."
      },
      "scenarios": {
-      "do_nothing": "Dev assumes Nimbus Labs is not interested or not ready, and the opportunity closes without a word.",
+      "do_nothing": "Dev assumes you are not interested or not ready, and the opportunity closes without a word.",
       "act": "Sending the sheet now, with a short apology, may still revive the conversation.",
       "best": "Dev comes back with questions and a call follows.",
       "worst": "Dev has chosen something else in the meantime, and the late sheet gets no response.",

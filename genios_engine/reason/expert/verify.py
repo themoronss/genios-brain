@@ -37,8 +37,10 @@ ONE PASS, IN ONE ORDER.
       one value its one cited calculator line holds, in its unit, or it drops (`wrong_number`, RULE 08).
   2 · AN INFERENCE OR A PATTERN stands while one of its grounds stands (else `ungrounded`).
   3 · THE CARD'S WORDS. The headline (the move, or the reading when there is no move) stands on the lines
-      of the facts the move rests on and the file's own head; the situation, what done looks like and a
-      proposed kind on every standing fact's lines; the draft on the move's own lines and head and what the
+      of the facts the move rests on and the file's own head; the situation, what done looks like, what
+      doing nothing costs (the card's "cost of ignoring", M35.C3.L-integration.V2.U05) and a proposed
+      kind's reason on every standing fact's lines (the kind's on the lines it cites) — each carried in
+      `CardWords` as checked; the draft on the move's own lines and head and what the
       brief says of us (`about_us`, M35.C2.L-logic.V1.U14) — never the rest of the dossier. A number
       corrected in a
       fact is corrected where the card restates it (M35.C2.L-logic.V1.U11): the same figure, as a value in
@@ -67,7 +69,8 @@ WHAT `validate` STILL REFUSES WHOLE — the structure (`STRUCTURAL`): a moving m
 resting on no fact the review has, a stage the playbook does not name. A slip of one optional move field
 drops its own line (M35.C1.L-contract.V0.U04): a `rests_on` ref beside the facts it names that is no fact
 (`rests_on`), an `answers` that is no ask the dossier printed (`answers`). Grounding is per line here,
-and a number in prose no founder is shown — a hypothesis, a scenario, the appraisal's reasons — is NOTED
+and a number in prose no founder is shown — a hypothesis, a scenario but doing nothing's, the appraisal's
+reasons — is NOTED
 (`unheld_number`), not refused: it reaches nobody, and a live model's hypotheses hold numbers.
 
 Pure: no I/O, no clock, no model. The same review and dossier, the same verdicts, byte for byte.
@@ -670,6 +673,14 @@ def about_us(dossier_text: str) -> str:
     return "\n".join(out)
 
 
+def _quoted(headline: str | None, *, capital: bool = False) -> str:
+    """A move as a question names it — in its CHECKED words (crosscheck X10: never the words that failed,
+    nor a number the check corrected), or, none standing, as the move."""
+    if headline:
+        return f"“{headline.rstrip('.')}”"
+    return "The move" if capital else "the move"
+
+
 def _is_us(to: str, people: FilePeople) -> bool:
     return any("@" in w and people.us.is_us(w) for w in _words(to)) \
         or names_us(to, people.us, people.our_names)
@@ -740,6 +751,10 @@ class _Run:
 
     def say(self, line: str, verdict: str, reason: str | None = None, detail: str = "") -> None:
         self.verdicts.append(C.LineVerdict(line, verdict, reason, detail))
+
+    def reason(self, line: str) -> str | None:
+        """The reason `line` was dropped for, or None."""
+        return next((v.reason for v in self.verdicts if v.line == line and v.verdict == C.DROPPED), None)
 
     def why(self, line: str) -> str:
         return next((f"{v.reason}: {v.detail}" if v.detail else str(v.reason)
@@ -895,7 +910,7 @@ def _prose(review: ExpertReview) -> list[str]:
     return [*(i.claim for i in review.inferences), *(p.claim for p in review.patterns),
             *(t for h in review.hypotheses for t in (h.proposition, h.needs)),
             *(t for u in review.unknowns for t in (u.question, u.relevance)), *review.frames.rivals,
-            eva.expected, eva.actual, sc.do_nothing, sc.act, sc.best, sc.worst, *sc.signals_to_watch,
+            eva.expected, eva.actual, sc.act, sc.best, sc.worst, *sc.signals_to_watch,
             *review.appraisal.reasons, review.alternative, review.wait_or_stop]
 
 
@@ -931,13 +946,19 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
                         figures=move_figures if move is not None else standing_figures)
     situation = run.text("situation", review.frames.primary, standing_corpus, figures=standing_figures)
     done_when = run.text("done_when", review.done_when, standing_corpus, figures=standing_figures)
+    # WHAT DOING NOTHING COSTS reaches every shown card as its "cost of ignoring" (crosscheck X03): a card
+    # text like the situation — its names and numbers on the standing facts' lines, "you" noted.
+    do_nothing = run.text("do_nothing", review.scenarios.do_nothing, standing_corpus,
+                          figures=standing_figures)
+    kind = None
     if review.proposed_kind is not None:
         pk = review.proposed_kind
         unseen = [e for e in pk.evidence if e not in run.lines]
         if unseen:
             run.say("kind", C.DROPPED, C.UNKNOWN_EVIDENCE, unseen[0])
         else:
-            run.text("kind", pk.why, run.items(pk.evidence), speaks=False, figures=run.figures(pk.evidence))
+            kind = run.text("kind", pk.why, run.items(pk.evidence), speaks=False,
+                            figures=run.figures(pk.evidence))
 
     held: str | None = None
     question: str | None = None
@@ -956,8 +977,8 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         if target and _is_us(target, people):
             to = target
             run.say("to", C.DROPPED, C.RECIPIENT_IS_US, to)
-            held = f"{C.RECIPIENT_IS_US}: {to}"
-            question = f"Whom should “{said}” go to? It is addressed to you."
+            held = C.HELD_BECAUSE[C.RECIPIENT_IS_US]
+            question = f"Whom should {_quoted(headline)} go to? It is addressed to you."
         elif target and people.connector is not None and matches(target, people.connector) \
                 and not matches(target, people.counterparty):
             to = target
@@ -970,8 +991,9 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
                 run.say("move", C.CORRECTED, C.BY_ALTERNATIVE, f"{said} -> {other}")
                 headline, to = other, them
             else:
-                held = f"{C.RECIPIENT_IS_CONNECTOR}: {to}"
-                question = f"“{said}” goes to {to}, who introduced {them}. Whom should it go to?"
+                held = C.HELD_BECAUSE[C.RECIPIENT_IS_CONNECTOR]
+                question = f"{_quoted(headline, capital=True)} goes to {to}, who introduced {them}. " \
+                           "Whom should it go to?"
         elif not to:
             if review.draft:
                 run.say("to", C.DROPPED, C.NO_RECIPIENT)
@@ -1014,11 +1036,11 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     if review.mode in MOVING and move is not None:
         fell = sorted(rested - standing)
         if fell:
-            held = f"{run.why(f'fact:{fell[0]}')} (fact {fell[0]})"
+            held = C.HELD_BECAUSE.get(run.reason(f"fact:{fell[0]}"), C.HELD_BECAUSE[C.HELD_MOVE])
             claim = review.facts[fell[0] - 1].claim.rstrip(".")
             question = f"Is it so: “{claim}”? It is not in what it cites."
         elif headline is None:
-            held = f"{run.why('move')} (the move)"
+            held = C.HELD_BECAUSE[C.HELD_MOVE]
             question = f"Is it so: “{said.rstrip('.')}”? It is not in what it rests on."
         if met is not None:
             # Already done (§3.4): whatever else the move lacked, it is moot — the ask it answers is
@@ -1026,19 +1048,20 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
             # still waiting on us keeps the file's card, held on what the next move on it is (X14).
             fate, held, question = C.SUPPRESSED, f"{C.ANSWERED}:{met}", None
             if (still := _owed(dossier_text, people, but=str(addressed))):
-                ref, kind, opened = still[0]
+                _ref, ask_kind, opened = still[0]
                 when = datetime.strptime(opened, "%Y-%m-%d %H:%M")
-                fate = C.HELD
-                question = (f"“{said.rstrip('.')}” is already answered. What is the next move on the "
-                            f"{_ASK_WORDS.get(kind, kind.replace('_', ' '))} still waiting on you since "
-                            f"{when.day} {when.strftime('%b')}?")
+                fate, held = C.HELD, C.HELD_BECAUSE[C.ANSWERED]
+                question = (f"{_quoted(headline, capital=True)} is already answered. What is the next move "
+                            f"on the {_ASK_WORDS.get(ask_kind, ask_kind.replace('_', ' '))} still waiting "
+                            f"on you since {when.day} {when.strftime('%b')}?")
         elif held:
             fate = C.HELD
         elif review.mode == "find_out":
             question = headline
     shown = fate == C.SHOWN
     grounds = [review.facts[n - 1] for n in sorted(rested & standing)]
-    words = C.CardWords(headline=headline if shown else None, situation=situation, done_when=done_when,
+    words = C.CardWords(do_nothing=do_nothing, kind=kind,
+                        headline=headline if shown else None, situation=situation, done_when=done_when,
                         draft=draft if shown else None, to=to if shown and draft else None,
                         evidence=tuple(e for f in grounds for e in f.evidence) if shown else (),
                         quotes=tuple(run.quotes[n] for n in sorted(rested & standing) if n in run.quotes)

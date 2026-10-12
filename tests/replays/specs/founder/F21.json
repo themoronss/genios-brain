@@ -260,7 +260,7 @@
       "actual": "The centre's notice and a reminder that applications close soon are the whole file; no receipt or status for an application from Nimbus Labs is in it."
      },
      "scenarios": {
-      "do_nothing": "If an application went in, nothing is lost; if none did, the window closes on a date nobody wrote down and the programme starts in November without Nimbus Labs.",
+      "do_nothing": "If an application went in, nothing is lost; if none did, the window closes on a date nobody wrote down and the programme starts in November without you.",
       "act": "A quick check settles whether an application is in; if not, the founder decides on the programme's fit while applications are open.",
       "best": "The receipt is found and the file waits for the centre's decision — or the fit is clear and an application goes in early.",
       "worst": "The brief's line is taken on trust, no application exists, and the window closes.",
@@ -409,7 +409,7 @@
       "actual": "The centre's only mail is a call for applications; no receipt or status for an application from Nimbus Labs is in the file."
      },
      "scenarios": {
-      "do_nothing": "If an application went in, nothing is lost; if none did, the window closes on a date nobody wrote down and the programme starts in November without Nimbus Labs.",
+      "do_nothing": "If an application went in, nothing is lost; if none did, the window closes on a date nobody wrote down and the programme starts in November without you.",
       "act": "A quick check settles whether an application is in; if not, the founder decides on the programme's fit while applications are open.",
       "best": "The receipt is found and the file waits for the centre's decision — or the fit is clear and an application goes in early.",
       "worst": "The brief's line is taken on trust, no application exists, and the window closes.",

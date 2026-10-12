@@ -8011,6 +8011,25 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/decide.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_review_decides.py tests/reason/expert/test_a_covered_file_decides_once.py tests/reason/expert/test_replay_asks_no_model.py"
                       depends_on: [M35.C3.L-integration.V1.U01]
+                    - id: M35.C3.L-integration.V2.U05
+                      what: >
+                        Every text the founder reads is the checked one (crosscheck X03, X19, X24, X10's
+                        `said` part): `scenarios.do_nothing` is checked as a card text (its names and
+                        numbers on the standing facts' lines, "you" noted) and carried in `CardWords`
+                        (`contracts/claim_check`), and `decide` gives the card its cost of ignoring from it
+                        (withheld: a fixed sentence saying so, never the raw words); the proposed kind's
+                        reason is carried as checked (`CardWords.kind`) and the brief's pending line is
+                        written from it (`kind_proposal.propose_kind(why=…)`, none when withheld);
+                        `sources_of` / `card_builder.CARD_SENTENCES` give done_when and do_nothing an
+                        inference entry and the draft its ground (the ids and quotes its move stands on),
+                        not only its recipient — 5 of 5 sentences; the recipient questions name the move in
+                        its CHECKED words; a held `because` is one closed founder-facing phrase
+                        (`claim_check.HELD_BECAUSE`), the check's detail staying in its verdicts. The 22
+                        third-person authored do_nothing texts (F*.json `model.expert`) and the prompt's two
+                        scenario hints speak to "you" (prompt bytes move: the lead re-records).
+                      artifact: "genios_engine/reason/expert/decide.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s13_u05 .venv/bin/python -m pytest -q tests/reason/expert/test_every_text_the_founder_reads_is_checked.py tests/reason/expert/test_the_brief_line_is_the_checked_reason.py tests/reason/expert/test_a_review_may_propose_a_kind.py tests/deliver/test_an_expert_card_is_checked.py tests/reason/expert/test_the_review_decides.py"
+                      depends_on: [M35.C3.L-integration.V2.U02, M35.C3.L-interface.V3.U03, M35.C2.L-logic.V1.U15]
         - id: M35.C4
           name: The golden set
           layers:

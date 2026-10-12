@@ -295,7 +295,7 @@
       "actual": "Arjun answered within the day with the deck, a one-pager and the demo link and no number; Owen has not written since."
      },
      "scenarios": {
-      "do_nothing": "Owen goes into the partner meeting without the numbers, or reads the answer as dodging them; Saltmarsh drops Nimbus Labs quietly while the file keeps looking answered.",
+      "do_nothing": "Owen goes into the partner meeting without the numbers, or reads the answer as dodging them; Saltmarsh drops you quietly while the file keeps looking answered.",
       "act": "The two numbers sent now, with one line owning the miss, answer exactly what Owen asked and give him something to take into the partner meeting.",
       "best": "Owen has the numbers before the partner meeting, Saltmarsh discusses Nimbus Labs, and a call or a next step follows.",
       "worst": "The partner meeting passed without them, and Saltmarsh reads an answer that skipped revenue and runway as evasion.",

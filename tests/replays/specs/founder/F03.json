@@ -431,7 +431,7 @@
       "actual": "The introduction arrived and the connector stepped back; the founder has not written in this file."
      },
      "scenarios": {
-      "do_nothing": "The introduction goes cold: a partner who was told the founder would take it from here hears nothing, and the fund is lost to the round without a conversation.",
+      "do_nothing": "The introduction goes cold: a partner who was told you would take it from here hears nothing, and the fund is lost to the round without a conversation.",
       "act": "A short, specific note to Rahul now, offering a call, turns the introduction into a first meeting while it is warm.",
       "best": "Rahul answers, a first call is booked, and Kestrel Capital turns out to fit the round.",
       "worst": "No note goes, or it goes to the connector instead of Rahul, and the introduction dies.",

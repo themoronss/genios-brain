@@ -65,7 +65,7 @@ def test_x14_the_deck_still_owed_keeps_the_file_s_card():
     checked = _check({"asks_a_call": True, "meeting_at": AFTER}, move=BOOK)
     assert _verdict(checked, "answers") == C.LineVerdict("answers", C.DROPPED, C.ANSWERED,
                                                          f"{W.ASK_MEET} by {W.MEETING}")
-    assert checked.fate == C.HELD and checked.because == f"answered:{W.MEETING}"
+    assert checked.fate == C.HELD and checked.because == C.HELD_BECAUSE[C.ANSWERED]
     assert checked.words.headline is None and checked.words.draft is None
     assert "question" in checked.question and "11 Aug" in checked.question
 
