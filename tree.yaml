@@ -8346,6 +8346,20 @@ yc2_w27_s17:
                       artifact: "scripts/qa/database_skips.py"
                       verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py"
                       depends_on: [M40.C4.L-contract.V0.U01]
+                    - id: M40.C4.L-contract.V0.U05
+                      what: >
+                        S17X-F2 — the scan inverted for the database job. It recognised a skip for
+                        want of a database by its wording, and 51 database-gated skips in 27 files
+                        say something else ("0043 not applied", "no org", "graph store not
+                        configured"). Now `ALLOWED` names the skips a real database run has for a
+                        reason that is not a database — measured on s13f4's whole suite on Postgres
+                        at ae24ee22: python-docx missing, an empty parameter set in
+                        tests/contracts/test_l1_contracts.py, the declared rollback exception 0080,
+                        the internal-auth 403 in tests/test_health_memory.py — each by its file AND
+                        its whole reason; every other skip fails the job, named.
+                      artifact: "scripts/qa/database_skips.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py tests/test_ci_runs_the_database_suite.py"
+                      depends_on: [M40.C4.L-contract.V0.U03]
             - layer: integration
               levels:
                 - level: 1

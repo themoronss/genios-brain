@@ -14,6 +14,14 @@ A log that is not a finished pytest run, or one whose skips were not reported, i
 read as a finished run with no skips, exit 0: a `PYTEST_ADDOPTS=--co` written to `$GITHUB_ENV`, or a
 `--co` in `addopts`, turned the database job green after running nothing. A collection, a run where
 no test ran, one where every test was deselected, and one narrowed below the floor are each exit 2.
+
+`M40.C4.L-contract.V0.U05` (S17X-F2): the scan is INVERTED. It recognised a skip for want of a
+database by its wording (`GENIOS_TEST_DATABASE_URL`, "database", "Postgres"), and 51 database-gated
+`pytest.skip` calls in 27 files use other words — "0043 not applied", "no org", "graph store not
+configured", "no scratch org seeded". Now the database job allows exactly the skips measured on a
+real database run for a reason that is not a database (`ALLOWED`: python-docx missing, an empty
+parameter set, the declared rollback exception 0080, the internal-auth 403), each by its file AND its
+reason; every other skip fails the job, named.
 """
 from __future__ import annotations
 
@@ -41,17 +49,33 @@ FLOOR = _module().PASSED_FLOOR
 #: A number a finished database run clears.
 RUN = FLOOR + 1
 
+#: The four skips of a real database run, as pytest printed them — s13f4's whole suite on Postgres
+#: at `ae24ee22` (20,868 passed, 4 skipped), the only skips it had.
+MEASURED = (
+    "SKIPPED [1] tests/capture/transcripts/test_transcript_units.py:68: could not import 'docx': "
+    "No module named 'docx'\n"
+    "SKIPPED [1] tests/contracts/test_l1_contracts.py:630: got empty parameter set for (lane)\n"
+    "SKIPPED [1] tests/platform/test_the_code_can_always_be_rolled_back.py:72: "
+    "0080_l1_extraction_results.sql is a declared exception — see DECLARED_EXCEPTIONS\n"
+    "SKIPPED [1] tests/test_health_memory.py:97: internal auth not wired in this harness (403)\n")
+
 GREEN = f"........ [100%]\n{RUN} passed in 3.21s\n"
 DB_SKIPS = (".s.s [100%]\n"
             "SKIPPED [1] tests/test_moments_pg.py:41: GENIOS_TEST_DATABASE_URL not set\n"
             "SKIPPED [3] tests/context/test_x.py:12: no scratch database configured\n"
             "SKIPPED [2] tests/reason/test_y.py:9: needs real Postgres\n"
-            "SKIPPED [1] tests/test_docs.py:68: could not import 'docx': No module named 'docx'\n"
+            "SKIPPED [1] tests/capture/transcripts/test_transcript_units.py:68: could not import "
+            "'docx': No module named 'docx'\n"
             f"{RUN} passed, 7 skipped in 2.00s\n")
-OTHER_SKIPS = (".s [100%]\n"
-               "SKIPPED [1] tests/test_docs.py:68: could not import 'docx': No module named 'docx'\n"
-               "SKIPPED [1] tests/platform/test_rollback.py:72: 0080_l1.sql is a declared exception\n"
-               f"{RUN} passed, 2 skipped in 1.00s\n")
+OTHER_SKIPS = (".s [100%]\n" + MEASURED + f"{RUN} passed, 4 skipped in 1.00s\n")
+#: The crosscheck's own examples: database-gated skips in words the old scan did not know.
+IN_OTHER_WORDS = (".s [100%]\n"
+                  "SKIPPED [1] tests/test_delivery_facts.py:53: 0043 not applied\n"
+                  "SKIPPED [1] tests/test_delivery_facts.py:56: no org\n"
+                  "SKIPPED [3] tests/platform/test_warm_lane_pg.py:273: graph store not configured\n"
+                  "SKIPPED [1] tests/context/test_point_in_time.py:180: no scratch org seeded — "
+                  "nothing to clone a tenant from\n"
+                  f"{RUN} passed, 6 skipped in 1.00s\n")
 
 
 def _scan(tmp_path, text: str):
@@ -63,22 +87,69 @@ def _scan(tmp_path, text: str):
 def test_a_clean_run_passes(tmp_path):
     r = _scan(tmp_path, GREEN)
     assert r.returncode == 0, r.stdout + r.stderr
-    assert "0 tests skipped for want of a database" in r.stdout
+    assert "0 tests skipped for a reason the database job does not allow" in r.stdout
 
 
 def test_a_skip_for_want_of_a_database_fails_and_is_named(tmp_path):
     r = _scan(tmp_path, DB_SKIPS)
     assert r.returncode == 1, r.stdout + r.stderr
-    assert "6 tests skipped for want of a database, in 3 files" in r.stdout
+    assert "6 tests skipped for a reason the database job does not allow, in 3 files" in r.stdout
     for where in ("tests/test_moments_pg.py:41", "tests/context/test_x.py:12",
                   "tests/reason/test_y.py:9"):
         assert where in r.stdout
-    assert "test_docs.py" not in r.stdout, "a skip for another reason is not this scan's"
+    assert "test_transcript_units.py:68 ×1" not in r.stdout, "an allowed skip is not named a failure"
 
 
-def test_a_skip_for_another_reason_is_not_counted(tmp_path):
+def test_the_skips_a_real_database_run_has_are_allowed(tmp_path):
     r = _scan(tmp_path, OTHER_SKIPS)
     assert r.returncode == 0, r.stdout + r.stderr
+    assert "0 tests skipped for a reason the database job does not allow" in r.stdout
+    assert "4 allowed" in r.stdout, r.stdout
+
+
+def test_a_database_skip_in_other_words_fails_and_is_named(tmp_path):
+    """S17X-F2: the old scan read these four reasons as "another reason" and passed the job."""
+    r = _scan(tmp_path, IN_OTHER_WORDS)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "6 tests skipped for a reason the database job does not allow, in 3 files" in r.stdout
+    for where in ("tests/test_delivery_facts.py:53", "tests/test_delivery_facts.py:56",
+                  "tests/platform/test_warm_lane_pg.py:273", "tests/context/test_point_in_time.py:180"):
+        assert where in r.stdout, where
+
+
+@pytest.mark.parametrize("line", [
+    # an allowed reason, in a file the allow-list does not name
+    "SKIPPED [1] tests/test_moments_pg.py:41: got empty parameter set for (lane)",
+    "SKIPPED [1] tests/test_x.py:9: could not import 'docx': No module named 'docx'",
+    # an allowed file, for a reason it does not name
+    "SKIPPED [1] tests/test_health_memory.py:97: internal auth not wired in this harness (500)",
+    "SKIPPED [1] tests/contracts/test_l1_contracts.py:40: GENIOS_TEST_DATABASE_URL not set",
+    "SKIPPED [1] tests/contracts/test_l1_contracts.py:640: got empty parameter set for (field)",
+    "SKIPPED [1] tests/platform/test_the_code_can_always_be_rolled_back.py:72: "
+    "0211_a_followup_names_its_observation.sql is a declared exception — see DECLARED_EXCEPTIONS",
+    "SKIPPED [1] tests/capture/transcripts/test_transcript_units.py:68: could not import 'pypdf': "
+    "No module named 'pypdf'",
+])
+def test_a_skip_is_allowed_only_by_its_file_and_its_reason_together(tmp_path, line):
+    r = _scan(tmp_path, f".s [100%]\n{line}\n{RUN} passed, 1 skipped in 1.00s\n")
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert line.split("] ", 1)[1].split(": ", 1)[0] in r.stdout
+
+
+def test_the_allow_list_is_the_four_measured_and_each_says_why():
+    """Adding a fifth is a decision — measured on a real database run, its reason not a database —
+    and made here on purpose. Each entry names a file that exists and says why it may skip."""
+    allowed = _module().ALLOWED
+    root = SCRIPT.parents[2]
+    assert [entry[0] for entry in allowed] == [
+        "tests/capture/transcripts/test_transcript_units.py",
+        "tests/contracts/test_l1_contracts.py",
+        "tests/platform/test_the_code_can_always_be_rolled_back.py",
+        "tests/test_health_memory.py",
+    ]
+    for path, _reason, why in allowed:
+        assert (root / path).is_file(), path
+        assert len(why.split()) >= 5, (path, why)
 
 
 def test_a_log_that_is_not_a_finished_run_is_an_error(tmp_path):
