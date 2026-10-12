@@ -58,7 +58,10 @@ ONE PASS, IN ONE ORDER.
   5 · THE FATE. No fact stands: REFUSED. A moving review (act, find out) whose move lost a fact it rests on,
       whose headline failed, or whose recipient is us or a connector with no alternative: HELD — the file
       goes to Investigation and asks ONE question. Otherwise SHOWN — a find-out review asking its own move.
-      Whether the ask a move answers is already ANSWERED is read live (`reason/expert/answered`).
+      Whether the ask a move answers is already ANSWERED is read here (`answered_by`, M35.C2.L-logic.V1.U15):
+      the ask it names, or the one owed ask its ground cites; answered by our reply in its thread after it,
+      or — a meeting ask — by a meeting with the asker booked after it. The move is then moot: SUPPRESSED,
+      or — another ask still waiting on us — HELD, asking the next move on that one: never the whole file.
 
 WHAT `validate` STILL REFUSES WHOLE — the structure (`STRUCTURAL`): a moving mode with no move, a move
 resting on no fact the review has, a stage the playbook does not name. A slip of one optional move field
@@ -75,6 +78,7 @@ import re
 import unicodedata
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from genios_engine.contracts import claim_check as C
 from genios_engine.contracts.expert_review import (
@@ -464,22 +468,66 @@ def _swap(text: str, corrections: Iterable[Correction]) -> str:
     return text
 
 
-def answered_by(dossier_text: str, ask: str) -> str | None:
-    """The meeting that answers a MEETING ask — on the file, after it was asked, held or booked ahead —
-    as the dossier prints both; None for any other ask, or none since. A closed ask needs no reading: the
-    dossier shows open asks only, so a move cannot name one (`validate`, `unknown_evidence`)."""
+def answered_by(dossier_text: str, ask: str, people: FilePeople | None = None) -> str | None:
+    """What answers this open ask, as an event id — or None (M35.C2.L-logic.V1.U15, crosscheck X14, X21):
+      * our reply in the ask's thread, after it was asked — any ask;
+      * a MEETING ask: a meeting on the file after it was asked (held or booked ahead, as the dossier
+        prints both), first BOOKED after the ask, and WITH THE ASKER — set up by them, or by us on the
+        asker's own file (the counterparty's). A meeting booked before the ask, or with somebody else,
+        answers nothing; a meeting never answers a question (replay 04).
+    What a meeting's booking, its organiser, the ask's thread and asker are, the file's people say
+    (`dossier.people_of`); without them nothing can be said to answer an ask. A closed ask needs no
+    reading: the dossier shows open asks only, so a move cannot name one (`validate`)."""
+    seen = next((a for a in (people.asks if people is not None else ()) if a.ref == ask), None)
     opened = kind = None
     for line in dossier_text.splitlines():
         if (m := _ASKED.match(line.strip())) is not None and m.group("ask") == ask:
             kind, opened = m.group("kind"), m.group("at")
             break
-    if kind not in MEETING_ASKS or opened is None:
+    if seen is None or opened is None or seen.opened_at is None:
         return None
-    for line in dossier_text.splitlines():
-        for m in _MET.finditer(line):
-            if (m.group("held") or m.group("booked")) > opened:        # the dossier's own clock, as text
-                return m.group("evt")
+    if seen.thread:
+        reply = next((r for r in people.replies if r.thread == seen.thread and r.at > seen.opened_at), None)
+        if reply is not None:
+            return reply.event_id
+    if kind not in MEETING_ASKS:
+        return None
+    met = {m.group("evt") for line in dossier_text.splitlines() for m in _MET.finditer(line)
+           if (m.group("held") or m.group("booked")) > opened}         # the dossier's own clock, as text
+    for meeting in people.meetings:
+        if meeting.event_id in met and meeting.booked_at is not None and meeting.booked_at > seen.opened_at \
+                and _with_the_asker(meeting, seen, people):
+            return meeting.event_id
     return None
+
+
+def _with_the_asker(meeting, ask, people: FilePeople) -> bool:
+    """Was this meeting with the one who asked — set up by them, or by us on their own file?"""
+    by, asker = meeting.by, ask.asker
+    if by is None or asker is None:
+        return False
+    if by.key and asker.key and by.key.casefold() == asker.key.casefold():
+        return True
+    if by.key and "@" in by.key and people.us.is_us(by.key):
+        return asker == people.counterparty
+    return bool(by.name) and matches(by.name, asker)
+
+
+#: An ask's kind as the founder reads it.
+_ASK_WORDS: dict[str, str] = {"question": "question", "meeting_request": "meeting request",
+                              "demo_requested": "demo request"}
+
+
+def _owed(dossier_text: str, people: FilePeople, but: str) -> list[tuple[str, str, str]]:
+    """The OTHER open asks that wait on us and nothing has answered — (ref, kind, opened), as printed."""
+    out = []
+    for line in dossier_text.splitlines():
+        m = _ASKED.match(line.strip())
+        if m is None or m.group("ask") == but or "they wait on us" not in line:
+            continue
+        if answered_by(dossier_text, m.group("ask"), people) is None:
+            out.append((m.group("ask"), m.group("kind"), m.group("at")))
+    return out
 
 
 # ── people ────────────────────────────────────────────────────────────────────────────────────────
@@ -934,6 +982,20 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         if any(v.line == "to" and v.verdict == C.DROPPED for v in run.verdicts):
             draft = None                    # its words were for someone it may not go to
     met = None
+    # THE ASK THE MOVE ANSWERS (M35.C2.L-logic.V1.U15, X21): the one it names — or, naming none, the one
+    # open ask waiting on us that the facts it rests on cite; then whether it is answered already. A fact
+    # citing the ask WITH the event that answered it says the ask is answered (a stale open loop, golden
+    # F45): it is no ground the move answers that ask on.
+    addressed = None
+    if move is not None and not move.answers:
+        grounds = [review.facts[n - 1].evidence for n in sorted(rested & standing)]
+        cited = {e for evidence in grounds for e in evidence if e.startswith(ASK_PREFIX)}
+        owed = [e for e in sorted(cited)
+                if any("they wait on us" in dl.line for dl in run.lines.get(e, ()))]
+        found = answered_by(dossier_text, owed[0], people) if len(owed) == 1 else None
+        if found is not None and not any(owed[0] in evidence and found in evidence for evidence in grounds):
+            met, addressed = found, owed[0]
+            run.say("answers", C.DROPPED, C.ANSWERED, f"{addressed} by {met}")
     if move is not None and move.answers:
         if not move.answers.startswith(ASK_PREFIX) or move.answers not in run.lines:
             # No ask its dossier printed — an unprinted `loop:`, or a mail, a promise, a calculator that is
@@ -942,7 +1004,8 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
             run.say("answers", C.DROPPED, C.UNKNOWN_EVIDENCE, move.answers)
         elif any("we wait on them" in dl.line for dl in run.lines.get(move.answers, ())):
             run.say("answers", C.DROPPED, C.NOT_OURS_TO_ANSWER, move.answers)
-        elif (met := answered_by(dossier_text, move.answers)) is not None:
+        elif (met := answered_by(dossier_text, move.answers, people)) is not None:
+            addressed = move.answers
             run.say("answers", C.DROPPED, C.ANSWERED, f"{move.answers} by {met}")
         else:
             run.say("answers", C.KEPT)
@@ -959,8 +1022,16 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
             question = f"Is it so: “{said.rstrip('.')}”? It is not in what it rests on."
         if met is not None:
             # Already done (§3.4): whatever else the move lacked, it is moot — the ask it answers is
-            # answered. One ask, and only it (replay 04): no other loop of the file is touched.
+            # answered. One ask, and only it (replay 04): the move drops, never the file — another ask
+            # still waiting on us keeps the file's card, held on what the next move on it is (X14).
             fate, held, question = C.SUPPRESSED, f"{C.ANSWERED}:{met}", None
+            if (still := _owed(dossier_text, people, but=str(addressed))):
+                ref, kind, opened = still[0]
+                when = datetime.strptime(opened, "%Y-%m-%d %H:%M")
+                fate = C.HELD
+                question = (f"“{said.rstrip('.')}” is already answered. What is the next move on the "
+                            f"{_ASK_WORDS.get(kind, kind.replace('_', ' '))} still waiting on you since "
+                            f"{when.day} {when.strftime('%b')}?")
         elif held:
             fate = C.HELD
         elif review.mode == "find_out":

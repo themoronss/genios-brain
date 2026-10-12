@@ -74,6 +74,9 @@ class Touch:
     outcome: str | None = None         # the ledger's outcome, asked before any word is read (`03` F57)
     words: str | None = None           # what it said, cut at WORDS_CHARS — None for an archive or no text
     words_cut: int = 0                 # the characters of it left out
+    #: A meeting: when the calendar first showed it — its first version's capture — so "was it booked after
+    #: the ask?" can be read (STEP-13 M35.C2.L-logic.V1.U15). None for a mail.
+    booked_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -141,13 +144,18 @@ def timeline_for(conn, org_id: str, file_id: str, *, now: datetime) -> FileTimel
     us = identity_for(conn, org_id)
     rows = list(conn.execute(_TOUCHES, {"o": org_id, "f": file_id}))
 
-    # One touch per meeting: the newest version the calendar sent, at its start.
+    # One touch per meeting: the newest version the calendar sent, at its start — booked when the first
+    # version was captured.
     newest: dict[str, object] = {}
+    first_seen: dict[str, datetime] = {}
     for r in rows:
         if (r.source, r.object_type) == MEETING:
             held = newest.get(r.source_object_id)
             if held is None or (r.captured_at, r.event_id) > (held.captured_at, held.event_id):
                 newest[r.source_object_id] = r
+            if r.captured_at is not None and (r.source_object_id not in first_seen
+                                              or r.captured_at < first_seen[r.source_object_id]):
+                first_seen[r.source_object_id] = r.captured_at
     cancelled = {key.split(":", 1)[1] for (key,) in conn.execute(_CANCELLED, {
         "o": org_id, "keys": [f"gcal:{m}" for m in sorted(newest)], "cancelled": CANCELLED})}
 
@@ -165,7 +173,7 @@ def timeline_for(conn, org_id: str, file_id: str, *, now: datetime) -> FileTimel
             meeting = Touch(at=r.occurred_at, kind="meeting", direction="meeting", who=r.who,
                             who_name=r.who_name, event_id=r.event_id, thread=None,
                             mailbox=r.connection_id, outcome=r.outcome, words=words,
-                            words_cut=cut)
+                            words_cut=cut, booked_at=first_seen.get(r.source_object_id))
             (touches if r.occurred_at <= now else upcoming).append(meeting)
     touches.sort(key=lambda t: (t.at, t.event_id))
     upcoming.sort(key=lambda t: (t.at, t.event_id))

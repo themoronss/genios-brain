@@ -7935,6 +7935,28 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_recipient.py tests/reason/expert/test_verify_people.py"
                       depends_on: [M35.C2.L-logic.V1.U12]
+                    - id: M35.C2.L-logic.V1.U15
+                      what: >
+                        An answered ask drops its move, not the file (crosscheck X14, X21): the ask a move
+                        answers is the one it names (`answers`) or, naming none, the one open ask waiting on
+                        us that the facts it rests on cite; it is answered by our reply in its thread after
+                        it was asked (any ask), or — a meeting ask — by a meeting on the file after it that
+                        was BOOKED after it (the calendar's first version, `Touch.booked_at`) and is WITH
+                        THE ASKER (set up by them, or by us on the asker's own file); a meeting never
+                        answers a question. A move whose ask is answered is suppressed when nothing else
+                        waits on us; when another unanswered ask still does, the file keeps its card —
+                        held, asking the next move on that ask. What the check reads (asks with thread and
+                        asker, our mails, meetings with booking and organiser) rides in
+                        `dossier.FilePeople`; nothing is printed, the dossier is unchanged. A fact citing an
+                        ask WITH the event that answered it (a stale open loop) is no ground the move
+                        answers it on. Golden F45 (must-detect) linked its move to exactly such a stale ask
+                        (`answers`), which would suppress its one card: the authored link is removed (the
+                        move answers no owed ask); with the ideal reader serving the authored answers the
+                        board is unchanged (must-detect 22 pass / 11 fail / 12 not expressible,
+                        must-abstain 13/13).
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s13_u15 .venv/bin/python -m pytest -q tests/reason/expert/test_verify_answered.py tests/reason/expert/test_an_answered_ask_is_not_raised_again.py tests/context/test_a_meeting_says_when_it_was_booked.py tests/context/test_a_file_has_a_timeline.py"
+                      depends_on: [M35.C2.L-logic.V1.U14]
         - id: M35.C3
           name: Where the check runs
           layers:

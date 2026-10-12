@@ -838,8 +838,7 @@
        "fact:5",
        "fact:7"
       ],
-      "to": "Meera",
-      "answers": "loop:loop_bfcb9b4eee023c29d4eabeb0"
+      "to": "Meera"
      },
      "alternative": "If the details already went another way, write one line confirming the leads expect her call, and ask for Bluepeak's next step and timing.",
      "wait_or_stop": "Do not wait: the next move is the founder's. Once the details have gone, give Bluepeak a week for the calls; if nothing comes, ask Meera Shah directly where Bluepeak stands, then stop.",
@@ -1015,8 +1014,7 @@
        "fact:4",
        "fact:5"
       ],
-      "to": "Meera",
-      "answers": "loop:loop_bfcb9b4eee023c29d4eabeb0"
+      "to": "Meera"
      },
      "alternative": "If she prefers mail, ask in one line what else Bluepeak needs to reach a decision, and by when.",
      "wait_or_stop": "Between her questions there is nothing to chase. If a gap opens longer than any so far, ask her directly where Bluepeak stands; stop if that draws nothing.",
