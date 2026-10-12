@@ -1,7 +1,7 @@
 {
  "case_id": "F45",
  "source": "ideal_reader",
- "recorded_at": "46f37bea",
+ "recorded_at": "a10f3140",
  "answers": {
   "0d05660a005c1a914e38118e41460164ea8d5a598f1b4a0241972ed8b34c4fab": {
    "site": "extraction",
@@ -36,6 +36,7 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 36, \"end_offset\": 41}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
    "input_tokens": 5504,
    "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
@@ -47,19 +48,19 @@
      {
       "claim": "Meera Shah of Bluepeak Ventures has asked Arjun one question at a time, each in its own thread: how the first pilot teams retained, how the team tier will be priced, who the first engineer after the round will be, and how many teams are in the pipeline.",
       "evidence": [
-       "evt_6b9c074d4fcae3a9032d6e98",
-       "evt_aedc2e199c2cf41438d361b1",
-       "evt_7385ef78a5a3fffefe542220",
-       "evt_e56b3fb33cd4677d904fcdf4"
+       "evt_#8",
+       "evt_#6",
+       "evt_#4",
+       "evt_#2"
       ]
      },
      {
       "claim": "Arjun answered every one: all three pilot teams still active at week eight, per-seat pricing with a floor of five seats, a backend engineer who has built sync pipelines, and nine teams in conversation for next quarter.",
       "evidence": [
-       "evt_89f3773f41f73080a1604a6b",
-       "evt_30ff636b71bfaec385a045b6",
-       "evt_e5e50c7bb6f13f5da52a07ae",
-       "evt_aec38afad58115d6073f0a02"
+       "evt_#7",
+       "evt_#5",
+       "evt_#3",
+       "evt_#1"
       ]
      },
      {
@@ -71,7 +72,7 @@
      {
       "claim": "The file's last word is Arjun's answer on the pipeline, and the quiet since is within the gaps the file closed before.",
       "evidence": [
-       "evt_aec38afad58115d6073f0a02",
+       "evt_#1",
        "num:days_quiet",
        "num:usual_gap"
       ]
@@ -79,15 +80,15 @@
      {
       "claim": "The file still lists the hiring question as an open ask that waits on us, though Arjun's answer to it is in the file.",
       "evidence": [
-       "loop:loop_bfcb9b4eee023c29d4eabeb0",
-       "evt_e5e50c7bb6f13f5da52a07ae"
+       "loop:loop_#1",
+       "evt_#3"
       ]
      },
      {
       "claim": "The brief names no kind of work for Bluepeak; the engine filed the file under admin and its pricing exchange as a sales opportunity.",
       "evidence": [
-       "sit:sit_52a9541abe4815995b32f479",
-       "sit:sit_0f6cadb0ee06428bf7ce3e20"
+       "sit:sit_#2",
+       "sit:sit_#1"
       ]
      }
     ],
@@ -96,7 +97,7 @@
       "claim": "Bluepeak is an investor doing its diligence by mail: retention, pricing, the first hire after the round and the pipeline are what a fund asks before deciding on a seed round.",
       "based_on": [
        "fact:1",
-       "evt_7385ef78a5a3fffefe542220"
+       "evt_#4"
       ]
      },
      {
@@ -158,9 +159,9 @@
      "kind": "investor",
      "why": "Meera Shah writes for Bluepeak Ventures and asks about the pilots, pricing, the first hire after the round and the pipeline — an investor's questions about the seed round — while the engine filed the file under admin and as a sales opportunity.",
      "evidence": [
-      "evt_7385ef78a5a3fffefe542220",
-      "evt_6b9c074d4fcae3a9032d6e98",
-      "sit:sit_0f6cadb0ee06428bf7ce3e20"
+      "evt_#4",
+      "evt_#8",
+      "sit:sit_#1"
      ]
     },
     "expected_vs_actual": {
@@ -201,7 +202,8 @@
     "done_when": "Bluepeak has named its next step and a date — a call, references, a partners' meeting, or a decision.",
     "draft": "Hi Meera, thanks for the questions over the past weeks — I hope the answers helped. Would a short call be useful to cover anything else Bluepeak needs? It would also help me to understand your next step and timing. Arjun"
    },
-   "raw": "{\"facts\": [{\"claim\": \"Meera Shah of Bluepeak Ventures has asked Arjun one question at a time, each in its own thread: how the first pilot teams retained, how the team tier will be priced, who the first engineer after the round will be, and how many teams are in the pipeline.\", \"evidence\": [\"evt_6b9c074d4fcae3a9032d6e98\", \"evt_aedc2e199c2cf41438d361b1\", \"evt_7385ef78a5a3fffefe542220\", \"evt_e56b3fb33cd4677d904fcdf4\"]}, {\"claim\": \"Arjun answered every one: all three pilot teams still active at week eight, per-seat pricing with a floor of five seats, a backend engineer who has built sync pipelines, and nine teams in conversation for next quarter.\", \"evidence\": [\"evt_89f3773f41f73080a1604a6b\", \"evt_30ff636b71bfaec385a045b6\", \"evt_e5e50c7bb6f13f5da52a07ae\", \"evt_aec38afad58115d6073f0a02\"]}, {\"claim\": \"His answers took a median of one day across four of them — too few to call a normal.\", \"evidence\": [\"num:your_reply_time:meera@bluepeak.test\"]}, {\"claim\": \"The file's last word is Arjun's answer on the pipeline, and the quiet since is within the gaps the file closed before.\", \"evidence\": [\"evt_aec38afad58115d6073f0a02\", \"num:days_quiet\", \"num:usual_gap\"]}, {\"claim\": \"The file still lists the hiring question as an open ask that waits on us, though Arjun's answer to it is in the file.\", \"evidence\": [\"loop:loop_bfcb9b4eee023c29d4eabeb0\", \"evt_e5e50c7bb6f13f5da52a07ae\"]}, {\"claim\": \"The brief names no kind of work for Bluepeak; the engine filed the file under admin and its pricing exchange as a sales opportunity.\", \"evidence\": [\"sit:sit_52a9541abe4815995b32f479\", \"sit:sit_0f6cadb0ee06428bf7ce3e20\"]}], \"inferences\": [{\"claim\": \"Bluepeak is an investor doing its diligence by mail: retention, pricing, the first hire after the round and the pipeline are what a fund asks before deciding on a seed round.\", \"based_on\": [\"fact:1\", \"evt_7385ef78a5a3fffefe542220\"]}, {\"claim\": \"The open hiring ask is stale: Arjun answered it, though with a profile rather than a name.\", \"based_on\": [\"fact:5\"]}, {\"claim\": \"A run of single questions with no call and no named next step leaves Bluepeak's timing and decision unknown to the founder.\", \"based_on\": [\"fact:1\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"In this file the founder answers each of her questions within about a day, and she follows with a new one in her own time.\", \"based_on\": [\"num:your_reply_time:meera@bluepeak.test\", \"num:usual_gap\"]}], \"hypotheses\": [{\"proposition\": \"Bluepeak is building toward a partners' discussion and will ask for references or a call next.\", \"needs\": \"Meera Shah's next mail, or her answer when asked what Bluepeak needs to decide.\"}, {\"proposition\": \"Meera Shah reads the hiring answer as complete, and the open ask in the file is only a record left open.\", \"needs\": \"Her next mail moving on, or her asking again for a name.\"}], \"unknowns\": [{\"question\": \"Where Bluepeak stands in its own process — a first look, a partners' meeting, diligence.\", \"relevance\": \"Quiet and the next move read differently at each stage; the file holds only the questions.\"}, {\"question\": \"Whether Bluepeak means to lead or to follow in the round.\", \"relevance\": \"It decides how much of the founder's time this file deserves against the rest of the round.\"}, {\"question\": \"Whether the founder and Meera Shah have spoken outside mail.\", \"relevance\": \"A call the file cannot see may already have set the next step.\"}], \"frames\": {\"primary\": \"An investor doing diligence by mail, one question at a time: every question so far is answered, and the conversation has no named next step or date.\", \"rivals\": [\"A sales prospect weighing a purchase, as the engine filed it — but questions about the round and the first hire after it are an investor's.\", \"A fund keeping a light watch with no intent to decide this round.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Meera Shah writes for Bluepeak Ventures and asks about the pilots, pricing, the first hire after the round and the pipeline — an investor's questions about the seed round — while the engine filed the file under admin and as a sales opportunity.\", \"evidence\": [\"evt_7385ef78a5a3fffefe542220\", \"evt_6b9c074d4fcae3a9032d6e98\", \"sit:sit_0f6cadb0ee06428bf7ce3e20\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the file's own rhythm sets it: a question from Meera Shah, an answer from Arjun within about a day, and in time a step toward a decision.\", \"actual\": \"Four questions asked and four answered; the move is hers, and no call, meeting or decision date has been named.\"}, \"scenarios\": {\"do_nothing\": \"The questions keep coming one at a time and the founder keeps answering; Bluepeak's decision drifts with no date while the rest of the round moves.\", \"act\": \"A call with Meera Shah turns the single questions into one conversation, and tells the founder what Bluepeak still needs and when it will decide.\", \"best\": \"Bluepeak names its next step — references, a partners' meeting — and a date.\", \"worst\": \"The questions stop without a word, and the founder learns of a pass only when the round has moved on.\", \"signals_to_watch\": [\"Meera Shah asking for references, a call or a partners' meeting.\", \"A gap between her questions longer than any so far.\", \"Questions that keep coming without any step toward a decision.\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Bluepeak is asking diligence questions about it.\", \"Every question so far is answered and the move is hers, so nothing is overdue.\", \"Asking for a call costs little and can be declined without harm.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Write to Meera Shah offering a short call to cover whatever Bluepeak still needs, and ask what its next step is and when it expects to decide.\", \"for_whom\": \"Meera Shah, Bluepeak Ventures\", \"by_when\": null}, \"alternative\": \"If she prefers mail, ask in one line what else Bluepeak needs to reach a decision, and by when.\", \"wait_or_stop\": \"Between her questions there is nothing to chase. If a gap opens longer than any so far, ask her directly where Bluepeak stands; stop if that draws nothing.\", \"done_when\": \"Bluepeak has named its next step and a date — a call, references, a partners' meeting, or a decision.\", \"draft\": \"Hi Meera, thanks for the questions over the past weeks — I hope the answers helped. Would a short call be useful to cover anything else Bluepeak needs? It would also help me to understand your next step and timing. Arjun\"}",
+   "raw": "{\"facts\": [{\"claim\": \"Meera Shah of Bluepeak Ventures has asked Arjun one question at a time, each in its own thread: how the first pilot teams retained, how the team tier will be priced, who the first engineer after the round will be, and how many teams are in the pipeline.\", \"evidence\": [\"evt_#8\", \"evt_#6\", \"evt_#4\", \"evt_#2\"]}, {\"claim\": \"Arjun answered every one: all three pilot teams still active at week eight, per-seat pricing with a floor of five seats, a backend engineer who has built sync pipelines, and nine teams in conversation for next quarter.\", \"evidence\": [\"evt_#7\", \"evt_#5\", \"evt_#3\", \"evt_#1\"]}, {\"claim\": \"His answers took a median of one day across four of them — too few to call a normal.\", \"evidence\": [\"num:your_reply_time:meera@bluepeak.test\"]}, {\"claim\": \"The file's last word is Arjun's answer on the pipeline, and the quiet since is within the gaps the file closed before.\", \"evidence\": [\"evt_#1\", \"num:days_quiet\", \"num:usual_gap\"]}, {\"claim\": \"The file still lists the hiring question as an open ask that waits on us, though Arjun's answer to it is in the file.\", \"evidence\": [\"loop:loop_#1\", \"evt_#3\"]}, {\"claim\": \"The brief names no kind of work for Bluepeak; the engine filed the file under admin and its pricing exchange as a sales opportunity.\", \"evidence\": [\"sit:sit_#2\", \"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Bluepeak is an investor doing its diligence by mail: retention, pricing, the first hire after the round and the pipeline are what a fund asks before deciding on a seed round.\", \"based_on\": [\"fact:1\", \"evt_#4\"]}, {\"claim\": \"The open hiring ask is stale: Arjun answered it, though with a profile rather than a name.\", \"based_on\": [\"fact:5\"]}, {\"claim\": \"A run of single questions with no call and no named next step leaves Bluepeak's timing and decision unknown to the founder.\", \"based_on\": [\"fact:1\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"In this file the founder answers each of her questions within about a day, and she follows with a new one in her own time.\", \"based_on\": [\"num:your_reply_time:meera@bluepeak.test\", \"num:usual_gap\"]}], \"hypotheses\": [{\"proposition\": \"Bluepeak is building toward a partners' discussion and will ask for references or a call next.\", \"needs\": \"Meera Shah's next mail, or her answer when asked what Bluepeak needs to decide.\"}, {\"proposition\": \"Meera Shah reads the hiring answer as complete, and the open ask in the file is only a record left open.\", \"needs\": \"Her next mail moving on, or her asking again for a name.\"}], \"unknowns\": [{\"question\": \"Where Bluepeak stands in its own process — a first look, a partners' meeting, diligence.\", \"relevance\": \"Quiet and the next move read differently at each stage; the file holds only the questions.\"}, {\"question\": \"Whether Bluepeak means to lead or to follow in the round.\", \"relevance\": \"It decides how much of the founder's time this file deserves against the rest of the round.\"}, {\"question\": \"Whether the founder and Meera Shah have spoken outside mail.\", \"relevance\": \"A call the file cannot see may already have set the next step.\"}], \"frames\": {\"primary\": \"An investor doing diligence by mail, one question at a time: every question so far is answered, and the conversation has no named next step or date.\", \"rivals\": [\"A sales prospect weighing a purchase, as the engine filed it — but questions about the round and the first hire after it are an investor's.\", \"A fund keeping a light watch with no intent to decide this round.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Meera Shah writes for Bluepeak Ventures and asks about the pilots, pricing, the first hire after the round and the pipeline — an investor's questions about the seed round — while the engine filed the file under admin and as a sales opportunity.\", \"evidence\": [\"evt_#4\", \"evt_#8\", \"sit:sit_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the file's own rhythm sets it: a question from Meera Shah, an answer from Arjun within about a day, and in time a step toward a decision.\", \"actual\": \"Four questions asked and four answered; the move is hers, and no call, meeting or decision date has been named.\"}, \"scenarios\": {\"do_nothing\": \"The questions keep coming one at a time and the founder keeps answering; Bluepeak's decision drifts with no date while the rest of the round moves.\", \"act\": \"A call with Meera Shah turns the single questions into one conversation, and tells the founder what Bluepeak still needs and when it will decide.\", \"best\": \"Bluepeak names its next step — references, a partners' meeting — and a date.\", \"worst\": \"The questions stop without a word, and the founder learns of a pass only when the round has moved on.\", \"signals_to_watch\": [\"Meera Shah asking for references, a call or a partners' meeting.\", \"A gap between her questions longer than any so far.\", \"Questions that keep coming without any step toward a decision.\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Bluepeak is asking diligence questions about it.\", \"Every question so far is answered and the move is hers, so nothing is overdue.\", \"Asking for a call costs little and can be declined without harm.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Write to Meera Shah offering a short call to cover whatever Bluepeak still needs, and ask what its next step is and when it expects to decide.\", \"for_whom\": \"Meera Shah, Bluepeak Ventures\", \"by_when\": null}, \"alternative\": \"If she prefers mail, ask in one line what else Bluepeak needs to reach a decision, and by when.\", \"wait_or_stop\": \"Between her questions there is nothing to chase. If a gap opens longer than any so far, ask her directly where Bluepeak stands; stop if that draws nothing.\", \"done_when\": \"Bluepeak has named its next step and a date — a call, references, a partners' meeting, or a decision.\", \"draft\": \"Hi Meera, thanks for the questions over the past weeks — I hope the answers helped. Would a short call be useful to cover anything else Bluepeak needs? It would also help me to understand your next step and timing. Arjun\"}",
+   "framed": true,
    "input_tokens": 3581,
    "output_tokens": 1638,
    "model": "claude-haiku-4-5-20251001"
@@ -218,6 +220,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"The team tier will be priced per seat, with a floor of five seats.\", \"start_offset\": 44, \"end_offset\": 110, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1510,
    "output_tokens": 54,
    "model": "claude-haiku-4-5-20251001"
@@ -234,6 +237,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could two of your pilot customers take a short reference call with us?\", \"start_offset\": 43, \"end_offset\": 113, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1516,
    "output_tokens": 55,
    "model": "claude-haiku-4-5-20251001"
@@ -250,6 +254,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Yes - two pilot leads have agreed; I will send their details separately.\", \"start_offset\": 47, \"end_offset\": 119, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1512,
    "output_tokens": 56,
    "model": "claude-haiku-4-5-20251001"
@@ -314,30 +319,332 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 105, \"end_offset\": 115}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 116, \"end_offset\": 133}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Explain how the team tier will be priced after the pilots convert\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"How do you plan to price the team tier once the pilots convert?\", \"start_offset\": 40, \"end_offset\": 103}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "framed": true,
    "input_tokens": 5507,
    "output_tokens": 230,
    "model": "claude-haiku-4-5-20251001"
   },
-  "38d7e0b7d304b34eab67812520cfe98b4b116f822c0d68712ff9294f559fb0cf": {
+  "4051abc8db9d01854f807991302ab2ff0b75fe56bddf457aa9424d04f617485c": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "How do you plan to price the team tier once the pilots convert?",
+    "start_offset": 40,
+    "end_offset": 103,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"How do you plan to price the team tier once the pilots convert?\", \"start_offset\": 40, \"end_offset\": 103, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1514,
+   "output_tokens": 53,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "407a72554aed212ca13e5dfd15fca58cfc98a455d6898dba553867acd6e35869": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Bluepeak x Nimbus - references",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Bluepeak x Nimbus - references",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 3,
+      "business": true,
+      "description": "Re: Bluepeak x Nimbus - competition",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 4,
+      "business": true,
+      "description": "Bluepeak x Nimbus - competition",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - references\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Bluepeak x Nimbus - references\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - competition\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 4, \"business\": true, \"description\": \"Bluepeak x Nimbus - competition\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1315,
+   "output_tokens": 157,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "437475b70490ed99c679df7b3aab1928e11ec0ac7aa293dc1484b0e685fbff5f": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Meera Shah",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Meera Shah",
+        "start_offset": 100,
+        "end_offset": 110
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Bluepeak Ventures",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Bluepeak Ventures",
+        "start_offset": 111,
+        "end_offset": 128
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Give the number of teams in next quarter's pipeline",
+      "asked_by": "Meera Shah",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "How many teams are in your pipeline for the next quarter?",
+        "start_offset": 41,
+        "end_offset": 98
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 100, \"end_offset\": 110}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 111, \"end_offset\": 128}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Give the number of teams in next quarter's pipeline\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"How many teams are in your pipeline for the next quarter?\", \"start_offset\": 41, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "framed": true,
+   "input_tokens": 5506,
+   "output_tokens": 224,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4507243e5224e7b139ecf2ce9bda5769a4570f8c5f3cd4dd81dfeda85f28773e": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Meera",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Meera",
+        "start_offset": 39,
+        "end_offset": 44
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 39, \"end_offset\": 44}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
+   "input_tokens": 5507,
+   "output_tokens": 107,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4e2743c2faf9447ec7a0b5b8ddc4c93ca6fd6824805713ced7ff41bd57a0d081": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Meera Shah",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Meera Shah",
+        "start_offset": 100,
+        "end_offset": 110
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Bluepeak Ventures",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Bluepeak Ventures",
+        "start_offset": 111,
+        "end_offset": 128
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Say who the first engineering hire after the round will be",
+      "asked_by": "Meera Shah",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Who is the first engineer you plan to hire after the round?",
+        "start_offset": 39,
+        "end_offset": 98
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 100, \"end_offset\": 110}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 111, \"end_offset\": 128}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Say who the first engineering hire after the round will be\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Who is the first engineer you plan to hire after the round?\", \"start_offset\": 39, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "framed": true,
+   "input_tokens": 5505,
+   "output_tokens": 227,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "568d28c9441ba2529cba71491e39df52879e034ba4bcc0ac11e2beb9167fe469": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Bluepeak x Nimbus - hiring",
+    "start_offset": 0,
+    "end_offset": 30,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - hiring\", \"start_offset\": 0, \"end_offset\": 30, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1507,
+   "output_tokens": 44,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5d6399e7499ee26f68e3f1d0a267a3f40fb8361eed7e4499e78ccf12ce49ef13": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Meera",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Meera",
+        "start_offset": 37,
+        "end_offset": 42
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 37, \"end_offset\": 42}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
+   "input_tokens": 5500,
+   "output_tokens": 107,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5ec422fc3c0b7f50a51dfcdace3cb808a94b4c97742d72e3668fcc84feb99c67": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "How many teams are in your pipeline for the next quarter?",
+    "start_offset": 41,
+    "end_offset": 98,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"How many teams are in your pipeline for the next quarter?\", \"start_offset\": 41, \"end_offset\": 98, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1512,
+   "output_tokens": 52,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "64966182172adae31ae4298386905dcd7dd0729724d2117690edeaa925c4df42": {
    "site": "expert",
    "parsed": {
     "facts": [
      {
       "claim": "On the ninth of September Meera Shah of Bluepeak Ventures asked whether two of the pilot customers could take a short reference call with Bluepeak.",
       "evidence": [
-       "evt_42f17c0e40ac5f3bcf4bfdd9"
+       "evt_#2"
       ]
      },
      {
       "claim": "On the fifteenth Arjun answered that two pilot leads had agreed, and that he would send their details separately.",
       "evidence": [
-       "evt_e7800ff9957d071cd017cef8"
+       "evt_#1"
       ]
      },
      {
       "claim": "That mail is the file's last word: nothing has followed it, and the file has been quiet for well over a week, longer than any gap it closed before.",
       "evidence": [
-       "evt_e7800ff9957d071cd017cef8",
+       "evt_#1",
        "num:days_quiet",
        "num:longest_gap"
       ]
@@ -345,21 +652,21 @@
      {
       "claim": "Before that she asked which tool the pilot teams use instead of Nimbus Labs, and Arjun answered that most of them use shared spreadsheets and a chat channel.",
       "evidence": [
-       "evt_d5066e3187bf640142f98a3f",
-       "evt_7caa1d8142d82b89fe3edca0"
+       "evt_#4",
+       "evt_#3"
       ]
      },
      {
       "claim": "Her August questions — among them the first engineer after the round and the pipeline — were each answered too, and the file's older exchanges have the same shape: her question, then his answer.",
       "evidence": [
-       "evt_7385ef78a5a3fffefe542220",
-       "evt_e5e50c7bb6f13f5da52a07ae",
-       "evt_e56b3fb33cd4677d904fcdf4",
-       "evt_aec38afad58115d6073f0a02",
-       "evt_6b9c074d4fcae3a9032d6e98",
-       "evt_89f3773f41f73080a1604a6b",
-       "evt_aedc2e199c2cf41438d361b1",
-       "evt_30ff636b71bfaec385a045b6"
+       "evt_#8",
+       "evt_#7",
+       "evt_#6",
+       "evt_#5",
+       "evt_#12",
+       "evt_#11",
+       "evt_#10",
+       "evt_#9"
       ]
      },
      {
@@ -373,15 +680,15 @@
      {
       "claim": "The file still lists her hiring question of August as an open ask that waits on us, though Arjun's answer to it is in the file.",
       "evidence": [
-       "loop:loop_bfcb9b4eee023c29d4eabeb0",
-       "evt_e5e50c7bb6f13f5da52a07ae"
+       "loop:loop_#1",
+       "evt_#7"
       ]
      },
      {
       "claim": "The brief names no kind of work for Bluepeak; the engine filed the file under admin, and its pricing exchange as a sales opportunity now marked dormant.",
       "evidence": [
-       "sit:sit_52a9541abe4815995b32f479",
-       "sit:sit_0f6cadb0ee06428bf7ce3e20"
+       "sit:sit_#2",
+       "sit:sit_#1"
       ]
      }
     ],
@@ -461,9 +768,9 @@
      "kind": "investor",
      "why": "Meera Shah writes for Bluepeak Ventures and asks about the pilots, pricing, the first hire after the round and the pipeline — an investor's questions about the seed round — while the engine filed the file under admin and as a sales opportunity.",
      "evidence": [
-      "evt_7385ef78a5a3fffefe542220",
-      "evt_6b9c074d4fcae3a9032d6e98",
-      "sit:sit_0f6cadb0ee06428bf7ce3e20"
+      "evt_#8",
+      "evt_#12",
+      "sit:sit_#1"
      ]
     },
     "expected_vs_actual": {
@@ -504,302 +811,10 @@
     "done_when": "Meera Shah has the two pilot leads' details and the reference calls are booked.",
     "draft": "Hi Meera, here are the two pilot leads who agreed to take a reference call with you — I've copied them both so you can find a time directly. Once you've spoken, could we talk about Bluepeak's next step? Arjun"
    },
-   "raw": "{\"facts\": [{\"claim\": \"On the ninth of September Meera Shah of Bluepeak Ventures asked whether two of the pilot customers could take a short reference call with Bluepeak.\", \"evidence\": [\"evt_42f17c0e40ac5f3bcf4bfdd9\"]}, {\"claim\": \"On the fifteenth Arjun answered that two pilot leads had agreed, and that he would send their details separately.\", \"evidence\": [\"evt_e7800ff9957d071cd017cef8\"]}, {\"claim\": \"That mail is the file's last word: nothing has followed it, and the file has been quiet for well over a week, longer than any gap it closed before.\", \"evidence\": [\"evt_e7800ff9957d071cd017cef8\", \"num:days_quiet\", \"num:longest_gap\"]}, {\"claim\": \"Before that she asked which tool the pilot teams use instead of Nimbus Labs, and Arjun answered that most of them use shared spreadsheets and a chat channel.\", \"evidence\": [\"evt_d5066e3187bf640142f98a3f\", \"evt_7caa1d8142d82b89fe3edca0\"]}, {\"claim\": \"Her August questions — among them the first engineer after the round and the pipeline — were each answered too, and the file's older exchanges have the same shape: her question, then his answer.\", \"evidence\": [\"evt_7385ef78a5a3fffefe542220\", \"evt_e5e50c7bb6f13f5da52a07ae\", \"evt_e56b3fb33cd4677d904fcdf4\", \"evt_aec38afad58115d6073f0a02\", \"evt_6b9c074d4fcae3a9032d6e98\", \"evt_89f3773f41f73080a1604a6b\", \"evt_aedc2e199c2cf41438d361b1\", \"evt_30ff636b71bfaec385a045b6\"]}, {\"claim\": \"Arjun's answers to her usually take a day and a half over six answers, the same as his normal across every counterparty.\", \"evidence\": [\"num:your_reply_time:meera@bluepeak.test\", \"num:your_normal:meera@bluepeak.test\", \"num:your_normal_overall\"]}, {\"claim\": \"The file still lists her hiring question of August as an open ask that waits on us, though Arjun's answer to it is in the file.\", \"evidence\": [\"loop:loop_bfcb9b4eee023c29d4eabeb0\", \"evt_e5e50c7bb6f13f5da52a07ae\"]}, {\"claim\": \"The brief names no kind of work for Bluepeak; the engine filed the file under admin, and its pricing exchange as a sales opportunity now marked dormant.\", \"evidence\": [\"sit:sit_52a9541abe4815995b32f479\", \"sit:sit_0f6cadb0ee06428bf7ce3e20\"]}], \"inferences\": [{\"claim\": \"Bluepeak has moved from single questions to asking for customer references, a step toward a decision, and the next move toward it is the founder's: the two pilot leads' details.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"As far as the file shows, the details have not gone: no mail carrying them follows the founder's word, though he may have sent them another way.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"The open hiring ask is stale: Arjun answered it, though with a profile rather than a name.\", \"based_on\": [\"fact:7\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"The founder answers her in about a day and a half, as he answers everyone; the quiet after his own word this time is far longer than that.\", \"based_on\": [\"num:your_reply_time:meera@bluepeak.test\", \"num:your_normal_overall\", \"fact:3\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"Every gap this file closed before was shorter than the quiet now, so this silence breaks the file's own rhythm rather than following it.\", \"based_on\": [\"num:longest_gap\", \"num:days_quiet\"]}], \"hypotheses\": [{\"proposition\": \"Meera Shah is waiting for the two pilot leads' details the founder said he would send separately, and has nothing to act on until they come.\", \"needs\": \"The founder's word on whether the details went out, by mail or another channel.\"}, {\"proposition\": \"The details went by another channel and the reference calls are already being arranged.\", \"needs\": \"The founder's confirmation, or a mail from Meera Shah about the calls.\"}], \"unknowns\": [{\"question\": \"Whether the two pilot leads' details reached Meera Shah — the file holds no mail carrying them.\", \"relevance\": \"If they did not, the next move is the founder's and is late; if they did, the file is waiting on Bluepeak.\"}, {\"question\": \"Where Bluepeak stands in its own process, and when it expects to decide.\", \"relevance\": \"Reference calls are a step toward a decision, but the file does not say how close Bluepeak is; the founder cannot pace the round around it without knowing.\"}, {\"question\": \"Whether the founder and Meera Shah have spoken outside mail.\", \"relevance\": \"A call the file cannot see may already have set the next step.\"}], \"frames\": {\"primary\": \"An investor at the reference stage of diligence, left without what the founder offered: Meera Shah asked for reference calls with pilot customers, the founder wrote that two pilot leads agreed and that he would send their details separately, and nothing after that is in the file.\", \"rivals\": [\"The details went by another channel and Bluepeak is quietly making the calls.\", \"Bluepeak has lost interest, and the quiet is a pass that nobody sends.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Meera Shah writes for Bluepeak Ventures and asks about the pilots, pricing, the first hire after the round and the pipeline — an investor's questions about the seed round — while the engine filed the file under admin and as a sales opportunity.\", \"evidence\": [\"evt_7385ef78a5a3fffefe542220\", \"evt_6b9c074d4fcae3a9032d6e98\", \"sit:sit_0f6cadb0ee06428bf7ce3e20\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the founder's own word sets it: the two pilot leads' details, sent separately, so Bluepeak can take its reference calls.\", \"actual\": \"No mail carrying the details is in the file, and the file has been quiet for longer than any gap it closed before.\"}, \"scenarios\": {\"do_nothing\": \"Bluepeak cannot take its reference calls, the diligence stalls on the founder's side, and the quiet reads to the fund as lost momentum.\", \"act\": \"The details reach Meera Shah, the reference calls go ahead, and Bluepeak can move toward a decision.\", \"best\": \"The references speak well of the pilots and Bluepeak names its next step toward an offer.\", \"worst\": \"Bluepeak reads the delay as a weak signal from the founder and lets the conversation lapse.\", \"signals_to_watch\": [\"Meera Shah confirming the reference calls are booked.\", \"A further request from Bluepeak — a call, a partners' meeting, terms.\", \"Continued quiet after the details go.\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Bluepeak has reached reference calls.\", \"The founder's own word to send the details is the last thing in the file, and nothing after it shows they went.\", \"The quiet is already longer than any gap the file closed before.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Introduce Meera Shah to the two pilot leads who agreed to a reference call — copying them in, or sending their contact details — as he wrote he would, and ask for Bluepeak's next step.\", \"for_whom\": \"Meera Shah, Bluepeak Ventures\", \"by_when\": null}, \"alternative\": \"If the details already went another way, write one line confirming the leads expect her call, and ask for Bluepeak's next step and timing.\", \"wait_or_stop\": \"Do not wait: the next move is the founder's. Once the details have gone, give Bluepeak a week for the calls; if nothing comes, ask Meera Shah directly where Bluepeak stands, then stop.\", \"done_when\": \"Meera Shah has the two pilot leads' details and the reference calls are booked.\", \"draft\": \"Hi Meera, here are the two pilot leads who agreed to take a reference call with you — I've copied them both so you can find a time directly. Once you've spoken, could we talk about Bluepeak's next step? Arjun\"}",
-   "input_tokens": 3760,
+   "raw": "{\"facts\": [{\"claim\": \"On the ninth of September Meera Shah of Bluepeak Ventures asked whether two of the pilot customers could take a short reference call with Bluepeak.\", \"evidence\": [\"evt_#2\"]}, {\"claim\": \"On the fifteenth Arjun answered that two pilot leads had agreed, and that he would send their details separately.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"That mail is the file's last word: nothing has followed it, and the file has been quiet for well over a week, longer than any gap it closed before.\", \"evidence\": [\"evt_#1\", \"num:days_quiet\", \"num:longest_gap\"]}, {\"claim\": \"Before that she asked which tool the pilot teams use instead of Nimbus Labs, and Arjun answered that most of them use shared spreadsheets and a chat channel.\", \"evidence\": [\"evt_#4\", \"evt_#3\"]}, {\"claim\": \"Her August questions — among them the first engineer after the round and the pipeline — were each answered too, and the file's older exchanges have the same shape: her question, then his answer.\", \"evidence\": [\"evt_#8\", \"evt_#7\", \"evt_#6\", \"evt_#5\", \"evt_#12\", \"evt_#11\", \"evt_#10\", \"evt_#9\"]}, {\"claim\": \"Arjun's answers to her usually take a day and a half over six answers, the same as his normal across every counterparty.\", \"evidence\": [\"num:your_reply_time:meera@bluepeak.test\", \"num:your_normal:meera@bluepeak.test\", \"num:your_normal_overall\"]}, {\"claim\": \"The file still lists her hiring question of August as an open ask that waits on us, though Arjun's answer to it is in the file.\", \"evidence\": [\"loop:loop_#1\", \"evt_#7\"]}, {\"claim\": \"The brief names no kind of work for Bluepeak; the engine filed the file under admin, and its pricing exchange as a sales opportunity now marked dormant.\", \"evidence\": [\"sit:sit_#2\", \"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Bluepeak has moved from single questions to asking for customer references, a step toward a decision, and the next move toward it is the founder's: the two pilot leads' details.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"As far as the file shows, the details have not gone: no mail carrying them follows the founder's word, though he may have sent them another way.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"The open hiring ask is stale: Arjun answered it, though with a profile rather than a name.\", \"based_on\": [\"fact:7\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"The founder answers her in about a day and a half, as he answers everyone; the quiet after his own word this time is far longer than that.\", \"based_on\": [\"num:your_reply_time:meera@bluepeak.test\", \"num:your_normal_overall\", \"fact:3\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"Every gap this file closed before was shorter than the quiet now, so this silence breaks the file's own rhythm rather than following it.\", \"based_on\": [\"num:longest_gap\", \"num:days_quiet\"]}], \"hypotheses\": [{\"proposition\": \"Meera Shah is waiting for the two pilot leads' details the founder said he would send separately, and has nothing to act on until they come.\", \"needs\": \"The founder's word on whether the details went out, by mail or another channel.\"}, {\"proposition\": \"The details went by another channel and the reference calls are already being arranged.\", \"needs\": \"The founder's confirmation, or a mail from Meera Shah about the calls.\"}], \"unknowns\": [{\"question\": \"Whether the two pilot leads' details reached Meera Shah — the file holds no mail carrying them.\", \"relevance\": \"If they did not, the next move is the founder's and is late; if they did, the file is waiting on Bluepeak.\"}, {\"question\": \"Where Bluepeak stands in its own process, and when it expects to decide.\", \"relevance\": \"Reference calls are a step toward a decision, but the file does not say how close Bluepeak is; the founder cannot pace the round around it without knowing.\"}, {\"question\": \"Whether the founder and Meera Shah have spoken outside mail.\", \"relevance\": \"A call the file cannot see may already have set the next step.\"}], \"frames\": {\"primary\": \"An investor at the reference stage of diligence, left without what the founder offered: Meera Shah asked for reference calls with pilot customers, the founder wrote that two pilot leads agreed and that he would send their details separately, and nothing after that is in the file.\", \"rivals\": [\"The details went by another channel and Bluepeak is quietly making the calls.\", \"Bluepeak has lost interest, and the quiet is a pass that nobody sends.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Meera Shah writes for Bluepeak Ventures and asks about the pilots, pricing, the first hire after the round and the pipeline — an investor's questions about the seed round — while the engine filed the file under admin and as a sales opportunity.\", \"evidence\": [\"evt_#8\", \"evt_#12\", \"sit:sit_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the founder's own word sets it: the two pilot leads' details, sent separately, so Bluepeak can take its reference calls.\", \"actual\": \"No mail carrying the details is in the file, and the file has been quiet for longer than any gap it closed before.\"}, \"scenarios\": {\"do_nothing\": \"Bluepeak cannot take its reference calls, the diligence stalls on the founder's side, and the quiet reads to the fund as lost momentum.\", \"act\": \"The details reach Meera Shah, the reference calls go ahead, and Bluepeak can move toward a decision.\", \"best\": \"The references speak well of the pilots and Bluepeak names its next step toward an offer.\", \"worst\": \"Bluepeak reads the delay as a weak signal from the founder and lets the conversation lapse.\", \"signals_to_watch\": [\"Meera Shah confirming the reference calls are booked.\", \"A further request from Bluepeak — a call, a partners' meeting, terms.\", \"Continued quiet after the details go.\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Bluepeak has reached reference calls.\", \"The founder's own word to send the details is the last thing in the file, and nothing after it shows they went.\", \"The quiet is already longer than any gap the file closed before.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Introduce Meera Shah to the two pilot leads who agreed to a reference call — copying them in, or sending their contact details — as he wrote he would, and ask for Bluepeak's next step.\", \"for_whom\": \"Meera Shah, Bluepeak Ventures\", \"by_when\": null}, \"alternative\": \"If the details already went another way, write one line confirming the leads expect her call, and ask for Bluepeak's next step and timing.\", \"wait_or_stop\": \"Do not wait: the next move is the founder's. Once the details have gone, give Bluepeak a week for the calls; if nothing comes, ask Meera Shah directly where Bluepeak stands, then stop.\", \"done_when\": \"Meera Shah has the two pilot leads' details and the reference calls are booked.\", \"draft\": \"Hi Meera, here are the two pilot leads who agreed to take a reference call with you — I've copied them both so you can find a time directly. Once you've spoken, could we talk about Bluepeak's next step? Arjun\"}",
+   "framed": true,
+   "input_tokens": 3809,
    "output_tokens": 1887,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "4051abc8db9d01854f807991302ab2ff0b75fe56bddf457aa9424d04f617485c": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "How do you plan to price the team tier once the pilots convert?",
-    "start_offset": 40,
-    "end_offset": 103,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"How do you plan to price the team tier once the pilots convert?\", \"start_offset\": 40, \"end_offset\": 103, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1514,
-   "output_tokens": 53,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "407a72554aed212ca13e5dfd15fca58cfc98a455d6898dba553867acd6e35869": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Bluepeak x Nimbus - references",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     },
-     {
-      "item": 2,
-      "business": true,
-      "description": "Bluepeak x Nimbus - references",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     },
-     {
-      "item": 3,
-      "business": true,
-      "description": "Re: Bluepeak x Nimbus - competition",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     },
-     {
-      "item": 4,
-      "business": true,
-      "description": "Bluepeak x Nimbus - competition",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - references\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Bluepeak x Nimbus - references\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - competition\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 4, \"business\": true, \"description\": \"Bluepeak x Nimbus - competition\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 1315,
-   "output_tokens": 157,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "437475b70490ed99c679df7b3aab1928e11ec0ac7aa293dc1484b0e685fbff5f": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Meera Shah",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Meera Shah",
-        "start_offset": 100,
-        "end_offset": 110
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Bluepeak Ventures",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Bluepeak Ventures",
-        "start_offset": 111,
-        "end_offset": 128
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Give the number of teams in next quarter's pipeline",
-      "asked_by": "Meera Shah",
-      "asked_of": "Arjun Rao",
-      "evidence": [
-       {
-        "quote": "How many teams are in your pipeline for the next quarter?",
-        "start_offset": 41,
-        "end_offset": 98
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 100, \"end_offset\": 110}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 111, \"end_offset\": 128}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Give the number of teams in next quarter's pipeline\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"How many teams are in your pipeline for the next quarter?\", \"start_offset\": 41, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 5506,
-   "output_tokens": 224,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "4507243e5224e7b139ecf2ce9bda5769a4570f8c5f3cd4dd81dfeda85f28773e": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Meera",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Meera",
-        "start_offset": 39,
-        "end_offset": 44
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 39, \"end_offset\": 44}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5507,
-   "output_tokens": 107,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "4e2743c2faf9447ec7a0b5b8ddc4c93ca6fd6824805713ced7ff41bd57a0d081": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Meera Shah",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Meera Shah",
-        "start_offset": 100,
-        "end_offset": 110
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Bluepeak Ventures",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Bluepeak Ventures",
-        "start_offset": 111,
-        "end_offset": 128
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Say who the first engineering hire after the round will be",
-      "asked_by": "Meera Shah",
-      "asked_of": "Arjun Rao",
-      "evidence": [
-       {
-        "quote": "Who is the first engineer you plan to hire after the round?",
-        "start_offset": 39,
-        "end_offset": 98
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 100, \"end_offset\": 110}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 111, \"end_offset\": 128}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Say who the first engineering hire after the round will be\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Who is the first engineer you plan to hire after the round?\", \"start_offset\": 39, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 5505,
-   "output_tokens": 227,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "568d28c9441ba2529cba71491e39df52879e034ba4bcc0ac11e2beb9167fe469": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Re: Bluepeak x Nimbus - hiring",
-    "start_offset": 0,
-    "end_offset": 30,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - hiring\", \"start_offset\": 0, \"end_offset\": 30, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1507,
-   "output_tokens": 44,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "5d6399e7499ee26f68e3f1d0a267a3f40fb8361eed7e4499e78ccf12ce49ef13": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Meera",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Meera",
-        "start_offset": 37,
-        "end_offset": 42
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 37, \"end_offset\": 42}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5500,
-   "output_tokens": 107,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "5ec422fc3c0b7f50a51dfcdace3cb808a94b4c97742d72e3668fcc84feb99c67": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "How many teams are in your pipeline for the next quarter?",
-    "start_offset": 41,
-    "end_offset": 98,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"How many teams are in your pipeline for the next quarter?\", \"start_offset\": 41, \"end_offset\": 98, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1512,
-   "output_tokens": 52,
    "model": "claude-haiku-4-5-20251001"
   },
   "6dd29f5a184128e746d11c61f3355a8215b44bfdc449f79746aa8901450851b2": {
@@ -814,6 +829,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - pipeline\", \"start_offset\": 0, \"end_offset\": 32, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1505,
    "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
@@ -889,8 +905,25 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - pipeline\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Bluepeak x Nimbus - pipeline\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - hiring\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 4, \"business\": true, \"description\": \"Bluepeak x Nimbus - hiring\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 5, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - pricing\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 6, \"business\": true, \"description\": \"Bluepeak x Nimbus - pricing\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 7, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - retention\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 8, \"business\": true, \"description\": \"Bluepeak x Nimbus - retention\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
    "input_tokens": 1498,
    "output_tokens": 304,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7dc05d7512404b6e0bb8acbe072b09d24e94db5b364a0340e13c835ef4427f98": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1593,
+   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
   "830daf59e1869945b47a00106106e89a73e09885abb478946c1d95bc311b4149": {
@@ -953,6 +986,7 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 115, \"end_offset\": 125}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 126, \"end_offset\": 143}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Arrange two pilot-customer reference calls\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could two of your pilot customers take a short reference call with us?\", \"start_offset\": 43, \"end_offset\": 113}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "framed": true,
    "input_tokens": 5510,
    "output_tokens": 226,
    "model": "claude-haiku-4-5-20251001"
@@ -1017,8 +1051,25 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 110, \"end_offset\": 120}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 121, \"end_offset\": 138}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Name the tool the pilot teams use today instead of Nimbus Labs\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Which tool do your pilot teams use today instead of Nimbus Labs?\", \"start_offset\": 44, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "framed": true,
    "input_tokens": 5509,
    "output_tokens": 229,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a1d40d82f63cd84f0ae38a07d54531c2310cc716fd10aafcf5f52443ddb1874b": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1677,
+   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
   "a43ca235b96880df456d6a2e71a0bf17ce6d0361a024f26772687ebee2817f58": {
@@ -1054,6 +1105,7 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 38, \"end_offset\": 43}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
    "input_tokens": 5509,
    "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
@@ -1111,6 +1163,7 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 4, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 5, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 6, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 7, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
    "input_tokens": 1257,
    "output_tokens": 192,
    "model": "claude-haiku-4-5-20251001"
@@ -1148,6 +1201,7 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 40, \"end_offset\": 45}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
    "input_tokens": 5505,
    "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
@@ -1181,6 +1235,7 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
    "input_tokens": 1136,
    "output_tokens": 96,
    "model": "claude-haiku-4-5-20251001"
@@ -1197,6 +1252,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - competition\", \"start_offset\": 0, \"end_offset\": 35, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1510,
    "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
@@ -1261,6 +1317,7 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 118, \"end_offset\": 128}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 129, \"end_offset\": 146}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the eight-week retention of the first three pilot teams\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you share how the first three pilot teams retained over eight weeks?\", \"start_offset\": 42, \"end_offset\": 116}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "framed": true,
    "input_tokens": 5511,
    "output_tokens": 231,
    "model": "claude-haiku-4-5-20251001"
@@ -1298,6 +1355,7 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 35, \"end_offset\": 40}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
    "input_tokens": 5501,
    "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"

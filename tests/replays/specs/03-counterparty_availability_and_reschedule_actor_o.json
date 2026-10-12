@@ -56,8 +56,8 @@
       "expected_decision": "Observation only / Review source",
       "prohibited": "Claiming \"Met N days ago\" or sending a recap",
       "pass_condition": "No action button is rendered, and an explicit missing-occurrence/missing-attendance code is present on the output",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "No observation / review vocabulary exists — cards.level only carries prescriptive/predictive, and there is no missing-evidence code channel on the card"
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "Calendar is disconnected, or the sync window is incomplete",

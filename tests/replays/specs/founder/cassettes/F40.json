@@ -1,50 +1,8 @@
 {
  "case_id": "F40",
  "source": "ideal_reader",
- "recorded_at": "1b5e5f58",
+ "recorded_at": "a10f3140",
  "answers": {
-  "12fb36cf30c9ec0678598511a3b49a781ea69161cbc23324a38c9cb813903403": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "DECISION_MADE",
-      "confidence_bp": 6000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
-   "input_tokens": 1033,
-   "output_tokens": 50,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "51980a9453f8c059a07ce61a443b23d83c09080343c31e4e5d64fc10d871b14c": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.action_item_tracking.one_register_across_meetings": 5005,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4994,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
-     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4886
-    },
-    "confidence_bp": 5000,
-    "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 5005, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4994, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4886}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
-   "input_tokens": 4422,
-   "output_tokens": 109,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "54fb90071de227117bed8a5e21ff799cbce0e8205585b7f03aebeb596aa6e987": {
    "site": "relevance",
    "parsed": {
@@ -60,47 +18,25 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
+   "framed": true,
    "input_tokens": 1138,
    "output_tokens": 38,
    "model": "claude-haiku-4-5-20251001"
   },
-  "6cfdcd6a8e74421ea7d1f1d6ee06f8fb35951d4bf75dacad93175b1afe16e412": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "DECISION_MADE",
-      "confidence_bp": 6000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
-   "input_tokens": 1034,
-   "output_tokens": 50,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a8b5afe451ee9af49f2ade5a189f41430debaf62c47af5148f12affcca3da8f1": {
+  "a3b9849f7030146d593bd49547a1694a7c3f76218d1df927b0b1123e80730da7": {
    "site": "expert",
    "parsed": {
     "facts": [
      {
       "claim": "The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.",
       "evidence": [
-       "evt_547adcf31568fedadb1f9552"
+       "evt_#1"
       ]
      },
      {
       "claim": "No words go with the booking — no title, agenda or note.",
       "evidence": [
-       "evt_547adcf31568fedadb1f9552"
+       "evt_#1"
       ]
      },
      {
@@ -113,13 +49,13 @@
      {
       "claim": "Nothing on record shows the meeting taking place, nor anything agreed at it.",
       "evidence": [
-       "evt_547adcf31568fedadb1f9552"
+       "evt_#1"
       ]
      },
      {
       "claim": "The brief names no kind of work for this contact; the engine opened an admin situation on the booking.",
       "evidence": [
-       "sit:sit_435d409034319684f09efa26"
+       "sit:sit_#1"
       ]
      }
     ],
@@ -205,37 +141,26 @@
     "done_when": "A mail or the founder's note shows what the meeting was for and what follows — or the file stays quiet and is let go.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.\", \"evidence\": [\"evt_547adcf31568fedadb1f9552\"]}, {\"claim\": \"No words go with the booking — no title, agenda or note.\", \"evidence\": [\"evt_547adcf31568fedadb1f9552\"]}, {\"claim\": \"Neither side's reply time is measured, and the file holds no mail at all.\", \"evidence\": [\"num:their_reply_time:meera@tallgrass.test\", \"num:your_reply_time:meera@tallgrass.test\"]}, {\"claim\": \"Nothing on record shows the meeting taking place, nor anything agreed at it.\", \"evidence\": [\"evt_547adcf31568fedadb1f9552\"]}, {\"claim\": \"The brief names no kind of work for this contact; the engine opened an admin situation on the booking.\", \"evidence\": [\"sit:sit_435d409034319684f09efa26\"]}], \"inferences\": [{\"claim\": \"The only thing known is a booking: whether the meeting took place, and what came of it, cannot be read from this file.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}, {\"claim\": \"No follow-through can be owed on a meeting nobody has confirmed took place.\", \"based_on\": [\"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The meeting went ahead as booked.\", \"needs\": \"A mail from either side after the booked time, or the founder's own word.\"}, {\"proposition\": \"The meeting was moved or dropped.\", \"needs\": \"A changed or cancelled calendar entry, or a mail saying so.\"}], \"unknowns\": [{\"question\": \"Whether the meeting took place at all.\", \"relevance\": \"Only a meeting that took place can leave anything owed; until one is confirmed, nothing can be asked of the founder.\"}, {\"question\": \"What the meeting is for, and who this contact at Tallgrass is to Nimbus Labs.\", \"relevance\": \"The brief names no kind of work for the contact, so neither preparation nor any later step can be judged.\"}, {\"question\": \"Whether any mailbox has read this contact's mail.\", \"relevance\": \"No mailbox is shown to have read it, so the absence of mail says nothing either way.\"}], \"frames\": {\"primary\": \"A calendar booking with no words around it: a meeting with meera@tallgrass.test sits on the calendar and the file holds nothing else. Nothing is owed until a signal shows what, if anything, came of it.\", \"rivals\": [\"A meeting that went ahead and left a step owed — nothing on record shows either.\", \"A booking that was moved or dropped without the calendar saying so.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook or any mail, nothing is expected beyond the booking itself.\", \"actual\": \"A booking for the thirteenth of August is all the file holds: no mail, no words, and no confirmation that the meeting took place.\"}, \"scenarios\": {\"do_nothing\": \"If the meeting matters, mail from one side will show it; the file loses nothing by waiting.\", \"act\": \"Acting now would mean guessing at a meeting nobody has described — a note about what was agreed would rest on nothing.\", \"best\": \"A mail from either side shows what the meeting was for and what, if anything, comes next.\", \"worst\": \"Something agreed at the meeting is never written down — and the file cannot know it without a signal.\", \"signals_to_watch\": [\"A mail from meera@tallgrass.test or from the founder after the booked time.\", \"The calendar entry moving or being cancelled.\", \"The founder's own note on what was agreed.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The file holds only a booking, with no words, mail or promise.\", \"The brief names no kind of work for this contact.\", \"Nothing on record shows anything owed by the founder.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the founder wants a record, he can note what was agreed himself; nothing should be presumed for him.\", \"wait_or_stop\": \"Wait for a signal — a mail from either side, or the founder's own note. Stop if the booked time passes and the file stays quiet with nothing written.\", \"done_when\": \"A mail or the founder's note shows what the meeting was for and what follows — or the file stays quiet and is let go.\", \"draft\": null}",
-   "input_tokens": 2960,
+   "raw": "{\"facts\": [{\"claim\": \"The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"No words go with the booking — no title, agenda or note.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Neither side's reply time is measured, and the file holds no mail at all.\", \"evidence\": [\"num:their_reply_time:meera@tallgrass.test\", \"num:your_reply_time:meera@tallgrass.test\"]}, {\"claim\": \"Nothing on record shows the meeting taking place, nor anything agreed at it.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The brief names no kind of work for this contact; the engine opened an admin situation on the booking.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The only thing known is a booking: whether the meeting took place, and what came of it, cannot be read from this file.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}, {\"claim\": \"No follow-through can be owed on a meeting nobody has confirmed took place.\", \"based_on\": [\"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The meeting went ahead as booked.\", \"needs\": \"A mail from either side after the booked time, or the founder's own word.\"}, {\"proposition\": \"The meeting was moved or dropped.\", \"needs\": \"A changed or cancelled calendar entry, or a mail saying so.\"}], \"unknowns\": [{\"question\": \"Whether the meeting took place at all.\", \"relevance\": \"Only a meeting that took place can leave anything owed; until one is confirmed, nothing can be asked of the founder.\"}, {\"question\": \"What the meeting is for, and who this contact at Tallgrass is to Nimbus Labs.\", \"relevance\": \"The brief names no kind of work for the contact, so neither preparation nor any later step can be judged.\"}, {\"question\": \"Whether any mailbox has read this contact's mail.\", \"relevance\": \"No mailbox is shown to have read it, so the absence of mail says nothing either way.\"}], \"frames\": {\"primary\": \"A calendar booking with no words around it: a meeting with meera@tallgrass.test sits on the calendar and the file holds nothing else. Nothing is owed until a signal shows what, if anything, came of it.\", \"rivals\": [\"A meeting that went ahead and left a step owed — nothing on record shows either.\", \"A booking that was moved or dropped without the calendar saying so.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook or any mail, nothing is expected beyond the booking itself.\", \"actual\": \"A booking for the thirteenth of August is all the file holds: no mail, no words, and no confirmation that the meeting took place.\"}, \"scenarios\": {\"do_nothing\": \"If the meeting matters, mail from one side will show it; the file loses nothing by waiting.\", \"act\": \"Acting now would mean guessing at a meeting nobody has described — a note about what was agreed would rest on nothing.\", \"best\": \"A mail from either side shows what the meeting was for and what, if anything, comes next.\", \"worst\": \"Something agreed at the meeting is never written down — and the file cannot know it without a signal.\", \"signals_to_watch\": [\"A mail from meera@tallgrass.test or from the founder after the booked time.\", \"The calendar entry moving or being cancelled.\", \"The founder's own note on what was agreed.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The file holds only a booking, with no words, mail or promise.\", \"The brief names no kind of work for this contact.\", \"Nothing on record shows anything owed by the founder.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the founder wants a record, he can note what was agreed himself; nothing should be presumed for him.\", \"wait_or_stop\": \"Wait for a signal — a mail from either side, or the founder's own note. Stop if the booked time passes and the file stays quiet with nothing written.\", \"done_when\": \"A mail or the founder's note shows what the meeting was for and what follows — or the file stays quiet and is let go.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 2956,
    "output_tokens": 1018,
    "model": "claude-haiku-4-5-20251001"
   },
-  "ab00f014a6f878bd444e700a23cfadcb0c31f22b86a9d8ea812e44e48be9d5de": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Meeting with meera@tallgrass.test is clear",
-    "situation": "Nothing open is on record with meera@tallgrass.test.",
-    "artifact": "Nothing is missing on record; confirm the agenda."
-   },
-   "raw": "{\"headline\": \"Meeting with meera@tallgrass.test is clear\", \"situation\": \"Nothing open is on record with meera@tallgrass.test.\", \"artifact\": \"Nothing is missing on record; confirm the agenda.\"}",
-   "input_tokens": 680,
-   "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "be41c6502890c80aefa23533e197d7e34611d2362d17eb93764dd4ba47ffedfa": {
+  "f93c68750b5b1e5fe0dd103f0e78f17e6224cf6956a8accfeb2abbf90d7904a5": {
    "site": "expert",
    "parsed": {
     "facts": [
      {
       "claim": "The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.",
       "evidence": [
-       "evt_547adcf31568fedadb1f9552"
+       "evt_#1"
       ]
      },
      {
       "claim": "No words go with the booking — no title, agenda or note.",
       "evidence": [
-       "evt_547adcf31568fedadb1f9552"
+       "evt_#1"
       ]
      },
      {
@@ -248,13 +173,13 @@
      {
       "claim": "Nothing on record shows the meeting taking place, nor anything agreed at it.",
       "evidence": [
-       "evt_547adcf31568fedadb1f9552"
+       "evt_#1"
       ]
      },
      {
       "claim": "The brief names no kind of work for this contact; the engine opened an admin situation on the booking.",
       "evidence": [
-       "sit:sit_435d409034319684f09efa26"
+       "sit:sit_#1"
       ]
      }
     ],
@@ -340,84 +265,10 @@
     "done_when": "A mail or the founder's note shows what the meeting was for and what follows — or the file stays quiet and is let go.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.\", \"evidence\": [\"evt_547adcf31568fedadb1f9552\"]}, {\"claim\": \"No words go with the booking — no title, agenda or note.\", \"evidence\": [\"evt_547adcf31568fedadb1f9552\"]}, {\"claim\": \"Neither side's reply time is measured, and the file holds no mail at all.\", \"evidence\": [\"num:their_reply_time:meera@tallgrass.test\", \"num:your_reply_time:meera@tallgrass.test\"]}, {\"claim\": \"Nothing on record shows the meeting taking place, nor anything agreed at it.\", \"evidence\": [\"evt_547adcf31568fedadb1f9552\"]}, {\"claim\": \"The brief names no kind of work for this contact; the engine opened an admin situation on the booking.\", \"evidence\": [\"sit:sit_435d409034319684f09efa26\"]}], \"inferences\": [{\"claim\": \"The only thing known is a booking: whether the meeting took place, and what came of it, cannot be read from this file.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}, {\"claim\": \"No follow-through can be owed on a meeting nobody has confirmed took place.\", \"based_on\": [\"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The meeting went ahead as booked.\", \"needs\": \"A mail from either side after the booked time, or the founder's own word.\"}, {\"proposition\": \"The meeting was moved or dropped.\", \"needs\": \"A changed or cancelled calendar entry, or a mail saying so.\"}], \"unknowns\": [{\"question\": \"Whether the meeting took place at all.\", \"relevance\": \"Only a meeting that took place can leave anything owed; until one is confirmed, nothing can be asked of the founder.\"}, {\"question\": \"What the meeting is for, and who this contact at Tallgrass is to Nimbus Labs.\", \"relevance\": \"The brief names no kind of work for the contact, so neither preparation nor any later step can be judged.\"}, {\"question\": \"Whether any mailbox has read this contact's mail.\", \"relevance\": \"No mailbox is shown to have read it, so the absence of mail says nothing either way.\"}], \"frames\": {\"primary\": \"A calendar booking with no words around it: a meeting with meera@tallgrass.test sits on the calendar and the file holds nothing else. Nothing is owed until a signal shows what, if anything, came of it.\", \"rivals\": [\"A meeting that went ahead and left a step owed — nothing on record shows either.\", \"A booking that was moved or dropped without the calendar saying so.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook or any mail, nothing is expected beyond the booking itself.\", \"actual\": \"A booking for the thirteenth of August is all the file holds: no mail, no words, and no confirmation that the meeting took place.\"}, \"scenarios\": {\"do_nothing\": \"If the meeting matters, mail from one side will show it; the file loses nothing by waiting.\", \"act\": \"Acting now would mean guessing at a meeting nobody has described — a note about what was agreed would rest on nothing.\", \"best\": \"A mail from either side shows what the meeting was for and what, if anything, comes next.\", \"worst\": \"Something agreed at the meeting is never written down — and the file cannot know it without a signal.\", \"signals_to_watch\": [\"A mail from meera@tallgrass.test or from the founder after the booked time.\", \"The calendar entry moving or being cancelled.\", \"The founder's own note on what was agreed.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The file holds only a booking, with no words, mail or promise.\", \"The brief names no kind of work for this contact.\", \"Nothing on record shows anything owed by the founder.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the founder wants a record, he can note what was agreed himself; nothing should be presumed for him.\", \"wait_or_stop\": \"Wait for a signal — a mail from either side, or the founder's own note. Stop if the booked time passes and the file stays quiet with nothing written.\", \"done_when\": \"A mail or the founder's note shows what the meeting was for and what follows — or the file stays quiet and is let go.\", \"draft\": null}",
-   "input_tokens": 3071,
+   "raw": "{\"facts\": [{\"claim\": \"The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"No words go with the booking — no title, agenda or note.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Neither side's reply time is measured, and the file holds no mail at all.\", \"evidence\": [\"num:their_reply_time:meera@tallgrass.test\", \"num:your_reply_time:meera@tallgrass.test\"]}, {\"claim\": \"Nothing on record shows the meeting taking place, nor anything agreed at it.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The brief names no kind of work for this contact; the engine opened an admin situation on the booking.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The only thing known is a booking: whether the meeting took place, and what came of it, cannot be read from this file.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}, {\"claim\": \"No follow-through can be owed on a meeting nobody has confirmed took place.\", \"based_on\": [\"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The meeting went ahead as booked.\", \"needs\": \"A mail from either side after the booked time, or the founder's own word.\"}, {\"proposition\": \"The meeting was moved or dropped.\", \"needs\": \"A changed or cancelled calendar entry, or a mail saying so.\"}], \"unknowns\": [{\"question\": \"Whether the meeting took place at all.\", \"relevance\": \"Only a meeting that took place can leave anything owed; until one is confirmed, nothing can be asked of the founder.\"}, {\"question\": \"What the meeting is for, and who this contact at Tallgrass is to Nimbus Labs.\", \"relevance\": \"The brief names no kind of work for the contact, so neither preparation nor any later step can be judged.\"}, {\"question\": \"Whether any mailbox has read this contact's mail.\", \"relevance\": \"No mailbox is shown to have read it, so the absence of mail says nothing either way.\"}], \"frames\": {\"primary\": \"A calendar booking with no words around it: a meeting with meera@tallgrass.test sits on the calendar and the file holds nothing else. Nothing is owed until a signal shows what, if anything, came of it.\", \"rivals\": [\"A meeting that went ahead and left a step owed — nothing on record shows either.\", \"A booking that was moved or dropped without the calendar saying so.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook or any mail, nothing is expected beyond the booking itself.\", \"actual\": \"A booking for the thirteenth of August is all the file holds: no mail, no words, and no confirmation that the meeting took place.\"}, \"scenarios\": {\"do_nothing\": \"If the meeting matters, mail from one side will show it; the file loses nothing by waiting.\", \"act\": \"Acting now would mean guessing at a meeting nobody has described — a note about what was agreed would rest on nothing.\", \"best\": \"A mail from either side shows what the meeting was for and what, if anything, comes next.\", \"worst\": \"Something agreed at the meeting is never written down — and the file cannot know it without a signal.\", \"signals_to_watch\": [\"A mail from meera@tallgrass.test or from the founder after the booked time.\", \"The calendar entry moving or being cancelled.\", \"The founder's own note on what was agreed.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The file holds only a booking, with no words, mail or promise.\", \"The brief names no kind of work for this contact.\", \"Nothing on record shows anything owed by the founder.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the founder wants a record, he can note what was agreed himself; nothing should be presumed for him.\", \"wait_or_stop\": \"Wait for a signal — a mail from either side, or the founder's own note. Stop if the booked time passes and the file stays quiet with nothing written.\", \"done_when\": \"A mail or the founder's note shows what the meeting was for and what follows — or the file stays quiet and is let go.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 3025,
    "output_tokens": 1018,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "cc1e359a57298ae59143f6ee0c8698ca9b1f6d18f1fee48706e28b222b6403d6": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.cold_calling.permission_based_opener": 3869,
-     "sales.pb.demo.discovery_anchored_demo": 3799,
-     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3736,
-     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3820
-    },
-    "confidence_bp": 4000,
-    "rationale": "A sales opener or demo script does not fit a founder's meeting.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3869, \"sales.pb.demo.discovery_anchored_demo\": 3799, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3736, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3820}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener or demo script does not fit a founder's meeting.\", \"missing\": []}",
-   "input_tokens": 4318,
-   "output_tokens": 93,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d280329e4f18f1deadca7672b73184e3ba70ea6530993b844141eb0dabec7298": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Meeting with meera@tallgrass.test, 2 days ago",
-    "situation": "The meeting with meera@tallgrass.test happened 2 days ago. No follow-through is visible.",
-    "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
-   },
-   "raw": "{\"headline\": \"Meeting with meera@tallgrass.test, 2 days ago\", \"situation\": \"The meeting with meera@tallgrass.test happened 2 days ago. No follow-through is visible.\", \"artifact\": \"Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date].\"}",
-   "input_tokens": 656,
-   "output_tokens": 67,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d98b11514c469cd6adad10af8294f0f00c9f13e1abb8d9127ef39fb0a3cb4d7f": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.agenda_preparation.decision_first_agendas": 4671,
-     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 6200,
-     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4671,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4814,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4870,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5063,
-     "admin.pb.meeting_scheduling.schedule_once_correctly": 4804
-    },
-    "confidence_bp": 5000,
-    "rationale": "A confirmed external meeting is coming.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4671, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 6200, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4671, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4814, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4870, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5063, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4804}, \"confidence_bp\": 5000, \"rationale\": \"A confirmed external meeting is coming.\", \"missing\": []}",
-   "input_tokens": 5538,
-   "output_tokens": 152,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f1eca7f535b75d3fc3397db6afee09fa12568307b042953a9c753fd5a19dd4a4": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.agenda_preparation.decision_first_agendas": 4671,
-     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 4805,
-     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4671,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4814,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 6200,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5063,
-     "admin.pb.meeting_scheduling.schedule_once_correctly": 4804
-    },
-    "confidence_bp": 5000,
-    "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4671, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 4805, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4671, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4814, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6200, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5063, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4804}, \"confidence_bp\": 5000, \"rationale\": \"The meeting was on the calendar; what, if anything, was promised is open.\", \"missing\": []}",
-   "input_tokens": 5543,
-   "output_tokens": 161,
    "model": "claude-haiku-4-5-20251001"
   }
  }

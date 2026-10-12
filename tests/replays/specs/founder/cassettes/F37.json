@@ -1,20 +1,8 @@
 {
  "case_id": "F37",
  "source": "ideal_reader",
- "recorded_at": "1b5e5f58",
+ "recorded_at": "a10f3140",
  "answers": {
-  "118d767f6a0a9b8f1643143015ad2ef9c08a2d7aedc037b03070d79b4fc028b9": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Farah Qureshi your deck",
-    "situation": "Farah Qureshi asked 2 days ago for your deck by Friday 12 Sep.",
-    "artifact": "Hi Farah, here is our deck. Thanks, Arjun"
-   },
-   "raw": "{\"headline\": \"Send Farah Qureshi your deck\", \"situation\": \"Farah Qureshi asked 2 days ago for your deck by Friday 12 Sep.\", \"artifact\": \"Hi Farah, here is our deck. Thanks, Arjun\"}",
-   "input_tokens": 1619,
-   "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "1b7a5c69bddb911d51d8d527c746f56138772f59570abb5d1c98245a925c03a5": {
    "site": "extraction",
    "parsed": {
@@ -69,34 +57,9 @@
     }
    },
    "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Farah Qureshi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Farah Qureshi\", \"start_offset\": 9, \"end_offset\": 22}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kitepath\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kitepath\", \"start_offset\": 24, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Farah Qureshi\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Farah Qureshi\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
+   "framed": true,
    "input_tokens": 5541,
    "output_tokens": 198,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "46d72de81efc7b0ffbcd0c44b36e589d6e242a448e70dc248dad0a9bff8f5ee6": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "customer_support.pb.breach_prevention.work_the_at_risk_list_hourly": 5067,
-     "customer_support.pb.expectation_setting.promise_the_process_not_the_outcome": 5263,
-     "customer_support.pb.response_drafting.answer_first_then_everything_else": 5600,
-     "customer_support.pb.ticket_triage.blast_radius_before_depth": 5009,
-     "customer_support.pb.ticket_triage.entitlement_before_complaint": 5009,
-     "customer_support.pb.ticket_triage.hand_off_with_the_assumption": 4953,
-     "customer_support.pb.ticket_triage.name_the_finishing_queue": 4981,
-     "customer_support.pb.ticket_triage.one_question_then_route": 4953,
-     "customer_support.pb.ticket_triage.state_the_coin_flip": 4953,
-     "customer_support.pb.ticket_triage.two_questions_in_order": 5009,
-     "customer_support.pb.ticket_triage.workaround_test": 4981
-    },
-    "confidence_bp": 4500,
-    "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 5067, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5263, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 5009, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 5009, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4953, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4981, \"customer_support.pb.ticket_triage.one_question_then_route\": 4953, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4953, \"customer_support.pb.ticket_triage.two_questions_in_order\": 5009, \"customer_support.pb.ticket_triage.workaround_test\": 4981}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
-   "input_tokens": 5354,
-   "output_tokens": 242,
    "model": "claude-haiku-4-5-20251001"
   },
   "5891825ab3791a5f4193b3889d8c6b26895401f81405ad3d812b22a8ad6500f6": {
@@ -176,6 +139,7 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"deck\"], \"entity_mentions\": [{\"surface_form\": \"Farah Qureshi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Farah Qureshi\", \"start_offset\": 13, \"end_offset\": 26}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kitepath\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kitepath\", \"start_offset\": 28, \"end_offset\": 36}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Send the deck by Friday 12 Sep\", \"asked_by\": \"Farah Qureshi\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Can you send your deck by Friday 12 Sep?\", \"start_offset\": 72, \"end_offset\": 112}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"Friday 12 Sep\", \"earliest\": \"2026-09-12T00:00:00+05:30\", \"latest\": \"2026-09-12T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-08T09:00:00Z\", \"evidence\": [{\"quote\": \"Friday 12 Sep\", \"start_offset\": 98, \"end_offset\": 111}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"the deck by Friday\"}}",
+   "framed": true,
    "input_tokens": 5510,
    "output_tokens": 288,
    "model": "claude-haiku-4-5-20251001"
@@ -192,6 +156,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Can you send your deck by Friday 12 Sep?\", \"start_offset\": 72, \"end_offset\": 112, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1514,
    "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
@@ -211,6 +176,7 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Farah Qureshi (Kitepath)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
    "input_tokens": 1167,
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
@@ -226,19 +192,20 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
    "input_tokens": 1036,
    "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c9d439e2719c84d66ca1ff0f9eb57d697f836a443160dd8d1d5fa8102fdc9c77": {
+  "c52630c87cae216e815611fcf3101de02d02fa7154a9c44f659579db54bf37cc": {
    "site": "expert",
    "parsed": {
     "proposed_kind": {
      "kind": "investor",
      "why": "The introduction names Farah as the one who leads investments at Kitepath, and she asked for the deck — investor work for the seed round the brief names.",
      "evidence": [
-      "evt_dcfe67d4a16fbbc55bf6a2b1",
-      "evt_475e72f774b0be782663b6dc"
+      "evt_#2",
+      "evt_#1"
      ]
     },
     "draft": "Hi Farah, good to meet you. Here is our deck — happy to walk you through it whenever suits you. Arjun",
@@ -252,25 +219,25 @@
      {
       "claim": "Introly introduced Arjun to Farah Qureshi, who leads investments at Kitepath, and left the two of them to take it from there.",
       "evidence": [
-       "evt_dcfe67d4a16fbbc55bf6a2b1"
+       "evt_#2"
       ]
      },
      {
       "claim": "Farah wrote to Arjun directly and asked him to send the deck by Friday the twelfth of September.",
       "evidence": [
-       "evt_475e72f774b0be782663b6dc"
+       "evt_#1"
       ]
      },
      {
       "claim": "Her ask is open and waits on us.",
       "evidence": [
-       "loop:loop_3d6f3e81f9289943ea0bc6b7"
+       "loop:loop_#1"
       ]
      },
      {
       "claim": "The engine reads the file as an investor relationship in the fundraising domain.",
       "evidence": [
-       "sit:sit_520a68e0278cc3aeb132ec4a"
+       "sit:sit_#1"
       ]
      },
      {
@@ -361,44 +328,10 @@
     "wait_or_stop": "No waiting — the ask is ours; once the deck is with Farah, wait for her reply.",
     "done_when": "Farah has the deck by the twelfth, and her ask is closed."
    },
-   "raw": "{\"proposed_kind\": {\"kind\": \"investor\", \"why\": \"The introduction names Farah as the one who leads investments at Kitepath, and she asked for the deck — investor work for the seed round the brief names.\", \"evidence\": [\"evt_dcfe67d4a16fbbc55bf6a2b1\", \"evt_475e72f774b0be782663b6dc\"]}, \"draft\": \"Hi Farah, good to meet you. Here is our deck — happy to walk you through it whenever suits you. Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Reply to Farah directly with the deck, before the twelfth.\", \"for_whom\": \"Farah Qureshi at Kitepath\", \"by_when\": \"2026-09-12\"}, \"facts\": [{\"claim\": \"Introly introduced Arjun to Farah Qureshi, who leads investments at Kitepath, and left the two of them to take it from there.\", \"evidence\": [\"evt_dcfe67d4a16fbbc55bf6a2b1\"]}, {\"claim\": \"Farah wrote to Arjun directly and asked him to send the deck by Friday the twelfth of September.\", \"evidence\": [\"evt_475e72f774b0be782663b6dc\"]}, {\"claim\": \"Her ask is open and waits on us.\", \"evidence\": [\"loop:loop_3d6f3e81f9289943ea0bc6b7\"]}, {\"claim\": \"The engine reads the file as an investor relationship in the fundraising domain.\", \"evidence\": [\"sit:sit_520a68e0278cc3aeb132ec4a\"]}, {\"claim\": \"No answer of ours to Farah is measured in the file.\", \"evidence\": [\"num:your_reply_time:farah@kitepath.test\"]}], \"inferences\": [{\"claim\": \"The connector's part is done: it handed the conversation over, so the person to answer is Farah, not the connector.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"An investor who asks for the deck within hours of an introduction is interested, and raising the seed round is the brief's first goal.\", \"based_on\": [\"fact:1\", \"fact:2\", \"num:usual_gap\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of Kitepath's pace beyond this first exchange.\", \"based_on\": [\"hist:derived.history.times_seen@fundraising\", \"hist:derived.history.prior_outcome@fundraising\"]}], \"hypotheses\": [{\"proposition\": \"Farah may want a call once she has read the deck.\", \"needs\": \"Her reply once the deck is with her.\"}], \"unknowns\": [{\"question\": \"Is the deck current and ready to send?\", \"relevance\": \"If it needs work, the twelfth sets the time for it.\"}, {\"question\": \"What does Kitepath invest in, at what stage and size, and does it fit the seed round?\", \"relevance\": \"It decides how much of the founder's time this lead deserves.\"}], \"frames\": {\"primary\": \"A fresh investor lead from a connector: Farah, who leads investments at Kitepath, asked for the deck by the twelfth, and the answer is Arjun's to send — to her, not to the connector.\", \"rivals\": [\"A connector's thread, where a thank-you to the connector might look like the next move — though it said it would let the two of them take it from there.\", \"A light first screen, where the deck joins a pile and the date matters less than it seems.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief's goal of raising the seed round: an investor's ask for the deck answered by its date.\", \"actual\": \"Farah's ask is open, and nothing from us is in the file.\"}, \"scenarios\": {\"do_nothing\": \"The twelfth passes without the deck, and an investor who asked within hours of the introduction moves on.\", \"act\": \"Sending the deck to Farah before the twelfth keeps a warm lead warm and opens the conversation with Kitepath.\", \"best\": \"Farah reads the deck and asks for a call; Kitepath joins the seed round's conversations.\", \"worst\": \"No deck by the twelfth and the lead goes cold — or the answer goes to the connector and Farah never sees it.\", \"signals_to_watch\": [\"The deck sent to Farah before the twelfth\", \"Farah asking for a call\", \"The twelfth passing with her ask still open\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Raising the seed round is the first goal the brief names, and Farah leads investments at Kitepath.\", \"She set the twelfth for the deck, only days away.\", \"A late deck can still be sent with an apology, so a slip is recoverable, if costly to the first impression.\"]}, \"mode\": \"act\", \"alternative\": \"If the deck needs work, tell Farah now when it will come, still before the twelfth.\", \"wait_or_stop\": \"No waiting — the ask is ours; once the deck is with Farah, wait for her reply.\", \"done_when\": \"Farah has the deck by the twelfth, and her ask is closed.\"}",
-   "input_tokens": 3175,
+   "raw": "{\"proposed_kind\": {\"kind\": \"investor\", \"why\": \"The introduction names Farah as the one who leads investments at Kitepath, and she asked for the deck — investor work for the seed round the brief names.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"draft\": \"Hi Farah, good to meet you. Here is our deck — happy to walk you through it whenever suits you. Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Reply to Farah directly with the deck, before the twelfth.\", \"for_whom\": \"Farah Qureshi at Kitepath\", \"by_when\": \"2026-09-12\"}, \"facts\": [{\"claim\": \"Introly introduced Arjun to Farah Qureshi, who leads investments at Kitepath, and left the two of them to take it from there.\", \"evidence\": [\"evt_#2\"]}, {\"claim\": \"Farah wrote to Arjun directly and asked him to send the deck by Friday the twelfth of September.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Her ask is open and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The engine reads the file as an investor relationship in the fundraising domain.\", \"evidence\": [\"sit:sit_#1\"]}, {\"claim\": \"No answer of ours to Farah is measured in the file.\", \"evidence\": [\"num:your_reply_time:farah@kitepath.test\"]}], \"inferences\": [{\"claim\": \"The connector's part is done: it handed the conversation over, so the person to answer is Farah, not the connector.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"An investor who asks for the deck within hours of an introduction is interested, and raising the seed round is the brief's first goal.\", \"based_on\": [\"fact:1\", \"fact:2\", \"num:usual_gap\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of Kitepath's pace beyond this first exchange.\", \"based_on\": [\"hist:derived.history.times_seen@fundraising\", \"hist:derived.history.prior_outcome@fundraising\"]}], \"hypotheses\": [{\"proposition\": \"Farah may want a call once she has read the deck.\", \"needs\": \"Her reply once the deck is with her.\"}], \"unknowns\": [{\"question\": \"Is the deck current and ready to send?\", \"relevance\": \"If it needs work, the twelfth sets the time for it.\"}, {\"question\": \"What does Kitepath invest in, at what stage and size, and does it fit the seed round?\", \"relevance\": \"It decides how much of the founder's time this lead deserves.\"}], \"frames\": {\"primary\": \"A fresh investor lead from a connector: Farah, who leads investments at Kitepath, asked for the deck by the twelfth, and the answer is Arjun's to send — to her, not to the connector.\", \"rivals\": [\"A connector's thread, where a thank-you to the connector might look like the next move — though it said it would let the two of them take it from there.\", \"A light first screen, where the deck joins a pile and the date matters less than it seems.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief's goal of raising the seed round: an investor's ask for the deck answered by its date.\", \"actual\": \"Farah's ask is open, and nothing from us is in the file.\"}, \"scenarios\": {\"do_nothing\": \"The twelfth passes without the deck, and an investor who asked within hours of the introduction moves on.\", \"act\": \"Sending the deck to Farah before the twelfth keeps a warm lead warm and opens the conversation with Kitepath.\", \"best\": \"Farah reads the deck and asks for a call; Kitepath joins the seed round's conversations.\", \"worst\": \"No deck by the twelfth and the lead goes cold — or the answer goes to the connector and Farah never sees it.\", \"signals_to_watch\": [\"The deck sent to Farah before the twelfth\", \"Farah asking for a call\", \"The twelfth passing with her ask still open\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Raising the seed round is the first goal the brief names, and Farah leads investments at Kitepath.\", \"She set the twelfth for the deck, only days away.\", \"A late deck can still be sent with an apology, so a slip is recoverable, if costly to the first impression.\"]}, \"mode\": \"act\", \"alternative\": \"If the deck needs work, tell Farah now when it will come, still before the twelfth.\", \"wait_or_stop\": \"No waiting — the ask is ours; once the deck is with Farah, wait for her reply.\", \"done_when\": \"Farah has the deck by the twelfth, and her ask is closed.\"}",
+   "framed": true,
+   "input_tokens": 3169,
    "output_tokens": 1098,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d1189199262a188f92c421cc690d2a3bb628f9acfaba828fdae1ea11137e7caa": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 4,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 1167,
-   "output_tokens": 98,
    "model": "claude-haiku-4-5-20251001"
   },
   "e2a0ef59ddf42ca2be8907424a8266871af944afbc16918a34d477c031fe4cee": {
@@ -413,51 +346,9 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 199, \"end_offset\": 234, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1541,
    "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ef2b876ad61c3a478e9ce26e6c2a98a0d8a9b861360a91c39ec9b7d4d48f83f5": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "customer_support.pb.breach_prevention.work_the_at_risk_list_hourly": 4949,
-     "customer_support.pb.expectation_setting.promise_the_process_not_the_outcome": 5145,
-     "customer_support.pb.response_drafting.answer_first_then_everything_else": 5600,
-     "customer_support.pb.ticket_triage.blast_radius_before_depth": 4892,
-     "customer_support.pb.ticket_triage.entitlement_before_complaint": 4892,
-     "customer_support.pb.ticket_triage.hand_off_with_the_assumption": 4836,
-     "customer_support.pb.ticket_triage.name_the_finishing_queue": 4864,
-     "customer_support.pb.ticket_triage.one_question_then_route": 4836,
-     "customer_support.pb.ticket_triage.state_the_coin_flip": 4836,
-     "customer_support.pb.ticket_triage.two_questions_in_order": 4892,
-     "customer_support.pb.ticket_triage.workaround_test": 4864
-    },
-    "confidence_bp": 4500,
-    "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 4949, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5145, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 4892, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 4892, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4836, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4864, \"customer_support.pb.ticket_triage.one_question_then_route\": 4836, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4836, \"customer_support.pb.ticket_triage.two_questions_in_order\": 4892, \"customer_support.pb.ticket_triage.workaround_test\": 4864}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
-   "input_tokens": 5351,
-   "output_tokens": 242,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "fda255d966787d4c8e31fe938763d0ab603d1809c44b48d39567a92ccf76e629": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 2123,
-   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   }
  }

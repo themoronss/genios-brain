@@ -1,7 +1,7 @@
 {
  "case_id": "F53",
  "source": "ideal_reader",
- "recorded_at": "46f37bea",
+ "recorded_at": "a10f3140",
  "answers": {
   "5d40dbc85cef6db2be5de633ffb246c582ad7bac78d1267d59f8fd6c5e27d010": {
    "site": "resolution",
@@ -15,6 +15,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"How many design partners do you have live today?\", \"start_offset\": 51, \"end_offset\": 99, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1517,
    "output_tokens": 49,
    "model": "claude-haiku-4-5-20251001"

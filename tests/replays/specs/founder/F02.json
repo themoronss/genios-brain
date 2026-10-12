@@ -286,7 +286,7 @@
   "stage": "STEP-11 — no stage is derived for a file (STEP-09 built the files, not their stages)"
  },
  "notes": "Three of the four real mails were dropped by the rules (Promotions N-06, no-reply N-03); the fourth passed them and the AI filter called it junk, which is also the faithful answer to an automated acknowledgement.",
- "blocked_on": "the portal and the locker each have their own file since STEP-09, and the portal's account_admin situation now reaches the decider — which is shown none of the notices' words, only the company, and faithfully defers: no card — the file's content in front of the decider is STEP-12 (the dossier)",
+ "blocked_on": "the file is decided from its review since STEP-12, one decision per review — and its move changed as the file moved (the board resolution, then the certificate), so two cards where one should change: STEP-14's living card (03 F176)",
  "model": {
   "decider": [
    {
@@ -425,13 +425,13 @@
       {
        "claim": "StartupSetu Support then wrote that it had received the board resolution the founder uploaded, and that the examiner would review it and update the application.",
        "evidence": [
-        "evt_0cd50331d44cd91129833ec8"
+        "evt_9d6c26970b7b45a94b1dbb97"
        ]
       },
       {
        "claim": "StartupSetu then wrote that Nimbus Labs Private Limited is recognised under the StartupSetu programme, with its certificate available on the portal.",
        "evidence": [
-        "evt_c778e797f2e6c8cc107b3a07"
+        "evt_5848f385e310ba76a3195cda"
        ]
       },
       {
@@ -451,7 +451,7 @@
        "claim": "The account admin situation formed on the examiner's ask was decided and deferred, and the recognition notice formed a second situation, read as an investor relationship in fundraising.",
        "evidence": [
         "sit:sit_3790e1fb03ef0358179ac6a5",
-        "sit:sit_ab2ade90e729de1ae1619cfa"
+        "sit:sit_7184f905e550e1148f7308ca"
        ]
       }
      ],

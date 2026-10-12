@@ -1,7 +1,7 @@
 {
  "case_id": "F23",
  "source": "ideal_reader",
- "recorded_at": "46f37bea",
+ "recorded_at": "a10f3140",
  "answers": {
   "b82a239741676b41bce64953485544117638032ee24e34e3479bf9e4721384ea": {
    "site": "expert",
@@ -10,20 +10,20 @@
      {
       "claim": "The State Startup Mission wrote that Nimbus Labs' registration on its portal is complete, and gave its registration number.",
       "evidence": [
-       "evt_b9151ac8d56114de9e250716"
+       "evt_#1"
       ]
      },
      {
       "claim": "Before that it wrote that the sustenance allowance scheme has been extended to March.",
       "evidence": [
-       "evt_1a3e736dba0d7ba62c882d66"
+       "evt_#3"
       ]
      },
      {
       "claim": "Its other mail is monthly bulletins addressed to every startup.",
       "evidence": [
-       "evt_68047246bb4f2c5c07da44df",
-       "evt_3af4b8a1ece6736014cbfa5c"
+       "evt_#4",
+       "evt_#2"
       ]
      },
      {
@@ -35,8 +35,8 @@
      {
       "claim": "Beside the file's account admin situation, the engine opened a sales opportunity situation on one of the bulletins.",
       "evidence": [
-       "sit:sit_b95f37bfa5df7faa1b98c6d5",
-       "sit:sit_54806634429f5907f374cd02"
+       "sit:sit_#2",
+       "sit:sit_#1"
       ]
      },
      {
@@ -94,7 +94,7 @@
      }
     ],
     "frames": {
-     "primary": "The mission's portal reports Nimbus Labs' registration complete and gives its registration number — the application the brief lists as applied is settled.",
+     "primary": "The mission's portal reports your registration complete and gives its registration number — the application the brief lists as applied is settled.",
      "rivals": [
       "One more templated notice that needs nothing beyond filing.",
       "A registration that is a first step toward the mission's schemes rather than an end in itself."
@@ -137,9 +137,10 @@
     "done_when": "The registration number is on file and the brief's line says registered.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"The State Startup Mission wrote that Nimbus Labs' registration on its portal is complete, and gave its registration number.\", \"evidence\": [\"evt_b9151ac8d56114de9e250716\"]}, {\"claim\": \"Before that it wrote that the sustenance allowance scheme has been extended to March.\", \"evidence\": [\"evt_1a3e736dba0d7ba62c882d66\"]}, {\"claim\": \"Its other mail is monthly bulletins addressed to every startup.\", \"evidence\": [\"evt_68047246bb4f2c5c07da44df\", \"evt_3af4b8a1ece6736014cbfa5c\"]}, {\"claim\": \"The mission writes from a no-reply address.\", \"evidence\": [\"num:their_reply_time:no-reply@statestartup.gov.test\"]}, {\"claim\": \"Beside the file's account admin situation, the engine opened a sales opportunity situation on one of the bulletins.\", \"evidence\": [\"sit:sit_b95f37bfa5df7faa1b98c6d5\", \"sit:sit_54806634429f5907f374cd02\"]}, {\"claim\": \"The playbook holds that for a government scheme the portal's status is the record and its templated notices are the programme speaking.\", \"evidence\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"inferences\": [{\"claim\": \"The application the brief lists as applied is settled: the registration is done.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"Nothing is owed back, and nothing could be answered by mail: the sender takes no replies.\", \"based_on\": [\"fact:1\", \"fact:4\"]}, {\"claim\": \"A bulletin read as a sales opportunity is a misfiling: the mission is a programme writing to every startup, not a buyer.\", \"based_on\": [\"fact:3\", \"fact:5\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Such notices arrive from an automated sender, the shape a mail filter treats as automated — the copy of the record most likely to be lost.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"hypotheses\": [{\"proposition\": \"The registration opens the mission's schemes to Nimbus Labs — such as the sustenance allowance scheme it said was extended to March.\", \"needs\": \"The scheme's own terms.\"}], \"unknowns\": [{\"question\": \"What the registration number is needed for next.\", \"relevance\": \"It decides where the number must be kept and who needs it.\"}, {\"question\": \"Whether the portal shows anything further asked of Nimbus Labs.\", \"relevance\": \"The portal, not the mail, is the record.\"}], \"frames\": {\"primary\": \"The mission's portal reports Nimbus Labs' registration complete and gives its registration number — the application the brief lists as applied is settled.\", \"rivals\": [\"One more templated notice that needs nothing beyond filing.\", \"A registration that is a first step toward the mission's schemes rather than an end in itself.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"in_programme\", \"expected\": \"The application is settled; what the file holds now is the programme's own calendar and notices.\", \"actual\": \"The mission wrote that the registration on its portal is complete, with a registration number; its other mail is bulletins and a scheme update.\"}, \"scenarios\": {\"do_nothing\": \"The number sits in one mail among bulletins, and the brief keeps saying applied.\", \"act\": \"The number is filed with the company's papers and the brief says registered, ready for the next scheme.\", \"best\": \"The registration is on file and a scheme the company can use is found through it.\", \"worst\": \"The number is lost among bulletins and has to be dug out when a scheme or an office asks for it.\", \"signals_to_watch\": [\"Notices from the mission about schemes open to registered startups.\", \"The portal's record for Nimbus Labs.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The registration is complete; nothing is owed back to the mission.\", \"The number arrived in a templated mail from a no-reply sender, the kind most easily lost.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"File the registration number from the mission's mail with the company's papers, and move the brief's State Startup Mission line from applied to registered.\", \"for_whom\": \"Nimbus Labs' records and its brief\", \"by_when\": null}, \"alternative\": \"Check whether the sustenance allowance scheme the mission extended to March is open to a registered startup.\", \"wait_or_stop\": \"Nothing to wait for. Stop once the number is filed and the brief reads registered.\", \"done_when\": \"The registration number is on file and the brief's line says registered.\", \"draft\": null}",
+   "raw": "{\"facts\": [{\"claim\": \"The State Startup Mission wrote that Nimbus Labs' registration on its portal is complete, and gave its registration number.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Before that it wrote that the sustenance allowance scheme has been extended to March.\", \"evidence\": [\"evt_#3\"]}, {\"claim\": \"Its other mail is monthly bulletins addressed to every startup.\", \"evidence\": [\"evt_#4\", \"evt_#2\"]}, {\"claim\": \"The mission writes from a no-reply address.\", \"evidence\": [\"num:their_reply_time:no-reply@statestartup.gov.test\"]}, {\"claim\": \"Beside the file's account admin situation, the engine opened a sales opportunity situation on one of the bulletins.\", \"evidence\": [\"sit:sit_#2\", \"sit:sit_#1\"]}, {\"claim\": \"The playbook holds that for a government scheme the portal's status is the record and its templated notices are the programme speaking.\", \"evidence\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"inferences\": [{\"claim\": \"The application the brief lists as applied is settled: the registration is done.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"Nothing is owed back, and nothing could be answered by mail: the sender takes no replies.\", \"based_on\": [\"fact:1\", \"fact:4\"]}, {\"claim\": \"A bulletin read as a sales opportunity is a misfiling: the mission is a programme writing to every startup, not a buyer.\", \"based_on\": [\"fact:3\", \"fact:5\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Such notices arrive from an automated sender, the shape a mail filter treats as automated — the copy of the record most likely to be lost.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"hypotheses\": [{\"proposition\": \"The registration opens the mission's schemes to Nimbus Labs — such as the sustenance allowance scheme it said was extended to March.\", \"needs\": \"The scheme's own terms.\"}], \"unknowns\": [{\"question\": \"What the registration number is needed for next.\", \"relevance\": \"It decides where the number must be kept and who needs it.\"}, {\"question\": \"Whether the portal shows anything further asked of Nimbus Labs.\", \"relevance\": \"The portal, not the mail, is the record.\"}], \"frames\": {\"primary\": \"The mission's portal reports your registration complete and gives its registration number — the application the brief lists as applied is settled.\", \"rivals\": [\"One more templated notice that needs nothing beyond filing.\", \"A registration that is a first step toward the mission's schemes rather than an end in itself.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"in_programme\", \"expected\": \"The application is settled; what the file holds now is the programme's own calendar and notices.\", \"actual\": \"The mission wrote that the registration on its portal is complete, with a registration number; its other mail is bulletins and a scheme update.\"}, \"scenarios\": {\"do_nothing\": \"The number sits in one mail among bulletins, and the brief keeps saying applied.\", \"act\": \"The number is filed with the company's papers and the brief says registered, ready for the next scheme.\", \"best\": \"The registration is on file and a scheme the company can use is found through it.\", \"worst\": \"The number is lost among bulletins and has to be dug out when a scheme or an office asks for it.\", \"signals_to_watch\": [\"Notices from the mission about schemes open to registered startups.\", \"The portal's record for Nimbus Labs.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The registration is complete; nothing is owed back to the mission.\", \"The number arrived in a templated mail from a no-reply sender, the kind most easily lost.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"File the registration number from the mission's mail with the company's papers, and move the brief's State Startup Mission line from applied to registered.\", \"for_whom\": \"Nimbus Labs' records and its brief\", \"by_when\": null}, \"alternative\": \"Check whether the sustenance allowance scheme the mission extended to March is open to a registered startup.\", \"wait_or_stop\": \"Nothing to wait for. Stop once the number is filed and the brief reads registered.\", \"done_when\": \"The registration number is on file and the brief's line says registered.\", \"draft\": null}",
+   "framed": true,
    "input_tokens": 9324,
-   "output_tokens": 1103,
+   "output_tokens": 1101,
    "model": "claude-haiku-4-5-20251001"
   }
  }

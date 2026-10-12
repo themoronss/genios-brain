@@ -1,7 +1,7 @@
 {
  "case_id": "F53",
  "source": "ideal_reader",
- "recorded_at": "1b5e5f58",
+ "recorded_at": "a10f3140",
  "answers": {
   "05aec04857e13cdb589156fefc497e3f6cefc0ff9b610b168d787754bd14d6cb": {
    "site": "extraction",
@@ -37,6 +37,7 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ira Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira\", \"start_offset\": 31, \"end_offset\": 34}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\", \"motive\": \"the answer to her question\"}}",
+   "framed": true,
    "input_tokens": 5509,
    "output_tokens": 117,
    "model": "claude-haiku-4-5-20251001"
@@ -53,6 +54,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Larkspur x Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 26, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1509,
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
@@ -91,6 +93,7 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ira Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira\", \"start_offset\": 99, \"end_offset\": 102}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\", \"motive\": \"taking it to her partners\"}}",
+   "framed": true,
    "input_tokens": 5505,
    "output_tokens": 117,
    "model": "claude-haiku-4-5-20251001"
@@ -124,6 +127,7 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
    "input_tokens": 1121,
    "output_tokens": 96,
    "model": "claude-haiku-4-5-20251001"
@@ -189,6 +193,7 @@
     }
    },
    "raw": "{\"intent\": \"question\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ira Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira\", \"start_offset\": 101, \"end_offset\": 104}], \"confidence_bp\": 9000}, {\"surface_form\": \"Larkspur Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Larkspur Ventures\", \"start_offset\": 105, \"end_offset\": 122}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"How many design partners are live\", \"asked_by\": \"Ira Bose\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"How many design partners do you have live today?\", \"start_offset\": 51, \"end_offset\": 99}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"interest after the demo\"}}",
+   "framed": true,
    "input_tokens": 5509,
    "output_tokens": 224,
    "model": "claude-haiku-4-5-20251001"
@@ -200,25 +205,25 @@
      {
       "claim": "Ira Bose of Larkspur Ventures wrote after the demo that she loved it, and asked how many design partners Nimbus Labs has live.",
       "evidence": [
-       "evt_c0d691bb8d4aa9af058c9301"
+       "evt_#4"
       ]
      },
      {
       "claim": "Arjun answered the next day: three live and two more starting in April, with an offer to walk her through them.",
       "evidence": [
-       "evt_a309eca25989b116aaf6fa80"
+       "evt_#3"
       ]
      },
      {
       "claim": "Ira wrote back that this was helpful and that she would take it to their Monday meeting.",
       "evidence": [
-       "evt_0f723e30ca018dc8761a2dfd"
+       "evt_#2"
       ]
      },
      {
       "claim": "Arjun answered that he would be happy to join the meeting if it helped; that mail is the file's last touch.",
       "evidence": [
-       "evt_0629e3d6c4bc8fe263774d01"
+       "evt_#1"
       ]
      },
      {
@@ -232,7 +237,7 @@
      {
       "claim": "The engine files Larkspur as a sales opportunity, and the brief names no kind of work for it.",
       "evidence": [
-       "sit:sit_68f58a53d34e98a5b46517cc"
+       "sit:sit_#1"
       ]
      }
     ],
@@ -302,7 +307,7 @@
      }
     ],
     "frames": {
-     "primary": "A fund in active interest, waiting on its own meeting: Larkspur Ventures loved the demo, asked about design partners, got its answer, and Ira is taking Nimbus Labs to their Monday meeting, with Arjun's offer to join on the table.",
+     "primary": "A fund in active interest, waiting on its own meeting: Larkspur Ventures loved the demo, asked about design partners, got its answer, and Ira is taking you to their Monday meeting, with your offer to join on the table.",
      "rivals": [
       "A polite holding answer: taking it to the Monday meeting may be how Ira closes the loop without committing.",
       "A sales conversation, as the engine files it; nothing in the mail supports that, and Ira writes for a fund."
@@ -312,8 +317,8 @@
      "kind": "investor",
      "why": "Ira signs for Larkspur Ventures, a fund, and after the demo asked about live design partners and took the company to the fund's Monday meeting: an investor's file, which the engine holds as a sales opportunity and the brief names no kind for.",
      "evidence": [
-      "evt_c0d691bb8d4aa9af058c9301",
-      "evt_0f723e30ca018dc8761a2dfd"
+      "evt_#4",
+      "evt_#2"
      ]
     },
     "expected_vs_actual": {
@@ -354,9 +359,10 @@
     "done_when": "Larkspur's answer from the Monday meeting is known, and the next step, a call, more material or a pass, is in the file.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"Ira Bose of Larkspur Ventures wrote after the demo that she loved it, and asked how many design partners Nimbus Labs has live.\", \"evidence\": [\"evt_c0d691bb8d4aa9af058c9301\"]}, {\"claim\": \"Arjun answered the next day: three live and two more starting in April, with an offer to walk her through them.\", \"evidence\": [\"evt_a309eca25989b116aaf6fa80\"]}, {\"claim\": \"Ira wrote back that this was helpful and that she would take it to their Monday meeting.\", \"evidence\": [\"evt_0f723e30ca018dc8761a2dfd\"]}, {\"claim\": \"Arjun answered that he would be happy to join the meeting if it helped; that mail is the file's last touch.\", \"evidence\": [\"evt_0629e3d6c4bc8fe263774d01\"]}, {\"claim\": \"The four mails ran both ways within about nine days, none left waiting longer than about a week, and the quiet since Arjun's last mail is still within the gaps the file has closed.\", \"evidence\": [\"num:usual_gap\", \"num:longest_gap\", \"num:days_quiet\"]}, {\"claim\": \"The engine files Larkspur as a sales opportunity, and the brief names no kind of work for it.\", \"evidence\": [\"sit:sit_68f58a53d34e98a5b46517cc\"]}], \"inferences\": [{\"claim\": \"The move is Larkspur's: Ira is taking Nimbus Labs to their Monday meeting, and Arjun's offer to join is on the table.\", \"based_on\": [\"fact:3\", \"fact:4\"]}, {\"claim\": \"The exchange is warm and quick on both sides: a fund that loved the demo carried it to its meeting within days.\", \"based_on\": [\"fact:1\", \"fact:3\", \"fact:5\"]}, {\"claim\": \"Nothing is owed by Arjun until the meeting has happened.\", \"based_on\": [\"fact:3\", \"fact:4\"]}, {\"claim\": \"Filed as a sales opportunity, a fund that loved the demo sits outside the seed round's work, where it belongs.\", \"based_on\": [\"fact:1\", \"fact:6\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Neither side has let the exchange sit longer than about a week; too few exchanges to call that normal, but it is the pace to judge the coming quiet by.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\"]}], \"hypotheses\": [{\"proposition\": \"Ira will come back after the meeting with a next step: a call with the fund, or a request for more.\", \"needs\": \"Word from Ira after the meeting.\"}, {\"proposition\": \"Larkspur will want to see the two design partners due in April start before it moves.\", \"needs\": \"Ira's questions after the meeting.\"}], \"unknowns\": [{\"question\": \"What Larkspur's Monday meeting will decide.\", \"relevance\": \"It sets the next move: a call with the fund, more material, or a pass.\"}, {\"question\": \"Whether Ira takes up Arjun's offer to join the meeting.\", \"relevance\": \"If she does, Arjun needs to prepare for it now.\"}, {\"question\": \"Which Monday the meeting falls on; the file does not date it.\", \"relevance\": \"It sets when Larkspur's quiet would start to mean something.\"}], \"frames\": {\"primary\": \"A fund in active interest, waiting on its own meeting: Larkspur Ventures loved the demo, asked about design partners, got its answer, and Ira is taking Nimbus Labs to their Monday meeting, with Arjun's offer to join on the table.\", \"rivals\": [\"A polite holding answer: taking it to the Monday meeting may be how Ira closes the loop without committing.\", \"A sales conversation, as the engine files it; nothing in the mail supports that, and Ira writes for a fund.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Ira signs for Larkspur Ventures, a fund, and after the demo asked about live design partners and took the company to the fund's Monday meeting: an investor's file, which the engine holds as a sales opportunity and the brief names no kind for.\", \"evidence\": [\"evt_c0d691bb8d4aa9af058c9301\", \"evt_0f723e30ca018dc8761a2dfd\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the file's own history: after Ira takes it to the Monday meeting, word from her within about a week, the pace the exchange has kept.\", \"actual\": \"Ira said she would take it to the meeting, Arjun offered to join, and the file has been quiet since, within its usual pace.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost yet: the move is Larkspur's until its Monday meeting has passed.\", \"act\": \"Writing again before the meeting adds pressure to an exchange that is going well; the useful work now is to be ready to join or to send more.\", \"best\": \"The meeting goes well and Ira comes back with a call with the fund or a next step toward the round.\", \"worst\": \"The meeting passes, Larkspur says nothing, and the file drifts into silence without anyone noticing.\", \"signals_to_watch\": [\"Ira writing after the Monday meeting\", \"An invitation for Arjun to join or present\", \"No word from Ira a week after the meeting\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Larkspur loved the demo.\", \"The move is Larkspur's until its Monday meeting has passed.\", \"Nothing Arjun could send now is needed, and holding back costs nothing.\"]}, \"mode\": \"wait\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"If nothing has come from Ira within a week of the Monday meeting, ask her where Larkspur landed and whether a walk-through of the design partners would help\", \"for_whom\": \"Ira Bose at Larkspur Ventures\", \"by_when\": null}, \"alternative\": \"If Ira asks Arjun to join the meeting, prepare the walk-through of the design partners he offered.\", \"wait_or_stop\": \"Wait until the Monday meeting has passed and a week more; then ask Ira once. If that also goes unanswered, stop chasing and keep Larkspur for a later update with news.\", \"done_when\": \"Larkspur's answer from the Monday meeting is known, and the next step, a call, more material or a pass, is in the file.\", \"draft\": null}",
+   "raw": "{\"facts\": [{\"claim\": \"Ira Bose of Larkspur Ventures wrote after the demo that she loved it, and asked how many design partners Nimbus Labs has live.\", \"evidence\": [\"evt_#4\"]}, {\"claim\": \"Arjun answered the next day: three live and two more starting in April, with an offer to walk her through them.\", \"evidence\": [\"evt_#3\"]}, {\"claim\": \"Ira wrote back that this was helpful and that she would take it to their Monday meeting.\", \"evidence\": [\"evt_#2\"]}, {\"claim\": \"Arjun answered that he would be happy to join the meeting if it helped; that mail is the file's last touch.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The four mails ran both ways within about nine days, none left waiting longer than about a week, and the quiet since Arjun's last mail is still within the gaps the file has closed.\", \"evidence\": [\"num:usual_gap\", \"num:longest_gap\", \"num:days_quiet\"]}, {\"claim\": \"The engine files Larkspur as a sales opportunity, and the brief names no kind of work for it.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The move is Larkspur's: Ira is taking Nimbus Labs to their Monday meeting, and Arjun's offer to join is on the table.\", \"based_on\": [\"fact:3\", \"fact:4\"]}, {\"claim\": \"The exchange is warm and quick on both sides: a fund that loved the demo carried it to its meeting within days.\", \"based_on\": [\"fact:1\", \"fact:3\", \"fact:5\"]}, {\"claim\": \"Nothing is owed by Arjun until the meeting has happened.\", \"based_on\": [\"fact:3\", \"fact:4\"]}, {\"claim\": \"Filed as a sales opportunity, a fund that loved the demo sits outside the seed round's work, where it belongs.\", \"based_on\": [\"fact:1\", \"fact:6\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Neither side has let the exchange sit longer than about a week; too few exchanges to call that normal, but it is the pace to judge the coming quiet by.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\"]}], \"hypotheses\": [{\"proposition\": \"Ira will come back after the meeting with a next step: a call with the fund, or a request for more.\", \"needs\": \"Word from Ira after the meeting.\"}, {\"proposition\": \"Larkspur will want to see the two design partners due in April start before it moves.\", \"needs\": \"Ira's questions after the meeting.\"}], \"unknowns\": [{\"question\": \"What Larkspur's Monday meeting will decide.\", \"relevance\": \"It sets the next move: a call with the fund, more material, or a pass.\"}, {\"question\": \"Whether Ira takes up Arjun's offer to join the meeting.\", \"relevance\": \"If she does, Arjun needs to prepare for it now.\"}, {\"question\": \"Which Monday the meeting falls on; the file does not date it.\", \"relevance\": \"It sets when Larkspur's quiet would start to mean something.\"}], \"frames\": {\"primary\": \"A fund in active interest, waiting on its own meeting: Larkspur Ventures loved the demo, asked about design partners, got its answer, and Ira is taking you to their Monday meeting, with your offer to join on the table.\", \"rivals\": [\"A polite holding answer: taking it to the Monday meeting may be how Ira closes the loop without committing.\", \"A sales conversation, as the engine files it; nothing in the mail supports that, and Ira writes for a fund.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Ira signs for Larkspur Ventures, a fund, and after the demo asked about live design partners and took the company to the fund's Monday meeting: an investor's file, which the engine holds as a sales opportunity and the brief names no kind for.\", \"evidence\": [\"evt_#4\", \"evt_#2\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the file's own history: after Ira takes it to the Monday meeting, word from her within about a week, the pace the exchange has kept.\", \"actual\": \"Ira said she would take it to the meeting, Arjun offered to join, and the file has been quiet since, within its usual pace.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost yet: the move is Larkspur's until its Monday meeting has passed.\", \"act\": \"Writing again before the meeting adds pressure to an exchange that is going well; the useful work now is to be ready to join or to send more.\", \"best\": \"The meeting goes well and Ira comes back with a call with the fund or a next step toward the round.\", \"worst\": \"The meeting passes, Larkspur says nothing, and the file drifts into silence without anyone noticing.\", \"signals_to_watch\": [\"Ira writing after the Monday meeting\", \"An invitation for Arjun to join or present\", \"No word from Ira a week after the meeting\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Larkspur loved the demo.\", \"The move is Larkspur's until its Monday meeting has passed.\", \"Nothing Arjun could send now is needed, and holding back costs nothing.\"]}, \"mode\": \"wait\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"If nothing has come from Ira within a week of the Monday meeting, ask her where Larkspur landed and whether a walk-through of the design partners would help\", \"for_whom\": \"Ira Bose at Larkspur Ventures\", \"by_when\": null}, \"alternative\": \"If Ira asks Arjun to join the meeting, prepare the walk-through of the design partners he offered.\", \"wait_or_stop\": \"Wait until the Monday meeting has passed and a week more; then ask Ira once. If that also goes unanswered, stop chasing and keep Larkspur for a later update with news.\", \"done_when\": \"Larkspur's answer from the Monday meeting is known, and the next step, a call, more material or a pass, is in the file.\", \"draft\": null}",
+   "framed": true,
    "input_tokens": 3215,
-   "output_tokens": 1416,
+   "output_tokens": 1413,
    "model": "claude-haiku-4-5-20251001"
   },
   "63fc45687e6e68062f0e85782e749c793deb5f012a55e95563eed319f94354b2": {
@@ -398,6 +404,7 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Larkspur x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Re: Larkspur x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Re: Larkspur x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 4, \"business\": true, \"description\": \"Larkspur x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
    "input_tokens": 1298,
    "output_tokens": 149,
    "model": "claude-haiku-4-5-20251001"
@@ -436,6 +443,7 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ira Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira\", \"start_offset\": 41, \"end_offset\": 44}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\", \"motive\": \"an offer to join\"}}",
+   "framed": true,
    "input_tokens": 5502,
    "output_tokens": 114,
    "model": "claude-haiku-4-5-20251001"
@@ -452,6 +460,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Larkspur x Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 26, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1516,
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
@@ -468,6 +477,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Larkspur x Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 26, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1512,
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
@@ -479,25 +489,25 @@
      {
       "claim": "Ira Bose of Larkspur Ventures wrote after the demo that she loved it, and asked how many design partners Nimbus Labs has live.",
       "evidence": [
-       "evt_c0d691bb8d4aa9af058c9301"
+       "evt_#4"
       ]
      },
      {
       "claim": "Arjun answered the next day: three live and two more starting in April, with an offer to walk her through them.",
       "evidence": [
-       "evt_a309eca25989b116aaf6fa80"
+       "evt_#3"
       ]
      },
      {
       "claim": "Ira wrote back that this was helpful and that she would take it to their Monday meeting.",
       "evidence": [
-       "evt_0f723e30ca018dc8761a2dfd"
+       "evt_#2"
       ]
      },
      {
       "claim": "Arjun answered that he would be happy to join the meeting if it helped; that mail, on the eleventh of March, is the file's last touch.",
       "evidence": [
-       "evt_0629e3d6c4bc8fe263774d01"
+       "evt_#1"
       ]
      },
      {
@@ -505,7 +515,7 @@
       "evidence": [
        "num:usual_gap",
        "num:longest_gap",
-       "sit:sit_68f58a53d34e98a5b46517cc"
+       "sit:sit_#1"
       ]
      },
      {
@@ -517,13 +527,13 @@
      {
       "claim": "The engine files Larkspur as a sales opportunity, and the brief names no kind of work for it.",
       "evidence": [
-       "sit:sit_68f58a53d34e98a5b46517cc"
+       "sit:sit_#1"
       ]
      },
      {
       "claim": "The engine now holds that opportunity as dormant, its quiet long past the engine's default window.",
       "evidence": [
-       "sit:sit_68f58a53d34e98a5b46517cc",
+       "sit:sit_#1",
        "num:days_quiet"
       ]
      }
@@ -600,7 +610,7 @@
      }
     ],
     "frames": {
-     "primary": "A fund gone cold after a warm start: Larkspur Ventures loved the demo, asked about design partners, got its answer, and took Nimbus Labs to its Monday meeting in March, and the file has held nothing from Larkspur since.",
+     "primary": "A fund gone cold after a warm start: Larkspur Ventures loved the demo, asked about design partners, got its answer, and took you to its Monday meeting in March, and the file has held nothing from Larkspur since.",
      "rivals": [
       "A quiet pass: Larkspur decided against at that meeting and never wrote to say so.",
       "A lost thread: Ira did write after March and the mail is not in this file, which no mailbox is shown to have read that far."
@@ -610,8 +620,8 @@
      "kind": "investor",
      "why": "Ira signs for Larkspur Ventures, a fund, and after the demo asked about live design partners and took the company to the fund's Monday meeting: an investor's file, which the engine holds as a sales opportunity and the brief names no kind for.",
      "evidence": [
-      "evt_c0d691bb8d4aa9af058c9301",
-      "evt_0f723e30ca018dc8761a2dfd"
+      "evt_#4",
+      "evt_#2"
      ]
     },
     "expected_vs_actual": {
@@ -653,9 +663,10 @@
     "done_when": "Larkspur's answer is known, in, not now, or out, and the file says so.",
     "draft": "Hi Ira, it has been a while since you took Nimbus Labs to your Monday meeting in March. Where did Larkspur land? I would be glad to share where the design partners stand now, and to talk about the seed round if it is of interest. Arjun"
    },
-   "raw": "{\"facts\": [{\"claim\": \"Ira Bose of Larkspur Ventures wrote after the demo that she loved it, and asked how many design partners Nimbus Labs has live.\", \"evidence\": [\"evt_c0d691bb8d4aa9af058c9301\"]}, {\"claim\": \"Arjun answered the next day: three live and two more starting in April, with an offer to walk her through them.\", \"evidence\": [\"evt_a309eca25989b116aaf6fa80\"]}, {\"claim\": \"Ira wrote back that this was helpful and that she would take it to their Monday meeting.\", \"evidence\": [\"evt_0f723e30ca018dc8761a2dfd\"]}, {\"claim\": \"Arjun answered that he would be happy to join the meeting if it helped; that mail, on the eleventh of March, is the file's last touch.\", \"evidence\": [\"evt_0629e3d6c4bc8fe263774d01\"]}, {\"claim\": \"The four mails ran both ways within about nine days, none left waiting longer than about a week.\", \"evidence\": [\"num:usual_gap\", \"num:longest_gap\", \"sit:sit_68f58a53d34e98a5b46517cc\"]}, {\"claim\": \"The file has now been quiet far longer than any gap it closed before.\", \"evidence\": [\"num:days_quiet\"]}, {\"claim\": \"The engine files Larkspur as a sales opportunity, and the brief names no kind of work for it.\", \"evidence\": [\"sit:sit_68f58a53d34e98a5b46517cc\"]}, {\"claim\": \"The engine now holds that opportunity as dormant, its quiet long past the engine's default window.\", \"evidence\": [\"sit:sit_68f58a53d34e98a5b46517cc\", \"num:days_quiet\"]}], \"inferences\": [{\"claim\": \"Larkspur looked in earnest: a question after the demo, a quick answer, and the company taken to its Monday meeting within days.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, {\"claim\": \"What that meeting decided never reached this file: the last word in it is Arjun's offer to join.\", \"based_on\": [\"fact:3\", \"fact:4\"]}, {\"claim\": \"The file has gone cold, not closed: it holds no decline, only a long silence after a warm exchange.\", \"based_on\": [\"fact:4\", \"fact:6\", \"fact:8\"]}, {\"claim\": \"Filed as a sales opportunity, a fund that loved the demo sits outside the seed round's work, where it belongs.\", \"based_on\": [\"fact:1\", \"fact:7\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"While the exchange was live, neither side let it sit longer than about a week; too few exchanges to call that normal, but the present silence is far outside anything the file has known.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\", \"num:days_quiet\"]}], \"hypotheses\": [{\"proposition\": \"Larkspur passed at its Monday meeting and never said so.\", \"needs\": \"Ira's word on where the meeting landed.\"}, {\"proposition\": \"Ira wrote after March and the mail is not in this file.\", \"needs\": \"A search of the mailbox for Larkspur since March; the dossier says no mailbox is shown to have read that far.\"}, {\"proposition\": \"Larkspur wanted more traction, the design partners due in April, before moving.\", \"needs\": \"Ira's answer to a note saying where the design partners stand now.\"}], \"unknowns\": [{\"question\": \"What Larkspur's Monday meeting decided.\", \"relevance\": \"A pass makes the note a courtesy; a not-yet makes it a re-pitch with news; no decision makes it a nudge.\"}, {\"question\": \"Whether anything came from Larkspur after March that the file does not show.\", \"relevance\": \"The dossier says no reply may not be said here; a missed mail would turn the move from reopening the file into answering it.\"}, {\"question\": \"Where the design partners stand now, and whether the two due in April started.\", \"relevance\": \"It is the news that gives a note to Ira a reason beyond asking.\"}], \"frames\": {\"primary\": \"A fund gone cold after a warm start: Larkspur Ventures loved the demo, asked about design partners, got its answer, and took Nimbus Labs to its Monday meeting in March, and the file has held nothing from Larkspur since.\", \"rivals\": [\"A quiet pass: Larkspur decided against at that meeting and never wrote to say so.\", \"A lost thread: Ira did write after March and the mail is not in this file, which no mailbox is shown to have read that far.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Ira signs for Larkspur Ventures, a fund, and after the demo asked about live design partners and took the company to the fund's Monday meeting: an investor's file, which the engine holds as a sales opportunity and the brief names no kind for.\", \"evidence\": [\"evt_c0d691bb8d4aa9af058c9301\", \"evt_0f723e30ca018dc8761a2dfd\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the file's own history: after Ira took Nimbus Labs to the Monday meeting, word on the outcome within a week or two, the pace the exchange kept.\", \"actual\": \"The last touch is Arjun's offer to join the meeting, in March; nothing from Larkspur appears after it, for far longer than any gap the file closed.\"}, \"scenarios\": {\"do_nothing\": \"Larkspur stays a fund that once loved the demo; the file drifts further, and the seed round loses a lead that was warm.\", \"act\": \"A short note to Ira with where the design partners stand and a plain question about where Larkspur landed either reopens the file or closes it cleanly.\", \"best\": \"Ira answers, Larkspur is still interested, and a call on the design partners leads into the round.\", \"worst\": \"Larkspur passed long ago and the note only confirms it; or Ira wrote after March, the mail was missed, and the silence was ours.\", \"signals_to_watch\": [\"Ira answering the note\", \"Ira saying what the Monday meeting decided\", \"A mail from Larkspur found in the mailbox from after March\", \"Silence a week or two after the note\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Larkspur loved the demo.\", \"The file has been silent far longer than any gap it closed, and the meeting's outcome never reached it.\", \"A short note costs little and does no harm whichever way Larkspur has gone.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Check the mailbox for anything from Larkspur since March, then write Ira a short note with where the design partners stand now and a plain question about where Larkspur landed after its Monday meeting\", \"for_whom\": \"Ira Bose at Larkspur Ventures\", \"by_when\": null}, \"alternative\": \"If there is no fresh news on the design partners, ask Ira only where the meeting landed and whether Larkspur is looking at the seed round.\", \"wait_or_stop\": \"Do not wait longer: the file is already far past anything it has known. After the note, give Ira a week or two; one more nudge if she is silent, then stop and keep Larkspur for the next round of updates.\", \"done_when\": \"Larkspur's answer is known, in, not now, or out, and the file says so.\", \"draft\": \"Hi Ira, it has been a while since you took Nimbus Labs to your Monday meeting in March. Where did Larkspur land? I would be glad to share where the design partners stand now, and to talk about the seed round if it is of interest. Arjun\"}",
+   "raw": "{\"facts\": [{\"claim\": \"Ira Bose of Larkspur Ventures wrote after the demo that she loved it, and asked how many design partners Nimbus Labs has live.\", \"evidence\": [\"evt_#4\"]}, {\"claim\": \"Arjun answered the next day: three live and two more starting in April, with an offer to walk her through them.\", \"evidence\": [\"evt_#3\"]}, {\"claim\": \"Ira wrote back that this was helpful and that she would take it to their Monday meeting.\", \"evidence\": [\"evt_#2\"]}, {\"claim\": \"Arjun answered that he would be happy to join the meeting if it helped; that mail, on the eleventh of March, is the file's last touch.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The four mails ran both ways within about nine days, none left waiting longer than about a week.\", \"evidence\": [\"num:usual_gap\", \"num:longest_gap\", \"sit:sit_#1\"]}, {\"claim\": \"The file has now been quiet far longer than any gap it closed before.\", \"evidence\": [\"num:days_quiet\"]}, {\"claim\": \"The engine files Larkspur as a sales opportunity, and the brief names no kind of work for it.\", \"evidence\": [\"sit:sit_#1\"]}, {\"claim\": \"The engine now holds that opportunity as dormant, its quiet long past the engine's default window.\", \"evidence\": [\"sit:sit_#1\", \"num:days_quiet\"]}], \"inferences\": [{\"claim\": \"Larkspur looked in earnest: a question after the demo, a quick answer, and the company taken to its Monday meeting within days.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, {\"claim\": \"What that meeting decided never reached this file: the last word in it is Arjun's offer to join.\", \"based_on\": [\"fact:3\", \"fact:4\"]}, {\"claim\": \"The file has gone cold, not closed: it holds no decline, only a long silence after a warm exchange.\", \"based_on\": [\"fact:4\", \"fact:6\", \"fact:8\"]}, {\"claim\": \"Filed as a sales opportunity, a fund that loved the demo sits outside the seed round's work, where it belongs.\", \"based_on\": [\"fact:1\", \"fact:7\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"While the exchange was live, neither side let it sit longer than about a week; too few exchanges to call that normal, but the present silence is far outside anything the file has known.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\", \"num:days_quiet\"]}], \"hypotheses\": [{\"proposition\": \"Larkspur passed at its Monday meeting and never said so.\", \"needs\": \"Ira's word on where the meeting landed.\"}, {\"proposition\": \"Ira wrote after March and the mail is not in this file.\", \"needs\": \"A search of the mailbox for Larkspur since March; the dossier says no mailbox is shown to have read that far.\"}, {\"proposition\": \"Larkspur wanted more traction, the design partners due in April, before moving.\", \"needs\": \"Ira's answer to a note saying where the design partners stand now.\"}], \"unknowns\": [{\"question\": \"What Larkspur's Monday meeting decided.\", \"relevance\": \"A pass makes the note a courtesy; a not-yet makes it a re-pitch with news; no decision makes it a nudge.\"}, {\"question\": \"Whether anything came from Larkspur after March that the file does not show.\", \"relevance\": \"The dossier says no reply may not be said here; a missed mail would turn the move from reopening the file into answering it.\"}, {\"question\": \"Where the design partners stand now, and whether the two due in April started.\", \"relevance\": \"It is the news that gives a note to Ira a reason beyond asking.\"}], \"frames\": {\"primary\": \"A fund gone cold after a warm start: Larkspur Ventures loved the demo, asked about design partners, got its answer, and took you to its Monday meeting in March, and the file has held nothing from Larkspur since.\", \"rivals\": [\"A quiet pass: Larkspur decided against at that meeting and never wrote to say so.\", \"A lost thread: Ira did write after March and the mail is not in this file, which no mailbox is shown to have read that far.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Ira signs for Larkspur Ventures, a fund, and after the demo asked about live design partners and took the company to the fund's Monday meeting: an investor's file, which the engine holds as a sales opportunity and the brief names no kind for.\", \"evidence\": [\"evt_#4\", \"evt_#2\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the file's own history: after Ira took Nimbus Labs to the Monday meeting, word on the outcome within a week or two, the pace the exchange kept.\", \"actual\": \"The last touch is Arjun's offer to join the meeting, in March; nothing from Larkspur appears after it, for far longer than any gap the file closed.\"}, \"scenarios\": {\"do_nothing\": \"Larkspur stays a fund that once loved the demo; the file drifts further, and the seed round loses a lead that was warm.\", \"act\": \"A short note to Ira with where the design partners stand and a plain question about where Larkspur landed either reopens the file or closes it cleanly.\", \"best\": \"Ira answers, Larkspur is still interested, and a call on the design partners leads into the round.\", \"worst\": \"Larkspur passed long ago and the note only confirms it; or Ira wrote after March, the mail was missed, and the silence was ours.\", \"signals_to_watch\": [\"Ira answering the note\", \"Ira saying what the Monday meeting decided\", \"A mail from Larkspur found in the mailbox from after March\", \"Silence a week or two after the note\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Larkspur loved the demo.\", \"The file has been silent far longer than any gap it closed, and the meeting's outcome never reached it.\", \"A short note costs little and does no harm whichever way Larkspur has gone.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Check the mailbox for anything from Larkspur since March, then write Ira a short note with where the design partners stand now and a plain question about where Larkspur landed after its Monday meeting\", \"for_whom\": \"Ira Bose at Larkspur Ventures\", \"by_when\": null}, \"alternative\": \"If there is no fresh news on the design partners, ask Ira only where the meeting landed and whether Larkspur is looking at the seed round.\", \"wait_or_stop\": \"Do not wait longer: the file is already far past anything it has known. After the note, give Ira a week or two; one more nudge if she is silent, then stop and keep Larkspur for the next round of updates.\", \"done_when\": \"Larkspur's answer is known, in, not now, or out, and the file says so.\", \"draft\": \"Hi Ira, it has been a while since you took Nimbus Labs to your Monday meeting in March. Where did Larkspur land? I would be glad to share where the design partners stand now, and to talk about the seed round if it is of interest. Arjun\"}",
+   "framed": true,
    "input_tokens": 3223,
-   "output_tokens": 1711,
+   "output_tokens": 1709,
    "model": "claude-haiku-4-5-20251001"
   }
  }

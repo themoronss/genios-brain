@@ -1,131 +1,8 @@
 {
  "case_id": "F35",
  "source": "ideal_reader",
- "recorded_at": "1b5e5f58",
+ "recorded_at": "a10f3140",
  "answers": {
-  "3a19dd8f82188998296a498c4d30a88137eb4f747708abe411c5f34b0b3dc567": {
-   "site": "expert",
-   "parsed": {
-    "proposed_kind": null,
-    "draft": null,
-    "next_move": null,
-    "facts": [
-     {
-      "claim": "Divya Raman, Programme Lead at Lakshya Accelerator, wrote that the first-phase reviews are on the thirtieth of September at the Lakshya campus.",
-      "evidence": [
-       "evt_f7a1ee778938081185bc4339"
-      ]
-     },
-     {
-      "claim": "Her mail says there is no fee for the review, and that the programme fee is waived for this cohort.",
-      "evidence": [
-       "evt_f7a1ee778938081185bc4339"
-      ]
-     },
-     {
-      "claim": "Her mail informs and asks nothing of Arjun.",
-      "evidence": [
-       "evt_f7a1ee778938081185bc4339"
-      ]
-     },
-     {
-      "claim": "The engine filed this programme mail as an investor relationship in the fundraising domain, and ended that reading as a misfiled kind.",
-      "evidence": [
-       "sit:sit_b98bfe47e3632c6d9611d387"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "Nothing in this file costs money: the mail rules out a fee for the review and for the programme.",
-      "based_on": [
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "What the file asks of the founder is to be at the review on the thirtieth, prepared — no reply.",
-      "based_on": [
-       "fact:1",
-       "fact:3"
-      ]
-     }
-    ],
-    "patterns": [
-     {
-      "kind": "pattern",
-      "claim": "Once in a programme, the file follows the programme's own calendar — its reviews among its dates, fixed for the cohort — a prior from the playbook, not yet reviewed.",
-      "based_on": [
-       "pb:founder_office.pb.program_applications.follow_an_application"
-      ]
-     },
-     {
-      "kind": "counter_pattern",
-      "claim": "A programme is not an investor: the investor reading the engine first gave this mail would bring the wrong moves to a programme's notice.",
-      "based_on": [
-       "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
-       "sit:sit_b98bfe47e3632c6d9611d387"
-      ]
-     }
-    ],
-    "hypotheses": [
-     {
-      "proposition": "The programme may send the review's format or materials closer to the date.",
-      "needs": "Divya's next mail."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "What does the first-phase review ask the founders to present?",
-      "relevance": "It decides how much preparation the review needs."
-     },
-     {
-      "question": "Can Arjun be at the campus that day?",
-      "relevance": "A clash is the one thing that would need a message to Divya."
-     }
-    ],
-    "frames": {
-     "primary": "A programme notice with a date and no cost: the first-phase review is on the thirtieth at the campus, the fee is waived, and nothing needs an answer.",
-     "rivals": [
-      "A money matter, as a quick reading of the word fee might suggest — the mail says plainly that none applies.",
-      "An invitation that wants a reply — the mail asks for none."
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": "in_programme",
-     "expected": "In the programme, the file follows the programme's calendar — its reviews among its dates — on the cohort's own days.",
-     "actual": "The review's date and place are on file, with no fee and no ask."
-    },
-    "scenarios": {
-     "do_nothing": "Nothing is lost now; the file waits for the review, and the only risk is arriving at it unprepared.",
-     "act": "Writing back now adds nothing; preparing for the review is the only useful work.",
-     "best": "Arjun is at the campus on the thirtieth, prepared, and the review goes well.",
-     "worst": "A clash on the day goes unnoticed until it is too late to tell the programme.",
-     "signals_to_watch": [
-      "Divya sending the review's format or materials",
-      "A clash on Arjun's calendar for the thirtieth",
-      "Any change of date or place from the programme"
-     ]
-    },
-    "appraisal": {
-     "stakes": "medium",
-     "urgency": "low",
-     "reversibility": "reversible",
-     "reasons": [
-      "Lakshya is the programme the founder is in, and its reviews are part of it.",
-      "The review is days away, and the mail asks for nothing now.",
-      "No money is involved: the mail rules out a fee for the review or the programme."
-     ]
-    },
-    "mode": "wait",
-    "alternative": "If Arjun cannot be at the campus that day, write to Divya early to ask the programme's rule.",
-    "wait_or_stop": "Wait for the review on the thirtieth and prepare in the days before it; stop waiting if the programme moves the date.",
-    "done_when": "Arjun attends the first-phase review on the thirtieth, prepared."
-   },
-   "raw": "{\"proposed_kind\": null, \"draft\": null, \"next_move\": null, \"facts\": [{\"claim\": \"Divya Raman, Programme Lead at Lakshya Accelerator, wrote that the first-phase reviews are on the thirtieth of September at the Lakshya campus.\", \"evidence\": [\"evt_f7a1ee778938081185bc4339\"]}, {\"claim\": \"Her mail says there is no fee for the review, and that the programme fee is waived for this cohort.\", \"evidence\": [\"evt_f7a1ee778938081185bc4339\"]}, {\"claim\": \"Her mail informs and asks nothing of Arjun.\", \"evidence\": [\"evt_f7a1ee778938081185bc4339\"]}, {\"claim\": \"The engine filed this programme mail as an investor relationship in the fundraising domain, and ended that reading as a misfiled kind.\", \"evidence\": [\"sit:sit_b98bfe47e3632c6d9611d387\"]}], \"inferences\": [{\"claim\": \"Nothing in this file costs money: the mail rules out a fee for the review and for the programme.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"What the file asks of the founder is to be at the review on the thirtieth, prepared — no reply.\", \"based_on\": [\"fact:1\", \"fact:3\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Once in a programme, the file follows the programme's own calendar — its reviews among its dates, fixed for the cohort — a prior from the playbook, not yet reviewed.\", \"based_on\": [\"pb:founder_office.pb.program_applications.follow_an_application\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"A programme is not an investor: the investor reading the engine first gave this mail would bring the wrong moves to a programme's notice.\", \"based_on\": [\"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\", \"sit:sit_b98bfe47e3632c6d9611d387\"]}], \"hypotheses\": [{\"proposition\": \"The programme may send the review's format or materials closer to the date.\", \"needs\": \"Divya's next mail.\"}], \"unknowns\": [{\"question\": \"What does the first-phase review ask the founders to present?\", \"relevance\": \"It decides how much preparation the review needs.\"}, {\"question\": \"Can Arjun be at the campus that day?\", \"relevance\": \"A clash is the one thing that would need a message to Divya.\"}], \"frames\": {\"primary\": \"A programme notice with a date and no cost: the first-phase review is on the thirtieth at the campus, the fee is waived, and nothing needs an answer.\", \"rivals\": [\"A money matter, as a quick reading of the word fee might suggest — the mail says plainly that none applies.\", \"An invitation that wants a reply — the mail asks for none.\"]}, \"expected_vs_actual\": {\"stage\": \"in_programme\", \"expected\": \"In the programme, the file follows the programme's calendar — its reviews among its dates — on the cohort's own days.\", \"actual\": \"The review's date and place are on file, with no fee and no ask.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost now; the file waits for the review, and the only risk is arriving at it unprepared.\", \"act\": \"Writing back now adds nothing; preparing for the review is the only useful work.\", \"best\": \"Arjun is at the campus on the thirtieth, prepared, and the review goes well.\", \"worst\": \"A clash on the day goes unnoticed until it is too late to tell the programme.\", \"signals_to_watch\": [\"Divya sending the review's format or materials\", \"A clash on Arjun's calendar for the thirtieth\", \"Any change of date or place from the programme\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"Lakshya is the programme the founder is in, and its reviews are part of it.\", \"The review is days away, and the mail asks for nothing now.\", \"No money is involved: the mail rules out a fee for the review or the programme.\"]}, \"mode\": \"wait\", \"alternative\": \"If Arjun cannot be at the campus that day, write to Divya early to ask the programme's rule.\", \"wait_or_stop\": \"Wait for the review on the thirtieth and prepare in the days before it; stop waiting if the programme moves the date.\", \"done_when\": \"Arjun attends the first-phase review on the thirtieth, prepared.\"}",
-   "input_tokens": 8988,
-   "output_tokens": 980,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "7733d04329048546fb0c357f5b1f2af8985ea5b15d42e844cb920b41115336ac": {
    "site": "resolution",
    "parsed": {
@@ -138,6 +15,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Phase-1 review: logistics\", \"start_offset\": 0, \"end_offset\": 25, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1534,
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
@@ -204,8 +82,133 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"phase-1 review\", \"logistics\"], \"entity_mentions\": [{\"surface_form\": \"Divya Raman\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Divya Raman\", \"start_offset\": 169, \"end_offset\": 180}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lakshya Accelerator\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lakshya Accelerator\", \"start_offset\": 197, \"end_offset\": 216}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"30 Sep\", \"earliest\": \"2026-09-30T00:00:00+05:30\", \"latest\": \"2026-09-30T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-20T05:00:00Z\", \"evidence\": [{\"quote\": \"30 Sep\", \"start_offset\": 61, \"end_offset\": 67}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
    "input_tokens": 5527,
    "output_tokens": 227,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f8f8939c13bceec0c5e238801720798f55cd6968f4e3569b5aefaa562d43f0e0": {
+   "site": "expert",
+   "parsed": {
+    "proposed_kind": null,
+    "draft": null,
+    "next_move": null,
+    "facts": [
+     {
+      "claim": "Divya Raman, Programme Lead at Lakshya Accelerator, wrote that the first-phase reviews are on the thirtieth of September at the Lakshya campus.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "Her mail says there is no fee for the review, and that the programme fee is waived for this cohort.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "Her mail informs and asks nothing of Arjun.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "The engine filed this programme mail as an investor relationship in the fundraising domain, and ended that reading as a misfiled kind.",
+      "evidence": [
+       "sit:sit_#1"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Nothing in this file costs money: the mail rules out a fee for the review and for the programme.",
+      "based_on": [
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "What the file asks of the founder is to be at the review on the thirtieth, prepared — no reply.",
+      "based_on": [
+       "fact:1",
+       "fact:3"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "Once in a programme, the file follows the programme's own calendar — its reviews among its dates, fixed for the cohort — a prior from the playbook, not yet reviewed.",
+      "based_on": [
+       "pb:founder_office.pb.program_applications.follow_an_application"
+      ]
+     },
+     {
+      "kind": "counter_pattern",
+      "claim": "A programme is not an investor: the investor reading the engine first gave this mail would bring the wrong moves to a programme's notice.",
+      "based_on": [
+       "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+       "sit:sit_#1"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "The programme may send the review's format or materials closer to the date.",
+      "needs": "Divya's next mail."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "What does the first-phase review ask the founders to present?",
+      "relevance": "It decides how much preparation the review needs."
+     },
+     {
+      "question": "Can Arjun be at the campus that day?",
+      "relevance": "A clash is the one thing that would need a message to Divya."
+     }
+    ],
+    "frames": {
+     "primary": "A programme notice with a date and no cost: the first-phase review is on the thirtieth at the campus, the fee is waived, and nothing needs an answer.",
+     "rivals": [
+      "A money matter, as a quick reading of the word fee might suggest — the mail says plainly that none applies.",
+      "An invitation that wants a reply — the mail asks for none."
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": "in_programme",
+     "expected": "In the programme, the file follows the programme's calendar — its reviews among its dates — on the cohort's own days.",
+     "actual": "The review's date and place are on file, with no fee and no ask."
+    },
+    "scenarios": {
+     "do_nothing": "Nothing is lost now; the file waits for the review, and the only risk is arriving at it unprepared.",
+     "act": "Writing back now adds nothing; preparing for the review is the only useful work.",
+     "best": "Arjun is at the campus on the thirtieth, prepared, and the review goes well.",
+     "worst": "A clash on the day goes unnoticed until it is too late to tell the programme.",
+     "signals_to_watch": [
+      "Divya sending the review's format or materials",
+      "A clash on Arjun's calendar for the thirtieth",
+      "Any change of date or place from the programme"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "Lakshya is the programme the founder is in, and its reviews are part of it.",
+      "The review is days away, and the mail asks for nothing now.",
+      "No money is involved: the mail rules out a fee for the review or the programme."
+     ]
+    },
+    "mode": "wait",
+    "alternative": "If Arjun cannot be at the campus that day, write to Divya early to ask the programme's rule.",
+    "wait_or_stop": "Wait for the review on the thirtieth and prepare in the days before it; stop waiting if the programme moves the date.",
+    "done_when": "Arjun attends the first-phase review on the thirtieth, prepared."
+   },
+   "raw": "{\"proposed_kind\": null, \"draft\": null, \"next_move\": null, \"facts\": [{\"claim\": \"Divya Raman, Programme Lead at Lakshya Accelerator, wrote that the first-phase reviews are on the thirtieth of September at the Lakshya campus.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Her mail says there is no fee for the review, and that the programme fee is waived for this cohort.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Her mail informs and asks nothing of Arjun.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The engine filed this programme mail as an investor relationship in the fundraising domain, and ended that reading as a misfiled kind.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Nothing in this file costs money: the mail rules out a fee for the review and for the programme.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"What the file asks of the founder is to be at the review on the thirtieth, prepared — no reply.\", \"based_on\": [\"fact:1\", \"fact:3\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Once in a programme, the file follows the programme's own calendar — its reviews among its dates, fixed for the cohort — a prior from the playbook, not yet reviewed.\", \"based_on\": [\"pb:founder_office.pb.program_applications.follow_an_application\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"A programme is not an investor: the investor reading the engine first gave this mail would bring the wrong moves to a programme's notice.\", \"based_on\": [\"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\", \"sit:sit_#1\"]}], \"hypotheses\": [{\"proposition\": \"The programme may send the review's format or materials closer to the date.\", \"needs\": \"Divya's next mail.\"}], \"unknowns\": [{\"question\": \"What does the first-phase review ask the founders to present?\", \"relevance\": \"It decides how much preparation the review needs.\"}, {\"question\": \"Can Arjun be at the campus that day?\", \"relevance\": \"A clash is the one thing that would need a message to Divya.\"}], \"frames\": {\"primary\": \"A programme notice with a date and no cost: the first-phase review is on the thirtieth at the campus, the fee is waived, and nothing needs an answer.\", \"rivals\": [\"A money matter, as a quick reading of the word fee might suggest — the mail says plainly that none applies.\", \"An invitation that wants a reply — the mail asks for none.\"]}, \"expected_vs_actual\": {\"stage\": \"in_programme\", \"expected\": \"In the programme, the file follows the programme's calendar — its reviews among its dates — on the cohort's own days.\", \"actual\": \"The review's date and place are on file, with no fee and no ask.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost now; the file waits for the review, and the only risk is arriving at it unprepared.\", \"act\": \"Writing back now adds nothing; preparing for the review is the only useful work.\", \"best\": \"Arjun is at the campus on the thirtieth, prepared, and the review goes well.\", \"worst\": \"A clash on the day goes unnoticed until it is too late to tell the programme.\", \"signals_to_watch\": [\"Divya sending the review's format or materials\", \"A clash on Arjun's calendar for the thirtieth\", \"Any change of date or place from the programme\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"Lakshya is the programme the founder is in, and its reviews are part of it.\", \"The review is days away, and the mail asks for nothing now.\", \"No money is involved: the mail rules out a fee for the review or the programme.\"]}, \"mode\": \"wait\", \"alternative\": \"If Arjun cannot be at the campus that day, write to Divya early to ask the programme's rule.\", \"wait_or_stop\": \"Wait for the review on the thirtieth and prepare in the days before it; stop waiting if the programme moves the date.\", \"done_when\": \"Arjun attends the first-phase review on the thirtieth, prepared.\"}",
+   "framed": true,
+   "input_tokens": 8982,
+   "output_tokens": 980,
    "model": "claude-haiku-4-5-20251001"
   }
  }

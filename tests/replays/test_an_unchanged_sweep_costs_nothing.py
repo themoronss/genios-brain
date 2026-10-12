@@ -120,6 +120,9 @@ def test_without_the_gate_the_same_sweep_pays_again(monkeypatch):
 
     monkeypatch.setattr(routes, "_run_l2_chain", chain)
     model = _Tagged(CassetteRecorder(IdealReader(extended)), sweep)
-    run_case(extended, model)
+    # ⛔ THE EXPERT OFF, deliberately (STEP-12 M33.C2.L-integration.V0.U01): with it on, F13's file is
+    # decided from its review and nothing it explains reaches the decider or R-1 — gate or no gate. The
+    # gate is this control's subject.
+    run_case(extended, model, expert=False)
     last = len(extended.sweeps) - 1
     assert {site for s, site in model.calls if s == last} >= {"decider", "r1"}

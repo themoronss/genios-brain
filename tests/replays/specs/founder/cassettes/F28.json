@@ -1,7 +1,7 @@
 {
  "case_id": "F28",
  "source": "ideal_reader",
- "recorded_at": "1b5e5f58",
+ "recorded_at": "a10f3140",
  "answers": {
   "3241eaba7e25a6cd05ccfb3937152bd68a51749060c0d5f31ef0596004a61ca8": {
    "site": "resolution",
@@ -15,34 +15,28 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you send your security questionnaire answers before then?\", \"start_offset\": 63, \"end_offset\": 126, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1530,
    "output_tokens": 53,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3466ded7215729174b94561401eca7b4cdd5ab50efb9d26a9a5f811cde09eeab": {
-   "site": "r1",
+  "38e9ae20f8dd99286bf47e2bfbf97ae77fce4cea430b30b858f29d9fb79155ac": {
+   "site": "bundle_narrator",
    "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 1035,
-   "output_tokens": 51,
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1556,
+   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
-  "4c8514945b560768af0378be00d1afa7fa25be4af07b3781fd0b8aeb491e7930": {
+  "83d077d13988937caba263d7255241f9096fdd4cbd49b64f2af89070cfd0d3de": {
    "site": "expert",
    "parsed": {
     "proposed_kind": null,
@@ -57,19 +51,19 @@
      {
       "claim": "Ishita Rao, Head of Partnerships at Novacore, asked Arjun to send our security questionnaire answers before their call on the eighth of October, because Novacore's IT team needs them first.",
       "evidence": [
-       "evt_5185bef9bcda76b11f2c93a0"
+       "evt_#1"
       ]
      },
      {
       "claim": "A call with Ishita is on the calendar for the eighth of October.",
       "evidence": [
-       "evt_0e547359e31864611d4d4363"
+       "evt_#2"
       ]
      },
      {
       "claim": "Her ask is open and waits on us.",
       "evidence": [
-       "loop:loop_5700b577391b57bf0b3634f7"
+       "loop:loop_#1"
       ]
      },
      {
@@ -166,44 +160,140 @@
     "wait_or_stop": "No waiting on our side — the move is ours; once the answers are sent, wait for IT's questions and the call.",
     "done_when": "Novacore's IT team has our security questionnaire answers before the call on the eighth."
    },
-   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Ishita, looking forward to the eighth. Attached are our security questionnaire answers for your IT team — happy to take any questions before we speak. Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Ishita our security questionnaire answers before the call — or, if Novacore has its own form, ask her for it at once.\", \"for_whom\": \"Ishita Rao and Novacore's IT team\", \"by_when\": \"2026-10-08\"}, \"facts\": [{\"claim\": \"Ishita Rao, Head of Partnerships at Novacore, asked Arjun to send our security questionnaire answers before their call on the eighth of October, because Novacore's IT team needs them first.\", \"evidence\": [\"evt_5185bef9bcda76b11f2c93a0\"]}, {\"claim\": \"A call with Ishita is on the calendar for the eighth of October.\", \"evidence\": [\"evt_0e547359e31864611d4d4363\"]}, {\"claim\": \"Her ask is open and waits on us.\", \"evidence\": [\"loop:loop_5700b577391b57bf0b3634f7\"]}, {\"claim\": \"No answer of ours to Ishita is measured in the file.\", \"evidence\": [\"num:your_reply_time:ishita@novacore.test\"]}], \"inferences\": [{\"claim\": \"Novacore's IT review is a gate in front of the partnership: without the answers, the call may not be able to move to next steps.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Security questionnaire answers are a document to prepare, not a one-line reply, so they need time before the eighth.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of how Novacore's IT team takes a late answer.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Novacore may have a questionnaire of its own for us to fill in, rather than wanting our standard answers.\", \"needs\": \"Ishita's form, or a one-line question to her.\"}, {\"proposition\": \"Our side may have security answers written down from an earlier review.\", \"needs\": \"Arjun's word on what is ready.\"}], \"unknowns\": [{\"question\": \"Which questionnaire does Novacore want — its own form, or our standard answers?\", \"relevance\": \"If it is their form and we do not have it, the first move is to ask for it at once.\"}, {\"question\": \"Are our security answers written down anywhere yet?\", \"relevance\": \"If not, preparing them takes days, and the eighth is close.\"}, {\"question\": \"How long does Novacore's IT team need with the answers before the call?\", \"relevance\": \"It sets how early the answers must go.\"}], \"frames\": {\"primary\": \"A design partner whose IT team must clear us before the booked call: the security questionnaire answers are ours to send, and they are due before the eighth.\", \"rivals\": [\"A courtesy request that could wait for the call itself without harm.\", \"A procurement gate that will take more than one round, where the first answers open a longer review.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From Ishita's own words and the brief's goal of landing design partners: the questionnaire answers with Novacore's IT team before the call on the eighth.\", \"actual\": \"Nothing from us is in the file; the ask is open and the call is booked.\"}, \"scenarios\": {\"do_nothing\": \"The eighth arrives without the answers; Novacore's IT team has not cleared us and the call cannot move to next steps.\", \"act\": \"Sending the answers in good time lets the IT review run before the call, so the call can turn to the partnership itself.\", \"best\": \"The answers go out early, IT clears them, and the call ends with a design-partner next step.\", \"worst\": \"The answers are missing at the call, the review starts late, and a partner the brief wants stalls in its own procurement.\", \"signals_to_watch\": [\"The answers sent to Ishita before the eighth\", \"Ishita or her IT team writing with questions\", \"The call staying booked or being moved\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Novacore is one of the brief's design partner talks.\", \"Ishita tied the answers to a call booked on a fixed date, with her IT team needing them first.\", \"Late answers delay the review but can still be sent, so a slip costs time rather than the partner.\"]}, \"mode\": \"act\", \"alternative\": \"If the answers cannot be ready in time, tell Ishita now when they will come, so her IT team can plan and the call can still go ahead.\", \"wait_or_stop\": \"No waiting on our side — the move is ours; once the answers are sent, wait for IT's questions and the call.\", \"done_when\": \"Novacore's IT team has our security questionnaire answers before the call on the eighth.\"}",
-   "input_tokens": 3100,
+   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Ishita, looking forward to the eighth. Attached are our security questionnaire answers for your IT team — happy to take any questions before we speak. Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Ishita our security questionnaire answers before the call — or, if Novacore has its own form, ask her for it at once.\", \"for_whom\": \"Ishita Rao and Novacore's IT team\", \"by_when\": \"2026-10-08\"}, \"facts\": [{\"claim\": \"Ishita Rao, Head of Partnerships at Novacore, asked Arjun to send our security questionnaire answers before their call on the eighth of October, because Novacore's IT team needs them first.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"A call with Ishita is on the calendar for the eighth of October.\", \"evidence\": [\"evt_#2\"]}, {\"claim\": \"Her ask is open and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"No answer of ours to Ishita is measured in the file.\", \"evidence\": [\"num:your_reply_time:ishita@novacore.test\"]}], \"inferences\": [{\"claim\": \"Novacore's IT review is a gate in front of the partnership: without the answers, the call may not be able to move to next steps.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Security questionnaire answers are a document to prepare, not a one-line reply, so they need time before the eighth.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of how Novacore's IT team takes a late answer.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Novacore may have a questionnaire of its own for us to fill in, rather than wanting our standard answers.\", \"needs\": \"Ishita's form, or a one-line question to her.\"}, {\"proposition\": \"Our side may have security answers written down from an earlier review.\", \"needs\": \"Arjun's word on what is ready.\"}], \"unknowns\": [{\"question\": \"Which questionnaire does Novacore want — its own form, or our standard answers?\", \"relevance\": \"If it is their form and we do not have it, the first move is to ask for it at once.\"}, {\"question\": \"Are our security answers written down anywhere yet?\", \"relevance\": \"If not, preparing them takes days, and the eighth is close.\"}, {\"question\": \"How long does Novacore's IT team need with the answers before the call?\", \"relevance\": \"It sets how early the answers must go.\"}], \"frames\": {\"primary\": \"A design partner whose IT team must clear us before the booked call: the security questionnaire answers are ours to send, and they are due before the eighth.\", \"rivals\": [\"A courtesy request that could wait for the call itself without harm.\", \"A procurement gate that will take more than one round, where the first answers open a longer review.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From Ishita's own words and the brief's goal of landing design partners: the questionnaire answers with Novacore's IT team before the call on the eighth.\", \"actual\": \"Nothing from us is in the file; the ask is open and the call is booked.\"}, \"scenarios\": {\"do_nothing\": \"The eighth arrives without the answers; Novacore's IT team has not cleared us and the call cannot move to next steps.\", \"act\": \"Sending the answers in good time lets the IT review run before the call, so the call can turn to the partnership itself.\", \"best\": \"The answers go out early, IT clears them, and the call ends with a design-partner next step.\", \"worst\": \"The answers are missing at the call, the review starts late, and a partner the brief wants stalls in its own procurement.\", \"signals_to_watch\": [\"The answers sent to Ishita before the eighth\", \"Ishita or her IT team writing with questions\", \"The call staying booked or being moved\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Novacore is one of the brief's design partner talks.\", \"Ishita tied the answers to a call booked on a fixed date, with her IT team needing them first.\", \"Late answers delay the review but can still be sent, so a slip costs time rather than the partner.\"]}, \"mode\": \"act\", \"alternative\": \"If the answers cannot be ready in time, tell Ishita now when they will come, so her IT team can plan and the call can still go ahead.\", \"wait_or_stop\": \"No waiting on our side — the move is ours; once the answers are sent, wait for IT's questions and the call.\", \"done_when\": \"Novacore's IT team has our security questionnaire answers before the call on the eighth.\"}",
+   "framed": true,
+   "input_tokens": 3172,
    "output_tokens": 1164,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5ff54a1f7847677d90fb6fd7c56385cb17bdf62ccaeb19915cd67738fdc4443b": {
-   "site": "decider",
+  "8bd3ef5b91053f90a665e3c9261531d88d7683946a4484319f2516f441a74d30": {
+   "site": "expert",
    "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4969,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 5025,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5217
+    "proposed_kind": null,
+    "draft": "Hi Ishita, looking forward to the eighth. Attached are our security questionnaire answers for your IT team — happy to take any questions before we speak. Arjun",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Send Ishita our security questionnaire answers before the call — or, if Novacore has its own form, ask her for it at once.",
+     "for_whom": "Ishita Rao and Novacore's IT team",
+     "by_when": "2026-10-08"
     },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4969, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 5025, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5217}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 4140,
-   "output_tokens": 91,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8d06eb4aa6334846234d3d3fcf409acdb058f590d4279d0e396a898f45ad63c9": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5200
+    "facts": [
+     {
+      "claim": "Ishita Rao, Head of Partnerships at Novacore, asked Arjun to send our security questionnaire answers before their call on the eighth of October, because Novacore's IT team needs them first.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "A call with Ishita is on the calendar for the eighth of October.",
+      "evidence": [
+       "evt_#2"
+      ]
+     },
+     {
+      "claim": "Her ask is open and waits on us.",
+      "evidence": [
+       "loop:loop_#1"
+      ]
+     },
+     {
+      "claim": "No answer of ours to Ishita is measured in the file.",
+      "evidence": [
+       "num:your_reply_time:ishita@novacore.test"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Novacore's IT review is a gate in front of the partnership: without the answers, the call may not be able to move to next steps.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Security questionnaire answers are a document to prepare, not a one-line reply, so they need time before the eighth.",
+      "based_on": [
+       "fact:1"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "The file is new — seen once, with no earlier card or outcome — so there is no record of how Novacore's IT team takes a late answer.",
+      "based_on": [
+       "hist:derived.history.times_seen@admin",
+       "hist:derived.history.prior_outcome@admin"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Novacore may have a questionnaire of its own for us to fill in, rather than wanting our standard answers.",
+      "needs": "Ishita's form, or a one-line question to her."
+     },
+     {
+      "proposition": "Our side may have security answers written down from an earlier review.",
+      "needs": "Arjun's word on what is ready."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Which questionnaire does Novacore want — its own form, or our standard answers?",
+      "relevance": "If it is their form and we do not have it, the first move is to ask for it at once."
+     },
+     {
+      "question": "Are our security answers written down anywhere yet?",
+      "relevance": "If not, preparing them takes days, and the eighth is close."
+     },
+     {
+      "question": "How long does Novacore's IT team need with the answers before the call?",
+      "relevance": "It sets how early the answers must go."
+     }
+    ],
+    "frames": {
+     "primary": "A design partner whose IT team must clear us before the booked call: the security questionnaire answers are ours to send, and they are due before the eighth.",
+     "rivals": [
+      "A courtesy request that could wait for the call itself without harm.",
+      "A procurement gate that will take more than one round, where the first answers open a longer review."
+     ]
     },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "From Ishita's own words and the brief's goal of landing design partners: the questionnaire answers with Novacore's IT team before the call on the eighth.",
+     "actual": "Nothing from us is in the file; the ask is open and the call is booked."
+    },
+    "scenarios": {
+     "do_nothing": "The eighth arrives without the answers; Novacore's IT team has not cleared us and the call cannot move to next steps.",
+     "act": "Sending the answers in good time lets the IT review run before the call, so the call can turn to the partnership itself.",
+     "best": "The answers go out early, IT clears them, and the call ends with a design-partner next step.",
+     "worst": "The answers are missing at the call, the review starts late, and a partner the brief wants stalls in its own procurement.",
+     "signals_to_watch": [
+      "The answers sent to Ishita before the eighth",
+      "Ishita or her IT team writing with questions",
+      "The call staying booked or being moved"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "reversible",
+     "reasons": [
+      "Landing design partners is a goal the brief names, and Novacore is one of the brief's design partner talks.",
+      "Ishita tied the answers to a call booked on a fixed date, with her IT team needing them first.",
+      "Late answers delay the review but can still be sent, so a slip costs time rather than the partner."
+     ]
+    },
+    "mode": "act",
+    "alternative": "If the answers cannot be ready in time, tell Ishita now when they will come, so her IT team can plan and the call can still go ahead.",
+    "wait_or_stop": "No waiting on our side — the move is ours; once the answers are sent, wait for IT's questions and the call.",
+    "done_when": "Novacore's IT team has our security questionnaire answers before the call on the eighth."
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 2130,
-   "output_tokens": 42,
+   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Ishita, looking forward to the eighth. Attached are our security questionnaire answers for your IT team — happy to take any questions before we speak. Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Ishita our security questionnaire answers before the call — or, if Novacore has its own form, ask her for it at once.\", \"for_whom\": \"Ishita Rao and Novacore's IT team\", \"by_when\": \"2026-10-08\"}, \"facts\": [{\"claim\": \"Ishita Rao, Head of Partnerships at Novacore, asked Arjun to send our security questionnaire answers before their call on the eighth of October, because Novacore's IT team needs them first.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"A call with Ishita is on the calendar for the eighth of October.\", \"evidence\": [\"evt_#2\"]}, {\"claim\": \"Her ask is open and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"No answer of ours to Ishita is measured in the file.\", \"evidence\": [\"num:your_reply_time:ishita@novacore.test\"]}], \"inferences\": [{\"claim\": \"Novacore's IT review is a gate in front of the partnership: without the answers, the call may not be able to move to next steps.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Security questionnaire answers are a document to prepare, not a one-line reply, so they need time before the eighth.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of how Novacore's IT team takes a late answer.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Novacore may have a questionnaire of its own for us to fill in, rather than wanting our standard answers.\", \"needs\": \"Ishita's form, or a one-line question to her.\"}, {\"proposition\": \"Our side may have security answers written down from an earlier review.\", \"needs\": \"Arjun's word on what is ready.\"}], \"unknowns\": [{\"question\": \"Which questionnaire does Novacore want — its own form, or our standard answers?\", \"relevance\": \"If it is their form and we do not have it, the first move is to ask for it at once.\"}, {\"question\": \"Are our security answers written down anywhere yet?\", \"relevance\": \"If not, preparing them takes days, and the eighth is close.\"}, {\"question\": \"How long does Novacore's IT team need with the answers before the call?\", \"relevance\": \"It sets how early the answers must go.\"}], \"frames\": {\"primary\": \"A design partner whose IT team must clear us before the booked call: the security questionnaire answers are ours to send, and they are due before the eighth.\", \"rivals\": [\"A courtesy request that could wait for the call itself without harm.\", \"A procurement gate that will take more than one round, where the first answers open a longer review.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From Ishita's own words and the brief's goal of landing design partners: the questionnaire answers with Novacore's IT team before the call on the eighth.\", \"actual\": \"Nothing from us is in the file; the ask is open and the call is booked.\"}, \"scenarios\": {\"do_nothing\": \"The eighth arrives without the answers; Novacore's IT team has not cleared us and the call cannot move to next steps.\", \"act\": \"Sending the answers in good time lets the IT review run before the call, so the call can turn to the partnership itself.\", \"best\": \"The answers go out early, IT clears them, and the call ends with a design-partner next step.\", \"worst\": \"The answers are missing at the call, the review starts late, and a partner the brief wants stalls in its own procurement.\", \"signals_to_watch\": [\"The answers sent to Ishita before the eighth\", \"Ishita or her IT team writing with questions\", \"The call staying booked or being moved\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Novacore is one of the brief's design partner talks.\", \"Ishita tied the answers to a call booked on a fixed date, with her IT team needing them first.\", \"Late answers delay the review but can still be sent, so a slip costs time rather than the partner.\"]}, \"mode\": \"act\", \"alternative\": \"If the answers cannot be ready in time, tell Ishita now when they will come, so her IT team can plan and the call can still go ahead.\", \"wait_or_stop\": \"No waiting on our side — the move is ours; once the answers are sent, wait for IT's questions and the call.\", \"done_when\": \"Novacore's IT team has our security questionnaire answers before the call on the eighth.\"}",
+   "framed": true,
+   "input_tokens": 3096,
+   "output_tokens": 1164,
    "model": "claude-haiku-4-5-20251001"
   },
   "9c8cfb61a51054863db55b710f7feb5de1ecc4c817c1f07a001cf8e4bc2fe0cb": {
@@ -303,228 +393,25 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"security questionnaire\", \"partnership\"], \"entity_mentions\": [{\"surface_form\": \"Ishita Rao\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ishita Rao\", \"start_offset\": 158, \"end_offset\": 168}], \"confidence_bp\": 9000}, {\"surface_form\": \"Novacore\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Novacore\", \"start_offset\": 191, \"end_offset\": 199}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Send the security questionnaire answers before 8 Oct\", \"asked_by\": \"Ishita Rao\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you send your security questionnaire answers before then?\", \"start_offset\": 63, \"end_offset\": 126}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"8 Oct\", \"earliest\": \"2026-10-08T00:00:00+05:30\", \"latest\": \"2026-10-08T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-29T09:00:00Z\", \"evidence\": [{\"quote\": \"8 Oct\", \"start_offset\": 19, \"end_offset\": 24}]}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Ishita Rao\", \"value\": \"Head of Partnerships\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Head of Partnerships, Novacore\", \"start_offset\": 169, \"end_offset\": 199}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"security review before the call\"}, \"implied_actions\": [\"send the security questionnaire answers before 8 Oct\"]}",
+   "framed": true,
    "input_tokens": 5523,
    "output_tokens": 388,
    "model": "claude-haiku-4-5-20251001"
   },
-  "9d6f3596b1bc2cd9a03622c40715411256d105bff1510c9ca275ee23ea1876bc": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 1141,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9e67e995c6809030fec932bebd8df96c9229afe284826e151190f99c738b3527": {
+  "c4e2f88c27e6a7ad0759c6e51022ed8aa00279eb9713c8e57b61ecb6761f39d7": {
    "site": "bundle_narrator",
    "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
     "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
    },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2398,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a5bf25067d0d13590cd3b748bc2d00a231db926679c805ec6a034b3cdcb10f8a": {
-   "site": "expert",
-   "parsed": {
-    "proposed_kind": null,
-    "draft": "Hi Ishita, looking forward to the eighth. Attached are our security questionnaire answers for your IT team — happy to take any questions before we speak. Arjun",
-    "next_move": {
-     "who": "Arjun",
-     "what": "Send Ishita our security questionnaire answers before the call — or, if Novacore has its own form, ask her for it at once.",
-     "for_whom": "Ishita Rao and Novacore's IT team",
-     "by_when": "2026-10-08"
-    },
-    "facts": [
-     {
-      "claim": "Ishita Rao, Head of Partnerships at Novacore, asked Arjun to send our security questionnaire answers before their call on the eighth of October, because Novacore's IT team needs them first.",
-      "evidence": [
-       "evt_5185bef9bcda76b11f2c93a0"
-      ]
-     },
-     {
-      "claim": "A call with Ishita is on the calendar for the eighth of October.",
-      "evidence": [
-       "evt_0e547359e31864611d4d4363"
-      ]
-     },
-     {
-      "claim": "Her ask is open and waits on us.",
-      "evidence": [
-       "loop:loop_5700b577391b57bf0b3634f7"
-      ]
-     },
-     {
-      "claim": "No answer of ours to Ishita is measured in the file.",
-      "evidence": [
-       "num:your_reply_time:ishita@novacore.test"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "Novacore's IT review is a gate in front of the partnership: without the answers, the call may not be able to move to next steps.",
-      "based_on": [
-       "fact:1",
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "Security questionnaire answers are a document to prepare, not a one-line reply, so they need time before the eighth.",
-      "based_on": [
-       "fact:1"
-      ]
-     }
-    ],
-    "patterns": [
-     {
-      "kind": "base_rate",
-      "claim": "The file is new — seen once, with no earlier card or outcome — so there is no record of how Novacore's IT team takes a late answer.",
-      "based_on": [
-       "hist:derived.history.times_seen@admin",
-       "hist:derived.history.prior_outcome@admin"
-      ]
-     }
-    ],
-    "hypotheses": [
-     {
-      "proposition": "Novacore may have a questionnaire of its own for us to fill in, rather than wanting our standard answers.",
-      "needs": "Ishita's form, or a one-line question to her."
-     },
-     {
-      "proposition": "Our side may have security answers written down from an earlier review.",
-      "needs": "Arjun's word on what is ready."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "Which questionnaire does Novacore want — its own form, or our standard answers?",
-      "relevance": "If it is their form and we do not have it, the first move is to ask for it at once."
-     },
-     {
-      "question": "Are our security answers written down anywhere yet?",
-      "relevance": "If not, preparing them takes days, and the eighth is close."
-     },
-     {
-      "question": "How long does Novacore's IT team need with the answers before the call?",
-      "relevance": "It sets how early the answers must go."
-     }
-    ],
-    "frames": {
-     "primary": "A design partner whose IT team must clear us before the booked call: the security questionnaire answers are ours to send, and they are due before the eighth.",
-     "rivals": [
-      "A courtesy request that could wait for the call itself without harm.",
-      "A procurement gate that will take more than one round, where the first answers open a longer review."
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "From Ishita's own words and the brief's goal of landing design partners: the questionnaire answers with Novacore's IT team before the call on the eighth.",
-     "actual": "Nothing from us is in the file; the ask is open and the call is booked."
-    },
-    "scenarios": {
-     "do_nothing": "The eighth arrives without the answers; Novacore's IT team has not cleared us and the call cannot move to next steps.",
-     "act": "Sending the answers in good time lets the IT review run before the call, so the call can turn to the partnership itself.",
-     "best": "The answers go out early, IT clears them, and the call ends with a design-partner next step.",
-     "worst": "The answers are missing at the call, the review starts late, and a partner the brief wants stalls in its own procurement.",
-     "signals_to_watch": [
-      "The answers sent to Ishita before the eighth",
-      "Ishita or her IT team writing with questions",
-      "The call staying booked or being moved"
-     ]
-    },
-    "appraisal": {
-     "stakes": "medium",
-     "urgency": "high",
-     "reversibility": "reversible",
-     "reasons": [
-      "Landing design partners is a goal the brief names, and Novacore is one of the brief's design partner talks.",
-      "Ishita tied the answers to a call booked on a fixed date, with her IT team needing them first.",
-      "Late answers delay the review but can still be sent, so a slip costs time rather than the partner."
-     ]
-    },
-    "mode": "act",
-    "alternative": "If the answers cannot be ready in time, tell Ishita now when they will come, so her IT team can plan and the call can still go ahead.",
-    "wait_or_stop": "No waiting on our side — the move is ours; once the answers are sent, wait for IT's questions and the call.",
-    "done_when": "Novacore's IT team has our security questionnaire answers before the call on the eighth."
-   },
-   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Ishita, looking forward to the eighth. Attached are our security questionnaire answers for your IT team — happy to take any questions before we speak. Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Ishita our security questionnaire answers before the call — or, if Novacore has its own form, ask her for it at once.\", \"for_whom\": \"Ishita Rao and Novacore's IT team\", \"by_when\": \"2026-10-08\"}, \"facts\": [{\"claim\": \"Ishita Rao, Head of Partnerships at Novacore, asked Arjun to send our security questionnaire answers before their call on the eighth of October, because Novacore's IT team needs them first.\", \"evidence\": [\"evt_5185bef9bcda76b11f2c93a0\"]}, {\"claim\": \"A call with Ishita is on the calendar for the eighth of October.\", \"evidence\": [\"evt_0e547359e31864611d4d4363\"]}, {\"claim\": \"Her ask is open and waits on us.\", \"evidence\": [\"loop:loop_5700b577391b57bf0b3634f7\"]}, {\"claim\": \"No answer of ours to Ishita is measured in the file.\", \"evidence\": [\"num:your_reply_time:ishita@novacore.test\"]}], \"inferences\": [{\"claim\": \"Novacore's IT review is a gate in front of the partnership: without the answers, the call may not be able to move to next steps.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Security questionnaire answers are a document to prepare, not a one-line reply, so they need time before the eighth.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of how Novacore's IT team takes a late answer.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Novacore may have a questionnaire of its own for us to fill in, rather than wanting our standard answers.\", \"needs\": \"Ishita's form, or a one-line question to her.\"}, {\"proposition\": \"Our side may have security answers written down from an earlier review.\", \"needs\": \"Arjun's word on what is ready.\"}], \"unknowns\": [{\"question\": \"Which questionnaire does Novacore want — its own form, or our standard answers?\", \"relevance\": \"If it is their form and we do not have it, the first move is to ask for it at once.\"}, {\"question\": \"Are our security answers written down anywhere yet?\", \"relevance\": \"If not, preparing them takes days, and the eighth is close.\"}, {\"question\": \"How long does Novacore's IT team need with the answers before the call?\", \"relevance\": \"It sets how early the answers must go.\"}], \"frames\": {\"primary\": \"A design partner whose IT team must clear us before the booked call: the security questionnaire answers are ours to send, and they are due before the eighth.\", \"rivals\": [\"A courtesy request that could wait for the call itself without harm.\", \"A procurement gate that will take more than one round, where the first answers open a longer review.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From Ishita's own words and the brief's goal of landing design partners: the questionnaire answers with Novacore's IT team before the call on the eighth.\", \"actual\": \"Nothing from us is in the file; the ask is open and the call is booked.\"}, \"scenarios\": {\"do_nothing\": \"The eighth arrives without the answers; Novacore's IT team has not cleared us and the call cannot move to next steps.\", \"act\": \"Sending the answers in good time lets the IT review run before the call, so the call can turn to the partnership itself.\", \"best\": \"The answers go out early, IT clears them, and the call ends with a design-partner next step.\", \"worst\": \"The answers are missing at the call, the review starts late, and a partner the brief wants stalls in its own procurement.\", \"signals_to_watch\": [\"The answers sent to Ishita before the eighth\", \"Ishita or her IT team writing with questions\", \"The call staying booked or being moved\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Novacore is one of the brief's design partner talks.\", \"Ishita tied the answers to a call booked on a fixed date, with her IT team needing them first.\", \"Late answers delay the review but can still be sent, so a slip costs time rather than the partner.\"]}, \"mode\": \"act\", \"alternative\": \"If the answers cannot be ready in time, tell Ishita now when they will come, so her IT team can plan and the call can still go ahead.\", \"wait_or_stop\": \"No waiting on our side — the move is ours; once the answers are sent, wait for IT's questions and the call.\", \"done_when\": \"Novacore's IT team has our security questionnaire answers before the call on the eighth.\"}",
-   "input_tokens": 3122,
-   "output_tokens": 1164,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "bf6c2a266a37ad55ab14ce2e3a0367390eaca7cfefc95b75c67a387ceb2e07f9": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4523,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4579,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4772
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4523, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4579, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4772}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 4139,
-   "output_tokens": 91,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "dc6da491bf9e51da7198d1a2bc845457d29550ae0c81008f94ff8850935d50f3": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2358,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "fc46b2027ddc6bd217eb5828f6dd85da1b0f8df954e67f2194738e22e4482919": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Ishita Rao your security questionnaire answers",
-    "situation": "Ishita Rao is waiting on your security questionnaire answers.",
-    "artifact": "Hi Ishita, attaching our security questionnaire answers. Thanks, Arjun"
-   },
-   "raw": "{\"headline\": \"Send Ishita Rao your security questionnaire answers\", \"situation\": \"Ishita Rao is waiting on your security questionnaire answers.\", \"artifact\": \"Hi Ishita, attaching our security questionnaire answers. Thanks, Arjun\"}",
-   "input_tokens": 1819,
-   "output_tokens": 57,
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1768,
+   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   }
  }

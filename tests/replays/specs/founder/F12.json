@@ -591,5 +591,6 @@
    }
   ]
  },
- "notes": "Production read the real mail but no signal type fitted, so it never entered memory — and the call was stored as a deadline that expires (F04)."
+ "notes": "Production read the real mail but no signal type fitted, so it never entered memory — and the call was stored as a deadline that expires (F04).",
+ "blocked_on": "the same advice, decided again after its week lapsed between the two sweeps, is a second card: STEP-14's living card (03 F176)"
 }

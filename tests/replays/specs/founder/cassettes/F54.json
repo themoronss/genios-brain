@@ -1,51 +1,138 @@
 {
  "case_id": "F54",
  "source": "ideal_reader",
- "recorded_at": "51372223",
+ "recorded_at": "a10f3140",
  "answers": {
-  "31c98b6b6a03ad6f3b5c24ff90739a7b1f45238d6918daae1602c7bee313de0b": {
-   "site": "decider",
+  "112b01042618e574285bd557dccf00e5d68a3a89b2eef4a81466d61ecb7e823e": {
+   "site": "expert",
    "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
-     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 4749,
-     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 6200,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
-     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
+    "facts": [
+     {
+      "claim": "The file's only address is an events mailbox at Bluebay, and no reply time is measured for it either way.",
+      "evidence": [
+       "num:their_reply_time:events@bluebayhub.test",
+       "num:your_reply_time:events@bluebayhub.test"
+      ]
+     },
+     {
+      "claim": "Its one item is a meeting set for the twentieth of August.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "No gap between touches is measured: the file holds that one meeting and no mail.",
+      "evidence": [
+       "num:usual_gap"
+      ]
+     },
+     {
+      "claim": "The engine files it as an admin contact, seen once.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "This is the organiser's address for the meeting: a shared mailbox, not a person Arjun works with.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Whatever follows the meeting belongs in the files of the people Arjun meets there, not here.",
+      "based_on": [
+       "fact:2",
+       "fact:3"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Bluebay matters to Arjun as a host whose events he wants to keep attending.",
+      "needs": "Arjun saying so; nothing in the file points to it."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether Arjun wants anything from Bluebay as an organiser, such as future invitations.",
+      "relevance": "Only then would this file hold work of its own."
+     },
+     {
+      "question": "Who else the meeting brings Arjun together with.",
+      "relevance": "Any work that comes of the meeting lives in those people's files, not in the organiser's."
+     }
+    ],
+    "frames": {
+     "primary": "An organiser's mailbox, filed as if it were a person: it carries the invitation and needs nothing back.",
+     "rivals": [
+      "A host whose events Arjun wants to keep attending, which would make Bluebay worth a line in the brief.",
+      "A shared inbox that one known person at Bluebay answers, which would make it a real contact."
+     ]
     },
-    "confidence_bp": 5000,
-    "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
-    "missing": []
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "No playbook applies; an organiser's mailbox is expected to send invitations and little else.",
+     "actual": "It holds one meeting and no mail, as an organiser's mailbox would."
+    },
+    "scenarios": {
+     "do_nothing": "Nothing is lost: the mailbox expects no answer, and the file stays as it is.",
+     "act": "Writing to an organiser's inbox would reach whoever runs Bluebay's events and move none of Arjun's work.",
+     "best": "The file stays quiet, and any follow-up from the meeting goes to the people Arjun met.",
+     "worst": "The mailbox is treated as a person, and Arjun is asked to follow up with an inbox while the people he met are left without a note.",
+     "signals_to_watch": [
+      "Mail from a named person at Bluebay, which would make this a real contact",
+      "Arjun saying he wants to stay on Bluebay's guest list"
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The counterparty is a shared mailbox, not a person, and asks for nothing.",
+      "The file holds one meeting and no mail or promise."
+     ]
+    },
+    "mode": "nothing",
+    "next_move": null,
+    "alternative": "If Arjun wants to stay close to Bluebay as a host, a line in the brief naming it, rather than a note to its mailbox.",
+    "wait_or_stop": "Nothing to wait for here; stop treating this mailbox as a person, and look for any follow-up in the files of the people the meeting brings Arjun together with.",
+    "done_when": "Nothing is needed; the file is done as it stands.",
+    "draft": null
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 4749, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6200, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"The meeting was on the calendar; what, if anything, was promised is open.\", \"missing\": []}",
-   "input_tokens": 5548,
-   "output_tokens": 161,
+   "raw": "{\"facts\": [{\"claim\": \"The file's only address is an events mailbox at Bluebay, and no reply time is measured for it either way.\", \"evidence\": [\"num:their_reply_time:events@bluebayhub.test\", \"num:your_reply_time:events@bluebayhub.test\"]}, {\"claim\": \"Its one item is a meeting set for the twentieth of August.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"No gap between touches is measured: the file holds that one meeting and no mail.\", \"evidence\": [\"num:usual_gap\"]}, {\"claim\": \"The engine files it as an admin contact, seen once.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"This is the organiser's address for the meeting: a shared mailbox, not a person Arjun works with.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Whatever follows the meeting belongs in the files of the people Arjun meets there, not here.\", \"based_on\": [\"fact:2\", \"fact:3\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Bluebay matters to Arjun as a host whose events he wants to keep attending.\", \"needs\": \"Arjun saying so; nothing in the file points to it.\"}], \"unknowns\": [{\"question\": \"Whether Arjun wants anything from Bluebay as an organiser, such as future invitations.\", \"relevance\": \"Only then would this file hold work of its own.\"}, {\"question\": \"Who else the meeting brings Arjun together with.\", \"relevance\": \"Any work that comes of the meeting lives in those people's files, not in the organiser's.\"}], \"frames\": {\"primary\": \"An organiser's mailbox, filed as if it were a person: it carries the invitation and needs nothing back.\", \"rivals\": [\"A host whose events Arjun wants to keep attending, which would make Bluebay worth a line in the brief.\", \"A shared inbox that one known person at Bluebay answers, which would make it a real contact.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies; an organiser's mailbox is expected to send invitations and little else.\", \"actual\": \"It holds one meeting and no mail, as an organiser's mailbox would.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the mailbox expects no answer, and the file stays as it is.\", \"act\": \"Writing to an organiser's inbox would reach whoever runs Bluebay's events and move none of Arjun's work.\", \"best\": \"The file stays quiet, and any follow-up from the meeting goes to the people Arjun met.\", \"worst\": \"The mailbox is treated as a person, and Arjun is asked to follow up with an inbox while the people he met are left without a note.\", \"signals_to_watch\": [\"Mail from a named person at Bluebay, which would make this a real contact\", \"Arjun saying he wants to stay on Bluebay's guest list\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The counterparty is a shared mailbox, not a person, and asks for nothing.\", \"The file holds one meeting and no mail or promise.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If Arjun wants to stay close to Bluebay as a host, a line in the brief naming it, rather than a note to its mailbox.\", \"wait_or_stop\": \"Nothing to wait for here; stop treating this mailbox as a person, and look for any follow-up in the files of the people the meeting brings Arjun together with.\", \"done_when\": \"Nothing is needed; the file is done as it stands.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 3034,
+   "output_tokens": 840,
    "model": "claude-haiku-4-5-20251001"
   },
-  "381e19f566191c2eb0ce3f98bcdf5456b4fa504848c58f5e086060e5ffba6478": {
+  "42dcadbe404eddeabc44365cedf4c6addbdb962e8a15bd111b84f4506946601f": {
    "site": "expert",
    "parsed": {
     "facts": [
      {
       "claim": "The meeting with Kavya on it, set for the twentieth of August, is now listed as a past touch rather than a booking, under Bluebay's events mailbox.",
       "evidence": [
-       "evt_ead5136fdca87480ed161644"
+       "evt_#1"
       ]
      },
      {
       "claim": "Memory holds no words for that meeting, so nothing on file says what was said or agreed there.",
       "evidence": [
-       "evt_ead5136fdca87480ed161644"
+       "evt_#1"
       ]
      },
      {
       "claim": "The file has been quiet for about eight days since the meeting, well inside the engine's default quiet window for the contact.",
       "evidence": [
        "num:days_quiet",
-       "sit:sit_822c2e27953be7d8ea4deda1"
+       "sit:sit_#1"
       ]
      },
      {
@@ -58,7 +145,7 @@
      {
       "claim": "The engine files Kavya as an admin contact, seen once.",
       "evidence": [
-       "sit:sit_822c2e27953be7d8ea4deda1",
+       "sit:sit_#1",
        "hist:derived.history.times_seen@admin"
       ]
      },
@@ -167,180 +254,40 @@
     "done_when": "Arjun has said whether they met, and either a note to Kavya is in the file or the file is closed.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"The meeting with Kavya on it, set for the twentieth of August, is now listed as a past touch rather than a booking, under Bluebay's events mailbox.\", \"evidence\": [\"evt_ead5136fdca87480ed161644\"]}, {\"claim\": \"Memory holds no words for that meeting, so nothing on file says what was said or agreed there.\", \"evidence\": [\"evt_ead5136fdca87480ed161644\"]}, {\"claim\": \"The file has been quiet for about eight days since the meeting, well inside the engine's default quiet window for the contact.\", \"evidence\": [\"num:days_quiet\", \"sit:sit_822c2e27953be7d8ea4deda1\"]}, {\"claim\": \"No reply time is measured either way with Kavya: the file holds no mail between her and Arjun.\", \"evidence\": [\"num:their_reply_time:kavya@ferrypay.test\", \"num:your_reply_time:kavya@ferrypay.test\"]}, {\"claim\": \"The engine files Kavya as an admin contact, seen once.\", \"evidence\": [\"sit:sit_822c2e27953be7d8ea4deda1\", \"hist:derived.history.times_seen@admin\"]}, {\"claim\": \"If another week passes with nothing, the file will have been quiet for over two weeks, and with no stop rule nothing says when the contact goes dormant.\", \"evidence\": [\"whatif:7\"]}], \"inferences\": [{\"claim\": \"The meeting looks like an event Bluebay organised, with Kavya among those invited, rather than a meeting she set up with Arjun.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"If Arjun and Kavya spoke there, more than a week has gone by with nothing written down and no note to her on file.\", \"based_on\": [\"fact:2\", \"fact:3\", \"fact:4\"]}, {\"claim\": \"Waiting costs more each week: the later a note goes, the less it reads as a natural follow-up, and no stop rule marks when it is too late.\", \"based_on\": [\"fact:3\", \"fact:6\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Arjun met Kavya at the event and meant to write to her afterwards.\", \"needs\": \"Arjun's word on whether they spoke and what was said.\"}, {\"proposition\": \"Kavya was on the invitation but they never spoke, so there is nothing to follow up.\", \"needs\": \"Arjun's account of the event.\"}, {\"proposition\": \"A follow-up went to her by a route this file cannot see.\", \"needs\": \"Arjun saying so, or a mailbox shown to have read this file's mail.\"}], \"unknowns\": [{\"question\": \"Whether Arjun went to the event and spoke with Kavya.\", \"relevance\": \"Without a conversation there is nothing to follow up, and the file can close.\"}, {\"question\": \"What, if anything, was said or promised between them.\", \"relevance\": \"A promise made there would make a note owed, not optional.\"}, {\"question\": \"Who Kavya is and what FerryPay does.\", \"relevance\": \"It decides whether the contact serves any goal in the brief, such as design partners or the seed round.\"}], \"frames\": {\"primary\": \"A contact from an event on the calendar, with nothing on file since: if Arjun met Kavya there, the moment for an easy follow-up is passing.\", \"rivals\": [\"An invitation list, not a conversation: Kavya was on it, Arjun never spoke with her, and nothing is owed.\", \"A follow-up that went by phone or another mailbox, which this file cannot see.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; from the file's own shape, a first meeting is followed within days by a short note, or by a decision that none is needed.\", \"actual\": \"The meeting's date passed over a week ago, and nothing has been written in the file since.\"}, \"scenarios\": {\"do_nothing\": \"The contact goes cold, and whatever came of the event is lost.\", \"act\": \"Arjun says whether he met Kavya; if he did, a short note this week keeps the contact warm, and if not, the file closes.\", \"best\": \"They spoke, Arjun's note lands while the event is still fresh, and Kavya answers with something that serves the brief's goals.\", \"worst\": \"Kavya expected a note that never came, and a useful contact is lost for want of a few lines.\", \"signals_to_watch\": [\"Arjun's answer on whether they spoke\", \"A note from Arjun to Kavya in the file\", \"Any mail from Kavya\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Over a week has passed since the meeting with nothing on file.\", \"Nothing in the file shows what the contact is worth.\", \"A late note is still possible and costs little.\"]}, \"mode\": \"find_out\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Say whether he spoke with Kavya at the Bluebay event and what was said; if they spoke, send her a short follow-up note this week.\", \"for_whom\": \"Kavya at FerryPay\", \"by_when\": null}, \"alternative\": \"If Arjun did not speak with her, close the file with no note.\", \"wait_or_stop\": \"Do not wait for Kavya to write first; stop if Arjun did not meet her or nothing came of it.\", \"done_when\": \"Arjun has said whether they met, and either a note to Kavya is in the file or the file is closed.\", \"draft\": null}",
-   "input_tokens": 3081,
+   "raw": "{\"facts\": [{\"claim\": \"The meeting with Kavya on it, set for the twentieth of August, is now listed as a past touch rather than a booking, under Bluebay's events mailbox.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Memory holds no words for that meeting, so nothing on file says what was said or agreed there.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The file has been quiet for about eight days since the meeting, well inside the engine's default quiet window for the contact.\", \"evidence\": [\"num:days_quiet\", \"sit:sit_#1\"]}, {\"claim\": \"No reply time is measured either way with Kavya: the file holds no mail between her and Arjun.\", \"evidence\": [\"num:their_reply_time:kavya@ferrypay.test\", \"num:your_reply_time:kavya@ferrypay.test\"]}, {\"claim\": \"The engine files Kavya as an admin contact, seen once.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}, {\"claim\": \"If another week passes with nothing, the file will have been quiet for over two weeks, and with no stop rule nothing says when the contact goes dormant.\", \"evidence\": [\"whatif:7\"]}], \"inferences\": [{\"claim\": \"The meeting looks like an event Bluebay organised, with Kavya among those invited, rather than a meeting she set up with Arjun.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"If Arjun and Kavya spoke there, more than a week has gone by with nothing written down and no note to her on file.\", \"based_on\": [\"fact:2\", \"fact:3\", \"fact:4\"]}, {\"claim\": \"Waiting costs more each week: the later a note goes, the less it reads as a natural follow-up, and no stop rule marks when it is too late.\", \"based_on\": [\"fact:3\", \"fact:6\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Arjun met Kavya at the event and meant to write to her afterwards.\", \"needs\": \"Arjun's word on whether they spoke and what was said.\"}, {\"proposition\": \"Kavya was on the invitation but they never spoke, so there is nothing to follow up.\", \"needs\": \"Arjun's account of the event.\"}, {\"proposition\": \"A follow-up went to her by a route this file cannot see.\", \"needs\": \"Arjun saying so, or a mailbox shown to have read this file's mail.\"}], \"unknowns\": [{\"question\": \"Whether Arjun went to the event and spoke with Kavya.\", \"relevance\": \"Without a conversation there is nothing to follow up, and the file can close.\"}, {\"question\": \"What, if anything, was said or promised between them.\", \"relevance\": \"A promise made there would make a note owed, not optional.\"}, {\"question\": \"Who Kavya is and what FerryPay does.\", \"relevance\": \"It decides whether the contact serves any goal in the brief, such as design partners or the seed round.\"}], \"frames\": {\"primary\": \"A contact from an event on the calendar, with nothing on file since: if Arjun met Kavya there, the moment for an easy follow-up is passing.\", \"rivals\": [\"An invitation list, not a conversation: Kavya was on it, Arjun never spoke with her, and nothing is owed.\", \"A follow-up that went by phone or another mailbox, which this file cannot see.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; from the file's own shape, a first meeting is followed within days by a short note, or by a decision that none is needed.\", \"actual\": \"The meeting's date passed over a week ago, and nothing has been written in the file since.\"}, \"scenarios\": {\"do_nothing\": \"The contact goes cold, and whatever came of the event is lost.\", \"act\": \"Arjun says whether he met Kavya; if he did, a short note this week keeps the contact warm, and if not, the file closes.\", \"best\": \"They spoke, Arjun's note lands while the event is still fresh, and Kavya answers with something that serves the brief's goals.\", \"worst\": \"Kavya expected a note that never came, and a useful contact is lost for want of a few lines.\", \"signals_to_watch\": [\"Arjun's answer on whether they spoke\", \"A note from Arjun to Kavya in the file\", \"Any mail from Kavya\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Over a week has passed since the meeting with nothing on file.\", \"Nothing in the file shows what the contact is worth.\", \"A late note is still possible and costs little.\"]}, \"mode\": \"find_out\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Say whether he spoke with Kavya at the Bluebay event and what was said; if they spoke, send her a short follow-up note this week.\", \"for_whom\": \"Kavya at FerryPay\", \"by_when\": null}, \"alternative\": \"If Arjun did not speak with her, close the file with no note.\", \"wait_or_stop\": \"Do not wait for Kavya to write first; stop if Arjun did not meet her or nothing came of it.\", \"done_when\": \"Arjun has said whether they met, and either a note to Kavya is in the file or the file is closed.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 3028,
    "output_tokens": 1211,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3ed9e9100c68ed30d77d3241b57ee5e4a15ea1877d5bae142d3a8f3f24125848": {
-   "site": "decider",
+  "df76f60519938e087380db992eaf1f46665a3ef2d09ea0bda8484a36b9d7ae66": {
+   "site": "relevance",
    "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.cold_calling.permission_based_opener": 3812,
-     "sales.pb.demo.discovery_anchored_demo": 3742,
-     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3679,
-     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3763
-    },
-    "confidence_bp": 4000,
-    "rationale": "A sales opener or demo script does not fit a founder at a founders mixer.",
-    "missing": []
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "no readable text",
+      "category": "unknown",
+      "human_authored": null,
+      "asks_for_reply": null
+     }
+    ]
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3812, \"sales.pb.demo.discovery_anchored_demo\": 3742, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3679, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3763}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener or demo script does not fit a founder at a founders mixer.\", \"missing\": []}",
-   "input_tokens": 4348,
-   "output_tokens": 96,
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1144,
+   "output_tokens": 38,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3fa3296979745797b0e363a1ae66678f01c7fb262774f09c9041bd49e07d062c": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Meeting with events@bluebayhub.test, 7 days ago",
-    "situation": "The meeting with events@bluebayhub.test happened 7 days ago. No follow-through is visible.",
-    "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
-   },
-   "raw": "{\"headline\": \"Meeting with events@bluebayhub.test, 7 days ago\", \"situation\": \"The meeting with events@bluebayhub.test happened 7 days ago. No follow-through is visible.\", \"artifact\": \"Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date].\"}",
-   "input_tokens": 682,
-   "output_tokens": 68,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "4572c62249fe0d55382e27679e10e8d1708f5ddaa334080803ff022a7ec31254": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "The file's only address is an events mailbox at Bluebay, and no reply time is measured for it either way.",
-      "evidence": [
-       "num:their_reply_time:events@bluebayhub.test",
-       "num:your_reply_time:events@bluebayhub.test"
-      ]
-     },
-     {
-      "claim": "Its one item is a meeting set for the twentieth of August.",
-      "evidence": [
-       "evt_ead5136fdca87480ed161644"
-      ]
-     },
-     {
-      "claim": "No gap between touches is measured: the file holds that one meeting and no mail.",
-      "evidence": [
-       "num:usual_gap"
-      ]
-     },
-     {
-      "claim": "The engine files it as an admin contact, seen once.",
-      "evidence": [
-       "sit:sit_231ad59dccbb0216960f245a",
-       "hist:derived.history.times_seen@admin"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "This is the organiser's address for the meeting: a shared mailbox, not a person Arjun works with.",
-      "based_on": [
-       "fact:1",
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "Whatever follows the meeting belongs in the files of the people Arjun meets there, not here.",
-      "based_on": [
-       "fact:2",
-       "fact:3"
-      ]
-     }
-    ],
-    "patterns": [],
-    "hypotheses": [
-     {
-      "proposition": "Bluebay matters to Arjun as a host whose events he wants to keep attending.",
-      "needs": "Arjun saying so; nothing in the file points to it."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "Whether Arjun wants anything from Bluebay as an organiser, such as future invitations.",
-      "relevance": "Only then would this file hold work of its own."
-     },
-     {
-      "question": "Who else the meeting brings Arjun together with.",
-      "relevance": "Any work that comes of the meeting lives in those people's files, not in the organiser's."
-     }
-    ],
-    "frames": {
-     "primary": "An organiser's mailbox, filed as if it were a person: it carries the invitation and needs nothing back.",
-     "rivals": [
-      "A host whose events Arjun wants to keep attending, which would make Bluebay worth a line in the brief.",
-      "A shared inbox that one known person at Bluebay answers, which would make it a real contact."
-     ]
-    },
-    "proposed_kind": null,
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "No playbook applies; an organiser's mailbox is expected to send invitations and little else.",
-     "actual": "It holds one meeting and no mail, as an organiser's mailbox would."
-    },
-    "scenarios": {
-     "do_nothing": "Nothing is lost: the mailbox expects no answer, and the file stays as it is.",
-     "act": "Writing to an organiser's inbox would reach whoever runs Bluebay's events and move none of Arjun's work.",
-     "best": "The file stays quiet, and any follow-up from the meeting goes to the people Arjun met.",
-     "worst": "The mailbox is treated as a person, and Arjun is asked to follow up with an inbox while the people he met are left without a note.",
-     "signals_to_watch": [
-      "Mail from a named person at Bluebay, which would make this a real contact",
-      "Arjun saying he wants to stay on Bluebay's guest list"
-     ]
-    },
-    "appraisal": {
-     "stakes": "low",
-     "urgency": "low",
-     "reversibility": "reversible",
-     "reasons": [
-      "The counterparty is a shared mailbox, not a person, and asks for nothing.",
-      "The file holds one meeting and no mail or promise."
-     ]
-    },
-    "mode": "nothing",
-    "next_move": null,
-    "alternative": "If Arjun wants to stay close to Bluebay as a host, a line in the brief naming it, rather than a note to its mailbox.",
-    "wait_or_stop": "Nothing to wait for here; stop treating this mailbox as a person, and look for any follow-up in the files of the people the meeting brings Arjun together with.",
-    "done_when": "Nothing is needed; the file is done as it stands.",
-    "draft": null
-   },
-   "raw": "{\"facts\": [{\"claim\": \"The file's only address is an events mailbox at Bluebay, and no reply time is measured for it either way.\", \"evidence\": [\"num:their_reply_time:events@bluebayhub.test\", \"num:your_reply_time:events@bluebayhub.test\"]}, {\"claim\": \"Its one item is a meeting set for the twentieth of August.\", \"evidence\": [\"evt_ead5136fdca87480ed161644\"]}, {\"claim\": \"No gap between touches is measured: the file holds that one meeting and no mail.\", \"evidence\": [\"num:usual_gap\"]}, {\"claim\": \"The engine files it as an admin contact, seen once.\", \"evidence\": [\"sit:sit_231ad59dccbb0216960f245a\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"This is the organiser's address for the meeting: a shared mailbox, not a person Arjun works with.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Whatever follows the meeting belongs in the files of the people Arjun meets there, not here.\", \"based_on\": [\"fact:2\", \"fact:3\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Bluebay matters to Arjun as a host whose events he wants to keep attending.\", \"needs\": \"Arjun saying so; nothing in the file points to it.\"}], \"unknowns\": [{\"question\": \"Whether Arjun wants anything from Bluebay as an organiser, such as future invitations.\", \"relevance\": \"Only then would this file hold work of its own.\"}, {\"question\": \"Who else the meeting brings Arjun together with.\", \"relevance\": \"Any work that comes of the meeting lives in those people's files, not in the organiser's.\"}], \"frames\": {\"primary\": \"An organiser's mailbox, filed as if it were a person: it carries the invitation and needs nothing back.\", \"rivals\": [\"A host whose events Arjun wants to keep attending, which would make Bluebay worth a line in the brief.\", \"A shared inbox that one known person at Bluebay answers, which would make it a real contact.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies; an organiser's mailbox is expected to send invitations and little else.\", \"actual\": \"It holds one meeting and no mail, as an organiser's mailbox would.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the mailbox expects no answer, and the file stays as it is.\", \"act\": \"Writing to an organiser's inbox would reach whoever runs Bluebay's events and move none of Arjun's work.\", \"best\": \"The file stays quiet, and any follow-up from the meeting goes to the people Arjun met.\", \"worst\": \"The mailbox is treated as a person, and Arjun is asked to follow up with an inbox while the people he met are left without a note.\", \"signals_to_watch\": [\"Mail from a named person at Bluebay, which would make this a real contact\", \"Arjun saying he wants to stay on Bluebay's guest list\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The counterparty is a shared mailbox, not a person, and asks for nothing.\", \"The file holds one meeting and no mail or promise.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If Arjun wants to stay close to Bluebay as a host, a line in the brief naming it, rather than a note to its mailbox.\", \"wait_or_stop\": \"Nothing to wait for here; stop treating this mailbox as a person, and look for any follow-up in the files of the people the meeting brings Arjun together with.\", \"done_when\": \"Nothing is needed; the file is done as it stands.\", \"draft\": null}",
-   "input_tokens": 3085,
-   "output_tokens": 840,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "4f700deaca490f5c42c5ba3dd3ee488f900c57b41cd164212ac17fb2124753f5": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
-     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 6200,
-     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4814,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
-     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
-    },
-    "confidence_bp": 5000,
-    "rationale": "A confirmed external meeting is coming.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 6200, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4814, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"A confirmed external meeting is coming.\", \"missing\": []}",
-   "input_tokens": 5545,
-   "output_tokens": 152,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "58f2d6b1e9ecabe7b45e7420da22f114b054ebd761d1bc21eb73720748d9bc1f": {
+  "e0e1f71d8f8f35bc37ca97291efcdb072d27c5ba77ed05dcb1d2e0e3ec5905e6": {
    "site": "expert",
    "parsed": {
     "facts": [
      {
       "claim": "A meeting with Rhea is booked for the twentieth of August, the day after this review.",
       "evidence": [
-       "evt_ead5136fdca87480ed161644"
+       "evt_#1"
       ]
      },
      {
@@ -354,14 +301,14 @@
      {
       "claim": "The engine files Rhea as an admin contact, seen once.",
       "evidence": [
-       "sit:sit_b62a12df3061c07672db45ea",
+       "sit:sit_#1",
        "hist:derived.history.times_seen@admin"
       ]
      },
      {
       "claim": "Nothing in the file says who set the meeting up or what it is for.",
       "evidence": [
-       "evt_ead5136fdca87480ed161644"
+       "evt_#1"
       ]
      }
     ],
@@ -442,357 +389,33 @@
     "done_when": "After the meeting, the file shows whether Arjun met Rhea and what, if anything, follows.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"A meeting with Rhea is booked for the twentieth of August, the day after this review.\", \"evidence\": [\"evt_ead5136fdca87480ed161644\"]}, {\"claim\": \"No reply time is measured either way with Rhea, and no gap between touches: the file holds no mail and no earlier touch.\", \"evidence\": [\"num:their_reply_time:rhea@tallowfin.test\", \"num:your_reply_time:rhea@tallowfin.test\", \"num:usual_gap\"]}, {\"claim\": \"The engine files Rhea as an admin contact, seen once.\", \"evidence\": [\"sit:sit_b62a12df3061c07672db45ea\", \"hist:derived.history.times_seen@admin\"]}, {\"claim\": \"Nothing in the file says who set the meeting up or what it is for.\", \"evidence\": [\"evt_ead5136fdca87480ed161644\"]}], \"inferences\": [{\"claim\": \"This is a first meeting, with nothing before it in the file.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Nothing is owed to Rhea before the meeting; whatever work there is begins after it.\", \"based_on\": [\"fact:1\", \"fact:2\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The meeting is a group event with Rhea as one of several guests, not a meeting of her own.\", \"needs\": \"The meeting's title or invitation list, which the file does not show.\"}, {\"proposition\": \"It is a first call someone arranged for Arjun.\", \"needs\": \"Arjun's word on how it came about.\"}], \"unknowns\": [{\"question\": \"What the meeting is and who arranged it.\", \"relevance\": \"A one-to-one about real work would deserve a short brief beforehand; a group event would not.\"}, {\"question\": \"Who Rhea is and what Tallowfin does.\", \"relevance\": \"It decides whether anything after the meeting is worth Arjun's time.\"}], \"frames\": {\"primary\": \"A first meeting booked with someone new, with nothing owed before it.\", \"rivals\": [\"A group event where Rhea is one of several guests rather than a meeting of her own.\", \"A call someone else arranged, whose purpose Arjun knows and the file does not.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; a booked first meeting asks nothing of Arjun until it has taken place.\", \"actual\": \"The meeting is booked for the twentieth, and the file holds no mail or other touch.\"}, \"scenarios\": {\"do_nothing\": \"The meeting comes and goes; the file stays empty unless Arjun notes what was said or writes afterwards.\", \"act\": \"Preparing now spends time on a meeting whose purpose the file does not show.\", \"best\": \"Arjun meets Rhea, something useful comes of it, and a short note afterwards opens a thread.\", \"worst\": \"Something is said or promised at the meeting and, with nothing written down, it is forgotten.\", \"signals_to_watch\": [\"The meeting's date passing\", \"A note or mail with Rhea after the meeting\", \"The meeting turning out to be a group event\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"One booked meeting, with no history and no kind of work behind it.\", \"Nothing is owed before the meeting takes place.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the meeting turns out to be a one-to-one about real work, a short brief on Rhea and Tallowfin before it.\", \"wait_or_stop\": \"Wait until the meeting on the twentieth has passed, then look again; stop if nothing comes of it.\", \"done_when\": \"After the meeting, the file shows whether Arjun met Rhea and what, if anything, follows.\", \"draft\": null}",
-   "input_tokens": 2964,
+   "raw": "{\"facts\": [{\"claim\": \"A meeting with Rhea is booked for the twentieth of August, the day after this review.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"No reply time is measured either way with Rhea, and no gap between touches: the file holds no mail and no earlier touch.\", \"evidence\": [\"num:their_reply_time:rhea@tallowfin.test\", \"num:your_reply_time:rhea@tallowfin.test\", \"num:usual_gap\"]}, {\"claim\": \"The engine files Rhea as an admin contact, seen once.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}, {\"claim\": \"Nothing in the file says who set the meeting up or what it is for.\", \"evidence\": [\"evt_#1\"]}], \"inferences\": [{\"claim\": \"This is a first meeting, with nothing before it in the file.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Nothing is owed to Rhea before the meeting; whatever work there is begins after it.\", \"based_on\": [\"fact:1\", \"fact:2\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The meeting is a group event with Rhea as one of several guests, not a meeting of her own.\", \"needs\": \"The meeting's title or invitation list, which the file does not show.\"}, {\"proposition\": \"It is a first call someone arranged for Arjun.\", \"needs\": \"Arjun's word on how it came about.\"}], \"unknowns\": [{\"question\": \"What the meeting is and who arranged it.\", \"relevance\": \"A one-to-one about real work would deserve a short brief beforehand; a group event would not.\"}, {\"question\": \"Who Rhea is and what Tallowfin does.\", \"relevance\": \"It decides whether anything after the meeting is worth Arjun's time.\"}], \"frames\": {\"primary\": \"A first meeting booked with someone new, with nothing owed before it.\", \"rivals\": [\"A group event where Rhea is one of several guests rather than a meeting of her own.\", \"A call someone else arranged, whose purpose Arjun knows and the file does not.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; a booked first meeting asks nothing of Arjun until it has taken place.\", \"actual\": \"The meeting is booked for the twentieth, and the file holds no mail or other touch.\"}, \"scenarios\": {\"do_nothing\": \"The meeting comes and goes; the file stays empty unless Arjun notes what was said or writes afterwards.\", \"act\": \"Preparing now spends time on a meeting whose purpose the file does not show.\", \"best\": \"Arjun meets Rhea, something useful comes of it, and a short note afterwards opens a thread.\", \"worst\": \"Something is said or promised at the meeting and, with nothing written down, it is forgotten.\", \"signals_to_watch\": [\"The meeting's date passing\", \"A note or mail with Rhea after the meeting\", \"The meeting turning out to be a group event\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"One booked meeting, with no history and no kind of work behind it.\", \"Nothing is owed before the meeting takes place.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the meeting turns out to be a one-to-one about real work, a short brief on Rhea and Tallowfin before it.\", \"wait_or_stop\": \"Wait until the meeting on the twentieth has passed, then look again; stop if nothing comes of it.\", \"done_when\": \"After the meeting, the file shows whether Arjun met Rhea and what, if anything, follows.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 2960,
    "output_tokens": 849,
    "model": "claude-haiku-4-5-20251001"
   },
-  "617bb16d7f3777030021aba778b3957b297914d591fd4b70bbf5de07c3f68fd7": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "DECISION_MADE",
-      "confidence_bp": 6000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
-   "input_tokens": 1039,
-   "output_tokens": 50,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6511e77cef4dd6610ffe19fe19885bd6b26501b4f345f8aa2714572d058ba72b": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
-     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 4749,
-     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 6200,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
-     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
-    },
-    "confidence_bp": 5000,
-    "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 4749, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6200, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"The meeting was on the calendar; what, if anything, was promised is open.\", \"missing\": []}",
-   "input_tokens": 5548,
-   "output_tokens": 161,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "809e694cda2255a2b9cbf762c43bbc6db863146d257c561d46505e91b7167319": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
-     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 6200,
-     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4814,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
-     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
-    },
-    "confidence_bp": 5000,
-    "rationale": "A confirmed external meeting is coming.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 6200, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4814, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"A confirmed external meeting is coming.\", \"missing\": []}",
-   "input_tokens": 5544,
-   "output_tokens": 152,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8a2532e7775cb2486d2367bfa3799b9a976bd794b0ab291f886d0e80bd6d4ff9": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "The file's only address is an events mailbox at Bluebay, and no reply time is measured for it either way.",
-      "evidence": [
-       "num:their_reply_time:events@bluebayhub.test",
-       "num:your_reply_time:events@bluebayhub.test"
-      ]
-     },
-     {
-      "claim": "Its one item is a meeting set for the twentieth of August.",
-      "evidence": [
-       "evt_ead5136fdca87480ed161644"
-      ]
-     },
-     {
-      "claim": "No gap between touches is measured: the file holds that one meeting and no mail.",
-      "evidence": [
-       "num:usual_gap"
-      ]
-     },
-     {
-      "claim": "The engine files it as an admin contact, seen once.",
-      "evidence": [
-       "sit:sit_231ad59dccbb0216960f245a",
-       "hist:derived.history.times_seen@admin"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "This is the organiser's address for the meeting: a shared mailbox, not a person Arjun works with.",
-      "based_on": [
-       "fact:1",
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "Whatever follows the meeting belongs in the files of the people Arjun meets there, not here.",
-      "based_on": [
-       "fact:2",
-       "fact:3"
-      ]
-     }
-    ],
-    "patterns": [],
-    "hypotheses": [
-     {
-      "proposition": "Bluebay matters to Arjun as a host whose events he wants to keep attending.",
-      "needs": "Arjun saying so; nothing in the file points to it."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "Whether Arjun wants anything from Bluebay as an organiser, such as future invitations.",
-      "relevance": "Only then would this file hold work of its own."
-     },
-     {
-      "question": "Who else the meeting brings Arjun together with.",
-      "relevance": "Any work that comes of the meeting lives in those people's files, not in the organiser's."
-     }
-    ],
-    "frames": {
-     "primary": "An organiser's mailbox, filed as if it were a person: it carries the invitation and needs nothing back.",
-     "rivals": [
-      "A host whose events Arjun wants to keep attending, which would make Bluebay worth a line in the brief.",
-      "A shared inbox that one known person at Bluebay answers, which would make it a real contact."
-     ]
-    },
-    "proposed_kind": null,
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "No playbook applies; an organiser's mailbox is expected to send invitations and little else.",
-     "actual": "It holds one meeting and no mail, as an organiser's mailbox would."
-    },
-    "scenarios": {
-     "do_nothing": "Nothing is lost: the mailbox expects no answer, and the file stays as it is.",
-     "act": "Writing to an organiser's inbox would reach whoever runs Bluebay's events and move none of Arjun's work.",
-     "best": "The file stays quiet, and any follow-up from the meeting goes to the people Arjun met.",
-     "worst": "The mailbox is treated as a person, and Arjun is asked to follow up with an inbox while the people he met are left without a note.",
-     "signals_to_watch": [
-      "Mail from a named person at Bluebay, which would make this a real contact",
-      "Arjun saying he wants to stay on Bluebay's guest list"
-     ]
-    },
-    "appraisal": {
-     "stakes": "low",
-     "urgency": "low",
-     "reversibility": "reversible",
-     "reasons": [
-      "The counterparty is a shared mailbox, not a person, and asks for nothing.",
-      "The file holds one meeting and no mail or promise."
-     ]
-    },
-    "mode": "nothing",
-    "next_move": null,
-    "alternative": "If Arjun wants to stay close to Bluebay as a host, a line in the brief naming it, rather than a note to its mailbox.",
-    "wait_or_stop": "Nothing to wait for here; stop treating this mailbox as a person, and look for any follow-up in the files of the people the meeting brings Arjun together with.",
-    "done_when": "Nothing is needed; the file is done as it stands.",
-    "draft": null
-   },
-   "raw": "{\"facts\": [{\"claim\": \"The file's only address is an events mailbox at Bluebay, and no reply time is measured for it either way.\", \"evidence\": [\"num:their_reply_time:events@bluebayhub.test\", \"num:your_reply_time:events@bluebayhub.test\"]}, {\"claim\": \"Its one item is a meeting set for the twentieth of August.\", \"evidence\": [\"evt_ead5136fdca87480ed161644\"]}, {\"claim\": \"No gap between touches is measured: the file holds that one meeting and no mail.\", \"evidence\": [\"num:usual_gap\"]}, {\"claim\": \"The engine files it as an admin contact, seen once.\", \"evidence\": [\"sit:sit_231ad59dccbb0216960f245a\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"This is the organiser's address for the meeting: a shared mailbox, not a person Arjun works with.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Whatever follows the meeting belongs in the files of the people Arjun meets there, not here.\", \"based_on\": [\"fact:2\", \"fact:3\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Bluebay matters to Arjun as a host whose events he wants to keep attending.\", \"needs\": \"Arjun saying so; nothing in the file points to it.\"}], \"unknowns\": [{\"question\": \"Whether Arjun wants anything from Bluebay as an organiser, such as future invitations.\", \"relevance\": \"Only then would this file hold work of its own.\"}, {\"question\": \"Who else the meeting brings Arjun together with.\", \"relevance\": \"Any work that comes of the meeting lives in those people's files, not in the organiser's.\"}], \"frames\": {\"primary\": \"An organiser's mailbox, filed as if it were a person: it carries the invitation and needs nothing back.\", \"rivals\": [\"A host whose events Arjun wants to keep attending, which would make Bluebay worth a line in the brief.\", \"A shared inbox that one known person at Bluebay answers, which would make it a real contact.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies; an organiser's mailbox is expected to send invitations and little else.\", \"actual\": \"It holds one meeting and no mail, as an organiser's mailbox would.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the mailbox expects no answer, and the file stays as it is.\", \"act\": \"Writing to an organiser's inbox would reach whoever runs Bluebay's events and move none of Arjun's work.\", \"best\": \"The file stays quiet, and any follow-up from the meeting goes to the people Arjun met.\", \"worst\": \"The mailbox is treated as a person, and Arjun is asked to follow up with an inbox while the people he met are left without a note.\", \"signals_to_watch\": [\"Mail from a named person at Bluebay, which would make this a real contact\", \"Arjun saying he wants to stay on Bluebay's guest list\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The counterparty is a shared mailbox, not a person, and asks for nothing.\", \"The file holds one meeting and no mail or promise.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If Arjun wants to stay close to Bluebay as a host, a line in the brief naming it, rather than a note to its mailbox.\", \"wait_or_stop\": \"Nothing to wait for here; stop treating this mailbox as a person, and look for any follow-up in the files of the people the meeting brings Arjun together with.\", \"done_when\": \"Nothing is needed; the file is done as it stands.\", \"draft\": null}",
-   "input_tokens": 2968,
-   "output_tokens": 840,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "90f99339fbb0bb9e62f8c7705483b29a3c8f46cee287167f5757efc35fe906c7": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "A meeting with Kavya is booked for the twentieth of August, the day after this review.",
-      "evidence": [
-       "evt_ead5136fdca87480ed161644"
-      ]
-     },
-     {
-      "claim": "No reply time is measured either way with Kavya, and no gap between touches: the file holds no mail and no earlier touch.",
-      "evidence": [
-       "num:their_reply_time:kavya@ferrypay.test",
-       "num:your_reply_time:kavya@ferrypay.test",
-       "num:usual_gap"
-      ]
-     },
-     {
-      "claim": "The engine files Kavya as an admin contact, seen once.",
-      "evidence": [
-       "sit:sit_822c2e27953be7d8ea4deda1",
-       "hist:derived.history.times_seen@admin"
-      ]
-     },
-     {
-      "claim": "Nothing in the file says who set the meeting up or what it is for.",
-      "evidence": [
-       "evt_ead5136fdca87480ed161644"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "This is a first meeting, with nothing before it in the file.",
-      "based_on": [
-       "fact:1",
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "Nothing is owed to Kavya before the meeting; whatever work there is begins after it.",
-      "based_on": [
-       "fact:1",
-       "fact:2"
-      ]
-     }
-    ],
-    "patterns": [],
-    "hypotheses": [
-     {
-      "proposition": "The meeting is a group event with Kavya as one of several guests, not a meeting of her own.",
-      "needs": "The meeting's title or invitation list, which the file does not show."
-     },
-     {
-      "proposition": "It is a first call someone arranged for Arjun.",
-      "needs": "Arjun's word on how it came about."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "What the meeting is and who arranged it.",
-      "relevance": "A one-to-one about real work would deserve a short brief beforehand; a group event would not."
-     },
-     {
-      "question": "Who Kavya is and what FerryPay does.",
-      "relevance": "It decides whether anything after the meeting is worth Arjun's time."
-     }
-    ],
-    "frames": {
-     "primary": "A first meeting booked with someone new, with nothing owed before it.",
-     "rivals": [
-      "A group event where Kavya is one of several guests rather than a meeting of her own.",
-      "A call someone else arranged, whose purpose Arjun knows and the file does not."
-     ]
-    },
-    "proposed_kind": null,
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "No playbook applies and the brief names no kind of work for this file; a booked first meeting asks nothing of Arjun until it has taken place.",
-     "actual": "The meeting is booked for the twentieth, and the file holds no mail or other touch."
-    },
-    "scenarios": {
-     "do_nothing": "The meeting comes and goes; the file stays empty unless Arjun notes what was said or writes afterwards.",
-     "act": "Preparing now spends time on a meeting whose purpose the file does not show.",
-     "best": "Arjun meets Kavya, something useful comes of it, and a short note afterwards opens a thread.",
-     "worst": "Something is said or promised at the meeting and, with nothing written down, it is forgotten.",
-     "signals_to_watch": [
-      "The meeting's date passing",
-      "A note or mail with Kavya after the meeting",
-      "The meeting turning out to be a group event"
-     ]
-    },
-    "appraisal": {
-     "stakes": "low",
-     "urgency": "low",
-     "reversibility": "reversible",
-     "reasons": [
-      "One booked meeting, with no history and no kind of work behind it.",
-      "Nothing is owed before the meeting takes place."
-     ]
-    },
-    "mode": "wait",
-    "next_move": null,
-    "alternative": "If the meeting turns out to be a one-to-one about real work, a short brief on Kavya and FerryPay before it.",
-    "wait_or_stop": "Wait until the meeting on the twentieth has passed, then look again; stop if nothing comes of it.",
-    "done_when": "After the meeting, the file shows whether Arjun met Kavya and what, if anything, follows.",
-    "draft": null
-   },
-   "raw": "{\"facts\": [{\"claim\": \"A meeting with Kavya is booked for the twentieth of August, the day after this review.\", \"evidence\": [\"evt_ead5136fdca87480ed161644\"]}, {\"claim\": \"No reply time is measured either way with Kavya, and no gap between touches: the file holds no mail and no earlier touch.\", \"evidence\": [\"num:their_reply_time:kavya@ferrypay.test\", \"num:your_reply_time:kavya@ferrypay.test\", \"num:usual_gap\"]}, {\"claim\": \"The engine files Kavya as an admin contact, seen once.\", \"evidence\": [\"sit:sit_822c2e27953be7d8ea4deda1\", \"hist:derived.history.times_seen@admin\"]}, {\"claim\": \"Nothing in the file says who set the meeting up or what it is for.\", \"evidence\": [\"evt_ead5136fdca87480ed161644\"]}], \"inferences\": [{\"claim\": \"This is a first meeting, with nothing before it in the file.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Nothing is owed to Kavya before the meeting; whatever work there is begins after it.\", \"based_on\": [\"fact:1\", \"fact:2\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The meeting is a group event with Kavya as one of several guests, not a meeting of her own.\", \"needs\": \"The meeting's title or invitation list, which the file does not show.\"}, {\"proposition\": \"It is a first call someone arranged for Arjun.\", \"needs\": \"Arjun's word on how it came about.\"}], \"unknowns\": [{\"question\": \"What the meeting is and who arranged it.\", \"relevance\": \"A one-to-one about real work would deserve a short brief beforehand; a group event would not.\"}, {\"question\": \"Who Kavya is and what FerryPay does.\", \"relevance\": \"It decides whether anything after the meeting is worth Arjun's time.\"}], \"frames\": {\"primary\": \"A first meeting booked with someone new, with nothing owed before it.\", \"rivals\": [\"A group event where Kavya is one of several guests rather than a meeting of her own.\", \"A call someone else arranged, whose purpose Arjun knows and the file does not.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; a booked first meeting asks nothing of Arjun until it has taken place.\", \"actual\": \"The meeting is booked for the twentieth, and the file holds no mail or other touch.\"}, \"scenarios\": {\"do_nothing\": \"The meeting comes and goes; the file stays empty unless Arjun notes what was said or writes afterwards.\", \"act\": \"Preparing now spends time on a meeting whose purpose the file does not show.\", \"best\": \"Arjun meets Kavya, something useful comes of it, and a short note afterwards opens a thread.\", \"worst\": \"Something is said or promised at the meeting and, with nothing written down, it is forgotten.\", \"signals_to_watch\": [\"The meeting's date passing\", \"A note or mail with Kavya after the meeting\", \"The meeting turning out to be a group event\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"One booked meeting, with no history and no kind of work behind it.\", \"Nothing is owed before the meeting takes place.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the meeting turns out to be a one-to-one about real work, a short brief on Kavya and FerryPay before it.\", \"wait_or_stop\": \"Wait until the meeting on the twentieth has passed, then look again; stop if nothing comes of it.\", \"done_when\": \"After the meeting, the file shows whether Arjun met Kavya and what, if anything, follows.\", \"draft\": null}",
-   "input_tokens": 2964,
-   "output_tokens": 851,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a131a81d27de81fe762e38904752027674a7cf921eb1115faffce8e6515540fe": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Meeting with rhea@tallowfin.test is clear",
-    "situation": "Nothing open is on record with rhea@tallowfin.test.",
-    "artifact": "Nothing is missing on record; confirm the agenda."
-   },
-   "raw": "{\"headline\": \"Meeting with rhea@tallowfin.test is clear\", \"situation\": \"Nothing open is on record with rhea@tallowfin.test.\", \"artifact\": \"Nothing is missing on record; confirm the agenda.\"}",
-   "input_tokens": 679,
-   "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b2f5f789ee724f34780bd90297bd240a85ae0f931e16776c1dc67432253cb006": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Meeting with kavya@ferrypay.test is clear",
-    "situation": "Nothing open is on record with kavya@ferrypay.test.",
-    "artifact": "Nothing is missing on record; confirm the agenda."
-   },
-   "raw": "{\"headline\": \"Meeting with kavya@ferrypay.test is clear\", \"situation\": \"Nothing open is on record with kavya@ferrypay.test.\", \"artifact\": \"Nothing is missing on record; confirm the agenda.\"}",
-   "input_tokens": 679,
-   "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b609cdd1ff3998d262814d274edf4d95dfe65b4e219a434efb0758a68d2de1b5": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Meeting with events@bluebayhub.test is clear",
-    "situation": "Nothing open is on record with events@bluebayhub.test.",
-    "artifact": "Nothing is missing on record; confirm the agenda."
-   },
-   "raw": "{\"headline\": \"Meeting with events@bluebayhub.test is clear\", \"situation\": \"Nothing open is on record with events@bluebayhub.test.\", \"artifact\": \"Nothing is missing on record; confirm the agenda.\"}",
-   "input_tokens": 681,
-   "output_tokens": 49,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b6bfe2244ae19b43479afec94a52e710e32ad93b3cd85f33ee390202ac8e304c": {
+  "e6a3867ff82ed49200d25418f0dba4229f07a12a59f138ac84993fb428c5cf5c": {
    "site": "expert",
    "parsed": {
     "facts": [
      {
       "claim": "The meeting with Rhea on it, set for the twentieth of August, is now listed as a past touch rather than a booking, under Bluebay's events mailbox.",
       "evidence": [
-       "evt_ead5136fdca87480ed161644"
+       "evt_#1"
       ]
      },
      {
       "claim": "Memory holds no words for that meeting, so nothing on file says what was said or agreed there.",
       "evidence": [
-       "evt_ead5136fdca87480ed161644"
+       "evt_#1"
       ]
      },
      {
       "claim": "The file has been quiet for about eight days since the meeting, well inside the engine's default quiet window for the contact.",
       "evidence": [
        "num:days_quiet",
-       "sit:sit_b62a12df3061c07672db45ea"
+       "sit:sit_#1"
       ]
      },
      {
@@ -805,7 +428,7 @@
      {
       "claim": "The engine files Rhea as an admin contact, seen once.",
       "evidence": [
-       "sit:sit_b62a12df3061c07672db45ea",
+       "sit:sit_#1",
        "hist:derived.history.times_seen@admin"
       ]
      },
@@ -914,114 +537,234 @@
     "done_when": "Arjun has said whether they met, and either a note to Rhea is in the file or the file is closed.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"The meeting with Rhea on it, set for the twentieth of August, is now listed as a past touch rather than a booking, under Bluebay's events mailbox.\", \"evidence\": [\"evt_ead5136fdca87480ed161644\"]}, {\"claim\": \"Memory holds no words for that meeting, so nothing on file says what was said or agreed there.\", \"evidence\": [\"evt_ead5136fdca87480ed161644\"]}, {\"claim\": \"The file has been quiet for about eight days since the meeting, well inside the engine's default quiet window for the contact.\", \"evidence\": [\"num:days_quiet\", \"sit:sit_b62a12df3061c07672db45ea\"]}, {\"claim\": \"No reply time is measured either way with Rhea: the file holds no mail between her and Arjun.\", \"evidence\": [\"num:their_reply_time:rhea@tallowfin.test\", \"num:your_reply_time:rhea@tallowfin.test\"]}, {\"claim\": \"The engine files Rhea as an admin contact, seen once.\", \"evidence\": [\"sit:sit_b62a12df3061c07672db45ea\", \"hist:derived.history.times_seen@admin\"]}, {\"claim\": \"If another week passes with nothing, the file will have been quiet for over two weeks, and with no stop rule nothing says when the contact goes dormant.\", \"evidence\": [\"whatif:7\"]}], \"inferences\": [{\"claim\": \"The meeting looks like an event Bluebay organised, with Rhea among those invited, rather than a meeting she set up with Arjun.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"If Arjun and Rhea spoke there, more than a week has gone by with nothing written down and no note to her on file.\", \"based_on\": [\"fact:2\", \"fact:3\", \"fact:4\"]}, {\"claim\": \"Waiting costs more each week: the later a note goes, the less it reads as a natural follow-up, and no stop rule marks when it is too late.\", \"based_on\": [\"fact:3\", \"fact:6\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Arjun met Rhea at the event and meant to write to her afterwards.\", \"needs\": \"Arjun's word on whether they spoke and what was said.\"}, {\"proposition\": \"Rhea was on the invitation but they never spoke, so there is nothing to follow up.\", \"needs\": \"Arjun's account of the event.\"}, {\"proposition\": \"A follow-up went to her by a route this file cannot see.\", \"needs\": \"Arjun saying so, or a mailbox shown to have read this file's mail.\"}], \"unknowns\": [{\"question\": \"Whether Arjun went to the event and spoke with Rhea.\", \"relevance\": \"Without a conversation there is nothing to follow up, and the file can close.\"}, {\"question\": \"What, if anything, was said or promised between them.\", \"relevance\": \"A promise made there would make a note owed, not optional.\"}, {\"question\": \"Who Rhea is and what Tallowfin does.\", \"relevance\": \"It decides whether the contact serves any goal in the brief, such as design partners or the seed round.\"}], \"frames\": {\"primary\": \"A contact from an event on the calendar, with nothing on file since: if Arjun met Rhea there, the moment for an easy follow-up is passing.\", \"rivals\": [\"An invitation list, not a conversation: Rhea was on it, Arjun never spoke with her, and nothing is owed.\", \"A follow-up that went by phone or another mailbox, which this file cannot see.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; from the file's own shape, a first meeting is followed within days by a short note, or by a decision that none is needed.\", \"actual\": \"The meeting's date passed over a week ago, and nothing has been written in the file since.\"}, \"scenarios\": {\"do_nothing\": \"The contact goes cold, and whatever came of the event is lost.\", \"act\": \"Arjun says whether he met Rhea; if he did, a short note this week keeps the contact warm, and if not, the file closes.\", \"best\": \"They spoke, Arjun's note lands while the event is still fresh, and Rhea answers with something that serves the brief's goals.\", \"worst\": \"Rhea expected a note that never came, and a useful contact is lost for want of a few lines.\", \"signals_to_watch\": [\"Arjun's answer on whether they spoke\", \"A note from Arjun to Rhea in the file\", \"Any mail from Rhea\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Over a week has passed since the meeting with nothing on file.\", \"Nothing in the file shows what the contact is worth.\", \"A late note is still possible and costs little.\"]}, \"mode\": \"find_out\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Say whether he spoke with Rhea at the Bluebay event and what was said; if they spoke, send her a short follow-up note this week.\", \"for_whom\": \"Rhea at Tallowfin\", \"by_when\": null}, \"alternative\": \"If Arjun did not speak with her, close the file with no note.\", \"wait_or_stop\": \"Do not wait for Rhea to write first; stop if Arjun did not meet her or nothing came of it.\", \"done_when\": \"Arjun has said whether they met, and either a note to Rhea is in the file or the file is closed.\", \"draft\": null}",
-   "input_tokens": 3081,
+   "raw": "{\"facts\": [{\"claim\": \"The meeting with Rhea on it, set for the twentieth of August, is now listed as a past touch rather than a booking, under Bluebay's events mailbox.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Memory holds no words for that meeting, so nothing on file says what was said or agreed there.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The file has been quiet for about eight days since the meeting, well inside the engine's default quiet window for the contact.\", \"evidence\": [\"num:days_quiet\", \"sit:sit_#1\"]}, {\"claim\": \"No reply time is measured either way with Rhea: the file holds no mail between her and Arjun.\", \"evidence\": [\"num:their_reply_time:rhea@tallowfin.test\", \"num:your_reply_time:rhea@tallowfin.test\"]}, {\"claim\": \"The engine files Rhea as an admin contact, seen once.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}, {\"claim\": \"If another week passes with nothing, the file will have been quiet for over two weeks, and with no stop rule nothing says when the contact goes dormant.\", \"evidence\": [\"whatif:7\"]}], \"inferences\": [{\"claim\": \"The meeting looks like an event Bluebay organised, with Rhea among those invited, rather than a meeting she set up with Arjun.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"If Arjun and Rhea spoke there, more than a week has gone by with nothing written down and no note to her on file.\", \"based_on\": [\"fact:2\", \"fact:3\", \"fact:4\"]}, {\"claim\": \"Waiting costs more each week: the later a note goes, the less it reads as a natural follow-up, and no stop rule marks when it is too late.\", \"based_on\": [\"fact:3\", \"fact:6\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Arjun met Rhea at the event and meant to write to her afterwards.\", \"needs\": \"Arjun's word on whether they spoke and what was said.\"}, {\"proposition\": \"Rhea was on the invitation but they never spoke, so there is nothing to follow up.\", \"needs\": \"Arjun's account of the event.\"}, {\"proposition\": \"A follow-up went to her by a route this file cannot see.\", \"needs\": \"Arjun saying so, or a mailbox shown to have read this file's mail.\"}], \"unknowns\": [{\"question\": \"Whether Arjun went to the event and spoke with Rhea.\", \"relevance\": \"Without a conversation there is nothing to follow up, and the file can close.\"}, {\"question\": \"What, if anything, was said or promised between them.\", \"relevance\": \"A promise made there would make a note owed, not optional.\"}, {\"question\": \"Who Rhea is and what Tallowfin does.\", \"relevance\": \"It decides whether the contact serves any goal in the brief, such as design partners or the seed round.\"}], \"frames\": {\"primary\": \"A contact from an event on the calendar, with nothing on file since: if Arjun met Rhea there, the moment for an easy follow-up is passing.\", \"rivals\": [\"An invitation list, not a conversation: Rhea was on it, Arjun never spoke with her, and nothing is owed.\", \"A follow-up that went by phone or another mailbox, which this file cannot see.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; from the file's own shape, a first meeting is followed within days by a short note, or by a decision that none is needed.\", \"actual\": \"The meeting's date passed over a week ago, and nothing has been written in the file since.\"}, \"scenarios\": {\"do_nothing\": \"The contact goes cold, and whatever came of the event is lost.\", \"act\": \"Arjun says whether he met Rhea; if he did, a short note this week keeps the contact warm, and if not, the file closes.\", \"best\": \"They spoke, Arjun's note lands while the event is still fresh, and Rhea answers with something that serves the brief's goals.\", \"worst\": \"Rhea expected a note that never came, and a useful contact is lost for want of a few lines.\", \"signals_to_watch\": [\"Arjun's answer on whether they spoke\", \"A note from Arjun to Rhea in the file\", \"Any mail from Rhea\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Over a week has passed since the meeting with nothing on file.\", \"Nothing in the file shows what the contact is worth.\", \"A late note is still possible and costs little.\"]}, \"mode\": \"find_out\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Say whether he spoke with Rhea at the Bluebay event and what was said; if they spoke, send her a short follow-up note this week.\", \"for_whom\": \"Rhea at Tallowfin\", \"by_when\": null}, \"alternative\": \"If Arjun did not speak with her, close the file with no note.\", \"wait_or_stop\": \"Do not wait for Rhea to write first; stop if Arjun did not meet her or nothing came of it.\", \"done_when\": \"Arjun has said whether they met, and either a note to Rhea is in the file or the file is closed.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 3028,
    "output_tokens": 1206,
    "model": "claude-haiku-4-5-20251001"
   },
-  "d3140b27f680acdc286cee9b97048038eb50303e503cc5dfe91ced50f0a253d3": {
-   "site": "decider",
+  "e7b1fc24751f594fe4c49c3acdf7e91272e1580fafdd46ff39cd08a66dfb3ef0": {
+   "site": "expert",
    "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
-     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 4749,
-     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 6200,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
-     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
-    },
-    "confidence_bp": 5000,
-    "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 4749, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6200, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"The meeting was on the calendar; what, if anything, was promised is open.\", \"missing\": []}",
-   "input_tokens": 5549,
-   "output_tokens": 161,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d7c6aebcef719c4371c9202e3eea322362b843d9cf0df0d4c9aa39e39de10d06": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.action_item_tracking.one_register_across_meetings": 4948,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4938,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
-     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4829
-    },
-    "confidence_bp": 5000,
-    "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 4948, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4938, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4829}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
-   "input_tokens": 4452,
-   "output_tokens": 109,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "df76f60519938e087380db992eaf1f46665a3ef2d09ea0bda8484a36b9d7ae66": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
+    "facts": [
      {
-      "item": 1,
-      "business": false,
-      "description": "no readable text",
-      "category": "unknown",
-      "human_authored": null,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
-   "input_tokens": 1144,
-   "output_tokens": 38,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "fa3d9f1a189d404c9071b45bcbd8c9806d4ff5b93caf3a9d9ffe281015a23dfa": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
-     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 6200,
-     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4814,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
-     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
-    },
-    "confidence_bp": 5000,
-    "rationale": "A confirmed external meeting is coming.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 6200, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4814, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"A confirmed external meeting is coming.\", \"missing\": []}",
-   "input_tokens": 5544,
-   "output_tokens": 152,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "fe3838f5975964355072ed4adbdb9d0f4d8e57ee377754031d819a4a5be727c9": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
+      "claim": "The file's only address is an events mailbox at Bluebay, and no reply time is measured for it either way.",
+      "evidence": [
+       "num:their_reply_time:events@bluebayhub.test",
+       "num:your_reply_time:events@bluebayhub.test"
+      ]
      },
      {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "DECISION_MADE",
-      "confidence_bp": 6000
+      "claim": "Its one item is a meeting set for the twentieth of August.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "No gap between touches is measured: the file holds that one meeting and no mail.",
+      "evidence": [
+       "num:usual_gap"
+      ]
+     },
+     {
+      "claim": "The engine files it as an admin contact, seen once.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@admin"
+      ]
      }
-    ]
+    ],
+    "inferences": [
+     {
+      "claim": "This is the organiser's address for the meeting: a shared mailbox, not a person Arjun works with.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Whatever follows the meeting belongs in the files of the people Arjun meets there, not here.",
+      "based_on": [
+       "fact:2",
+       "fact:3"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Bluebay matters to Arjun as a host whose events he wants to keep attending.",
+      "needs": "Arjun saying so; nothing in the file points to it."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether Arjun wants anything from Bluebay as an organiser, such as future invitations.",
+      "relevance": "Only then would this file hold work of its own."
+     },
+     {
+      "question": "Who else the meeting brings Arjun together with.",
+      "relevance": "Any work that comes of the meeting lives in those people's files, not in the organiser's."
+     }
+    ],
+    "frames": {
+     "primary": "An organiser's mailbox, filed as if it were a person: it carries the invitation and needs nothing back.",
+     "rivals": [
+      "A host whose events Arjun wants to keep attending, which would make Bluebay worth a line in the brief.",
+      "A shared inbox that one known person at Bluebay answers, which would make it a real contact."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "No playbook applies; an organiser's mailbox is expected to send invitations and little else.",
+     "actual": "It holds one meeting and no mail, as an organiser's mailbox would."
+    },
+    "scenarios": {
+     "do_nothing": "Nothing is lost: the mailbox expects no answer, and the file stays as it is.",
+     "act": "Writing to an organiser's inbox would reach whoever runs Bluebay's events and move none of Arjun's work.",
+     "best": "The file stays quiet, and any follow-up from the meeting goes to the people Arjun met.",
+     "worst": "The mailbox is treated as a person, and Arjun is asked to follow up with an inbox while the people he met are left without a note.",
+     "signals_to_watch": [
+      "Mail from a named person at Bluebay, which would make this a real contact",
+      "Arjun saying he wants to stay on Bluebay's guest list"
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The counterparty is a shared mailbox, not a person, and asks for nothing.",
+      "The file holds one meeting and no mail or promise."
+     ]
+    },
+    "mode": "nothing",
+    "next_move": null,
+    "alternative": "If Arjun wants to stay close to Bluebay as a host, a line in the brief naming it, rather than a note to its mailbox.",
+    "wait_or_stop": "Nothing to wait for here; stop treating this mailbox as a person, and look for any follow-up in the files of the people the meeting brings Arjun together with.",
+    "done_when": "Nothing is needed; the file is done as it stands.",
+    "draft": null
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
-   "input_tokens": 1040,
-   "output_tokens": 50,
+   "raw": "{\"facts\": [{\"claim\": \"The file's only address is an events mailbox at Bluebay, and no reply time is measured for it either way.\", \"evidence\": [\"num:their_reply_time:events@bluebayhub.test\", \"num:your_reply_time:events@bluebayhub.test\"]}, {\"claim\": \"Its one item is a meeting set for the twentieth of August.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"No gap between touches is measured: the file holds that one meeting and no mail.\", \"evidence\": [\"num:usual_gap\"]}, {\"claim\": \"The engine files it as an admin contact, seen once.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"This is the organiser's address for the meeting: a shared mailbox, not a person Arjun works with.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Whatever follows the meeting belongs in the files of the people Arjun meets there, not here.\", \"based_on\": [\"fact:2\", \"fact:3\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Bluebay matters to Arjun as a host whose events he wants to keep attending.\", \"needs\": \"Arjun saying so; nothing in the file points to it.\"}], \"unknowns\": [{\"question\": \"Whether Arjun wants anything from Bluebay as an organiser, such as future invitations.\", \"relevance\": \"Only then would this file hold work of its own.\"}, {\"question\": \"Who else the meeting brings Arjun together with.\", \"relevance\": \"Any work that comes of the meeting lives in those people's files, not in the organiser's.\"}], \"frames\": {\"primary\": \"An organiser's mailbox, filed as if it were a person: it carries the invitation and needs nothing back.\", \"rivals\": [\"A host whose events Arjun wants to keep attending, which would make Bluebay worth a line in the brief.\", \"A shared inbox that one known person at Bluebay answers, which would make it a real contact.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies; an organiser's mailbox is expected to send invitations and little else.\", \"actual\": \"It holds one meeting and no mail, as an organiser's mailbox would.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the mailbox expects no answer, and the file stays as it is.\", \"act\": \"Writing to an organiser's inbox would reach whoever runs Bluebay's events and move none of Arjun's work.\", \"best\": \"The file stays quiet, and any follow-up from the meeting goes to the people Arjun met.\", \"worst\": \"The mailbox is treated as a person, and Arjun is asked to follow up with an inbox while the people he met are left without a note.\", \"signals_to_watch\": [\"Mail from a named person at Bluebay, which would make this a real contact\", \"Arjun saying he wants to stay on Bluebay's guest list\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The counterparty is a shared mailbox, not a person, and asks for nothing.\", \"The file holds one meeting and no mail or promise.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If Arjun wants to stay close to Bluebay as a host, a line in the brief naming it, rather than a note to its mailbox.\", \"wait_or_stop\": \"Nothing to wait for here; stop treating this mailbox as a person, and look for any follow-up in the files of the people the meeting brings Arjun together with.\", \"done_when\": \"Nothing is needed; the file is done as it stands.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 2964,
+   "output_tokens": 840,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "eb47ae1cd307d1525dadbb90f1d87faee8a782b137855c69babf0652ca9f24fa": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "A meeting with Kavya is booked for the twentieth of August, the day after this review.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "No reply time is measured either way with Kavya, and no gap between touches: the file holds no mail and no earlier touch.",
+      "evidence": [
+       "num:their_reply_time:kavya@ferrypay.test",
+       "num:your_reply_time:kavya@ferrypay.test",
+       "num:usual_gap"
+      ]
+     },
+     {
+      "claim": "The engine files Kavya as an admin contact, seen once.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@admin"
+      ]
+     },
+     {
+      "claim": "Nothing in the file says who set the meeting up or what it is for.",
+      "evidence": [
+       "evt_#1"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "This is a first meeting, with nothing before it in the file.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Nothing is owed to Kavya before the meeting; whatever work there is begins after it.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "The meeting is a group event with Kavya as one of several guests, not a meeting of her own.",
+      "needs": "The meeting's title or invitation list, which the file does not show."
+     },
+     {
+      "proposition": "It is a first call someone arranged for Arjun.",
+      "needs": "Arjun's word on how it came about."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "What the meeting is and who arranged it.",
+      "relevance": "A one-to-one about real work would deserve a short brief beforehand; a group event would not."
+     },
+     {
+      "question": "Who Kavya is and what FerryPay does.",
+      "relevance": "It decides whether anything after the meeting is worth Arjun's time."
+     }
+    ],
+    "frames": {
+     "primary": "A first meeting booked with someone new, with nothing owed before it.",
+     "rivals": [
+      "A group event where Kavya is one of several guests rather than a meeting of her own.",
+      "A call someone else arranged, whose purpose Arjun knows and the file does not."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "No playbook applies and the brief names no kind of work for this file; a booked first meeting asks nothing of Arjun until it has taken place.",
+     "actual": "The meeting is booked for the twentieth, and the file holds no mail or other touch."
+    },
+    "scenarios": {
+     "do_nothing": "The meeting comes and goes; the file stays empty unless Arjun notes what was said or writes afterwards.",
+     "act": "Preparing now spends time on a meeting whose purpose the file does not show.",
+     "best": "Arjun meets Kavya, something useful comes of it, and a short note afterwards opens a thread.",
+     "worst": "Something is said or promised at the meeting and, with nothing written down, it is forgotten.",
+     "signals_to_watch": [
+      "The meeting's date passing",
+      "A note or mail with Kavya after the meeting",
+      "The meeting turning out to be a group event"
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "One booked meeting, with no history and no kind of work behind it.",
+      "Nothing is owed before the meeting takes place."
+     ]
+    },
+    "mode": "wait",
+    "next_move": null,
+    "alternative": "If the meeting turns out to be a one-to-one about real work, a short brief on Kavya and FerryPay before it.",
+    "wait_or_stop": "Wait until the meeting on the twentieth has passed, then look again; stop if nothing comes of it.",
+    "done_when": "After the meeting, the file shows whether Arjun met Kavya and what, if anything, follows.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"A meeting with Kavya is booked for the twentieth of August, the day after this review.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"No reply time is measured either way with Kavya, and no gap between touches: the file holds no mail and no earlier touch.\", \"evidence\": [\"num:their_reply_time:kavya@ferrypay.test\", \"num:your_reply_time:kavya@ferrypay.test\", \"num:usual_gap\"]}, {\"claim\": \"The engine files Kavya as an admin contact, seen once.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}, {\"claim\": \"Nothing in the file says who set the meeting up or what it is for.\", \"evidence\": [\"evt_#1\"]}], \"inferences\": [{\"claim\": \"This is a first meeting, with nothing before it in the file.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Nothing is owed to Kavya before the meeting; whatever work there is begins after it.\", \"based_on\": [\"fact:1\", \"fact:2\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The meeting is a group event with Kavya as one of several guests, not a meeting of her own.\", \"needs\": \"The meeting's title or invitation list, which the file does not show.\"}, {\"proposition\": \"It is a first call someone arranged for Arjun.\", \"needs\": \"Arjun's word on how it came about.\"}], \"unknowns\": [{\"question\": \"What the meeting is and who arranged it.\", \"relevance\": \"A one-to-one about real work would deserve a short brief beforehand; a group event would not.\"}, {\"question\": \"Who Kavya is and what FerryPay does.\", \"relevance\": \"It decides whether anything after the meeting is worth Arjun's time.\"}], \"frames\": {\"primary\": \"A first meeting booked with someone new, with nothing owed before it.\", \"rivals\": [\"A group event where Kavya is one of several guests rather than a meeting of her own.\", \"A call someone else arranged, whose purpose Arjun knows and the file does not.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; a booked first meeting asks nothing of Arjun until it has taken place.\", \"actual\": \"The meeting is booked for the twentieth, and the file holds no mail or other touch.\"}, \"scenarios\": {\"do_nothing\": \"The meeting comes and goes; the file stays empty unless Arjun notes what was said or writes afterwards.\", \"act\": \"Preparing now spends time on a meeting whose purpose the file does not show.\", \"best\": \"Arjun meets Kavya, something useful comes of it, and a short note afterwards opens a thread.\", \"worst\": \"Something is said or promised at the meeting and, with nothing written down, it is forgotten.\", \"signals_to_watch\": [\"The meeting's date passing\", \"A note or mail with Kavya after the meeting\", \"The meeting turning out to be a group event\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"One booked meeting, with no history and no kind of work behind it.\", \"Nothing is owed before the meeting takes place.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the meeting turns out to be a one-to-one about real work, a short brief on Kavya and FerryPay before it.\", \"wait_or_stop\": \"Wait until the meeting on the twentieth has passed, then look again; stop if nothing comes of it.\", \"done_when\": \"After the meeting, the file shows whether Arjun met Kavya and what, if anything, follows.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 2960,
+   "output_tokens": 851,
    "model": "claude-haiku-4-5-20251001"
   }
  }

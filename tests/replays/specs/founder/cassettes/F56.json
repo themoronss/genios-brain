@@ -1,7 +1,7 @@
 {
  "case_id": "F56",
  "source": "ideal_reader",
- "recorded_at": "1b5e5f58",
+ "recorded_at": "a10f3140",
  "answers": {
   "3eeeefb5e40b6904935e9ea3523a30f46bbf0d6fcddd1b02178be8198ad7daf9": {
    "site": "junk_gate_batch",
@@ -14,6 +14,7 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "framed": true,
    "input_tokens": 1069,
    "output_tokens": 25,
    "model": "claude-haiku-4-5-20251001"
@@ -33,6 +34,7 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Your Authwise Pro plan renews on 15 Oct\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
    "input_tokens": 1204,
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"

@@ -192,7 +192,7 @@
  "not_expressible": {
   "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
  },
- "blocked_on": null,
+ "blocked_on": "the file is decided from its review since STEP-12: the introduction's move, then Nikhil's reply's — two cards where one living card should change: STEP-14 (03 F176)",
  "model": {
   "decider": [
    {
@@ -242,14 +242,14 @@
       {
        "claim": "Nikhil replied about three days later, thanking the founder for the introduction and asking whether he is around on Thursday for a thirty-minute call, or what times work for him next week.",
        "evidence": [
-        "evt_580edc73595682ca6e29ee20",
+        "evt_c8b1e9f1c3da8857bc625fd0",
         "num:usual_gap"
        ]
       },
       {
        "claim": "Nikhil signs as CTO of Quillstack.",
        "evidence": [
-        "evt_580edc73595682ca6e29ee20"
+        "evt_c8b1e9f1c3da8857bc625fd0"
        ]
       },
       {
@@ -328,7 +328,7 @@
       "why": "Quillstack came to the founder through the connector's introduction of its CTO, and the work in this file is taking that introduction forward: Nikhil has asked for a call.",
       "evidence": [
        "evt_b5a1dca2622a328e0e7f88fe",
-       "evt_580edc73595682ca6e29ee20"
+       "evt_c8b1e9f1c3da8857bc625fd0"
       ]
      },
      "expected_vs_actual": {

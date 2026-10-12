@@ -145,13 +145,13 @@ ARCHIVED_IN_ADDED: dict[str, dict[str, str]] = {"F56": {"f56-renewal": "llm_junk
 #: STEP-05: a mail below the floor, the founder's own sent mail and an archive now enter memory.
 MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     "F04": ("STEP-05", ("must_detect", "pass", None, 1)),
-    "F05": ("STEP-05", ("must_detect", "pass", None, 1)),
-    "F06": ("STEP-05", ("must_detect", "pass", None, 1)),
-    "F07": ("STEP-05", ("must_detect", "fail", "reasoning", 2)),
+    "F05": ("STEP-12", ("must_detect", "fail", "reasoning", 2)),
+    "F06": ("STEP-12", ("must_detect", "fail", "reasoning", 2)),
+    "F07": ("STEP-12", ("must_detect", "pass", None, 1)),
     "F10": ("STEP-05", ("must_detect", "pass", None, 1)),
-    "F11": ("STEP-05", ("must_detect", "fail", "reasoning", 0)),
+    "F11": ("STEP-12", ("must_detect", "pass", None, 1)),
     "F19": ("STEP-05", ("must_detect", "fail", "reasoning", 2)),
-    "F24": ("STEP-05", ("must_detect", "fail", "reasoning", 1)),
+    "F24": ("STEP-12", ("must_detect", "fail", "reasoning", 3)),
     "F26": ("STEP-05", ("must_detect", "pass", None, 1)),
     "F31": ("STEP-05", ("must_abstain", "pass", None, 1)),
     "F36": ("STEP-05", ("must_abstain", "pass", None, 0)),
@@ -160,14 +160,25 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     # STEP-07: the brief keeps the portal's, the locker's and the intro agent's mail, and it is
     # read — but no situation it forms reaches a card yet.
     "F01": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
-    "F02": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
-    "F09": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
+    "F02": ("STEP-12", ("must_detect", "fail", "reasoning", 2)),
+    "F09": ("STEP-12", ("must_detect", "pass", None, 1)),
     # STEP-09 (`yc2_w27_s09 · M27.C5`): the introduction and its two nudges are Rahul's file, never
     # the connector's, and one card is about him.
     "F03": ("STEP-09", ("must_detect", "pass", None, 1)),
     # STEP-10 (`yc2_w27_s10 · M29.C3`, D38): the bounce report is kept and read, and it is on the
     # fund's file — and no card shows a bounce yet (STEP-14).
-    "F16": ("STEP-10", ("must_detect", "fail", "reasoning", 0)),
+    "F16": ("STEP-12", ("must_detect", "pass", None, 1)),
+    # STEP-12 (`yc2_w27_s12 · M33`): each covered file decided once from its review, everything it
+    # explains standing down — one card about a file where there were two or three, a second card where
+    # the review's advice changed as the file moved (`03` F176), a must-abstain case's recap gone.
+    "F12": ("STEP-12", ("must_detect", "fail", "reasoning", 2)),
+    "F17": ("STEP-12", ("must_detect", "pass", None, 1)),
+    "F20": ("STEP-12", ("must_detect", "not_expressible", None, 1)),
+    "F23": ("STEP-12", ("must_detect", "not_expressible", None, 1)),
+    "F25": ("STEP-12", ("must_detect", "fail", None, 2)),
+    "F27": ("STEP-12", ("must_detect", "pass", None, 1)),
+    "F29": ("STEP-12", ("must_detect", "pass", None, 2)),
+    "F40": ("STEP-12", ("must_abstain", "pass", None, 0)),
 }
 
 #: The same measurement: (kind, verdict, lost_at, cards over every sweep) per case.

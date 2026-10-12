@@ -93,8 +93,8 @@
       "expected_decision": "Create a separate Boardy-as-target request with its own evidence and its own decision.",
       "prohibited": "Reusing an introduced contact's action or Completion to satisfy the Boardy request.",
       "pass_condition": "The Boardy request ID differs from every introduction request ID.",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "No requester/connector/target role typing exists, so the same person node cannot be connector in one request and target in another; no direction in extraction to establish who made the ask."
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "The introduced contact's email address is missing or ambiguous in the intro message.",

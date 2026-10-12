@@ -376,7 +376,7 @@
       {
        "claim": "Divya then wrote that the Phase-One review presentations are on the thirtieth of September, and asked for the review deck to be uploaded by the twenty-eighth.",
        "evidence": [
-        "evt_a816b96bda6877a6fd2f4dd8"
+        "evt_cbea1730c3a5dd7a254c3ba0"
        ]
       },
       {
@@ -517,7 +517,7 @@
       {
        "claim": "Divya then wrote that the Phase-One review presentations are on the thirtieth of September, and asked for the review deck to be uploaded by the twenty-eighth.",
        "evidence": [
-        "evt_a816b96bda6877a6fd2f4dd8"
+        "evt_cbea1730c3a5dd7a254c3ba0"
        ]
       },
       {
@@ -746,5 +746,5 @@
   ]
  },
  "notes": "Production junked ten of the real programme lead's mails and parked 22 attachments.",
- "blocked_on": "the review mail reaches memory since STEP-05; no card names the Phase-1 review deck (one of the two deciders asked defers) — lost in reasoning (STEP-14)"
+ "blocked_on": "the file is decided from its review since STEP-12, and its move changed with each due date (the unit economics sheet, then the review deck): two cards about the assignment where one living card should change — STEP-14 (03 F176)"
 }

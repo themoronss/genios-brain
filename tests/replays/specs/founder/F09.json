@@ -153,7 +153,6 @@
   "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
  },
  "notes": "Replay 02 m04: when the connector makes a bounded ask, it is a separate item with its own card — never merged into an introduced contact's.",
- "blocked_on": "the connector's ask is kept and read (STEP-07) and is the connector's own file since STEP-09 — but the situation it forms (investor_relationship, anchored on Introly) is in the fundraising domain, which is not active: only Admin is (`06`) — D2, STEP-12",
  "model": {
   "expert": [
    {

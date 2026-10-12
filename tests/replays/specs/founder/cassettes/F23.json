@@ -1,8 +1,40 @@
 {
  "case_id": "F23",
  "source": "ideal_reader",
- "recorded_at": "1b5e5f58",
+ "recorded_at": "a10f3140",
  "answers": {
+  "670d5c0d7f5706eac288735d21ed01f37cc32fc83649da78da01d22c89e432ba": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1562,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "68537066c8c2678bd0851645c0272790a19003904b36294e9e8c4bd8d6af9ad0": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1646,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "76dd4d434221a55acca5ca18ce1cf6ea51038831491db3ce954e81f9cdf975e0": {
    "site": "extraction",
    "parsed": {
@@ -36,6 +68,7 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"programme bulletin\"], \"entity_mentions\": [{\"surface_form\": \"State Startup Mission\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"State Startup Mission\", \"start_offset\": 87, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
+   "framed": true,
    "input_tokens": 5501,
    "output_tokens": 118,
    "model": "claude-haiku-4-5-20251001"
@@ -100,6 +133,7 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"startup registration\"], \"entity_mentions\": [{\"surface_form\": \"State Startup Mission\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"State Startup Mission\", \"start_offset\": 59, \"end_offset\": 80}], \"confidence_bp\": 9000}, {\"surface_form\": \"SSM-2026-3381\", \"entity_type\": \"document\", \"evidence\": [{\"quote\": \"SSM-2026-3381\", \"start_offset\": 129, \"end_offset\": 142}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"the registration on the State Startup Mission portal\", \"state\": \"made\", \"owner\": \"State Startup Mission\", \"evidence\": [{\"quote\": \"Your registration on the State Startup Mission portal is complete\", \"start_offset\": 34, \"end_offset\": 99}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"transactional\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"medium\"}}",
+   "framed": true,
    "input_tokens": 5515,
    "output_tokens": 236,
    "model": "claude-haiku-4-5-20251001"
@@ -137,6 +171,7 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"government scheme\"], \"entity_mentions\": [{\"surface_form\": \"State Startup Mission\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"State Startup Mission\", \"start_offset\": 91, \"end_offset\": 112}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
+   "framed": true,
    "input_tokens": 5501,
    "output_tokens": 118,
    "model": "claude-haiku-4-5-20251001"
@@ -148,7 +183,7 @@
      {
       "claim": "The State Startup Mission sent its monthly bulletin — new incubators empanelled and a policy update — addressed to every startup.",
       "evidence": [
-       "evt_68047246bb4f2c5c07da44df"
+       "evt_#3"
       ]
      },
      {
@@ -160,7 +195,7 @@
      {
       "claim": "The engine holds the file as an account admin situation in the admin domain.",
       "evidence": [
-       "sit:sit_54806634429f5907f374cd02"
+       "sit:sit_#2"
       ]
      },
      {
@@ -223,7 +258,7 @@
      }
     ],
     "frames": {
-     "primary": "A state programme's broadcast mail — bulletins and notices from a no-reply address — while the brief says Nimbus Labs has applied; nothing in it is about that application.",
+     "primary": "A state programme's broadcast mail — bulletins and notices from a no-reply address — while the brief says you have applied; nothing in it is about that application.",
      "rivals": [
       "A watched sender whose next templated notice may carry the decision on the application.",
       "Newsletter traffic with nothing for the founder."
@@ -263,9 +298,10 @@
     "done_when": "The mission's word on Nimbus Labs' application is on file.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"The State Startup Mission sent its monthly bulletin — new incubators empanelled and a policy update — addressed to every startup.\", \"evidence\": [\"evt_68047246bb4f2c5c07da44df\"]}, {\"claim\": \"The mission writes from a no-reply address.\", \"evidence\": [\"num:their_reply_time:no-reply@statestartup.gov.test\"]}, {\"claim\": \"The engine holds the file as an account admin situation in the admin domain.\", \"evidence\": [\"sit:sit_54806634429f5907f374cd02\"]}, {\"claim\": \"This is the first time the founder's history holds the mission.\", \"evidence\": [\"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The mission's mail so far is broadcast, not an answer about Nimbus Labs' own application.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"For a government scheme the portal holds the record and the mail only reports it, so the bulletins say nothing about where an application of ours stands.\", \"based_on\": [\"fact:1\", \"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"A scheme's notices come as templates from an automated sender — the shape a mail filter treats as automated — so the one about our application is the mail most likely to be lost among bulletins.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}, {\"kind\": \"pattern\", \"claim\": \"A programme's quiet before its own date is not a no.\", \"based_on\": [\"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"]}], \"hypotheses\": [{\"proposition\": \"The brief's line that the founder applied is a registration with the mission still being processed.\", \"needs\": \"The portal's status, or the mission's notice about it.\"}, {\"proposition\": \"Some of the mission's notices carry schemes or incubators the company could use.\", \"needs\": \"Reading them against the brief's goals.\"}], \"unknowns\": [{\"question\": \"What Nimbus Labs applied for with the mission, and where it stands on the portal.\", \"relevance\": \"It decides whether there is anything to wait for, or anything to do.\"}, {\"question\": \"Whether a notice about the application has been read as one more bulletin.\", \"relevance\": \"The mission's notices about an application come from the same no-reply sender as its bulletins.\"}], \"frames\": {\"primary\": \"A state programme's broadcast mail — bulletins and notices from a no-reply address — while the brief says Nimbus Labs has applied; nothing in it is about that application.\", \"rivals\": [\"A watched sender whose next templated notice may carry the decision on the application.\", \"Newsletter traffic with nothing for the founder.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"applied\", \"expected\": \"Nothing is owed while the application waits; the one thing to check is the receipt, and for a government scheme the portal is the record.\", \"actual\": \"Only broadcast mail from the mission is in the file; no receipt or status for Nimbus Labs appears in it.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost while the application waits; the risk is a notice about it read as one more bulletin.\", \"act\": \"A look at the portal's status would show whether anything is waiting on us.\", \"best\": \"The mission's notice about the application arrives and is read the day it comes.\", \"worst\": \"A templated notice about the application is skimmed as a bulletin, and a step the mission asks for passes unseen.\", \"signals_to_watch\": [\"A mail from the mission about Nimbus Labs' own registration or application, not a bulletin.\", \"A status change on the mission's portal.\", \"A notice naming a document or a date for Nimbus Labs.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The mail is broadcast from a no-reply address and asks nothing.\", \"The brief lists the mission as applied, so what matters is its notice about the application, which has not come.\", \"The playbook's stop rule, a prior, is far off.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"Check the mission's portal for the application's status, so the wait has a known state.\", \"wait_or_stop\": \"Wait for the mission's own notice about Nimbus Labs, or a status change on its portal; read each mail from it for that before filing it as a bulletin.\", \"done_when\": \"The mission's word on Nimbus Labs' application is on file.\", \"draft\": null}",
+   "raw": "{\"facts\": [{\"claim\": \"The State Startup Mission sent its monthly bulletin — new incubators empanelled and a policy update — addressed to every startup.\", \"evidence\": [\"evt_#3\"]}, {\"claim\": \"The mission writes from a no-reply address.\", \"evidence\": [\"num:their_reply_time:no-reply@statestartup.gov.test\"]}, {\"claim\": \"The engine holds the file as an account admin situation in the admin domain.\", \"evidence\": [\"sit:sit_#2\"]}, {\"claim\": \"This is the first time the founder's history holds the mission.\", \"evidence\": [\"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The mission's mail so far is broadcast, not an answer about Nimbus Labs' own application.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"For a government scheme the portal holds the record and the mail only reports it, so the bulletins say nothing about where an application of ours stands.\", \"based_on\": [\"fact:1\", \"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"A scheme's notices come as templates from an automated sender — the shape a mail filter treats as automated — so the one about our application is the mail most likely to be lost among bulletins.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}, {\"kind\": \"pattern\", \"claim\": \"A programme's quiet before its own date is not a no.\", \"based_on\": [\"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"]}], \"hypotheses\": [{\"proposition\": \"The brief's line that the founder applied is a registration with the mission still being processed.\", \"needs\": \"The portal's status, or the mission's notice about it.\"}, {\"proposition\": \"Some of the mission's notices carry schemes or incubators the company could use.\", \"needs\": \"Reading them against the brief's goals.\"}], \"unknowns\": [{\"question\": \"What Nimbus Labs applied for with the mission, and where it stands on the portal.\", \"relevance\": \"It decides whether there is anything to wait for, or anything to do.\"}, {\"question\": \"Whether a notice about the application has been read as one more bulletin.\", \"relevance\": \"The mission's notices about an application come from the same no-reply sender as its bulletins.\"}], \"frames\": {\"primary\": \"A state programme's broadcast mail — bulletins and notices from a no-reply address — while the brief says you have applied; nothing in it is about that application.\", \"rivals\": [\"A watched sender whose next templated notice may carry the decision on the application.\", \"Newsletter traffic with nothing for the founder.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"applied\", \"expected\": \"Nothing is owed while the application waits; the one thing to check is the receipt, and for a government scheme the portal is the record.\", \"actual\": \"Only broadcast mail from the mission is in the file; no receipt or status for Nimbus Labs appears in it.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost while the application waits; the risk is a notice about it read as one more bulletin.\", \"act\": \"A look at the portal's status would show whether anything is waiting on us.\", \"best\": \"The mission's notice about the application arrives and is read the day it comes.\", \"worst\": \"A templated notice about the application is skimmed as a bulletin, and a step the mission asks for passes unseen.\", \"signals_to_watch\": [\"A mail from the mission about Nimbus Labs' own registration or application, not a bulletin.\", \"A status change on the mission's portal.\", \"A notice naming a document or a date for Nimbus Labs.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The mail is broadcast from a no-reply address and asks nothing.\", \"The brief lists the mission as applied, so what matters is its notice about the application, which has not come.\", \"The playbook's stop rule, a prior, is far off.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"Check the mission's portal for the application's status, so the wait has a known state.\", \"wait_or_stop\": \"Wait for the mission's own notice about Nimbus Labs, or a status change on its portal; read each mail from it for that before filing it as a bulletin.\", \"done_when\": \"The mission's word on Nimbus Labs' application is on file.\", \"draft\": null}",
+   "framed": true,
    "input_tokens": 9233,
-   "output_tokens": 1090,
+   "output_tokens": 1088,
    "model": "claude-haiku-4-5-20251001"
   },
   "bdda3772af762d0e520dba1dba77678b96d515158602820a1af56bcccdda8a5f": {
@@ -275,7 +311,7 @@
      {
       "claim": "The State Startup Mission sent its monthly bulletin — new incubators empanelled and a policy update — addressed to every startup.",
       "evidence": [
-       "evt_68047246bb4f2c5c07da44df"
+       "evt_#1"
       ]
      },
      {
@@ -287,7 +323,7 @@
      {
       "claim": "The engine holds the file as an account admin situation in the admin domain.",
       "evidence": [
-       "sit:sit_54806634429f5907f374cd02"
+       "sit:sit_#1"
       ]
      },
      {
@@ -350,7 +386,7 @@
      }
     ],
     "frames": {
-     "primary": "A state programme's broadcast mail — bulletins and notices from a no-reply address — while the brief says Nimbus Labs has applied; nothing in it is about that application.",
+     "primary": "A state programme's broadcast mail — bulletins and notices from a no-reply address — while the brief says you have applied; nothing in it is about that application.",
      "rivals": [
       "A watched sender whose next templated notice may carry the decision on the application.",
       "Newsletter traffic with nothing for the founder."
@@ -390,9 +426,10 @@
     "done_when": "The mission's word on Nimbus Labs' application is on file.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"The State Startup Mission sent its monthly bulletin — new incubators empanelled and a policy update — addressed to every startup.\", \"evidence\": [\"evt_68047246bb4f2c5c07da44df\"]}, {\"claim\": \"The mission writes from a no-reply address.\", \"evidence\": [\"num:their_reply_time:no-reply@statestartup.gov.test\"]}, {\"claim\": \"The engine holds the file as an account admin situation in the admin domain.\", \"evidence\": [\"sit:sit_54806634429f5907f374cd02\"]}, {\"claim\": \"This is the first time the founder's history holds the mission.\", \"evidence\": [\"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The mission's mail so far is broadcast, not an answer about Nimbus Labs' own application.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"For a government scheme the portal holds the record and the mail only reports it, so the bulletins say nothing about where an application of ours stands.\", \"based_on\": [\"fact:1\", \"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"A scheme's notices come as templates from an automated sender — the shape a mail filter treats as automated — so the one about our application is the mail most likely to be lost among bulletins.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}, {\"kind\": \"pattern\", \"claim\": \"A programme's quiet before its own date is not a no.\", \"based_on\": [\"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"]}], \"hypotheses\": [{\"proposition\": \"The brief's line that the founder applied is a registration with the mission still being processed.\", \"needs\": \"The portal's status, or the mission's notice about it.\"}, {\"proposition\": \"Some of the mission's notices carry schemes or incubators the company could use.\", \"needs\": \"Reading them against the brief's goals.\"}], \"unknowns\": [{\"question\": \"What Nimbus Labs applied for with the mission, and where it stands on the portal.\", \"relevance\": \"It decides whether there is anything to wait for, or anything to do.\"}, {\"question\": \"Whether a notice about the application has been read as one more bulletin.\", \"relevance\": \"The mission's notices about an application come from the same no-reply sender as its bulletins.\"}], \"frames\": {\"primary\": \"A state programme's broadcast mail — bulletins and notices from a no-reply address — while the brief says Nimbus Labs has applied; nothing in it is about that application.\", \"rivals\": [\"A watched sender whose next templated notice may carry the decision on the application.\", \"Newsletter traffic with nothing for the founder.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"applied\", \"expected\": \"Nothing is owed while the application waits; the one thing to check is the receipt, and for a government scheme the portal is the record.\", \"actual\": \"Only broadcast mail from the mission is in the file; no receipt or status for Nimbus Labs appears in it.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost while the application waits; the risk is a notice about it read as one more bulletin.\", \"act\": \"A look at the portal's status would show whether anything is waiting on us.\", \"best\": \"The mission's notice about the application arrives and is read the day it comes.\", \"worst\": \"A templated notice about the application is skimmed as a bulletin, and a step the mission asks for passes unseen.\", \"signals_to_watch\": [\"A mail from the mission about Nimbus Labs' own registration or application, not a bulletin.\", \"A status change on the mission's portal.\", \"A notice naming a document or a date for Nimbus Labs.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The mail is broadcast from a no-reply address and asks nothing.\", \"The brief lists the mission as applied, so what matters is its notice about the application, which has not come.\", \"The playbook's stop rule, a prior, is far off.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"Check the mission's portal for the application's status, so the wait has a known state.\", \"wait_or_stop\": \"Wait for the mission's own notice about Nimbus Labs, or a status change on its portal; read each mail from it for that before filing it as a bulletin.\", \"done_when\": \"The mission's word on Nimbus Labs' application is on file.\", \"draft\": null}",
+   "raw": "{\"facts\": [{\"claim\": \"The State Startup Mission sent its monthly bulletin — new incubators empanelled and a policy update — addressed to every startup.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The mission writes from a no-reply address.\", \"evidence\": [\"num:their_reply_time:no-reply@statestartup.gov.test\"]}, {\"claim\": \"The engine holds the file as an account admin situation in the admin domain.\", \"evidence\": [\"sit:sit_#1\"]}, {\"claim\": \"This is the first time the founder's history holds the mission.\", \"evidence\": [\"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The mission's mail so far is broadcast, not an answer about Nimbus Labs' own application.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"For a government scheme the portal holds the record and the mail only reports it, so the bulletins say nothing about where an application of ours stands.\", \"based_on\": [\"fact:1\", \"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"A scheme's notices come as templates from an automated sender — the shape a mail filter treats as automated — so the one about our application is the mail most likely to be lost among bulletins.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}, {\"kind\": \"pattern\", \"claim\": \"A programme's quiet before its own date is not a no.\", \"based_on\": [\"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"]}], \"hypotheses\": [{\"proposition\": \"The brief's line that the founder applied is a registration with the mission still being processed.\", \"needs\": \"The portal's status, or the mission's notice about it.\"}, {\"proposition\": \"Some of the mission's notices carry schemes or incubators the company could use.\", \"needs\": \"Reading them against the brief's goals.\"}], \"unknowns\": [{\"question\": \"What Nimbus Labs applied for with the mission, and where it stands on the portal.\", \"relevance\": \"It decides whether there is anything to wait for, or anything to do.\"}, {\"question\": \"Whether a notice about the application has been read as one more bulletin.\", \"relevance\": \"The mission's notices about an application come from the same no-reply sender as its bulletins.\"}], \"frames\": {\"primary\": \"A state programme's broadcast mail — bulletins and notices from a no-reply address — while the brief says you have applied; nothing in it is about that application.\", \"rivals\": [\"A watched sender whose next templated notice may carry the decision on the application.\", \"Newsletter traffic with nothing for the founder.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"applied\", \"expected\": \"Nothing is owed while the application waits; the one thing to check is the receipt, and for a government scheme the portal is the record.\", \"actual\": \"Only broadcast mail from the mission is in the file; no receipt or status for Nimbus Labs appears in it.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost while the application waits; the risk is a notice about it read as one more bulletin.\", \"act\": \"A look at the portal's status would show whether anything is waiting on us.\", \"best\": \"The mission's notice about the application arrives and is read the day it comes.\", \"worst\": \"A templated notice about the application is skimmed as a bulletin, and a step the mission asks for passes unseen.\", \"signals_to_watch\": [\"A mail from the mission about Nimbus Labs' own registration or application, not a bulletin.\", \"A status change on the mission's portal.\", \"A notice naming a document or a date for Nimbus Labs.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The mail is broadcast from a no-reply address and asks nothing.\", \"The brief lists the mission as applied, so what matters is its notice about the application, which has not come.\", \"The playbook's stop rule, a prior, is far off.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"Check the mission's portal for the application's status, so the wait has a known state.\", \"wait_or_stop\": \"Wait for the mission's own notice about Nimbus Labs, or a status change on its portal; read each mail from it for that before filing it as a bulletin.\", \"done_when\": \"The mission's word on Nimbus Labs' application is on file.\", \"draft\": null}",
+   "framed": true,
    "input_tokens": 8953,
-   "output_tokens": 1090,
+   "output_tokens": 1088,
    "model": "claude-haiku-4-5-20251001"
   },
   "caa7dec6e68e016de0c5ee544aeb1e9bb943c49d4eb3e7e7515605645164f7f7": {
@@ -428,6 +465,7 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"programme bulletin\"], \"entity_mentions\": [{\"surface_form\": \"State Startup Mission\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"State Startup Mission\", \"start_offset\": 93, \"end_offset\": 114}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
+   "framed": true,
    "input_tokens": 5502,
    "output_tokens": 118,
    "model": "claude-haiku-4-5-20251001"
@@ -439,20 +477,20 @@
      {
       "claim": "The State Startup Mission wrote that Nimbus Labs' registration on its portal is complete, and gave its registration number.",
       "evidence": [
-       "evt_b9151ac8d56114de9e250716"
+       "evt_#1"
       ]
      },
      {
       "claim": "Before that it wrote that the sustenance allowance scheme has been extended to March.",
       "evidence": [
-       "evt_1a3e736dba0d7ba62c882d66"
+       "evt_#3"
       ]
      },
      {
       "claim": "Its other mail is monthly bulletins addressed to every startup.",
       "evidence": [
-       "evt_68047246bb4f2c5c07da44df",
-       "evt_3af4b8a1ece6736014cbfa5c"
+       "evt_#4",
+       "evt_#2"
       ]
      },
      {
@@ -464,8 +502,8 @@
      {
       "claim": "Beside the file's account admin situation, the engine opened a sales opportunity situation on one of the bulletins.",
       "evidence": [
-       "sit:sit_b95f37bfa5df7faa1b98c6d5",
-       "sit:sit_54806634429f5907f374cd02"
+       "sit:sit_#2",
+       "sit:sit_#1"
       ]
      },
      {
@@ -523,7 +561,7 @@
      }
     ],
     "frames": {
-     "primary": "The mission's portal reports Nimbus Labs' registration complete and gives its registration number — the application the brief lists as applied is settled.",
+     "primary": "The mission's portal reports your registration complete and gives its registration number — the application the brief lists as applied is settled.",
      "rivals": [
       "One more templated notice that needs nothing beyond filing.",
       "A registration that is a first step toward the mission's schemes rather than an end in itself."
@@ -566,9 +604,10 @@
     "done_when": "The registration number is on file and the brief's line says registered.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"The State Startup Mission wrote that Nimbus Labs' registration on its portal is complete, and gave its registration number.\", \"evidence\": [\"evt_b9151ac8d56114de9e250716\"]}, {\"claim\": \"Before that it wrote that the sustenance allowance scheme has been extended to March.\", \"evidence\": [\"evt_1a3e736dba0d7ba62c882d66\"]}, {\"claim\": \"Its other mail is monthly bulletins addressed to every startup.\", \"evidence\": [\"evt_68047246bb4f2c5c07da44df\", \"evt_3af4b8a1ece6736014cbfa5c\"]}, {\"claim\": \"The mission writes from a no-reply address.\", \"evidence\": [\"num:their_reply_time:no-reply@statestartup.gov.test\"]}, {\"claim\": \"Beside the file's account admin situation, the engine opened a sales opportunity situation on one of the bulletins.\", \"evidence\": [\"sit:sit_b95f37bfa5df7faa1b98c6d5\", \"sit:sit_54806634429f5907f374cd02\"]}, {\"claim\": \"The playbook holds that for a government scheme the portal's status is the record and its templated notices are the programme speaking.\", \"evidence\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"inferences\": [{\"claim\": \"The application the brief lists as applied is settled: the registration is done.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"Nothing is owed back, and nothing could be answered by mail: the sender takes no replies.\", \"based_on\": [\"fact:1\", \"fact:4\"]}, {\"claim\": \"A bulletin read as a sales opportunity is a misfiling: the mission is a programme writing to every startup, not a buyer.\", \"based_on\": [\"fact:3\", \"fact:5\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Such notices arrive from an automated sender, the shape a mail filter treats as automated — the copy of the record most likely to be lost.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"hypotheses\": [{\"proposition\": \"The registration opens the mission's schemes to Nimbus Labs — such as the sustenance allowance scheme it said was extended to March.\", \"needs\": \"The scheme's own terms.\"}], \"unknowns\": [{\"question\": \"What the registration number is needed for next.\", \"relevance\": \"It decides where the number must be kept and who needs it.\"}, {\"question\": \"Whether the portal shows anything further asked of Nimbus Labs.\", \"relevance\": \"The portal, not the mail, is the record.\"}], \"frames\": {\"primary\": \"The mission's portal reports Nimbus Labs' registration complete and gives its registration number — the application the brief lists as applied is settled.\", \"rivals\": [\"One more templated notice that needs nothing beyond filing.\", \"A registration that is a first step toward the mission's schemes rather than an end in itself.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"in_programme\", \"expected\": \"The application is settled; what the file holds now is the programme's own calendar and notices.\", \"actual\": \"The mission wrote that the registration on its portal is complete, with a registration number; its other mail is bulletins and a scheme update.\"}, \"scenarios\": {\"do_nothing\": \"The number sits in one mail among bulletins, and the brief keeps saying applied.\", \"act\": \"The number is filed with the company's papers and the brief says registered, ready for the next scheme.\", \"best\": \"The registration is on file and a scheme the company can use is found through it.\", \"worst\": \"The number is lost among bulletins and has to be dug out when a scheme or an office asks for it.\", \"signals_to_watch\": [\"Notices from the mission about schemes open to registered startups.\", \"The portal's record for Nimbus Labs.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The registration is complete; nothing is owed back to the mission.\", \"The number arrived in a templated mail from a no-reply sender, the kind most easily lost.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"File the registration number from the mission's mail with the company's papers, and move the brief's State Startup Mission line from applied to registered.\", \"for_whom\": \"Nimbus Labs' records and its brief\", \"by_when\": null}, \"alternative\": \"Check whether the sustenance allowance scheme the mission extended to March is open to a registered startup.\", \"wait_or_stop\": \"Nothing to wait for. Stop once the number is filed and the brief reads registered.\", \"done_when\": \"The registration number is on file and the brief's line says registered.\", \"draft\": null}",
+   "raw": "{\"facts\": [{\"claim\": \"The State Startup Mission wrote that Nimbus Labs' registration on its portal is complete, and gave its registration number.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Before that it wrote that the sustenance allowance scheme has been extended to March.\", \"evidence\": [\"evt_#3\"]}, {\"claim\": \"Its other mail is monthly bulletins addressed to every startup.\", \"evidence\": [\"evt_#4\", \"evt_#2\"]}, {\"claim\": \"The mission writes from a no-reply address.\", \"evidence\": [\"num:their_reply_time:no-reply@statestartup.gov.test\"]}, {\"claim\": \"Beside the file's account admin situation, the engine opened a sales opportunity situation on one of the bulletins.\", \"evidence\": [\"sit:sit_#2\", \"sit:sit_#1\"]}, {\"claim\": \"The playbook holds that for a government scheme the portal's status is the record and its templated notices are the programme speaking.\", \"evidence\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"inferences\": [{\"claim\": \"The application the brief lists as applied is settled: the registration is done.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"Nothing is owed back, and nothing could be answered by mail: the sender takes no replies.\", \"based_on\": [\"fact:1\", \"fact:4\"]}, {\"claim\": \"A bulletin read as a sales opportunity is a misfiling: the mission is a programme writing to every startup, not a buyer.\", \"based_on\": [\"fact:3\", \"fact:5\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Such notices arrive from an automated sender, the shape a mail filter treats as automated — the copy of the record most likely to be lost.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"hypotheses\": [{\"proposition\": \"The registration opens the mission's schemes to Nimbus Labs — such as the sustenance allowance scheme it said was extended to March.\", \"needs\": \"The scheme's own terms.\"}], \"unknowns\": [{\"question\": \"What the registration number is needed for next.\", \"relevance\": \"It decides where the number must be kept and who needs it.\"}, {\"question\": \"Whether the portal shows anything further asked of Nimbus Labs.\", \"relevance\": \"The portal, not the mail, is the record.\"}], \"frames\": {\"primary\": \"The mission's portal reports your registration complete and gives its registration number — the application the brief lists as applied is settled.\", \"rivals\": [\"One more templated notice that needs nothing beyond filing.\", \"A registration that is a first step toward the mission's schemes rather than an end in itself.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"in_programme\", \"expected\": \"The application is settled; what the file holds now is the programme's own calendar and notices.\", \"actual\": \"The mission wrote that the registration on its portal is complete, with a registration number; its other mail is bulletins and a scheme update.\"}, \"scenarios\": {\"do_nothing\": \"The number sits in one mail among bulletins, and the brief keeps saying applied.\", \"act\": \"The number is filed with the company's papers and the brief says registered, ready for the next scheme.\", \"best\": \"The registration is on file and a scheme the company can use is found through it.\", \"worst\": \"The number is lost among bulletins and has to be dug out when a scheme or an office asks for it.\", \"signals_to_watch\": [\"Notices from the mission about schemes open to registered startups.\", \"The portal's record for Nimbus Labs.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The registration is complete; nothing is owed back to the mission.\", \"The number arrived in a templated mail from a no-reply sender, the kind most easily lost.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"File the registration number from the mission's mail with the company's papers, and move the brief's State Startup Mission line from applied to registered.\", \"for_whom\": \"Nimbus Labs' records and its brief\", \"by_when\": null}, \"alternative\": \"Check whether the sustenance allowance scheme the mission extended to March is open to a registered startup.\", \"wait_or_stop\": \"Nothing to wait for. Stop once the number is filed and the brief reads registered.\", \"done_when\": \"The registration number is on file and the brief's line says registered.\", \"draft\": null}",
+   "framed": true,
    "input_tokens": 9324,
-   "output_tokens": 1103,
+   "output_tokens": 1101,
    "model": "claude-haiku-4-5-20251001"
   }
  }

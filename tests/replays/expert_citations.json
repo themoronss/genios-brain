@@ -1,0 +1,3134 @@
+{
+ "F01": {
+  "evt_1cc07fcda32dffd470f8bdd2": [
+   [
+    "- [#] 2026-09-24 05:20 UTC · they wrote · StartupSetu",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_card_verdict@fundraising": [
+   [
+    "- [#] derived.history.prior_card_verdict@fundraising = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@fundraising": [
+   [
+    "- [#] derived.history.prior_outcome@fundraising = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.28 days [#]",
+    2
+   ]
+  ],
+  "num:their_reply_time:updates@startupsetu.gov.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:updates@startupsetu.gov.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_461663895a8f9f35ee9b84a5": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-24 05:20 UTC → 2026-09-24 05:20 UTC (0 days) · quiet 0.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "whatif:14": [
+   [
+    "- [#] After 14 days of nothing the file has been quiet 14.3 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ]
+  ],
+  "whatif:7": [
+   [
+    "- [#] After 7 days of nothing the file has been quiet 7.3 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ]
+  ]
+ },
+ "F02": {
+  "evt_5848f385e310ba76a3195cda": [
+   [
+    "- [#] 2026-09-30 07:03 UTC · they wrote · StartupSetu",
+    0
+   ]
+  ],
+  "evt_5da28a4041d61c29619fc6e0": [
+   [
+    "- [#] 2026-09-23 09:10 UTC · they wrote · DigiVault",
+    0
+   ]
+  ],
+  "evt_8e35d40489af90b4aab3ac5a": [
+   [
+    "- [#] 2026-09-29 06:00 UTC · they wrote · StartupSetu",
+    0
+   ]
+  ],
+  "evt_9d6c26970b7b45a94b1dbb97": [
+   [
+    "- [#] 2026-09-30 06:09 UTC · they wrote · StartupSetu",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@admin": [
+   [
+    "- [#] derived.history.prior_outcome@admin = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "loop:loop_ce191d561f3fa9b81d0efc83": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-29 06:00 UTC",
+    0
+   ]
+  ],
+  "num:longest_gap": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.37 days [#]",
+    1
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.5 days [#]",
+    1
+   ],
+   [
+    "Usual gap between touches: 2 times, median 0.53 days — too few to call normal [#]; longest closed gap: 1.01 days [#]; quiet now: 0.46 days [#] — within the gaps it closed before",
+    1
+   ]
+  ],
+  "num:their_reply_time:no-reply@digivault.gov.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.37 days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.5 days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: 2 times, median 0.53 days — too few to call normal [#]; longest closed gap: 1.01 days [#]; quiet now: 0.46 days [#] — within the gaps it closed before",
+    0
+   ]
+  ],
+  "num:your_reply_time:updates@startupsetu.gov.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_2ffd9981fedb283756546398": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-23 09:10 UTC → 2026-09-23 09:10 UTC (0 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_3790e1fb03ef0358179ac6a5": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-29 06:00 UTC → 2026-09-29 06:00 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-29 06:00 UTC → 2026-09-30 06:09 UTC (1 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_7184f905e550e1148f7308ca": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-30 07:03 UTC → 2026-09-30 07:03 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F03": {
+  "evt_c9e60c2e9863426c3d31dbad": [
+   [
+    "- [#] 2026-09-03 08:15 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@admin": [
+   [
+    "- [#] derived.history.prior_outcome@admin = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "num:their_reply_time:rahul@kestrelcap.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:rahul@kestrelcap.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_90385c0468bf323c8c6b007e": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-03 08:15 UTC → 2026-09-03 08:15 UTC (0 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-03 08:15 UTC → 2026-09-04 08:00 UTC (1 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-03 08:15 UTC → 2026-09-07 08:00 UTC (4 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F04": {
+  "evt_6c884f8bd871b47ff2405481": [
+   [
+    "- [#] 2026-08-06 07:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_e3ca97e0562fb14b8fbaf283": [
+   [
+    "- [#] 2026-08-06 11:40 UTC · they wrote · Sofia Brandt",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "loop:loop_12ad46461f3201eb0c430403": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-06 11:40 UTC",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: once: 0.19 days [#]; longest closed gap: 0.19 days [#]; quiet now: 0.26 days [#] — longer than any gap it closed before",
+    2
+   ]
+  ],
+  "num:longest_gap": [
+   [
+    "Usual gap between touches: once: 0.19 days [#]; longest closed gap: 0.19 days [#]; quiet now: 0.26 days [#] — longer than any gap it closed before",
+    1
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: once: 0.19 days [#]; longest closed gap: 0.19 days [#]; quiet now: 0.26 days [#] — longer than any gap it closed before",
+    0
+   ]
+  ],
+  "sit:sit_93f8e3114a4bc6e1be54e861": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-06 07:00 UTC → 2026-08-06 11:40 UTC (0.2 days) · quiet 0.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F05": {
+  "evt_bcd624eff080cedc9d5aeb7e": [
+   [
+    "- [#] 2026-08-11 09:20 UTC · they wrote · Marco Ruiz",
+    0
+   ]
+  ],
+  "evt_de534177fe392262e4e90ec7": [
+   [
+    "- [#] 2026-08-06 07:30 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "loop:loop_710d228531e72758baeafa35": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-11 09:20 UTC",
+    0
+   ]
+  ],
+  "num:their_reply_time:marco@altavia.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.44 days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: once: 5.08 days [#]; longest closed gap: 5.08 days [#]; quiet now: 0.36 days [#] — within the gaps it closed before",
+    0
+   ]
+  ],
+  "num:your_reply_time:marco@altavia.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_dafc6228faa35af6a7410c28": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-06 07:30 UTC → 2026-08-06 07:30 UTC (0 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-06 07:30 UTC → 2026-08-11 09:20 UTC (5.1 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F06": {
+  "evt_b5a1dca2622a328e0e7f88fe": [
+   [
+    "- [#] 2026-08-06 08:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_c8b1e9f1c3da8857bc625fd0": [
+   [
+    "- [#] 2026-08-09 10:05 UTC · they wrote · Nikhil Bose",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "loop:loop_15045a0e2d2595afc9655cd2": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-09 10:05 UTC",
+    0
+   ]
+  ],
+  "num:their_reply_time:nikhil@quillstack.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.42 days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: once: 3.09 days [#]; longest closed gap: 3.09 days [#]; quiet now: 0.33 days [#] — within the gaps it closed before",
+    0
+   ]
+  ],
+  "num:your_reply_time:nikhil@quillstack.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_9b5aa30b70e97a2e87078ddb": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-06 08:00 UTC → 2026-08-06 08:00 UTC (0 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-06 08:00 UTC → 2026-08-09 10:05 UTC (3.1 days) · quiet 0.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F07": {
+  "card:card_d88c89f38cb07752eb747cd8": [
+   [
+    "- [#] a card “Needs a decision — Accept Leela's invite if it is not yet”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
+    0
+   ],
+   [
+    "- [#] a card “Needs a decision — Accept Leela's invite if it is not yet”, expired; what happened to it: card.created (rule3_admin_queue), card.surfaced (push), card.expired (rule_cleared)",
+    0
+   ]
+  ],
+  "evt_64ef93e8cfdaf91361d9ff65": [
+   [
+    "Booked: [#] a meeting at 2026-08-13 09:30 UTC",
+    0
+   ],
+   [
+    "- [#] 2026-08-13 09:30 UTC · a meeting · leela@ferngrove.test",
+    0
+   ]
+  ],
+  "evt_77953c8ec9ee4fa5ecf57847": [
+   [
+    "- [#] 2026-08-13 08:00 UTC · they wrote · Leela Krishnan",
+    0
+   ]
+  ],
+  "evt_8bb7bb3d94cabb26707b7abb": [
+   [
+    "- [#] 2026-08-12 05:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_efcd026d0fe8466b9fb45caa": [
+   [
+    "- [#] 2026-08-12 09:30 UTC · they wrote · Leela Krishnan",
+    0
+   ]
+  ],
+  "num:longest_gap": [
+   [
+    "Usual gap between touches: once: 0.19 days [#]; longest closed gap: 0.19 days [#]; quiet now: 0.35 days [#] — longer than any gap it closed before",
+    1
+   ],
+   [
+    "Usual gap between touches: 3 times, median 0.19 days — too few to call normal [#]; longest closed gap: 0.94 days [#]; quiet now: 0.35 days [#] — within the gaps it closed before",
+    1
+   ],
+   [
+    "Usual gap between touches: 3 times, median 0.19 days — too few to call normal [#]; longest closed gap: 0.94 days [#]; quiet now: 2.1 days [#] — longer than any gap it closed before",
+    1
+   ]
+  ],
+  "num:their_reply_time:leela@ferngrove.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: once: 0.19 days [#]; longest closed gap: 0.19 days [#]; quiet now: 0.35 days [#] — longer than any gap it closed before",
+    0
+   ],
+   [
+    "Usual gap between touches: 3 times, median 0.19 days — too few to call normal [#]; longest closed gap: 0.94 days [#]; quiet now: 0.35 days [#] — within the gaps it closed before",
+    0
+   ],
+   [
+    "Usual gap between touches: 3 times, median 0.19 days — too few to call normal [#]; longest closed gap: 0.94 days [#]; quiet now: 2.1 days [#] — longer than any gap it closed before",
+    0
+   ]
+  ],
+  "num:your_reply_time:leela@ferngrove.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_253196e2b247c7a14b9c30e3": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-12 05:00 UTC → 2026-08-13 09:30 UTC (1.2 days) · last seen at a booking 0.6 days ahead, so no quiet yet of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-12 05:00 UTC → 2026-08-13 09:30 UTC (1.2 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-12 05:00 UTC → 2026-08-13 09:30 UTC (1.2 days) · quiet 2.1 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F08": {
+  "evt_3590c3eab4945590a593ff98": [
+   [
+    "- [#] 2026-08-04 06:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_53d1d71846925c16d7662f46": [
+   [
+    "- [#] 2026-08-06 06:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_card_verdict@admin": [
+   [
+    "- [#] derived.history.prior_card_verdict@admin = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@admin": [
+   [
+    "- [#] derived.history.prior_outcome@admin = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.5 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 1.5 days [#]",
+    2
+   ]
+  ],
+  "num:their_reply_time:omar@tidewell.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:their_reply_time:simon@lumenpath.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:omar@tidewell.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "num:your_reply_time:simon@lumenpath.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_927b1dade363f079f95068d7": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-04 06:00 UTC → 2026-08-04 06:00 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_ed2f8bee5c5d4c4db7fa16cc": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-06 06:00 UTC → 2026-08-06 06:00 UTC (0 days) · quiet 1.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "whatif:14": [
+   [
+    "- [#] After 14 days of nothing the file has been quiet 14.5 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ],
+   [
+    "- [#] After 14 days of nothing the file has been quiet 15.5 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ]
+  ],
+  "whatif:3": [
+   [
+    "- [#] After 3 days of nothing the file has been quiet 3.5 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ],
+   [
+    "- [#] After 3 days of nothing the file has been quiet 4.5 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ]
+  ],
+  "whatif:7": [
+   [
+    "- [#] After 7 days of nothing the file has been quiet 7.5 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ],
+   [
+    "- [#] After 7 days of nothing the file has been quiet 8.5 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ]
+  ]
+ },
+ "F09": {
+  "evt_08854ba95ec981eb04a33094": [
+   [
+    "- [#] 2026-09-29 10:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_521f2d9ef46d120b8144488e": [
+   [
+    "- [#] 2026-09-29 10:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_card_verdict@fundraising": [
+   [
+    "- [#] derived.history.prior_card_verdict@fundraising = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@fundraising": [
+   [
+    "- [#] derived.history.prior_outcome@fundraising = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "loop:loop_ecf0fdaf98d15926d517352e": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-29 10:00 UTC",
+    0
+   ]
+  ],
+  "num:introductions": [
+   [
+    "People it introduced: none [#]; of them wrote to us: not measured [#]; met us: not measured [#]",
+    0
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: once: 0 days [#]; longest closed gap: 0 days [#]; quiet now: 0.33 days [#] — longer than any gap it closed before",
+    0
+   ]
+  ],
+  "sit:sit_85055544a66edc289d1eca06": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-29 10:00 UTC → 2026-09-29 10:00 UTC (0 days) · quiet 0.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F10": {
+  "evt_0521fdea4d700f0092a756d9": [
+   [
+    "- [#] 2026-09-18 07:45 UTC · they wrote · Kiran Agnihotri",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_card_verdict@fundraising": [
+   [
+    "- [#] derived.history.prior_card_verdict@fundraising = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@fundraising": [
+   [
+    "- [#] derived.history.prior_outcome@fundraising = first_time",
+    0
+   ]
+  ],
+  "loop:loop_8e7ab520ea5e87492baede73": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-18 07:45 UTC",
+    0
+   ]
+  ],
+  "num:your_reply_time:kiran@banyanseed.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.investors_do_not_chase": [
+   [
+    "- [#] When the turn is ours, the clock is running against us and nobody will say so. Age the conversations where we owe the reply before the ones where they do. — why: A fund sees far more companies than it can fund — one partner described 500 to 800 plans a year for one or two deals done (David Hornik, quoted by Paul Graham) — and loses nothing by dropping one. A partial reply left unanswered reads to it as a company that lost momentum, the one attribute a raise cannot afford to project. The asymmetry is structural: our silence is informative to them; theirs, before the stage says otherwise, is not informative to us. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process": [
+   [
+    "- [#] A round's momentum comes from investors seeing other investors move. Run every conversation in parallel, and let each live investor hear real progress elsewhere; a conversation run on its own has no clock. — why: \"The biggest factor in most investors' opinions of you is the opinion of other investors\" (Graham, \"How to Raise Money\"), and getting far along with one firm \"will sometimes provoke other firms, even good ones, to make up their minds, lest they lose the deal\" (\"Investor Herd Dynamics\"). Talked to one at a time, each investor holds a free option and waits; and the first commitment is the hard one — \"Once you start getting investors to commit, it becomes increasingly easy to get more to.\" (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.only_an_offer_counts": [
+   [
+    "- [#] Count an investor in only when they have made a definite offer — an amount and a valuation or cap, with no conditions — and confirmed it in writing. Until then, treat them as a no, however warm they sound. — why: \"Investors habitually seem more positive than they are\", and some \"use language that makes it sound as if they're committing, but which doesn't actually commit them\" (Graham). \"We'd love to be part of this\", \"we're in if you find a lead\" and \"we can do fifty to a hundred and fifty\" are not offers: Y Combinator's Handshake Deal Protocol defines an offer as an amount plus a valuation or cap and refuses ranges and conditions, because a founder who keeps room for a conditional yes is the only party it binds. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.run_an_investor_conversation": [
+   [
+    "Run an investor conversation to a decision [#], version pb-d3f940d86e88 — playbook not yet reviewed",
+    0
+   ]
+  ]
+ },
+ "F11": {
+  "evt_7eabedc7eedd5ae4297eeb1d": [
+   [
+    "- [#] 2026-09-15 14:10 UTC · they wrote · Tom Keller",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_card_verdict@fundraising": [
+   [
+    "- [#] derived.history.prior_card_verdict@fundraising = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@fundraising": [
+   [
+    "- [#] derived.history.prior_outcome@fundraising = first_time",
+    0
+   ]
+  ],
+  "loop:loop_1531307971fd8eba4224d4e7": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-15 14:10 UTC",
+    0
+   ]
+  ],
+  "num:your_reply_time:tom@northfieldvc.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.investors_do_not_chase": [
+   [
+    "- [#] When the turn is ours, the clock is running against us and nobody will say so. Age the conversations where we owe the reply before the ones where they do. — why: A fund sees far more companies than it can fund — one partner described 500 to 800 plans a year for one or two deals done (David Hornik, quoted by Paul Graham) — and loses nothing by dropping one. A partial reply left unanswered reads to it as a company that lost momentum, the one attribute a raise cannot afford to project. The asymmetry is structural: our silence is informative to them; theirs, before the stage says otherwise, is not informative to us. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process": [
+   [
+    "- [#] A round's momentum comes from investors seeing other investors move. Run every conversation in parallel, and let each live investor hear real progress elsewhere; a conversation run on its own has no clock. — why: \"The biggest factor in most investors' opinions of you is the opinion of other investors\" (Graham, \"How to Raise Money\"), and getting far along with one firm \"will sometimes provoke other firms, even good ones, to make up their minds, lest they lose the deal\" (\"Investor Herd Dynamics\"). Talked to one at a time, each investor holds a free option and waits; and the first commitment is the hard one — \"Once you start getting investors to commit, it becomes increasingly easy to get more to.\" (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.only_an_offer_counts": [
+   [
+    "- [#] Count an investor in only when they have made a definite offer — an amount and a valuation or cap, with no conditions — and confirmed it in writing. Until then, treat them as a no, however warm they sound. — why: \"Investors habitually seem more positive than they are\", and some \"use language that makes it sound as if they're committing, but which doesn't actually commit them\" (Graham). \"We'd love to be part of this\", \"we're in if you find a lead\" and \"we can do fifty to a hundred and fifty\" are not offers: Y Combinator's Handshake Deal Protocol defines an offer as an amount plus a valuation or cap and refuses ranges and conditions, because a founder who keeps room for a conditional yes is the only party it binds. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.run_an_investor_conversation": [
+   [
+    "Run an investor conversation to a decision [#], version pb-d3f940d86e88 — playbook not yet reviewed",
+    0
+   ]
+  ]
+ },
+ "F12": {
+  "evt_6871fbe6d55307337c516bc6": [
+   [
+    "- [#] 2026-09-27 10:00 UTC · they wrote · Neeraj Joshi",
+    0
+   ]
+  ],
+  "evt_6c481b4979f8f62bd38e86aa": [
+   [
+    "Booked: [#] a meeting at 2026-10-08 09:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_2395aea9b1b84fd6d852d4d0": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-27 10:00 UTC",
+    0
+   ]
+  ],
+  "num:your_reply_time:neeraj@harborpoint.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.investors_do_not_chase": [
+   [
+    "- [#] When the turn is ours, the clock is running against us and nobody will say so. Age the conversations where we owe the reply before the ones where they do. — why: A fund sees far more companies than it can fund — one partner described 500 to 800 plans a year for one or two deals done (David Hornik, quoted by Paul Graham) — and loses nothing by dropping one. A partial reply left unanswered reads to it as a company that lost momentum, the one attribute a raise cannot afford to project. The asymmetry is structural: our silence is informative to them; theirs, before the stage says otherwise, is not informative to us. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.before_an_investor_call": [
+   [
+    "- [#] Before an investor call: Their stage, sector and cheque size; what they have backed and why; any portfolio company that competes; what the partner on the call has written or invested in. \"Make sure you know your audience\" (YC's seed guide).; The stage, what was said last, what they asked for and whether it was sent, who introduced the company. A call that repeats the last one moves the conversation backwards.; Name the next step to ask for — a partners' meeting, a data room, references, a commitment — and who on their side can grant it.; The numbers that matter and how they moved since the last contact, the questions this investor's thesis raises, and a demo if the product can be shown.; Let them talk; then ask what they need in order to decide, who else must meet the company, and by when. Leave with \"an attempted close or at very minimum absolute clarity on next steps\" (YC).; Write the same day: thank them, confirm the next step and its date in writing, and send anything promised on the call. — success: The call ends with a named next step and a date, confirmed in writing the same day. — wait 7 days (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.run_an_investor_conversation": [
+   [
+    "Run an investor conversation to a decision [#], version pb-d3f940d86e88 — playbook not yet reviewed",
+    0
+   ]
+  ],
+  "sit:sit_e9653a6082d1c505b719f702": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-27 10:00 UTC → 2026-10-08 09:00 UTC (11 days) · last seen at a booking 10.6 days ahead, so no quiet yet of a 90-day window (the file's kind of work)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-27 10:00 UTC → 2026-10-08 09:00 UTC (11 days) · last seen at a booking 1.9 days ahead, so no quiet yet of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ],
+  "whatif:14": [
+   [
+    "- [#] After 14 days of nothing the file has been quiet 14.3 days; its playbook's stop rule — a prior — calls the work dormant after 90: 75.7 more days of nothing before it is. The next date passes.",
+    0
+   ],
+   [
+    "- [#] After 14 days of nothing the file has been quiet 23.1 days; its playbook's stop rule — a prior — calls the work dormant after 90: 66.9 more days of nothing before it is. The next date passes.",
+    0
+   ]
+  ]
+ },
+ "F13": {
+  "evt_e11237c955138c90261649f8": [
+   [
+    "- [#] 2026-08-08 06:30 UTC · they wrote · Mohit Sethi",
+    0
+   ]
+  ],
+  "loop:loop_29f2bf391a481189068fff05": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-08 06:30 UTC",
+    0
+   ]
+  ],
+  "num:your_reply_time:mohit@tuskercap.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.investors_do_not_chase": [
+   [
+    "- [#] When the turn is ours, the clock is running against us and nobody will say so. Age the conversations where we owe the reply before the ones where they do. — why: A fund sees far more companies than it can fund — one partner described 500 to 800 plans a year for one or two deals done (David Hornik, quoted by Paul Graham) — and loses nothing by dropping one. A partial reply left unanswered reads to it as a company that lost momentum, the one attribute a raise cannot afford to project. The asymmetry is structural: our silence is informative to them; theirs, before the stage says otherwise, is not informative to us. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.only_an_offer_counts": [
+   [
+    "- [#] Count an investor in only when they have made a definite offer — an amount and a valuation or cap, with no conditions — and confirmed it in writing. Until then, treat them as a no, however warm they sound. — why: \"Investors habitually seem more positive than they are\", and some \"use language that makes it sound as if they're committing, but which doesn't actually commit them\" (Graham). \"We'd love to be part of this\", \"we're in if you find a lead\" and \"we can do fifty to a hundred and fifty\" are not offers: Y Combinator's Handshake Deal Protocol defines an offer as an amount plus a valuation or cap and refuses ranges and conditions, because a founder who keeps room for a conditional yes is the only party it binds. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.silence_reads_by_stage": [
+   [
+    "- [#] Investor silence means different things at different stages. Before a first meeting it is the default; after a first call that named no next step it is usually a soft no; more than a week after a partners' meeting it is usually a no; in diligence it is the work; after a term sheet it is paperwork, until the timetable slips. Read silence by the stage, never by its length alone. — why: Each stage has a different decider and a different clock. A firm in diligence is calling references and writing its memo (Gompers et al. measured ten reference calls on average); a partnership decides in a weekly meeting, and its rejection \"will rarely come in the form of an actual 'no'\" (Dixon); and investors at every stage prefer an open option to a closed door — \"Some of the worse ones never actually do say no; they just stop replying to your emails\" (Graham). The same twelve days of quiet is therefore nothing in diligence and an answer after a partners' meeting. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.run_an_investor_conversation": [
+   [
+    "Run an investor conversation to a decision [#], version pb-d3f940d86e88 — playbook not yet reviewed",
+    0
+   ]
+  ],
+  "sit:sit_aa5ecf1cee7c356fcca5a85a": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-08 06:30 UTC → 2026-08-08 06:30 UTC (0 days) · quiet 0.2 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ]
+ },
+ "F14": {
+  "evt_2e227c5f998d4be2dc0f081c": [
+   [
+    "- [#] 2026-08-07 09:00 UTC · they wrote · Tara Lindqvist",
+    0
+   ]
+  ],
+  "evt_3fbcc6e12737e445c356d7d3": [
+   [
+    "- [#] 2026-08-19 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_b21b6fea4e74b70cbbb19bb5": [
+   [
+    "- [#] 2026-08-26 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_c25e5af66b0b21705ffc806a": [
+   [
+    "- [#] 2026-08-12 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_card_verdict@fundraising": [
+   [
+    "- [#] derived.history.prior_card_verdict@fundraising = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@fundraising": [
+   [
+    "- [#] derived.history.prior_outcome@fundraising = first_time",
+    0
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.38 days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: 3 times, median 7 days — too few to call normal [#]; longest closed gap: 7 days [#]; quiet now: 0.38 days [#] — within the gaps it closed before",
+    0
+   ],
+   [
+    "Usual gap between touches: 3 times, median 7 days — too few to call normal [#]; longest closed gap: 7 days [#]; quiet now: 25.12 days [#] — longer than any gap it closed before",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict": [
+   [
+    "- [#] Most passes are decisions about timing, stage or a metric, and each of those carries an implicit date on which it stops being true. Record the date, not the refusal. Only thesis and team passes are verdicts. — why: A fund passing on stage is saying its cheque does not fit today's round, which changes at the next round without anyone changing their mind; a fund passing on timing is reading its own cycle. Both are scheduling facts wearing the vocabulary of rejection, and the vocabulary is what gets recorded. Investors who reject a company \"are some of your warmest leads for future fundraising\" — any who \"spent significant time deciding probably came close to saying yes\" (Graham). Thesis and team are different in kind: judgments about what the company is, which no date changes. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.reopen_after_a_pass": [
+   [
+    "- [#] Reopen after a pass: Read the passing message for its reason: stage, timing, traction, thesis, team, or none given. Only the first three reopen. Thesis and team do not reopen for this company, and pretending otherwise costs the relationship as well as the time.; Capture the exact words — \"come back when you have a lead\", \"we look again above fifty thousand a month in revenue\". Paraphrase loses the threshold, and the threshold is the asset. Where none was given, record that rather than inventing one.; Thank them, confirm the condition back in their own words, and ask for nothing. Arguing with a pass turns a warm future conversation into a closed one, and this is the moment the temptation is strongest.; A date where the condition is a date; a watch on the metric where it is a threshold. An unscheduled intention to follow up later is indistinguishable from having dropped it.; Open on what changed against their stated condition and nothing else. \"You said come back with a lead; we have one\" is a new conversation. \"Just checking in\" is the one they already declined, and it teaches them to skim the next. — success: The re-approach produces a meeting, or a reply that reopens the conversation. — wait 30 days (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.run_an_investor_conversation": [
+   [
+    "Run an investor conversation to a decision [#], version pb-d3f940d86e88 — playbook not yet reviewed",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.the_conditional_deferral": [
+   [
+    "- [#] The conditional deferral: Take the conversation out of the round's count. \"Send me updates\" commits nobody, and \"I want to invest in you, but I don't lead\" translates to \"No, except yes if you turn out to be a hot deal\" (Graham).; Record exactly what would bring them back — a lead, a revenue figure, a launch — in their words. \"Keep me posted\" with nothing named is recorded as no condition, never filled in with a plausible one.; Thank them, confirm the condition back in their words, and say they will hear when it changes. Arguing with a deferral turns a door left open into a closed one.; Add them to the update list: growth, cash and burn, what the company needs, sent every month — the cadence Aaron Harris, a former Y Combinator partner, recommends. Each update is a dated reading of progress against their condition.; When the condition is met, write to them about that and nothing else — \"You said come back with a lead; we have one.\" A check-in is the conversation they already deferred.; If the updates in the window draw no reply and no question, stop expecting them to reopen the conversation by themselves. Keep the investor on the list; the re-approach waits for the condition. — success: The investor answers an update with a question or a request to meet — or the condition is met and a meeting is booked. — wait 90 days (not yet reviewed)",
+    0
+   ]
+  ]
+ },
+ "F15": {
+  "evt_40ab364c4382f76fd81bb665": [
+   [
+    "- [#] 2026-08-11 02:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_c948c90270ed285f6f2b49fc": [
+   [
+    "- [#] 2026-08-11 01:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_e93045e17f9f8b1f887bebf8": [
+   [
+    "- [#] 2026-08-11 03:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_f4ce35e222e19ba3448acd67": [
+   [
+    "- [#] 2026-08-11 05:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_f7a3274b9b39e353eae26b82": [
+   [
+    "- [#] 2026-08-11 04:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@fundraising": [
+   [
+    "- [#] derived.history.prior_outcome@fundraising = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "loop:loop_5a95165690e736bc6a430e00": [
+   [
+    "- [#] question, we wait on them, open since 2026-08-11 05:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_5fe5306f8a8bff0451e3a72a": [
+   [
+    "- [#] question, we wait on them, open since 2026-08-11 01:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_bee259e2b13e73554f46a400": [
+   [
+    "- [#] question, we wait on them, open since 2026-08-11 04:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_f378a07d41ff6feda0fac698": [
+   [
+    "- [#] question, we wait on them, open since 2026-08-11 03:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_f54779fc0fcb1260b84b7eff": [
+   [
+    "- [#] question, we wait on them, open since 2026-08-11 02:00 UTC",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.54 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.58 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.62 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.67 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.71 days [#]",
+    2
+   ]
+  ],
+  "sit:sit_084d5275aa3d91bb3ed7d6bb": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-11 01:00 UTC → 2026-08-11 01:00 UTC (0 days) · quiet 0.7 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_254d3146a7310342f911e00e": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-11 03:00 UTC → 2026-08-11 03:00 UTC (0 days) · quiet 0.6 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_2d4d09fec30ef9f8f7be9eef": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-11 02:00 UTC → 2026-08-11 02:00 UTC (0 days) · quiet 0.7 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_5291a40a038315af17bb8a4a": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-11 05:00 UTC → 2026-08-11 05:00 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_6490fc67713cd888f30600ee": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-11 04:00 UTC → 2026-08-11 04:00 UTC (0 days) · quiet 0.6 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "wave:wave_6354a4c281d25389daff08c7": [
+   [
+    "- [#] a wave “Nimbus Labs - raising our seed round”: sent to 5, replied 0 of 5, bounced 0 of 5, followed up 0 of 5; last sent 0.5 days ago",
+    0
+   ]
+  ],
+  "whatif:14": [
+   [
+    "- [#] After 14 days of nothing the file has been quiet 14.5 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ],
+   [
+    "- [#] After 14 days of nothing the file has been quiet 14.6 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ],
+   [
+    "- [#] After 14 days of nothing the file has been quiet 14.7 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ]
+  ]
+ },
+ "F16": {
+  "evt_087eceb326bd232754cc4664": [
+   [
+    "- [#] 2026-08-11 06:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_card_verdict@fundraising": [
+   [
+    "- [#] derived.history.prior_card_verdict@fundraising = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@fundraising": [
+   [
+    "- [#] derived.history.prior_outcome@fundraising = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.5 days [#]",
+    2
+   ]
+  ],
+  "num:their_reply_time:partners@lattice-capital.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:partners@lattice-capital.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_3d1dfb513afbf9e4b3794aaf": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-11 06:00 UTC → 2026-08-11 06:00 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F17": {
+  "evt_489f9174cd14a5b32635a246": [
+   [
+    "- [#] 2026-10-01 07:30 UTC · they wrote · Amira Saleh",
+    0
+   ]
+  ],
+  "evt_b28cdc0da85d9a12960d5eba": [
+   [
+    "- [#] 2026-08-26 08:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "loop:loop_a7971bd8e62872fad4b7cc8d": [
+   [
+    "- [#] question, they wait on us, open since 2026-10-01 07:30 UTC",
+    0
+   ]
+  ],
+  "num:their_reply_time:amira@gulflaunchpad.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ],
+   [
+    "their reply time: once: 35.98 days [#]",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides": [
+   [
+    "- [#] A programme that reads its applications as a batch answers on its own published calendar, not on the applicant's. Its quiet before that date is not a no — and after it, the programme's own reply rule, not the length of the quiet, says what the quiet means. — why: Reviewers read an intake's applications against one calendar and answer on dates they publish. YC tells on-time applicants they \"will get a decision by December 11\" and says \"We always respond to everyone who applies, no exceptions\"; Techstars reviews \"within four weeks of applications closing\" and \"will notify all applicants about the state of their application\"; Hub71 promises \"feedback about the status of your application within three months of applying\". The answer has a date, so until that date has come the quiet carries no information about this application. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor": [
+   [
+    "- [#] An application to a programme is a selection process with a published calendar, not an investor conversation — even when the programme invests. Read it by its calendar and its rules, not by how warm the last mail was. — why: A programme reads every applicant against the same form and the same calendar, and decides through its own selection rounds; YC puts it plainly — \"One of YC's core principles is considering all applications equally. We don't rely on introductions the way many investors do.\" Its terms are its own, published before anyone applies: YC has \"a standard deal for every company that is accepted\", Techstars offers $220,000 \"for the vast majority of our programs\", Hub71 AED 250,000 on a SAFE note. And its no comes with a next intake. Read as an investor, the same file gets an investor's moves — a chase to a selection team that has published its date, a warm introduction to a process that reads every application alike, a pass filed as final — and each one is wrong here. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point": [
+   [
+    "- [#] In an application, the programme's deadline is the one date that will not move for this company; every other date in the plan is set backwards from it, on the programme's clock. — why: The deadline is published once, for every applicant, and kept. YC publishes \"November 2 at 8pm PT\" and answers a request to mark a late application on time with \"No, sorry\"; Hub71 reads an application that misses its cohort's deadline for the next cohort. Everything on the company's side — the deck, the numbers, a co-founder's week — can move; the deadline cannot, so it is the only point a plan can be anchored to. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.follow_an_application": [
+   [
+    "Follow an application from the deadline to the first day [#], version pb-8f465e5ab424 — playbook not yet reviewed",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.prepare_for_the_interview": [
+   [
+    "- [#] Prepare for a programme's interview: Book by the date the invitation gives and write the time on both clocks. Know the format before preparing for it: YC's interviews are ten-minute conversations over Zoom.; YC: \"All founders should be present on the call\", and it prefers that each founder answers at least one question. Techstars uses the interview to meet any additional co-founders and the extended team.; YC's interviewers \"will have read your application and have it open during the call\". Know what was written, and list what has changed since it went in.; YC's advice for an edge is \"to work hard and have your startup improve between the time that you applied and the time that you interview\". Have that change ready to say in a sentence.; YC's typical first question is \"What is your company working on?\", answered \"in a few simple, jargon-free sentences\". Techstars asks what the founders have learned since they started, and from their first customer.; YC suggests having key metrics written down to hand during the call, and warns that \"if you state numbers in the interview we may ask for verification of them afterwards\".; YC sometimes asks to see a demo: software \"loaded up and ready to screenshare\", hardware in the room with the founders, or a demo video when it cannot be.; The programmes disagree. YC: beyond the basic preparation, rehearsal \"is not useful and is often counter-productive\". Techstars: practise the introduction, anticipate questions and rehearse answers. Follow the programme being interviewed for.; After the call, note the questions, every number stated, and anything promised — a verification, a document, a follow-up — with its date. — success: The interview is held at the booked time with every founder present, and every number stated in it is on the file, ready to verify. — wait 14 days (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.work_back_from_the_deadline": [
+   [
+    "- [#] Work back from a deadline that does not move: Write the deadline in the programme's time zone and in the founders'. YC's \"November 2 at 8pm PT\" for its Winter 2027 batch is 3 November at 9:30 am in India.; Each answer, the video, the deck, the metrics, each co-founder's own profile, any recommendation: an owner and a date before the deadline. On YC's form only the founder who created the application can edit it, and each co-founder completes a profile of their own.; Numbers, names and the deck are final the day before; the last day is for the upload. What is submitted stays submitted: YC does not allow continuous editing once an application enters review, and SISFS fixes the order of incubator preferences on submission.; Submit before the last day and file the receipt — the confirmation mail or the portal's submitted status. Without it the application may not have gone in: YC says that without its confirmation \"you likely did not submit the application\".; If the deadline is missed, read the programme's own rule instead of asking for an exception: Hub71 considers a late application for the next cohort; YC still reads one but \"can't promise exactly when we'll get back to you\", and will not mark it on time for a good reason. — success: The application's receipt — a confirmation mail or the portal's submitted status — is on the file before the programme's deadline, read on the programme's own clock. — wait 14 days (not yet reviewed)",
+    0
+   ]
+  ],
+  "sit:sit_606ef6e360b4eb90cbc6bdb1": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-26 08:00 UTC → 2026-08-26 08:00 UTC (0 days) · quiet 0.4 days of a 90-day window (the file's kind of work)",
+    0
+   ],
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-26 08:00 UTC → 2026-10-01 07:30 UTC (36 days) · quiet 0.4 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ]
+ },
+ "F19": {
+  "evt_737819ca62a1671f48e7a887": [
+   [
+    "- [#] 2026-09-07 06:00 UTC · they wrote · Ritika Sharma",
+    0
+   ]
+  ],
+  "evt_8050a1c8ddab56f63af89aab": [
+   [
+    "- [#] 2026-09-07 05:00 UTC · they wrote · Naveen Gupta",
+    0
+   ]
+  ],
+  "evt_f6dc49920ee904fdab0e2a4f": [
+   [
+    "- [#] 2026-09-24 09:00 UTC · they wrote · Ekta Bhalla",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "loop:loop_2ffa15592637f386c7c83fae": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-07 06:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_44bcb3a253c003e041f4926a": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-07 05:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_b4ea92a49ba069acb9973a25": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-24 09:00 UTC",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point": [
+   [
+    "- [#] In an application, the programme's deadline is the one date that will not move for this company; every other date in the plan is set backwards from it, on the programme's clock. — why: The deadline is published once, for every applicant, and kept. YC publishes \"November 2 at 8pm PT\" and answers a request to mark a late application on time with \"No, sorry\"; Hub71 reads an application that misses its cohort's deadline for the next cohort. Everything on the company's side — the deck, the numbers, a co-founder's week — can move; the deadline cannot, so it is the only point a plan can be anchored to. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.the_portal_is_the_record": [
+   [
+    "- [#] For a government scheme, the portal's status is the decision record and the mail only reports it. Read the portal before reading the mailbox's silence, and keep the portal's templated notices: they are the programme speaking. — why: A scheme applies its published rules through its portal. SISFS lets every applicant \"track the progress of their application on the Startup India portal on a real-time basis\", requires every incubator to report its evaluation progress there, and notifies rejections by email. Such notices typically arrive as templates from an automated sender — the shape a mail filter treats as automated — so the mailbox is the copy of the record most likely to be lost. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.documents_after_acceptance": [
+   [
+    "- [#] Get the papers in after acceptance: Ask once for every document the programme needs and by when, and work from its list rather than from what another programme asked for.; SISFS: \"it is mandatory to sign a legal agreement with the incubator to avail the seed fund\"; Google for Startups Accelerator India sends a programme contract to sign; YC invests with a YC Agreement alongside its SAFEs; Hub71's selected startups \"enter into an agreement\".; YC invests in US, Canada, Cayman and Singapore corporations; a company incorporated elsewhere — an Indian private limited company, say — creates a parent in one of them, which YC says \"will require a significant effort on your part\". Hub71 requires an ADGM tech licence for a subsidiary of the holding company.; The instruments are issued against the cap table — YC's two SAFEs, Techstars' uncapped MFN SAFE and post-money CEA, Hub71's SAFE note. An Indian scheme reads shareholding too: SISFS requires Indian promoters to hold at least 51% when the company applies.; A government scheme admits only the company its rules describe, and its incubator checks before it signs — SISFS takes only DPIIT-recognised startups incorporated not more than two years before the application, and its incubators \"conduct due diligence of the startups and sign legal agreement\".; SISFS pays startups \"in their company bank accounts\" and releases the first grant instalment within 60 days of receiving the application; later instalments wait on an interim progress update and a utilisation certificate.; SISFS: an update to the incubator at least once in fifteen days, and on the scheme's dashboard every month. Hub71: \"Startups accepted to our programs must relocate and establish a presence at our space within Abu Dhabi.\" — success: The programme's agreement is signed and every item on its onboarding list is in before the programme's first day — or, for a grant, before the first instalment. — wait 30 days (not yet reviewed)",
+    0
+   ]
+  ],
+  "sit:sit_93aa5db19fe0443d3414d9c3": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-07 05:00 UTC → 2026-09-07 06:00 UTC (0 days) · quiet 1.5 days of a 90-day window (the file's kind of work)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-07 05:00 UTC → 2026-09-24 09:00 UTC (17.2 days) · quiet 0.4 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ]
+ },
+ "F20": {
+  "evt_597f2a0e12ec13c67c77487f": [
+   [
+    "- [#] 2026-09-13 06:00 UTC · they wrote · Sameer Rana",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides": [
+   [
+    "- [#] A programme that reads its applications as a batch answers on its own published calendar, not on the applicant's. Its quiet before that date is not a no — and after it, the programme's own reply rule, not the length of the quiet, says what the quiet means. — why: Reviewers read an intake's applications against one calendar and answer on dates they publish. YC tells on-time applicants they \"will get a decision by December 11\" and says \"We always respond to everyone who applies, no exceptions\"; Techstars reviews \"within four weeks of applications closing\" and \"will notify all applicants about the state of their application\"; Hub71 promises \"feedback about the status of your application within three months of applying\". The answer has a date, so until that date has come the quiet carries no information about this application. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor": [
+   [
+    "- [#] An application to a programme is a selection process with a published calendar, not an investor conversation — even when the programme invests. Read it by its calendar and its rules, not by how warm the last mail was. — why: A programme reads every applicant against the same form and the same calendar, and decides through its own selection rounds; YC puts it plainly — \"One of YC's core principles is considering all applications equally. We don't rely on introductions the way many investors do.\" Its terms are its own, published before anyone applies: YC has \"a standard deal for every company that is accepted\", Techstars offers $220,000 \"for the vast majority of our programs\", Hub71 AED 250,000 on a SAFE note. And its no comes with a next intake. Read as an investor, the same file gets an investor's moves — a chase to a selection team that has published its date, a warm introduction to a process that reads every application alike, a pass filed as final — and each one is wrong here. (not yet reviewed)",
+    0
+   ]
+  ],
+  "sit:sit_ae17a79bb2702ac636d98c3d": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-13 06:00 UTC → 2026-09-13 06:00 UTC (0 days) · quiet 0.5 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ]
+ },
+ "F21": {
+  "evt_0616ab6c71c798e70dd44f98": [
+   [
+    "- [#] 2026-09-16 05:00 UTC · they wrote · Awadh Enterprise Centre",
+    0
+   ]
+  ],
+  "evt_a63c89b44c27111f6b8f66f5": [
+   [
+    "- [#] 2026-09-21 05:00 UTC · they wrote · Awadh Enterprise Centre",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor": [
+   [
+    "- [#] An application to a programme is a selection process with a published calendar, not an investor conversation — even when the programme invests. Read it by its calendar and its rules, not by how warm the last mail was. — why: A programme reads every applicant against the same form and the same calendar, and decides through its own selection rounds; YC puts it plainly — \"One of YC's core principles is considering all applications equally. We don't rely on introductions the way many investors do.\" Its terms are its own, published before anyone applies: YC has \"a standard deal for every company that is accepted\", Techstars offers $220,000 \"for the vast majority of our programs\", Hub71 AED 250,000 on a SAFE note. And its no comes with a next intake. Read as an investor, the same file gets an investor's moves — a chase to a selection team that has published its date, a warm introduction to a process that reads every application alike, a pass filed as final — and each one is wrong here. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point": [
+   [
+    "- [#] In an application, the programme's deadline is the one date that will not move for this company; every other date in the plan is set backwards from it, on the programme's clock. — why: The deadline is published once, for every applicant, and kept. YC publishes \"November 2 at 8pm PT\" and answers a request to mark a late application on time with \"No, sorry\"; Hub71 reads an application that misses its cohort's deadline for the next cohort. Everything on the company's side — the deck, the numbers, a co-founder's week — can move; the deadline cannot, so it is the only point a plan can be anchored to. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.work_back_from_the_deadline": [
+   [
+    "- [#] Work back from a deadline that does not move: Write the deadline in the programme's time zone and in the founders'. YC's \"November 2 at 8pm PT\" for its Winter 2027 batch is 3 November at 9:30 am in India.; Each answer, the video, the deck, the metrics, each co-founder's own profile, any recommendation: an owner and a date before the deadline. On YC's form only the founder who created the application can edit it, and each co-founder completes a profile of their own.; Numbers, names and the deck are final the day before; the last day is for the upload. What is submitted stays submitted: YC does not allow continuous editing once an application enters review, and SISFS fixes the order of incubator preferences on submission.; Submit before the last day and file the receipt — the confirmation mail or the portal's submitted status. Without it the application may not have gone in: YC says that without its confirmation \"you likely did not submit the application\".; If the deadline is missed, read the programme's own rule instead of asking for an exception: Hub71 considers a late application for the next cohort; YC still reads one but \"can't promise exactly when we'll get back to you\", and will not mark it on time for a good reason. — success: The application's receipt — a confirmation mail or the portal's submitted status — is on the file before the programme's deadline, read on the programme's own clock. — wait 14 days (not yet reviewed)",
+    0
+   ]
+  ],
+  "sit:sit_dd21bb3971e08da23957a057": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-16 05:00 UTC → 2026-09-16 05:00 UTC (0 days) · quiet 0.5 days of a 90-day window (the file's kind of work)",
+    0
+   ],
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-16 05:00 UTC → 2026-09-21 05:00 UTC (5 days) · quiet 0.5 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ]
+ },
+ "F22": {
+  "evt_17c8070e9244db207db3ee56": [
+   [
+    "- [#] 2026-09-07 05:00 UTC · they wrote · University Startup Cell",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point": [
+   [
+    "- [#] In an application, the programme's deadline is the one date that will not move for this company; every other date in the plan is set backwards from it, on the programme's clock. — why: The deadline is published once, for every applicant, and kept. YC publishes \"November 2 at 8pm PT\" and answers a request to mark a late application on time with \"No, sorry\"; Hub71 reads an application that misses its cohort's deadline for the next cohort. Everything on the company's side — the deck, the numbers, a co-founder's week — can move; the deadline cannot, so it is the only point a plan can be anchored to. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.documents_after_acceptance": [
+   [
+    "- [#] Get the papers in after acceptance: Ask once for every document the programme needs and by when, and work from its list rather than from what another programme asked for.; SISFS: \"it is mandatory to sign a legal agreement with the incubator to avail the seed fund\"; Google for Startups Accelerator India sends a programme contract to sign; YC invests with a YC Agreement alongside its SAFEs; Hub71's selected startups \"enter into an agreement\".; YC invests in US, Canada, Cayman and Singapore corporations; a company incorporated elsewhere — an Indian private limited company, say — creates a parent in one of them, which YC says \"will require a significant effort on your part\". Hub71 requires an ADGM tech licence for a subsidiary of the holding company.; The instruments are issued against the cap table — YC's two SAFEs, Techstars' uncapped MFN SAFE and post-money CEA, Hub71's SAFE note. An Indian scheme reads shareholding too: SISFS requires Indian promoters to hold at least 51% when the company applies.; A government scheme admits only the company its rules describe, and its incubator checks before it signs — SISFS takes only DPIIT-recognised startups incorporated not more than two years before the application, and its incubators \"conduct due diligence of the startups and sign legal agreement\".; SISFS pays startups \"in their company bank accounts\" and releases the first grant instalment within 60 days of receiving the application; later instalments wait on an interim progress update and a utilisation certificate.; SISFS: an update to the incubator at least once in fifteen days, and on the scheme's dashboard every month. Hub71: \"Startups accepted to our programs must relocate and establish a presence at our space within Abu Dhabi.\" — success: The programme's agreement is signed and every item on its onboarding list is in before the programme's first day — or, for a grant, before the first instalment. — wait 30 days (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.work_back_from_the_deadline": [
+   [
+    "- [#] Work back from a deadline that does not move: Write the deadline in the programme's time zone and in the founders'. YC's \"November 2 at 8pm PT\" for its Winter 2027 batch is 3 November at 9:30 am in India.; Each answer, the video, the deck, the metrics, each co-founder's own profile, any recommendation: an owner and a date before the deadline. On YC's form only the founder who created the application can edit it, and each co-founder completes a profile of their own.; Numbers, names and the deck are final the day before; the last day is for the upload. What is submitted stays submitted: YC does not allow continuous editing once an application enters review, and SISFS fixes the order of incubator preferences on submission.; Submit before the last day and file the receipt — the confirmation mail or the portal's submitted status. Without it the application may not have gone in: YC says that without its confirmation \"you likely did not submit the application\".; If the deadline is missed, read the programme's own rule instead of asking for an exception: Hub71 considers a late application for the next cohort; YC still reads one but \"can't promise exactly when we'll get back to you\", and will not mark it on time for a good reason. — success: The application's receipt — a confirmation mail or the portal's submitted status — is on the file before the programme's deadline, read on the programme's own clock. — wait 14 days (not yet reviewed)",
+    0
+   ]
+  ],
+  "sit:sit_09175db4339370437ff6c3b7": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-07 05:00 UTC → 2026-09-07 05:00 UTC (0 days) · quiet 0.5 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ]
+ },
+ "F23": {
+  "evt_1a3e736dba0d7ba62c882d66": [
+   [
+    "- [#] 2026-09-15 05:00 UTC · they wrote · State Startup Mission",
+    0
+   ]
+  ],
+  "evt_3af4b8a1ece6736014cbfa5c": [
+   [
+    "- [#] 2026-09-25 05:00 UTC · they wrote · State Startup Mission",
+    0
+   ]
+  ],
+  "evt_68047246bb4f2c5c07da44df": [
+   [
+    "- [#] 2026-09-05 05:00 UTC · they wrote · State Startup Mission",
+    0
+   ]
+  ],
+  "evt_b9151ac8d56114de9e250716": [
+   [
+    "- [#] 2026-10-05 05:00 UTC · they wrote · State Startup Mission",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "num:their_reply_time:no-reply@statestartup.gov.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides": [
+   [
+    "- [#] A programme that reads its applications as a batch answers on its own published calendar, not on the applicant's. Its quiet before that date is not a no — and after it, the programme's own reply rule, not the length of the quiet, says what the quiet means. — why: Reviewers read an intake's applications against one calendar and answer on dates they publish. YC tells on-time applicants they \"will get a decision by December 11\" and says \"We always respond to everyone who applies, no exceptions\"; Techstars reviews \"within four weeks of applications closing\" and \"will notify all applicants about the state of their application\"; Hub71 promises \"feedback about the status of your application within three months of applying\". The answer has a date, so until that date has come the quiet carries no information about this application. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.the_portal_is_the_record": [
+   [
+    "- [#] For a government scheme, the portal's status is the decision record and the mail only reports it. Read the portal before reading the mailbox's silence, and keep the portal's templated notices: they are the programme speaking. — why: A scheme applies its published rules through its portal. SISFS lets every applicant \"track the progress of their application on the Startup India portal on a real-time basis\", requires every incubator to report its evaluation progress there, and notifies rejections by email. Such notices typically arrive as templates from an automated sender — the shape a mail filter treats as automated — so the mailbox is the copy of the record most likely to be lost. (not yet reviewed)",
+    0
+   ]
+  ],
+  "sit:sit_54806634429f5907f374cd02": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-05 05:00 UTC → 2026-09-05 05:00 UTC (0 days) · quiet 0.5 days of a 90-day window (the file's kind of work)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-05 05:00 UTC → 2026-09-15 05:00 UTC (10 days) · quiet 10.5 days of a 90-day window (the file's kind of work)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-05 05:00 UTC → 2026-10-05 05:00 UTC (30 days) · quiet 0.5 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ],
+  "sit:sit_b95f37bfa5df7faa1b98c6d5": [
+   [
+    "- [#] opportunity (sales) · active · seen 2026-09-25 05:00 UTC → 2026-09-25 05:00 UTC (0 days) · quiet 0.5 days of a 90-day window (the file's kind of work)",
+    0
+   ],
+   [
+    "- [#] opportunity (sales) · active · seen 2026-09-25 05:00 UTC → 2026-09-25 05:00 UTC (0 days) · quiet 10.5 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ]
+ },
+ "F24": {
+  "evt_4af96cdebc72bdc9f4d52c58": [
+   [
+    "- [#] 2026-09-01 06:00 UTC · they wrote · Divya Raman",
+    0
+   ]
+  ],
+  "evt_cbea1730c3a5dd7a254c3ba0": [
+   [
+    "- [#] 2026-09-13 05:00 UTC · they wrote · Divya Raman",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "loop:loop_616f487fd540d48d09b06d31": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-01 06:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_e14e35ea2505c94aed05b5dc": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-13 05:00 UTC",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.5 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: once: 11.96 days [#]; longest closed gap: 11.96 days [#]; quiet now: 0.29 days [#] — within the gaps it closed before",
+    2
+   ],
+   [
+    "Usual gap between touches: once: 11.96 days [#]; longest closed gap: 11.96 days [#]; quiet now: 13.29 days [#] — longer than any gap it closed before",
+    2
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor": [
+   [
+    "- [#] An application to a programme is a selection process with a published calendar, not an investor conversation — even when the programme invests. Read it by its calendar and its rules, not by how warm the last mail was. — why: A programme reads every applicant against the same form and the same calendar, and decides through its own selection rounds; YC puts it plainly — \"One of YC's core principles is considering all applications equally. We don't rely on introductions the way many investors do.\" Its terms are its own, published before anyone applies: YC has \"a standard deal for every company that is accepted\", Techstars offers $220,000 \"for the vast majority of our programs\", Hub71 AED 250,000 on a SAFE note. And its no comes with a next intake. Read as an investor, the same file gets an investor's moves — a chase to a selection team that has published its date, a warm introduction to a process that reads every application alike, a pass filed as final — and each one is wrong here. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point": [
+   [
+    "- [#] In an application, the programme's deadline is the one date that will not move for this company; every other date in the plan is set backwards from it, on the programme's clock. — why: The deadline is published once, for every applicant, and kept. YC publishes \"November 2 at 8pm PT\" and answers a request to mark a late application on time with \"No, sorry\"; Hub71 reads an application that misses its cohort's deadline for the next cohort. Everything on the company's side — the deck, the numbers, a co-founder's week — can move; the deadline cannot, so it is the only point a plan can be anchored to. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.work_back_from_the_deadline": [
+   [
+    "- [#] Work back from a deadline that does not move: Write the deadline in the programme's time zone and in the founders'. YC's \"November 2 at 8pm PT\" for its Winter 2027 batch is 3 November at 9:30 am in India.; Each answer, the video, the deck, the metrics, each co-founder's own profile, any recommendation: an owner and a date before the deadline. On YC's form only the founder who created the application can edit it, and each co-founder completes a profile of their own.; Numbers, names and the deck are final the day before; the last day is for the upload. What is submitted stays submitted: YC does not allow continuous editing once an application enters review, and SISFS fixes the order of incubator preferences on submission.; Submit before the last day and file the receipt — the confirmation mail or the portal's submitted status. Without it the application may not have gone in: YC says that without its confirmation \"you likely did not submit the application\".; If the deadline is missed, read the programme's own rule instead of asking for an exception: Hub71 considers a late application for the next cohort; YC still reads one but \"can't promise exactly when we'll get back to you\", and will not mark it on time for a good reason. — success: The application's receipt — a confirmation mail or the portal's submitted status — is on the file before the programme's deadline, read on the programme's own clock. — wait 14 days (not yet reviewed)",
+    0
+   ]
+  ],
+  "sit:sit_e9aeb6551928e46a8c5f8ba1": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-01 06:00 UTC → 2026-09-01 06:00 UTC (0 days) · quiet 0.5 days of a 90-day window (the file's kind of work)",
+    0
+   ],
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-01 06:00 UTC → 2026-09-13 05:00 UTC (12 days) · quiet 0.3 days of a 90-day window (the file's kind of work)",
+    0
+   ],
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-01 06:00 UTC → 2026-09-13 05:00 UTC (12 days) · quiet 13.3 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ]
+ },
+ "F25": {
+  "evt_5d126b6651a2fd44c3737382": [
+   [
+    "- [#] 2026-08-05 10:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_f81b74d10a59df3b036b80c0": [
+   [
+    "- [#] 2026-08-07 08:00 UTC · they wrote · Kavitha Nair",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_card_verdict@admin": [
+   [
+    "- [#] derived.history.prior_card_verdict@admin = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@admin": [
+   [
+    "- [#] derived.history.prior_outcome@admin = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "num:their_reply_time:kavitha.nair@inboxmail.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ],
+   [
+    "their reply time: once: 1.92 days [#]",
+    0
+   ]
+  ],
+  "whatif:14": [
+   [
+    "- [#] After 14 days of nothing the file has been quiet 14.3 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ],
+   [
+    "- [#] After 14 days of nothing the file has been quiet 14.4 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ],
+   [
+    "- [#] After 14 days of nothing the file has been quiet 17.2 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ]
+  ]
+ },
+ "F26": {
+  "evt_14e41c15781b059f7f694f3e": [
+   [
+    "- [#] 2026-08-16 06:00 UTC · they wrote · Neha Kapoor",
+    0
+   ]
+  ],
+  "evt_4ae977e63e76106ac3c70483": [
+   [
+    "- [#] 2026-09-22 07:00 UTC · they wrote · Neha Kapoor",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@admin": [
+   [
+    "- [#] derived.history.prior_outcome@admin = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "loop:loop_8683ec3e321d474f05bb9df0": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-22 07:00 UTC",
+    0
+   ]
+  ],
+  "num:longest_gap": [
+   [
+    "Usual gap between touches: once: 37.04 days [#]; longest closed gap: 37.04 days [#]; quiet now: 0.46 days [#] — within the gaps it closed before",
+    1
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: once: 37.04 days [#]; longest closed gap: 37.04 days [#]; quiet now: 0.46 days [#] — within the gaps it closed before",
+    0
+   ]
+  ],
+  "num:your_reply_time:neha@orbitly.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ]
+ },
+ "F27": {
+  "evt_5cf10818ee5e3a851a602996": [
+   [
+    "Booked: [#] a meeting at 2026-10-09 10:30 UTC",
+    0
+   ]
+  ],
+  "evt_a13904cafbf7099ad45b4a46": [
+   [
+    "- [#] 2026-09-30 11:05 UTC · they wrote · Varun Iyer",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@admin": [
+   [
+    "- [#] derived.history.prior_outcome@admin = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "loop:loop_1e3c002f29917e093dfec82d": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-30 11:05 UTC",
+    0
+   ]
+  ],
+  "num:your_reply_time:varun@cleanwave.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ]
+ },
+ "F28": {
+  "evt_0e547359e31864611d4d4363": [
+   [
+    "Booked: [#] a meeting at 2026-10-08 08:30 UTC",
+    0
+   ]
+  ],
+  "evt_5185bef9bcda76b11f2c93a0": [
+   [
+    "- [#] 2026-09-29 09:00 UTC · they wrote · Ishita Rao",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@admin": [
+   [
+    "- [#] derived.history.prior_outcome@admin = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "loop:loop_5700b577391b57bf0b3634f7": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-29 09:00 UTC",
+    0
+   ]
+  ],
+  "num:your_reply_time:ishita@novacore.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ]
+ },
+ "F29": {
+  "card:card_57ae9a1e1a933d0d3565bd7a": [
+   [
+    "- [#] a card “Send Aman our API pricing sheet before the pricing call on”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
+    0
+   ]
+  ],
+  "evt_7c7f6a51a4aeef4951b61d51": [
+   [
+    "- [#] 2026-09-27 08:00 UTC · they wrote · Aman Verma",
+    0
+   ]
+  ],
+  "evt_b715c09c1dad67711567b551": [
+   [
+    "Booked: [#] a meeting at 2026-10-05 10:30 UTC",
+    0
+   ],
+   [
+    "- [#] 2026-10-05 10:30 UTC · a meeting · aman@memloop.test",
+    0
+   ]
+  ],
+  "evt_f4f199251d9e3c63af1f3b55": [
+   [
+    "Booked: [#] a meeting at 2026-10-05 05:30 UTC",
+    0
+   ],
+   [
+    "- [#] 2026-10-05 05:30 UTC · a meeting · aman@memloop.test",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@sales": [
+   [
+    "- [#] derived.history.times_seen@sales = 1",
+    0
+   ]
+  ],
+  "loop:loop_4b80cac1219873494671ff75": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-27 08:00 UTC",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.42 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 7.17 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: 2 times, median 4.06 days — too few to call normal [#]; longest closed gap: 7.9 days [#]; quiet now: 1.06 days [#] — within the gaps it closed before",
+    2
+   ]
+  ],
+  "sit:sit_6d0383b0424d3a0338bc4c4b": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-10-05 05:30 UTC → 2026-10-05 10:30 UTC (0.2 days) · last seen at a booking 7.7 days ahead, so no quiet yet of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-10-05 05:30 UTC → 2026-10-05 10:30 UTC (0.2 days) · last seen at a booking 0.9 days ahead, so no quiet yet of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-10-05 05:30 UTC → 2026-10-05 10:30 UTC (0.2 days) · quiet 1.1 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_c72ad4f886c59c5851e98373": [
+   [
+    "- [#] opportunity (sales) · active · seen 2026-09-27 08:00 UTC → 2026-09-27 08:00 UTC (0 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] opportunity (sales) · active · seen 2026-09-27 08:00 UTC → 2026-09-27 08:00 UTC (0 days) · quiet 7.2 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] opportunity (sales) · active · seen 2026-09-27 08:00 UTC → 2026-09-27 08:00 UTC (0 days) · quiet 9.2 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F30": {
+  "evt_52c42307a01eb918fc307834": [
+   [
+    "- [#] 2026-09-20 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@sales": [
+   [
+    "- [#] derived.history.prior_outcome@sales = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@sales": [
+   [
+    "- [#] derived.history.times_seen@sales = 1",
+    0
+   ]
+  ],
+  "promise:node_61c031c739c1ed41b4297d5a": [
+   [
+    "- [#] a promise: send the pilot proposal · due 2026-09-25 18:29 UTC · open · from [#]",
+    0
+   ]
+  ],
+  "sit:sit_621f0b236ecb1503d47c6ab5": [
+   [
+    "- [#] opportunity (sales) · active · seen 2026-09-20 09:00 UTC → 2026-09-20 09:00 UTC (0 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F31": {
+  "evt_76937e6d81ba18909fb2fed5": [
+   [
+    "- [#] 2026-09-09 06:00 UTC · they wrote · Divya Raman",
+    0
+   ]
+  ],
+  "loop:loop_a0a5a60c5f2a32c0b4eb999a": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-09 06:00 UTC",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor": [
+   [
+    "- [#] An application to a programme is a selection process with a published calendar, not an investor conversation — even when the programme invests. Read it by its calendar and its rules, not by how warm the last mail was. — why: A programme reads every applicant against the same form and the same calendar, and decides through its own selection rounds; YC puts it plainly — \"One of YC's core principles is considering all applications equally. We don't rely on introductions the way many investors do.\" Its terms are its own, published before anyone applies: YC has \"a standard deal for every company that is accepted\", Techstars offers $220,000 \"for the vast majority of our programs\", Hub71 AED 250,000 on a SAFE note. And its no comes with a next intake. Read as an investor, the same file gets an investor's moves — a chase to a selection team that has published its date, a warm introduction to a process that reads every application alike, a pass filed as final — and each one is wrong here. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point": [
+   [
+    "- [#] In an application, the programme's deadline is the one date that will not move for this company; every other date in the plan is set backwards from it, on the programme's clock. — why: The deadline is published once, for every applicant, and kept. YC publishes \"November 2 at 8pm PT\" and answers a request to mark a late application on time with \"No, sorry\"; Hub71 reads an application that misses its cohort's deadline for the next cohort. Everything on the company's side — the deck, the numbers, a co-founder's week — can move; the deadline cannot, so it is the only point a plan can be anchored to. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.follow_an_application": [
+   [
+    "Follow an application from the deadline to the first day [#], version pb-8f465e5ab424 — playbook not yet reviewed",
+    0
+   ]
+  ],
+  "sit:sit_c3fd649aa730962e644c4b74": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-09 06:00 UTC → 2026-09-09 06:00 UTC (0 days) · quiet 0.5 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ]
+ },
+ "F35": {
+  "evt_f7a1ee778938081185bc4339": [
+   [
+    "- [#] 2026-09-20 05:00 UTC · they wrote · Divya Raman",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor": [
+   [
+    "- [#] An application to a programme is a selection process with a published calendar, not an investor conversation — even when the programme invests. Read it by its calendar and its rules, not by how warm the last mail was. — why: A programme reads every applicant against the same form and the same calendar, and decides through its own selection rounds; YC puts it plainly — \"One of YC's core principles is considering all applications equally. We don't rely on introductions the way many investors do.\" Its terms are its own, published before anyone applies: YC has \"a standard deal for every company that is accepted\", Techstars offers $220,000 \"for the vast majority of our programs\", Hub71 AED 250,000 on a SAFE note. And its no comes with a next intake. Read as an investor, the same file gets an investor's moves — a chase to a selection team that has published its date, a warm introduction to a process that reads every application alike, a pass filed as final — and each one is wrong here. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.follow_an_application": [
+   [
+    "Follow an application from the deadline to the first day [#], version pb-8f465e5ab424 — playbook not yet reviewed",
+    0
+   ]
+  ],
+  "sit:sit_b98bfe47e3632c6d9611d387": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-20 05:00 UTC → 2026-09-20 05:00 UTC (0 days) · quiet 0.5 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ]
+ },
+ "F36": {
+  "evt_495d99411b9af06c91aeb74d": [
+   [
+    "- [#] 2026-09-02 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@admin": [
+   [
+    "- [#] derived.history.prior_outcome@admin = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "num:their_reply_time:ravi@partnerco.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.38 days [#]",
+    0
+   ]
+  ]
+ },
+ "F37": {
+  "evt_475e72f774b0be782663b6dc": [
+   [
+    "- [#] 2026-09-08 09:00 UTC · they wrote · Farah Qureshi",
+    0
+   ]
+  ],
+  "evt_dcfe67d4a16fbbc55bf6a2b1": [
+   [
+    "- [#] 2026-09-08 05:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_outcome@fundraising": [
+   [
+    "- [#] derived.history.prior_outcome@fundraising = first_time",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "loop:loop_3d6f3e81f9289943ea0bc6b7": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-08 09:00 UTC",
+    0
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: once: 0.17 days [#]; longest closed gap: 0.17 days [#]; quiet now: 0.38 days [#] — longer than any gap it closed before",
+    0
+   ]
+  ],
+  "num:your_reply_time:farah@kitepath.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_520a68e0278cc3aeb132ec4a": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-08 05:00 UTC → 2026-09-08 09:00 UTC (0.2 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F38": {
+  "evt_5537745fd2e663215e0a7eb8": [
+   [
+    "- [#] 2026-09-04 06:00 UTC · they wrote · Pooja Iyer",
+    0
+   ]
+  ],
+  "evt_dd6559023d6bb7336109d592": [
+   [
+    "- [#] 2026-09-02 07:00 UTC · they wrote · Pooja Iyer",
+    0
+   ]
+  ],
+  "loop:loop_bfac64072b885fdc4f973e56": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-02 07:00 UTC",
+    0
+   ]
+  ],
+  "sit:sit_65deb1eef1847353ab817298": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-02 07:00 UTC → 2026-09-04 06:00 UTC (2 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F39": {
+  "evt_89f17bd43ceb4eb323ad5b52": [
+   [
+    "- [#] 2026-09-10 08:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.42 days [#]",
+    2
+   ]
+  ],
+  "num:their_reply_time:rohan@castlerock.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:rohan@castlerock.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_89b564a32207761c7b4e66e8": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-10 08:00 UTC → 2026-09-10 08:00 UTC (0 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F40": {
+  "evt_547adcf31568fedadb1f9552": [
+   [
+    "Booked: [#] a meeting at 2026-08-13 10:00 UTC",
+    0
+   ],
+   [
+    "- [#] 2026-08-13 10:00 UTC · a meeting · arjun@nimbuslabs.test",
+    0
+   ]
+  ],
+  "num:their_reply_time:meera@tallgrass.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:meera@tallgrass.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_435d409034319684f09efa26": [
+   [
+    "- [#] admin_contact (admin) · active · seen 2026-08-13 10:00 UTC → 2026-08-13 10:00 UTC (0 days) · last seen at a booking 0.7 days ahead, so no quiet yet of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] admin_contact (admin) · active · seen 2026-08-13 10:00 UTC → 2026-08-13 10:00 UTC (0 days) · quiet 2.1 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F41": {
+  "evt_6538e31a303d631d83ef2f8d": [
+   [
+    "- [#] 2026-09-01 05:00 UTC · we wrote · Meera Iyer",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 1.29 days [#]",
+    2
+   ]
+  ],
+  "num:their_reply_time:dev@harbourvc.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "sit:sit_2aa12d5eb2167672469a1cee": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-01 05:00 UTC → 2026-09-01 05:00 UTC (0 days) · quiet 1.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F42": {
+  "evt_02276c72e9d3936cce9a8b3b": [
+   [
+    "- [#] 2026-08-08 06:30 UTC · they wrote · Manav Rao",
+    0
+   ]
+  ],
+  "loop:loop_dd4c4b5f6ea6a242e4ddd70f": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-08 06:30 UTC",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.investors_do_not_chase": [
+   [
+    "- [#] When the turn is ours, the clock is running against us and nobody will say so. Age the conversations where we owe the reply before the ones where they do. — why: A fund sees far more companies than it can fund — one partner described 500 to 800 plans a year for one or two deals done (David Hornik, quoted by Paul Graham) — and loses nothing by dropping one. A partial reply left unanswered reads to it as a company that lost momentum, the one attribute a raise cannot afford to project. The asymmetry is structural: our silence is informative to them; theirs, before the stage says otherwise, is not informative to us. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process": [
+   [
+    "- [#] A round's momentum comes from investors seeing other investors move. Run every conversation in parallel, and let each live investor hear real progress elsewhere; a conversation run on its own has no clock. — why: \"The biggest factor in most investors' opinions of you is the opinion of other investors\" (Graham, \"How to Raise Money\"), and getting far along with one firm \"will sometimes provoke other firms, even good ones, to make up their minds, lest they lose the deal\" (\"Investor Herd Dynamics\"). Talked to one at a time, each investor holds a free option and waits; and the first commitment is the hard one — \"Once you start getting investors to commit, it becomes increasingly easy to get more to.\" (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.only_an_offer_counts": [
+   [
+    "- [#] Count an investor in only when they have made a definite offer — an amount and a valuation or cap, with no conditions — and confirmed it in writing. Until then, treat them as a no, however warm they sound. — why: \"Investors habitually seem more positive than they are\", and some \"use language that makes it sound as if they're committing, but which doesn't actually commit them\" (Graham). \"We'd love to be part of this\", \"we're in if you find a lead\" and \"we can do fifty to a hundred and fifty\" are not offers: Y Combinator's Handshake Deal Protocol defines an offer as an amount plus a valuation or cap and refuses ranges and conditions, because a founder who keeps room for a conditional yes is the only party it binds. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.silence_reads_by_stage": [
+   [
+    "- [#] Investor silence means different things at different stages. Before a first meeting it is the default; after a first call that named no next step it is usually a soft no; more than a week after a partners' meeting it is usually a no; in diligence it is the work; after a term sheet it is paperwork, until the timetable slips. Read silence by the stage, never by its length alone. — why: Each stage has a different decider and a different clock. A firm in diligence is calling references and writing its memo (Gompers et al. measured ten reference calls on average); a partnership decides in a weekly meeting, and its rejection \"will rarely come in the form of an actual 'no'\" (Dixon); and investors at every stage prefer an open option to a closed door — \"Some of the worse ones never actually do say no; they just stop replying to your emails\" (Graham). The same twelve days of quiet is therefore nothing in diligence and an answer after a partners' meeting. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.run_an_investor_conversation": [
+   [
+    "Run an investor conversation to a decision [#], version pb-d3f940d86e88 — playbook not yet reviewed",
+    0
+   ]
+  ],
+  "sit:sit_d560e962f04640ab0f53f330": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-08 06:30 UTC → 2026-08-08 06:30 UTC (0 days) · quiet 0.2 days of a 90-day window (the file's kind of work)",
+    0
+   ]
+  ]
+ },
+ "F43": {
+  "evt_96abadacc3d4e17fbe1dc918": [
+   [
+    "- [#] 2026-08-11 05:00 UTC · we wrote · Meera Iyer",
+    0
+   ]
+  ],
+  "loop:loop_bc5fa5174e9778979c57dfdb": [
+   [
+    "- [#] question, we wait on them, open since 2026-08-11 05:00 UTC",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.29 days [#]",
+    2
+   ]
+  ],
+  "sit:sit_97618f5e82c6db76a5c71ad9": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-11 05:00 UTC → 2026-08-11 05:00 UTC (0 days) · quiet 0.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F44": {
+  "evt_358ab154b3010d9babc1c0cd": [
+   [
+    "- [#] 2026-09-18 06:00 UTC · they wrote · Kavita Rao",
+    0
+   ]
+  ],
+  "loop:loop_01e9fe76f30592f7851bc153": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-18 06:00 UTC",
+    0
+   ]
+  ],
+  "num:their_reply_time:kavita.rao.vc@gmail.com": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "sit:sit_dac35ed2118bed303eaae45e": [
+   [
+    "- [#] investor_contact (fundraising) · active · seen 2026-09-18 06:00 UTC → 2026-09-18 06:00 UTC (0 days) · quiet 0.2 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F45": {
+  "evt_30ff636b71bfaec385a045b6": [
+   [
+    "- [#] 2026-08-13 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ],
+   [
+    "- [#] 2026-08-13 09:00 UTC · we wrote · Arjun Rao (older — its words not shown)",
+    0
+   ]
+  ],
+  "evt_55ccbe8ea141878d91d2f87f": [
+   [
+    "- [#] 2026-09-02 09:00 UTC · they wrote · Meera Shah",
+    0
+   ]
+  ],
+  "evt_6b9c074d4fcae3a9032d6e98": [
+   [
+    "- [#] 2026-08-05 09:00 UTC · they wrote · Meera Shah",
+    0
+   ],
+   [
+    "- [#] 2026-08-05 09:00 UTC · they wrote · Meera Shah (older — its words not shown)",
+    0
+   ]
+  ],
+  "evt_7385ef78a5a3fffefe542220": [
+   [
+    "- [#] 2026-08-19 09:00 UTC · they wrote · Meera Shah",
+    0
+   ]
+  ],
+  "evt_89f3773f41f73080a1604a6b": [
+   [
+    "- [#] 2026-08-05 21:00 UTC · we wrote · Arjun Rao",
+    0
+   ],
+   [
+    "- [#] 2026-08-05 21:00 UTC · we wrote · Arjun Rao (older — its words not shown)",
+    0
+   ]
+  ],
+  "evt_9c5be017cef1cccd617fcb0e": [
+   [
+    "- [#] 2026-09-05 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_9ed904c2f51993642f3f7493": [
+   [
+    "- [#] 2026-09-15 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_aec38afad58115d6073f0a02": [
+   [
+    "- [#] 2026-08-28 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_aedc2e199c2cf41438d361b1": [
+   [
+    "- [#] 2026-08-12 09:00 UTC · they wrote · Meera Shah",
+    0
+   ],
+   [
+    "- [#] 2026-08-12 09:00 UTC · they wrote · Meera Shah (older — its words not shown)",
+    0
+   ]
+  ],
+  "evt_bbf28b40fd18292ad4ade12b": [
+   [
+    "- [#] 2026-09-09 09:00 UTC · they wrote · Meera Shah",
+    0
+   ]
+  ],
+  "evt_e56b3fb33cd4677d904fcdf4": [
+   [
+    "- [#] 2026-08-26 09:00 UTC · they wrote · Meera Shah",
+    0
+   ]
+  ],
+  "evt_e5e50c7bb6f13f5da52a07ae": [
+   [
+    "- [#] 2026-08-20 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "loop:loop_bfcb9b4eee023c29d4eabeb0": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-19 09:00 UTC",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: usually 2 days (n=7, file) [#]; longest closed gap: 6.5 days [#]; quiet now: 3.38 days [#] — within the gaps it closed before",
+    2
+   ],
+   [
+    "Usual gap between touches: usually 4 days (n=11, file) [#]; longest closed gap: 6.5 days [#]; quiet now: 15.12 days [#] — longer than any gap it closed before",
+    2
+   ]
+  ],
+  "num:longest_gap": [
+   [
+    "Usual gap between touches: usually 2 days (n=7, file) [#]; longest closed gap: 6.5 days [#]; quiet now: 3.38 days [#] — within the gaps it closed before",
+    1
+   ],
+   [
+    "Usual gap between touches: usually 4 days (n=11, file) [#]; longest closed gap: 6.5 days [#]; quiet now: 15.12 days [#] — longer than any gap it closed before",
+    1
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: usually 2 days (n=7, file) [#]; longest closed gap: 6.5 days [#]; quiet now: 3.38 days [#] — within the gaps it closed before",
+    0
+   ],
+   [
+    "Usual gap between touches: usually 4 days (n=11, file) [#]; longest closed gap: 6.5 days [#]; quiet now: 15.12 days [#] — longer than any gap it closed before",
+    0
+   ]
+  ],
+  "num:your_normal:meera@bluepeak.test": [
+   [
+    "your normal with them: usually 1.5 days (n=6, person) [#]",
+    0
+   ]
+  ],
+  "num:your_normal_overall": [
+   [
+    "Your reply time across every counterparty: usually 1.5 days (n=6, tenant) [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:meera@bluepeak.test": [
+   [
+    "your reply time to them: 4 times, median 1 days — too few to call normal [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ],
+   [
+    "your reply time to them: usually 1.5 days (n=6, person) [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_0f6cadb0ee06428bf7ce3e20": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-05 09:00 UTC → 2026-08-28 09:00 UTC (23 days) · quiet 3.4 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-05 09:00 UTC → 2026-09-15 09:00 UTC (41 days) · quiet 15.1 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_52a9541abe4815995b32f479": [
+   [
+    "- [#] opportunity (sales) · active · seen 2026-08-12 09:00 UTC → 2026-08-13 09:00 UTC (1 days) · quiet 18.4 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] opportunity (sales) · dormant · seen 2026-08-12 09:00 UTC → 2026-08-13 09:00 UTC (1 days) · quiet 48.1 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F46": {
+  "evt_97d933041e0609ecbbce82a8": [
+   [
+    "- [#] 2026-09-01 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_fde8a73a37c03df1fe5597c5": [
+   [
+    "- [#] 2026-09-03 09:00 UTC · they wrote · Ravi Iyer",
+    0
+   ]
+  ],
+  "loop:loop_c02f2f668d1ff1d265d1f708": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-03 09:00 UTC",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: once: 2 days [#]; longest closed gap: 2 days [#]; quiet now: 7.12 days [#] — longer than any gap it closed before",
+    2
+   ]
+  ],
+  "num:longest_gap": [
+   [
+    "Usual gap between touches: once: 2 days [#]; longest closed gap: 2 days [#]; quiet now: 7.12 days [#] — longer than any gap it closed before",
+    1
+   ]
+  ],
+  "sit:sit_b5ff25e5e81c73649d6cab95": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-09-01 09:00 UTC → 2026-09-03 09:00 UTC (2 days) · quiet 7.1 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F47": {
+  "evt_eb77193bd00df0b82dd6ca2f": [
+   [
+    "- [#] 2026-08-14 06:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "num:their_reply_time:partners@ardentridge.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:partners@ardentridge.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_0bf0b98962a5e13772934ca2": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-14 06:00 UTC → 2026-08-14 06:00 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F48": {
+  "evt_148549ace15c34b27f025789": [
+   [
+    "- [#] 2026-07-16 05:30 UTC · they wrote · Mira Kapoor",
+    0
+   ]
+  ],
+  "evt_3ecb6c855d565ad8238c2604": [
+   [
+    "- [#] 2026-07-16 07:10 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: once: 0.07 days [#]; longest closed gap: 0.07 days [#]; quiet now: 14.2 days [#] — longer than any gap it closed before",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 14.27 days [#]",
+    2
+   ]
+  ],
+  "num:longest_gap": [
+   [
+    "Usual gap between touches: once: 0.07 days [#]; longest closed gap: 0.07 days [#]; quiet now: 14.2 days [#] — longer than any gap it closed before",
+    1
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 14.27 days [#]",
+    1
+   ]
+  ],
+  "num:their_reply_time:tarun@quillstack.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: once: 0.07 days [#]; longest closed gap: 0.07 days [#]; quiet now: 14.2 days [#] — longer than any gap it closed before",
+    0
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 14.27 days [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:mira@linkbridge.test": [
+   [
+    "your reply time to them: once: 0.07 days [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "num:your_reply_time:tarun@quillstack.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_0d007805d5e20a20ea5eb2d7": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-07-16 05:30 UTC → 2026-07-16 05:30 UTC (0 days) · quiet 14.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_568303a19afe323660560d2b": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-07-16 05:30 UTC → 2026-07-16 07:10 UTC (0.1 days) · quiet 14.2 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "whatif:14": [
+   [
+    "- [#] After 14 days of nothing the file has been quiet 28.2 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ],
+   [
+    "- [#] After 14 days of nothing the file has been quiet 28.3 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ]
+  ]
+ },
+ "F49": {
+  "evt_8e60f7c3ffffdabee3acc83b": [
+   [
+    "- [#] 2026-07-08 10:30 UTC · they wrote · Kunal Mehta",
+    0
+   ]
+  ],
+  "evt_c8a90c03e0b5987545789efa": [
+   [
+    "- [#] 2026-07-08 09:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: once: 0.06 days [#]; longest closed gap: 0.06 days [#]; quiet now: 14.06 days [#] — longer than any gap it closed before",
+    2
+   ]
+  ],
+  "num:longest_gap": [
+   [
+    "Usual gap between touches: once: 0.06 days [#]; longest closed gap: 0.06 days [#]; quiet now: 14.06 days [#] — longer than any gap it closed before",
+    1
+   ]
+  ],
+  "num:their_reply_time:kunal@sparkreach.test": [
+   [
+    "their reply time: once: 0.06 days [#]",
+    0
+   ]
+  ],
+  "sit:sit_d195bf66cb22cd6d9959d05b": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-07-08 09:00 UTC → 2026-07-08 10:30 UTC (0.1 days) · quiet 14.1 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F50": {
+  "evt_1197eb4b54077d67d26d79af": [
+   [
+    "- [#] 2026-08-18 10:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_f0b653e0e8fb137bfac6fb27": [
+   [
+    "- [#] 2026-08-18 04:00 UTC · they wrote · Owen Park",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: once: 0.25 days [#]; longest closed gap: 0.25 days [#]; quiet now: 1.08 days [#] — longer than any gap it closed before",
+    2
+   ]
+  ],
+  "num:your_reply_time:owen@saltmarshvc.test": [
+   [
+    "your reply time to them: once: 0.25 days [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_99c65ffee362690f54f21cb4": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-18 04:00 UTC → 2026-08-18 10:00 UTC (0.2 days) · quiet 1.1 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F51": {
+  "evt_f35092e97f8fb6735ee225f2": [
+   [
+    "- [#] 2026-07-30 06:00 UTC · they wrote · Sana Qureshi",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 3.25 days [#]",
+    2
+   ]
+  ],
+  "sit:sit_7493c6ce7cef1726166211ae": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-07-30 06:00 UTC → 2026-07-30 06:00 UTC (0 days) · quiet 3.2 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F52": {
+  "evt_c4712b6b8ec4802296eb9578": [
+   [
+    "- [#] 2026-04-02 09:00 UTC · they wrote · Gautam Varma",
+    0
+   ]
+  ],
+  "evt_f0b6c2947781c73fda60740c": [
+   [
+    "- [#] 2026-09-12 08:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 1.12 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 8.17 days [#]",
+    2
+   ]
+  ],
+  "num:their_reply_time:gautam@ridgelinecap.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:gautam@ridgelinecap.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_099f4cdf7e3ddf8cd2965611": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-04-02 09:00 UTC → 2026-04-02 09:00 UTC (0 days) · quiet 1.1 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_910c6ae2dcbc47b35ce417ff": [
+   [
+    "- [#] support_case (support) · active · seen 2026-09-12 08:00 UTC → 2026-09-12 08:00 UTC (0 days) · quiet 8.2 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F53": {
+  "evt_0629e3d6c4bc8fe263774d01": [
+   [
+    "- [#] 2026-03-11 06:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_0f723e30ca018dc8761a2dfd": [
+   [
+    "- [#] 2026-03-10 05:00 UTC · they wrote · Ira Bose",
+    0
+   ]
+  ],
+  "evt_a309eca25989b116aaf6fa80": [
+   [
+    "- [#] 2026-03-03 06:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_c0d691bb8d4aa9af058c9301": [
+   [
+    "- [#] 2026-03-02 05:00 UTC · they wrote · Ira Bose",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: 3 times, median 1.04 days — too few to call normal [#]; longest closed gap: 6.96 days [#]; quiet now: 1.25 days [#] — within the gaps it closed before",
+    2
+   ],
+   [
+    "Usual gap between touches: 3 times, median 1.04 days — too few to call normal [#]; longest closed gap: 6.96 days [#]; quiet now: 188.25 days [#] — longer than any gap it closed before",
+    2
+   ]
+  ],
+  "num:longest_gap": [
+   [
+    "Usual gap between touches: 3 times, median 1.04 days — too few to call normal [#]; longest closed gap: 6.96 days [#]; quiet now: 1.25 days [#] — within the gaps it closed before",
+    1
+   ],
+   [
+    "Usual gap between touches: 3 times, median 1.04 days — too few to call normal [#]; longest closed gap: 6.96 days [#]; quiet now: 188.25 days [#] — longer than any gap it closed before",
+    1
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: 3 times, median 1.04 days — too few to call normal [#]; longest closed gap: 6.96 days [#]; quiet now: 1.25 days [#] — within the gaps it closed before",
+    0
+   ],
+   [
+    "Usual gap between touches: 3 times, median 1.04 days — too few to call normal [#]; longest closed gap: 6.96 days [#]; quiet now: 188.25 days [#] — longer than any gap it closed before",
+    0
+   ]
+  ],
+  "sit:sit_68f58a53d34e98a5b46517cc": [
+   [
+    "- [#] opportunity (sales) · active · seen 2026-03-02 05:00 UTC → 2026-03-11 06:00 UTC (9 days) · quiet 1.2 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] opportunity (sales) · dormant · seen 2026-03-02 05:00 UTC → 2026-03-11 06:00 UTC (9 days) · quiet 188.2 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F54": {
+  "evt_ead5136fdca87480ed161644": [
+   [
+    "Booked: [#] a meeting at 2026-08-20 12:30 UTC",
+    0
+   ],
+   [
+    "- [#] 2026-08-20 12:30 UTC · a meeting · events@bluebayhub.test",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: unknown days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 7.98 days [#]",
+    2
+   ]
+  ],
+  "num:their_reply_time:events@bluebayhub.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:their_reply_time:kavya@ferrypay.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:their_reply_time:rhea@tallowfin.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: unknown days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 7.98 days [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:events@bluebayhub.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "num:your_reply_time:kavya@ferrypay.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "num:your_reply_time:rhea@tallowfin.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_231ad59dccbb0216960f245a": [
+   [
+    "- [#] admin_contact (admin) · active · seen 2026-08-20 12:30 UTC → 2026-08-20 12:30 UTC (0 days) · last seen at a booking 1 days ahead, so no quiet yet of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] admin_contact (admin) · active · seen 2026-08-20 12:30 UTC → 2026-08-20 12:30 UTC (0 days) · quiet 8 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_822c2e27953be7d8ea4deda1": [
+   [
+    "- [#] admin_contact (admin) · active · seen 2026-08-20 12:30 UTC → 2026-08-20 12:30 UTC (0 days) · last seen at a booking 1 days ahead, so no quiet yet of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] admin_contact (admin) · active · seen 2026-08-20 12:30 UTC → 2026-08-20 12:30 UTC (0 days) · quiet 8 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_b62a12df3061c07672db45ea": [
+   [
+    "- [#] admin_contact (admin) · active · seen 2026-08-20 12:30 UTC → 2026-08-20 12:30 UTC (0 days) · last seen at a booking 1 days ahead, so no quiet yet of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] admin_contact (admin) · active · seen 2026-08-20 12:30 UTC → 2026-08-20 12:30 UTC (0 days) · quiet 8 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "whatif:7": [
+   [
+    "- [#] After 7 days of nothing the file has no touch to count quiet days from. The next date passes.",
+    0
+   ],
+   [
+    "- [#] After 7 days of nothing the file has been quiet 15 days; its playbook names no stop rule, so whether the work goes dormant is not said.",
+    0
+   ]
+  ]
+ },
+ "F55": {
+  "evt_22d224284fc214bbf70ac0c8": [
+   [
+    "- [#] 2026-08-20 05:00 UTC · they wrote · Rhea Thomas",
+    0
+   ]
+  ],
+  "evt_4979a01a5c5baa80999f1125": [
+   [
+    "- [#] 2026-08-14 06:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_f7943679d333f11914ee7efa": [
+   [
+    "- [#] 2026-08-16 05:00 UTC · they wrote · Dev Malhotra",
+    0
+   ]
+  ],
+  "evt_fc8900329eb4ad7be5cd1e8f": [
+   [
+    "- [#] 2026-08-25 05:00 UTC · they wrote · Kabir Sethi",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@sales": [
+   [
+    "- [#] derived.history.times_seen@sales = 1",
+    0
+   ]
+  ],
+  "loop:loop_09e26d117b16268f4d64c703": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-20 05:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_8f37654f5e0a1648cd060c90": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-16 05:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_f06f6011811c658935b08009": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-25 05:00 UTC",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 17.29 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 22.29 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 26.29 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 28.25 days [#]",
+    2
+   ]
+  ],
+  "num:their_reply_time:ishaan@meadowvc.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:your_reply_time:dev@tanglewood.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "num:your_reply_time:kabir@orchardhq.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "num:your_reply_time:rhea@pinegrove.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_2abc0c3e8df51f7b50831eb6": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-20 05:00 UTC → 2026-08-20 05:00 UTC (0 days) · quiet 22.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_488606820f90f113611a6c5a": [
+   [
+    "- [#] opportunity (sales) · active · seen 2026-08-16 05:00 UTC → 2026-08-16 05:00 UTC (0 days) · quiet 26.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_90c06ea07cc150a3e833ca9b": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-14 06:00 UTC → 2026-08-14 06:00 UTC (0 days) · quiet 28.2 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_a394a4d31a06d3b76bc70845": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-25 05:00 UTC → 2026-08-25 05:00 UTC (0 days) · quiet 17.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F57": {
+  "evt_896d238855ecfb2a99b39e33": [
+   [
+    "- [#] 2026-09-03 06:00 UTC · we wrote · Arjun Rao",
+    0
+   ]
+  ],
+  "evt_cb865447ff1df267aeb7634c": [
+   [
+    "- [#] 2026-09-01 05:00 UTC · they wrote · Zoya Hameed",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "loop:loop_12328b0430c548e3efb3eaa8": [
+   [
+    "- [#] question, they wait on us, open since 2026-09-01 05:00 UTC",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 1.29 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: once: 2.04 days [#]; longest closed gap: 2.04 days [#]; quiet now: 1.25 days [#] — within the gaps it closed before",
+    2
+   ],
+   [
+    "Usual gap between touches: once: 2.04 days [#]; longest closed gap: 2.04 days [#]; quiet now: 7.25 days [#] — longer than any gap it closed before",
+    2
+   ]
+  ],
+  "num:longest_gap": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 1.29 days [#]",
+    1
+   ],
+   [
+    "Usual gap between touches: once: 2.04 days [#]; longest closed gap: 2.04 days [#]; quiet now: 1.25 days [#] — within the gaps it closed before",
+    1
+   ],
+   [
+    "Usual gap between touches: once: 2.04 days [#]; longest closed gap: 2.04 days [#]; quiet now: 7.25 days [#] — longer than any gap it closed before",
+    1
+   ]
+  ],
+  "num:their_reply_time:zoya@pinecrest.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 1.29 days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: once: 2.04 days [#]; longest closed gap: 2.04 days [#]; quiet now: 1.25 days [#] — within the gaps it closed before",
+    0
+   ],
+   [
+    "Usual gap between touches: once: 2.04 days [#]; longest closed gap: 2.04 days [#]; quiet now: 7.25 days [#] — longer than any gap it closed before",
+    0
+   ]
+  ],
+  "num:your_reply_time:zoya@pinecrest.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ],
+   [
+    "your reply time to them: once: 2.04 days [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "sit:sit_66365f9b06bf1d479a7ce8b3": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-01 05:00 UTC → 2026-09-01 05:00 UTC (0 days) · quiet 1.3 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-01 05:00 UTC → 2026-09-03 06:00 UTC (2 days) · quiet 1.2 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-01 05:00 UTC → 2026-09-03 06:00 UTC (2 days) · quiet 7.2 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F58": {
+  "evt_89a7e7c8098890b11b1c1353": [
+   [
+    "- [#] 2026-09-01 05:00 UTC · we wrote · Meher Joshi",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 1.29 days [#]",
+    2
+   ]
+  ],
+  "num:their_reply_time:leena@cobaltpeak.test": [
+   [
+    "their reply time: not measured [#]",
+    0
+   ]
+  ],
+  "sit:sit_27ebb7c2b2fc1fc9707211ec": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-09-01 05:00 UTC → 2026-09-01 05:00 UTC (0 days) · quiet 1.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ }
+}

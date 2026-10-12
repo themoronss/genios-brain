@@ -1,7 +1,7 @@
 {
  "case_id": "F57",
  "source": "ideal_reader",
- "recorded_at": "1b5e5f58",
+ "recorded_at": "a10f3140",
  "answers": {
   "0ade2fb5bb6bec03bb05513e530607817f0fbc8e7a5da443d37bd9623d2942b9": {
    "site": "extraction",
@@ -37,47 +37,175 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"legal\"], \"entity_mentions\": [{\"surface_form\": \"Zoya Hameed\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Zoya\", \"start_offset\": 19, \"end_offset\": 23}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"medium\", \"motive\": \"the signed NDA she asked for\"}}",
+   "framed": true,
    "input_tokens": 5489,
    "output_tokens": 118,
    "model": "claude-haiku-4-5-20251001"
   },
-  "2cc0ad0943e1d7c90f844c83ede97669568104dddd3642dc2b82137399f8872b": {
-   "site": "r1",
+  "195fb355c95267891ec7e84e3c9fa2f2cec5cd68e5e62db35f7aa7895fa266c0": {
+   "site": "expert",
    "parsed": {
-    "readings": [
+    "facts": [
      {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
+      "claim": "Zoya Hameed asked on the first of September for the signed mutual NDA by Thursday, so that Pinecrest could share the pilot data.",
+      "evidence": [
+       "evt_#2"
+      ]
      },
      {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
+      "claim": "On the third of September, the Thursday she named, Arjun wrote back to Zoya with the signed NDA attached.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "That answer came about two days after her ask, his one measured reply time in the file.",
+      "evidence": [
+       "num:your_reply_time:zoya@pinecrest.test",
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "His mail is the last in the file, and no reply from Pinecrest is on file since.",
+      "evidence": [
+       "evt_#1",
+       "num:days_quiet"
+      ]
+     },
+     {
+      "claim": "Zoya's own reply time is not measured, so there is no pattern of hers to judge the quiet by.",
+      "evidence": [
+       "num:their_reply_time:zoya@pinecrest.test"
+      ]
+     },
+     {
+      "claim": "The file's situation was last active on the third of September, the day of Arjun's answer.",
+      "evidence": [
+       "sit:sit_#1"
+      ]
      }
-    ]
+    ],
+    "inferences": [
+     {
+      "claim": "Arjun met Zoya's deadline: the signed NDA reached her on the day she named.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "With the NDA sent, the next move in the file, sharing the pilot data, is Pinecrest's.",
+      "based_on": [
+       "fact:1",
+       "fact:2",
+       "fact:4"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "Arjun met the one dated ask in this file within the time it named.",
+      "based_on": [
+       "num:your_reply_time:zoya@pinecrest.test"
+      ]
+     },
+     {
+      "kind": "counter_pattern",
+      "claim": "One closed gap is no rhythm: a quiet longer than the file's only gap, which was Arjun's own answer, says nothing yet about how long Pinecrest takes.",
+      "based_on": [
+       "num:usual_gap",
+       "num:longest_gap"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Pinecrest is preparing the pilot data and will send it unprompted.",
+      "needs": "The data, or a note from Zoya."
+     },
+     {
+      "proposition": "The pilot has slowed at Pinecrest for reasons of its own.",
+      "needs": "Word from Pinecrest."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "When Pinecrest means to share the pilot data.",
+      "relevance": "Only a date Pinecrest names, and then lets pass, would make the quiet worth raising."
+     },
+     {
+      "question": "Whether Pinecrest has signed the mutual NDA on its own side.",
+      "relevance": "It would explain a quiet spell with nothing owed by Arjun."
+     }
+    ],
+    "frames": {
+     "primary": "An ask answered in full: Zoya asked for the signed mutual NDA by Thursday, Arjun sent it signed on the third, and the next move is Pinecrest's.",
+     "rivals": [
+      "An NDA that Pinecrest still has to sign on its side before any data moves.",
+      "A pilot that has slowed at Pinecrest for reasons that have nothing to do with the NDA."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "partner",
+     "why": "Zoya asks for a mutual NDA so that Pinecrest can share pilot data with Nimbus Labs: a pilot on a partner's data is design partner work, one of the brief's goals.",
+     "evidence": [
+      "evt_#2"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "No playbook applies and the brief names no kind of work for this file; once the signed NDA is sent, Pinecrest shares the pilot data when it is ready.",
+     "actual": "Arjun sent the signed NDA on the third, by the Thursday Zoya named; nothing has come from Pinecrest since, and nothing in the file is owed by Arjun."
+    },
+    "scenarios": {
+     "do_nothing": "Nothing is lost: the ask is met, and the pilot data comes when Pinecrest is ready.",
+     "act": "Writing again now would add nothing; the move is Pinecrest's.",
+     "best": "Pinecrest shares the pilot data and the pilot begins.",
+     "worst": "The pilot slows at Pinecrest, and the file stays quiet for reasons Arjun cannot see.",
+     "signals_to_watch": [
+      "The pilot data arriving from Pinecrest",
+      "A note from Zoya, or the NDA signed on Pinecrest's side",
+      "A date Pinecrest names for the data"
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The one ask in the file was met within the time Zoya set.",
+      "Nothing in the file is owed by Arjun.",
+      "Quiet after a signed document is sent is, on its own, no sign of trouble."
+     ]
+    },
+    "mode": "nothing",
+    "next_move": null,
+    "alternative": "None is needed; the file can rest until Pinecrest writes.",
+    "wait_or_stop": "Nothing to wait on from Arjun's side; treat the NDA ask as closed and look again only when Pinecrest writes.",
+    "done_when": "The NDA ask is closed with the signed copy sent; the file needs nothing more until Pinecrest moves.",
+    "draft": null
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 1040,
-   "output_tokens": 51,
+   "raw": "{\"facts\": [{\"claim\": \"Zoya Hameed asked on the first of September for the signed mutual NDA by Thursday, so that Pinecrest could share the pilot data.\", \"evidence\": [\"evt_#2\"]}, {\"claim\": \"On the third of September, the Thursday she named, Arjun wrote back to Zoya with the signed NDA attached.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"That answer came about two days after her ask, his one measured reply time in the file.\", \"evidence\": [\"num:your_reply_time:zoya@pinecrest.test\", \"evt_#1\"]}, {\"claim\": \"His mail is the last in the file, and no reply from Pinecrest is on file since.\", \"evidence\": [\"evt_#1\", \"num:days_quiet\"]}, {\"claim\": \"Zoya's own reply time is not measured, so there is no pattern of hers to judge the quiet by.\", \"evidence\": [\"num:their_reply_time:zoya@pinecrest.test\"]}, {\"claim\": \"The file's situation was last active on the third of September, the day of Arjun's answer.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Arjun met Zoya's deadline: the signed NDA reached her on the day she named.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"With the NDA sent, the next move in the file, sharing the pilot data, is Pinecrest's.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Arjun met the one dated ask in this file within the time it named.\", \"based_on\": [\"num:your_reply_time:zoya@pinecrest.test\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"One closed gap is no rhythm: a quiet longer than the file's only gap, which was Arjun's own answer, says nothing yet about how long Pinecrest takes.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\"]}], \"hypotheses\": [{\"proposition\": \"Pinecrest is preparing the pilot data and will send it unprompted.\", \"needs\": \"The data, or a note from Zoya.\"}, {\"proposition\": \"The pilot has slowed at Pinecrest for reasons of its own.\", \"needs\": \"Word from Pinecrest.\"}], \"unknowns\": [{\"question\": \"When Pinecrest means to share the pilot data.\", \"relevance\": \"Only a date Pinecrest names, and then lets pass, would make the quiet worth raising.\"}, {\"question\": \"Whether Pinecrest has signed the mutual NDA on its own side.\", \"relevance\": \"It would explain a quiet spell with nothing owed by Arjun.\"}], \"frames\": {\"primary\": \"An ask answered in full: Zoya asked for the signed mutual NDA by Thursday, Arjun sent it signed on the third, and the next move is Pinecrest's.\", \"rivals\": [\"An NDA that Pinecrest still has to sign on its side before any data moves.\", \"A pilot that has slowed at Pinecrest for reasons that have nothing to do with the NDA.\"]}, \"proposed_kind\": {\"kind\": \"partner\", \"why\": \"Zoya asks for a mutual NDA so that Pinecrest can share pilot data with Nimbus Labs: a pilot on a partner's data is design partner work, one of the brief's goals.\", \"evidence\": [\"evt_#2\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; once the signed NDA is sent, Pinecrest shares the pilot data when it is ready.\", \"actual\": \"Arjun sent the signed NDA on the third, by the Thursday Zoya named; nothing has come from Pinecrest since, and nothing in the file is owed by Arjun.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the ask is met, and the pilot data comes when Pinecrest is ready.\", \"act\": \"Writing again now would add nothing; the move is Pinecrest's.\", \"best\": \"Pinecrest shares the pilot data and the pilot begins.\", \"worst\": \"The pilot slows at Pinecrest, and the file stays quiet for reasons Arjun cannot see.\", \"signals_to_watch\": [\"The pilot data arriving from Pinecrest\", \"A note from Zoya, or the NDA signed on Pinecrest's side\", \"A date Pinecrest names for the data\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The one ask in the file was met within the time Zoya set.\", \"Nothing in the file is owed by Arjun.\", \"Quiet after a signed document is sent is, on its own, no sign of trouble.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"None is needed; the file can rest until Pinecrest writes.\", \"wait_or_stop\": \"Nothing to wait on from Arjun's side; treat the NDA ask as closed and look again only when Pinecrest writes.\", \"done_when\": \"The NDA ask is closed with the signed copy sent; the file needs nothing more until Pinecrest moves.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 3201,
+   "output_tokens": 1111,
    "model": "claude-haiku-4-5-20251001"
   },
-  "2f610e493e09507f756fe74b0f91195b6ad9a89b6d5bee5e65670e03cc4481ad": {
+  "243da6d005b18289f85482d73b9a52dc8da0aeba2eb29cc6c480854b564fd2b7": {
    "site": "expert",
    "parsed": {
     "facts": [
      {
       "claim": "Zoya Hameed of Pinecrest wrote on the first of September asking Arjun to send the signed mutual NDA by Thursday, so that Pinecrest can share the pilot data.",
       "evidence": [
-       "evt_cb865447ff1df267aeb7634c"
+       "evt_#1"
       ]
      },
      {
       "claim": "Her request is an open ask on Arjun's side.",
       "evidence": [
-       "loop:loop_12328b0430c548e3efb3eaa8"
+       "loop:loop_#1"
       ]
      },
      {
@@ -90,7 +218,7 @@
      {
       "claim": "The engine files it as an admin account, seen for the first time.",
       "evidence": [
-       "sit:sit_66365f9b06bf1d479a7ce8b3",
+       "sit:sit_#1",
        "hist:derived.history.times_seen@admin"
       ]
      }
@@ -172,27 +300,10 @@
     "done_when": "Zoya has the signed mutual NDA, and the open ask is closed.",
     "draft": "Hi Zoya, the signed mutual NDA is attached. Looking forward to the pilot data. Arjun"
    },
-   "raw": "{\"facts\": [{\"claim\": \"Zoya Hameed of Pinecrest wrote on the first of September asking Arjun to send the signed mutual NDA by Thursday, so that Pinecrest can share the pilot data.\", \"evidence\": [\"evt_cb865447ff1df267aeb7634c\"]}, {\"claim\": \"Her request is an open ask on Arjun's side.\", \"evidence\": [\"loop:loop_12328b0430c548e3efb3eaa8\"]}, {\"claim\": \"The file has been quiet for about a day, and no answer from Arjun is measured yet.\", \"evidence\": [\"num:days_quiet\", \"num:your_reply_time:zoya@pinecrest.test\"]}, {\"claim\": \"The engine files it as an admin account, seen for the first time.\", \"evidence\": [\"sit:sit_66365f9b06bf1d479a7ce8b3\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Thursday is the day after this review, so the deadline is close.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"The pilot data waits on this NDA, so a delay here delays the pilot.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The NDA's text is agreed and only needs signing.\", \"needs\": \"Arjun's word, or the NDA in hand.\"}], \"unknowns\": [{\"question\": \"Whether Arjun has the NDA's text and has read it.\", \"relevance\": \"If the terms still need review, a short note naming the day it will come is better than a missed Thursday.\"}, {\"question\": \"What the pilot is and what data Pinecrest will share.\", \"relevance\": \"It decides how carefully the NDA's terms need reading before signing.\"}], \"frames\": {\"primary\": \"A clear, dated ask from a pilot partner: sign the mutual NDA and send it by Thursday, so the pilot data can flow.\", \"rivals\": [\"A routine paperwork step Arjun may already have in hand.\", \"An NDA whose terms still need review before Arjun can sign.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; a dated request like this is expected to be met by the day it names.\", \"actual\": \"The ask is about a day old and unanswered, and Thursday is tomorrow.\"}, \"scenarios\": {\"do_nothing\": \"Thursday passes, the pilot data waits, and the pilot slips.\", \"act\": \"Arjun signs and sends the NDA by Thursday, and Pinecrest can share the data.\", \"best\": \"The signed NDA goes over today, and the pilot data follows within days.\", \"worst\": \"The day is missed and Pinecrest reads it as a lack of commitment to the pilot.\", \"signals_to_watch\": [\"The signed NDA going out from Arjun\", \"The pilot data arriving from Pinecrest\", \"A further note from Zoya\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Zoya named Thursday, the day after this review.\", \"The pilot data waits on the NDA.\", \"A signed NDA binds Nimbus Labs, so its terms deserve a read before signing.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Sign the mutual NDA and send it to Zoya.\", \"for_whom\": \"Zoya Hameed at Pinecrest\", \"by_when\": \"2026-09-03\"}, \"alternative\": \"If the terms need review, write to Zoya today and name the day she will have it.\", \"wait_or_stop\": \"Do not wait past Thursday; stop once the signed NDA is with Zoya.\", \"done_when\": \"Zoya has the signed mutual NDA, and the open ask is closed.\", \"draft\": \"Hi Zoya, the signed mutual NDA is attached. Looking forward to the pilot data. Arjun\"}",
-   "input_tokens": 3038,
+   "raw": "{\"facts\": [{\"claim\": \"Zoya Hameed of Pinecrest wrote on the first of September asking Arjun to send the signed mutual NDA by Thursday, so that Pinecrest can share the pilot data.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Her request is an open ask on Arjun's side.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The file has been quiet for about a day, and no answer from Arjun is measured yet.\", \"evidence\": [\"num:days_quiet\", \"num:your_reply_time:zoya@pinecrest.test\"]}, {\"claim\": \"The engine files it as an admin account, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Thursday is the day after this review, so the deadline is close.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"The pilot data waits on this NDA, so a delay here delays the pilot.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The NDA's text is agreed and only needs signing.\", \"needs\": \"Arjun's word, or the NDA in hand.\"}], \"unknowns\": [{\"question\": \"Whether Arjun has the NDA's text and has read it.\", \"relevance\": \"If the terms still need review, a short note naming the day it will come is better than a missed Thursday.\"}, {\"question\": \"What the pilot is and what data Pinecrest will share.\", \"relevance\": \"It decides how carefully the NDA's terms need reading before signing.\"}], \"frames\": {\"primary\": \"A clear, dated ask from a pilot partner: sign the mutual NDA and send it by Thursday, so the pilot data can flow.\", \"rivals\": [\"A routine paperwork step Arjun may already have in hand.\", \"An NDA whose terms still need review before Arjun can sign.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; a dated request like this is expected to be met by the day it names.\", \"actual\": \"The ask is about a day old and unanswered, and Thursday is tomorrow.\"}, \"scenarios\": {\"do_nothing\": \"Thursday passes, the pilot data waits, and the pilot slips.\", \"act\": \"Arjun signs and sends the NDA by Thursday, and Pinecrest can share the data.\", \"best\": \"The signed NDA goes over today, and the pilot data follows within days.\", \"worst\": \"The day is missed and Pinecrest reads it as a lack of commitment to the pilot.\", \"signals_to_watch\": [\"The signed NDA going out from Arjun\", \"The pilot data arriving from Pinecrest\", \"A further note from Zoya\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Zoya named Thursday, the day after this review.\", \"The pilot data waits on the NDA.\", \"A signed NDA binds Nimbus Labs, so its terms deserve a read before signing.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Sign the mutual NDA and send it to Zoya.\", \"for_whom\": \"Zoya Hameed at Pinecrest\", \"by_when\": \"2026-09-03\"}, \"alternative\": \"If the terms need review, write to Zoya today and name the day she will have it.\", \"wait_or_stop\": \"Do not wait past Thursday; stop once the signed NDA is with Zoya.\", \"done_when\": \"Zoya has the signed mutual NDA, and the open ask is closed.\", \"draft\": \"Hi Zoya, the signed mutual NDA is attached. Looking forward to the pilot data. Arjun\"}",
+   "framed": true,
+   "input_tokens": 3034,
    "output_tokens": 815,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "33a94370e5d03c22ab84e04072691fdd16558f0ddbe223834707b2d51da410dd": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4733,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4789,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4982
-    },
-    "confidence_bp": 4000,
-    "rationale": "Our mail of 3 Sep answered them and the ball is in their court; nothing here is ours to do.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4733, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4789, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4982}, \"confidence_bp\": 4000, \"rationale\": \"Our mail of 3 Sep answered them and the ball is in their court; nothing here is ours to do.\", \"missing\": []}",
-   "input_tokens": 4153,
-   "output_tokens": 95,
    "model": "claude-haiku-4-5-20251001"
   },
   "39f5e4d1d4f4ca0c62321cbe7df2c8e620871bfcb8fc24085afc99a67be0121e": {
@@ -273,78 +384,112 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"legal\", \"pilot\"], \"entity_mentions\": [{\"surface_form\": \"Zoya Hameed\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Zoya\", \"start_offset\": 105, \"end_offset\": 109}], \"confidence_bp\": 9000}, {\"surface_form\": \"Pinecrest\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Pinecrest\", \"start_offset\": 110, \"end_offset\": 119}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Send the signed mutual NDA by Thursday\", \"asked_by\": \"Zoya Hameed\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you send the signed mutual NDA by Thursday\", \"start_offset\": 23, \"end_offset\": 71}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"by Thursday\", \"earliest\": \"2026-09-03T00:00:00+05:30\", \"latest\": \"2026-09-03T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-01T05:00:00Z\", \"evidence\": [{\"quote\": \"by Thursday\", \"start_offset\": 60, \"end_offset\": 71}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"the signed NDA, to share the pilot data\"}}",
+   "framed": true,
    "input_tokens": 5505,
    "output_tokens": 297,
    "model": "claude-haiku-4-5-20251001"
   },
-  "51a629ab5689dc3603c84118252b19a433d8aa3bea414d4b9b9929fc225bdd0a": {
-   "site": "decider",
+  "721786332f35f801110026b8877a954fb790114255356b4c864ab392175aeb2f": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1038,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "751a2dacd4c08ad39bd424be439a7c90001b36957e919a95c01e7b76d2994542": {
+   "site": "resolution",
    "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4599,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4655,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you send the signed mutual NDA by Thursday so we can share the pilot data?",
+    "start_offset": 23,
+    "end_offset": 103,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you send the signed mutual NDA by Thursday so we can share the pilot data?\", \"start_offset\": 23, \"end_offset\": 103, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1516,
+   "output_tokens": 58,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "97745906fdd4dc68896c508a17528158ffd028beafb5d53afd17b0c1486fa3ee": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "RESOLVED",
+    "certainty": "EXPLICIT_COMPLETION",
+    "scope": [
+     "situation"
+    ],
+    "quote": "Signed NDA attached",
+    "start_offset": 26,
+    "end_offset": 45,
+    "speaker_role_said": "owner"
+   },
+   "raw": "{\"verdict\": \"RESOLVED\", \"certainty\": \"EXPLICIT_COMPLETION\", \"scope\": [\"situation\"], \"quote\": \"Signed NDA attached\", \"start_offset\": 26, \"end_offset\": 45, \"speaker_role_said\": \"owner\"}",
+   "framed": true,
+   "input_tokens": 1499,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "afeab2d9941458c9610bc14950832497270f1b37f916d42632a8ab78910a651f": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
     },
-    "confidence_bp": 5000,
-    "rationale": "Pinecrest wrote yesterday and the ball is in our court.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4599, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4655, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Pinecrest wrote yesterday and the ball is in our court.\", \"missing\": []}",
-   "input_tokens": 4156,
-   "output_tokens": 86,
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1031,
+   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
-  "52bc9374295f8f2bbe332e33b3dc4a98cb5b0e26b28c2d823a947d493925732c": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 1041,
-   "output_tokens": 51,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "54fa578760969b8201f92c80e08ca936bac1105d5170f54c715793938d3a035b": {
+  "bf69d369c73c4532a1ca63b32fa3cabd66ddbfe74299ba9ab6e81d7833567f85": {
    "site": "expert",
    "parsed": {
     "facts": [
      {
       "claim": "Zoya Hameed asked on the first of September for the signed mutual NDA by Thursday, so that Pinecrest could share the pilot data.",
       "evidence": [
-       "evt_cb865447ff1df267aeb7634c"
+       "evt_#2"
       ]
      },
      {
       "claim": "On the third of September, the Thursday she named, Arjun wrote back to Zoya with the signed NDA attached.",
       "evidence": [
-       "evt_896d238855ecfb2a99b39e33"
+       "evt_#1"
       ]
      },
      {
       "claim": "That answer came about two days after her ask, his one measured reply time in the file.",
       "evidence": [
        "num:your_reply_time:zoya@pinecrest.test",
-       "evt_896d238855ecfb2a99b39e33"
+       "evt_#1"
       ]
      },
      {
       "claim": "His mail is the last in the file, and no reply from Pinecrest is on file since.",
       "evidence": [
-       "evt_896d238855ecfb2a99b39e33",
+       "evt_#1",
        "num:days_quiet"
       ]
      },
@@ -357,7 +502,7 @@
      {
       "claim": "The file's situation was last active on the third of September, the day of Arjun's answer.",
       "evidence": [
-       "sit:sit_66365f9b06bf1d479a7ce8b3"
+       "sit:sit_#1"
       ]
      }
     ],
@@ -426,7 +571,7 @@
      "kind": "partner",
      "why": "Zoya asks for a mutual NDA so that Pinecrest can share pilot data with Nimbus Labs: a pilot on a partner's data is design partner work, one of the brief's goals.",
      "evidence": [
-      "evt_cb865447ff1df267aeb7634c"
+      "evt_#2"
      ]
     },
     "expected_vs_actual": {
@@ -462,91 +607,10 @@
     "done_when": "The NDA ask is closed with the signed copy sent; the file needs nothing more until Pinecrest moves.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"Zoya Hameed asked on the first of September for the signed mutual NDA by Thursday, so that Pinecrest could share the pilot data.\", \"evidence\": [\"evt_cb865447ff1df267aeb7634c\"]}, {\"claim\": \"On the third of September, the Thursday she named, Arjun wrote back to Zoya with the signed NDA attached.\", \"evidence\": [\"evt_896d238855ecfb2a99b39e33\"]}, {\"claim\": \"That answer came about two days after her ask, his one measured reply time in the file.\", \"evidence\": [\"num:your_reply_time:zoya@pinecrest.test\", \"evt_896d238855ecfb2a99b39e33\"]}, {\"claim\": \"His mail is the last in the file, and no reply from Pinecrest is on file since.\", \"evidence\": [\"evt_896d238855ecfb2a99b39e33\", \"num:days_quiet\"]}, {\"claim\": \"Zoya's own reply time is not measured, so there is no pattern of hers to judge the quiet by.\", \"evidence\": [\"num:their_reply_time:zoya@pinecrest.test\"]}, {\"claim\": \"The file's situation was last active on the third of September, the day of Arjun's answer.\", \"evidence\": [\"sit:sit_66365f9b06bf1d479a7ce8b3\"]}], \"inferences\": [{\"claim\": \"Arjun met Zoya's deadline: the signed NDA reached her on the day she named.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"With the NDA sent, the next move in the file, sharing the pilot data, is Pinecrest's.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Arjun met the one dated ask in this file within the time it named.\", \"based_on\": [\"num:your_reply_time:zoya@pinecrest.test\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"One closed gap is no rhythm: a quiet longer than the file's only gap, which was Arjun's own answer, says nothing yet about how long Pinecrest takes.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\"]}], \"hypotheses\": [{\"proposition\": \"Pinecrest is preparing the pilot data and will send it unprompted.\", \"needs\": \"The data, or a note from Zoya.\"}, {\"proposition\": \"The pilot has slowed at Pinecrest for reasons of its own.\", \"needs\": \"Word from Pinecrest.\"}], \"unknowns\": [{\"question\": \"When Pinecrest means to share the pilot data.\", \"relevance\": \"Only a date Pinecrest names, and then lets pass, would make the quiet worth raising.\"}, {\"question\": \"Whether Pinecrest has signed the mutual NDA on its own side.\", \"relevance\": \"It would explain a quiet spell with nothing owed by Arjun.\"}], \"frames\": {\"primary\": \"An ask answered in full: Zoya asked for the signed mutual NDA by Thursday, Arjun sent it signed on the third, and the next move is Pinecrest's.\", \"rivals\": [\"An NDA that Pinecrest still has to sign on its side before any data moves.\", \"A pilot that has slowed at Pinecrest for reasons that have nothing to do with the NDA.\"]}, \"proposed_kind\": {\"kind\": \"partner\", \"why\": \"Zoya asks for a mutual NDA so that Pinecrest can share pilot data with Nimbus Labs: a pilot on a partner's data is design partner work, one of the brief's goals.\", \"evidence\": [\"evt_cb865447ff1df267aeb7634c\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; once the signed NDA is sent, Pinecrest shares the pilot data when it is ready.\", \"actual\": \"Arjun sent the signed NDA on the third, by the Thursday Zoya named; nothing has come from Pinecrest since, and nothing in the file is owed by Arjun.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the ask is met, and the pilot data comes when Pinecrest is ready.\", \"act\": \"Writing again now would add nothing; the move is Pinecrest's.\", \"best\": \"Pinecrest shares the pilot data and the pilot begins.\", \"worst\": \"The pilot slows at Pinecrest, and the file stays quiet for reasons Arjun cannot see.\", \"signals_to_watch\": [\"The pilot data arriving from Pinecrest\", \"A note from Zoya, or the NDA signed on Pinecrest's side\", \"A date Pinecrest names for the data\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The one ask in the file was met within the time Zoya set.\", \"Nothing in the file is owed by Arjun.\", \"Quiet after a signed document is sent is, on its own, no sign of trouble.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"None is needed; the file can rest until Pinecrest writes.\", \"wait_or_stop\": \"Nothing to wait on from Arjun's side; treat the NDA ask as closed and look again only when Pinecrest writes.\", \"done_when\": \"The NDA ask is closed with the signed copy sent; the file needs nothing more until Pinecrest moves.\", \"draft\": null}",
-   "input_tokens": 3163,
+   "raw": "{\"facts\": [{\"claim\": \"Zoya Hameed asked on the first of September for the signed mutual NDA by Thursday, so that Pinecrest could share the pilot data.\", \"evidence\": [\"evt_#2\"]}, {\"claim\": \"On the third of September, the Thursday she named, Arjun wrote back to Zoya with the signed NDA attached.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"That answer came about two days after her ask, his one measured reply time in the file.\", \"evidence\": [\"num:your_reply_time:zoya@pinecrest.test\", \"evt_#1\"]}, {\"claim\": \"His mail is the last in the file, and no reply from Pinecrest is on file since.\", \"evidence\": [\"evt_#1\", \"num:days_quiet\"]}, {\"claim\": \"Zoya's own reply time is not measured, so there is no pattern of hers to judge the quiet by.\", \"evidence\": [\"num:their_reply_time:zoya@pinecrest.test\"]}, {\"claim\": \"The file's situation was last active on the third of September, the day of Arjun's answer.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Arjun met Zoya's deadline: the signed NDA reached her on the day she named.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"With the NDA sent, the next move in the file, sharing the pilot data, is Pinecrest's.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Arjun met the one dated ask in this file within the time it named.\", \"based_on\": [\"num:your_reply_time:zoya@pinecrest.test\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"One closed gap is no rhythm: a quiet longer than the file's only gap, which was Arjun's own answer, says nothing yet about how long Pinecrest takes.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\"]}], \"hypotheses\": [{\"proposition\": \"Pinecrest is preparing the pilot data and will send it unprompted.\", \"needs\": \"The data, or a note from Zoya.\"}, {\"proposition\": \"The pilot has slowed at Pinecrest for reasons of its own.\", \"needs\": \"Word from Pinecrest.\"}], \"unknowns\": [{\"question\": \"When Pinecrest means to share the pilot data.\", \"relevance\": \"Only a date Pinecrest names, and then lets pass, would make the quiet worth raising.\"}, {\"question\": \"Whether Pinecrest has signed the mutual NDA on its own side.\", \"relevance\": \"It would explain a quiet spell with nothing owed by Arjun.\"}], \"frames\": {\"primary\": \"An ask answered in full: Zoya asked for the signed mutual NDA by Thursday, Arjun sent it signed on the third, and the next move is Pinecrest's.\", \"rivals\": [\"An NDA that Pinecrest still has to sign on its side before any data moves.\", \"A pilot that has slowed at Pinecrest for reasons that have nothing to do with the NDA.\"]}, \"proposed_kind\": {\"kind\": \"partner\", \"why\": \"Zoya asks for a mutual NDA so that Pinecrest can share pilot data with Nimbus Labs: a pilot on a partner's data is design partner work, one of the brief's goals.\", \"evidence\": [\"evt_#2\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; once the signed NDA is sent, Pinecrest shares the pilot data when it is ready.\", \"actual\": \"Arjun sent the signed NDA on the third, by the Thursday Zoya named; nothing has come from Pinecrest since, and nothing in the file is owed by Arjun.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the ask is met, and the pilot data comes when Pinecrest is ready.\", \"act\": \"Writing again now would add nothing; the move is Pinecrest's.\", \"best\": \"Pinecrest shares the pilot data and the pilot begins.\", \"worst\": \"The pilot slows at Pinecrest, and the file stays quiet for reasons Arjun cannot see.\", \"signals_to_watch\": [\"The pilot data arriving from Pinecrest\", \"A note from Zoya, or the NDA signed on Pinecrest's side\", \"A date Pinecrest names for the data\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The one ask in the file was met within the time Zoya set.\", \"Nothing in the file is owed by Arjun.\", \"Quiet after a signed document is sent is, on its own, no sign of trouble.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"None is needed; the file can rest until Pinecrest writes.\", \"wait_or_stop\": \"Nothing to wait on from Arjun's side; treat the NDA ask as closed and look again only when Pinecrest writes.\", \"done_when\": \"The NDA ask is closed with the signed copy sent; the file needs nothing more until Pinecrest moves.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 3167,
    "output_tokens": 1111,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "721786332f35f801110026b8877a954fb790114255356b4c864ab392175aeb2f": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 1038,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "751a2dacd4c08ad39bd424be439a7c90001b36957e919a95c01e7b76d2994542": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Could you send the signed mutual NDA by Thursday so we can share the pilot data?",
-    "start_offset": 23,
-    "end_offset": 103,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you send the signed mutual NDA by Thursday so we can share the pilot data?\", \"start_offset\": 23, \"end_offset\": 103, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1516,
-   "output_tokens": 58,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "97745906fdd4dc68896c508a17528158ffd028beafb5d53afd17b0c1486fa3ee": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "RESOLVED",
-    "certainty": "EXPLICIT_COMPLETION",
-    "scope": [
-     "situation"
-    ],
-    "quote": "Signed NDA attached",
-    "start_offset": 26,
-    "end_offset": 45,
-    "speaker_role_said": "owner"
-   },
-   "raw": "{\"verdict\": \"RESOLVED\", \"certainty\": \"EXPLICIT_COMPLETION\", \"scope\": [\"situation\"], \"quote\": \"Signed NDA attached\", \"start_offset\": 26, \"end_offset\": 45, \"speaker_role_said\": \"owner\"}",
-   "input_tokens": 1499,
-   "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "afeab2d9941458c9610bc14950832497270f1b37f916d42632a8ab78910a651f": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 1031,
-   "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "e13f44381a385a4103bffb3e95c2277eeabace41f49ff2d0fbe742d605e8a6d7": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Pinecrest the signed mutual NDA",
-    "situation": "Zoya at Pinecrest asked for the signed mutual NDA by Thursday. The next move is ours.",
-    "artifact": "Hi Zoya, attaching the signed mutual NDA. Thanks, Arjun"
-   },
-   "raw": "{\"headline\": \"Send Pinecrest the signed mutual NDA\", \"situation\": \"Zoya at Pinecrest asked for the signed mutual NDA by Thursday. The next move is ours.\", \"artifact\": \"Hi Zoya, attaching the signed mutual NDA. Thanks, Arjun\"}",
-   "input_tokens": 1542,
-   "output_tokens": 56,
    "model": "claude-haiku-4-5-20251001"
   },
   "e6913aa35164bde4f35588d0386884118cc9878d0827ef22188f09f09956ddbd": {
@@ -572,6 +636,7 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Mutual NDA\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Re: Mutual NDA\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
    "input_tokens": 1177,
    "output_tokens": 71,
    "model": "claude-haiku-4-5-20251001"
@@ -591,175 +656,9 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Mutual NDA\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
    "input_tokens": 1169,
    "output_tokens": 36,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f6d2683038a5202a3c3d1426aca1965f764c20af4febed08ff188fbe493de839": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4983,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 5039,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5231
-    },
-    "confidence_bp": 4000,
-    "rationale": "Our mail of 3 Sep answered them and the ball is in their court; nothing here is ours to do.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4983, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 5039, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5231}, \"confidence_bp\": 4000, \"rationale\": \"Our mail of 3 Sep answered them and the ball is in their court; nothing here is ours to do.\", \"missing\": []}",
-   "input_tokens": 4159,
-   "output_tokens": 95,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "fd2ffb565bc89b132868da3a30be2875d70dd9eaca26138b9b98737e654d58fb": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "Zoya Hameed asked on the first of September for the signed mutual NDA by Thursday, so that Pinecrest could share the pilot data.",
-      "evidence": [
-       "evt_cb865447ff1df267aeb7634c"
-      ]
-     },
-     {
-      "claim": "On the third of September, the Thursday she named, Arjun wrote back to Zoya with the signed NDA attached.",
-      "evidence": [
-       "evt_896d238855ecfb2a99b39e33"
-      ]
-     },
-     {
-      "claim": "That answer came about two days after her ask, his one measured reply time in the file.",
-      "evidence": [
-       "num:your_reply_time:zoya@pinecrest.test",
-       "evt_896d238855ecfb2a99b39e33"
-      ]
-     },
-     {
-      "claim": "His mail is the last in the file, and no reply from Pinecrest is on file since.",
-      "evidence": [
-       "evt_896d238855ecfb2a99b39e33",
-       "num:days_quiet"
-      ]
-     },
-     {
-      "claim": "Zoya's own reply time is not measured, so there is no pattern of hers to judge the quiet by.",
-      "evidence": [
-       "num:their_reply_time:zoya@pinecrest.test"
-      ]
-     },
-     {
-      "claim": "The file's situation was last active on the third of September, the day of Arjun's answer.",
-      "evidence": [
-       "sit:sit_66365f9b06bf1d479a7ce8b3"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "Arjun met Zoya's deadline: the signed NDA reached her on the day she named.",
-      "based_on": [
-       "fact:1",
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "With the NDA sent, the next move in the file, sharing the pilot data, is Pinecrest's.",
-      "based_on": [
-       "fact:1",
-       "fact:2",
-       "fact:4"
-      ]
-     }
-    ],
-    "patterns": [
-     {
-      "kind": "pattern",
-      "claim": "Arjun met the one dated ask in this file within the time it named.",
-      "based_on": [
-       "num:your_reply_time:zoya@pinecrest.test"
-      ]
-     },
-     {
-      "kind": "counter_pattern",
-      "claim": "One closed gap is no rhythm: a quiet longer than the file's only gap, which was Arjun's own answer, says nothing yet about how long Pinecrest takes.",
-      "based_on": [
-       "num:usual_gap",
-       "num:longest_gap"
-      ]
-     }
-    ],
-    "hypotheses": [
-     {
-      "proposition": "Pinecrest is preparing the pilot data and will send it unprompted.",
-      "needs": "The data, or a note from Zoya."
-     },
-     {
-      "proposition": "The pilot has slowed at Pinecrest for reasons of its own.",
-      "needs": "Word from Pinecrest."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "When Pinecrest means to share the pilot data.",
-      "relevance": "Only a date Pinecrest names, and then lets pass, would make the quiet worth raising."
-     },
-     {
-      "question": "Whether Pinecrest has signed the mutual NDA on its own side.",
-      "relevance": "It would explain a quiet spell with nothing owed by Arjun."
-     }
-    ],
-    "frames": {
-     "primary": "An ask answered in full: Zoya asked for the signed mutual NDA by Thursday, Arjun sent it signed on the third, and the next move is Pinecrest's.",
-     "rivals": [
-      "An NDA that Pinecrest still has to sign on its side before any data moves.",
-      "A pilot that has slowed at Pinecrest for reasons that have nothing to do with the NDA."
-     ]
-    },
-    "proposed_kind": {
-     "kind": "partner",
-     "why": "Zoya asks for a mutual NDA so that Pinecrest can share pilot data with Nimbus Labs: a pilot on a partner's data is design partner work, one of the brief's goals.",
-     "evidence": [
-      "evt_cb865447ff1df267aeb7634c"
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "No playbook applies and the brief names no kind of work for this file; once the signed NDA is sent, Pinecrest shares the pilot data when it is ready.",
-     "actual": "Arjun sent the signed NDA on the third, by the Thursday Zoya named; nothing has come from Pinecrest since, and nothing in the file is owed by Arjun."
-    },
-    "scenarios": {
-     "do_nothing": "Nothing is lost: the ask is met, and the pilot data comes when Pinecrest is ready.",
-     "act": "Writing again now would add nothing; the move is Pinecrest's.",
-     "best": "Pinecrest shares the pilot data and the pilot begins.",
-     "worst": "The pilot slows at Pinecrest, and the file stays quiet for reasons Arjun cannot see.",
-     "signals_to_watch": [
-      "The pilot data arriving from Pinecrest",
-      "A note from Zoya, or the NDA signed on Pinecrest's side",
-      "A date Pinecrest names for the data"
-     ]
-    },
-    "appraisal": {
-     "stakes": "low",
-     "urgency": "low",
-     "reversibility": "reversible",
-     "reasons": [
-      "The one ask in the file was met within the time Zoya set.",
-      "Nothing in the file is owed by Arjun.",
-      "Quiet after a signed document is sent is, on its own, no sign of trouble."
-     ]
-    },
-    "mode": "nothing",
-    "next_move": null,
-    "alternative": "None is needed; the file can rest until Pinecrest writes.",
-    "wait_or_stop": "Nothing to wait on from Arjun's side; treat the NDA ask as closed and look again only when Pinecrest writes.",
-    "done_when": "The NDA ask is closed with the signed copy sent; the file needs nothing more until Pinecrest moves.",
-    "draft": null
-   },
-   "raw": "{\"facts\": [{\"claim\": \"Zoya Hameed asked on the first of September for the signed mutual NDA by Thursday, so that Pinecrest could share the pilot data.\", \"evidence\": [\"evt_cb865447ff1df267aeb7634c\"]}, {\"claim\": \"On the third of September, the Thursday she named, Arjun wrote back to Zoya with the signed NDA attached.\", \"evidence\": [\"evt_896d238855ecfb2a99b39e33\"]}, {\"claim\": \"That answer came about two days after her ask, his one measured reply time in the file.\", \"evidence\": [\"num:your_reply_time:zoya@pinecrest.test\", \"evt_896d238855ecfb2a99b39e33\"]}, {\"claim\": \"His mail is the last in the file, and no reply from Pinecrest is on file since.\", \"evidence\": [\"evt_896d238855ecfb2a99b39e33\", \"num:days_quiet\"]}, {\"claim\": \"Zoya's own reply time is not measured, so there is no pattern of hers to judge the quiet by.\", \"evidence\": [\"num:their_reply_time:zoya@pinecrest.test\"]}, {\"claim\": \"The file's situation was last active on the third of September, the day of Arjun's answer.\", \"evidence\": [\"sit:sit_66365f9b06bf1d479a7ce8b3\"]}], \"inferences\": [{\"claim\": \"Arjun met Zoya's deadline: the signed NDA reached her on the day she named.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"With the NDA sent, the next move in the file, sharing the pilot data, is Pinecrest's.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Arjun met the one dated ask in this file within the time it named.\", \"based_on\": [\"num:your_reply_time:zoya@pinecrest.test\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"One closed gap is no rhythm: a quiet longer than the file's only gap, which was Arjun's own answer, says nothing yet about how long Pinecrest takes.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\"]}], \"hypotheses\": [{\"proposition\": \"Pinecrest is preparing the pilot data and will send it unprompted.\", \"needs\": \"The data, or a note from Zoya.\"}, {\"proposition\": \"The pilot has slowed at Pinecrest for reasons of its own.\", \"needs\": \"Word from Pinecrest.\"}], \"unknowns\": [{\"question\": \"When Pinecrest means to share the pilot data.\", \"relevance\": \"Only a date Pinecrest names, and then lets pass, would make the quiet worth raising.\"}, {\"question\": \"Whether Pinecrest has signed the mutual NDA on its own side.\", \"relevance\": \"It would explain a quiet spell with nothing owed by Arjun.\"}], \"frames\": {\"primary\": \"An ask answered in full: Zoya asked for the signed mutual NDA by Thursday, Arjun sent it signed on the third, and the next move is Pinecrest's.\", \"rivals\": [\"An NDA that Pinecrest still has to sign on its side before any data moves.\", \"A pilot that has slowed at Pinecrest for reasons that have nothing to do with the NDA.\"]}, \"proposed_kind\": {\"kind\": \"partner\", \"why\": \"Zoya asks for a mutual NDA so that Pinecrest can share pilot data with Nimbus Labs: a pilot on a partner's data is design partner work, one of the brief's goals.\", \"evidence\": [\"evt_cb865447ff1df267aeb7634c\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; once the signed NDA is sent, Pinecrest shares the pilot data when it is ready.\", \"actual\": \"Arjun sent the signed NDA on the third, by the Thursday Zoya named; nothing has come from Pinecrest since, and nothing in the file is owed by Arjun.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the ask is met, and the pilot data comes when Pinecrest is ready.\", \"act\": \"Writing again now would add nothing; the move is Pinecrest's.\", \"best\": \"Pinecrest shares the pilot data and the pilot begins.\", \"worst\": \"The pilot slows at Pinecrest, and the file stays quiet for reasons Arjun cannot see.\", \"signals_to_watch\": [\"The pilot data arriving from Pinecrest\", \"A note from Zoya, or the NDA signed on Pinecrest's side\", \"A date Pinecrest names for the data\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The one ask in the file was met within the time Zoya set.\", \"Nothing in the file is owed by Arjun.\", \"Quiet after a signed document is sent is, on its own, no sign of trouble.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"None is needed; the file can rest until Pinecrest writes.\", \"wait_or_stop\": \"Nothing to wait on from Arjun's side; treat the NDA ask as closed and look again only when Pinecrest writes.\", \"done_when\": \"The NDA ask is closed with the signed copy sent; the file needs nothing more until Pinecrest moves.\", \"draft\": null}",
-   "input_tokens": 3191,
-   "output_tokens": 1111,
    "model": "claude-haiku-4-5-20251001"
   }
  }

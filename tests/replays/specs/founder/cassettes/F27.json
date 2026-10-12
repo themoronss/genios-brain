@@ -1,26 +1,25 @@
 {
  "case_id": "F27",
  "source": "ideal_reader",
- "recorded_at": "1b5e5f58",
+ "recorded_at": "a10f3140",
  "answers": {
-  "2ef33aa0ab2baf00923637ad58f3d6e748f92e7a104dd11237e87edfd43cf877": {
-   "site": "decider",
+  "2b5d4ec4dc132aabc0207a192ff624a7b2038f8d5f2e586d9689bac454857863": {
+   "site": "bundle_narrator",
    "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5200
-    },
-    "confidence_bp": 5500,
-    "rationale": "Varun asked a direct question a week ago and the call he booked is on 9 Oct; the reply is ours.",
-    "missing": []
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"Varun asked a direct question a week ago and the call he booked is on 9 Oct; the reply is ours.\", \"missing\": []}",
-   "input_tokens": 2159,
-   "output_tokens": 57,
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1557,
+   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3077443d7a9d9bb7665f6662ad1de1c1624aaf081a4f574fe1a2a5f5a2f6a3b7": {
+  "2c831ae4f75ab7a98dc4d01dc80ab0b14d41b237e6b69f58361f9e74b2ba4084": {
    "site": "expert",
    "parsed": {
     "proposed_kind": null,
@@ -35,20 +34,20 @@
      {
       "claim": "Varun Iyer, founder of Cleanwave, wrote after meeting Arjun at a meetup, shared Cleanwave's API docs, and asked Arjun to confirm whether our agent can read Cleanwave's webhook events before they meet.",
       "evidence": [
-       "evt_a13904cafbf7099ad45b4a46"
+       "evt_#1"
       ]
      },
      {
       "claim": "Varun has booked a call for the ninth of October at four in the afternoon IST.",
       "evidence": [
-       "evt_a13904cafbf7099ad45b4a46",
-       "evt_5cf10818ee5e3a851a602996"
+       "evt_#1",
+       "evt_#2"
       ]
      },
      {
       "claim": "His question is open and waits on us.",
       "evidence": [
-       "loop:loop_1e3c002f29917e093dfec82d"
+       "loop:loop_#1"
       ]
      },
      {
@@ -145,79 +144,29 @@
     "wait_or_stop": "Nothing to wait for — the move is ours; once the answer is sent, the file waits for the call on the ninth.",
     "done_when": "Varun has our answer on the webhook events before the call, and the call goes ahead as booked."
    },
-   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Varun, good to meet at the meetup, and thanks for the docs. On your question — whether our agent can read your webhook events: [our answer]. Looking forward to the call on the ninth. Arjun\", \"next_move\": {\"who\": \"Arjun, with whoever can check the agent against Cleanwave's API docs\", \"what\": \"Check whether our agent can read Cleanwave's webhook events, and reply to Varun with the answer before the call.\", \"for_whom\": \"Varun Iyer at Cleanwave\", \"by_when\": \"2026-10-09\"}, \"facts\": [{\"claim\": \"Varun Iyer, founder of Cleanwave, wrote after meeting Arjun at a meetup, shared Cleanwave's API docs, and asked Arjun to confirm whether our agent can read Cleanwave's webhook events before they meet.\", \"evidence\": [\"evt_a13904cafbf7099ad45b4a46\"]}, {\"claim\": \"Varun has booked a call for the ninth of October at four in the afternoon IST.\", \"evidence\": [\"evt_a13904cafbf7099ad45b4a46\", \"evt_5cf10818ee5e3a851a602996\"]}, {\"claim\": \"His question is open and waits on us.\", \"evidence\": [\"loop:loop_1e3c002f29917e093dfec82d\"]}, {\"claim\": \"No answer of ours to Varun is measured in the file.\", \"evidence\": [\"num:your_reply_time:varun@cleanwave.test\"]}], \"inferences\": [{\"claim\": \"Varun wants the webhook answer before the call so the call can be spent on the integration, not on finding out whether it is possible.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The answer needs a technical check of Cleanwave's API docs against what our agent reads — Arjun's or the team's to give, not a scheduling note.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of how Cleanwave takes a late answer.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Our agent may read webhook events of this kind today.\", \"needs\": \"A look at Cleanwave's API docs against what the agent can read.\"}, {\"proposition\": \"Varun may read a missing answer as a sign the integration is not ready.\", \"needs\": \"His tone at the call, or a chase before it.\"}], \"unknowns\": [{\"question\": \"Can our agent read Cleanwave's webhook events today?\", \"relevance\": \"It decides whether the reply is a yes, a not-yet with a plan, or a no — and what the call is for.\"}, {\"question\": \"Did Arjun give Varun an answer in person or on another channel?\", \"relevance\": \"If so, the question is closed and only the call remains.\"}, {\"question\": \"Who from our side should join the call?\", \"relevance\": \"A technical question may need an engineer on it.\"}], \"frames\": {\"primary\": \"A warm integration partner with a technical question waiting on us, due before the call he booked: can our agent read Cleanwave's webhook events?\", \"rivals\": [\"A routine scheduling thread, where the call itself will settle the question.\", \"An early sign of a poor fit: if the agent cannot read their events, the call becomes about whether to build it.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From the brief's goal of landing design partners and Varun's own words: the webhook question answered before the call, and the call spent on the integration.\", \"actual\": \"The question is unanswered in the file, and the call is booked for the ninth of October.\"}, \"scenarios\": {\"do_nothing\": \"Varun comes to the call without his answer, its first part goes on the question he asked days before, and the partner reads the silence as a gap.\", \"act\": \"A short answer before the call — yes, not yet, or no with what it would take — lets the call go straight to the integration.\", \"best\": \"The agent reads their webhook events, Varun hears so before the call, and it ends with a design-partner next step.\", \"worst\": \"No answer comes, the call opens on the question, and the agent turns out not to read their events — the partnership starts on the back foot.\", \"signals_to_watch\": [\"A reply to Varun before the call\", \"Varun writing again before the ninth\", \"The call staying on the calendar or being moved\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Cleanwave is one of the brief's design partner talks.\", \"Varun asked for the answer before a call he booked on a fixed date.\", \"A late or partial answer can be mended at the call, so a wrong move is cheap to reverse.\"]}, \"mode\": \"act\", \"alternative\": \"If the check cannot be finished in time, write to Varun before the call with what is known so far, and say the full answer comes at the call.\", \"wait_or_stop\": \"Nothing to wait for — the move is ours; once the answer is sent, the file waits for the call on the ninth.\", \"done_when\": \"Varun has our answer on the webhook events before the call, and the call goes ahead as booked.\"}",
-   "input_tokens": 3123,
+   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Varun, good to meet at the meetup, and thanks for the docs. On your question — whether our agent can read your webhook events: [our answer]. Looking forward to the call on the ninth. Arjun\", \"next_move\": {\"who\": \"Arjun, with whoever can check the agent against Cleanwave's API docs\", \"what\": \"Check whether our agent can read Cleanwave's webhook events, and reply to Varun with the answer before the call.\", \"for_whom\": \"Varun Iyer at Cleanwave\", \"by_when\": \"2026-10-09\"}, \"facts\": [{\"claim\": \"Varun Iyer, founder of Cleanwave, wrote after meeting Arjun at a meetup, shared Cleanwave's API docs, and asked Arjun to confirm whether our agent can read Cleanwave's webhook events before they meet.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Varun has booked a call for the ninth of October at four in the afternoon IST.\", \"evidence\": [\"evt_#1\", \"evt_#2\"]}, {\"claim\": \"His question is open and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"No answer of ours to Varun is measured in the file.\", \"evidence\": [\"num:your_reply_time:varun@cleanwave.test\"]}], \"inferences\": [{\"claim\": \"Varun wants the webhook answer before the call so the call can be spent on the integration, not on finding out whether it is possible.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The answer needs a technical check of Cleanwave's API docs against what our agent reads — Arjun's or the team's to give, not a scheduling note.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of how Cleanwave takes a late answer.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Our agent may read webhook events of this kind today.\", \"needs\": \"A look at Cleanwave's API docs against what the agent can read.\"}, {\"proposition\": \"Varun may read a missing answer as a sign the integration is not ready.\", \"needs\": \"His tone at the call, or a chase before it.\"}], \"unknowns\": [{\"question\": \"Can our agent read Cleanwave's webhook events today?\", \"relevance\": \"It decides whether the reply is a yes, a not-yet with a plan, or a no — and what the call is for.\"}, {\"question\": \"Did Arjun give Varun an answer in person or on another channel?\", \"relevance\": \"If so, the question is closed and only the call remains.\"}, {\"question\": \"Who from our side should join the call?\", \"relevance\": \"A technical question may need an engineer on it.\"}], \"frames\": {\"primary\": \"A warm integration partner with a technical question waiting on us, due before the call he booked: can our agent read Cleanwave's webhook events?\", \"rivals\": [\"A routine scheduling thread, where the call itself will settle the question.\", \"An early sign of a poor fit: if the agent cannot read their events, the call becomes about whether to build it.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From the brief's goal of landing design partners and Varun's own words: the webhook question answered before the call, and the call spent on the integration.\", \"actual\": \"The question is unanswered in the file, and the call is booked for the ninth of October.\"}, \"scenarios\": {\"do_nothing\": \"Varun comes to the call without his answer, its first part goes on the question he asked days before, and the partner reads the silence as a gap.\", \"act\": \"A short answer before the call — yes, not yet, or no with what it would take — lets the call go straight to the integration.\", \"best\": \"The agent reads their webhook events, Varun hears so before the call, and it ends with a design-partner next step.\", \"worst\": \"No answer comes, the call opens on the question, and the agent turns out not to read their events — the partnership starts on the back foot.\", \"signals_to_watch\": [\"A reply to Varun before the call\", \"Varun writing again before the ninth\", \"The call staying on the calendar or being moved\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Cleanwave is one of the brief's design partner talks.\", \"Varun asked for the answer before a call he booked on a fixed date.\", \"A late or partial answer can be mended at the call, so a wrong move is cheap to reverse.\"]}, \"mode\": \"act\", \"alternative\": \"If the check cannot be finished in time, write to Varun before the call with what is known so far, and say the full answer comes at the call.\", \"wait_or_stop\": \"Nothing to wait for — the move is ours; once the answer is sent, the file waits for the call on the ninth.\", \"done_when\": \"Varun has our answer on the webhook events before the call, and the call goes ahead as booked.\"}",
+   "framed": true,
+   "input_tokens": 3194,
    "output_tokens": 1209,
    "model": "claude-haiku-4-5-20251001"
   },
-  "78010f39c3945882fb950913efd778dd711926d23a3b4dda69535b74f7b029b9": {
+  "3769a78ce28b5d8b3c0a484b6c04fea700932f0bff049727cd5b908e2ff6ec02": {
    "site": "bundle_narrator",
    "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
     "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
    },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2362,
-   "output_tokens": 166,
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1764,
+   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
-  "7b18fba3714acc67e7637d6a57f4dbdbb3daae779ae6f9bfc81ec804a22cbedc": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2321,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a0f9e904cf9774d2e96519d437298bf93f082370e652df5076c1fd88a86887cd": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 1035,
-   "output_tokens": 51,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a46a279395e75f13c7129a00c92c6ad5f03ca5cec76b4e220566b1dd23d0998b": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Answer Varun's webhook question",
-    "situation": "Varun Iyer asked 7 days ago whether our agent can read Cleanwave's webhook events. The reply is ours.",
-    "artifact": "Hi Varun, on your question about your webhook events: [our answer]. Talk soon."
-   },
-   "raw": "{\"headline\": \"Answer Varun's webhook question\", \"situation\": \"Varun Iyer asked 7 days ago whether our agent can read Cleanwave's webhook events. The reply is ours.\", \"artifact\": \"Hi Varun, on your question about your webhook events: [our answer]. Talk soon.\"}",
-   "input_tokens": 1820,
-   "output_tokens": 64,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b10886d8037fb59900922b5524590d933b2b3f77495deb55f8c88551dab4fb53": {
+  "42cd11307ad0db8258f50a09211d6b8acac709197084ae11bba18575b19cda85": {
    "site": "expert",
    "parsed": {
     "proposed_kind": null,
@@ -232,20 +181,20 @@
      {
       "claim": "Varun Iyer, founder of Cleanwave, wrote after meeting Arjun at a meetup, shared Cleanwave's API docs, and asked Arjun to confirm whether our agent can read Cleanwave's webhook events before they meet.",
       "evidence": [
-       "evt_a13904cafbf7099ad45b4a46"
+       "evt_#1"
       ]
      },
      {
       "claim": "Varun has booked a call for the ninth of October at four in the afternoon IST.",
       "evidence": [
-       "evt_a13904cafbf7099ad45b4a46",
-       "evt_5cf10818ee5e3a851a602996"
+       "evt_#1",
+       "evt_#2"
       ]
      },
      {
       "claim": "His question is open and waits on us.",
       "evidence": [
-       "loop:loop_1e3c002f29917e093dfec82d"
+       "loop:loop_#1"
       ]
      },
      {
@@ -342,106 +291,10 @@
     "wait_or_stop": "Nothing to wait for — the move is ours; once the answer is sent, the file waits for the call on the ninth.",
     "done_when": "Varun has our answer on the webhook events before the call, and the call goes ahead as booked."
    },
-   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Varun, good to meet at the meetup, and thanks for the docs. On your question — whether our agent can read your webhook events: [our answer]. Looking forward to the call on the ninth. Arjun\", \"next_move\": {\"who\": \"Arjun, with whoever can check the agent against Cleanwave's API docs\", \"what\": \"Check whether our agent can read Cleanwave's webhook events, and reply to Varun with the answer before the call.\", \"for_whom\": \"Varun Iyer at Cleanwave\", \"by_when\": \"2026-10-09\"}, \"facts\": [{\"claim\": \"Varun Iyer, founder of Cleanwave, wrote after meeting Arjun at a meetup, shared Cleanwave's API docs, and asked Arjun to confirm whether our agent can read Cleanwave's webhook events before they meet.\", \"evidence\": [\"evt_a13904cafbf7099ad45b4a46\"]}, {\"claim\": \"Varun has booked a call for the ninth of October at four in the afternoon IST.\", \"evidence\": [\"evt_a13904cafbf7099ad45b4a46\", \"evt_5cf10818ee5e3a851a602996\"]}, {\"claim\": \"His question is open and waits on us.\", \"evidence\": [\"loop:loop_1e3c002f29917e093dfec82d\"]}, {\"claim\": \"No answer of ours to Varun is measured in the file.\", \"evidence\": [\"num:your_reply_time:varun@cleanwave.test\"]}], \"inferences\": [{\"claim\": \"Varun wants the webhook answer before the call so the call can be spent on the integration, not on finding out whether it is possible.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The answer needs a technical check of Cleanwave's API docs against what our agent reads — Arjun's or the team's to give, not a scheduling note.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of how Cleanwave takes a late answer.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Our agent may read webhook events of this kind today.\", \"needs\": \"A look at Cleanwave's API docs against what the agent can read.\"}, {\"proposition\": \"Varun may read a missing answer as a sign the integration is not ready.\", \"needs\": \"His tone at the call, or a chase before it.\"}], \"unknowns\": [{\"question\": \"Can our agent read Cleanwave's webhook events today?\", \"relevance\": \"It decides whether the reply is a yes, a not-yet with a plan, or a no — and what the call is for.\"}, {\"question\": \"Did Arjun give Varun an answer in person or on another channel?\", \"relevance\": \"If so, the question is closed and only the call remains.\"}, {\"question\": \"Who from our side should join the call?\", \"relevance\": \"A technical question may need an engineer on it.\"}], \"frames\": {\"primary\": \"A warm integration partner with a technical question waiting on us, due before the call he booked: can our agent read Cleanwave's webhook events?\", \"rivals\": [\"A routine scheduling thread, where the call itself will settle the question.\", \"An early sign of a poor fit: if the agent cannot read their events, the call becomes about whether to build it.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From the brief's goal of landing design partners and Varun's own words: the webhook question answered before the call, and the call spent on the integration.\", \"actual\": \"The question is unanswered in the file, and the call is booked for the ninth of October.\"}, \"scenarios\": {\"do_nothing\": \"Varun comes to the call without his answer, its first part goes on the question he asked days before, and the partner reads the silence as a gap.\", \"act\": \"A short answer before the call — yes, not yet, or no with what it would take — lets the call go straight to the integration.\", \"best\": \"The agent reads their webhook events, Varun hears so before the call, and it ends with a design-partner next step.\", \"worst\": \"No answer comes, the call opens on the question, and the agent turns out not to read their events — the partnership starts on the back foot.\", \"signals_to_watch\": [\"A reply to Varun before the call\", \"Varun writing again before the ninth\", \"The call staying on the calendar or being moved\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Cleanwave is one of the brief's design partner talks.\", \"Varun asked for the answer before a call he booked on a fixed date.\", \"A late or partial answer can be mended at the call, so a wrong move is cheap to reverse.\"]}, \"mode\": \"act\", \"alternative\": \"If the check cannot be finished in time, write to Varun before the call with what is known so far, and say the full answer comes at the call.\", \"wait_or_stop\": \"Nothing to wait for — the move is ours; once the answer is sent, the file waits for the call on the ninth.\", \"done_when\": \"Varun has our answer on the webhook events before the call, and the call goes ahead as booked.\"}",
-   "input_tokens": 3187,
+   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Varun, good to meet at the meetup, and thanks for the docs. On your question — whether our agent can read your webhook events: [our answer]. Looking forward to the call on the ninth. Arjun\", \"next_move\": {\"who\": \"Arjun, with whoever can check the agent against Cleanwave's API docs\", \"what\": \"Check whether our agent can read Cleanwave's webhook events, and reply to Varun with the answer before the call.\", \"for_whom\": \"Varun Iyer at Cleanwave\", \"by_when\": \"2026-10-09\"}, \"facts\": [{\"claim\": \"Varun Iyer, founder of Cleanwave, wrote after meeting Arjun at a meetup, shared Cleanwave's API docs, and asked Arjun to confirm whether our agent can read Cleanwave's webhook events before they meet.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Varun has booked a call for the ninth of October at four in the afternoon IST.\", \"evidence\": [\"evt_#1\", \"evt_#2\"]}, {\"claim\": \"His question is open and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"No answer of ours to Varun is measured in the file.\", \"evidence\": [\"num:your_reply_time:varun@cleanwave.test\"]}], \"inferences\": [{\"claim\": \"Varun wants the webhook answer before the call so the call can be spent on the integration, not on finding out whether it is possible.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The answer needs a technical check of Cleanwave's API docs against what our agent reads — Arjun's or the team's to give, not a scheduling note.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of how Cleanwave takes a late answer.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Our agent may read webhook events of this kind today.\", \"needs\": \"A look at Cleanwave's API docs against what the agent can read.\"}, {\"proposition\": \"Varun may read a missing answer as a sign the integration is not ready.\", \"needs\": \"His tone at the call, or a chase before it.\"}], \"unknowns\": [{\"question\": \"Can our agent read Cleanwave's webhook events today?\", \"relevance\": \"It decides whether the reply is a yes, a not-yet with a plan, or a no — and what the call is for.\"}, {\"question\": \"Did Arjun give Varun an answer in person or on another channel?\", \"relevance\": \"If so, the question is closed and only the call remains.\"}, {\"question\": \"Who from our side should join the call?\", \"relevance\": \"A technical question may need an engineer on it.\"}], \"frames\": {\"primary\": \"A warm integration partner with a technical question waiting on us, due before the call he booked: can our agent read Cleanwave's webhook events?\", \"rivals\": [\"A routine scheduling thread, where the call itself will settle the question.\", \"An early sign of a poor fit: if the agent cannot read their events, the call becomes about whether to build it.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From the brief's goal of landing design partners and Varun's own words: the webhook question answered before the call, and the call spent on the integration.\", \"actual\": \"The question is unanswered in the file, and the call is booked for the ninth of October.\"}, \"scenarios\": {\"do_nothing\": \"Varun comes to the call without his answer, its first part goes on the question he asked days before, and the partner reads the silence as a gap.\", \"act\": \"A short answer before the call — yes, not yet, or no with what it would take — lets the call go straight to the integration.\", \"best\": \"The agent reads their webhook events, Varun hears so before the call, and it ends with a design-partner next step.\", \"worst\": \"No answer comes, the call opens on the question, and the agent turns out not to read their events — the partnership starts on the back foot.\", \"signals_to_watch\": [\"A reply to Varun before the call\", \"Varun writing again before the ninth\", \"The call staying on the calendar or being moved\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Cleanwave is one of the brief's design partner talks.\", \"Varun asked for the answer before a call he booked on a fixed date.\", \"A late or partial answer can be mended at the call, so a wrong move is cheap to reverse.\"]}, \"mode\": \"act\", \"alternative\": \"If the check cannot be finished in time, write to Varun before the call with what is known so far, and say the full answer comes at the call.\", \"wait_or_stop\": \"Nothing to wait for — the move is ours; once the answer is sent, the file waits for the call on the ninth.\", \"done_when\": \"Varun has our answer on the webhook events before the call, and the call goes ahead as booked.\"}",
+   "framed": true,
+   "input_tokens": 3119,
    "output_tokens": 1209,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b1f437e0e7d209feaef24e4195ab5c640ab757fd6e865fc9c6099c35de356982": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Triage to five outcomes",
-    "situation_summary": "The triage to five outcomes is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The triage to five outcomes ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the triage to five outcomes shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Triage to five outcomes\", \"situation_summary\": \"The triage to five outcomes is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The triage to five outcomes ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the triage to five outcomes shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 3134,
-   "output_tokens": 188,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c9043aab67d64df8d87b16e4562bd70afd957e0c3cad69fe0823c41109169a60": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4969,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 5025,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
-    },
-    "confidence_bp": 5000,
-    "rationale": "Cleanwave wrote today and the ball is in our court.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4969, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 5025, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Cleanwave wrote today and the ball is in our court.\", \"missing\": []}",
-   "input_tokens": 4140,
-   "output_tokens": 85,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ce9d955f77bf69d4e2a6840589b4f17976979e54232bead2fb7d0786bedd025e": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Triage to five outcomes",
-    "situation_summary": "The triage to five outcomes is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The triage to five outcomes ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the triage to five outcomes shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Triage to five outcomes\", \"situation_summary\": \"The triage to five outcomes is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The triage to five outcomes ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the triage to five outcomes shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 3019,
-   "output_tokens": 188,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d7df0eed367664e5bc1de351cdd47a48c2d777d6f486a844e1daa94e0b49a318": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 1141,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "de13065d0be7bf8e9ec2f2975ad913546ccbe4d420d40f9ac8f8d98ec98267bf": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4515,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4571,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
-    },
-    "confidence_bp": 5000,
-    "rationale": "Cleanwave wrote today and the ball is in our court.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4515, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4571, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Cleanwave wrote today and the ball is in our court.\", \"missing\": []}",
-   "input_tokens": 4139,
-   "output_tokens": 85,
    "model": "claude-haiku-4-5-20251001"
   },
   "e6b822e4035628a3e3bb23ae4d6bfaff4d322e6c8c31d7101966c8e9df1ed520": {
@@ -456,6 +309,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you confirm whether your agent can read our webhook events before we meet?\", \"start_offset\": 130, \"end_offset\": 210, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
    "input_tokens": 1553,
    "output_tokens": 58,
    "model": "claude-haiku-4-5-20251001"
@@ -578,20 +432,9 @@
     ]
    },
    "raw": "{\"intent\": \"question\", \"stance\": \"positive\", \"topics\": [\"integration\", \"webhooks\"], \"entity_mentions\": [{\"surface_form\": \"Varun Iyer\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Varun Iyer\", \"start_offset\": 260, \"end_offset\": 270}], \"confidence_bp\": 9000}, {\"surface_form\": \"Cleanwave\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Cleanwave\", \"start_offset\": 0, \"end_offset\": 9}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Can the Nimbus agent read Cleanwave's webhook events?\", \"asked_by\": \"Varun Iyer\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you confirm whether your agent can read our webhook events before we meet?\", \"start_offset\": 130, \"end_offset\": 210}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"Thursday 9 Oct, 4 pm IST\", \"earliest\": \"2026-10-09T10:30:00Z\", \"latest\": \"2026-10-09T10:30:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-09-30T11:05:00Z\", \"evidence\": [{\"quote\": \"Thursday 9 Oct, 4 pm IST\", \"start_offset\": 225, \"end_offset\": 249}]}], \"scheduling_proposals\": [{\"proposer\": \"Varun Iyer\", \"text\": \"a call on Thursday 9 Oct, 4 pm IST\", \"evidence_text\": \"I have booked Thursday 9 Oct, 4 pm IST.\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Varun Iyer\", \"value\": \"Founder\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Founder, Cleanwave\", \"start_offset\": 271, \"end_offset\": 289}], \"confidence_bp\": 9000}, {\"field\": \"relationship.nature\", \"subject\": \"Cleanwave\", \"value\": \"integration partner\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"Could you confirm whether your agent can read our webhook events\", \"start_offset\": 130, \"end_offset\": 194}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"confirm the webhook integration before the call\"}, \"implied_actions\": [\"confirm whether the agent can read Cleanwave's webhook events\"]}",
+   "framed": true,
    "input_tokens": 5549,
    "output_tokens": 503,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f7ca79db2b919d1fb581dc143fff56f266ea478516c52a28791d36ce69c30c0d": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Confirm webhook support for Cleanwave",
-    "situation": "Varun at Cleanwave asked whether our agent can read their webhook events before you meet. The next move is ours.",
-    "artifact": "Hi Varun, thanks for the docs. On whether our agent can read your webhook events: [our answer]. We can go through it when we meet."
-   },
-   "raw": "{\"headline\": \"Confirm webhook support for Cleanwave\", \"situation\": \"Varun at Cleanwave asked whether our agent can read their webhook events before you meet. The next move is ours.\", \"artifact\": \"Hi Varun, thanks for the docs. On whether our agent can read your webhook events: [our answer]. We can go through it when we meet.\"}",
-   "input_tokens": 1568,
-   "output_tokens": 82,
    "model": "claude-haiku-4-5-20251001"
   }
  }

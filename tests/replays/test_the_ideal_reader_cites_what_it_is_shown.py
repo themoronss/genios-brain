@@ -6,8 +6,8 @@ Tree `yc2_w27_s12` M33.C2.L-data.V0.U03 (`tests/replays/expert_citations.py`, re
 An authored review cites the ids of the dossier it was written against. Served to a dossier that shows the
 same lines under other ids — the first-connect door mints ids in another order — it cites the ids shown
 there, line for line; a citation whose line that dossier does not hold exactly once stays as authored, for
-the contract to refuse. And a recording is replayed in its key's own frame: the ids it cites are the
-replaying prompt's own.
+the contract to refuse. And the table of where every authored citation points is current: every id every
+case's answers cite has its line.
 """
 from __future__ import annotations
 
@@ -90,6 +90,18 @@ def test_the_ideal_reader_serves_the_expert_the_ids_its_dossier_shows(monkeypatc
     prompt = _prompt(line.replace(target, "evt_moved"))
     served = IdealReader(case)._answer("expert", prompt)
     assert target not in X.cited(served) and "evt_moved" in X.cited(served)
+
+
+def test_where_every_authored_citation_points_is_measured():
+    """`expert_citations.json` is current: every id every case's authored answers cite has its line."""
+    table = X._table()
+    for case in load_cases():
+        want = set().union(*(X.cited(e["answer"]) for e in (case.model or {}).get("expert") or ()))
+        have = set(table.get(case.case_id, {}))
+        assert want <= have, f"{case.case_id}: cited with no line recorded — {sorted(want - have)}"
+        for cid, lines in table.get(case.case_id, {}).items():
+            assert lines and all("[#]" in shape_ and int(index) >= 0 for shape_, index in lines), \
+                (case.case_id, cid)
 
 
 def test_a_line_printed_otherwise_as_time_passes_is_matched_by_any_of_its_shapes():

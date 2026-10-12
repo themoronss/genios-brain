@@ -1,7 +1,7 @@
 {
  "case_id": "F34",
  "source": "ideal_reader",
- "recorded_at": "1b5e5f58",
+ "recorded_at": "a10f3140",
  "answers": {
   "6aed800f14609d53f60e99b96eadf3259515e1f470b0e05cc6ea375c5ed13886": {
    "site": "junk_gate_batch",
@@ -20,6 +20,7 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "framed": true,
    "input_tokens": 1062,
    "output_tokens": 50,
    "model": "claude-haiku-4-5-20251001"
@@ -39,6 +40,7 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"You have 6 new co-founder matches\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "framed": true,
    "input_tokens": 1163,
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"

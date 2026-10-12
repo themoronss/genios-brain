@@ -601,7 +601,7 @@
       {
        "claim": "Ekta Bhalla of the Incubation Cell wrote that the invoice for the two co-working seats is due on the thirtieth of September, and asked Arjun to confirm the billing name.",
        "evidence": [
-        "evt_914574e5c9426c7139dd8ac9"
+        "evt_f6dc49920ee904fdab0e2a4f"
        ]
       },
       {
@@ -609,7 +609,7 @@
        "evidence": [
         "loop:loop_44bcb3a253c003e041f4926a",
         "loop:loop_2ffa15592637f386c7c83fae",
-        "loop:loop_633b7dacc926ebb956b627e5"
+        "loop:loop_b4ea92a49ba069acb9973a25"
        ]
       },
       {
@@ -894,5 +894,5 @@
   ]
  },
  "notes": "None of the four real people reached memory.",
- "blocked_on": "all three asks reach memory since STEP-05; Naveen's and Ritika's become their own cards, and no card names Ekta — lost in reasoning (STEP-12, STEP-14)"
+ "blocked_on": "one file, three people's asks: its review's single move changed between the sweeps (two cards about Naveen), and the case expects a card per person where one file has one card — 03 F176, 06 D58 (STEP-14)"
 }
