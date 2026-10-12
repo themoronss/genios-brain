@@ -112,12 +112,13 @@ def _instant(value) -> datetime | None:
 def meetings_of_day(conn, org_id: str, *, emails: Iterable[str], now: datetime, tz: str) -> MeetingDay:
     """The seat's meetings of today and tomorrow in `tz`, and the external meetings nobody followed up — as of
     `now`. `emails` are the seat's addresses (the first is the viewer whose private events it may read)."""
-    mine = sorted({str(e).strip().lower() for e in emails if str(e or "").strip()})
+    given = list(dict.fromkeys(str(e).strip().lower() for e in emails if str(e or "").strip()))
+    mine = sorted(given)
     zone = ZoneInfo(tz)
     local = now.astimezone(zone).date()
     if not mine:
         return MeetingDay(local_date=local, today=(), tomorrow=(), no_follow_up=())
-    viewer = mine[0]
+    viewer = given[0]                       # the seat's own address, as given first — never the alphabet's first
     facts: dict[str, dict] = {}
     for r in conn.execute(_MINE, {"o": org_id, "mine": mine, "viewer": viewer}):
         held = facts.setdefault(r.node_id, {"name": r.display_name})

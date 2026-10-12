@@ -199,6 +199,12 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "template brief, the next unit; until it lands no brief is fitted to its budget.",
         "MOVES WHEN M44.C3.L-logic.V1.U03 (`executive/morning_template`) lands: every brief is fitted there"),
 
+    "morning_day.read_day": (
+        "STEP-15 M44.C3.L-logic.V0.U02, built bottom-up: every item of one seat's day — each file's checked "
+        "judgment, the questions, your desk, the day's meetings, your promises — with its material and sources. "
+        "Its one caller is the composer, M44.C4.L-integration.V1.U02; until it lands no day is read.",
+        "MOVES WHEN M44.C4.L-integration.V1.U02 (`executive/morning.compose`) lands: every brief reads its day there"),
+
     "morning_store.keep": (
         "STEP-15 M44.C4.L-data.V0.U01, built bottom-up: the brief written once per seat per local day, a second composer handed the first's — the row is the claim. Its one caller is the composer, M44.C4.L-integration.V1.U02; until it lands no brief is kept.",
         "MOVES WHEN M44.C4.L-integration.V1.U02 (`executive/morning.compose`) lands: every brief is kept there"),

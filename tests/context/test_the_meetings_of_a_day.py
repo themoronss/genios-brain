@@ -108,6 +108,13 @@ def test_today_and_tomorrow_are_the_seats_days_in_the_orgs_timezone(pg):
     assert today.start_at == NOW + timedelta(hours=6)
 
 
+def test_the_viewer_is_the_seats_own_address_given_first(pg):
+    _person(pg, "n_also", "Arjun Rao", "a.rao@nimbuslabs.test")
+    _meeting(pg, "m_mine", "Private 1:1", NOW + timedelta(hours=5), private_to=(ME,))
+    assert [m.meeting_id for m in _day(pg, emails=(ME, "a.rao@nimbuslabs.test")).today] == ["m_mine"]
+    assert _day(pg, emails=("a.rao@nimbuslabs.test", ME)).today == ()     # another address of ours is not this seat
+
+
 def test_a_seat_with_no_address_has_no_meetings(pg):
     _meeting(pg, "m_today", "Insight call", NOW + timedelta(hours=6))
     assert _day(pg, emails=()).today == ()

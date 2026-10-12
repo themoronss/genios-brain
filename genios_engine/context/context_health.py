@@ -118,28 +118,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "*'Every lens one entity appears in.'* One test caller. The multi-lens view of a node, and every live reader asks for one lens at a time",
         "MOVES WHEN a surface shows one entity across lenses — an entity page is the obvious caller and does not exist"),
 
-    # STEP-15 builds bottom-up (tree `yc2_w27_s15`): the day's readers land before the day that reads them. Each
-    # entry is deleted in the commit that wires its caller.
-    "your_desk.desk_for": (
-        "STEP-15 M44.C2.L-data.V0.U03: your last mail out and who waits on you — built before the morning brief's "
-        "day, which reads it, bottom-up",
-        "MOVES WITH M44.C3.L-logic.V0.U02 (`executive/morning_day`), which reads your desk into the day"),
-
-    "meeting_days.meetings_of_day": (
-        "STEP-15 M44.C2.L-data.V0.U04: the seat's meetings of today and tomorrow, and the external meetings "
-        "nobody followed up — built before the morning brief's day, which reads them, bottom-up",
-        "MOVES WITH M44.C3.L-logic.V0.U02 (`executive/morning_day`), which reads the day's meetings"),
-
-    "promises_due.promises_due": (
-        "STEP-15 M44.C2.L-data.V0.U05: every open promise of ours overdue or due within a week, with its mail and "
-        "whom it is owed to — built before the morning brief's day, which reads it, bottom-up",
-        "MOVES WITH M44.C3.L-logic.V0.U02 (`executive/morning_day`), which reads your promises due"),
-
-    "your_desk.open_questions": (
-        "STEP-15 M44.C2.L-data.V0.U02: every open question of the tenant with the card that asks it, in one read — "
-        "built before the morning brief's day, which reads it, bottom-up",
-        "MOVES WITH M44.C3.L-logic.V0.U02 (`executive/morning_day`), which lists the questions your files ask"),
-
 }
 
 
