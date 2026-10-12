@@ -189,10 +189,9 @@ def test_the_decider_quotes_each_claim_whole(decider_reads):
 from genios_engine.deliver.store import QUESTION_CARD_BUILDER  # noqa: E402 — beside the clause it serves
 
 
-@pytest.mark.xfail(strict=True, reason="STEP-13 crosscheck: a question card says what answering it does — its "
-                   "success (your answer, kept on the file) and what waiting costs — in the question card's own "
-                   "words, M36.C2.L-logic.V2.U10 (the fix worker's unit); this marker goes when it lands")
 def test_a_question_card_says_what_answering_it_does(reads):
+    """STEP-13: a question card carries no play — its success is your answer, kept on the file, and what waiting
+    costs is said in a closed phrase (M36.C2.L-logic.V2.U10's fix); its window stays the question's own."""
     asked = [card for read in reads.values() for card in read["founder_cards"]
              if card["builder_version"] == QUESTION_CARD_BUILDER]
     assert asked, "no question card on these cases — F01's is one"
