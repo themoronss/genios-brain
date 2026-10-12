@@ -1,0 +1,592 @@
+# Proposed tree block for STEP-14 (the card) — checked and planned 2026-10-12 against yc2w27-s14-plan @ fbd0aeaa.
+# The lead merges it into tree.yaml (and updates tests/test_tree_ids_are_addressable.py: nineteen blocks, and
+# the header's table: `yc2_w27_s14  M42, M43  ← STEP-14, the card (planned 12 Oct)`). M42 and M43 appear in no
+# other block. Cross-block dependencies use the canonical form `<block>/<id>` (tree.yaml header).
+yc2_w27_s14:
+  status: proposed   # 2026-10-12: checked and planned (STEP-14 §8); awaiting Rohit's go and s14-D1…s14-D8
+  source: >
+    speedrun008/YC-II W27/STEP-14 §1-§6, re-checked claim by claim against yc2w27-s14-plan @ fbd0aeaa (STEP-13
+    built but for M36.C2 U05, U06, U08, M35.C4 U03 and M36.C3; its question card — `deliver/store.
+    QUESTION_CARD_BUILDER` "founder_question.v1", `QUESTION_CARD_SQL` the queue's third door,
+    `deliver/pipeline._build_question_cards`, the writer moved to `reason/expert/asks.py` — landing on the s13
+    line as this was written, planned against as described) — STEP-14 §8 — and measured by replaying 31 of the
+    58 golden cases one at a time, each on a fresh scratch database, from their cassettes (no spend): 39 cards,
+    every one the expert's. Since STEP-12 a covered file holds ONE decision at a time, so it shows one card at a
+    time; but every new decision is a new card and the old one is REPLACED — 10 replacements over 9 cases, eight
+    of them must-detect cases lost (F02, F05, F06, F12, F19, F24, F25, F50; 03 F176). 10 of the 39 cards are
+    demoted to `review` by the formula lane's quote gate and reach no app surface: 6 of the board's 21 must-detect
+    passes are cards the app never shows (F03, F07, F16, F47, F48, F49). why now, what remains and the role are
+    empty on all 39; 21 name a domain as their subject; the headline is the move cut at 60 characters (38 of 39
+    longer, 10 cut mid-phrase); the move's date, recipient, alternative and stop rule are on no card field. No
+    contract check exists, and the second card writer (`reason/team/emit`) runs no validator; the narrator's
+    prompt still names Titan Capital and a salesperson; screen reminders are still hidden (D8 — STEP-15's).
+  vision: >
+    One file, one card, and it lives. Each new decision or question on a file is a new VERSION of the same card —
+    what changed is said, the words before are kept, a renewal changes nothing you see — never a second card; a
+    question the file asks you, and your answer, are versions of it too. The card is in the gold shape, every line
+    from the checked review or from code's own calculators, no model writing it, whatever model reviewed: who and
+    what the file is, what remains, why now, the move (who, what, for whom, by when, to whom), its alternative,
+    when to stop, what done looks like, its window, its receipts. Nothing false reaches the dashboard — us, an
+    internal field name, money with no money in the evidence, a quote that is not in the quotes — from either card
+    writer. And the board counts what you actually see.
+  order_note: >
+    STEP-13 complete first (its question card and Answer are M42.C3.U04's and U05's inputs). M42: the identity
+    (C1), reason hands the file on (C2), delivery versions it (C3); the expert card's level from its check
+    (C3.U01) lands BEFORE the board counts what the app shows (C4.U03), so no pass drops on the way. A card is
+    what the expert's dossier reads back of the file's past (`context/file_judgments`), so M42 re-records once
+    (C4.U04). M43 after M42's acceptance: the check widened (C1.U02, C2.U01) and the card lines (C2.U02-U04)
+    before the card shows them (C3); the contract (C4) any time after M42.C3.U03; the narrator's prompt (C5.U01),
+    the authored lines (C2.U05) and replay 02's cases (C6.U01-U08) before ONE more re-record (C6.U09); the
+    acceptance last. Every unit: its own tests, a mutation run, the repo's guards; each milestone: a crosscheck
+    and the whole QA tier, awake.
+  milestones:
+    - id: M42
+      name: One file, one living card (STEP-14 §3.1, §3.2; 03 F176, F52, F53)
+      ships: >
+        On the golden set no file has two open cards after any sweep and no file's card is replaced by another:
+        F02, F05, F06, F12, F19, F24, F25 and F50 show one card that changes, each version saying what changed and
+        keeping the words before; a renewal pushes nothing; a held file's question (STEP-13's question card) and
+        your answer are versions of the file's card; the six must-detect passes the app never showed reach it.
+        Must-detect counted on what the app shows 15 → 29 of 45 (and F01, F52 when STEP-13's question card passes
+        them, M36.C2 U08), must-abstain 13 of 13, forbidden outputs 0 over every version of every card.
+      categories:
+        - id: M42.C1
+          name: The card's identity is its file
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M42.C1.L-contract.V0.U01
+                      what: >
+                        `0220_the_living_card`: `cards.file_id` — the file whose decisions and questions the card
+                        carries (null on a card that is no file's: the legacy and compiled lanes, P4) — and
+                        `cards.version` (1 at creation); a partial unique index, at most one card per (org, file)
+                        the founder has not decided. Wiped by `/reset` with its cards; rolled back cleanly.
+                      artifact: "migrations/0220_the_living_card.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_the_living_card_table.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: []
+                    - id: M42.C1.L-contract.V0.U02
+                      what: >
+                        What a version of a card is (`contracts/card_version`), pure and frozen: the words it
+                        showed (headline, situation, the move, the draft, the lane), the signal it carried, the
+                        change — created, updated, reworded, renewed, asked, answered, reopened — and whether it is
+                        MATERIAL by one closed rule (another ask, recipient, date, lane or mode; s14-D1), with the
+                        fields that changed. Read back as stored.
+                      artifact: "genios_engine/contracts/card_version.py"
+                      verify: ".venv/bin/python -m pytest -q tests/contracts/test_a_card_version_says_what_changed.py"
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M42.C1.L-data.V1.U03
+                      what: >
+                        The one writer of a card's signal, as `platform/card_lifecycle` is of `expired`:
+                        `version_card` moves a file's card onto the file's newest signal — open, or closed by the
+                        clock, a replacement or a clearing; never one the founder decided (acted, resolved,
+                        dismissed, answered-and-closed) nor one an agent holds — and writes one version event
+                        carrying the version's words, in the caller's transaction. A guard: no other statement in
+                        the engine sets `cards.signal_id`.
+                      artifact: "genios_engine/platform/card_lifecycle.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/platform/test_one_way_to_version_a_card.py tests/platform/test_card_lifecycle.py tests/platform/test_one_way_to_expire_a_card.py"
+                      depends_on: [M42.C1.L-contract.V0.U01, M42.C1.L-contract.V0.U02]
+        - id: M42.C2
+          name: Reason hands the file on
+          layers:
+            - layer: data
+              levels:
+                - level: 2
+                  units:
+                    - id: M42.C2.L-data.V2.U03
+                      what: >
+                        What was judged before reads a file card's VERSIONS: each version's headline, when, and
+                        what changed, from its version events — so the expert still sees the advice it gave
+                        before, where today it sees a replaced card beside a new one.
+                      artifact: "genios_engine/context/file_judgments.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_what_was_judged_before_reads_versions.py"
+                      depends_on: [M42.C1.L-data.V1.U03]
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M42.C2.L-logic.V0.U01
+                      what: >
+                        `RENEW_MARGIN` 12 hours — more than one 6-hourly sweep: a standing decision is decided
+                        again BEFORE its card's window lapses, so the same advice renews the card instead of a
+                        lapse and a new card (03 F52, F53).
+                      artifact: "genios_engine/reason/change_gate.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_change_gate.py"
+                      depends_on: []
+            - layer: interface
+              levels:
+                - level: 3
+                  units:
+                    - id: M42.C2.L-interface.V3.U04
+                      what: >
+                        The dossier prints a file card's versions under what was judged before, and a meeting by
+                        its title (`03` F164: "a meeting at …" names no meeting) — the check's meeting reading
+                        (`verify._MET`) unchanged.
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_dossier.py tests/reason/expert/test_the_dossier_lines.py tests/reason/expert/test_an_answered_ask_is_not_raised_again.py"
+                      depends_on: [M42.C2.L-data.V2.U03]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M42.C2.L-integration.V2.U02
+                      what: >
+                        A file's decision hands the file on (`_emit_capability_signal`'s file branch): other
+                        advice, or the same advice inside the renewal margin (no longer "standing"), retires the
+                        old signal and leaves its card to be VERSIONED, never expired REPLACED; a review that
+                        names no move still clears it (RULE_CLEARED, F175).
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_file_hands_its_card_on.py tests/reason/expert/test_a_file_keeps_one_decision.py tests/reason/expert/test_a_covered_file_decides_once.py"
+                      depends_on: [M42.C2.L-logic.V0.U01, M42.C1.L-data.V1.U03]
+                    - id: M42.C2.L-integration.V2.U05
+                      what: >
+                        A file's question hands the file on (`reason/expert/asks`, STEP-13's question writer): a
+                        new question, a decision after a question (`retire_question`), a question after a decision
+                        — each leaves the file's card to be VERSIONED (asked, answered-and-decided), never expired
+                        REPLACED; the same question asked again stays re-bound, as today.
+                      artifact: "genios_engine/reason/expert/asks.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/reason/expert/test_a_file_hands_its_card_on.py"
+                      depends_on: [M42.C1.L-data.V1.U03, yc2_w27_s13/M36.C2.L-integration.V2.U03]
+        - id: M42.C3
+          name: Delivery versions the file's card
+          layers:
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M42.C3.L-data.V1.U02
+                      what: >
+                        `CardStore.version_card`: under the new signal's build lease, re-prove its authority (the
+                        decision's predicate, or the question's), then `card_lifecycle.version_card` and the new
+                        words in place — the founder's side of the row (snooze, history, verdicts) kept; returns
+                        the card, its version and whether the change is material.
+                      artifact: "genios_engine/deliver/store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_a_card_is_versioned_not_replaced.py tests/deliver/test_three_places_must_agree_on_a_rebuild.py"
+                      depends_on: [M42.C1.L-data.V1.U03]
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M42.C3.L-logic.V0.U01
+                      what: >
+                        An expert card is graded by its check, not by the formula lane's quote gate: a shown move
+                        is prescriptive, grounded by the sources its check kept (`_sentence_sources`); a held or
+                        find-out file's card is a question (`review`); `clarity_verdict`, `states_absence` and
+                        `quotable` stay for every other card (STEP-13's question card is `review` by its own
+                        builder already). The draft names its file (`file_id`). Measured: 10 of 39 expert cards
+                        demoted today, 6 of them must-detect passes the app never shows.
+                      artifact: "genios_engine/deliver/card_builder.py"
+                      verify: ".venv/bin/python -m pytest -q tests/deliver/test_an_expert_card_is_graded_by_its_check.py tests/deliver/test_an_expert_card_speaks_its_review.py tests/deliver/test_an_expert_card_is_checked.py"
+                      depends_on: []
+            - layer: interface
+              levels:
+                - level: 3
+                  units:
+                    - id: M42.C3.L-interface.V3.U04
+                      what: >
+                        The doors agree on a file card's CURRENT version: STEP-13's third door (`QUESTION_CARD_SQL`,
+                        keyed on the question builder's stamp) and the decision's door read the version the card
+                        carries now — a version write stamps the builder its door reads — in the queue, the card
+                        detail and a context match; a guard holds that every open file card passes exactly one
+                        door, so a card turned from a question into a decision (or back) never vanishes or shows
+                        twice.
+                      artifact: "genios_engine/deliver/store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_a_file_card_passes_one_door.py tests/deliver/test_a_question_card.py"
+                      depends_on: [M42.C3.L-integration.V2.U03, yc2_w27_s13/M36.C2.L-interface.V3.U05]
+                - level: 4
+                  units:
+                    - id: M42.C3.L-interface.V4.U05
+                      what: >
+                        Answering keeps the file's card (s14-D3): the Answer action (STEP-13 M36.C2 U06) keeps your
+                        words on the file and VERSIONS the card — "your answer is in; the file is read again",
+                        Monitor — instead of resolving it; the file's next review versions it again. The other
+                        buttons act on a question version as on any card.
+                      artifact: "genios_engine/deliver/actions.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_an_answer_keeps_the_files_card.py tests/deliver/test_answering_a_question.py"
+                      depends_on: [M42.C3.L-interface.V3.U04, yc2_w27_s13/M36.C2.L-interface.V4.U06]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M42.C3.L-integration.V2.U03
+                      what: >
+                        Both builders version the file's card, never insert a second: the decision loop and
+                        STEP-13's `_build_question_cards` (a question card is the file's card asking). A material
+                        version is pushed under today's band and budget, a reworded or renewed one is not (s14-D1;
+                        counted `versioned`, `renewed`); a question version keeps its builder's surfaces (app, api
+                        — never an agent) and actions (answer, snooze); a file card whose signal closed and that no
+                        version reached is expired REPLACED at the end of the pass, counted;
+                        `files_with_two_open_cards` measured every pass (0).
+                      artifact: "genios_engine/deliver/pipeline.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_one_file_one_card.py tests/deliver/test_a_question_card.py tests/deliver/test_the_recall_guard_runs_on_a_pass.py"
+                      depends_on: [M42.C3.L-data.V1.U02, M42.C3.L-logic.V0.U01, M42.C2.L-integration.V2.U02, M42.C2.L-integration.V2.U05, yc2_w27_s13/M36.C2.L-interface.V3.U05]
+        - id: M42.C4
+          name: The board counts what you see
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M42.C4.L-data.V0.U01
+                      what: >
+                        The queue answers at an instant (`CardStore.queue(…, eval_time=)`): what the app showed
+                        then, read by the queue's own predicate — never a copy of it in a reader.
+                      artifact: "genios_engine/deliver/store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_the_queue_answers_at_an_instant.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M42.C4.L-logic.V2.U03
+                      what: >
+                        Must-detect counts a card only once the app showed it (s14-D4); forbidden names and
+                        phrases, `forbidden:us` and must-abstain read every card on every surface and every
+                        version's words; a case reports the cards no app showed.
+                      artifact: "tests/replays/marking.py"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_marking.py tests/replays/test_marking_matches_the_claim.py"
+                      depends_on: [M42.C4.L-integration.V1.U02, M42.C3.L-logic.V0.U01]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M42.C4.L-integration.V1.U02
+                      what: >
+                        Per sweep the runner records the cards the app queue showed at the sweep's instant (admin,
+                        no impressions) beside every open card, and every version's words (the version events);
+                        `CardView` carries the sweeps it was on the app and its versions.
+                      artifact: "tests/replays/engine_runner.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/replays/test_engine_runner.py"
+                      depends_on: [M42.C4.L-data.V0.U01, M42.C1.L-data.V1.U03]
+                - level: 3
+                  units:
+                    - id: M42.C4.L-integration.V3.U04
+                      what: >
+                        Re-recorded once — a card is what the next review's dossier reads back (its versions, its
+                        level, a meeting's title) — and the board restated in its five places (blocked_on,
+                        MOVED_AFTER, the Atlas specs, the controls, `03` §F.1): F02, F05, F06, F12, F19, F24, F25,
+                        F50 pass; F03, F07, F16, F47, F48, F49 stay passes, now on the app.
+                      artifact: "tests/replays/specs/founder/cassettes"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M42.C3.L-interface.V3.U04, M42.C2.L-interface.V3.U04, M42.C4.L-logic.V2.U03]
+                - level: 4
+                  units:
+                    - id: M42.C4.L-integration.V4.U05
+                      what: >
+                        M42's acceptance: on the golden set no file has two open cards after any sweep, no file
+                        card is expired REPLACED, every version names what changed and keeps the words before, a
+                        renewal pushes nothing, a held file's question and an answer are versions of its card;
+                        with versioning switched off, F176's eight cases show their second card again (the
+                        negative control).
+                      artifact: "tests/replays/test_one_file_one_living_card.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_one_file_one_living_card.py"
+                      depends_on: [M42.C4.L-integration.V3.U04, M42.C3.L-interface.V4.U05]
+    - id: M43
+      name: The card in the gold shape, and nothing false on it (STEP-14 §3.3-§3.5; 03 F64, F164, F179)
+      ships: >
+        Every expert card on the golden set — a decision's or STEP-13's question card — carries its subject (a person when the file has one, never a bare
+        domain), role, why now, what remains (when the file has an open ask), the move whole (who, what, for whom,
+        by when, to whom), its alternative and stop rule — checked like the situation — what done looks like, a
+        window read from the file (no default where a date or a pattern exists), receipts and only measured
+        confidence axes; no headline ends mid-phrase. Each contract rule refuses its case at both card writers,
+        by mutation; no real name in a prompt. Replay 02's introductions are six founder cases (s14-D5).
+      categories:
+        - id: M43.C1
+          name: What the gold card carries
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M43.C1.L-contract.V0.U01
+                      what: >
+                        `0221_the_gold_card`: `cards.recommended` (who, what, for whom, by when, to), `cards.alternative`,
+                        `cards.wait_or_stop`; `expert_reviews.card_lines` — the lines code wrote for the card at
+                        review time (why now, what remains, subject, role, window), so a decision and a replay
+                        read them without the dossier. The existing columns carry the rest (subject, role, what
+                        remains, why now, done when, window, do-nothing, receipts, confidence). Rolled back cleanly.
+                      artifact: "migrations/0221_the_gold_card.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_the_gold_card_table.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: []
+                    - id: M43.C1.L-contract.V0.U02
+                      what: >
+                        `check.v2`: the alternative, the stop rule and the do-nothing scenario are card words — the
+                        founder is shown them (the do-nothing on all 39 cards today) — so `CardWords` carries them
+                        and `CARD_LINES` names them; a review checked under v1 is checked again on read (no model).
+                      artifact: "genios_engine/contracts/claim_check.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_claim_check_contract.py"
+                      depends_on: []
+        - id: M43.C2
+          name: Each line from the file
+          layers:
+            - layer: data
+              levels:
+                - level: 2
+                  units:
+                    - id: M43.C2.L-data.V2.U05
+                      what: >
+                        The authored answers' alternatives, stop rules and do-nothing lines stand `check.v2` over
+                        all the golden set's authored reviews (`06` D49) — reworded where a line names what its
+                        facts do not hold, each change named.
+                      artifact: "tests/replays/specs/founder"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_every_changed_file_has_an_expert_answer.py"
+                      depends_on: [M43.C2.L-logic.V1.U01]
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M43.C2.L-logic.V0.U02
+                      what: >
+                        The lines code writes for the card (`reason/expert/card_lines`), pure over the dossier's
+                        parts, the review and its triggers: why now — the trigger as a sentence (the new touch's
+                        who and day, the meeting's title and its days away from the calculator), never "first
+                        look"; what remains — the file's open asks, ours and theirs, each with who and since when;
+                        subject and role — the file's counterparty person and company (`03` F64) and the brief's
+                        kind of work and role; the window — the move's date, else the playbook stage's prior, else
+                        the file's measured reply time, else 7 days labelled a default (`03` F179).
+                      artifact: "genios_engine/reason/expert/card_lines.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_card_lines.py"
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M43.C2.L-logic.V1.U01
+                      what: >
+                        The check holds the alternative, the stop rule and the do-nothing line to the standing
+                        facts' lines by the card validator's own rule, as it holds the situation — a line that
+                        fails is withheld, never the review; they leave `_prose` ("no founder is shown").
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify.py tests/reason/expert/test_verify_claims.py tests/reason/expert/test_verify_people.py"
+                      depends_on: [M43.C1.L-contract.V0.U02]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M43.C2.L-integration.V2.U03
+                      what: >
+                        The review run writes the card lines beside the check (0221), from the dossier it was
+                        written against; a review stored before 0221 shows the review's own words without them.
+                      artifact: "genios_engine/reason/expert/review.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_one_review.py tests/reason/expert/test_the_review_store.py"
+                      depends_on: [M43.C2.L-logic.V0.U02, M43.C1.L-contract.V0.U01, M43.C2.L-logic.V1.U01]
+                - level: 3
+                  units:
+                    - id: M43.C2.L-integration.V3.U04
+                      what: >
+                        The decision carries the gold lines on its render block — subject, role, why now, what
+                        remains, the move whole (who, what, for whom, by when, to), alternative, stop rule — and its
+                        play's window is the file's (F179); `DECIDE_VERSION` 1.2.0, so each covered file is decided
+                        once more, with no model.
+                      artifact: "genios_engine/reason/expert/decide.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_review_decides.py tests/reason/expert/test_replay_asks_no_model.py tests/replays/test_every_founder_file_reads_its_playbook.py"
+                      depends_on: [M43.C2.L-integration.V2.U03]
+        - id: M43.C3
+          name: The card shows them
+          layers:
+            - layer: data
+              levels:
+                - level: 4
+                  units:
+                    - id: M43.C3.L-data.V4.U02
+                      what: >
+                        The card store writes the gold columns (0221) on a new card and on every version, and a
+                        version's event carries them.
+                      artifact: "genios_engine/deliver/store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_a_card_is_versioned_not_replaced.py tests/deliver/test_the_gold_card_table.py"
+                      depends_on: [M43.C3.L-interface.V3.U01, M43.C1.L-contract.V0.U01, M42.C3.L-data.V1.U02]
+            - layer: interface
+              levels:
+                - level: 3
+                  units:
+                    - id: M43.C3.L-interface.V3.U01
+                      what: >
+                        An expert card in the gold shape: subject (the person when the file has one), role, what
+                        remains, why now, recommended, alternative, stop rule, done when, window, receipts, the
+                        confidence axes that were measured (R is a default today on 39 of 39), "playbook not yet
+                        reviewed" (D3). The headline is the move cut at a clause, never on a bare function word
+                        (*"…before the"*, *"…call on"*), the whole move under recommended. `BUILDER_VERSION` moves,
+                        so every untouched card is rebuilt in place.
+                      artifact: "genios_engine/deliver/card_builder.py"
+                      verify: ".venv/bin/python -m pytest -q tests/deliver/test_an_expert_card_is_in_the_gold_shape.py tests/deliver/test_an_expert_card_speaks_its_review.py"
+                      depends_on: [M43.C2.L-integration.V3.U04, M42.C3.L-logic.V0.U01]
+                    - id: M43.C3.L-interface.V3.U03
+                      what: >
+                        STEP-13's question card in the gold shape too (`deliver/pipeline.question_card`): the
+                        question as its headline and why it is asked as its situation, as built, and beside them
+                        the file's subject, role, why now and what remains from its review's card lines (0221) —
+                        never a domain as the subject; its actions (answer, snooze) and surfaces (app, api)
+                        unchanged.
+                      artifact: "genios_engine/deliver/pipeline.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_a_question_card.py tests/deliver/test_a_question_card_is_in_the_gold_shape.py"
+                      depends_on: [M43.C2.L-integration.V2.U03, M42.C3.L-integration.V2.U03]
+        - id: M43.C4
+          name: Nothing false reaches the dashboard
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M43.C4.L-contract.V0.U01
+                      what: >
+                        The card contract (`contracts/card_contract`), pure, for every card whatever wrote it: its
+                        subject or its draft's recipient is us · an internal field name or an unfilled slot in any
+                        shown text (`party.role`, `{stage}`) · money claimed with no money field in its evidence
+                        (*"a dated payment obligation"*) · a quote not in its quotes · a number or a date not in its
+                        own corpus. Refused, with the rule and what it found.
+                      artifact: "genios_engine/contracts/card_contract.py"
+                      verify: ".venv/bin/python -m pytest -q tests/contracts/test_the_card_contract.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M43.C4.L-logic.V0.U04
+                      what: >
+                        A discrepancy names its field in words — *"Which is right? Maria Exconde's role"*, never
+                        `party.role` — from one closed map; a field the map does not name is not asked, counted.
+                      artifact: "genios_engine/reason/verify/passes.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_a_discrepancy_names_its_field_in_words.py"
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M43.C4.L-integration.V1.U02
+                      what: >
+                        Every card the pipeline writes — a decision's or a question's, new or a version — passes
+                        the contract first: refused, it is not written, counted `refused_contract:<rule>` and
+                        logged; a version refused leaves the card as it was.
+                      artifact: "genios_engine/deliver/pipeline.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_no_card_breaks_the_contract.py"
+                      depends_on: [M43.C4.L-contract.V0.U01, M42.C3.L-integration.V2.U03]
+                    - id: M43.C4.L-integration.V1.U03
+                      what: >
+                        The second card writer (`reason/team/emit`, P4 team and verify cards) passes the same
+                        contract before `_write_card`: refused, no card and no moment, counted.
+                      artifact: "genios_engine/reason/team/emit.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/test_team_unit.py tests/reason/test_the_team_writer_keeps_the_contract.py"
+                      depends_on: [M43.C4.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M43.C4.L-integration.V2.U05
+                      what: >
+                        The health check says what the founder sees: files with two open cards (0), file cards
+                        expired REPLACED since the deploy (0), cards refused by the contract per rule, expert cards
+                        with no app surface (0) — beside today's "cards reach the app", which passes while one card
+                        does.
+                      artifact: "scripts/pipeline_health.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_cards.py tests/scripts/test_pipeline_health_reach.py"
+                      depends_on: [M43.C4.L-integration.V1.U02]
+        - id: M43.C5
+          name: Clean copy for the cards the expert does not write
+          layers:
+            - layer: interface
+              levels:
+                - level: 0
+                  units:
+                    - id: M43.C5.L-interface.V0.U01
+                      what: >
+                        The narrator — only for a card no review wrote — writes as the founder's chief of staff,
+                        to "you", never "for a salesperson"; its headline examples are the golden set's invented
+                        names, never Titan Capital, Divyanshu or Leslie.
+                      artifact: "genios_engine/deliver/render.py"
+                      verify: ".venv/bin/python -m pytest -q tests/deliver/test_the_narrator_sees_its_facts_in_one_order.py tests/test_delivery.py tests/test_render_compiled_copy.py"
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M43.C5.L-integration.V1.U02
+                      what: >
+                        No real name in a prompt: every string literal of every module that writes a model prompt
+                        in `deliver/` and `reason/expert/` read from the AST, none holding a `REAL_NAMES` token
+                        (`tests/replays/founder_case`); mutated, a real name planted in a literal fails it.
+                      artifact: "tests/deliver/test_no_real_name_in_a_prompt.py"
+                      verify: ".venv/bin/python -m pytest -q tests/deliver/test_no_real_name_in_a_prompt.py"
+                      depends_on: [M43.C5.L-interface.V0.U01]
+        - id: M43.C6
+          name: The golden set
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M43.C6.L-data.V0.U01
+                      what: >
+                        Six rows for Atlas replay 02's introductions (`06` D54, s14-D5), each its answer and why:
+                        three intros in three threads, three in one forwarded thread, one replied and two silent,
+                        a booked meeting beside a proposed time, an address the intro leaves ambiguous, a declined
+                        introduction.
+                      artifact: "speedrun008/YC-II W27/golden-labels.md"
+                      verify: ".venv/bin/python -m pytest -q tests/test_golden_labels_sheet.py"
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M43.C6.L-data.V1.U02
+                      what: "F59 — three introductions in three threads: three files, a card each, none the connector's (02 m00)."
+                      artifact: "tests/replays/specs/founder/F59.json"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_case_forbids_something.py -k F59"
+                      depends_on: [M43.C6.L-data.V0.U01]
+                    - id: M43.C6.L-data.V1.U03
+                      what: "F60 — three introductions in one forwarded thread: split per contact, never one ask (02 m01)."
+                      artifact: "tests/replays/specs/founder/F60.json"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_case_forbids_something.py -k F60"
+                      depends_on: [M43.C6.L-data.V0.U01]
+                    - id: M43.C6.L-data.V1.U04
+                      what: "F61 — one contact replied, two silent: the replied one's card versions, the others' stand, none closed (02 m02)."
+                      artifact: "tests/replays/specs/founder/F61.json"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_case_forbids_something.py -k F61"
+                      depends_on: [M43.C6.L-data.V0.U01]
+                    - id: M43.C6.L-data.V1.U05
+                      what: "F62 — one contact's meeting booked, another's time only proposed: each file keeps its own state (02 m03)."
+                      artifact: "tests/replays/specs/founder/F62.json"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_case_forbids_something.py -k F62"
+                      depends_on: [M43.C6.L-data.V0.U01]
+                    - id: M43.C6.L-data.V1.U06
+                      what: "F63 — the introduced contact's address is missing from the intro: the file asks you one question, never a guessed address (02 m05)."
+                      artifact: "tests/replays/specs/founder/F63.json"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_case_forbids_something.py -k F63"
+                      depends_on: [M43.C6.L-data.V0.U01]
+                    - id: M43.C6.L-data.V1.U07
+                      what: "F64 — an introduction declined: its card clears and never comes back from old activity; the connector's history kept (02 m07)."
+                      artifact: "tests/replays/specs/founder/F64.json"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_case_forbids_something.py -k F64"
+                      depends_on: [M43.C6.L-data.V0.U01]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M43.C6.L-integration.V2.U08
+                      what: >
+                        Replay 02's m00, m01, m02, m03, m05 and m07 expressed on F59-F64, each its pass condition
+                        as predicates; m06 (a shared display name), m08 (private facts across contacts) and m09
+                        (an unknown send result) stay declared, with the step that owns each.
+                      artifact: "tests/replays/atlas_expression.py"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_golden_replays.py -k 02"
+                      depends_on: [M43.C6.L-data.V1.U02, M43.C6.L-data.V1.U03, M43.C6.L-data.V1.U04, M43.C6.L-data.V1.U05, M43.C6.L-data.V1.U06, M43.C6.L-data.V1.U07]
+                - level: 3
+                  units:
+                    - id: M43.C6.L-integration.V3.U09
+                      what: >
+                        Re-recorded once more — the narrator's prompt, the checked alternative and stop rule, the
+                        gold card's words read back by the dossier, the six new cases — and the board restated in
+                        its five places.
+                      artifact: "tests/replays/specs/founder/cassettes"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M43.C3.L-data.V4.U02, M43.C3.L-interface.V3.U03, M43.C4.L-integration.V1.U02, M43.C5.L-interface.V0.U01, M43.C2.L-data.V2.U05, M43.C6.L-integration.V2.U08, M42.C4.L-integration.V4.U05]
+                - level: 4
+                  units:
+                    - id: M43.C6.L-integration.V4.U10
+                      what: >
+                        M43's acceptance: every expert card on the golden set is in the gold shape (each field
+                        present where the file holds it, no headline ending mid-phrase, no default window where a
+                        date or a pattern exists); each contract rule, planted in a served card, is refused on its
+                        case at both writers and no card shows it; with the contract switched off, each planted
+                        card reaches the dashboard (the negative control).
+                      artifact: "tests/replays/test_every_card_is_in_the_gold_shape.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_every_card_is_in_the_gold_shape.py"
+                      depends_on: [M43.C6.L-integration.V3.U09, M43.C4.L-integration.V1.U03, M43.C4.L-logic.V0.U04, M43.C4.L-integration.V2.U05, M43.C5.L-integration.V1.U02]
