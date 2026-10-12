@@ -38,7 +38,8 @@ WHAT THE CHECK READS BACK (STEP-13, tree `yc2_w27_s13` M35.C2.L-logic.V0.U01). `
 each claim to the lines it cites, so the dossier is read back by id: `lines_by_id` maps every id the text
 prints to each place it is printed — the line, the item it belongs to (a head line and the lines indented
 under it: a touch's words, a person's numbers) and, for a touch, its words. `people_of` says who the file's
-mail shows, who is us, and which connector introduced its counterparty — whom a draft may go to.
+mail shows, who is us, and which connector introduced its counterparty — whom a draft may go to — named as
+the person it is (`connector_of`, M35.C2.L-logic.V0.U13).
 """
 from __future__ import annotations
 
@@ -659,6 +660,29 @@ def label_of(key: str | None) -> str | None:
     return host.split(".", 1)[0]
 
 
+def connector_of(parts: DossierParts) -> Person | None:
+    """The connector that introduced the file's counterparty, NAMED AS THE PERSON it is (STEP-13
+    M35.C2.L-logic.V0.U13, `03` X07) — None on the connector's own file, and on a file nobody introduced.
+
+    An address is a person: named by the name its own mail in the file signs, else by its own words
+    (`pankaj@saka.vc` is Pankaj, `pankaj.mehta@saka.vc` Pankaj Mehta) — never by its domain's label, which
+    named Pankaj "saka" and let "Send Pankaj the short deck", to Pankaj Mehta, pass the connector check.
+    A connector known only by its company's domain (`boardy.ai`) is named by that domain's first label, as
+    before. ⛔ The graph's own node name is not read: the name the connector's mail signs is the one the
+    graph took it from, and a read here would be the dossier's first of a node it does not print."""
+    f = parts.file
+    if not f.introduced_by or f.kind == "connector":
+        return None
+    key = str(f.introduced_by)
+    signed = next((t.who_name for t in reversed(parts.timeline.touches)
+                   if str(t.who or "").casefold() == key.casefold() and t.who_name
+                   and t.who_name.casefold() != key.casefold()), None)
+    if "@" not in key:
+        return Person(name=signed or label_of(key), key=key)
+    words = [w for w in re.split(r"[._+-]+", key.split("@", 1)[0]) if w]
+    return Person(name=signed or " ".join(w[:1].upper() + w[1:].lower() for w in words) or None, key=key)
+
+
 def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str] = ()) -> FilePeople:
     """The file's people as its dossier shows them (see `FilePeople`). Pure over the parts."""
     f = parts.file
@@ -670,10 +694,8 @@ def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str]
         if t.direction == "in" and (t.who or t.who_name):
             seen.append(Person(name=t.who_name, key=t.who))
     people = tuple(dict.fromkeys(seen))
-    connector = (Person(name=label_of(f.introduced_by), key=f.introduced_by)
-                 if f.introduced_by and f.kind != "connector" else None)
     return FilePeople(counterparty=counterparty, people=people, us=us,
-                      our_names=tuple(n for n in our_names if n), connector=connector,
+                      our_names=tuple(n for n in our_names if n), connector=connector_of(parts),
                       head=_file(parts, _Ids()).text)
 
 
@@ -686,5 +708,5 @@ def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | 
 __all__ = ["CLAIMS_LIMIT", "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine", "DossierParts",
            "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",
            "OPTIONAL", "RELATIVE_WORDS", "SECTIONS", "Section", "TITLES", "TOUCHES_LISTED", "TOUCHES_WHOLE",
-           "WAVES_LIMIT", "build_dossier", "dossier_for", "label_of", "lines_by_id", "people_of",
+           "WAVES_LIMIT", "build_dossier", "connector_of", "dossier_for", "label_of", "lines_by_id", "people_of",
            "read_parts", "read_promises"]

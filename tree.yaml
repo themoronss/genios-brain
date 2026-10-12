@@ -7805,6 +7805,20 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/dossier.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_dossier_lines.py tests/reason/expert/test_the_dossier.py"
                       depends_on: []
+                    - id: M35.C2.L-logic.V0.U13
+                      what: >
+                        The connector is named as the person (fix-first, crosscheck `03` X07):
+                        `dossier.connector_of` (read by `people_of`) names a connector at an address by the
+                        name its own mail in the file signs (the latest), else by the address's own words
+                        (`pankaj@saka.vc` → "Pankaj", `pankaj.mehta@saka.vc` → "Pankaj Mehta") — never by its
+                        domain's label, which named Pankaj "saka"; a connector known only by its company's
+                        domain keeps that domain's label. So `verify`'s own `matches` (verify unedited) catches
+                        "Send Pankaj the short deck to forward to Marco", to "Pankaj Mehta", as the connector:
+                        the draft never goes to whoever made the introduction. The graph's node name is not
+                        read (the name the connector's mail signs is the one the graph took it from).
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_connector_is_named_as_the_person.py tests/reason/expert/test_the_dossier_lines.py tests/reason/expert/test_verify_people.py"
+                      depends_on: [M35.C2.L-logic.V0.U01, M35.C2.L-logic.V1.U02]
                 - level: 1
                   units:
                     - id: M35.C2.L-logic.V1.U02
