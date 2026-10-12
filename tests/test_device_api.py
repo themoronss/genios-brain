@@ -39,7 +39,19 @@ from genios_engine.platform.crypto import decrypt
 
 ORG = "org_dev"
 GRANT = "urn:ietf:params:oauth:grant-type:device_code"
-NOW = datetime.now(timezone.utc)
+#: ⛔ A FIXED INSTANT, NOT THE CLOCK AT IMPORT (`yc2_w27_s17` M41.C1.L-logic.V0.U01, `03` F142). This was
+#: `datetime.now()` taken when the module was imported, and the seat-pause test paused the seat until
+#: `NOW + 1h`: in a run that spanned more than an hour of wall clock (a sleeping laptop, a slow
+#: runner) the pause was already over, the upload was accepted and `rejected[0]` raised IndexError.
+#: A pure function is handed this instant; an instant the PRODUCT compares with its own clock is read
+#: when the test runs (`_now()`). Being in the past, this one fails any test that still leans on it
+#: for "the future".
+NOW = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
+
+
+def _now() -> datetime:
+    """The wall clock, read when the test runs — for an instant the product compares with its own."""
+    return datetime.now(timezone.utc)
 
 
 # ── harness ───────────────────────────────────────────────────────────────────────────────────
@@ -587,7 +599,7 @@ def test_org_disabled_seat_off_and_seat_paused_are_rejected(client, world):
     assert _upload(client, dev["access_token"], [_session()]).json()["rejected"][0]["reason"] \
         == "seat_capture_disabled"
     cstore.save_seat_settings(ORG, "seat_rep", {"enabled": True,
-                                                "paused_until": NOW + timedelta(hours=1)})
+                                                "paused_until": _now() + timedelta(hours=1)})
     assert _upload(client, dev["access_token"], [_session()]).json()["rejected"][0]["reason"] \
         == "paused"
     cstore.save_seat_settings(ORG, "seat_rep", {"paused_until": NOW - timedelta(seconds=1)})
@@ -740,7 +752,7 @@ def test_a_seat_opts_in_pauses_and_resumes(client, world):
     resumed = client.post("/v1/capture/pause", json={"minutes": 0}, headers=H(rep)).json()
     assert resumed["seat"]["paused_until"] is None and resumed["effective"]["capture_on"] is True
     assert resumed["policy_version"] == version
-    until = (NOW + timedelta(hours=2)).isoformat()
+    until = (_now() + timedelta(hours=2)).isoformat()
     assert client.post("/v1/capture/pause", json={"until": until},
                        headers=H(rep)).json()["effective"]["paused_until"]
     past = (NOW - timedelta(hours=2)).isoformat()
