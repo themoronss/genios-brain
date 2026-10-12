@@ -20,14 +20,26 @@ anything moves.
 The kinds an ending writes stay the ones their readers already expect: `card.expired` for the sites
 that wrote nothing before; `window.lapsed` (the sweep), `card.dismissed` (the extension) and
 `card.retired` (STEP-04's repair) are kept, because History, L6 and the repair's own audit read them.
+
+⛔ AND THE ONE WRITER OF A CARD'S SIGNAL (STEP-14, `yc2_w27_s14` M42.C1.L-data.V1.U03). A file's card lives
+(`migrations/0220`): the file's next decision or question is a VERSION of it, never a second card.
+`version_card` re-points the card at the file's newest signal — open, or closed by the clock, a replacement or a
+clearing (reopened, s14-D2); never one the founder decided (acted, resolved, dismissed, retired) nor one an agent
+holds (it waits) — moves its window to the new signal's, and writes ONE `card.versioned` event carrying the
+version (`contracts/card_version`): its words, the words before, the signal it carried and the one it came from,
+the change and whether it is material — in the caller's transaction. Its words are the card store's to write
+(`deliver/store.CardStore.version_card`). `file_card` reads which card a file's next version goes to, by the same
+rule. `tests/platform/test_one_way_to_version_a_card.py` fails on any other SQL that sets `cards.signal_id`.
 """
 from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 
 from sqlalchemy import text
 
+from genios_engine.contracts.card_version import CREATED, CardVersion
 from genios_engine.platform.ids import new_id
 
 #: `CardStore.OPEN_STATES` — a card in any of these is still in front of somebody. Every expiry site
@@ -114,3 +126,84 @@ def expire_lapsed(conn, *, now) -> list[tuple[str, str]]:
         _event(conn, card_id=row.card_id, org_id=row.org_id, kind=LAPSED_KIND, cause=LAPSED,
                actor="system", detail=None, signal_id=row.signal_id)
     return [(row.card_id, row.org_id) for row in moved]
+
+
+# ── the one writer of a card's signal (STEP-14) ─────────────────────────────────────────────────────────────
+#: The event a version writes — not an ending, so not one of `KINDS`.
+VERSIONED = "card.versioned"
+#: A card the founder decided stays decided: by its state, or — its state `expired` — by how it ended.
+DECIDED_STATES = ("acted", "resolved")
+DECIDING_KINDS = (DISMISSED, RETIRED)
+
+#: Nobody decided it: not acted or resolved, never dismissed from the extension or retired by STEP-04's repair.
+_UNDECIDED = (
+    "k.state <> all(:decided) and k.resolved_at is null "
+    "and not exists (select 1 from card_events e where e.org_id = k.org_id and e.card_id = k.card_id "
+    "                and e.kind = any(:deciding))")
+#: An agent holds it: claimed, or an agent's claim on it neither released nor finished.
+_HELD = (
+    "(k.state = 'claimed' or exists (select 1 from agent_claims ac where ac.org_id = k.org_id "
+    " and ac.card_id = k.card_id and ac.released_at is null and ac.result is null))")
+
+_FILE_CARD = text(
+    "select k.card_id, k.signal_id, k.version, k.state, " + _HELD + " as held from cards k "
+    " where k.org_id = :o and k.file_id = :f and " + _UNDECIDED +
+    " order by k.created_at desc, k.card_id desc limit 1")
+
+_VERSION = text(
+    "with before as (select card_id, signal_id, state from cards where org_id = :o and card_id = :card) "
+    "update cards k set signal_id = :signal, version = :version, expires_at = :expires, "
+    "       state = case k.state when 'expired' then 'queued' else k.state end "
+    # `before` is this tenant's card or nothing, and `card_id` is the key: the join names one row of this tenant.
+    "  from before where k.card_id = before.card_id and k.file_id is not null "
+    "   and k.version = :version - 1 and not " + _HELD + " and " + _UNDECIDED +
+    "   and not exists (select 1 from cards other where other.signal_id = :signal "
+    "                   and other.card_id <> k.card_id) "
+    "returning before.signal_id as from_signal, before.state as from_state")
+
+
+@dataclass(frozen=True, slots=True)
+class FileCard:
+    """The card a file's next version goes to: which, the signal it carries, its version and state — and
+    whether an agent holds it (the file's next version then waits)."""
+    card_id: str
+    signal_id: str
+    version: int
+    state: str
+    held: bool
+
+
+def _rule() -> dict:
+    return {"decided": list(DECIDED_STATES), "deciding": list(DECIDING_KINDS)}
+
+
+def file_card(conn, *, org_id: str, file_id: str) -> FileCard | None:
+    """The file's newest card nobody decided — open, or closed by the clock, a replacement or a clearing.
+    None: the file has no such card, and its next decision is a new card."""
+    row = conn.execute(_FILE_CARD, {"o": org_id, "f": str(file_id), **_rule()}).first()
+    if row is None:
+        return None
+    return FileCard(card_id=row.card_id, signal_id=row.signal_id, version=int(row.version), state=row.state,
+                    held=bool(row.held))
+
+
+def version_card(conn, *, org_id: str, card_id: str, version: CardVersion, expires_at,
+                 actor: str = "system") -> bool:
+    """Move this tenant's file card onto `version.signal_id`, its window to `expires_at` (the new signal's),
+    reopen it if the clock, a replacement or a clearing closed it, and write its one `card.versioned` event — in
+    the caller's transaction. False, nothing moved and nothing written: the card is decided, held by an agent,
+    no file's, another tenant's, not at the version before this one, or the signal already has a card."""
+    if not isinstance(version, CardVersion):
+        raise TypeError("a card is versioned by a contracts/card_version.CardVersion")
+    if version.change == CREATED:
+        raise ValueError("a card is created by its insert, never versioned into being")
+    moved = conn.execute(_VERSION, {"o": org_id, "card": card_id, "signal": version.signal_id,
+                                    "version": version.version, "expires": expires_at, **_rule()}).first()
+    if moved is None:
+        return False
+    _event(conn, card_id=card_id, org_id=org_id, kind=VERSIONED, cause=version.change, actor=actor,
+           detail={**version.as_mapping(), "from_signal": moved.from_signal,
+                   "reopened": moved.from_state == "expired"},
+           signal_id=version.signal_id)
+    return True
+
