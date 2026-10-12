@@ -24,7 +24,16 @@ from genios_engine.contracts.source_event import compute_dedup_key
 from genios_engine.platform.crypto import encrypt
 
 KEY = Fernet.generate_key().decode()
-NOW = datetime.now(timezone.utc)
+#: ⛔ Read when each test runs, never when this module is imported (`yc2_w27_s17`
+#: M41.C1.L-integration.V1.U02, `YC-II W27/03` F142): an instant taken at import is hours old by the
+#: time a long run — a sleeping laptop, a slow CI runner — reaches the test. Set by `_clock`.
+NOW: datetime = None  # type: ignore[assignment]
+
+
+@pytest.fixture(autouse=True)
+def _clock():
+    global NOW
+    NOW = datetime.now(timezone.utc)
 
 
 @pytest.fixture

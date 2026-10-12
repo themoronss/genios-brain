@@ -19,7 +19,16 @@ from sqlalchemy import create_engine, text
 pytestmark = pytest.mark.pg
 ORG = "s04_health_subject"
 OWNER = "founder.s04subject@gmail.com"
-NOW = datetime.now(timezone.utc)
+#: ⛔ Read when each test runs, never when this module is imported (`yc2_w27_s17`
+#: M41.C1.L-integration.V1.U02, `YC-II W27/03` F142): an instant taken at import is hours old by the
+#: time a long run — a sleeping laptop, a slow CI runner — reaches the test. Set by `_clock`.
+NOW: datetime = None  # type: ignore[assignment]
+
+
+@pytest.fixture(autouse=True)
+def _clock():
+    global NOW
+    NOW = datetime.now(timezone.utc)
 
 
 def _health():

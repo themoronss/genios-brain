@@ -39,7 +39,17 @@ from genios_engine.platform.auth import (MEMBER_SCOPES, ROLE_ADMIN, ROLE_MEMBER,
 from genios_engine.platform.sessions import mint_access_token
 
 ORG = "org_seats"
-NOW = datetime.now(timezone.utc)
+#: ⛔ A FIXED INSTANT for what is handed `now` or stamped as history; the product's own clock is read
+#: when the test runs (`_now()`) — `yc2_w27_s17` M41.C1.L-integration.V1.U02, `YC-II W27/03` F142.
+#: This was `datetime.now()` at import, and a session "valid until NOW + 1 day" built at import is
+#: expired in any run longer than a day — refused for the wrong reason, which is a test that stops
+#: testing what it says.
+NOW = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
+
+
+def _now() -> datetime:
+    """The wall clock, read when the test runs — for an instant the product compares with its own."""
+    return datetime.now(timezone.utc)
 
 OWNER = AuthCtx(org_id=ORG, actor_id="founder@acme.test", scopes=None, source="jwt",
                 seat_id="seat_owner", role=ROLE_OWNER, email="founder@acme.test", session_id="s0")
@@ -125,7 +135,7 @@ def _verify(monkeypatch, claims, row):
 
 
 def _session_row(**over):
-    row = dict(seat_id="seat_rep", revoked_at=None, expires_at=NOW + timedelta(days=1),
+    row = dict(seat_id="seat_rep", revoked_at=None, expires_at=_now() + timedelta(days=1),
                email="rep@acme.test", role="member", active=True, org_email="founder@acme.test")
     row.update(over)
     return SimpleNamespace(**row)
@@ -155,17 +165,19 @@ def test_the_role_comes_from_the_seat_not_from_the_claim(monkeypatch):
     _refused(get_current_org, ctx)
 
 
-@pytest.mark.parametrize("row", [
-    None,                                                  # no such session
-    _session_row(revoked_at=NOW),                          # logged out / reuse-revoked
-    _session_row(expires_at=NOW - timedelta(seconds=1)),   # session past its absolute lifetime
-    _session_row(active=False),                            # the seat was deactivated
-    _session_row(active=None),                             # the seat row is gone
-    _session_row(seat_id="seat_other"),                    # the claim names another seat
-])
-def test_a_dead_session_is_refused_on_the_next_request(monkeypatch, row):
+# Rows built when the test runs, not at import: each is refused for exactly ONE reason, and a row
+# built at import would also be expired by the time a long run reached it.
+@pytest.mark.parametrize("make_row", [
+    lambda: None,                                                  # no such session
+    lambda: _session_row(revoked_at=_now()),                       # logged out / reuse-revoked
+    lambda: _session_row(expires_at=_now() - timedelta(seconds=1)),  # past its absolute lifetime
+    lambda: _session_row(active=False),                            # the seat was deactivated
+    lambda: _session_row(active=None),                             # the seat row is gone
+    lambda: _session_row(seat_id="seat_other"),                    # the claim names another seat
+], ids=["no_session", "revoked", "expired", "seat_off", "seat_gone", "other_seat"])
+def test_a_dead_session_is_refused_on_the_next_request(monkeypatch, make_row):
     with pytest.raises(HTTPException) as exc:
-        _verify(monkeypatch, _claims(), row)
+        _verify(monkeypatch, _claims(), make_row())
     assert exc.value.status_code == 401
 
 
@@ -344,7 +356,7 @@ def test_the_owner_and_an_agent_key_read_what_they_always_read(monkeypatch):
 
 def _card(card_id, assignee):
     return {"card_id": card_id, "signal_id": "sig", "org_id": ORG, "assignee": assignee,
-            "state": "acted", "expires_at": NOW + timedelta(days=1)}
+            "state": "acted", "expires_at": _now() + timedelta(days=1)}
 
 
 @pytest.mark.parametrize("assignee, reaches, status", [
