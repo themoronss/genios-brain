@@ -580,6 +580,44 @@ python scripts/activate_tenant.py --org $ORG --database-url "$URL" --features ex
 Switch it on for no other tenant. A day later run the expert's health check
 (`scripts/pipeline_health.py`, `check_the_expert_says_why_and_stays_in_budget`) and send the output.
 
+### 3.13 · STEP-17 — keep the health gate's output, and read it again the next day
+
+The last step of every deploy (`06` D64, STEP-17 S17-D3). `scripts/pipeline_health.py` has three
+verdicts since STEP-17 (`yc2_w27_s17` M40.C3): **PASS**, **FAIL** and **NO DATA** — a check whose
+population was empty in its window judged nothing, and says so instead of PASS (measured on a tenant
+with no data: 17 of 19 checks used to print PASS). NO DATA is never a failure and never a pass: it is
+counted apart in the last line, `N/M checks passed, K with no data, F failed`.
+
+**1 · Right after the deploy** — the record of the release. Keep the file with the deploy's log; send
+it to Rohit:
+
+```
+REL="$HOME/genios-releases/$(date +%F)-$(git rev-parse --short origin/harsh/mvp)"; mkdir -p "$REL"
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL" \
+    --json "$REL/health.json"
+```
+
+Exit 0: nothing failed — NO DATA allowed, and on the deploy day expected for any lane that has not
+run since the boot. Exit 1: a check FAILED — read its `fix:` line before the next deploy (`06` D64).
+`--json` writes every verdict (name, verdict, measured, expected, fix, detail) to the file as pure
+JSON, PASS and NO DATA included, so the `[db]` lines on stdout cannot spoil it (`03` F36).
+
+**2 · The next day** — every lane should have run by now, so NO DATA is no longer an answer:
+
+```
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL" \
+    --json "$REL/health-next-day.json" --require-data
+```
+
+Exit 2: nothing failed, but a check still judged nothing. What that means: the lane it reads made no
+call, wrote no row or saw no event in its window — an LLM lane that called in the last 7 days and
+not in the window is named in the check's own line (`03` F24's shape: a silent lane once read as a
+healthy one). Send Rohit the file and the names of the NO DATA checks; a silent lane is a finding,
+not a pass. Exit 1: as above. Exit 0: every check judged something, and none failed.
+
+Where a section above says a check *must pass*, NO DATA on the deploy day is not a breach of it; on
+the next day's `--require-data` run it is.
+
 ## 4 · The probes — send the outputs
 
 Read-only, from `speedrun008/YC-II W27/baseline/production_state.sql`:

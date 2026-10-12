@@ -8318,6 +8318,17 @@ yc2_w27_s17:
                       artifact: "scripts/pipeline_health.py"
                       verify: ".venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_keeps_its_output.py"
                       depends_on: [M40.C3.L-contract.V0.U01]
+                    - id: M40.C3.L-interface.V0.U05
+                      what: >
+                        S17X-G1 — the kept output reaches the deploy document: 08 §3.13 runs
+                        `pipeline_health.py … --json <release record>/health.json` right after the
+                        deploy and `--require-data` the next day, and says what NO DATA means (a
+                        check that judged nothing; exit 0 on the deploy day, exit 2 the next) and
+                        what each exit asks of Harsh. 06 records S17-D1..D4 (STEP-17 §8.6) as D62-D65,
+                        each at its recommended answer, taken. Docs only.
+                      artifact: "speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py && grep -c -- '--require-data' 'speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md'"
+                      depends_on: [M40.C3.L-interface.V0.U03]
         - id: M40.C4
           name: CI runs the database suite on production's Python (§3.1)
           layers:
