@@ -84,15 +84,40 @@ def test_one_pending_row_per_event_and_a_rerun_trigger_moves_forward(engine):
     assert len(again) == 1 and again[0].enqueued_at > first.enqueued_at
 
 
+def _first_in_line(eng, org: str) -> None:
+    """Make `org`'s open rows the oldest in the queue.
+
+    ⛔ `YC-II W27/03` F136 and F67 (`yc2_w27_s17` M41.C3.L-logic.V0.U01). `claim_batch` takes the
+    org that has waited longest — across every org, which is the product's rule and is right — so
+    on a database another test left open rows in (`tests/test_screen_promoter_pg.py` leaves its
+    own), the run claimed THEIR batch and this test's chain never ran: red in that order, green
+    alone. Backdating this org's own rows puts them first in line by that same rule, whatever else
+    the database holds — and a month's margin also leaves no doubt that every row was enqueued
+    before the run started, which a run judges by the database's `now()` (F67)."""
+    with eng.begin() as c:
+        c.execute(text("update l2_work_queue set enqueued_at = enqueued_at - interval '30 days' "
+                       "where org_id = :o and done_at is null and parked_at is null"), {"o": org})
+
+
+def _claimable(eng, org: str) -> int:
+    with eng.connect() as c:
+        return int(c.execute(text(
+            f"select count(*) from l2_work_queue where org_id = :o and {W._CLAIMABLE}"),
+            {"o": org}).scalar())
+
+
 def test_a_burst_coalesces_into_one_chain_run(engine):
     for i in range(5):
         W.enqueue(engine, "org_warm_a", [f"evt_{i}_{j}" for j in range(5)], "webhook:gmail")
+    _first_in_line(engine, "org_warm_a")
     runs = []
     assert W.run_once(engine, "w1", run_chain=_chain(engine, lambda: runs.append(1)), slots=1)
     assert runs == [1], "25 queued events must cost ONE chain run"
     assert _open(engine, "org_warm_a") == []
     assert all(r.done_at is not None for r in _rows(engine, "org_warm_a"))
-    assert W.run_once(engine, "w1", run_chain=_chain(engine), slots=1) is False     # nothing left
+    # Nothing of this org is left to claim. (Not `run_once(...) is False`: that asks about the
+    # whole queue, and other tests' open rows are not this burst's.)
+    assert _claimable(engine, "org_warm_a") == 0
 
 
 def test_two_workers_never_process_the_same_event_and_never_overlap_an_org(engine, monkeypatch):
