@@ -8094,6 +8094,18 @@ yc2_w27_s13:
                       artifact: "tests/replays/test_every_claim_is_checked.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_every_claim_is_checked.py"
                       depends_on: [M35.C3.L-interface.V3.U03, M35.C3.L-integration.V2.U02]
+                - level: 2
+                  units:
+                    - id: M35.C4.L-integration.V2.U04
+                      what: >
+                        The live pass measures the check on a real model (added 12 Oct by the STEP-13 crosscheck,
+                        X32/X49; `06` D50, D65): `scripts/golden_eval.py --live` builds its client before the
+                        runner refuses one (it never ran before), and each case's row — and the scorecard — says
+                        what the check made of the model's reviews: their statuses, the fates (shown, held,
+                        suppressed, refused) and every dropped line's reason.
+                      artifact: "scripts/golden_eval.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/scripts/test_golden_eval.py"
+                      depends_on: [M35.C4.L-integration.V0.U02, M35.C3.L-integration.V1.U01]
         - id: M35.C5
           name: A claim says what made it
           layers:
@@ -8537,6 +8549,17 @@ yc2_w27_s17:
                       artifact: "scripts/pipeline_health.py"
                       verify: ".venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_keeps_its_output.py"
                       depends_on: [M40.C3.L-contract.V0.U01]
+                    - id: M40.C3.L-interface.V0.U05
+                      what: >
+                        S17X-G1 — the kept output reaches the deploy document: 08 §3.13 runs
+                        `pipeline_health.py … --json <release record>/health.json` right after the
+                        deploy and `--require-data` the next day, and says what NO DATA means (a
+                        check that judged nothing; exit 0 on the deploy day, exit 2 the next) and
+                        what each exit asks of Harsh. 06 records S17-D1..D4 (STEP-17 §8.6) as D67-D70 (renumbered at the merge),
+                        each at its recommended answer, taken. Docs only.
+                      artifact: "speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py && grep -c -- '--require-data' 'speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md'"
+                      depends_on: [M40.C3.L-interface.V0.U03]
         - id: M40.C4
           name: CI runs the database suite on production's Python (§3.1)
           layers:
@@ -8552,6 +8575,33 @@ yc2_w27_s17:
                       artifact: "scripts/qa/database_skips.py"
                       verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py"
                       depends_on: []
+                    - id: M40.C4.L-contract.V0.U03
+                      what: >
+                        S17X-F1 (the STEP-17/18 crosscheck) — a log is a finished run only if it
+                        PASSED more than `PASSED_FLOOR` (19,000: the hermetic suite, which runs no
+                        database test, passed 18,013 at 7766a06a; the database suite 20,569 at
+                        c97155cd). pytest's collect-only line — `20689/20800 tests collected (111
+                        deselected)` — read as a finished run with no skips, exit 0, so a `--co` from
+                        $GITHUB_ENV or addopts turned the database job green after running nothing.
+                        A collection, `no tests ran`, a run that deselected everything and one narrowed
+                        to the floor or below are each exit 2, named.
+                      artifact: "scripts/qa/database_skips.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py"
+                      depends_on: [M40.C4.L-contract.V0.U01]
+                    - id: M40.C4.L-contract.V0.U05
+                      what: >
+                        S17X-F2 — the scan inverted for the database job. It recognised a skip for
+                        want of a database by its wording, and 51 database-gated skips in 27 files
+                        say something else ("0043 not applied", "no org", "graph store not
+                        configured"). Now `ALLOWED` names the skips a real database run has for a
+                        reason that is not a database — measured on s13f4's whole suite on Postgres
+                        at ae24ee22: python-docx missing, an empty parameter set in
+                        tests/contracts/test_l1_contracts.py, the declared rollback exception 0080,
+                        the internal-auth 403 in tests/test_health_memory.py — each by its file AND
+                        its whole reason; every other skip fails the job, named.
+                      artifact: "scripts/qa/database_skips.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py tests/test_ci_runs_the_database_suite.py"
+                      depends_on: [M40.C4.L-contract.V0.U03]
             - layer: integration
               levels:
                 - level: 1
@@ -8571,6 +8621,20 @@ yc2_w27_s17:
                       artifact: ".github/workflows/ci.yml"
                       verify: ".venv/bin/python -m pytest -q tests/test_ci_runs_the_database_suite.py tests/test_ci_runs_the_golden_set_on_postgres.py"
                       depends_on: [M40.C4.L-contract.V0.U01, M40.C1.L-integration.V2.U04, M40.C2.L-integration.V0.U01, M40.C2.L-integration.V0.U02, M40.C3.L-logic.V0.U02]
+                    - id: M40.C4.L-integration.V1.U04
+                      what: >
+                        S17X-F1 — the guard reads the routes it did not: no step in any job writes
+                        $GITHUB_ENV or $GITHUB_PATH (`echo "PYTEST_ADDOPTS=--co" >> "$GITHUB_ENV"`
+                        reached the suite past every `env:` block); no workflow or job `defaults:`;
+                        the database job's five steps pinned exactly; pyproject's pytest table is
+                        `ini_options` alone, its settings {testpaths, addopts, markers}, `addopts`
+                        "--strict-markers" (as read 12 Oct); no root pytest.toml, .pytest.toml,
+                        pytest.ini, .pytest.ini, tox.ini or setup.cfg [tool:pytest], and the running
+                        pytest's own config file is pyproject.toml. Each check is a function, run on
+                        the real file and on a spoilt copy (a negative control).
+                      artifact: "tests/test_ci_runs_the_database_suite.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_ci_runs_the_database_suite.py"
+                      depends_on: [M40.C4.L-integration.V1.U02, M40.C4.L-contract.V0.U05]
         - id: M40.C5
           name: The plan's own checks (§3.5)
           layers:
@@ -8586,6 +8650,17 @@ yc2_w27_s17:
                       artifact: "tests/test_the_plan_folder_is_consistent.py"
                       verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py"
                       depends_on: []
+                    - id: M40.C5.L-logic.V0.U02
+                      what: >
+                        S17X-G2 — a step is built when its file's name says so OR when tree.yaml says
+                        so of its block (`yc2_w27_s<NN>: status: built`). STEP-17 and STEP-18 are
+                        built in the tree and named TO BUILD on disk, so the guard held neither;
+                        STEP-18 had no Verify section at all, and is given one first (§9, the units'
+                        own verifies). A block that says anything else (STEP-13's
+                        approved_in_progress) leaves a TO BUILD step unbuilt.
+                      artifact: "tests/test_the_plan_folder_is_consistent.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py"
+                      depends_on: [M40.C5.L-logic.V0.U01]
     - id: M41
       name: Tests that tell the truth (the findings 03 gave STEP-17)
       ships: >
@@ -8631,6 +8706,19 @@ yc2_w27_s17:
                       artifact: "tests/test_no_test_reads_the_clock_at_import.py"
                       verify: ".venv/bin/python -m pytest -q tests/test_no_test_reads_the_clock_at_import.py"
                       depends_on: [M41.C1.L-logic.V0.U01]
+                    - id: M41.C1.L-integration.V1.U04
+                      what: >
+                        S17X-F3 — two modules still read the clock at import one call away:
+                        tests/test_p10_nudges.py built `POPUP = {… "due": _in_3h() …}` and
+                        tests/test_screen_followups.py `ASK_V4` the same way. Both are now built when
+                        the test runs (`_popup()`, `_ask_v4()`). The guard follows a call made at
+                        import into the module's own function or named lambda, on as far as the
+                        module's own functions go; resolves the module's imports (`import time as
+                        t`, `from datetime import datetime as DT`); and sees a bare `time()`,
+                        `monotonic()` or `perf_counter()`. Red first on exactly those two modules.
+                      artifact: "tests/test_no_test_reads_the_clock_at_import.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/test_no_test_reads_the_clock_at_import.py tests/test_moments_pg.py tests/test_p10_nudges.py tests/test_screen_followups.py"
+                      depends_on: [M41.C1.L-integration.V1.U02]
         - id: M41.C2
           name: A timing guard takes the best of three
           layers:
@@ -8740,6 +8828,22 @@ yc2_w27_s18:
                       artifact: "genios_engine/feedback/publisher.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/feedback/test_a_review_object_waits_for_review.py tests/api/test_a_proposal_is_written_once.py tests/feedback/test_no_transition_takes_an_edge_the_contract_forbids.py"
                       depends_on: []
+                - level: 1
+                  units:
+                    - id: M48.C1.L-data.V1.U14
+                      what: >
+                        S18-X09 (the STEP-17/18 crosscheck) — review objects persisted before B4's fix
+                        stay at `governed`: `persist` answers `unchanged` every week, the review route
+                        answers 409, the queues never list them. `scripts/rest_stuck_reviews.py`, a
+                        one-off (dry run by default, `--apply` to write, a named target): every
+                        `governed` row whose LATEST `learning_transitions` edge goes to `human_review`
+                        (latest by time; at one instant the edge with a predecessor) moves to
+                        `human_review`, in one transaction, state only, no transition written. Listed
+                        in 08 §4.11 beside the s18-F3 probe. The learning ledger's measured updaters
+                        3 → 4 and the statement pin 3,119 → 3,121, each with its reason.
+                      artifact: "scripts/rest_stuck_reviews.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/scripts/test_rest_stuck_reviews.py tests/api/test_a_proposal_is_written_once.py tests/platform/test_a_delete_is_not_a_read.py"
+                      depends_on: [M48.C1.L-data.V0.U02]
         - id: M48.C2
           name: Memory is never aborted, lost on a rebuild, doubled, or failed by a neighbour's read — L3 Context Graph (`context/`) and its writers
           layers:
@@ -8771,6 +8875,21 @@ yc2_w27_s18:
                       artifact: "genios_engine/context/model_audit.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/context/lifecycle/test_a_decimal_answer_is_audited.py"
                       depends_on: []
+                - level: 1
+                  units:
+                    - id: M48.C2.L-logic.V1.U15
+                      what: >
+                        S18-X05 (the STEP-17/18 crosscheck) — the ROW, as U03 mended the hash. The
+                        parser lets `NaN`, `Infinity`, `-Infinity` in (`context/llm/parse` is
+                        `json.loads`), `json.dumps` wrote them back as bare tokens, and
+                        `cast(:parsed as jsonb)` refused them: the audit row, the `llm_costs` row of
+                        the same transaction and the rest of the org's resolution pass were lost.
+                        `_stored`: a non-finite number as its name, a Decimal as its text, a finite
+                        answer byte for byte as before, `allow_nan=False`, computed before the
+                        transaction opens. A Postgres test inserts `{"x": NaN}` and its kin.
+                      artifact: "genios_engine/context/model_audit.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/context/lifecycle/test_a_decimal_answer_is_audited.py"
+                      depends_on: [M48.C2.L-logic.V0.U03]
             - layer: data
               levels:
                 - level: 0
@@ -8834,6 +8953,18 @@ yc2_w27_s18:
                       artifact: "genios_engine/reason/runner.py"
                       verify: ".venv/bin/python -m pytest -q tests/test_every_read_closes_its_connection.py"
                       depends_on: [M48.C2.L-data.V0.U09]
+                - level: 2
+                  units:
+                    - id: M48.C2.L-data.V2.U18
+                      what: >
+                        S18-X08 (the STEP-17/18 crosscheck) — F120's shape, a third site nobody
+                        listed: `context/situations.unmet_source_families` caught a failed read of
+                        `source_coverage` with a bare except, and the support and outreach passes call
+                        it inside their own transaction right before `window_coverage_gaps`. Its read
+                        now runs in a SAVEPOINT; the case is in the F120 test, with its negative half.
+                      artifact: "genios_engine/context/situations.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/capture/coverage/test_a_failed_coverage_read_loses_itself_alone.py tests/context/test_a_card_names_the_source_it_is_missing.py"
+                      depends_on: [M48.C2.L-data.V1.U08]
             - layer: integration
               levels:
                 - level: 1
@@ -8848,6 +8979,23 @@ yc2_w27_s18:
                       artifact: "scripts/rebuild_graph.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/test_rebuild_graph_rebuilds_the_mail.py"
                       depends_on: [M48.C2.L-data.V0.U04]
+                - level: 2
+                  units:
+                    - id: M48.C2.L-integration.V2.U16
+                      what: >
+                        S18-X06 (the STEP-17/18 crosscheck) — `scripts/rebuild_graph.py` estimated
+                        "unstructured events NOT cache-linked (may cost LLM)" from its rows and
+                        refused `--apply` without `--allow-llm`; since B12 its rows include every
+                        archived mail, which takes the metadata road with no extraction, so a tenant
+                        with archived mail was refused a run that spends nothing. No road calls a
+                        model (`context/runner._process_one`): the estimate, its cache count, the
+                        refusal, `--allow-llm` and the model client are gone; the stale comments (the
+                        script's and the drain's "selects none of the road columns", S18-X14) fixed.
+                        A dry-run test drives `main()` with an archived mail, a held mail and a
+                        calendar event.
+                      artifact: "scripts/rebuild_graph.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/test_rebuild_graph_rebuilds_the_mail.py tests/scripts/test_rebuild_graph_hands_down_who_we_are.py tests/platform/test_a_delete_is_not_a_read.py"
+                      depends_on: [M48.C2.L-integration.V1.U05]
         - id: M48.C3
           name: A wipe takes its claims with it — L1 Signals (`capture/`) and its scripts
           layers:
@@ -8867,6 +9015,19 @@ yc2_w27_s18:
                       artifact: "scripts/gmail_l1.py"
                       verify: ".venv/bin/python -m pytest -q tests/test_every_mail_wipe_takes_its_fingerprints.py tests/test_a_disconnect_takes_its_fingerprints.py"
                       depends_on: []
+                - level: 1
+                  units:
+                    - id: M48.C3.L-data.V1.U17
+                      what: >
+                        S18-X07 (the STEP-17/18 crosscheck) — `scripts/gmail_l1.py` ran each delete
+                        in its own transaction and printed `skip:` on a failure, so a failed
+                        fingerprint delete (a lock, a timeout, no 0144) still let the events go and
+                        the re-sync skipped every message as `seen_on_screen`. The wipe (`WIPE`,
+                        `clear_gmail`) is ONE transaction, as the disconnect's is; `main` stops on a
+                        failure before the re-sync, exit 1; importing the script runs nothing.
+                      artifact: "scripts/gmail_l1.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/scripts/test_the_gmail_wipe_is_one_transaction.py tests/test_every_mail_wipe_takes_its_fingerprints.py"
+                      depends_on: [M48.C3.L-data.V0.U11]
     - id: M49
       name: Nothing is paid for that nothing reads, and what the engine says about itself is true (STEP-18 B7, B11, B25; 03 F97, F117, F128, F135)
       ships: >
@@ -8971,6 +9132,22 @@ yc2_w27_s18:
                       artifact: "genios_engine/platform/config.py"
                       verify: ".venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py"
                       depends_on: []
+                - level: 1
+                  units:
+                    - id: M49.C3.L-contract.V1.U10
+                      what: >
+                        `06` D62 (Rohit, 12 Oct; crosscheck S18-X03) — U07's unset case closed. An
+                        UNSET `GENIOS_ENV` (`"env" not in model_fields_set`) is not dev
+                        (`config.is_dev_env`), as `platform/egress` always read it, so a production
+                        that never named its environment no longer boots on the public secret;
+                        `change-me-in-prod` (`.env.example`) is refused like the default
+                        (`PUBLIC_JWT_SECRETS`); one `DEV_ENVS` (dev, development, test, local) serves
+                        the boot and egress — egress gains `local`, a laptop's name the device routes
+                        already read as dev. The unset-env test re-pinned, with its negative control
+                        (an unset env with a secret of its own boots).
+                      artifact: "genios_engine/platform/config.py"
+                      verify: ".venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py tests/test_egress.py tests/test_migrate_read_only.py"
+                      depends_on: [M49.C3.L-contract.V0.U07]
             - layer: integration
               levels:
                 - level: 1
@@ -8984,6 +9161,23 @@ yc2_w27_s18:
                       artifact: "genios_engine/main.py"
                       verify: ".venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py tests/test_migrate_read_only.py"
                       depends_on: [M49.C3.L-contract.V0.U07]
+                - level: 2
+                  units:
+                    - id: M49.C3.L-interface.V2.U09
+                      what: >
+                        S18-X02, X04 (the STEP-17/18 crosscheck), with `06` D62 — 08 had nothing for
+                        STEP-18 though three places send Harsh there. 08 §3.14: before the deploy read
+                        `GET /config` (its `env`, `dev` when unset), read whether `GENIOS_ENV`,
+                        `GENIOS_JWT_SECRET` and `GENIOS_COMPOSIO_WEBHOOK_SECRET` are set, and set the
+                        env and the secret together — an unset or non-dev env with a public secret
+                        refuses to boot (exit 3); a rotated secret signs every user and paired desktop
+                        out; a non-dev env turns unsigned Composio webhooks into 403 unless the webhook
+                        secret is set. The boot log names 0210 and 0211 (§2, one line). After the
+                        deploy (§4.11): the s18-F9 and s18-F3 probes (read-only, run on a scratch
+                        database) and the backfill of M48.C1.L-data.V1.U14. Docs only.
+                      artifact: "speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py && grep -c 'GENIOS_JWT_SECRET\\|0210_every_wrong_reason_is_kept\\|s18-F9\\|rest_stuck_reviews' 'speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md'"
+                      depends_on: [M49.C3.L-integration.V1.U08, M49.C3.L-contract.V1.U10, M48.C1.L-data.V1.U14]
 
 yc2_w27_s15:
   status: building   # 2026-10-12 in the worktree s15-build (branch yc2w27-s15), from the plan checked at fbd0aeaa (STEP-15 §8); Rohit: "complete it all" — s15-D1..D4, `06` D8 and D9 taken at their recommended answers

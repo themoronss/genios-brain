@@ -1,7 +1,7 @@
 {
  "case_id": "F54",
  "source": "ideal_reader",
- "recorded_at": "0aa6e43f",
+ "recorded_at": "e6b8522e",
  "answers": {
   "0aebd0bc5d7e99c0cdfac0a180141d0e5a58b0a57795ae445f9cb63ed7043921": {
    "site": "expert",
@@ -753,6 +753,26 @@
    "framed": true,
    "input_tokens": 3239,
    "output_tokens": 840,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "df76f60519938e087380db992eaf1f46665a3ef2d09ea0bda8484a36b9d7ae66": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "no readable text",
+      "category": "unknown",
+      "human_authored": null,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1144,
+   "output_tokens": 38,
    "model": "claude-haiku-4-5-20251001"
   }
  }

@@ -13,6 +13,11 @@ that call these reads do so inside their own transaction (`outreach_situations`,
 the defect `outreach_situations._optional` and `coverage_for_connection` were written against. Each
 read now runs in a SAVEPOINT: it loses its own answer (UNKNOWN, or no sentence) and the transaction
 reads on. A failed statement is made here the plainest way — a window bound Postgres cannot read.
+
+`yc2_w27_s18` M48.C2.L-data.V2.U18 (S18-X08): a third site of the same shape, unlisted —
+`context/situations.unmet_source_families`, which the support and outreach passes call inside their
+transaction right before `window_coverage_gaps`. Its failed statement here: an org id Postgres
+cannot compare with a text column.
 """
 from __future__ import annotations
 
@@ -22,7 +27,7 @@ import pytest
 from sqlalchemy import text
 
 from genios_engine.capture.coverage.window import SyncHealth, coverage_for_window
-from genios_engine.context.situations import window_coverage_gaps
+from genios_engine.context.situations import unmet_source_families, window_coverage_gaps
 
 pytestmark = pytest.mark.pg
 
@@ -76,3 +81,28 @@ def test_a_source_list_that_succeeds_still_names_what_cannot_be_ruled_out(engine
         c.execute(text("delete from l1_sync_runs where org_id = :o"), {"o": ORG})
         c.execute(text("delete from orgs where id = :o"), {"o": ORG})
     assert gaps == ("the gmail sweep did not finish, so a tail of this window was never read",)
+
+
+def test_a_failed_source_family_read_says_nothing_and_the_pass_reads_on(engine):
+    """S18-X08: `unmet_source_families` — the support and outreach passes call it inside their own
+    transaction, just before `window_coverage_gaps`."""
+    with engine.begin() as c:
+        assert unmet_source_families(c, 7, "admin") == ()
+        assert c.execute(text("select 1")).scalar() == 1, (
+            "the failed source-family read aborted the situation pass's transaction")
+
+
+def test_a_source_family_read_that_succeeds_still_names_what_is_missing(engine):
+    """The negative half: the savepoint changes nothing for a read that works."""
+    with engine.begin() as c:
+        c.execute(text("delete from source_coverage where org_id = :o"), {"o": ORG})
+        c.execute(text("delete from orgs where id = :o"), {"o": ORG})
+        c.execute(text("insert into orgs (id, name) values (:o, :o)"), {"o": ORG})
+        c.execute(text(
+            "insert into source_coverage (org_id, domain, required, connected) values "
+            "(:o, 'admin', array['finance', 'email'], array['email'])"),
+            {"o": ORG})
+        missing = unmet_source_families(c, ORG, "admin")
+        c.execute(text("delete from source_coverage where org_id = :o"), {"o": ORG})
+        c.execute(text("delete from orgs where id = :o"), {"o": ORG})
+    assert missing == ("finance",)
