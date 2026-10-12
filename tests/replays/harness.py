@@ -140,6 +140,48 @@ def cassette_key(prompt: str) -> str:
     return LLMClient.content_hash(normalise_prompt(prompt))
 
 
+#: A minted id in the key's own frame — `<prefix>_#<n>`, as `normalise_prompt` writes it.
+_PLACEHOLDER = re.compile(r"(?<![0-9A-Za-z_])([a-z]+)_#([0-9]+)(?![0-9A-Za-z])")
+
+
+def minted_ids(prompt: str) -> dict[str, str]:
+    """Each id the prompt names that `platform/ids.new_id` minted → the placeholder its key gives it."""
+    for pattern, replacement in _VOLATILE:
+        prompt = pattern.sub(replacement, prompt)
+    seen: dict[str, str] = {}
+    for match in _MINTED_ID.finditer(prompt):
+        token = match.group(0)
+        if token not in seen:
+            prefix = match.group(1)
+            seen[token] = f"{prefix}_#{sum(1 for t in seen if t.startswith(prefix + '_')) + 1}"
+    return seen
+
+
+def _reframe(value: Any, pattern: re.Pattern[str], mapping: Mapping[str, str]) -> Any:
+    if isinstance(value, str):
+        return pattern.sub(lambda m: mapping.get(m.group(0), m.group(0)), value)
+    if isinstance(value, list):
+        return [_reframe(v, pattern, mapping) for v in value]
+    if isinstance(value, dict):
+        return {k: _reframe(v, pattern, mapping) for k, v in value.items()}
+    return value
+
+
+def to_key_frame(answer: Any, prompt: str) -> Any:
+    """An answer with every minted id its prompt names written as the key's placeholder for it.
+
+    STEP-12 (M33.C2.L-data.V0.U03, `03` F177). The key forgives minted ids — a prompt about the same
+    things under other ids, from another door or another run, finds the same recording — so the answer
+    is kept in the same frame: what it cites is "the third event this prompt names", never one run's
+    id. An id the prompt does not name stays as written."""
+    return _reframe(answer, _MINTED_ID, minted_ids(prompt))
+
+
+def from_key_frame(answer: Any, prompt: str) -> Any:
+    """A recorded answer read back for THIS prompt: each placeholder its own id here."""
+    return _reframe(answer, _PLACEHOLDER, {v: k for k, v in minted_ids(prompt).items()})
+
+
 def identify_site(prompt: str) -> str:
     """Which model site wrote this prompt, or `unknown`. For reports and the ideal reader only —
     the cassette is keyed by the hash, never by the site."""
@@ -195,8 +237,11 @@ class RecordedLLM:
                 self.misses.append((site, key))
         if entry is None:
             raise CassetteMiss(site, key)
-        parsed = entry.get("parsed")
-        return LLMResult(parsed=parsed, raw=entry.get("raw") or json.dumps(parsed),
+        parsed, raw = entry.get("parsed"), entry.get("raw")
+        if entry.get("framed"):
+            # Recorded in its key's frame (`to_key_frame`): read back with this prompt's own ids.
+            parsed, raw = from_key_frame(parsed, prompt), from_key_frame(raw, prompt)
+        return LLMResult(parsed=parsed, raw=raw or json.dumps(parsed),
                          input_tokens=int(entry.get("input_tokens") or 0),
                          output_tokens=int(entry.get("output_tokens") or 0),
                          model=str(entry.get("model") or self.model))
@@ -227,7 +272,8 @@ class CassetteRecorder:
         result = self._inner.call(prompt, max_tokens=max_tokens, **kw)
         if not getattr(result, "ok", True):
             raise RuntimeError(f"not recorded — the model call failed: {result.error}")
-        entry = {"site": identify_site(prompt), "parsed": result.parsed, "raw": result.raw,
+        entry = {"site": identify_site(prompt), "parsed": to_key_frame(result.parsed, prompt),
+                 "raw": to_key_frame(result.raw, prompt), "framed": True,
                  "input_tokens": result.input_tokens, "output_tokens": result.output_tokens,
                  "model": result.model}
         with self._lock:

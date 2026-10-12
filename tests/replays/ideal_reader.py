@@ -28,7 +28,9 @@ case, in its guidance's own terms.
 per file (`06` D49: by Claude, from the case's own text, each marked `claude`) — `model.expert`, its
 `when` terms naming the file as its dossier does (`<counterparty key>`), never through the company
 brief the dossier opens with. A case that authors none for a file is refused, and so is the one repair
-the gate asks for a misshapen answer: a recording never holds a refused answer.
+the gate asks for a misshapen answer: a recording never holds a refused answer. An authored answer cites
+the ids of the dossier it was written against; served to a dossier that shows the same line under another
+id (another door mints ids in another order), it cites the id shown there (`expert_citations`).
 
 **It refuses to guess.** A prompt about no object of the case, a site the case gives no answer
 for, a quote the content does not contain, an extraction the schema rejects — each raises
@@ -165,6 +167,10 @@ class IdealReader:
                 f"— author model.{site} with terms the prompt names. Prompt: {_excerpt(prompt)}")
         if site == "decider":
             return decide_from_formula(prompt, authored, self.case.case_id)
+        if site == "expert":
+            # A faithful reader cites what its dossier shows (`expert_citations`, M33.C2.L-data.V0.U03).
+            from tests.replays.expert_citations import spots_for, translate
+            return translate(authored, prompt, spots_for(self.case.case_id))
         return authored
 
     def _authored(self, site: str, prompt: str) -> Any:
