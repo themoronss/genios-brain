@@ -1,7 +1,7 @@
 # yc2_w27_s18 — STEP-18, the live bugs already found. Proposed 2026-10-12 by the STEP-18 worker for the
 # lead to merge into `tree.yaml` (the worker never edits it). Same shape as `yc2_w27_s13`.
 yc2_w27_s18:
-  status: proposed_in_build   # 2026-10-12: checked and planned on `yc2w27-s18` @ fbd0aeaa; built unit by unit on that branch
+  status: built   # 2026-10-12 on `yc2w27-s18` (c885d677..), 20 units + 3 fixes, every unit mutation-tested; not pushed
   source: >
     speedrun008/YC-II W27/STEP-18 B1-B29 and the rows of `03` that name STEP-18 as their owner (F65, F79,
     F97, F100, F108, F109, F111, F117, F120, F128, F135, F158, F159, F165, F166, F180), each re-checked at
@@ -79,6 +79,19 @@ yc2_w27_s18:
         - id: M48.C2
           name: Memory is never aborted, lost on a rebuild, doubled, or failed by a neighbour's read — L3 Context Graph (`context/`) and its writers
           layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M48.C2.L-contract.V0.U12
+                      what: >
+                        ADDED IN BUILD (STEP-18 B13). `0211_a_followup_names_its_observation`:
+                        `screen_followups.observation_id` — the graph observation a follow-up was last
+                        written as, so the next write of a changed follow-up can retire it (finding it
+                        through `graph_source_refs`' evidence has no index). Additive, idempotent.
+                      artifact: "migrations/0211_a_followup_names_its_observation.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/test_migration_0211_a_followup_names_its_observation.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: []
             - layer: logic
               levels:
                 - level: 0
@@ -92,7 +105,7 @@ yc2_w27_s18:
                         which audits before it reads `ok`), the angle store and the cohort reader alike. An
                         answer with no float hashes exactly as before.
                       artifact: "genios_engine/context/model_audit.py"
-                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/context/test_a_decimal_answer_is_audited.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/context/lifecycle/test_a_decimal_answer_is_audited.py"
                       depends_on: []
             - layer: data
               levels:
@@ -100,7 +113,7 @@ yc2_w27_s18:
                   units:
                     - id: M48.C2.L-data.V0.U04
                       what: >
-                        STEP-18 B12, the read. `context/runner.rows_for_rebuild`: every kept event that has
+                        STEP-18 B12, the read. `context/runner._rows_for_rebuild` (private, as `_safe_process_one`): every kept event that has
                         a road into memory (`memory_lanes.lane_for` — a signal, below the floor, metadata,
                         calendar), with the drain's own columns (the cached extraction, the prepared text,
                         the recipients, the thread) — one spelling with `_pull`, which reads the same columns
@@ -119,7 +132,7 @@ yc2_w27_s18:
                         a fresh id, `graph_store.write_observation`).
                       artifact: "genios_engine/reason/moments/screen_memory.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/test_a_followup_has_one_observation_pg.py tests/test_screen_memory_batch_pg.py"
-                      depends_on: []
+                      depends_on: [M48.C2.L-contract.V0.U12]
                     - id: M48.C2.L-data.V0.U07
                       what: >
                         `03` F120, the first read. `capture/coverage/window.coverage_for_window` reads its
@@ -163,7 +176,7 @@ yc2_w27_s18:
                   units:
                     - id: M48.C2.L-integration.V1.U05
                       what: >
-                        STEP-18 B12, the script. `scripts/rebuild_graph.py` replays `rows_for_rebuild`: its own
+                        STEP-18 B12, the script. `scripts/rebuild_graph.py` replays `_rows_for_rebuild`: its own
                         pull selected no cached extraction (`rebuild_graph.py:77-83`), so every mail that had
                         reached memory through a signal was held `held_missing_qes_extraction` and only the
                         calendar was rebuilt — and it pulled `emitted` only, so the archived and below-floor
