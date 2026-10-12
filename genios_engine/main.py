@@ -50,6 +50,7 @@ from genios_engine.api.workstream_routes import router as workstream_router
 from genios_engine.api.workspace_routes import router as workspace_router
 from genios_engine.mcp.server import router as mcp_router
 from genios_engine.platform.config import get_settings
+from genios_engine.platform.config import insecure_boot
 
 # P6 group A's human delegation routes. Registered here (main.py is group B's) and guarded so the
 # app boots on a tree where A has not merged yet: only the module itself being ABSENT is tolerated —
@@ -63,6 +64,14 @@ except ModuleNotFoundError as _exc:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # ⛔ THE SHIPPED SECRET NEVER SERVES OUTSIDE DEV — asked first, before a migration or a worker
+    # starts (STEP-18 B7, `yc2_w27_s18` M49.C3.L-integration.V1.U08). With the default
+    # `GENIOS_JWT_SECRET` anyone can sign a session, so a deployment that names its environment and
+    # carries no secret of its own refuses to boot, loudly, rather than serve. ⛔ Deploy precondition
+    # (Harsh, `08`): production's `GENIOS_JWT_SECRET` is set before this image ships.
+    refusal = insecure_boot(get_settings())
+    if refusal:
+        raise RuntimeError(f"refusing to boot: {refusal}")
     # MIGRATE FIRST, fail fast. Code and schema deploy together now: new code names
     # columns/tables its migrations create, so serving requests before migrating meant
     # every capture insert + the L2 drain erroring until someone ran migrate by hand.

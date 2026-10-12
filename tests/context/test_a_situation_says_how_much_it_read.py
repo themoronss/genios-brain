@@ -8,6 +8,7 @@ read about 18 threads of roughly 465 and reported "18 of 18".
 """
 from __future__ import annotations
 
+import contextlib
 import inspect
 from datetime import datetime, timedelta, timezone
 
@@ -31,6 +32,10 @@ class _Conn:
         if self._last == "sources":
             return [type("R", (), {"source": s})() for s in self._sources]
         return self._rows.get(self._last, [])
+
+    # ⛔ A SAVEPOINT PER READ since `03` F120 (yc2_w27_s18 M48.C2.L-data.V0.U07): a real connection
+    # rolls a failed read back to it; this double has nothing to roll back.
+    def begin_nested(self): return contextlib.nullcontext()
 
 
 def _row(**kw):
@@ -57,6 +62,7 @@ def test_a_broken_read_is_silent_rather_than_noisy():
     """`unmet_source_families`'s own rule, kept: "a sentence is never worth the sweep"."""
     class _Broken:
         def execute(self, *_a, **_k): raise RuntimeError("no such table")
+        def begin_nested(self): return contextlib.nullcontext()
     assert window_coverage_gaps(_Broken(), "org", since=T0, until=NOW) == ()
 
 

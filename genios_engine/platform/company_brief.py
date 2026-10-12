@@ -18,6 +18,7 @@ import time
 from datetime import datetime
 
 from sqlalchemy import text
+from sqlalchemy.engine import Connection
 
 from genios_engine.contracts.company_brief import CompanyBrief, compose
 from genios_engine.platform.logging import get_logger
@@ -56,9 +57,24 @@ def current(source, org_id: str) -> CompanyBrief:
     """The tenant's brief for a model site: cached for `TTL_SECONDS`, empty on any failure.
 
     `source` is an engine, or anything with `.engine` (a store). A connection is accepted too, and
-    read through without the cache — a caller inside a transaction sees its own writes."""
+    read through without the cache — a caller inside a transaction sees its own writes.
+
+    ⛔ `03` F97 (STEP-18, `yc2_w27_s18` M49.C2.L-logic.V0.U04): that last sentence was a promise
+    the code broke twice. A connection HAS `.engine`, so it was read through a second connection of
+    its engine — which cannot see the caller's uncommitted lines — after a cached brief was served
+    first, and what that other connection saw was cached. It is now read on the connection itself,
+    in a savepoint (a failed read stays a failed read, never the caller's transaction), and the
+    cache is neither read nor written."""
     if not org_id:
         return CompanyBrief(org_id="")
+    if isinstance(source, Connection):
+        try:
+            with source.begin_nested():
+                return brief_for(source, org_id)
+        except Exception:      # noqa: BLE001 — no brief is the safe direction; never a lost judgment
+            _log.warning("company brief unreadable for org=%s — prompts go without it", org_id,
+                         exc_info=True)
+            return CompanyBrief(org_id=org_id)
     now = time.monotonic()
     with _LOCK:
         hit = _CACHE.get(org_id)

@@ -2,8 +2,8 @@
 cache (GRAPH_QUALITY_FIX.md — apply P1/P2/P5 to the existing graph).
 
 The graph is a pure projection of source_events + the cached L2 extractions, so we can drop it and
-replay: every emitted event is re-run through the (new) L2 logic, hitting the extraction cache so a
-fully-cached org rebuilds with ZERO new LLM calls.
+replay: every kept event with a road into memory is re-run through the drain's own L2 logic, with
+the drain's own columns (`context/runner._rows_for_rebuild`, STEP-18 B12) — no road calls a model.
 
 SAFETY (built in):
   * Dry by default. Without --apply it ONLY backs up nothing and prints coverage + a BEFORE probe.
@@ -27,6 +27,7 @@ from datetime import datetime, timezone
 from sqlalchemy import create_engine, text
 
 from genios_engine.capture.structured.registry import get_mapping
+from genios_engine.context.runner import _rows_for_rebuild
 from genios_engine.context.runner import _safe_process_one
 from genios_engine.platform.company_brief import current as company_brief_now
 from genios_engine.platform.self_identity import identity_for
@@ -76,13 +77,44 @@ def _print_probe(tag: str, p: dict) -> None:
           f"({p['orphan_pct']}%)  types={p['types']}")
 
 
-def _pull_all(conn, org: str):
-    """EVERY emitted event for the org (no dedup/exclusion filters — the rebuild replays all)."""
-    return conn.execute(text(
-        "select se.event_id, se.source, se.object_type, se.actor->>'email' as sender, "
-        "se.occurred_at, se.source_object_id, rp.enc_content "
-        "from source_events se join raw_payloads rp on rp.event_id = se.event_id "
-        "where se.org_id=:o and se.outcome='emitted' order by se.occurred_at asc"), {"o": org}).fetchall()
+def _rows(store, org: str):
+    """EVERY kept event of the org that has a road into memory, with the drain's own columns — what
+    memory already holds included, because a rebuild replays the whole ledger.
+
+    ⛔ STEP-18 B12 (`yc2_w27_s18` M48.C2.L-integration.V1.U05). This used to be a query of its own:
+    `outcome = 'emitted'` only, and only `event_id, source, object_type, sender, occurred_at,
+    source_object_id, enc_content`. `_process_one` reads a mail's cached extraction off its row, so
+    every mail that had reached memory through a signal was held `held_missing_qes_extraction` —
+    a rebuild restored the calendar and none of the mail — and the archived and below-floor roads
+    STEP-05 opened were never replayed. The drain's own read (`context/runner._rows_for_rebuild`)
+    is the one spelling of what a replayed row carries.
+    """
+    return _rows_for_rebuild(store, org)
+
+
+def _replay(rows, *, org: str, store, llm, crypto_key: str, workers: int,
+            internal=frozenset(), us=None, brief=None) -> dict[str, int]:
+    """Replay `rows` through the drain's own `_safe_process_one`; the count of each outcome.
+
+    Parallel, mirroring the L2 drain (ThreadPoolExecutor + `_safe_process_one`): store and llm are
+    thread-safe (SQLAlchemy pool + Anthropic client), workers kept under Supabase's 15-client cap,
+    and `_safe_process_one` quarantines a single event's failure."""
+    out: dict[str, int] = {}
+    done = 0
+
+    def _one(r):
+        outcome, _node, _err = _safe_process_one(
+            r, org_id=org, store=store, llm=llm, crypto_key=crypto_key, internal_emails=internal,
+            self_identity=us, company_brief=brief)
+        return outcome
+
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
+        for outcome in ex.map(_one, rows):
+            out[outcome] = out.get(outcome, 0) + 1
+            done += 1
+            if done % 50 == 0:
+                print(f"   … {done}/{len(rows)}  {dict(out)}", flush=True)
+    return out
 
 
 def _coverage(rows) -> tuple[int, int, int]:
@@ -110,15 +142,16 @@ def main() -> None:
     eng = store.engine
     ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
 
+    rows = _rows(store, org)
     with eng.connect() as c:
         before = _probe(c, org)
-        rows = _pull_all(c, org)
         structured, unstructured, _ = _coverage(rows)
         cached_ev = c.execute(text("select count(distinct event_id) from l1_extraction_results "
                                    "where org_id=:o"), {"o": org}).scalar() or 0
     print(f"== ORG {org} ==")
     _print_probe("BEFORE", before)
-    print(f"  emitted events: {len(rows)} (structured={structured}, unstructured={unstructured}) · "
+    print(f"  kept events with a road: {len(rows)} (structured={structured}, "
+          f"unstructured={unstructured}) · "
           f"cache rows(event-linked)={cached_ev}")
     uncached_est = max(0, unstructured - cached_ev)
     print(f"  est. unstructured events NOT cache-linked (may cost LLM): ~{uncached_est}")
@@ -158,21 +191,8 @@ def main() -> None:
     # kept ≤ Supabase's 15-client cap. _safe_process_one quarantines a single event's failure.
     workers = args.workers
     print(f"3) REPLAY {len(rows)} events across {workers} workers (pool cap {args.pool})…", flush=True)
-    out: dict[str, int] = {}
-    done = 0
-
-    def _one(r):
-        outcome, _node, _err = _safe_process_one(
-            r, org_id=org, store=store, llm=llm, crypto_key=s.crypto_key, internal_emails=internal,
-            self_identity=us, company_brief=brief)
-        return outcome
-
-    with ThreadPoolExecutor(max_workers=workers) as ex:
-        for outcome in ex.map(_one, rows):
-            out[outcome] = out.get(outcome, 0) + 1
-            done += 1
-            if done % 50 == 0:
-                print(f"   … {done}/{len(rows)}  {dict(out)}", flush=True)
+    out = _replay(rows, org=org, store=store, llm=llm, crypto_key=s.crypto_key, workers=workers,
+                  internal=internal, us=us, brief=brief)
     print("   outcomes:", out, flush=True)
 
     with eng.connect() as c:

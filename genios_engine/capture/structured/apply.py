@@ -15,14 +15,19 @@ import re
 from datetime import date, datetime, timedelta
 from typing import Any
 
+from genios_engine.capture.validate.canonical import CONSUMER_EMAIL_DOMAINS
 from genios_engine.platform.identity import norm_email
 
 from .registry import StructuredMapping
 from .targets import sift_mapping_targets
 
-# personal mailbox domains — an attendee here is a person, never evidence of a company
-_PERSONAL_DOMAINS = {"gmail.com", "googlemail.com", "outlook.com", "hotmail.com",
-                     "yahoo.com", "icloud.com", "proton.me", "protonmail.com"}
+# personal mailbox domains — an attendee here is a person, never evidence of a company.
+# ⛔ ONE LIST (`03` F128, STEP-18; `yc2_w27_s18` M49.C2.L-logic.V0.U05). This held 8 hosts while
+# `platform/self_identity.PUBLIC_MAIL_DOMAINS` holds the 24 of `CONSUMER_EMAIL_DOMAINS`, and
+# `context/pipeline._company_domain` and `context/introductions._stem` read these 8 — so the other
+# 16 (rediffmail.com, zoho.com, yahoo.co.in …) still minted one company file shared by everyone
+# writing from one. It is the 24 now, by name, so the two can never disagree again.
+_PERSONAL_DOMAINS = CONSUMER_EMAIL_DOMAINS
 
 
 def apply_mapping(mapping: StructuredMapping, raw_fields: dict[str, Any]) -> dict[str, Any]:

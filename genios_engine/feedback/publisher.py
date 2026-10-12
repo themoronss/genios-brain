@@ -277,7 +277,28 @@ def publish(conn, obj: LearningObject, *, target_state: LearningState, at: datet
         result = "rejected"
     log_transition(conn, org_id=obj.org_id, learning_id=obj.learning_id, from_state=from_state,
                    to_state=target_state.value, reason_code=result, at=at)
+    if target_state is LearningState.HUMAN_REVIEW:
+        _rest_for_review(conn, obj)
     return result
+
+
+def _rest_for_review(conn, obj: LearningObject) -> None:
+    """The row waits where the ledger says it waits: at `human_review`, for a named human.
+
+    ⛔ STEP-18 B4 (`yc2_w27_s18` M48.C1.L-data.V0.U02). The weekly sweep persists every proposal at
+    `governed` (`orchestrator.run_learning`; `brain_pipeline.admit_proposals` alike) and this
+    function LOGGED `governed → human_review` without moving the row — so the review route, which
+    takes only a `human_review` row (`api/learning_routes.review`), answered 409 to every object a
+    human was meant to review, and the console's queue (`state = 'human_review'`) never listed one.
+    The discovery path always moved its row (`org_rule_ingest._set_state`); this is the same
+    state-only write for the weekly road. Only the review case: a sink that needs no human leaves
+    the row where it was, as it always has (STEP-18 §8.3, s18-F3, names that wider shape for
+    STEP-16).
+    """
+    conn.execute(text("update learning_objects set state = :st "
+                      "where org_id = :o and learning_id = :l"),
+                 {"st": LearningState.HUMAN_REVIEW.value, "o": obj.org_id,
+                  "l": obj.learning_id})
 
 
 __all__ = ["log_transition", "persist", "publish", "publish_brain", "publish_knowledge",

@@ -315,16 +315,20 @@ def window_coverage_gaps(conn, org_id: str, *, since: datetime, until: datetime)
 
     `()` WHEN THERE IS NOTHING TO SAY — a source that can support an absence claim contributes no
     sentence. It is also `()` when the read itself fails, because a sentence is never worth the
-    sweep.
+    sweep — and the failure is held in a SAVEPOINT (`03` F120, STEP-18; `yc2_w27_s18`
+    M48.C2.L-data.V1.U08): three situation passes call this inside their own transaction, and on
+    Postgres a failed statement left bare aborts that transaction, so every later read and write of
+    the pass failed and was swallowed the same way.
     """
     from genios_engine.capture.coverage.window import SyncHealth, coverage_for_window
 
     try:
-        sources = [r.source for r in conn.execute(text(
-            "select distinct source from l1_sync_runs "
-            " where org_id = :o and source is not null "
-            "   and finished_at >= :since and finished_at < :until"),
-            {"o": org_id, "since": since, "until": until}).fetchall()]
+        with conn.begin_nested():
+            sources = [r.source for r in conn.execute(text(
+                "select distinct source from l1_sync_runs "
+                " where org_id = :o and source is not null "
+                "   and finished_at >= :since and finished_at < :until"),
+                {"o": org_id, "since": since, "until": until}).fetchall()]
     except Exception:          # noqa: BLE001 — absent table, unmigrated tenant, no rows
         return ()
 

@@ -466,6 +466,26 @@ def test_the_statement_count_did_NOT_move():
     # each a literal at its own `_scalar` call in `scripts/pipeline_health.py`.
     # ⛔ MOVED 3,070 → 3,071 by yc2_w27_s17/M40.C3.L-logic.V0.U02 (`03` F24): the two LLM checks name
     # the lanes that called this week and not in the window (`_silent_lanes`) — one SELECT, a literal.
+    # ⛔ MERGED 12 Oct: STEP-18's moves below were measured on its own branch, 3,079 → 3,080 → 3,078 →
+    # 3,077 → 3,078 → 3,079 (net 0); on top of 3,113 the merge re-measures 3,113.
+    # ⛔ MOVED 3,079 → 3,080 by yc2_w27_s18/M48.C1.L-data.V0.U02 (STEP-18 B4, a review object waits for
+    # review): one UPDATE, `feedback/publisher._rest_for_review` — the weekly road's review object rests at
+    # `human_review`. A literal at its own call.
+    # ⛔ MOVED 3,080 → 3,078 by yc2_w27_s18/M48.C2.L-data.V0.U04 (STEP-18 B12), measured per file with
+    # NO SQL removed: `context/runner._pull`'s SELECT was counted THREE times — the whole `"select …" +
+    # PENDING_FROM + "order by …"`, its inner sum and its column literal, each a node `_statements`
+    # walks. Its columns are now ONE constant, `ROAD_COLUMNS`, read by `_pull` and by the new
+    # `_rows_for_rebuild` (over `ROADS_FROM`), and each select is a Name-led sum the counter does not
+    # render: 3 → 1 for the drain, 0 for the rebuild. The instrument's over-count is `03` F100's kind.
+    # ⛔ MOVED 3,078 → 3,077 by yc2_w27_s18/M48.C2.L-integration.V1.U05 (STEP-18 B12): one SELECT
+    # removed, `scripts/rebuild_graph._pull_all` — the script's own pull of `source_events`; it replays
+    # the drain's rows (`context/runner._rows_for_rebuild`) instead. A literal.
+    # ⛔ MOVED 3,077 → 3,078 by yc2_w27_s18/M48.C2.L-data.V0.U06 (STEP-18 B13): one UPDATE,
+    # `reason/moments/screen_memory._retire` — a changed follow-up's previous observation superseded.
+    # A literal; the follow-up's own UPDATE gained a column, not a statement.
+    # ⛔ MOVED 3,078 → 3,079 by yc2_w27_s18/M48.C3.L-data.V0.U11 (STEP-18 B20's second half): one
+    # DELETE, `scripts/gmail_l1.py` — the gmail events' `message_fingerprints`, before the events. A
+    # literal in its statement list.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

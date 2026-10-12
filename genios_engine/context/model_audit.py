@@ -8,12 +8,41 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Mapping
 
 from sqlalchemy import text
 
 from genios_engine.platform.canonical import semantic_hash, stable_id
+
+
+def _decimals(value: Any) -> Any:
+    """The parsed answer with every float read as its decimal text — what the model WROTE.
+
+    `platform/canonical` refuses floats in a semantic artifact, and rightly: a float in a decision
+    is a value that cannot be compared to itself across a version. But this is the model's answer,
+    not ours, and the call is already paid for — refusing it here dropped the audit row and, in the
+    resolution pass, the rest of the org's pass with it (STEP-18 B21, `03` F32). `repr` is the
+    shortest text that reads back as the same float, so `0.85` hashes as `0.85` and never as the
+    binary fraction; a non-finite one (`nan`, `inf`) is hashed as its name. Nothing else changes, so
+    an answer with no float hashes exactly as it always did.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, float):
+        return Decimal(repr(value)) if math.isfinite(value) else repr(value)
+    if isinstance(value, Mapping):
+        return {key: _decimals(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_decimals(item) for item in value]
+    return value
+
+
+def _response_hash(parsed: Mapping[str, Any], raw: str) -> str:
+    """The audit row's `response_hash`: the parsed answer and the raw text, canonically hashed."""
+    return semantic_hash({"parsed": _decimals(dict(parsed)), "raw": raw})
 
 
 def model_run_id(*, org_id: str, site: str, subject_ref: str,
@@ -46,7 +75,7 @@ def record_model_run(
     parsed = getattr(result, "parsed", None)
     parsed = dict(parsed) if isinstance(parsed, Mapping) else {}
     raw = str(getattr(result, "raw", "") or "")
-    response_hash = semantic_hash({"parsed": parsed, "raw": raw})
+    response_hash = _response_hash(parsed, raw)
     model_snapshot = str(getattr(result, "model", "") or "unknown")
     run_id = model_run_id(
         org_id=org_id, site=site, subject_ref=subject_ref,

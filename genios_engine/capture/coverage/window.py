@@ -204,15 +204,23 @@ def coverage_for_window(conn, *, org_id: str, source: str,
 
     A missing table is treated as `UNKNOWN`, not as an error and never as zero. A tenant whose
     migrations have not run has not proven anything about their mailbox.
+
+    ⛔ IN A SAVEPOINT (`03` F120, STEP-18; `yc2_w27_s18` M48.C2.L-data.V0.U07). The bare `except`
+    here went on after a failed statement — and on Postgres a failed statement aborts the
+    transaction that holds it, so the three situation passes that read coverage inside their own
+    transaction (`outreach_situations`, `situations`, `support_situations`) lost every later read
+    and write of the pass, swallowed the same way. The read now loses itself alone, as
+    `coverage_for_connection`'s reads do (`_optional`).
     """
     try:
-        rows = conn.execute(text(
-            "select connection_id, mode, scanned, claimed_total, claimed_is_estimate, "
-            "       cursor_exhausted, page_budget_spent, error "
-            "  from l1_sync_runs "
-            " where org_id = :o and source = :s "
-            "   and finished_at >= :since and finished_at < :until"),
-            {"o": org_id, "s": source, "since": since, "until": until}).fetchall()
+        with conn.begin_nested():
+            rows = conn.execute(text(
+                "select connection_id, mode, scanned, claimed_total, claimed_is_estimate, "
+                "       cursor_exhausted, page_budget_spent, error "
+                "  from l1_sync_runs "
+                " where org_id = :o and source = :s "
+                "   and finished_at >= :since and finished_at < :until"),
+                {"o": org_id, "s": source, "since": since, "until": until}).fetchall()
     except Exception:                       # noqa: BLE001 — absent table, absent columns, no rows
         rows = []
     return _window_of(rows, source=source, since=since, until=until)

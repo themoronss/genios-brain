@@ -5,6 +5,15 @@ from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+#: The JWT signing secret this repository ships. ANYONE can read it here, so anyone can sign a session
+#: with it: it may serve only where `env` names a development environment (`insecure_boot`).
+DEFAULT_JWT_SECRET = "genios-dev-secret-change-in-prod"
+
+#: The environments the shipped secret may serve in — named EXPLICITLY, the way
+#: `platform/egress._DEV_ENVS` names them (with `local`, which the device routes already read as dev).
+DEV_ENVS: frozenset[str] = frozenset({"dev", "development", "test", "local"})
+
+
 class Settings(BaseSettings):
     """Typed settings from env (GENIOS_* prefix) / .env file.
 
@@ -34,7 +43,7 @@ class Settings(BaseSettings):
     # auth + cache (ported from genios-brain, engine-native). Both optional:
     # empty REDIS_URL → NullCache no-op (Redis is a prod accelerator, not a hard dep).
     redis_url: str = ""                          # rediss://… (Upstash) or redis://localhost
-    jwt_secret: str = "genios-dev-secret-change-in-prod"   # dashboard-session JWT signing
+    jwt_secret: str = DEFAULT_JWT_SECRET                    # dashboard-session JWT signing
     # Seat sessions (platform/sessions.py): a short-lived access JWT, renewed through a rotating
     # refresh token that can be revoked (logout, deactivation, reuse of a rotated token).
     # 7 days, the lifetime every client was built against. The dashboard, the desktop app and the
@@ -250,6 +259,29 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def insecure_boot(settings: Settings) -> str | None:
+    """Why this configuration may not serve, or None when it may.
+
+    ⛔ STEP-18 B7 (`yc2_w27_s18` M49.C3.L-contract.V0.U07). `jwt_secret` defaults to a string in the
+    repository and nothing checked it: an image deployed without `GENIOS_JWT_SECRET` signed and
+    verified every session (`platform/sessions`, `platform/auth`) with a key anyone can read. The
+    rule: an environment named outside `DEV_ENVS` may not serve with the shipped secret, nor with an
+    empty one. An UNSET `GENIOS_ENV` reads `dev`, as it always has — the refusal reaches the deploy
+    that names its environment, which is why the deploy must carry its own secret first (STEP-18
+    §8.3 s18-F11, Harsh's).
+    """
+    env = str(settings.env or "").strip().lower()
+    if env in DEV_ENVS:
+        return None
+    secret = str(settings.jwt_secret or "")
+    if not secret.strip() or secret == DEFAULT_JWT_SECRET:
+        return (f"GENIOS_ENV={env!r} is not a development environment and GENIOS_JWT_SECRET is "
+                f"{'empty' if not secret.strip() else 'the default this repository ships'} — anyone "
+                "could sign a session with it. Set GENIOS_JWT_SECRET to a secret of this "
+                "deployment's own.")
+    return None
 
 
 def l1_seam_enabled(engine, org_id: str) -> bool:
