@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_079, (
+    assert r["statements"] == 3_099, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -445,6 +445,13 @@ def test_the_statement_count_did_NOT_move():
     # `reason/domain_shadow`, the file's open question signal (a SELECT), its re-binding to the run asking
     # now, its replacement and its retirement (three UPDATEs), the question signal itself (an INSERT); in
     # `context/founder_questions.ask`, the same question re-bound to that run (an UPDATE). Six literals.
+    # ⛔ MOVED 3,079 → 3,099 by yc2_w27_s13/M36.C2.L-interface.V2.U09 (+15) and V3.U05 (+5), the question
+    # card. Five statements, counted as the extractor has always counted a concatenation — each prefix
+    # that already reads as SQL is a render of its own (`_statements` walks every `BinOp`). U09, in
+    # `deliver/store`: the tenant's graph-version lock on the question path (one literal), the insert's
+    # check of the question's authority (five renders: three literals around `QUESTION_SIGNAL_JOINS`
+    # and `QUESTION_SIGNAL_PREDICATE`), the card read's third door (four) and the queue's (five). U05, in
+    # `deliver/pipeline._QUESTIONS_WITHOUT_CARDS`, the open questions with no live card (five).
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
