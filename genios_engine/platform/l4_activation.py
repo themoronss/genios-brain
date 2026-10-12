@@ -270,9 +270,11 @@ EFFECTS = {
         "fingerprint moved — once per fingerprint, nearest deadline or meeting first, capped per "
         "pass and per day — and each review is validated against the dossier it was shown and kept "
         "in `expert_reviews`, a refusal with its reason. A VALID review DECIDES its file (STEP-12 "
-        "M33, `06` D1): the file gets one audited decision from it, its situations stand down — no "
-        "decider, no R-1 — and its card speaks the review's own words. Off, no file is reviewed, "
-        "nothing is spent, and every situation is decided as before"),
+        "M33, `06` D1): the file gets one audited decision from it, and everything the review "
+        "explains stands down — the compiled lane's situations on the file and its people, the "
+        "packs' rules on them — no decider, no R-1. The file keeps ONE decision, and its card speaks "
+        "the review's own words. Off, no file is reviewed, nothing is spent, and every situation "
+        "and rule is decided as before"),
 }
 
 #: Every column the record carries, in one place, so the reads below cannot select different shapes
