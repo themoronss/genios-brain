@@ -661,6 +661,10 @@ _ORG_SCOPED_TABLES = [
     # migration 0201: the one question each file asks the founder, and the founder's answer (STEP-13).
     # Questions ABOUT the tenant's counterparties, and answers in the founder's own words.
     "founder_questions",
+    # migration 0230: each seat's morning brief and the marks on its lines (STEP-15). Lines ABOUT the
+    # tenant's counterparties, in the expert's checked words, and marks in the founder's own words. Marks
+    # first: each belongs to its brief.
+    "morning_brief_marks", "morning_briefs",
     # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
     # config; context references capability. Payloads are explicit as defense in depth even though
     # the context FK also cascades them.

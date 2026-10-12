@@ -467,5 +467,10 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # (YC-II W27 STEP-13, `yc2_w27_s13/M36.C2.L-contract.V0.U01`): one new table, whose first reference is
     # the tenant reset's `delete` list. An engine change, not a resolver change; its store and readers
     # (`context/founder_questions.py`, M36.C2.L-data.V1.U02) are later units.
-    assert len(TC.table_usage()) == 194
-    assert len(TC._known_tables()) == 196
+    # ⛔ RE-PINNED 194 → 196 and 196 → 198 on 2026-10-12 by migration `0230_morning_briefs` (STEP-15,
+    # `yc2_w27_s15/M44.C1.L-contract.V1.U02`): two new tables, `morning_briefs` and `morning_brief_marks`, whose
+    # first reference is the tenant reset's `delete` list — measured: `table_usage()` holds each as
+    # `{"delete": {"genios_engine/api/account_routes.py"}}`. An engine change, not a resolver change; the store
+    # that reads and writes them (`executive/morning_store.py`, M44.C4.L-data.V0.U01) is a later unit.
+    assert len(TC.table_usage()) == 196
+    assert len(TC._known_tables()) == 198
