@@ -59,8 +59,12 @@ DOSSIER_VERSION = "dossier.v1"
 #: The sections, in the one order a dossier is ever written in.
 SECTIONS: tuple[str, ...] = ("brief", "file", "timeline", "promises", "numbers", "coverage",
                              "playbook", "situations", "judged_before", "what_if")
+#: A section printed only when it has something to say — and the section it follows. A file with none of
+#: them is printed byte for byte as before (STEP-13: the founder's answers, M36.C2.L-data.V2.U07).
+OPTIONAL: Mapping[str, str] = {"answers": "timeline"}
 TITLES: Mapping[str, str] = {
     "brief": "THE COMPANY BRIEF", "file": "THE FILE", "timeline": "WHAT HAPPENED",
+    "answers": "WHAT YOU TOLD US",
     "promises": "PROMISES IN ITS MAIL", "numbers": "ITS NUMBERS", "coverage": "WHAT WAS CHECKED",
     "playbook": "WHAT A PROFESSIONAL KNOWS ABOUT THIS WORK", "situations": "ITS SITUATIONS",
     "judged_before": "WHAT WAS JUDGED BEFORE", "what_if": "IF NOTHING HAPPENS"}
@@ -129,6 +133,9 @@ class DossierParts:
     what_if: tuple = ()        # reason/simulation.TimePasses, one per step
     promises: tuple[Promise, ...] = ()
     promises_cut: int = 0
+    #: The questions this file asked the founder and the founder answered (`context/founder_questions`,
+    #: STEP-13 M36.C2.L-data.V2.U07) — newest answer first. Printed only when there is one.
+    answers: tuple = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -256,6 +263,15 @@ def _timeline(p: DossierParts, cite: _Ids) -> Section:
                      else " — within the gaps it closed before")))
     lines.append("Screen activity is not part of a file's timeline, as decided.")
     return Section("timeline", "\n".join(lines), cut)
+
+
+def _answers(p: DossierParts, cite: _Ids) -> Section:
+    """What the founder told us, answering a question this file asked: the answer's id (the expert may
+    cite it), what was asked, the words, when. Their words are no mail's — printed on the head line, so
+    no claim is asked to quote them."""
+    lines = [f"- {cite(f'answer:{a.question_id}')} you answered on {_when(a.answered_at)} the question "
+             f"“{a.question}”: “{' '.join(str(a.answer).split())}”" for a in p.answers]
+    return Section("answers", "\n".join(lines))
 
 
 def _promises(p: DossierParts, cite: _Ids) -> Section:
@@ -458,7 +474,12 @@ def build_dossier(parts: DossierParts) -> Dossier:
         _brief(parts, cite), _file(parts, cite), _timeline(parts, cite), _promises(parts, cite),
         _numbers(parts, cite), _coverage(parts, cite), playbook, _situations(parts, cite),
         _judged_before(parts, cite), _what_if(parts, cite))}
-    sections = tuple(by_name[name] for name in SECTIONS)
+    names = list(SECTIONS)
+    if parts.answers:
+        # ⛔ ONLY WHEN THERE IS ONE: a file with no answer is printed byte for byte as before (STEP-13).
+        by_name["answers"] = _answers(parts, cite)
+        names.insert(names.index(OPTIONAL["answers"]) + 1, "answers")
+    sections = tuple(by_name[name] for name in names)
     draft = Dossier(org_id=parts.org_id, file_id=parts.file_id, as_of=parts.as_of,
                     sections=sections, catalogue=DossierCatalogue(frozenset(), frozenset()),
                     digest="")
@@ -528,6 +549,7 @@ def read_promises(conn, org_id: str, events: Iterable[str], *, us: Any = None,
 def read_parts(conn, org_id: str, file_id: str, *, now: datetime) -> DossierParts | None:
     """Every part of one file's dossier, read on one connection — None for a file it does not hold."""
     from genios_engine.context.file_judgments import judgments_for
+    from genios_engine.context.founder_questions import answers_for
     from genios_engine.context.workstream_numbers import numbers_for
     from genios_engine.context.workstream_timeline import timeline_for
     from genios_engine.context.workstreams import file_for, lifecycle_for
@@ -559,7 +581,7 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime) -> DossierPart
             do_nothing=pb.do_nothing_consequence if pb is not None else None,
             lifecycle=lifecycle,
             next_date=timeline.upcoming[0].at if timeline.upcoming else None),
-        promises=promises, promises_cut=promises_cut)
+        promises=promises, promises_cut=promises_cut, answers=answers_for(conn, org_id, str(file_id)))
 
 
 # ── reading it back (STEP-13) ──────────────────────────────────────────────────────────────────
@@ -653,6 +675,6 @@ def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | 
 
 __all__ = ["CLAIMS_LIMIT", "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine", "DossierParts",
            "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",
-           "RELATIVE_WORDS", "SECTIONS", "Section", "TITLES", "TOUCHES_LISTED", "TOUCHES_WHOLE",
+           "OPTIONAL", "RELATIVE_WORDS", "SECTIONS", "Section", "TITLES", "TOUCHES_LISTED", "TOUCHES_WHOLE",
            "WAVES_LIMIT", "build_dossier", "dossier_for", "label_of", "lines_by_id", "people_of",
            "read_parts", "read_promises"]

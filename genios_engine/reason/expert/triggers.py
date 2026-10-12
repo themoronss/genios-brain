@@ -79,8 +79,10 @@ def _new_evidence(now: Mapping[str, Any], then: Mapping[str, Any]) -> list[Trigg
     if held:
         out.append(Trigger(NEW_EVIDENCE, "held since the last review, which saw it booked: "
                            + ", ".join(held)))
-    fresh = sorted((_ids(now.get("events")) | _ids(now.get("booked")))
-                   - _ids(then.get("events")) - _ids(then.get("booked")))
+    # The founder's answers are evidence like a mail (STEP-13 M36.C2.L-data.V2.U07): one the last review
+    # did not see brings the file back, with the answer in front of the expert.
+    fresh = sorted((_ids(now.get("events")) | _ids(now.get("booked")) | _ids(now.get("answers")))
+                   - _ids(then.get("events")) - _ids(then.get("booked")) - _ids(then.get("answers")))
     if fresh:
         more = len(fresh) - LISTED
         out.append(Trigger(NEW_EVIDENCE, "new since the last review: " + ", ".join(fresh[:LISTED])
