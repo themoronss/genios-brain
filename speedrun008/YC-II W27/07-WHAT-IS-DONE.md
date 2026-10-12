@@ -54,7 +54,7 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | pushed by | Claude — *"tum khud se bhi apni saari cheezein apne tareeke se push kar do … GitHub pe sync karte rehna"* (Rohit, 11 Oct); fast-forward only, after `git fetch`, `speedrun008` only |
 | `origin/speedrun008` | `c97155cd` |
 | in these pushes | the alignment block `yc2_w27_align` (M34, 27 commits) and STEP-12 — M32 (39 units) and M33 (21 units) — each unit committed alone, each after its own tests, mutation run and the repo's guards |
-| against production's branch | `origin/harsh/mvp` holds **two commits of 10 Oct** that `speedrun008` does not (`e6c03ad4` a reminder's own budget, `84f00a40` a headline that names who is on the hook) — the deploy is **not** a fast-forward until they are merged into `speedrun008`, as `c50f0f7e` did on 9 Oct |
+| against production's branch | `origin/harsh/mvp`'s **two commits of 10 Oct** (`e6c03ad4` a reminder's own budget, `84f00a40` a headline that names who is on the hook) are merged into `speedrun008` (`aa22e395`, 12 Oct — one conflict, the same `_is_paste` fix made on both sides, `03` F137; Harsh's version taken; guards green): `harsh/mvp` is an ancestor of `speedrun008` again, the deploy is a fast-forward |
 | migrations | `0197`–`0199` (the expert's reviews) — the latest is `0199` |
 
 ## 3 · The nineteen steps
