@@ -965,6 +965,13 @@ def main() -> int:
     ap.add_argument("--hours", type=int, default=24, help="window for the LLM checks")
     ap.add_argument("--max-failure-bp", type=int, default=2000,
                     help="failures per lane, in basis points (default 2000 = 20%%)")
+    # ⛔ STEP-17 §3.4 (`yc2_w27_s17` M40.C3.L-interface.V0.U03): "run after each deploy; its output
+    # is kept". A file, not stdout: `scripts/_db` prints its `[db]` lines to stdout first (03 F36).
+    ap.add_argument("--json", dest="json_path", default=None,
+                    help="also write every verdict to this file as JSON, pass or fail")
+    ap.add_argument("--require-data", action="store_true",
+                    help="exit 2 when no check failed but one judged nothing (NO DATA) — for the "
+                         "run a day after a deploy, when every lane should have run")
     args = ap.parse_args()
 
     url = resolve_database_url(args, purpose="pipeline health audit (read-only)")
@@ -991,9 +998,33 @@ def main() -> int:
     passed = len(results) - len(failed) - len(no_data)
     print(f"\n{passed}/{len(results)} checks passed, {len(no_data)} with no data, "
           f"{len(failed)} failed")
+    if args.json_path:
+        _keep(args.json_path, args.org, results, passed=passed, no_data=len(no_data),
+              failed=len(failed))
     # ⛔ NO DATA is not a failure and not a pass: nothing was judged. It is printed and counted
-    # apart — never folded into "passed".
+    # apart — never folded into "passed" — and exits 2 only when the run asked for data.
+    if args.require_data and not failed and no_data:
+        return 2
     return 1 if failed else 0
+
+
+def _keep(path: str, org: str, results: list[Check], *, passed: int, no_data: int,
+          failed: int) -> None:
+    """Every verdict, as JSON, to `path` — the record a deploy keeps."""
+    import json
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    Path(path).write_text(json.dumps({
+        "org": org,
+        "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "summary": {"checks": len(results), "passed": passed, "no_data": no_data,
+                    "failed": failed},
+        "checks": [{"name": c.name, "verdict": c.verdict, "measured": c.measured,
+                    "expected": c.expected, "fix": c.fix, "detail": list(c.detail)}
+                   for c in results],
+    }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
 
 if __name__ == "__main__":        # pragma: no cover
     raise SystemExit(main())
