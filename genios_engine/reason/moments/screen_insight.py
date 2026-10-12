@@ -1194,7 +1194,8 @@ def _client(api_key: str, model: str):
 
 
 def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: list[dict],
-                deadline: float, seat_id: str | None = None, now_local: str = "", dates=None,
+                deadline: float, seat_id: str | None = None, device_id: str | None = None,
+                now_local: str = "", dates=None,
                 not_useful: list[str] | None = None,
                 useful: list[str] | None = None,
                 me: list[str] | None = None, open_items: list[dict] | None = None,
@@ -1228,6 +1229,9 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
         from genios_engine.context.graph_store import GraphStore
         GraphStore(engine=engine).record_cost(
             org_id=org_id, model=model, purpose=CAPABILITY_ID, seat_id=seat_id,
+            # WHICH LAPTOP. Two people share this seat on the design-partner org, so `seat_id`
+            # alone cannot say whose screen was read (migration 0191).
+            device_id=device_id,
             input_tokens=res.input_tokens, output_tokens=res.output_tokens,
             success=res.ok, error=res.error,
             # The screen lane is the one place a 1h cache TTL is paid for, so it is the one
@@ -1249,7 +1253,7 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
 
 def _compute(engine, *, org_id: str, email: str | None, app: str | None, participants,
              entities, screen: str, deadline: float, seat_id: str | None = None,
-             now_local: str = "", dates=None,
+             device_id: str | None = None, now_local: str = "", dates=None,
              not_useful: list[str] | None = None, useful: list[str] | None = None,
              said: list[str] | None = None, me: list[str] | None = None,
              open_items: list[dict] | None = None, meetings: list[dict] | None = None,
@@ -1272,7 +1276,7 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
     except Exception:      # noqa: BLE001 — context is a bonus; a new person has none anyway
         _log.info("screen insight: no graph context org=%s", org_id)
     raw = llm_insight(engine, org_id=org_id, app=app, screen=screen, facts=facts,
-                      deadline=deadline, seat_id=seat_id,
+                      deadline=deadline, seat_id=seat_id, device_id=device_id,
                       now_local=now_local, dates=dates, not_useful=not_useful,
                       useful=useful, me=me,
                       open_items=open_items, meetings=meetings, thread_key=thread_key,
@@ -1291,7 +1295,7 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
 
 
 def insight(engine, *, org_id: str, email: str | None, app: str | None, participants, entities,
-            screen: str, seat_id: str | None = None,
+            screen: str, seat_id: str | None = None, device_id: str | None = None,
             timeout_s: float = TIMEOUT_S, now_local: str = "", dates=None,
             not_useful: list[str] | None = None, useful: list[str] | None = None,
             said: list[str] | None = None, me: list[str] | None = None,
@@ -1304,7 +1308,8 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
     deadline = time.monotonic() + timeout_s
     fut = _POOL.submit(_compute, engine, org_id=org_id, email=email, app=app,
                        participants=participants, entities=entities, screen=screen,
-                       deadline=deadline, seat_id=seat_id, now_local=now_local, dates=dates,
+                       deadline=deadline, seat_id=seat_id, device_id=device_id,
+                       now_local=now_local, dates=dates,
                        not_useful=not_useful,
                        useful=useful, said=said, me=me,
                        open_items=open_items, meetings=meetings, thread_key=thread_key,

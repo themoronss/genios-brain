@@ -460,7 +460,12 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     meetings = _meetings_soon(engine, p, now)
     res = SI.insight(engine, org_id=p.org_id, email=p.email, app=body.surface.app,
                      participants=body.participants, entities=body.features.entities,
-                     screen=screen, seat_id=p.seat_id, now_local=SI.local_label(now, tz),
+                     screen=screen, seat_id=p.seat_id,
+                     # The request arrived on a DEVICE token, so this is the one place that knows
+                     # which laptop the screen belongs to. Two people share `seat_owner` on the
+                     # design-partner org, so without this the spend cannot be told apart at all
+                     # (migration 0191).
+                     device_id=p.device_id, now_local=SI.local_label(now, tz),
                      dates=body.features.dates, not_useful=notes,
                      useful=kept, said=RU.said(fresh, me), me=me,
                      open_items=context, meetings=meetings,

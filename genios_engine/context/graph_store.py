@@ -1171,7 +1171,7 @@ class GraphStore:
     def record_cost(self, *, org_id, model, purpose, input_tokens, output_tokens,
                     success=True, error=None, event_id=None,
                     subject_ref=None, client_context_id=None, seat_id=None,
-                    cache_read_tokens=0, cache_write_tokens=0) -> None:
+                    cache_read_tokens=0, cache_write_tokens=0, device_id=None) -> None:
         # Defaults so BOTH callers work: L2 passes all kwargs; L5 render passes only the core set.
         # (Was a bug: L5's call omitted success/error/event_id → TypeError swallowed → l5_render
         #  spend NEVER recorded, reproducing the old 'V2 LLM cost not tracked' gap.)
@@ -1186,6 +1186,12 @@ class GraphStore:
         # mailbox, an authenticated query — all know the answer at the call site. NULL keeps its
         # honest meaning: background work that serves no single seat.
         #
+        # `device_id` (0191) is the same argument one level down AGAIN, and screen intelligence
+        # is why. MEASURED on the design-partner org 12 Oct 2026: three devices, all three on one
+        # seat, because two people share a sign-in. For a lane whose entire job is to read ONE
+        # person's screen, `seat_id` then names a seat that is really two laptops. NULL keeps the
+        # meaning it has everywhere else here: work that serves no single device.
+        #
         # `cache_*_tokens` are RECORDED, NEVER PRICED. `input_tokens` is already the
         # cost-equivalent count (uncached + 1.25x/2x writes + 0.1x reads); adding these to it
         # would double-charge the cache. They exist so "is the prompt cache working" is a ledger
@@ -1194,13 +1200,14 @@ class GraphStore:
             c.execute(text(
                 "insert into llm_costs (org_id, model, purpose, input_tokens, output_tokens, "
                 "success, error, event_id, subject_ref, client_context_id, seat_id, "
-                "cache_read_tokens, cache_write_tokens) "
-                "values (:o, :m, :p, :it, :ot, :s, :e, :ev, :sr, :cc, :seat, :crt, :cwt)"),
+                "cache_read_tokens, cache_write_tokens, device_id) "
+                "values (:o, :m, :p, :it, :ot, :s, :e, :ev, :sr, :cc, :seat, :crt, :cwt, :dev)"),
                 {"o": org_id, "m": model, "p": purpose, "it": input_tokens, "ot": output_tokens,
                  "s": success, "e": (error or None), "ev": event_id,
                  "sr": subject_ref, "cc": client_context_id,
                  "seat": (seat_id or None),
-                 "crt": int(cache_read_tokens or 0), "cwt": int(cache_write_tokens or 0)})
+                 "crt": int(cache_read_tokens or 0), "cwt": int(cache_write_tokens or 0),
+                 "dev": (device_id or None)})
         # ⛔ AND THE SAME ARGUMENT FOR WHETHER THE PROVIDER IS ANSWERING AT ALL. `success` and
         # `error` have been written on every row since this table existed and were read by nothing:
         # between 25 and 30 September 2026 every call in the product failed on the account's spend
