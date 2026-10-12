@@ -1,8 +1,132 @@
 {
  "case_id": "F40",
  "source": "ideal_reader",
- "recorded_at": "be27bffe",
+ "recorded_at": "e6b8522e",
  "answers": {
+  "278676d2160402241afc500c9f679b82ca7df16cd218b8ef5158e128c0f6103f": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "No words go with the booking — no title, agenda or note.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "Neither side's reply time is measured, and the file holds no mail at all.",
+      "evidence": [
+       "num:their_reply_time:meera@tallgrass.test",
+       "num:your_reply_time:meera@tallgrass.test"
+      ]
+     },
+     {
+      "claim": "Nothing on record shows the meeting taking place, nor anything agreed at it.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "The brief names no kind of work for this contact; the engine opened an admin situation on the booking.",
+      "evidence": [
+       "sit:sit_#1"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The only thing known is a booking: whether the meeting took place, and what came of it, cannot be read from this file.",
+      "based_on": [
+       "fact:1",
+       "fact:2",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "No follow-through can be owed on a meeting nobody has confirmed took place.",
+      "based_on": [
+       "fact:4"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "The meeting went ahead as booked.",
+      "needs": "A mail from either side after the booked time, or the founder's own word."
+     },
+     {
+      "proposition": "The meeting was moved or dropped.",
+      "needs": "A changed or cancelled calendar entry, or a mail saying so."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether the meeting took place at all.",
+      "relevance": "Only a meeting that took place can leave anything owed; until one is confirmed, nothing can be asked of the founder."
+     },
+     {
+      "question": "What the meeting is for, and who this contact at Tallgrass is to Nimbus Labs.",
+      "relevance": "The brief names no kind of work for the contact, so neither preparation nor any later step can be judged."
+     },
+     {
+      "question": "Whether any mailbox has read this contact's mail.",
+      "relevance": "No mailbox is shown to have read it, so the absence of mail says nothing either way."
+     }
+    ],
+    "frames": {
+     "primary": "A calendar booking with no words around it: a meeting with meera@tallgrass.test sits on the calendar and the file holds nothing else. Nothing is owed until a signal shows what, if anything, came of it.",
+     "rivals": [
+      "A meeting that went ahead and left a step owed — nothing on record shows either.",
+      "A booking that was moved or dropped without the calendar saying so."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook or any mail, nothing is expected beyond the booking itself.",
+     "actual": "A booking for the thirteenth of August is all the file holds: no mail, no words, and no confirmation that the meeting took place."
+    },
+    "scenarios": {
+     "do_nothing": "If the meeting matters, mail from one side will show it; the file loses nothing by waiting.",
+     "act": "Acting now would mean guessing at a meeting nobody has described — a note about what was agreed would rest on nothing.",
+     "best": "A mail from either side shows what the meeting was for and what, if anything, comes next.",
+     "worst": "Something agreed at the meeting is never written down — and the file cannot know it without a signal.",
+     "signals_to_watch": [
+      "A mail from meera@tallgrass.test or from the founder after the booked time.",
+      "The calendar entry moving or being cancelled.",
+      "The founder's own note on what was agreed."
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The file holds only a booking, with no words, mail or promise.",
+      "The brief names no kind of work for this contact.",
+      "Nothing on record shows anything owed by the founder."
+     ]
+    },
+    "mode": "wait",
+    "next_move": null,
+    "alternative": "If the founder wants a record, he can note what was agreed himself; nothing should be presumed for him.",
+    "wait_or_stop": "Wait for a signal — a mail from either side, or the founder's own note. Stop if the booked time passes and the file stays quiet with nothing written.",
+    "done_when": "A mail or your note shows what the meeting was for and what follows — or the file stays quiet and is let go.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"No words go with the booking — no title, agenda or note.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Neither side's reply time is measured, and the file holds no mail at all.\", \"evidence\": [\"num:their_reply_time:meera@tallgrass.test\", \"num:your_reply_time:meera@tallgrass.test\"]}, {\"claim\": \"Nothing on record shows the meeting taking place, nor anything agreed at it.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The brief names no kind of work for this contact; the engine opened an admin situation on the booking.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The only thing known is a booking: whether the meeting took place, and what came of it, cannot be read from this file.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}, {\"claim\": \"No follow-through can be owed on a meeting nobody has confirmed took place.\", \"based_on\": [\"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The meeting went ahead as booked.\", \"needs\": \"A mail from either side after the booked time, or the founder's own word.\"}, {\"proposition\": \"The meeting was moved or dropped.\", \"needs\": \"A changed or cancelled calendar entry, or a mail saying so.\"}], \"unknowns\": [{\"question\": \"Whether the meeting took place at all.\", \"relevance\": \"Only a meeting that took place can leave anything owed; until one is confirmed, nothing can be asked of the founder.\"}, {\"question\": \"What the meeting is for, and who this contact at Tallgrass is to Nimbus Labs.\", \"relevance\": \"The brief names no kind of work for the contact, so neither preparation nor any later step can be judged.\"}, {\"question\": \"Whether any mailbox has read this contact's mail.\", \"relevance\": \"No mailbox is shown to have read it, so the absence of mail says nothing either way.\"}], \"frames\": {\"primary\": \"A calendar booking with no words around it: a meeting with meera@tallgrass.test sits on the calendar and the file holds nothing else. Nothing is owed until a signal shows what, if anything, came of it.\", \"rivals\": [\"A meeting that went ahead and left a step owed — nothing on record shows either.\", \"A booking that was moved or dropped without the calendar saying so.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook or any mail, nothing is expected beyond the booking itself.\", \"actual\": \"A booking for the thirteenth of August is all the file holds: no mail, no words, and no confirmation that the meeting took place.\"}, \"scenarios\": {\"do_nothing\": \"If the meeting matters, mail from one side will show it; the file loses nothing by waiting.\", \"act\": \"Acting now would mean guessing at a meeting nobody has described — a note about what was agreed would rest on nothing.\", \"best\": \"A mail from either side shows what the meeting was for and what, if anything, comes next.\", \"worst\": \"Something agreed at the meeting is never written down — and the file cannot know it without a signal.\", \"signals_to_watch\": [\"A mail from meera@tallgrass.test or from the founder after the booked time.\", \"The calendar entry moving or being cancelled.\", \"The founder's own note on what was agreed.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The file holds only a booking, with no words, mail or promise.\", \"The brief names no kind of work for this contact.\", \"Nothing on record shows anything owed by the founder.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the founder wants a record, he can note what was agreed himself; nothing should be presumed for him.\", \"wait_or_stop\": \"Wait for a signal — a mail from either side, or the founder's own note. Stop if the booked time passes and the file stays quiet with nothing written.\", \"done_when\": \"A mail or your note shows what the meeting was for and what follows — or the file stays quiet and is let go.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 3300,
+   "output_tokens": 1015,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "54fb90071de227117bed8a5e21ff799cbce0e8205585b7f03aebeb596aa6e987": {
    "site": "relevance",
    "parsed": {
@@ -23,7 +147,7 @@
    "output_tokens": 38,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5a1636b81874991d6255f518fce0d29c596ccf8381d1096c0d9e6360ad1c7cf4": {
+  "91348ce78881a00d80ccd051ee5dd367aad1592b8120f30f394cc883712145fa": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -143,131 +267,7 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"No words go with the booking — no title, agenda or note.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Neither side's reply time is measured, and the file holds no mail at all.\", \"evidence\": [\"num:their_reply_time:meera@tallgrass.test\", \"num:your_reply_time:meera@tallgrass.test\"]}, {\"claim\": \"Nothing on record shows the meeting taking place, nor anything agreed at it.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The brief names no kind of work for this contact; the engine opened an admin situation on the booking.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The only thing known is a booking: whether the meeting took place, and what came of it, cannot be read from this file.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}, {\"claim\": \"No follow-through can be owed on a meeting nobody has confirmed took place.\", \"based_on\": [\"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The meeting went ahead as booked.\", \"needs\": \"A mail from either side after the booked time, or the founder's own word.\"}, {\"proposition\": \"The meeting was moved or dropped.\", \"needs\": \"A changed or cancelled calendar entry, or a mail saying so.\"}], \"unknowns\": [{\"question\": \"Whether the meeting took place at all.\", \"relevance\": \"Only a meeting that took place can leave anything owed; until one is confirmed, nothing can be asked of the founder.\"}, {\"question\": \"What the meeting is for, and who this contact at Tallgrass is to Nimbus Labs.\", \"relevance\": \"The brief names no kind of work for the contact, so neither preparation nor any later step can be judged.\"}, {\"question\": \"Whether any mailbox has read this contact's mail.\", \"relevance\": \"No mailbox is shown to have read it, so the absence of mail says nothing either way.\"}], \"frames\": {\"primary\": \"A calendar booking with no words around it: a meeting with meera@tallgrass.test sits on the calendar and the file holds nothing else. Nothing is owed until a signal shows what, if anything, came of it.\", \"rivals\": [\"A meeting that went ahead and left a step owed — nothing on record shows either.\", \"A booking that was moved or dropped without the calendar saying so.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook or any mail, nothing is expected beyond the booking itself.\", \"actual\": \"A booking for the thirteenth of August is all the file holds: no mail, no words, and no confirmation that the meeting took place.\"}, \"scenarios\": {\"do_nothing\": \"If the meeting matters, mail from one side will show it; the file loses nothing by waiting.\", \"act\": \"Acting now would mean guessing at a meeting nobody has described — a note about what was agreed would rest on nothing.\", \"best\": \"A mail from either side shows what the meeting was for and what, if anything, comes next.\", \"worst\": \"Something agreed at the meeting is never written down — and the file cannot know it without a signal.\", \"signals_to_watch\": [\"A mail from meera@tallgrass.test or from the founder after the booked time.\", \"The calendar entry moving or being cancelled.\", \"The founder's own note on what was agreed.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The file holds only a booking, with no words, mail or promise.\", \"The brief names no kind of work for this contact.\", \"Nothing on record shows anything owed by the founder.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the founder wants a record, he can note what was agreed himself; nothing should be presumed for him.\", \"wait_or_stop\": \"Wait for a signal — a mail from either side, or the founder's own note. Stop if the booked time passes and the file stays quiet with nothing written.\", \"done_when\": \"A mail or your note shows what the meeting was for and what follows — or the file stays quiet and is let go.\", \"draft\": null}",
    "framed": true,
-   "input_tokens": 3305,
-   "output_tokens": 1015,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "fa142762a175c12f8a8938067f97f2668011cc06aa80c0564c32dd1e23901652": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.",
-      "evidence": [
-       "evt_#1"
-      ]
-     },
-     {
-      "claim": "No words go with the booking — no title, agenda or note.",
-      "evidence": [
-       "evt_#1"
-      ]
-     },
-     {
-      "claim": "Neither side's reply time is measured, and the file holds no mail at all.",
-      "evidence": [
-       "num:their_reply_time:meera@tallgrass.test",
-       "num:your_reply_time:meera@tallgrass.test"
-      ]
-     },
-     {
-      "claim": "Nothing on record shows the meeting taking place, nor anything agreed at it.",
-      "evidence": [
-       "evt_#1"
-      ]
-     },
-     {
-      "claim": "The brief names no kind of work for this contact; the engine opened an admin situation on the booking.",
-      "evidence": [
-       "sit:sit_#1"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "The only thing known is a booking: whether the meeting took place, and what came of it, cannot be read from this file.",
-      "based_on": [
-       "fact:1",
-       "fact:2",
-       "fact:4"
-      ]
-     },
-     {
-      "claim": "No follow-through can be owed on a meeting nobody has confirmed took place.",
-      "based_on": [
-       "fact:4"
-      ]
-     }
-    ],
-    "patterns": [],
-    "hypotheses": [
-     {
-      "proposition": "The meeting went ahead as booked.",
-      "needs": "A mail from either side after the booked time, or the founder's own word."
-     },
-     {
-      "proposition": "The meeting was moved or dropped.",
-      "needs": "A changed or cancelled calendar entry, or a mail saying so."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "Whether the meeting took place at all.",
-      "relevance": "Only a meeting that took place can leave anything owed; until one is confirmed, nothing can be asked of the founder."
-     },
-     {
-      "question": "What the meeting is for, and who this contact at Tallgrass is to Nimbus Labs.",
-      "relevance": "The brief names no kind of work for the contact, so neither preparation nor any later step can be judged."
-     },
-     {
-      "question": "Whether any mailbox has read this contact's mail.",
-      "relevance": "No mailbox is shown to have read it, so the absence of mail says nothing either way."
-     }
-    ],
-    "frames": {
-     "primary": "A calendar booking with no words around it: a meeting with meera@tallgrass.test sits on the calendar and the file holds nothing else. Nothing is owed until a signal shows what, if anything, came of it.",
-     "rivals": [
-      "A meeting that went ahead and left a step owed — nothing on record shows either.",
-      "A booking that was moved or dropped without the calendar saying so."
-     ]
-    },
-    "proposed_kind": null,
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "Without a playbook or any mail, nothing is expected beyond the booking itself.",
-     "actual": "A booking for the thirteenth of August is all the file holds: no mail, no words, and no confirmation that the meeting took place."
-    },
-    "scenarios": {
-     "do_nothing": "If the meeting matters, mail from one side will show it; the file loses nothing by waiting.",
-     "act": "Acting now would mean guessing at a meeting nobody has described — a note about what was agreed would rest on nothing.",
-     "best": "A mail from either side shows what the meeting was for and what, if anything, comes next.",
-     "worst": "Something agreed at the meeting is never written down — and the file cannot know it without a signal.",
-     "signals_to_watch": [
-      "A mail from meera@tallgrass.test or from the founder after the booked time.",
-      "The calendar entry moving or being cancelled.",
-      "The founder's own note on what was agreed."
-     ]
-    },
-    "appraisal": {
-     "stakes": "low",
-     "urgency": "low",
-     "reversibility": "reversible",
-     "reasons": [
-      "The file holds only a booking, with no words, mail or promise.",
-      "The brief names no kind of work for this contact.",
-      "Nothing on record shows anything owed by the founder."
-     ]
-    },
-    "mode": "wait",
-    "next_move": null,
-    "alternative": "If the founder wants a record, he can note what was agreed himself; nothing should be presumed for him.",
-    "wait_or_stop": "Wait for a signal — a mail from either side, or the founder's own note. Stop if the booked time passes and the file stays quiet with nothing written.",
-    "done_when": "A mail or your note shows what the meeting was for and what follows — or the file stays quiet and is let go.",
-    "draft": null
-   },
-   "raw": "{\"facts\": [{\"claim\": \"The calendar holds a meeting with meera@tallgrass.test, booked for the thirteenth of August.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"No words go with the booking — no title, agenda or note.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Neither side's reply time is measured, and the file holds no mail at all.\", \"evidence\": [\"num:their_reply_time:meera@tallgrass.test\", \"num:your_reply_time:meera@tallgrass.test\"]}, {\"claim\": \"Nothing on record shows the meeting taking place, nor anything agreed at it.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The brief names no kind of work for this contact; the engine opened an admin situation on the booking.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The only thing known is a booking: whether the meeting took place, and what came of it, cannot be read from this file.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:4\"]}, {\"claim\": \"No follow-through can be owed on a meeting nobody has confirmed took place.\", \"based_on\": [\"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The meeting went ahead as booked.\", \"needs\": \"A mail from either side after the booked time, or the founder's own word.\"}, {\"proposition\": \"The meeting was moved or dropped.\", \"needs\": \"A changed or cancelled calendar entry, or a mail saying so.\"}], \"unknowns\": [{\"question\": \"Whether the meeting took place at all.\", \"relevance\": \"Only a meeting that took place can leave anything owed; until one is confirmed, nothing can be asked of the founder.\"}, {\"question\": \"What the meeting is for, and who this contact at Tallgrass is to Nimbus Labs.\", \"relevance\": \"The brief names no kind of work for the contact, so neither preparation nor any later step can be judged.\"}, {\"question\": \"Whether any mailbox has read this contact's mail.\", \"relevance\": \"No mailbox is shown to have read it, so the absence of mail says nothing either way.\"}], \"frames\": {\"primary\": \"A calendar booking with no words around it: a meeting with meera@tallgrass.test sits on the calendar and the file holds nothing else. Nothing is owed until a signal shows what, if anything, came of it.\", \"rivals\": [\"A meeting that went ahead and left a step owed — nothing on record shows either.\", \"A booking that was moved or dropped without the calendar saying so.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook or any mail, nothing is expected beyond the booking itself.\", \"actual\": \"A booking for the thirteenth of August is all the file holds: no mail, no words, and no confirmation that the meeting took place.\"}, \"scenarios\": {\"do_nothing\": \"If the meeting matters, mail from one side will show it; the file loses nothing by waiting.\", \"act\": \"Acting now would mean guessing at a meeting nobody has described — a note about what was agreed would rest on nothing.\", \"best\": \"A mail from either side shows what the meeting was for and what, if anything, comes next.\", \"worst\": \"Something agreed at the meeting is never written down — and the file cannot know it without a signal.\", \"signals_to_watch\": [\"A mail from meera@tallgrass.test or from the founder after the booked time.\", \"The calendar entry moving or being cancelled.\", \"The founder's own note on what was agreed.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The file holds only a booking, with no words, mail or promise.\", \"The brief names no kind of work for this contact.\", \"Nothing on record shows anything owed by the founder.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the founder wants a record, he can note what was agreed himself; nothing should be presumed for him.\", \"wait_or_stop\": \"Wait for a signal — a mail from either side, or the founder's own note. Stop if the booked time passes and the file stays quiet with nothing written.\", \"done_when\": \"A mail or your note shows what the meeting was for and what follows — or the file stays quiet and is let go.\", \"draft\": null}",
-   "framed": true,
-   "input_tokens": 3236,
+   "input_tokens": 3231,
    "output_tokens": 1015,
    "model": "claude-haiku-4-5-20251001"
   }
