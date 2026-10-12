@@ -15,6 +15,13 @@ first: three people asked you something, and you have written to nobody since th
     asked (a name, never an address: `platform/self_identity.spoken_name`), since their oldest such ask, its age a
     count of whole days; oldest first. Their count is a count too.
 
+  THE QUESTIONS YOUR FILES ASK YOU (`open_questions`, M44.C2.L-data.V0.U02, `03` s15-F13) — every open question of
+    the tenant asked by the instant, oldest first, with the card that asks it when one is open (STEP-13's question
+    card: the open card on the signal the asking run raised for that file — its Answer is where the brief's line
+    leads, `06` D60). A question was read one file at a time (`context/founder_questions.open_question`). The read
+    lives here, beside who waits on you, because `context/founder_questions` is the STEP-16 builder's this step (the
+    lead, 12 Oct); it reads the same table and writes nothing.
+
 Read over one connection, as of an instant; no model, nothing written.
 """
 from __future__ import annotations
@@ -45,6 +52,39 @@ _LAST_BY_SENDER = text(
 _NAMES = text(
     "select node_id, display_name, canonical_key from graph_nodes "
     " where org_id = :o and node_id = any(:ids) and valid_to is null")
+
+
+#: The card states a founder can still see (`deliver/store.CardStore.OPEN_STATES`, read here, layers below it).
+OPEN_CARD_STATES: tuple[str, ...] = ("queued", "surfaced", "snoozed", "claimed", "delivered")
+
+#: Every open question asked by the instant, oldest first, with the open card on the signal its asking run raised.
+_OPEN_QUESTIONS = text(
+    "select q.question_id, q.file_id, q.fingerprint, q.run_id, q.question, q.asked_at, "
+    "       (select k.card_id from cards k join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+    "         where k.org_id = q.org_id and s.subject_node_id = q.file_id and s.reasoning_run_id = q.run_id "
+    "           and s.output_lane = 'investigation' and k.state = any(:open) order by k.card_id limit 1) as card_id "
+    "  from founder_questions q "
+    " where q.org_id = :o and q.state = 'open' and q.asked_at <= :now "
+    " order by q.asked_at, q.question_id")
+
+
+@dataclass(frozen=True, slots=True)
+class OpenQuestion:
+    """A question a file asks you, and the card that asks it."""
+    question_id: str
+    file_id: str
+    fingerprint: str
+    run_id: str | None
+    question: str
+    asked_at: datetime
+    card_id: str | None
+
+
+def open_questions(conn, org_id: str, *, now: datetime) -> tuple[OpenQuestion, ...]:
+    """Every open question of the tenant asked by `now`, oldest first, each with its open card or None."""
+    return tuple(OpenQuestion(question_id=r.question_id, file_id=r.file_id, fingerprint=r.fingerprint,
+                              run_id=r.run_id, question=r.question, asked_at=r.asked_at, card_id=r.card_id)
+                 for r in conn.execute(_OPEN_QUESTIONS, {"o": org_id, "now": now, "open": list(OPEN_CARD_STATES)}))
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,4 +150,4 @@ def desk_for(conn, org_id: str, files: Iterable, *, now: datetime) -> Desk:
                 waiting_count=count_of(len(waiting), basis=DESK_BASIS, unit="people"))
 
 
-__all__ = ["DESK_BASIS", "Desk", "Waiting", "desk_for"]
+__all__ = ["DESK_BASIS", "Desk", "OPEN_CARD_STATES", "OpenQuestion", "Waiting", "desk_for", "open_questions"]

@@ -135,6 +135,11 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "whom it is owed to — built before the morning brief's day, which reads it, bottom-up",
         "MOVES WITH M44.C3.L-logic.V0.U02 (`executive/morning_day`), which reads your promises due"),
 
+    "your_desk.open_questions": (
+        "STEP-15 M44.C2.L-data.V0.U02: every open question of the tenant with the card that asks it, in one read — "
+        "built before the morning brief's day, which reads it, bottom-up",
+        "MOVES WITH M44.C3.L-logic.V0.U02 (`executive/morning_day`), which lists the questions your files ask"),
+
 }
 
 
