@@ -15,6 +15,8 @@ from genios_engine.reason.authority import (
     AUTHORITATIVE_SCORE_INPUTS_SQL,
     AUTHORITATIVE_SIGNAL_JOINS,
     AUTHORITATIVE_SIGNAL_PREDICATE,
+    QUESTION_SIGNAL_JOINS,
+    QUESTION_SIGNAL_PREDICATE,
     authority_time,
 )
 
@@ -26,7 +28,7 @@ from .render import render_copy, review_copy
 from genios_engine.reason.expert.decide import is_expert
 from .router import budget_full
 
-from .store import CardStore
+from .store import QUESTION_CARD_BUILDER, CardStore
 
 # L5 pipeline — turn gated signals into delivered cards. Runs after L3 (in-process background, no
 # Celery). One card per open signal: E0 compose → E1 render (one temp-0 call, validated) → E3
@@ -189,6 +191,136 @@ def _open_situations_without_cards(graph, org_id: str,
             "order by max(s.eval_time) desc"),
             {"o": org_id, "as_of": as_of}).mappings().all()
     return [dict(r) for r in rows]
+
+
+# ── STEP-13 · THE QUESTION CARD (`yc2_w27_s13` M36.C2.L-interface.V3.U05; `06` D60) ─────────────────────────────
+#
+# A held file asks the founder ONE question (`reason/expert/asks`), and the question signal is authorised as
+# a question (`reason/authority.QUESTION_SIGNAL_PREDICATE`) — never as a decision, so the selector above never
+# returns it. Each open question signal with no live card gets its card, by its own builder
+# (`store.QUESTION_CARD_BUILDER`) and through its own door (`store.QUESTION_CARD_SQL`): the question as its
+# headline, the file as the expert read it as its situation, the Investigation lane, an Answer action. It is
+# the file's one card — a new question or a decision retires it (`asks`), and a re-asked question keeps it.
+_QUESTIONS_WITHOUT_CARDS = (
+    "select s.signal_id, s.subject_node_id, s.pack_id, s.score, s.config_snapshot_id, "
+    "s.reasoning_run_id, s.reasoning_decision_hash, s.authority_expires_at, s.output_lane, s.lane_reason, "
+    "s.capability_id, s.capability_version, s.capability_review_state, "
+    "question_asked.question_id, question_asked.question, question_asked.why, "
+    "question_asked.fingerprint "
+    "from signals s " + QUESTION_SIGNAL_JOINS +
+    # The same rule as the decision selector's join: an expired card reopens the door, and so does a
+    # stale one nobody has touched; any other card is the file's answer already.
+    "left join cards k on k.signal_id=s.signal_id and k.org_id=s.org_id and k.state != 'expired' "
+    "and not (k.builder_version is distinct from :builder "
+    "         and k.state = any(:refreshable) and k.resolved_at is null) "
+    "where s.org_id=:o and s.status='open' and k.card_id is null and " + QUESTION_SIGNAL_PREDICATE +
+    " order by s.eval_time, s.signal_id")
+
+#: What a question card offers: your answer, or later. A question is not an instruction, so there is
+#: nothing to run and nothing to do yourself; `wrong` waits for STEP-16, which learns from it.
+QUESTION_ACTIONS = ("answer", "snooze")
+
+
+def _open_questions_without_cards(graph, org_id: str, evaluation_time: datetime | None = None) -> list[dict]:
+    with graph.engine.connect() as c:
+        return [dict(r) for r in c.execute(text(_QUESTIONS_WITHOUT_CARDS), {
+            "o": org_id, "authority_time": authority_time(evaluation_time),
+            "builder": QUESTION_CARD_BUILDER,
+            "refreshable": list(CardStore.REFRESHABLE_STATES)}).mappings()]
+
+
+def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[dict, dict]:
+    """The card a held file asks its question on, and its copy — every word the question's or the file's
+    checked review's own; nothing written for it. Its situation is the expert's reading of the file as the
+    check let it stand, labelled an inference; with none, why the file asks."""
+    from datetime import timedelta
+
+    from genios_engine.reason.expert import store as reviews
+    from genios_engine.reason.expert.decide import SITUATION_IS
+
+    from .bands import band
+    from .card_builder import EXPIRY_DAYS, _group_memberships, load_node
+    from .lane_display import describe
+    from .router import resolve_assignee
+
+    node = row["subject_node_id"]
+    name, _node_type, attrs, facts = load_node(graph, org_id, node)
+    # WHOEVER THE FILE'S DECISION WOULD REACH: the same routing, so a question goes where its answer is.
+    assignee, rule = resolve_assignee(graph, org_id, facts, {**(attrs or {}), **_group_memberships(
+        graph, org_id, node)})
+    with graph.engine.connect() as c:
+        review = reviews.read_review(c, org_id, node, str(row["fingerprint"]))
+    checked = review.checked if review is not None else None
+    reading = checked.words.situation if checked is not None and checked.words.situation else None
+    why = [{"sentence": "headline", "question": row["question"], "because": row["why"],
+            "source": "expert_check"}]
+    if reading:
+        why.append({"sentence": "situation", "inference": SITUATION_IS, "source": "expert_check"})
+    lane = describe(row.get("output_lane"), row.get("lane_reason"))
+    score = int(row.get("score") or 0)
+    expires = eval_time + timedelta(days=EXPIRY_DAYS)
+    if row.get("authority_expires_at") is not None:
+        expires = min(expires, row["authority_expires_at"])
+    card = {
+        "signal_id": row["signal_id"], "org_id": org_id, "subject_node_id": node,
+        "domain": row.get("pack_id") or "founder_office",
+        # A QUESTION IS A REQUEST FOR ONE PRECISE ANSWER — `review`, the level that asks and never instructs
+        # (`contracts/outcomes`: ASK_DECISION), and says why it does not instruct.
+        "level": "review", "abstained_because": row["why"],
+        "urgency_band": band(score, None), "assignee": assignee, "resolved_rule": rule, "co_recipients": [],
+        "score": score, "score_block": {"S": score},
+        "business_subject": name, "unresolved_item": row["question"],
+        "capability_key": row.get("capability_id"), "capability_version": row.get("capability_version"),
+        "capability_review_state": str(row.get("capability_review_state") or "unreviewed"),
+        "output_lane": lane.lane, "lane_reason": lane.reason,
+        "actions": [{"type": "answer", "label": "Answer", "question_id": row["question_id"]},
+                    {"type": "snooze", "options": ["4h", "tomorrow_09", "3d", "custom"]}],
+        "why": why,
+        # The app and the API; never an agent's to answer for you.
+        "surfaces": ["app", "api"], "context_tags": [],
+        "config_snapshot_id": row.get("config_snapshot_id"), "builder_version": QUESTION_CARD_BUILDER,
+        "expires_at": expires, "_authority_time": eval_time,
+        "_question_authority": {"reasoning_run_id": row["reasoning_run_id"],
+                                "reasoning_decision_hash": row["reasoning_decision_hash"],
+                                "config_snapshot_id": row.get("config_snapshot_id"),
+                                "question_id": row["question_id"]}}
+    copy = {"headline": row["question"], "situation": reading or row["why"], "artifact": {},
+            "render_mode": "question"}
+    return card, copy
+
+
+def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: datetime, out: dict) -> None:
+    """Each open question with no live card gets one — counted where it is written, its lane tallied as
+    every card's is. ⛔ A pass that could not read its questions says so (`questions_unread`) and keeps
+    the decisions' cards: a read refused here must never cost a card the founder was owed elsewhere."""
+    try:
+        questions = _open_questions_without_cards(graph, org_id, eval_time)
+    except Exception as exc:      # noqa: BLE001 — see the docstring
+        import logging
+
+        logging.getLogger(__name__).warning("could not read the open questions for org=%s: %s", org_id, exc)
+        out["questions_unread"] = 1
+        return
+    for row in questions:
+        token = card_store.claim_build(org_id, row["signal_id"], eval_time=eval_time,
+                                       builder_version=QUESTION_CARD_BUILDER)
+        if token is None:
+            out["build_in_progress"] += 1
+            continue
+        try:
+            card, copy = question_card(graph, org_id, row, eval_time)
+            card_id, created, refreshed = card_store.insert_card(card, copy, build_claim_token=token)
+            if created:
+                out["built"] += 1
+                out["question_cards"] += 1
+                tally_lane(out, lane=card["output_lane"])
+            elif refreshed:
+                out["refreshed"] += 1
+                tally_lane(out, lane=card["output_lane"])
+            elif card_id is not None:
+                out["already_built"] += 1
+        finally:
+            card_store.release_build(org_id, row["signal_id"], token)
 
 
 def _apply_abstention(signal: dict, effective: dict) -> dict:
@@ -358,6 +490,9 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
            # Initialised at zero for the same reason `BY REASON` prints its zeros: a key that
            # appears only when it fires is a key nobody knows exists.
            "cards_from_signal": 0, "cards_from_situation": 0, "cards_uninterpreted": 0,
+           # STEP-13 · the cards a held file asks its question on (`_build_question_cards`), zeroed so a
+           # pass that asked nothing says so.
+           "question_cards": 0,
            # ⛔ THE LANE MIX. Zeroed for the same reason as the three above — "a key that appears
            # only when it fires is a key nobody knows exists" — and ALL SIX are zeroed, including
            # `unrouted`, because today every production signal is unrouted and a mix that hid that
@@ -642,6 +777,10 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 surfaced_by_reason[reason_code] = surfaced_by_reason.get(reason_code, 0) + 1
         finally:
             card_store.release_build(org_id, sig["signal_id"], claim_token)
+
+    # STEP-13 · the questions held files ask, each on its own card (M36.C2.L-interface.V3.U05) — after the
+    # decisions, inside the recall guard below: a question card is a card, its lane tallied.
+    _build_question_cards(graph, card_store, org_id, eval_time, out)
 
     # ⛔ THE RECALL GUARD, RUN — and until 2026-10-01 it was written, tested and never invoked.
     #
