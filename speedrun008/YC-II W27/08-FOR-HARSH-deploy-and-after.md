@@ -240,6 +240,18 @@ it** (`03` F62), or that company reads as a counterparty in those three places.
 | scripts | `scripts/company_brief.py … --kind`; `scripts/playbook_review_sheet.py` — Rohit's review, local files only, no database |
 | what does NOT change | no new environment variable; Admin's cards; nothing for any tenant that has not switched the Founder Office on |
 
+### 1.13 · STEP-12, the expert pass — in the next push
+
+| | What changes at runtime |
+|---|---|
+| migrations `0197`–`0199` | `expert_reviews` — one row per file per fingerprint: the review, its status and reason, its cost, what its fingerprint read (`inputs`) and what triggered it (`triggers`). `/reset` wipes it |
+| a new L4 feature, `expert_review` | off for every tenant (§3.11). Off: no file is reviewed, nothing is spent, every situation is decided as before |
+| with it on — the pass | each file whose fingerprint moved and that something touched is reviewed ONCE by R-7 (Sonnet-class, `06` D7), nearest deadline or meeting first, ten a pass, **$2 a day** on the R-sites' ledger; an unchanged sweep asks nothing; a refusal is a row with its reason |
+| with it on — the decision (`06` D1) | a file a VALID review covers gets ONE audited decision from it — no decider, no R-1 — and what the review explains stands down: the compiled lane's situations on the file and its people, the packs' rules on them (`covered_by_review` in the suppression log), the shadow native lane. The file keeps one decision — the same advice stands, other advice replaces it, a review that names no move clears its card (`rule_cleared`). Its card speaks the review's own words, no narrator |
+| the decider's spend | ends on covered files: the decider is asked only about what no valid review explains |
+| R-6 | retired (`06` D51) — it never ran in production |
+| what does NOT change | no new environment variable; nothing for any tenant without the feature |
+
 ### 1.3 · How it was tested before the push
 
 `baseline/yc2w27-qa/qa_record.txt`, at `83dd87f3`, every check on an **empty** scratch Postgres 17:
@@ -551,6 +563,22 @@ Rohit's call, applied by Rohit or by you on Rohit's word: a line already accepte
 `remove`, then `add in_motion "<Rohit's words>" --domain <domain> --kind <kind> --by rohit`
 (`scripts/company_brief.py`, as §3.6). The review itself is Rohit's and needs nothing from you: the
 admitted corpus ships with a later push.
+
+### 3.11 · STEP-12 — switch the expert on for Rohit's org, after the live pass
+
+Only after Rohit's yes on the live golden pass (`06` D50 — `scripts/golden_eval.py --dry-run --site expert`
+counts it: 97 expert calls, ≈ $2.08). Then, as §3.10, with `GENIOS_ALLOW_PROD_WRITE=1`:
+
+```
+python scripts/activate_tenant.py --org $ORG --database-url "$URL" --status
+python scripts/activate_tenant.py --org $ORG --database-url "$URL" --features expert_review \
+    --by harsh --notes "06 D1, D7: the expert decides Rohit's files"           # the dry run: ONE switch
+python scripts/activate_tenant.py --org $ORG --database-url "$URL" --features expert_review \
+    --by harsh --notes "06 D1, D7: the expert decides Rohit's files" --apply
+```
+
+Switch it on for no other tenant. A day later run the expert's health check
+(`scripts/pipeline_health.py`, `check_the_expert_says_why_and_stays_in_budget`) and send the output.
 
 ## 4 · The probes — send the outputs
 

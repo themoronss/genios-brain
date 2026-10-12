@@ -7683,7 +7683,7 @@ yc2_w27_align:
                         the dossier (after F113), the portal's notices (F99), in-motion counterparties
                         as named senders (F125), the draft script's kinds (F127), the expert proposing a
                         kind (F132), the per-file triggers (`05` §5).
-                      artifact: "speedrun008/YC-II W27/STEP-12-TO-BUILD-the-expert-pass.md"
+                      artifact: "speedrun008/YC-II W27/STEP-12-PENDING-owner-rohit-and-harsh-the-expert-pass.md"
                       verify: ".venv/bin/python -m pytest -q tests/test_tree_ids_are_addressable.py && bash scripts/qa/check-tree.sh"
                       depends_on: [M34.C3.L-interface.V2.U03]
             - layer: integration

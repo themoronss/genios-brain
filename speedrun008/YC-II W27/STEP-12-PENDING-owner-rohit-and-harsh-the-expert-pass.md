@@ -1,4 +1,4 @@
-# STEP-12 · TO BUILD · the expert pass — one strong judgment per file, only when it changed
+# STEP-12 · PENDING — owner Rohit (the live pass, D50: a key and a yes; D48, D57, D58) and Harsh (deploy, migrations `0197`–`0199`; `expert_review` for Rohit's org only, after the live pass) · the expert pass — one strong judgment per file, only when it changed — M32 and M33 built (§9)
 
 **Owner:** Claude. **Depends on:** `STEP-02` (fingerprint), `STEP-07` (brief), `STEP-09` (files),
 `STEP-10` (numbers); `STEP-11` makes it better but is not a precondition (D3). **Decisions:** `06`
@@ -186,7 +186,7 @@ C5 the golden set — the ideal reader's expert answers, authored per case, re-r
 situations of a covered file standing down, replay with zero model calls (F139 for covered files), the
 board measured, and the live pass (D50).
 
-28 units (22 in M32, 6 in M33), critical path 14 — ⛔ widened to **37** (30 in M32, 7 in M33) by §8.8. Each unit, its artifact and its verify command are in `tree.yaml`.
+28 units (22 in M32, 6 in M33), critical path 14 — ⛔ widened to **37** (30 in M32, 7 in M33) by §8.8 — ⛔ **60** as built (39 in M32, 21 in M33): the build minted each unit where it measured what the plan had not (§9). Each unit, its artifact and its verify command are in `tree.yaml`.
 
 ### 8.6 · Decisions
 
@@ -249,3 +249,48 @@ touch is not in a file's timeline (D53); a *"soon"* promise is no deadline — t
 (D56); the shadow decider's spend ends with M33, which replaces it on covered files (F11, D51).
 Owned elsewhere: F146 and F150 are `STEP-14`'s, F152 is `STEP-13`'s, `STEP-14`'s and `STEP-16`'s.
 
+---
+
+## 9 · Built — 12 Oct (tree `yc2_w27_s12`, 60 units)
+
+**M32 — the expert reviews every changed file, in shadow** (39 units). The review is a contract
+(`contracts/expert_review`: facts that cite, a frame and its rivals, expected against actual, scenarios,
+an appraisal of levels with reasons, a next move, a draft) and a store (migrations `0197`–`0199`: the
+review, the inputs its fingerprint read, what triggered it). The expert is R-7, Sonnet-class with its own
+ceiling and a $2 day (`06` D7). Its dossier is one file read alone — the brief, the timeline with each
+touch's words, what was judged before, the file's numbers with their n, its kind's playbook with its
+version, the time-passes what-if — and its fingerprint is the file's: events, asks, whose move, quiet and
+meeting rungs, the brief's and the playbook's versions, who decides. One repair for syntax only; a cut
+answer refused (F140); a refusal a record. The pass runs in the sweep: each file that moved and that
+something touched (`05` §5) reviewed once, nearest deadline first, at most ten a pass; an unchanged sweep
+asks nothing. A kind the expert proposes is a labelled proposal you accept (F132, F151). R-6 retired
+(D51). The golden set's expert answers are authored per case (D49, 66 files over 58 cases).
+
+**M33 — the review decides each covered file** (21 units, under `06` D1). A covered file is decided once,
+from its review, as an ordinary audited Layer 4 run (`reason/expert/decide`): the mode is the outcome —
+act a decision, find out an Investigation, wait or blocked Monitor, nothing Suppress — confidence is
+code's (the source events its facts cite), the appraisal's levels set urgency and importance, and no
+model is asked: no decider, no R-1, and a replay asks none (F139). The pass runs first and names what its
+valid reviews cover and who is in each file; everything a review explains stands down — the compiled
+lane's situations on the file, on its people, on a node no one owns, the packs' rules, the shadow native
+lane (F173); the file keeps ONE decision — the same advice stands, other advice replaces it, a review
+that names no move clears it (F174, F175); its card speaks the review's own words and its success is the
+review's `done_when`. The compiled lane's corpus thresholds read the file's measured numbers (F104).
+
+**Measured** (`03` §F.1): must-detect **13 → 21** of 45, must-abstain **12 → 13** of 13, forbidden outputs
+**8 → 0**, the Atlas replays passing **4 → 6** of 80. On all 58 cases the decider is asked nothing a covered
+file's review explains, eight files that never reached the decider before are decided, every must-abstain
+case holds, and every expert decision replays with every model door poisoned (M33.C2 U02). The
+first-connect door tells a founder who presses Sync what the sweep tells them, on all 58 (F177). The live
+pass is ready and has not run: `scripts/golden_eval.py --dry-run --site expert` counts **97 expert calls,
+≈ $2.08** on `claude-sonnet-5` (the ideal reader's token estimates).
+
+**What did not move, and whose it is:** a second card where the review's advice changed as the file
+moved, or was re-decided after its week (F02, F05, F06, F12, F24, F25, F50 — F176, `STEP-14`'s living
+card); a *find out* review held in Investigation with no card to ask it (F01, F52 — `STEP-13`); F15's wave
+reviewed once and never again (F169, `06` D57); F19's three people in one file (`06` D58); F56's renewal
+lost at the gate; an expert founder card whose move names no date stands the 7-day default (F179,
+`STEP-14`); the expert's prompt does not say to speak to you as *"you"* (F178, `STEP-13` §3.3).
+
+**Still owed:** the live pass on your yes and a key (`06` D50); the push; the deploy — migrations
+`0197`–`0199`, `expert_review` on for your org only, the expert's health check a day later; D48, D57, D58.
