@@ -97,7 +97,9 @@ def test_the_queue_read_now_carries_the_domain_it_partitions_on():
     src = inspect.getsource(CardStore.queue)
 
     assert "k.assignee, k.domain, k.urgency_band" in src
-    assert "rows = self._objective_order(c, org_id, seat, rows)" in src
+    # ⛔ RESTATED by yc2_w27_s14/M42.C4.L-data.V0.U01: the queue answers at an instant, and so does the objective
+    # it orders by (`now=eval_time`).
+    assert "rows = self._objective_order(c, org_id, seat, rows, now=eval_time)" in src
 
 
 # =============================================================================================

@@ -696,7 +696,7 @@ class CardStore:
     def queue(self, org_id: str, *, assignee: str | None = None, admin: bool = False,
               states=("queued", "surfaced", "snoozed", "claimed"),
               record_impressions: bool = True, viewer: str | None = None,
-              strict_seat: bool = False) -> list[dict]:
+              strict_seat: bool = False, eval_time=None) -> list[dict]:
         """Dashboard read. admin sees all queues (incl. unrouted); a member sees only their own.
         Ranked by score desc — the morning's cards in priority order (§5.13 scenario 10).
 
@@ -713,6 +713,10 @@ class CardStore:
 
         Defaults to `assignee` so every existing caller — the digest, the tests, the agent
         lane — behaves exactly as it did.
+
+        `eval_time` — STEP-14 (`yc2_w27_s14` M42.C4.L-data.V0.U01, s14-D4): the instant the queue answers for — what
+        the app showed then, read by this very predicate, never a copy of it in a reader (the golden board counts
+        what the app queue showed at each sweep). The wall clock when none is given, as before.
         """
         # The APP surface, not every card the org holds. A rejected deal past its deadline
         # still answers "what happened with Antler?" — it just does not belong in a queue
@@ -737,7 +741,7 @@ class CardStore:
               "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
               + QUESTION_SIGNAL_JOINS + common + "and " + QUESTION_CARD_SQL)
         params = {"o": org_id, "states": list(states),
-                  "authority_time": datetime.now(timezone.utc),
+                  "authority_time": authority_time(eval_time),
                   "situation_builder": SITUATION_CARD_BUILDER,
                   "question_builder": QUESTION_CARD_BUILDER}
         if not admin and assignee is not None and strict_seat:
@@ -806,7 +810,7 @@ class CardStore:
             # nothing — an org-level key resolves to nothing and keeps the org-wide read.
             seat = self._viewer_seat(c, org_id, viewer if viewer is not None else assignee)
             rows = self._your_part(c, org_id, seat, rows)
-            rows = self._objective_order(c, org_id, seat, rows)
+            rows = self._objective_order(c, org_id, seat, rows, now=eval_time)
             return rows
 
     #: What the History tab answers: every card somebody (or the world) already closed. `expired`
@@ -934,7 +938,7 @@ class CardStore:
         return rows
 
     @staticmethod
-    def _objective_order(conn, org_id: str, seat: str | None, rows: list[dict]) -> list[dict]:
+    def _objective_order(conn, org_id: str, seat: str | None, rows: list[dict], *, now=None) -> list[dict]:
         """Stable partition of a per-viewer queue by the viewer's declared objective domain.
 
         ONLY FOR A NAMED VIEWER. An admin reading the org queue and an org-level key have no
@@ -950,7 +954,7 @@ class CardStore:
                 "join org_seats s on s.org_id = o.org_id and lower(s.email) = o.seat_key "
                 "where o.org_id = :o and s.seat_id = :a and s.active "
                 "and (o.valid_until is null or o.valid_until > :now) limit 1"),
-                {"o": org_id, "a": seat, "now": datetime.now(timezone.utc)}).scalar()
+                {"o": org_id, "a": seat, "now": now or datetime.now(timezone.utc)}).scalar()
         except Exception:      # noqa: BLE001 — a preference, never a reason to touch the queue
             return rows
         if not domain:
