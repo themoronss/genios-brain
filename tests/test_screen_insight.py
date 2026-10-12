@@ -618,9 +618,26 @@ def test_a_headline_that_only_repeats_the_screen_is_not_a_headline():
     ]:
         assert SI.reject({"kind": "next_step", "text": text, "quote": quote}) is None, text
 
-    # The rule is length-first: a summary is shorter than what it summarises.
+    # The rule is length-first, in BOTH directions.
+    #
+    # Shorter than its quote ⇒ a summary of it.
     assert not SI._is_paste("Send the signed MSA", "send the signed MSA by Friday")
+    # LONGER than its quote ⇒ it says something the quote does not, which is a headline's job.
+    # Containment alone (shipped 9 Oct 2026, caught by the full suite) rejected this one: the
+    # quote sits inside it word for word, and "Priya will" is the part a manager needs.
+    assert not SI._is_paste("Priya will share the signed PO by Thursday",
+                            "share the signed PO by Thursday")
+    assert SI.reject({"kind": "their_promise", "who": "Priya Shah",
+                      "text": "Priya will share the signed PO by Thursday",
+                      "quote": "share the signed PO by Thursday"}) is None
+    # What is left is near-equality: identical, or within a trim's worth of it.
     assert SI._is_paste("send the signed MSA by Friday", "send the signed MSA by Friday")
+    assert SI._is_paste("send the signed MSA by Friday.", "send the signed MSA by Friday")
+    # Containment, not just equality, is what the band is for: the quote with one noise word
+    # bolted on the front is still the quote, and a headline needs more than "Ok".
+    assert SI._is_paste("Ok send the signed MSA by Friday", "send the signed MSA by Friday")
+    # One more word than the band allows means it is saying something — left alone.
+    assert not SI._is_paste("send the signed MSA by Friday now", "send the signed MSA by Friday")
 
 
 def test_a_headline_that_names_who_is_not_a_paste():
