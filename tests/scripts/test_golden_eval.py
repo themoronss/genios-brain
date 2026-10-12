@@ -174,6 +174,11 @@ def test_a_sites_live_pass_keeps_its_answers_and_board_beside_the_authored(monke
     assert card["site"] == "expert" and card["moved"] == []
     [row] = card["cases"]
     assert row["verdict"] == row["authored_verdict"] == "pass"
+    # STEP-13 M35.C4.L-integration.V2.U04: what the check made of the model's reviews, per case and in all — the
+    # faithful answers are valid, shown whole, nothing dropped.
+    assert set(row["reviews"]) == {"valid"} and row["reviews"]["valid"] >= 1
+    assert row["fates"] == {"shown": row["reviews"]["valid"]} and row["dropped"] == {}
+    assert card["reviews"] == row["reviews"] and card["fates"] == row["fates"] and card["dropped"] == {}
     [beside] = list(tmp_path.glob("*-claude-sonnet-5-expert/F13.json"))
     assert json.loads(beside.read_text()) and cassettes.load(case) == before, \
         "the authored cassette is never replaced"

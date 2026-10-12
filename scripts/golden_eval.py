@@ -39,6 +39,7 @@ import argparse
 import json
 import os
 import sys
+from collections import Counter
 from datetime import date
 from pathlib import Path
 
@@ -169,6 +170,25 @@ class LiveModel:
         return self._call(self._client, prompt, max_tokens=max_tokens, **kw)
 
 
+def _checked(engine, org: str) -> dict:
+    """What the check made of the expert's reviews on one case (STEP-13 M35.C4.L-integration.V2.U04): each
+    review's status, each checked review's fate (shown, held, suppressed, refused), and every dropped line's
+    reason — so a live pass says how often a real model's claims are held, and why, not only the board."""
+    from sqlalchemy import text
+
+    statuses, fates, dropped = Counter(), Counter(), Counter()
+    with engine.connect() as c:
+        for row in c.execute(text("select status, checked from expert_reviews where org_id = :o"), {"o": org}):
+            statuses[row.status] += 1
+            checked = row.checked if isinstance(row.checked, dict) else (json.loads(row.checked) if row.checked else None)
+            if checked:
+                fates[str(checked.get("fate"))] += 1
+                dropped.update(str(v.get("reason")) for v in checked.get("verdicts") or ()
+                               if v.get("verdict") == "dropped")
+    return {"reviews": dict(sorted(statuses.items())), "fates": dict(sorted(fates.items())),
+            "dropped": dict(sorted(dropped.items()))}
+
+
 def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int:
     from tests.replays import cassettes
     from tests.replays.engine_runner import pin_scratch_database, run_case
@@ -184,7 +204,13 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int
         inner = (SiteModel(site, LiveModel(key, model), IdealReader(case)) if site is not None
                  else LiveModel(key, model))
         recorder = CassetteRecorder(inner)
-        run = run_case(case, recorder)
+        run = run_case(case, recorder, keep=True)
+        from genios_engine.api import routes
+        from tests.replays.engine_runner import remove_tenant
+        try:
+            checked = _checked(routes._graph.engine, run.org_id)
+        finally:
+            remove_tenant(routes._graph.engine, run.org_id)
         mark = judge(case, run)
         spent = [a for a in recorder.cassette.values() if site is None or a.get("site") == site]
         tokens_in += sum(int(a["input_tokens"] or 0) for a in spent)
@@ -203,6 +229,7 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int
                      "lost_at": mark.lost_at, "cards": len(run.cards),
                      "cards_about_the_subject": expected,
                      "forbidden": [list(h) for h in mark.forbidden_hits], "reason": mark.reason,
+                     **checked,
                      **({"authored_verdict": recorded.verdict} if beside is not None else {})})
         print(f"{case.case_id} {mark.verdict:<15} {mark.reason[:100]}")
     detect = [r for r in rows if r["kind"] == "must_detect" and r["verdict"] != "not_expressible"]
@@ -216,6 +243,9 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int
             "abstain_failures": sum(r["kind"] == "must_abstain" and r["verdict"] in
                                     (FAIL, NOT_EXERCISED) for r in rows),
             "forbidden_outputs": sum(len(r["forbidden"]) for r in rows),
+            # The check, summed over every case (M35.C4.L-integration.V2.U04).
+            **{key: dict(sorted(sum((Counter(r[key]) for r in rows), Counter()).items()))
+               for key in ("reviews", "fates", "dropped")},
             "tokens_in": tokens_in, "tokens_out": tokens_out,
             "cost_usd": round(tokens_in / 1e6 * price_in + tokens_out / 1e6 * price_out, 4)}
     if beside is not None:

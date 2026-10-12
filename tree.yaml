@@ -8092,6 +8092,18 @@ yc2_w27_s13:
                       artifact: "tests/replays/test_every_claim_is_checked.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_every_claim_is_checked.py"
                       depends_on: [M35.C3.L-interface.V3.U03, M35.C3.L-integration.V2.U02]
+                - level: 2
+                  units:
+                    - id: M35.C4.L-integration.V2.U04
+                      what: >
+                        The live pass measures the check on a real model (added 12 Oct by the STEP-13 crosscheck,
+                        X32/X49; `06` D50, D65): `scripts/golden_eval.py --live` builds its client before the
+                        runner refuses one (it never ran before), and each case's row — and the scorecard — says
+                        what the check made of the model's reviews: their statuses, the fates (shown, held,
+                        suppressed, refused) and every dropped line's reason.
+                      artifact: "scripts/golden_eval.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/scripts/test_golden_eval.py"
+                      depends_on: [M35.C4.L-integration.V0.U02, M35.C3.L-integration.V1.U01]
         - id: M35.C5
           name: A claim says what made it
           layers:
