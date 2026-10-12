@@ -694,8 +694,9 @@ def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str]
         if t.direction == "in" and (t.who or t.who_name):
             seen.append(Person(name=t.who_name, key=t.who))
     people = tuple(dict.fromkeys(seen))
+    connector = connector_of(parts)
     return FilePeople(counterparty=counterparty, people=people, us=us,
-                      our_names=tuple(n for n in our_names if n), connector=connector_of(parts),
+                      our_names=tuple(n for n in our_names if n), connector=connector,
                       head=_file(parts, _Ids()).text)
 
 
