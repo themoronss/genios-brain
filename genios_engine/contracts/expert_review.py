@@ -33,6 +33,27 @@ ValueError naming the field for an answer that is malformed — the one thing a 
 LEVELS, NOT SCORES. Under `06` D1 the appraisal decides what matters — code maps its levels to
 importance and urgency; the model never writes the number (the Atlas's RULE 02, as amended).
 
+THE SECOND VERSION — WHAT THE CHECK READS (STEP-13, tree `yc2_w27_s13` M35.C1.L-contract.V0.U01). STEP-13
+checks every claim before anything reaches the founder (`reason/expert/verify`), and four things it must
+read were nowhere in the answer:
+
+  * `Fact.quote` — the words of the mail a fact cites that it rests on, as the dossier printed them. A
+    citation says WHICH mail; only the words say the mail says so ("Neel asked for your deck" stands on
+    "could you send the deck", or on nothing);
+  * `NextMove.rests_on` — the facts, by number (`fact:<n>`), the move rests on: when one of them falls,
+    the move has lost its ground. Absent (an answer of the first version), the move rests on every fact;
+  * `NextMove.to` — whom the move's draft goes to, as the dossier names them. `for_whom` is whom the move
+    SERVES, and is rightly "our records" for a move that writes nothing; a recipient check needs the
+    recipient;
+  * `NextMove.answers` — the ask the move answers, by its `loop:` id, so "is it already answered?" is
+    asked of THAT ask and of no other.
+
+Each is optional in the answer, so a first-version answer reads exactly as before and validates exactly
+as before. `validate` adds only what can be checked against the dossier: a `rests_on` naming no fact of
+the review (`ungrounded_move`), and an `answers` that is no ask the dossier showed. Neither a quote nor a
+recipient is a text the review WRITES: the check holds each against the mail itself, so neither is read
+for numbers here.
+
 Pure and frozen: no I/O, no clock, no model.
 """
 from __future__ import annotations
@@ -63,8 +84,12 @@ UNGROUNDED_PATTERN = "ungrounded_pattern"
 UNKNOWN_STAGE = "unknown_stage"
 NO_NEXT_MOVE = "no_next_move"
 NUMBER_NOT_IN_DOSSIER = "number_not_in_dossier"
+#: STEP-13: a move resting on no fact of the review, or answering something that is no ask.
+UNGROUNDED_MOVE = "ungrounded_move"
 REFUSALS: tuple[str, ...] = (UNCITED_FACT, UNKNOWN_EVIDENCE, UNGROUNDED_INFERENCE, UNGROUNDED_PATTERN,
-                             UNKNOWN_STAGE, NO_NEXT_MOVE, NUMBER_NOT_IN_DOSSIER)
+                             UNKNOWN_STAGE, NO_NEXT_MOVE, NUMBER_NOT_IN_DOSSIER, UNGROUNDED_MOVE)
+#: How the dossier names an ask (`reason/expert/dossier._file`): the only thing a move may answer.
+ASK_PREFIX = "loop:"
 
 _FACT_REF = re.compile(r"^fact:(\d+)$")
 # A comma groups thousands only before exactly three digits: "1,400" is one number, "7,8" is two.
@@ -152,6 +177,7 @@ def _day(value: Any) -> date | None:
 class Fact:
     claim: str
     evidence: tuple[str, ...]                    # dossier evidence ids — at least one, or refused
+    quote: str | None = None                     # STEP-13: the cited mail's own words it rests on
 
 
 @dataclass(frozen=True, slots=True)
@@ -215,6 +241,9 @@ class NextMove:
     what: str
     for_whom: str
     by_when: date | None
+    rests_on: tuple[str, ...] = ()               # STEP-13: `fact:<n>` — () rests on every fact
+    to: str | None = None                        # STEP-13: whom the draft goes to
+    answers: str | None = None                   # STEP-13: the ask (`loop:<id>`) it answers
 
 
 @dataclass(frozen=True, slots=True)
@@ -250,7 +279,8 @@ class ExpertReview:
         if not isinstance(raw, Mapping):
             raise ValueError("an expert review is an object")
         facts = tuple(Fact(claim=_text(f.get("claim"), "a fact's claim"),
-                           evidence=_texts(f.get("evidence"), "a fact's evidence"))
+                           evidence=_texts(f.get("evidence"), "a fact's evidence"),
+                           quote=_text(f.get("quote"), "a fact's quote", required=False) or None)
                       for f in _items(raw.get("facts"), "facts", "a fact"))
         if not facts:
             raise ValueError("an expert review states at least one fact")
@@ -261,7 +291,11 @@ class ExpertReview:
             next_move = NextMove(who=_text(nm.get("who"), "who makes the next move"),
                                  what=_text(nm.get("what"), "what the next move is"),
                                  for_whom=_text(nm.get("for_whom"), "for whom the next move is"),
-                                 by_when=_day(nm.get("by_when")))
+                                 by_when=_day(nm.get("by_when")),
+                                 rests_on=_texts(nm.get("rests_on"), "what the next move rests on"),
+                                 to=_text(nm.get("to"), "whom the draft goes to", required=False) or None,
+                                 answers=_text(nm.get("answers"), "the ask the next move answers",
+                                               required=False) or None)
         pk = raw.get("proposed_kind")
         proposed_kind = None
         if pk:
@@ -318,7 +352,10 @@ class ExpertReview:
         """The review as `from_mapping` reads it — what is stored, and what a replay reads back."""
         nm, pk = self.next_move, self.proposed_kind
         return {
-            "facts": [{"claim": f.claim, "evidence": list(f.evidence)} for f in self.facts],
+            # A second-version key is written only when it is there: a first-version review is stored,
+            # and read back, byte for byte as before.
+            "facts": [{"claim": f.claim, "evidence": list(f.evidence),
+                       **({"quote": f.quote} if f.quote else {})} for f in self.facts],
             "inferences": [{"claim": i.claim, "based_on": list(i.based_on)} for i in self.inferences],
             "patterns": [{"kind": p.kind, "claim": p.claim, "based_on": list(p.based_on)}
                          for p in self.patterns],
@@ -337,7 +374,10 @@ class ExpertReview:
             "mode": self.mode,
             "next_move": None if nm is None else {
                 "who": nm.who, "what": nm.what, "for_whom": nm.for_whom,
-                "by_when": nm.by_when.isoformat() if nm.by_when else None},
+                "by_when": nm.by_when.isoformat() if nm.by_when else None,
+                **({"rests_on": list(nm.rests_on)} if nm.rests_on else {}),
+                **({"to": nm.to} if nm.to else {}),
+                **({"answers": nm.answers} if nm.answers else {})},
             "alternative": self.alternative,
             "wait_or_stop": self.wait_or_stop,
             "done_when": self.done_when,
@@ -347,7 +387,8 @@ class ExpertReview:
         }
 
     def texts(self) -> tuple[str, ...]:
-        """Every text the review writes — what its numbers are read off."""
+        """Every text the review writes — what its numbers are read off. A fact's quote and a draft's
+        recipient are not written by the review but taken from the mail: the check holds each to it."""
         out: list[str] = [f.claim for f in self.facts]
         out += [i.claim for i in self.inferences]
         out += [p.claim for p in self.patterns]
@@ -429,15 +470,27 @@ def validate(review: ExpertReview, catalogue: DossierCatalogue) -> Validation:
         problems.append((UNKNOWN_STAGE, stage))
     if review.mode in MOVING and review.next_move is None:
         problems.append((NO_NEXT_MOVE, review.mode))
+    move = review.next_move
+    if move is not None:
+        for ref in move.rests_on:
+            m = _FACT_REF.match(ref)
+            if m is None or not 1 <= int(m.group(1)) <= len(review.facts):
+                problems.append((UNGROUNDED_MOVE, f"the next move rests on {ref}"))
+        if move.answers is not None:
+            if not move.answers.startswith(ASK_PREFIX):
+                problems.append((UNGROUNDED_MOVE, f"the next move answers {move.answers}, no ask"))
+            elif move.answers not in catalogue.evidence_ids:
+                problems.append((UNKNOWN_EVIDENCE, f"the next move answers {move.answers}"))
     stated = frozenset().union(*(number_tokens(t) for t in review.texts()))
     for number in sorted(stated - catalogue.numbers):
         problems.append((NUMBER_NOT_IN_DOSSIER, number))
     return Validation(problems=tuple(problems))
 
 
-__all__ = ["Appraisal", "DossierCatalogue", "ExpectedVsActual", "ExpertReview", "Fact", "Frames",
+__all__ = ["ASK_PREFIX", "Appraisal", "DossierCatalogue", "ExpectedVsActual", "ExpertReview", "Fact", "Frames",
            "Hypothesis", "Inference", "LEVELS", "MODES", "MOVING", "NO_NEXT_MOVE",
            "NUMBER_NOT_IN_DOSSIER", "NextMove", "PATTERN_KINDS", "Pattern", "ProposedKind", "REFUSALS",
            "REVERSIBILITY",
-           "Scenarios", "UNCITED_FACT", "UNGROUNDED_INFERENCE", "UNGROUNDED_PATTERN", "UNKNOWN_EVIDENCE",
+           "Scenarios", "UNCITED_FACT", "UNGROUNDED_INFERENCE", "UNGROUNDED_MOVE", "UNGROUNDED_PATTERN",
+           "UNKNOWN_EVIDENCE",
            "UNKNOWN_STAGE", "Unknown", "Validation", "number_tokens", "validate"]

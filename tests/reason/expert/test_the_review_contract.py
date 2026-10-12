@@ -13,6 +13,10 @@ not hold. A malformed answer is a ValueError that names the field: the one thing
 
 M32.C1.L-contract.V0.U09: a review may PROPOSE the file's kind of work (`03` F132, F151) — one of the
 brief's kinds, why, and the dossier ids that show it, validated like a fact; null when the kind is right.
+
+STEP-13 `yc2_w27_s13` M35.C1.L-contract.V0.U01: the second version carries what the check reads — a fact's
+quote, the facts a move rests on, whom its draft goes to, the ask it answers — each optional, so a
+first-version answer reads, validates and is stored exactly as before.
 """
 from __future__ import annotations
 
@@ -23,8 +27,8 @@ import pytest
 
 from genios_engine.contracts.expert_review import (
     MODES, NO_NEXT_MOVE, NUMBER_NOT_IN_DOSSIER, REFUSALS, UNCITED_FACT, UNGROUNDED_INFERENCE,
-    UNGROUNDED_PATTERN, UNKNOWN_EVIDENCE, UNKNOWN_STAGE, DossierCatalogue, ExpertReview, number_tokens,
-    validate)
+    UNGROUNDED_MOVE, UNGROUNDED_PATTERN, UNKNOWN_EVIDENCE, UNKNOWN_STAGE, DossierCatalogue, ExpertReview,
+    number_tokens, validate)
 
 pytestmark = pytest.mark.unit
 
@@ -255,3 +259,86 @@ def test_a_stage_is_refused_when_the_file_has_no_playbook():
     review = ExpertReview.from_mapping(_raw())
     result = validate(review, DossierCatalogue(CATALOGUE.evidence_ids, CATALOGUE.numbers, ()))
     assert result.reasons == (UNKNOWN_STAGE,)
+
+
+# ── STEP-13 · the second version: what the check reads ───────────────────────────────────────────
+ASKED = DossierCatalogue(evidence_ids=CATALOGUE.evidence_ids | {"loop:ask_deck"},
+                         numbers=CATALOGUE.numbers, stages=CATALOGUE.stages)
+SECOND = {"rests_on": ["fact:1"], "to": "Neel", "answers": "loop:ask_deck"}
+
+
+def _second(**move) -> dict:
+    facts = [{"claim": "Neel wrote on 27 Sep asking for a first call", "evidence": ["evt_neel_0927"],
+              "quote": "Could we find thirty minutes for a first call?"},
+             {"claim": "The call is booked for 8 Oct", "evidence": ["evt_invite_1008"]}]
+    return _raw(facts=facts, next_move={"who": "you", "what": "send a one-page pre-read",
+                                        "for_whom": "Neel", "by_when": "2026-10-07",
+                                        **SECOND, **move})
+
+
+def test_a_move_names_what_it_rests_on_whom_its_draft_goes_to_and_the_ask_it_answers():
+    review = ExpertReview.from_mapping(_second())
+    move = review.next_move
+    assert (move.rests_on, move.to, move.answers) == (("fact:1",), "Neel", "loop:ask_deck")
+    assert review.facts[0].quote == "Could we find thirty minutes for a first call?"
+    assert review.facts[1].quote is None
+    assert validate(review, ASKED).ok
+    again = ExpertReview.from_mapping(review.as_mapping())
+    assert again == review and again.as_mapping() == review.as_mapping()
+
+
+def test_a_first_version_answer_reads_validates_and_is_stored_as_before():
+    review = ExpertReview.from_mapping(_raw())
+    move = review.next_move
+    assert (move.rests_on, move.to, move.answers) == ((), None, None)
+    assert all(f.quote is None for f in review.facts)
+    assert validate(review, CATALOGUE).ok
+    stored = review.as_mapping()
+    assert set(stored["next_move"]) == {"who", "what", "for_whom", "by_when"}
+    assert all(set(f) == {"claim", "evidence"} for f in stored["facts"])
+
+
+@pytest.mark.parametrize("move, refusal", [
+    ({"rests_on": ["fact:3"]}, UNGROUNDED_MOVE),                 # the review has two facts
+    ({"rests_on": ["fact:0"]}, UNGROUNDED_MOVE),
+    ({"rests_on": ["evt_neel_0927"]}, UNGROUNDED_MOVE),          # a mail is no fact of the review
+    ({"rests_on": ["inference:1"]}, UNGROUNDED_MOVE),
+    ({"answers": "loop:never_shown"}, UNKNOWN_EVIDENCE),
+    ({"answers": "evt_neel_0927"}, UNGROUNDED_MOVE),             # a mail is no ask
+    ({"answers": "promise:p1"}, UNGROUNDED_MOVE),
+])
+def test_a_move_resting_on_nothing_or_answering_no_ask_is_named(move, refusal):
+    result = validate(ExpertReview.from_mapping(_second(**move)), ASKED)
+    assert not result.ok and result.reasons == (refusal,), result.problems
+
+
+def test_an_ask_named_by_a_move_is_held_to_the_dossier_shown():
+    review = ExpertReview.from_mapping(_second())
+    assert validate(review, CATALOGUE).reasons == (UNKNOWN_EVIDENCE,)
+
+
+def test_a_quote_and_a_recipient_are_not_read_for_numbers():
+    """The check holds a quote and a recipient to the mail itself; neither is a text the review writes."""
+    review = ExpertReview.from_mapping(_second(to="neel2@fund.test"))
+    facts = [{"claim": "Neel wrote", "evidence": ["evt_neel_0927"], "quote": "we closed 14 deals in 2025"},
+             {"claim": "The call is booked for 8 Oct", "evidence": ["evt_invite_1008"]}]
+    quoted = ExpertReview.from_mapping({**_second(), "facts": facts})
+    for r in (review, quoted):
+        assert validate(r, ASKED).ok
+        assert not {"neel2@fund.test", "we closed 14 deals in 2025"} & set(r.texts())
+
+
+@pytest.mark.parametrize("move, says", [
+    ({"rests_on": "fact:1"}, "what the next move rests on"),
+    ({"to": ["Neel"]}, "whom the draft goes to"),
+    ({"answers": {"loop": "ask_deck"}}, "the ask the next move answers"),
+])
+def test_a_malformed_second_version_field_is_a_value_error_that_says_what(move, says):
+    with pytest.raises(ValueError, match=says):
+        ExpertReview.from_mapping(_second(**move))
+
+
+def test_a_malformed_quote_is_a_value_error():
+    with pytest.raises(ValueError, match="a fact's quote"):
+        ExpertReview.from_mapping(_raw(facts=[{"claim": "Neel wrote", "evidence": ["evt_neel_0927"],
+                                               "quote": ["could we"]}]))

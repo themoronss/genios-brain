@@ -31,8 +31,8 @@ from genios_engine.contracts.company_brief import WORK_KINDS
 from genios_engine.contracts.expert_review import (LEVELS, MODES, MOVING, NO_NEXT_MOVE,
                                                    NUMBER_NOT_IN_DOSSIER, PATTERN_KINDS,
                                                    REVERSIBILITY, UNCITED_FACT,
-                                                   UNGROUNDED_INFERENCE, UNGROUNDED_PATTERN,
-                                                   UNKNOWN_EVIDENCE, UNKNOWN_STAGE)
+                                                   UNGROUNDED_INFERENCE, UNGROUNDED_MOVE,
+                                                   UNGROUNDED_PATTERN, UNKNOWN_EVIDENCE, UNKNOWN_STAGE)
 
 from .dossier import Dossier
 
@@ -84,6 +84,7 @@ RULE_FOR_REFUSAL: dict[str, str] = {
     UNCITED_FACT: _CITE, UNKNOWN_EVIDENCE: _CITE, UNGROUNDED_INFERENCE: _GROUND,
     UNGROUNDED_PATTERN: _GROUND, UNKNOWN_STAGE: _STAGE, NO_NEXT_MOVE: _MODE,
     NUMBER_NOT_IN_DOSSIER: _NUMBERS,
+    UNGROUNDED_MOVE: _GROUND,             # STEP-13: a move rests on fact:N, as an inference does
 }
 
 #: What each mode means — the contract's modes, in its order. Code maps a mode to the decision.
