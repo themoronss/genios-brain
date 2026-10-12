@@ -465,9 +465,24 @@ class ComposioGmailConnector:
         # confident DROP is full-fetched, so recall (and L2's full body) is preserved.
         rel = self._relevance
         if rel is not None and hasattr(rel, "prime") and hasattr(rel, "verdict_for"):
-            from genios_engine.capture.gate.rules import availability_marker, light_junk
+            from genios_engine.capture.gate.rules import availability_marker
+            from genios_engine.capture.gate.rules import is_a_delivery_report
+            from genios_engine.capture.gate.rules import light_junk
             light: list[tuple[dict, list[RawObject]]] = [(m, self._to_objects(m, fetch_full=False))
                                                          for m in messages]
+
+            # ⛔ A DELIVERY REPORT IS READ WHOLE (`03` F117, STEP-18; `yc2_w27_s18`
+            # M49.C1.L-logic.V0.U02). Since STEP-10 (`06` D38) the gate keeps a report and reads it:
+            # the failed address, the code and the original are in its BODY. On this path a daemon's
+            # report was settled from its LIST fields (its sender is automated: N-03) and a
+            # postmaster's went to the junk filter's batch, where a confident drop left it a snippet
+            # — so the bounce parser read a body nobody fetched, and the batch bought a verdict the
+            # gate never asks. Asked the way Layer 1 asks it, once, on the light object.
+            def _report(objs) -> bool:
+                return bool(objs) and is_a_delivery_report(objs[0].raw,
+                                                           sender_email=objs[0].actor_email)
+
+            reports = {id(m) for m, objs in light if _report(objs)}
             # DETERMINISTIC PRE-FILTER — the cheap rules run BEFORE the LLM, not after. Gmail's own
             # PROMOTIONS/SOCIAL/SPAM labels and clearly-automated senders are high-confidence junk we
             # can settle from the LIST fields alone, so they never cost an S2 gate call (the gate
@@ -485,6 +500,8 @@ class ComposioGmailConnector:
                         continue
                     if whole is not None and whole(objs[0]):
                         continue
+                    if id(m) in reports:
+                        continue
                     # L1.3.8-U2 — attachment presence overrides junk confidence. A
                     # PROMOTIONS-labelled message carrying a signed contract is junk MAIL with a
                     # real document inside it, and dropping it here costs the document: the light
@@ -500,7 +517,7 @@ class ComposioGmailConnector:
                         det_junk.add(id(m))
             # An availability notice (N-05) skips the LLM junk gate at the pipeline, so it must not
             # spend a prime call here either — nor be left as a body-less snippet by one.
-            all_light = [o for m, objs in light if id(m) not in det_junk for o in objs
+            all_light = [o for m, objs in light if id(m) not in det_junk | reports for o in objs
                          if not availability_marker(o.raw)]
             try:
                 rel.prime(all_light)                          # LLM only on what the rules couldn't settle
@@ -520,7 +537,7 @@ class ComposioGmailConnector:
             #
             # Same threshold, same constant, so the two surfaces cannot drift apart again.
             def _skip_body(m, objs) -> bool:
-                if not objs or availability_marker(objs[0].raw):
+                if not objs or availability_marker(objs[0].raw) or id(m) in reports:
                     return False
                 if whole is not None and whole(objs[0]):
                     return False
