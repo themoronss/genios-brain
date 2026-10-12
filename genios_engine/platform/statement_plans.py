@@ -42,9 +42,12 @@ from genios_engine.platform import table_coverage as _tc
 #: are SQL, not holes.
 HOLE = re.compile(r"\{(\?|[A-Za-z_][A-Za-z_0-9]*)\}")
 
-#: The two run-time assemblies that are not a ``{NAME}``.
+#: The run-time assemblies that are not a ``{NAME}``: a ``%`` format, a statement finished by
+#: ``sql += …``, and a template whose token a ``.replace(…)`` fills (`context/fact_visibility`'s
+#: ``__AMONG__``).
 PERCENT_FORMAT = "%"
 AUGMENTED = "+="
+REPLACED = ".replace"
 
 
 @dataclass(frozen=True)
@@ -115,6 +118,13 @@ def _augmented_names(tree: ast.Module) -> set[str]:
             and isinstance(node.target, ast.Name)}
 
 
+def _replaced_names(tree: ast.Module) -> set[str]:
+    """Names a ``NAME.replace(…)`` is called on — a template, finished at run time."""
+    return {node.func.value.id for node in ast.walk(tree)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "replace" and isinstance(node.func.value, ast.Name)}
+
+
 def census_of(path: str, source: str, *, resolve: Callable[[str], str | None]) -> list[Statement]:
     """The whole SQL expressions of one module, with ``resolve(name)`` filling each ``{name}``.
 
@@ -132,6 +142,7 @@ def _census(path: str, source: str, resolve: Callable[[str], str | None],
         if isinstance(node, ast.Call) and getattr(node.func, "id", None) == "print":
             printed.update(id(n) for n in ast.walk(node))
     augmented = _augmented_names(tree)
+    replaced = _replaced_names(tree)
 
     def count(key: str) -> None:
         if counts is not None:
@@ -164,6 +175,9 @@ def _census(path: str, source: str, resolve: Callable[[str], str | None],
         if isinstance(parent, ast.Assign) and any(
                 isinstance(t, ast.Name) and t.id in augmented for t in parent.targets):
             holes.append(AUGMENTED)
+        if isinstance(parent, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id in replaced for t in parent.targets):
+            holes.append(REPLACED)
         out.append(Statement(path=path, line=node.lineno, sql=sql, holes=tuple(holes)))
     return out
 
@@ -405,6 +419,6 @@ def plan(conn, sql: str) -> str | None:
     return error
 
 
-__all__ = ["AUGMENTED", "CANDIDATE_TYPES", "HOLE", "PERCENT_FORMAT", "PLAN_TIMEOUT_MS",
+__all__ = ["AUGMENTED", "CANDIDATE_TYPES", "HOLE", "PERCENT_FORMAT", "PLAN_TIMEOUT_MS", "REPLACED",
            "Statement", "TYPE_ERRORS", "build_statements", "census", "census_of",
            "import_failures", "plan", "positional", "statements"]

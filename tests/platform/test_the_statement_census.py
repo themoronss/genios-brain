@@ -41,6 +41,8 @@ def f(c, cond, x, cols):
     sql += " where b = :b"
     c.execute(text(sql))
     print("select a from cards -- printed for a human, never run")
+    TEMPLATE = "select a from cards where 1=1 __AMONG__"
+    c.execute(text(TEMPLATE.replace("__AMONG__", cond)))
     return ("update the crm", "delete my data")
 '''
 
@@ -67,8 +69,9 @@ def test_the_sample_census_is_exactly_its_whole_expressions():
         (13, "select {?} from cards", ("?",)),
         (14, "select a from %s", ("%",)),
         (15, "select a from cards", ("+=",)),
-        (19, "delete my data", ()),
-        (19, "update the crm", ()),
+        (19, "select a from cards where 1=1 __AMONG__", (".replace",)),
+        (21, "delete my data", ()),
+        (21, "update the crm", ()),
     ]
 
 
@@ -191,6 +194,9 @@ def test_the_census_covers_the_engine_and_the_scripts():
     # A script statement resolved through the engine constant it imports — read, never run.
     assert any(s.path == "scripts/history_density_report.py" and not s.holes
                and s.sql.strip() == "select count(*) from metric_history" for s in stmts)
+    # `context/fact_visibility._UNREADABLE_NODES` is finished by `.replace("__AMONG__", clause)`.
+    assert [s.holes for s in stmts if s.path == "genios_engine/context/fact_visibility.py"
+            and "__AMONG__" in s.sql] == [(".replace",)]
 
 
 def test_no_engine_module_fails_to_import():
