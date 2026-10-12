@@ -81,6 +81,8 @@ def test_the_table_has_the_columns_the_readers_need(engine):
         "inputs": ("jsonb", "YES"),
         # ⛔ MOVED by M32.C1.L-contract.V0.U08 (0199), deliberately: what triggered the review.
         "triggers": ("jsonb", "YES"),
+        # ⛔ MOVED by STEP-13 M35.C1.L-contract.V1.U03 (0200), deliberately: what the check found.
+        "checked": ("jsonb", "YES"),
     }
 
 
@@ -212,3 +214,37 @@ def test_the_wipe_leaves_no_review_of_the_tenant(engine):
         left = c.execute(text("select count(*) from expert_reviews where org_id = :o"),
                          {"o": ORG}).scalar()
     assert wiped["expert_reviews"] == 2 and left == 0
+
+
+# ── STEP-13 · 0200: what the check found, kept beside the review ───────────────────────────────
+def _check(c, fp: str, checked):
+    c.execute(text("update expert_reviews set checked = cast(:c as jsonb) where org_id = :o "
+                   "and fingerprint = :fp"), {"o": ORG, "fp": fp, "c": checked})
+
+
+@pytest.mark.pg
+@pytest.mark.parametrize("fate", ["shown", "held", "suppressed", "refused"])
+def test_a_review_keeps_what_its_check_found(engine, fate):
+    with engine.begin() as c:
+        _insert(c, fp=f"fp_{fate}")
+        _check(c, f"fp_{fate}", json.dumps({"fate": fate, "verdicts": []}))
+        kept = c.execute(text("select checked ->> 'fate' from expert_reviews where org_id = :o"),
+                         {"o": ORG}).scalar()
+    assert kept == fate
+
+
+@pytest.mark.pg
+def test_a_row_from_before_0200_has_no_check_and_is_kept_as_it_was(engine):
+    with engine.begin() as c:
+        _insert(c, fp="fp_before_0200")
+        assert c.execute(text("select checked from expert_reviews where org_id = :o"),
+                         {"o": ORG}).scalar() is None
+
+
+@pytest.mark.pg
+@pytest.mark.parametrize("checked", ['{"verdicts": []}', '{"fate": "maybe"}', '"shown"', "[]"])
+def test_a_check_without_its_fate_is_refused(engine, checked):
+    with pytest.raises(IntegrityError, match="expert_reviews_checked_check"):
+        with engine.begin() as c:
+            _insert(c, fp="fp_bad_check")
+            _check(c, "fp_bad_check", checked)

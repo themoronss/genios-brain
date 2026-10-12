@@ -21,6 +21,12 @@ WHAT THE FILE WAS (0198, M32.C3.L-data.V1.U10). Every row keeps its fingerprint'
 latest STANDING row is what the last judgment saw: the triggers (`reason/expert/triggers`) diff the
 file against it to say what moved. And every row keeps what triggered it (0199, M32.C3.L-data.V1.U11):
 each trigger's kind and what moved — the shape is checked here, the vocabulary is the triggers' own.
+
+WHAT THE CHECK FOUND (0200, STEP-13 `yc2_w27_s13` M35.C1.L-contract.V1.U03). A valid review is decided
+THROUGH its check (`reason/expert/verify`, `contracts/claim_check.CheckedReview`), and a replay reads that
+check back rather than running it again over a dossier nobody stored. So a valid row keeps its check:
+written with the review, or — a row checked under an older check version, or before 0200 — written onto
+the standing row by `write_check`, which touches nothing else.
 """
 from __future__ import annotations
 
@@ -32,6 +38,7 @@ from typing import Any
 
 from sqlalchemy import text
 
+from genios_engine.contracts.claim_check import CheckedReview
 from genios_engine.contracts.expert_review import ExpertReview
 
 VALID, REFUSED, TRUNCATED, OVER_BUDGET, FAILED = "valid", "refused", "truncated", "over_budget", "failed"
@@ -46,27 +53,27 @@ RETRYABLE: tuple[str, ...] = (OVER_BUDGET, FAILED)
 _WRITE = text(
     "insert into expert_reviews (org_id, file_id, fingerprint, model, prompt_version, dossier_digest, "
     "       status, reason, review, input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, "
-    "       triggers) "
+    "       triggers, checked) "
     "values (:o, :f, :fp, :model, :pv, :digest, :status, :reason, cast(:review as jsonb), :tin, :tout, "
-    "        :cost, :at, cast(:inputs as jsonb), cast(:triggers as jsonb)) "
+    "        :cost, :at, cast(:inputs as jsonb), cast(:triggers as jsonb), cast(:checked as jsonb)) "
     "on conflict (org_id, file_id, fingerprint) do update set "
     "       model = excluded.model, prompt_version = excluded.prompt_version, "
     "       dossier_digest = excluded.dossier_digest, status = excluded.status, "
     "       reason = excluded.reason, review = excluded.review, "
     "       input_tokens = excluded.input_tokens, output_tokens = excluded.output_tokens, "
     "       cost_micro_usd = excluded.cost_micro_usd, reviewed_at = excluded.reviewed_at, "
-    "       inputs = excluded.inputs, triggers = excluded.triggers "
+    "       inputs = excluded.inputs, triggers = excluded.triggers, checked = excluded.checked "
     " where expert_reviews.status in ('over_budget', 'failed')")
 
 _READ = text(
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
-    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers "
+    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers, checked "
     "  from expert_reviews "
     " where org_id = :o and file_id = :f and fingerprint = :fp")
 
 _LATEST_VALID = text(
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
-    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers "
+    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers, checked "
     "  from expert_reviews "
     " where org_id = :o and file_id = :f and status = 'valid' "
     " order by reviewed_at desc, fingerprint desc "
@@ -75,7 +82,7 @@ _LATEST_VALID = text(
 #: What the last judgment saw: the newest row that STANDS — `STANDING`'s three statuses, named again.
 _LATEST_STANDING = text(
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
-    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers "
+    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers, checked "
     "  from expert_reviews "
     " where org_id = :o and file_id = :f and status in ('valid', 'refused', 'truncated') "
     " order by reviewed_at desc, fingerprint desc "
@@ -101,6 +108,14 @@ class StoredReview:
     inputs: dict[str, Any] | None = None         # what the file was; None only on a row before 0198
     #: What triggered it — (kind, what moved) each; None only on a row written before 0199.
     triggers: tuple[tuple[str, str], ...] | None = None
+    #: What the check found (0200) — on a valid row; None before 0200, or until the pass checks it.
+    checked: CheckedReview | None = None
+
+
+#: A standing valid row's check, written onto it alone — a check of a newer version, or the first.
+_CHECK = text(
+    "update expert_reviews set checked = cast(:checked as jsonb) "
+    " where org_id = :o and file_id = :f and fingerprint = :fp and status = 'valid'")
 
 
 def _payload(status: str, review: ExpertReview | Mapping[str, Any] | None) -> dict[str, Any] | None:
@@ -130,11 +145,12 @@ def write_review(conn, *, org_id: str, file_id: str, fingerprint: str, model: st
                  dossier_digest: str, status: str, reason: str | None,
                  review: ExpertReview | Mapping[str, Any] | None, input_tokens: int, output_tokens: int,
                  cost_micro_usd: int, at: datetime, inputs: Mapping[str, Any],
-                 triggers: Iterable[Any]) -> bool:
+                 triggers: Iterable[Any], checked: CheckedReview | None = None) -> bool:
     """Store the expert's answer for this fingerprint, with what the file was (`inputs`) and what
     triggered the review. True when it was written; False when a standing row already answers it
     (nothing changes). ValueError for a status nobody named, a non-valid row without its reason, a
-    valid row without its review, inputs that are not a mapping, or a trigger without its words."""
+    valid row without its review, inputs that are not a mapping, or a trigger without its words. A
+    check rides only on a valid row: the review it checked is the row's own."""
     if status not in STATUSES:
         raise ValueError(f"unknown status {status!r}: one of {', '.join(STATUSES)}")
     if status != VALID and not (reason or "").strip():
@@ -143,25 +159,36 @@ def write_review(conn, *, org_id: str, file_id: str, fingerprint: str, model: st
         raise ValueError("a review keeps what the file was: its fingerprint's inputs, a mapping")
     said = _said(triggers)
     payload = _payload(status, review)
+    if checked is not None and status != VALID:
+        raise ValueError(f"a {status} row has no review to check")
     written = conn.execute(_WRITE, {
         "o": org_id, "f": file_id, "fp": fingerprint, "model": model, "pv": prompt_version,
         "digest": dossier_digest, "status": status, "reason": reason,
         "review": None if payload is None else json.dumps(payload, sort_keys=True),
         "tin": input_tokens, "tout": output_tokens, "cost": cost_micro_usd, "at": at,
-        "inputs": json.dumps(dict(inputs), sort_keys=True), "triggers": json.dumps(said)})
+        "inputs": json.dumps(dict(inputs), sort_keys=True), "triggers": json.dumps(said),
+        "checked": None if checked is None else json.dumps(checked.as_mapping(), sort_keys=True)})
     return written.rowcount == 1
+
+
+def write_check(conn, *, org_id: str, file_id: str, fingerprint: str, checked: CheckedReview) -> bool:
+    """Keep `checked` as the standing valid row's check — nothing else of the row moves. True when a
+    valid row took it; False when there is none (a refusal has no review to check)."""
+    return conn.execute(_CHECK, {"o": org_id, "f": file_id, "fp": fingerprint,
+                                 "checked": json.dumps(checked.as_mapping(), sort_keys=True)}).rowcount == 1
 
 
 def _stored(row) -> StoredReview:
     m = row._mapping
-    raw, triggers = m["review"], m["triggers"]
+    raw, triggers, checked = m["review"], m["triggers"], m["checked"]
     return StoredReview(
         file_id=m["file_id"], fingerprint=m["fingerprint"], model=m["model"],
         prompt_version=m["prompt_version"], dossier_digest=m["dossier_digest"], status=m["status"],
         reason=m["reason"], review=ExpertReview.from_mapping(raw) if m["status"] == VALID else None,
         raw=raw, input_tokens=m["input_tokens"], output_tokens=m["output_tokens"],
         cost_micro_usd=m["cost_micro_usd"], reviewed_at=m["reviewed_at"], inputs=m["inputs"],
-        triggers=None if triggers is None else tuple((t["kind"], t["says"]) for t in triggers))
+        triggers=None if triggers is None else tuple((t["kind"], t["says"]) for t in triggers),
+        checked=None if checked is None else CheckedReview.from_mapping(checked))
 
 
 def read_review(conn, org_id: str, file_id: str, fingerprint: str) -> StoredReview | None:
@@ -190,4 +217,5 @@ def latest_standing(conn, org_id: str, file_id: str) -> StoredReview | None:
 
 
 __all__ = ["FAILED", "OVER_BUDGET", "REFUSED", "RETRYABLE", "STANDING", "STATUSES", "TRUNCATED", "VALID",
-           "StoredReview", "latest_standing", "latest_valid", "read_review", "reviewed", "write_review"]
+           "StoredReview", "latest_standing", "latest_valid", "read_review", "reviewed", "write_check",
+           "write_review"]

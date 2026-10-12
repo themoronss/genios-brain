@@ -69,12 +69,12 @@ def engine():
 
 
 def _write(c, fp: str, *, status=R.VALID, reason=None, review=REVIEW, at=AT, org=ORG, cost=26_100,
-           inputs=INPUTS, triggers=None):
+           inputs=INPUTS, triggers=None, checked=None):
     said = [{"kind": k, "says": s} for k, s in TRIGGERS] if triggers is None else list(triggers)
     return R.write_review(c, org_id=org, file_id=FILE, fingerprint=fp, model="claude-sonnet-5",
                           prompt_version="expert-review.v1", dossier_digest="sha256:d", status=status,
                           reason=reason, review=review, input_tokens=9000, output_tokens=900,
-                          cost_micro_usd=cost, at=at, inputs=inputs, triggers=said)
+                          cost_micro_usd=cost, at=at, inputs=inputs, triggers=said, checked=checked)
 
 
 def test_a_valid_review_reads_back_as_the_review_that_was_written(engine):
@@ -252,3 +252,60 @@ def test_the_latest_standing_review_is_what_the_last_judgment_saw(engine):
         _write(c, "ffp-7", at=AT + timedelta(days=5))
     with engine.connect() as c:
         assert R.latest_standing(c, ORG, FILE).fingerprint == "ffp-7"   # a tie: the newest fingerprint
+
+
+# ── STEP-13 · M35.C1.L-contract.V1.U03: a valid review keeps its check ─────────────────────────
+def _checked(fate="shown", headline="share the data room"):
+    from genios_engine.contracts import claim_check as C
+    return C.CheckedReview(
+        verdicts=(C.LineVerdict("fact:1", C.KEPT),), fate=fate, cited=("evt_1",),
+        words=C.CardWords(headline=headline, situation="a fund doing diligence",
+                          done_when="the room is shared", draft=None, to=None, evidence=("evt_1",)))
+
+
+def test_a_valid_reviews_check_reads_back_as_it_was_written(engine):
+    with engine.begin() as c:
+        assert _write(c, "ffp-1", checked=_checked()) is True
+    with engine.connect() as c:
+        stored = R.read_review(c, ORG, FILE, "ffp-1")
+    assert stored.checked == _checked() and stored.review == REVIEW
+
+
+def test_a_check_is_written_onto_the_standing_valid_row_alone(engine):
+    with engine.begin() as c:
+        _write(c, "ffp-1")
+        _write(c, "ffp-2", status=R.REFUSED, reason="nothing_stands: fact:1 uncited", review=None)
+    with engine.begin() as c:
+        assert R.write_check(c, org_id=ORG, file_id=FILE, fingerprint="ffp-1",
+                             checked=_checked(headline="share the room")) is True
+        assert R.write_check(c, org_id=ORG, file_id=FILE, fingerprint="ffp-2", checked=_checked()) is False, \
+            "a refusal has no review to check"
+        assert R.write_check(c, org_id=ORG, file_id=FILE, fingerprint="ffp-none", checked=_checked()) is False
+    with engine.connect() as c:
+        one, two = R.read_review(c, ORG, FILE, "ffp-1"), R.read_review(c, ORG, FILE, "ffp-2")
+    assert one.checked.words.headline == "share the room" and one.review == REVIEW
+    assert two.checked is None
+
+
+def test_a_check_rides_only_on_a_valid_row(engine):
+    with pytest.raises(ValueError, match="no review to check"):
+        with engine.begin() as c:
+            _write(c, "ffp-1", status=R.REFUSED, reason="uncited_fact", review=None, checked=_checked())
+
+
+def test_a_row_from_before_0200_reads_with_no_check(engine):
+    with engine.begin() as c:
+        _write(c, "ffp-1")
+    with engine.connect() as c:
+        assert R.read_review(c, ORG, FILE, "ffp-1").checked is None
+
+
+def test_a_retried_review_that_succeeds_keeps_its_check(engine):
+    """A failed row's retry may replace it (`RETRYABLE`): the valid review that replaces it carries its
+    check, never the failed row's none."""
+    with engine.begin() as c:
+        _write(c, "ffp-1", status=R.FAILED, reason="the call failed", review=None)
+    with engine.begin() as c:
+        assert _write(c, "ffp-1", checked=_checked()) is True
+    with engine.connect() as c:
+        assert R.read_review(c, ORG, FILE, "ffp-1").checked == _checked()
