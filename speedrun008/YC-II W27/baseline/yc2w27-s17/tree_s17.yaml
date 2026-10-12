@@ -5,10 +5,11 @@ yc2_w27_s17:
   source: >
     speedrun008/YC-II W27/STEP-17 §1-§5, re-checked claim by claim against speedrun008 @ c97155cd
     (STEP-17 §8): a fresh scratch database migrated 0001-0199, every SQL string the engine holds
-    prepared and explained against it (2,298 whole expressions: 2,040 plan, 41 are not SQL, 217 are
-    assembled at run time, 1 is broken — scripts/slice_weight.py), every Python file parsed on 3.11,
+    prepared and explained against it (the first probe: 2,298 whole expressions — 2,040 plan, 41 are
+    not SQL, 217 are assembled at run time, 1 is broken, scripts/slice_weight.py; the census built in
+    M40.C1 reads 2,323 — 2,053 whole, 270 assembled at run time), every Python file parsed on 3.11,
     and the lead's QA at the same commit (the database suite 20,569 passed, 0 failed). CI's hermetic
-    job skips 301 database-gated files that no job runs; six health checks print PASS on nothing.
+    job skips 324 database-gated files that no job runs; six health checks print PASS on nothing.
   vision: >
     The suite goes red on the things that broke production while it was green: a statement naming a
     column that does not exist, a value the schema refuses, a feature that cannot be switched on, a
@@ -132,13 +133,14 @@ yc2_w27_s17:
                   units:
                     - id: M40.C3.L-contract.V0.U01
                       what: >
-                        A third verdict: `Check.ok` None is NO DATA — printed as such, counted apart,
-                        never a pass and never a failure; exit 1 only on a FAIL. The six checks that
-                        already say "not exercised" or "skipped" report it (known senders, the change
-                        gate, named counterparties' files, the work's files, the normals, the expert),
-                        and so does "live cards reach a surface" with no live card.
+                        A third verdict, NO DATA — printed as such, counted apart, never a pass and
+                        never a failure; exit 1 only on a FAIL. `ok` keeps answering "did it fail?"
+                        (the golden replays read it) and `no_data` answers "did it judge anything?".
+                        Every check knows its population — measured on a tenant with no data, 17 of
+                        19 said PASS; now each says NO DATA, but the two that fail on nothing by
+                        design (no brief, no memory reaching the window).
                       artifact: "scripts/pipeline_health.py"
-                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_says_no_data.py tests/scripts/test_the_gate_that_runs_on_real_data.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_says_no_data.py tests/scripts/test_the_gate_that_runs_on_real_data.py"
                       depends_on: []
             - layer: logic
               levels:
@@ -189,8 +191,12 @@ yc2_w27_s17:
                         dependency set, the whole suite but the golden set (`-m "not golden"`) with
                         GENIOS_TEST_DATABASE_URL, its failures as annotations, then the skip scan; and
                         every job on the Dockerfile's Python (3.11), read from the Dockerfile by the
-                        guard. Verified by the guard and by the job's own command run on
-                        python:3.11-slim-bookworm against a fresh scratch database.
+                        guard — which also closes the ways the job could be green over nothing (a
+                        path, -k or second -m; PYTEST_ADDOPTS or an emptied URL; continue-on-error;
+                        a job-level if:; anything after the scan; a golden test off golden-pg's
+                        paths). Verified by the guard; the job's own command over the whole suite
+                        on python:3.11-slim-bookworm against a fresh scratch database is the lead's
+                        run before the push (a bounded smoke of it passed at the build).
                       artifact: ".github/workflows/ci.yml"
                       verify: ".venv/bin/python -m pytest -q tests/test_ci_runs_the_database_suite.py tests/test_ci_runs_the_golden_set_on_postgres.py"
                       depends_on: [M40.C4.L-contract.V0.U01, M40.C1.L-integration.V2.U04, M40.C2.L-integration.V0.U01, M40.C2.L-integration.V0.U02, M40.C3.L-logic.V0.U02]
@@ -212,8 +218,9 @@ yc2_w27_s17:
     - id: M41
       name: Tests that tell the truth (the findings 03 gave STEP-17)
       ships: >
-        No test reads the wall clock when it is imported; a timing guard is not failed by one stalled
-        sample; the warm lane's test claims its own rows whatever ran before it.
+        No test reads the wall clock when it is imported; a timestamp the database wrote is read
+        against the database's clock; a timing guard is not failed by one stalled sample; the warm
+        lane's test claims its own rows whatever ran before it.
       categories:
         - id: M41.C1
           name: A test reads its own clock
@@ -229,6 +236,16 @@ yc2_w27_s17:
                         sleeping laptop, a slow runner) no longer finds the seat's pause over.
                       artifact: "tests/test_device_api.py"
                       verify: ".venv/bin/python -m pytest -q tests/test_device_api.py"
+                      depends_on: []
+                    - id: M41.C1.L-logic.V0.U03
+                      what: >
+                        03 F115's fourth — the scheduler's cursor round trip reads the gap against the
+                        DATABASE's clock (the row was back-dated by its `now()`), and asserts the exact
+                        round trip: the value stored is the value read. Read off the host's clock, it
+                        measured two clocks' distance too — "24.17 h" when a Docker VM's clock lagged
+                        the host's after the laptop slept.
+                      artifact: "tests/capture/acquire/test_scheduler.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/capture/acquire/test_scheduler.py"
                       depends_on: []
             - layer: integration
               levels:

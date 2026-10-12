@@ -74,8 +74,8 @@ Python.
 | | |
 |---|---|
 | the database suite, today | **20,569 passed · 0 failed · 4 skipped · 86 xfailed**, 54 min — the lead's STEP-12 QA at `c97155cd`. None of the 4 skips is for want of a database (a missing `docx` locally, an empty parameter set, a declared rollback exception, an internal-auth harness) |
-| CI's `test` job (the hermetic command) | **17,390 passed · 1,900 skipped** — 10 Oct at `3e2dba8d`. 1,896 of the skips are for want of a database, in **307 files**; 6 of those are `tests/replays`, which `golden-pg` runs. So **301 database-gated files never run in CI** — the plan said 150; it doubled as every step since added real-Postgres tests |
-| the SQL the engine holds | `platform/table_coverage` counts **3,064** statements. **745** of them are pieces of a larger statement (the left side of a `+`, the text of an f-string) and **21** are docstrings that start with *Select* or *Update*. Of the **2,298** whole expressions: **2,040** prepare and plan on Postgres 17; **41** are not SQL (a bare `'update'` in a vocabulary set, a regex, a help text); **217** are assembled at run time from a helper or a local (`where {clause}`) and cannot be planned from the source; **1 is broken** (`scripts/slice_weight.py`, S17-F1) |
+| CI's `test` job (the hermetic command) | **17,781 passed · 2,092 skipped** — the lead's QA at `c97155cd`. **2,088** of the skips are for want of a database, in **330 files**; 6 of those are `tests/replays`, which `golden-pg` runs. So **324 database-gated files never run in CI** — the plan said 150 (5 Oct); it was 301 on 10 Oct (`3e2dba8d`), and every step since adds real-Postgres tests |
+| the SQL the engine holds | `platform/table_coverage` counts **3,064** statements. **745** of them are pieces of a larger statement (the left side of a `+`, the text of an f-string) and **21** are docstrings that start with *Select* or *Update*. The census built here (M40.C1) reads the whole expressions only — **2,323** at the build: **2,053** render whole with their constants resolved across modules, and every one of them plans on Postgres 17 but **13** strings that are not SQL (eleven declarations, one by one — a support phrase, an argparse help, `table_coverage`'s own regexes) and **1 that was broken** (`scripts/slice_weight.py`, S17-F1, fixed); **270** are assembled at run time — a `{where}` from a helper, `sql += …`, a `%` format, a `.replace` template — and cannot be planned from the source. At the branch's head, **2,331 / 2,061 / 270**: M40.C3's eight new SELECTs (seven populations, one silent-lane read). (The first probe, before calls and `%` formats were counted as holes, read 2,298 / 2,040 / 217.) |
 | the `card_level` bug, as a test would see it | the calibration statement is three modules of fragments (`"with " + AUDITED_CARD_JUDGMENTS_CTES + …`). Read as text, it is a statement with holes and nothing plans it. Read with each module's constants resolved, it plans — so the test must resolve them, or B1 comes back unseen |
 | Python 3.11 | all **1,965** Python files of `genios_engine/`, `scripts/` and `tests/` parse on 3.11.17 (`python:3.11-slim-bookworm`, the Dockerfile's base). The suite has never run on 3.11 |
 | the health gate | 19 checks. **Six already know they had nothing to judge** — they say *"not exercised"* or *"skipped"* in their measured line — **and print PASS**. The two LLM checks pass when a lane made no call (F24's shape) |
@@ -87,7 +87,7 @@ Python.
 | # | Claim (§1) | Now | Evidence |
 |---|---|---|---|
 | 1 | CI runs only the hermetic suite | **partly** — `golden-pg` runs `tests/replays` on a Postgres 17 service since STEP-01; the rest of the database suite still skips | `.github/workflows/ci.yml:19-38` (`test`), `:40-76` (`golden-pg`) |
-| 2 | the real-Postgres seam exists, and skips | **true** — and it is the only thing between 301 files and CI | `tests/conftest.py:61-67, 78-89, 103-138` |
+| 2 | the real-Postgres seam exists, and skips | **true** — and it is the only thing between 324 files and CI | `tests/conftest.py:61-67, 78-89, 103-138` |
 | 3 | green while broken | **true in kind** — no test plans a statement it does not run; S17-F1 is a script that has never run | `scripts/slice_weight.py:31-37` |
 | 4 | a production gate exists, seven checks, on `harsh/mvp` | **true, grown** — on this branch, 19 checks, exit 1 on a failure | `scripts/pipeline_health.py:859-918` |
 | 5 | the database suite: 50 failed | **fixed** — 0 failed since `yc2_w27/M16` (5–6 Oct); 20,569 passed today | the lead's QA, `c97155cd` |
@@ -109,14 +109,15 @@ Python.
 - **S17-F1 · A script that has never run.** `scripts/slice_weight.py` — L2-3's cost check —
   selects `anchor_type` from `context_situations`; the column lives on `context_correlations`. Every
   run raises `UndefinedColumn` on its first statement, since `aa6ab06e` (24 Sep). The sweep it
-  claims to copy reads `n.node_type as anchor_type` from `graph_nodes`.
+  claims to copy reads `n.node_type as anchor_type` from `graph_nodes`. And before that statement:
+  `GraphStore(engine)` passes the engine as the URL — `AttributeError` — so it failed twice over.
 - **S17-F2 · The statement count counts pieces.** `table_coverage._statements` visits every string
   node, so `"select … from " + T` is two statements, and a docstring that starts *"Select only …"*
   is one. 745 + 21 of 3,064. Its table attribution needs the pieces (a whole expression with a call
   in it renders as nothing), so it is not changed; the planner counts whole expressions only.
-- **S17-F3 · Six checks know they judged nothing and say PASS** (8.1). The line says *"not
-  exercised"*; the verdict says the opposite.
-- **S17-F4 · 301 database-gated files never run in CI** (8.1), not 150.
+- **S17-F3 · On a tenant with no data at all, 17 of the gate's 19 checks say PASS** — six of them
+  with *"not exercised"* or *"skipped"* in the same line. Only the brief and memory's reach fail.
+- **S17-F4 · 324 database-gated files never run in CI** (8.1), not 150.
 - **S17-F5 · The folder guard reads only a §6 Verify** (8.1).
 - **S17-F6 · 22 test modules read the clock at import** (8.1). A long run — a sleeping laptop, a
   slow runner — moves the wall clock past their `NOW`. F142 is one of them; F115's three may be.
@@ -140,7 +141,7 @@ Python.
    list, `PREPARE` then `EXPLAIN EXECUTE` inside a transaction that is rolled back. A bind Postgres
    cannot type is typed by a search that accepts only a typing that plans — so the claim is *"some
    typing of the free binds plans it"*, said as such.
-3. **What cannot be planned is counted, not hidden.** 217 statements are assembled at run time; a
+3. **What cannot be planned is counted, not hidden.** 270 statements are assembled at run time; a
    ceiling holds the number, so a new one fails the build until it is made static or the ceiling is
    raised in the same diff. Strings that look like SQL and are not are declared one by one, checked
    both ways.
@@ -165,13 +166,14 @@ feedback reason stored (eight strict expected failures, STEP-16's), every defaul
 against Postgres · C3 the health gate says *no data* — the verdict, the LLM lanes, the kept output ·
 C4 CI — the database-skip scan, the `database` job on 3.11 · C5 a Verify read whatever its number.
 
-**M41 — tests that tell the truth** (4 units): the clock at import (F142, then the guard over the 22),
-a timing guard that takes the best of three (F156), a test that claims its own rows (F67, F136).
-F130 does not reproduce at `c97155cd` — `pytest tests/packs/*.py tests/packs/compiler/test_pattern_routing.py`:
-380 passed, 13 skipped, 0 errors — so it has no unit; F115's three may be the clock at import (S17-F6)
-and are re-measured after M41.C1.
+**M41 — tests that tell the truth** (5 units): the clock at import (F142, then the guard over the 22),
+F115's fourth — a database timestamp read against the database's clock, a timing guard that takes the
+best of three (F156), a test that claims its own rows (F67, F136). F130 does not reproduce at
+`c97155cd` — `pytest tests/packs/*.py tests/packs/compiler/test_pattern_routing.py`: 380 passed, 13
+skipped, 0 errors — so it has no unit; F115's three in `test_unread_reread_pg.py` read the clock at
+import, which M41.C1.U02 ends.
 
-**16 units, critical path 5** (M40.C1 U01 → U02 → U03 → U04 → M40.C4 U02).
+**17 units, critical path 5** (M40.C1 U01 → U02 → U03 → U04 → M40.C4 U02).
 
 ### 8.6 · Decisions
 
@@ -184,7 +186,7 @@ and are re-measured after M41.C1.
 
 ### 8.7 · Risks
 
-- **A statement assembled at run time is invisible to the planner.** 217 of them; the database
+- **A statement assembled at run time is invisible to the planner.** 270 of them; the database
   suite is their only check. The ceiling stops the number growing in silence, not the gap.
 - **"Some typing plans it" is weaker than "the runtime's typing plans it."** A statement that needs
   a cast at run time could pass. It applies only to type errors; a missing column or table is never
@@ -195,3 +197,43 @@ and are re-measured after M41.C1.
 - **The suite has never run on 3.11.** It parses; the full run is the database job's own verify,
   in Docker on `python:3.11-slim-bookworm`, before the push.
 - **A longer CI.** The database job is the slowest of the three (about 55 minutes here).
+
+### 8.8 · Built — 12 Oct (worktree `s17-build`, branch `yc2w27-s17`, not pushed)
+
+Seventeen units, one commit each, each with its tests written first and a mutation run over what it
+guards; repo guards per group of two or three units, each suite on its own fresh database on the
+second scratch server.
+
+| Unit | What it does | Commit |
+|---|---|---|
+| M40.C1 U01 | the statement census — every whole SQL expression, constants resolved across modules | `e7dba61e` (+ `c199b638`) |
+| M40.C1 U02 | a statement planned as Postgres will be asked it — SQLAlchemy's own binds, PREPARE + EXPLAIN | `defe000b` |
+| M40.C1 U03 | `scripts/slice_weight.py` runs — the sweep's own statement, the store by keyword (S17-F1) | `21767bf0` (+ `8775c176`) |
+| M40.C1 U04 | every whole statement planned on every run; B1 kept as a negative control | `edf60314` |
+| M40.C2 U01 | every feedback reason the route accepts is stored — eight strict expected failures, STEP-16's (B3) | `957aa9f9` |
+| M40.C2 U02 | a tenant made live on Postgres has every default feature on, no error collected | `f516b8de` |
+| M40.C3 U01 | the health gate says NO DATA when it judged nothing (17 of 19 said PASS on nothing) | `485017cb` |
+| M40.C3 U02 | an LLM lane silent in the window is NO DATA for that lane, named (F24) | `1c4df0c7` |
+| M40.C3 U03 | `--json` keeps every verdict; `--require-data` exits 2 on NO DATA | `6f98e670` (+ `cd4c171a`) |
+| M40.C4 U01 | `scripts/qa/database_skips.py` — a skip for want of a database fails the database job | `4e55c1e1` |
+| M40.C4 U02 | CI: a `database` job on Postgres 17, every job on Python 3.11 — and the ways it could be green over nothing closed | `cbf6c702` |
+| M40.C5 U01 | a built step's Verify is read whatever its number (S17-F5) | `525fdd67` |
+| M41.C1 U01 | `tests/test_device_api.py` reads the clock when it runs (F142) | `218a2e1e` |
+| M41.C1 U02 | no test module reads the clock at import — the guard, and the 21 others moved | `6cd64b7c` |
+| M41.C1 U03 | the scheduler's round trip read on the database's clock (F115's fourth) | `ba916a66` |
+| M41.C2 U01 | the linear-time token guard takes the best of three (F156) | `206ba6eb` |
+| M41.C3 U01 | the warm lane's test claims its own rows (F67, F136) | `ddce1b38` |
+
+**Not run here: the whole suite on Python 3.11** (§8.7) — the `database` job's own verify. The
+lead's QA shares the machine, so the builder ran a bounded smoke instead: on
+`python:3.11-slim-bookworm`, the job's own install and pytest flags over the two CI guards, the
+scan's tests and four database-gated files, on a fresh scratch database — 36 passed, 8 strict
+xfailed (STEP-16's reasons), 0 skipped, the scan exit 0. A search of the `.py` files of
+`genios_engine/`, `scripts/` and `tests/` for the standard library's 3.12- and 3.13-only names
+(`itertools.batched`, `typing.override`, `Path.walk`, `copy.replace`, `warnings.deprecated`, …)
+finds none. The full run on 3.11 is the lead's, before the push; until it has run, the first push
+may find what 3.11 answers differently.
+
+**The statement pin moves on this branch** (`tests/platform/test_a_delete_is_not_a_read.py`):
+3,064 → 3,071 — −1 `scripts/slice_weight.py` (M40.C1 U03), +7 and +1 the health gate (M40.C3 U01,
+U02). STEP-13's branch moved it on its own; the merge adds the two moves.
