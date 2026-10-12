@@ -7,6 +7,11 @@ latest STANDING review — what the expert last concluded, valid, refused or tru
 what triggered it, the model, the prompt version and its cost — and its latest VALID review, the one a
 decision may read. A failed or carried attempt judged nothing and is not shown here (the health check
 counts those). A file never reviewed says so; another tenant's reviews never show; reading writes nothing.
+
+RESTATED by STEP-13 (`yc2_w27_s13` M35.C3.L-interface.V3.U07, crosscheck X28): the route served the review's raw
+words as "valid" — unchecked, and still "valid" after a re-check refused it. Now a review shows what its CHECK
+let stand (`says`, the checked card words) and the check itself (`check`: fate, verdicts, the question asked);
+the raw words are data, never shown — as a refused answer's always were. `tests/api/test_a_review_shows_what_its_check_let_stand.py`.
 """
 from __future__ import annotations
 
@@ -23,13 +28,13 @@ from tests.reason.expert.test_the_review_store import REVIEW
 pytestmark = pytest.mark.pg
 
 
-def _write(store, org, file_id, fp, *, status=R.VALID, reason=None, review=REVIEW, at=NOW):
+def _write(store, org, file_id, fp, *, status=R.VALID, reason=None, review=REVIEW, at=NOW, checked=None):
     with store.engine.begin() as c:
         R.write_review(c, org_id=org, file_id=file_id, fingerprint=fp, model="claude-sonnet-5",
                        prompt_version="expert-review.v2", dossier_digest="sha256:d", status=status,
                        reason=reason, review=review, input_tokens=9000, output_tokens=900,
                        cost_micro_usd=27_000, at=at, inputs={"events": ["evt_1"]},
-                       triggers=[{"kind": "first_look", "says": "never judged"}])
+                       triggers=[{"kind": "first_look", "says": "never judged"}], checked=checked)
 
 
 def _review(monkeypatch, store, file_id):
@@ -44,17 +49,18 @@ def test_a_file_never_reviewed_says_so(monkeypatch, store):
 
 def test_a_file_shows_its_latest_review_and_its_status(monkeypatch, store):
     file_id = _file_id(store, ORG)
-    _write(store, ORG, file_id, "ffp-1", at=NOW - timedelta(days=2))
+    from tests.reason.expert.checks import as_written
+    _write(store, ORG, file_id, "ffp-1", at=NOW - timedelta(days=2), checked=as_written(REVIEW))
     _write(store, ORG, file_id, "ffp-2", status=R.REFUSED, reason="number_not_in_dossier: 4317",
            review=REVIEW.as_mapping(), at=NOW - timedelta(days=1))   # its words kept as data
     review = _review(monkeypatch, store, file_id)
     latest, valid = review["latest"], review["valid"]
     assert (latest["fingerprint"], latest["status"], latest["reason"]) == (
         "ffp-2", "refused", "number_not_in_dossier: 4317")
-    assert latest["review"] is None, "a refused answer's words are data, never shown as a review"
+    assert latest["says"] is None, "a refused answer's words are data, never shown as a review"
     assert latest["triggers"] == [{"kind": "first_look", "says": "never judged"}]
     assert (valid["fingerprint"], valid["status"]) == ("ffp-1", "valid")
-    assert valid["review"] == REVIEW.as_mapping()
+    assert valid["says"] == as_written(REVIEW).words.as_mapping() and "review" not in valid
     assert (valid["model"], valid["prompt_version"], valid["cost_micro_usd"]) == (
         "claude-sonnet-5", "expert-review.v2", 27_000)
     assert valid["reviewed_at"] == (NOW - timedelta(days=2)).isoformat()

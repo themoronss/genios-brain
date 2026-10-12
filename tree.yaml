@@ -7857,6 +7857,15 @@ yc2_w27_s13:
                       artifact: "genios_engine/deliver/card_builder.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_an_expert_card_is_checked.py"
                       depends_on: [M35.C3.L-integration.V2.U02]
+                    - id: M35.C3.L-interface.V3.U07
+                      what: >
+                        One file shows what the expert's check let stand (added 12 Oct by the STEP-13 crosscheck,
+                        X28): `GET /v1/workstreams/{file_id}` serves `says` — the checked card words, only when a
+                        check ran and did not refuse — and `check` (fate, why, the question, each line's
+                        verdict); the review's raw words are never served.
+                      artifact: "genios_engine/api/workstream_routes.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/api/test_a_review_shows_what_its_check_let_stand.py tests/api/test_a_file_shows_its_review.py"
+                      depends_on: [M35.C3.L-integration.V1.U01]
             - layer: integration
               levels:
                 - level: 1
