@@ -201,3 +201,56 @@ def test_the_answer_button_says_what_it_does():
     [answer, snooze] = _annotate_effects([{"type": "answer", "label": "Answer", "question_id": "fq_x"},
                                          {"type": "snooze"}])
     assert (answer["effect"], snooze["effect"]) == ("answer_kept", "defer_surface")
+
+
+def test_an_answer_pressed_while_the_question_is_rebound_is_kept(world, cards):
+    """⛔ `03` X43 (two connections, run): a sweep re-binds the question — the same words, asked by the run asking
+    now — while you press Answer. The press waited for the row locks and PostgreSQL re-checked the locked rows
+    against the run they WERE bound to: refused V-09, the question still open, your words lost. The door is read
+    once more, and sees the re-bind: your answer is kept."""
+    import threading
+    import time
+
+    from tests.reason.expert.test_a_covered_file_decides_once import _open_signals
+    store, org, registry, anchor, card = _card(world, cards)
+    [first] = _open_signals(store, org, anchor)
+    with store.engine.connect() as c:
+        one = c.execute(text("select reasoning_run_id, reasoning_decision_hash from signals where org_id = :o "
+                             "and signal_id = :s"), {"o": org, "s": first.signal_id}).one()
+    with store.engine.begin() as c:            # the gate has no memory of it: decided again, re-bound
+        c.execute(text("delete from reasoning_fingerprints where org_id = :o"), {"o": org})
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"}, at=NOW + timedelta(minutes=1))
+    with store.engine.connect() as c:
+        two = c.execute(text("select reasoning_run_id, reasoning_decision_hash from signals where org_id = :o "
+                             "and signal_id = :s"), {"o": org, "s": first.signal_id}).one()
+    assert two.reasoning_run_id != one.reasoning_run_id
+
+    def _bind(c, run):
+        c.execute(text("update founder_questions set run_id = :r where org_id = :o and file_id = :f "
+                       "and state = 'open'"), {"r": run.reasoning_run_id, "o": org, "f": anchor})
+        c.execute(text("update signals set reasoning_run_id = :r, reasoning_decision_hash = :h where org_id = :o "
+                       "and signal_id = :s"), {"r": run.reasoning_run_id, "h": run.reasoning_decision_hash,
+                                                "o": org, "s": first.signal_id})
+    with store.engine.begin() as c:            # back on the first run: what the press will read
+        _bind(c, one)
+    rebind = store.engine.connect()
+    rebind_tx = rebind.begin()
+    _bind(rebind, two)                         # the sweep's re-bind, its locks held, not yet committed
+    out: dict = {}
+    press = threading.Thread(target=lambda: out.update(_press(store, cards, org, card.card_id, "answer",
+                                                              words=WORDS)))
+    press.start()
+    with store.engine.connect() as c:          # the press is waiting on the re-bind's locks
+        for _ in range(100):
+            waiting = c.execute(text("select count(*) from pg_stat_activity where datname = current_database() "
+                                     "and wait_event_type = 'Lock'")).scalar()
+            if waiting:
+                break
+            time.sleep(0.05)
+    assert waiting, "the press never waited on the re-bind"
+    rebind_tx.commit()
+    rebind.close()
+    press.join(timeout=30)
+    assert out.get("ok") is True, out
+    [kept] = _questions(store, org, anchor)
+    assert (kept.state, kept.run_id) == (Q.ANSWERED, two.reasoning_run_id)
