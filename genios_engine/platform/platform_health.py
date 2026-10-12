@@ -65,6 +65,37 @@ UNREACHED: dict[str, tuple[str, str]] = {
     # repo's SQL and the migrations and answer questions about a FIXED checkout — identical on
     # every run, touching no production data. The half that only production can answer is a
     # RECEIPT: *"no live row points at a node a merge absorbed"*.
+    # ─────────────────────────────── statement_plans · every statement planned (`yc2_w27_s17` M40.C1)
+    # ⛔ BUILD-TIME PROPERTY GUARDS, filed with `table_coverage`'s beside them: they read the repo's
+    # SQL and ask a migrated scratch database whether it plans — a FIXED checkout's question, the
+    # same answer on every run, touching no production data. `tests/platform/
+    # test_every_statement_plans.py` is their caller; the planner's own tests are the others.
+    "statement_plans.statements": (
+        "⛔ Every whole SQL expression of the engine and its scripts, constants resolved across "
+        "modules — the census `test_every_statement_plans` plans. It exists because the "
+        "`card_level` bug's statement (the weekly calibration's, three modules of fragments; "
+        "`yc2_w27` M18) read as text with holes, "
+        "and a planner that skipped holes would have skipped exactly the one that broke",
+        "MOVES WHEN a deploy step plans the statements against the DEPLOYED schema rather than a "
+        "scratch one — then a script calls it, and the entry goes"),
+    "statement_plans.census": (
+        "What the census read and what it left out, by kind — the counts the ratchet "
+        "(`ASSEMBLED_AT_RUN_TIME`) and the floor are held to",
+        "MOVES WITH `statements` — one measurement, reported beside its verdict"),
+    "statement_plans.census_of": (
+        "One module's census with a resolver handed in — how the census's rules are tested on a "
+        "sample whose every row is known",
+        "MOVES WITH `statements`"),
+    "statement_plans.import_failures": (
+        "Engine modules the census could not import, with why — a module nobody can import keeps "
+        "every hole it has, and coverage would shrink with no failure anywhere",
+        "MOVES WITH `statements`"),
+    "statement_plans.plan": (
+        "⛔ PREPARE then EXPLAIN one statement on a database, rolled back: None when it plans, else "
+        "Postgres's error. Found on its first run a script that had never run "
+        "(`scripts/slice_weight.py`, S17-F1)",
+        "MOVES WHEN a deploy step plans against the deployed schema (`yc2_w27_s17` M40.C3) — then "
+        "a script calls it"),
     "table_coverage.illegal_column_updates": (
         "⛔ Every update of a WRITE-ONCE table outside its declared allowlist. Returns `()` and "
         "the emptiness is load-bearing: `learning_objects` holds the whole learning ledger's "

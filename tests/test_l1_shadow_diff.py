@@ -40,10 +40,21 @@ from scripts import l1_shadow_diff as SD          # noqa: E402
 from scripts._db import UnsafeDatabaseTarget      # noqa: E402
 from scripts._gate import read_only_connection    # noqa: E402
 
-NOW = datetime.now(timezone.utc)
-SINCE = NOW - timedelta(days=7)
-IN_WINDOW = NOW - timedelta(days=2)
-OUT_OF_WINDOW = NOW - timedelta(days=40)
+#: ⛔ Read when each test runs, never when this module is imported (`yc2_w27_s17`
+#: M41.C1.L-integration.V1.U02, `YC-II W27/03` F142): an instant taken at import is hours old by the
+#: time a long run — a sleeping laptop, a slow CI runner — reaches the test. Set by `_clock` when
+#: the module's first test starts: its module-scoped fixtures seed rows with these instants.
+NOW = SINCE = IN_WINDOW = OUT_OF_WINDOW = None  # type: ignore[assignment]
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _clock():
+    global NOW, SINCE, IN_WINDOW, OUT_OF_WINDOW
+    NOW = datetime.now(timezone.utc)
+    SINCE = NOW - timedelta(days=7)
+    IN_WINDOW = NOW - timedelta(days=2)
+    OUT_OF_WINDOW = NOW - timedelta(days=40)
+
 
 CLEAN = "org_shadow_clean"
 MESSY = "org_shadow_messy"

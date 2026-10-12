@@ -143,17 +143,41 @@ def test_every_open_finding_names_its_owner(kind):
     assert not orphans, "open findings nobody owns:\n  " + "\n  ".join(orphans)
 
 
-def _verify_paths(path: pathlib.Path) -> list[str]:
-    section = re.search(r"^## 6 · Verify\s*$(.*?)(?=^## |\Z)", path.read_text(encoding="utf-8"),
+def _verify_section(path: pathlib.Path) -> str | None:
+    """A step's Verify section, WHATEVER ITS NUMBER. ⛔ `yc2_w27_s17` M40.C5.L-logic.V0.U01 (STEP-17
+    S17-F5): this read `## 6 · Verify` only, so STEP-01's (§7) and STEP-08's (§5) were never read —
+    a built step's Verify could name a test that does not exist and nothing would say so."""
+    section = re.search(r"^## \d+ · Verify\s*$(.*?)(?=^## |\Z)", path.read_text(encoding="utf-8"),
                         re.M | re.S)
+    return None if section is None else section.group(1)
+
+
+def _verify_paths(path: pathlib.Path) -> list[str]:
+    section = _verify_section(path)
     if section is None:
         return []
     return sorted(set(re.findall(r"(?<![\w/.-])((?:tests|scripts|genios_engine)/[\w/.-]+\.(?:py|sh|sql))",
-                                 section.group(1))))
+                                 section)))
 
 
-@pytest.mark.parametrize("path", _params("verify", [p for p in _steps()
-                                                     if _name_status(p) != "TO BUILD"]))
+def _built() -> list[pathlib.Path]:
+    return [p for p in _steps() if _name_status(p) != "TO BUILD"]
+
+
+@pytest.mark.parametrize("path", _built(), ids=lambda p: p.name[:7])
+def test_a_built_step_says_how_to_verify_it(path):
+    """A built step with no Verify section would pass the test below on nothing."""
+    assert _verify_section(path) is not None, f"{path.name} has no Verify section"
+
+
+def test_a_verify_section_is_read_whatever_its_number():
+    """The two the old reader never saw: STEP-01's Verify is §7 and names two paths."""
+    (step01,) = [p for p in _steps() if p.name.startswith("STEP-01-")]
+    assert re.search(r"^## 7 · Verify", step01.read_text(encoding="utf-8"), re.M)
+    assert len(_verify_paths(step01)) >= 2, _verify_paths(step01)
+
+
+@pytest.mark.parametrize("path", _params("verify", _built()))
 def test_every_path_a_built_steps_verify_names_exists(path):
     missing = [p for p in _verify_paths(path) if not (REPO_ROOT / p).exists()]
     assert not missing, f"{path.name} §6 names what does not exist: {missing}"

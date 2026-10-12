@@ -27,7 +27,16 @@ URL = os.environ.get("GENIOS_TEST_DATABASE_URL")
 pytestmark = [pytest.mark.pg,
               pytest.mark.skipif(not URL, reason="GENIOS_TEST_DATABASE_URL not set")]
 
-NOW = datetime.now(timezone.utc)
+#: ⛔ Read when each test runs, never when this module is imported (`yc2_w27_s17`
+#: M41.C1.L-integration.V1.U02, `YC-II W27/03` F142): an instant taken at import is hours old by the
+#: time a long run — a sleeping laptop, a slow CI runner — reaches the test. Set by `_clock`.
+NOW: datetime = None  # type: ignore[assignment]
+
+
+@pytest.fixture(autouse=True)
+def _clock():
+    global NOW
+    NOW = datetime.now(timezone.utc)
 _ORGS: list[str] = []
 
 

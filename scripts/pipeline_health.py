@@ -1,6 +1,7 @@
 """Every invariant that was green in the test suite and false in production, asserted on real data.
 
-    GENIOS_TARGET_DATABASE_URL=... python scripts/pipeline_health.py --org org_...
+    GENIOS_TARGET_DATABASE_URL=... python scripts/pipeline_health.py --org org_... \
+        [--json health.json] [--require-data]
 
 ⛔ WHY THIS SCRIPT EXISTS. On 2026-10-04 the hermetic suite reported **14,624 passed, 0 failed**
 while production was carrying, simultaneously:
@@ -22,6 +23,11 @@ expected, and what to do — a check whose failure does not tell you the next mo
 somebody learns to ignore.
 
 EXIT CODE 1 if any check fails, so it can be a deploy gate rather than a thing someone remembers.
+
+THREE VERDICTS — PASS, FAIL, NO DATA (STEP-17 §3.4). A check whose population was empty judged
+nothing, and says so instead of passing; NO DATA is counted apart and is not a failure, unless the run
+asks for data (`--require-data`, exit 2 — the run a day after a deploy, when every lane should have
+run). `--json PATH` keeps every verdict as a file, the record a deploy keeps.
 """
 from __future__ import annotations
 
@@ -38,9 +44,21 @@ from scripts._db import add_database_argument, resolve_database_url   # noqa: E4
 from scripts._gate import read_only_connection, sql                   # noqa: E402
 
 
+#: The three verdicts. ⛔ STEP-17 §3.4 (`yc2_w27_s17` M40.C3.L-contract.V0.U01): measured on a tenant
+#: with no data at all, 17 of these 19 checks printed PASS — six saying "not exercised" or "skipped"
+#: in the same line — and `03` F24's ceiling check passed while its lane made no call. A pass over an
+#: empty table is not a pass.
+PASS, FAIL, NO_DATA = "PASS", "FAIL", "NO DATA"
+
+
 @dataclass
 class Check:
-    """One measured invariant. `detail` rows are printed under a failure, never summarised away."""
+    """One measured invariant. `detail` rows are printed under a failure, never summarised away.
+
+    ⛔ TWO QUESTIONS, TWO FIELDS. `ok` answers *"did it fail?"* and keeps the meaning every reader of
+    it already relies on (the golden replays assert it); `no_data` answers *"did it judge anything?"*
+    — a check whose population was empty sets it, and prints NO DATA, never PASS. A failure is never
+    hidden as no data (`verdict`)."""
 
     name: str
     ok: bool
@@ -48,6 +66,13 @@ class Check:
     expected: str
     fix: str
     detail: list[str] = field(default_factory=list)
+    no_data: bool = False
+
+    @property
+    def verdict(self) -> str:
+        if not self.ok:
+            return FAIL
+        return NO_DATA if self.no_data else PASS
 
 
 def _scalar(conn, statement: str, **params) -> int:
@@ -66,14 +91,42 @@ def check_every_emitted_event_is_routed(conn, org: str) -> Check:
     """
     n = _scalar(conn, "select count(*) from source_events "
                       "where org_id = :o and outcome = 'emitted' and route is null", o=org)
+    emitted = _scalar(conn, "select count(*) from source_events "
+                            "where org_id = :o and outcome = 'emitted'", o=org)
     return Check(
         name="every emitted event is routed",
-        ok=n == 0,
+        ok=n == 0, no_data=emitted == 0,
         measured=f"{n} emitted events with route IS NULL",
         expected="0 — an emitted event that is routed nowhere is never read",
         fix="UPDATE them to route='needs_extraction'; the writers are capture/parked/drain.py "
             "and capture/parked/recapture.py",
     )
+
+
+#: ⛔ `03` F24 (`yc2_w27_s17` M40.C3.L-logic.V0.U02): a lane that called in this many days and not in
+#: the window is SILENT, and the two LLM checks cannot vouch for it — NO DATA, named. Longer ago than
+#: this, a lane is retired rather than silent.
+SILENT_LANE_LOOKBACK_DAYS = 7
+
+
+def _silent_lanes(conn, org: str, *, hours: int) -> list:
+    """Lanes (`llm_costs.purpose`) that called in the lookback and not in the window, with the time
+    of each one's last call."""
+    return conn.execute(sql(
+        "select purpose, max(created_at) as last_call from llm_costs "
+        " where org_id = :o and created_at > now() - make_interval(days => :d) "
+        " group by 1 having max(created_at) <= now() - make_interval(hours => :h) "
+        " order by 1"), {"o": org, "d": SILENT_LANE_LOOKBACK_DAYS, "h": hours}).fetchall()
+
+
+def _silence(silent, hours: int) -> tuple[str, list[str]]:
+    """The measured-line suffix and the detail lines that name each silent lane."""
+    if not silent:
+        return "", []
+    return ("; no call in " + f"{hours}h from: "
+            + ", ".join(f"{r.purpose} (last {r.last_call:%Y-%m-%d})" for r in silent),
+            [f"{r.purpose}: no call in {hours}h — its last was {r.last_call:%Y-%m-%d %H:%M} UTC; "
+             "nothing here says it is healthy" for r in silent])
 
 
 def check_llm_failure_rate(conn, org: str, *, hours: int, ceiling_bp: int) -> Check:
@@ -88,15 +141,17 @@ def check_llm_failure_rate(conn, org: str, *, hours: int, ceiling_bp: int) -> Ch
         " where org_id = :o and created_at > now() - make_interval(hours => :h) "
         " group by 1 having count(*) >= 5 order by 2 desc"), {"o": org, "h": hours}).fetchall()
     bad = [(r.purpose, r.bad, r.n) for r in rows if r.n and (r.bad * 10000 // r.n) > ceiling_bp]
+    silent = _silent_lanes(conn, org, hours=hours)
+    suffix, silent_detail = _silence(silent, hours)
     return Check(
         name="no LLM lane is mostly failing",
-        ok=not bad,
+        ok=not bad, no_data=not rows or bool(silent),
         measured=(", ".join(f"{p}: {b}/{n}" for p, b, n in bad) if bad
-                  else f"{len(rows)} lane(s) under {ceiling_bp / 100:g}% in {hours}h"),
+                  else f"{len(rows)} lane(s) under {ceiling_bp / 100:g}% in {hours}h") + suffix,
         expected=f"every purpose under {ceiling_bp / 100:g}% failures",
         fix="read llm_costs.error for that purpose — a 400 means the request shape is wrong for "
             "the model, a truncation means the budget is too small for the question",
-        detail=[f"{p}: {b} of {n} failed" for p, b, n in bad],
+        detail=[f"{p}: {b} of {n} failed" for p, b, n in bad] + silent_detail,
     )
 
 
@@ -113,15 +168,20 @@ def check_no_silent_truncation(conn, org: str, *, hours: int) -> Check:
         " where org_id = :o and not success and created_at > now() - make_interval(hours => :h) "
         " group by 1 having count(*) >= 3"), {"o": org, "h": hours}).fetchall()
     pinned = [(r.purpose, r.lo, r.n) for r in rows if r.lo == r.hi and r.lo > 0]
+    calls = _scalar(conn, "select count(*) from llm_costs where org_id = :o "
+                          "and created_at > now() - make_interval(hours => :h)", o=org, h=hours)
+    silent = _silent_lanes(conn, org, hours=hours)
+    suffix, silent_detail = _silence(silent, hours)
     return Check(
         name="no lane is failing at a fixed token ceiling",
-        ok=not pinned,
+        ok=not pinned, no_data=calls == 0 or bool(silent),
         measured=(", ".join(f"{p}: {n} failures all at {lo} tokens" for p, lo, n in pinned)
-                  if pinned else "no failure cluster pinned to one output size"),
+                  if pinned else "no failure cluster pinned to one output size") + suffix,
         expected="failures spread across output sizes — a single size means truncation",
         fix="raise that lane's max_tokens, or ask it a smaller question; the error text will "
             "name the ceiling since LLMClient reads stop_reason",
-        detail=[f"{p}: {n} failures, every one at {lo} output tokens" for p, lo, n in pinned],
+        detail=[f"{p}: {n} failures, every one at {lo} output tokens" for p, lo, n in pinned]
+               + silent_detail,
     )
 
 
@@ -136,7 +196,7 @@ def check_parked_errors_are_readable(conn, org: str) -> Check:
                          "and refetch_last_error not like '%: %'", o=org)
     return Check(
         name="a stored failure says why",
-        ok=mute == 0,
+        ok=mute == 0, no_data=total == 0,
         measured=f"{mute} of {total} stored refetch errors carry no reason",
         expected="0 — an error nobody can read is an error nobody can fix",
         fix="capture/parked/refetch._readable_failure keeps the reason inside the 400-char cap",
@@ -152,7 +212,7 @@ def check_the_known_sender_set_is_not_empty(conn, org: str) -> Check:
                              "where e.org_id = :o and e.recipients is not null "
                              "and cardinality(e.recipients) > 0", o=org)
     if not outbound:
-        return Check(name="the tenant knows who it has written to", ok=True,
+        return Check(name="the tenant knows who it has written to", ok=True, no_data=True,
                      measured="no outbound mail captured yet",
                      expected="skipped — nothing has been sent, so nobody can be known",
                      fix="")
@@ -187,9 +247,14 @@ def check_a_selected_signal_can_be_carded(conn, org: str) -> Check:
                     " where s.org_id = :o and s.status = 'open' and k.state = 'expired' "
                     "   and k.resolved_at is null "
                     "   and k.created_at < now() - interval '2 hours'", o=org)
+    lapsed = _scalar(conn,
+                     "select count(*) from signals s "
+                     "  join cards k on k.signal_id = s.signal_id and k.org_id = s.org_id "
+                     " where s.org_id = :o and s.status = 'open' and k.state = 'expired' "
+                     "   and k.resolved_at is null", o=org)
     return Check(
         name="an open signal with a lapsed card gets rebuilt",
-        ok=stuck == 0,
+        ok=stuck == 0, no_data=lapsed == 0,
         measured=f"{stuck} open signals whose expired card has not been rebuilt in 2h",
         expected="0 — the pipeline selects these, so the claim and the write must accept them",
         fix="CardStore._REPLACEABLE must admit an expired, unresolved card; "
@@ -207,7 +272,7 @@ def check_cards_reach_the_app(conn, org: str) -> Check:
                            "and state in ('queued','surfaced') and 'app' = any(surfaces)", o=org)
     return Check(
         name="live cards reach a surface a person reads",
-        ok=live == 0 or on_app > 0,
+        ok=live == 0 or on_app > 0, no_data=live == 0,
         measured=f"{on_app} of {live} live cards carry the app surface",
         expected=">0 whenever any card is live — a card on no surface was not delivered",
         fix="deliver/card_builder._surfaces decides this; a card with no quotable finding keeps "
@@ -229,7 +294,7 @@ def check_the_change_gate_skips_what_did_not_change(conn, org: str) -> Check:
                            "where org_id = :o and sweep_at > now() - interval '6 hours'", o=org)
     name = "the change gate skips what did not change"
     if not sweeps:
-        return Check(name=name, ok=True, measured="no sweep in the last 6 hours",
+        return Check(name=name, ok=True, no_data=True, measured="no sweep in the last 6 hours",
                      expected="skipped — nothing to judge", fix="")
     looked = _scalar(conn, "select count(*) from reasoning_fingerprints where org_id = :o "
                            "and last_checked_at > now() - interval '6 hours'", o=org)
@@ -291,8 +356,10 @@ def check_nothing_was_deleted_at_the_gate(conn, org: str) -> Check:
         fix = ("the archiving gate runs and something still drops: walk one event with "
                "`capture/journey.event_journey` — every drop verdict should reach "
                "`capture/gate/gate._never_delete`, and only S0 `out_of_scope` may stay a drop")
+    captured = _scalar(conn, "select count(*) from source_events where org_id = :o "
+                             "and captured_at > now() - interval '24 hours'", o=org)
     return Check(
-        name=name, ok=deleted == 0,
+        name=name, ok=deleted == 0, no_data=captured == 0,
         measured=f"{deleted} object(s) captured in {window} were deleted at the gate",
         expected="0 — the gate archives what it calls noise; only S0's scope exclusion drops",
         fix=fix,
@@ -320,18 +387,20 @@ def check_we_are_never_the_subject(conn, org: str) -> Check:
     names = () if row is None else (
         row.name, row.company,
         f"{row.first_name} {row.last_name}" if row.first_name and row.last_name else None)
-    cards = [(r.card_id, r.business_subject) for r in conn.execute(sql(
+    open_cards = conn.execute(sql(
         "select card_id, business_subject from cards where org_id = :o and state = any(:open) "
         "   and business_subject is not null order by card_id"),
-        {"o": org, "open": list(_OPEN_CARD_STATES)})
-        if names_us(r.business_subject, us, names)]
-    threads = [(r.node_id, r.display_name) for r in conn.execute(sql(
+        {"o": org, "open": list(_OPEN_CARD_STATES)}).fetchall()
+    named_threads = conn.execute(sql(
         "select node_id, display_name from graph_nodes where org_id = :o and valid_to is null "
         "   and node_type = 'thread' and display_name like '%' || :dash || '%' order by node_id"),
-        {"o": org, "dash": _DASH})
-        if names_us(str(r.display_name).partition(_DASH)[0], us, names)]
+        {"o": org, "dash": _DASH}).fetchall()
+    cards = [(r.card_id, r.business_subject) for r in open_cards
+             if names_us(r.business_subject, us, names)]
+    threads = [(r.node_id, r.display_name) for r in named_threads
+               if names_us(str(r.display_name).partition(_DASH)[0], us, names)]
     return Check(
-        name=name, ok=not cards and not threads,
+        name=name, ok=not cards and not threads, no_data=not open_cards and not named_threads,
         measured=f"{len(cards)} open card(s) about us, {len(threads)} thread(s) named after us",
         expected="0 and 0 — after STEP-04's repair",
         fix=("before the repair this is the old defect: run `scripts/repair_self_identity.py` dry, "
@@ -397,8 +466,11 @@ def check_every_kept_event_entered_memory(conn, org: str) -> Check:
         "    on se.org_id = pe.org_id and se.event_id = pe.event_id and se.outcome = 'emitted' "
         " where pe.org_id = :o and pe.status = 'pending' and pe.reason_code = any(:reread)",
         o=org, reread=reread)
+    kept = _scalar(conn, "select count(*) from source_events where org_id = :o "
+                         "and outcome = any(:kept) and captured_at < now() - interval '1 day'",
+                   o=org, kept=list(KEPT_OUTCOMES))
     return Check(
-        name=name, ok=outside == 0 and meetings == 0,
+        name=name, ok=outside == 0 and meetings == 0, no_data=kept == 0,
         measured=(f"{outside} kept event(s) a day old outside memory, {meetings} calendar "
                   f"event(s) with no meeting; {waiting} kept mail(s) waiting for their re-read"),
         expected="0 and 0 — every kept event enters memory within a day (STEP-05)",
@@ -439,8 +511,9 @@ def check_every_situation_and_card_says_how_it_ended(conn, org: str) -> Check:
             by_type.setdefault(f"{e.domain}:{e.situation_type}", Counter())[e.end] += 1
     silent_types = {kind: counts for kind, counts in sorted(by_type.items())
                     if counts.get(CARDED, 0) == 0}
+    any_card = _scalar(conn, "select count(*) from cards where org_id = :o", o=org)
     return Check(
-        name=name, ok=not unrecorded and silent_cards == 0,
+        name=name, ok=not unrecorded and silent_cards == 0, no_data=not ends and any_card == 0,
         measured=(f"{len(unrecorded)} live situation(s) with no recorded end, {silent_cards} "
                   f"card(s) expired with no reason; {len(silent_types)} live situation type(s) "
                   "with no open card"),
@@ -543,8 +616,13 @@ def check_every_gmail_message_in_the_window_has_its_content(conn, org: str, *,
     if freed:
         detail.append(f"freed, not yet back or finished: {freed} — finish the backfill drain (a "
                       "TRUNCATED one again with a larger page, `?limit=100`), then --finish")
+    in_window = _scalar(
+        conn, "select count(*) from source_events where org_id = :o and source = 'gmail' "
+              "and object_type = 'email_message' and occurred_at >= "
+              "coalesce(cast(:now as timestamptz), now()) - make_interval(days => :days)",
+        o=org, now=now, days=days)
     return Check(
-        name=name, ok=not inside, measured=measured,
+        name=name, ok=not inside, no_data=in_window == 0, measured=measured,
         expected=("0 — each came back with its content and its old row is superseded, or says why "
                   "not: Gmail no longer lists it, it is older than the window, a scope exclusion"),
         fix=("STEP-08 §8.6: `scripts/resync_deleted_mail.py --org …` (the dry run) → Rohit names the "
@@ -631,7 +709,7 @@ def check_every_named_counterparty_has_a_file(conn, org: str) -> Check:
                     + (f"; some of the mail of {len(partly)} is outside its file" if partly
                        else ""))
     return Check(
-        name=name, ok=not unfiled and not misfiled, measured=measured,
+        name=name, ok=not unfiled and not misfiled, no_data=not ws.named, measured=measured,
         expected=("every named counterparty whose mail was read has that mail in a file, and every "
                   "introduction a connector made is in the file of the person introduced"),
         fix=("re-read the named counterparty's mail with the brief in force, in this order: "
@@ -685,7 +763,7 @@ def check_every_piece_of_work_has_one_file(conn, org: str) -> Check:
     brief = brief_for(conn, org)
     work = _work_lines(brief)
     if not work:
-        return Check(name=name, ok=True, expected=expected, fix=fix,
+        return Check(name=name, ok=True, no_data=True, expected=expected, fix=fix,
                      measured="not exercised — the brief names no piece of work in motion")
     ws = files_for(conn, org, now=datetime.now(timezone.utc), company_brief=brief)
     keys = {r.node_id: r.key for r in conn.execute(sql(
@@ -711,7 +789,8 @@ def check_every_piece_of_work_has_one_file(conn, org: str) -> Check:
     unfiled = [line for line in worked if not files[line.line_id]]
     split = [line for line in work if len(files[line.line_id]) > 1]
     return Check(
-        name=name, ok=not unfiled and not split, expected=expected, fix=fix,
+        name=name, ok=not unfiled and not split, no_data=not worked and not split,
+        expected=expected, fix=fix,
         measured=(f"{len(worked)} piece(s) of work in motion have mail — no file: {len(unfiled)}, "
                   f"split across files: {len(split)}"),
         detail=[f"{line.kind} · {line.address or line.domain} — \"{line.text}\": "
@@ -787,7 +866,7 @@ def check_every_normal_says_its_n(conn, org: str) -> Check:
     else:
         measured = f"{normals} normal(s) written; {len(wrong)} without its n or below {NORMAL_AT}"
     return Check(
-        name=name, ok=not wrong, measured=measured,
+        name=name, ok=not wrong, no_data=not normals, measured=measured,
         expected=(f"every normal says its n, and every n is {NORMAL_AT} or more — below it a number "
                   "is shown as what it is, never written as a habit"),
         fix=("a normal with no n was written before STEP-10 and the waiting pass retires it on its "
@@ -824,7 +903,8 @@ def check_the_expert_says_why_and_stays_in_budget(conn, org: str) -> Check:
         " where org_id = :o and reviewed_at > now() - interval '24 hours' "
         " group by status order by status"), {"o": org}).fetchall()
     if not rows:
-        return Check(name=name, ok=True, measured="no expert review in the last 24 hours",
+        return Check(name=name, ok=True, no_data=True,
+                     measured="no expert review in the last 24 hours",
                      expected="skipped — nothing to judge", fix="")
     total = sum(int(r.n) for r in rows)
     silent = _scalar(conn, "select count(*) from expert_reviews where org_id = :o "
@@ -927,6 +1007,13 @@ def main() -> int:
     ap.add_argument("--hours", type=int, default=24, help="window for the LLM checks")
     ap.add_argument("--max-failure-bp", type=int, default=2000,
                     help="failures per lane, in basis points (default 2000 = 20%%)")
+    # ⛔ STEP-17 §3.4 (`yc2_w27_s17` M40.C3.L-interface.V0.U03): "run after each deploy; its output
+    # is kept". A file, not stdout: `scripts/_db` prints its `[db]` lines to stdout first (03 F36).
+    ap.add_argument("--json", dest="json_path", default=None,
+                    help="also write every verdict to this file as JSON, pass or fail")
+    ap.add_argument("--require-data", action="store_true",
+                    help="exit 2 when no check failed but one judged nothing (NO DATA) — for the "
+                         "run a day after a deploy, when every lane should have run")
     args = ap.parse_args()
 
     url = resolve_database_url(args, purpose="pipeline health audit (read-only)")
@@ -940,17 +1027,45 @@ def main() -> int:
     finally:
         conn.close()
 
-    failed = [c for c in results if not c.ok]
+    failed = [c for c in results if c.verdict == FAIL]
+    no_data = [c for c in results if c.verdict == NO_DATA]
     for c in results:
-        print(f"{'PASS' if c.ok else 'FAIL'}  {c.name}")
+        print(f"{c.verdict:<7}  {c.name}")
         print(f"      measured: {c.measured}")
         if not c.ok:
             print(f"      expected: {c.expected}")
             for line in c.detail:
                 print(f"        · {line}")
             print(f"      fix:      {c.fix}")
-    print(f"\n{len(results) - len(failed)}/{len(results)} checks passed")
+    passed = len(results) - len(failed) - len(no_data)
+    print(f"\n{passed}/{len(results)} checks passed, {len(no_data)} with no data, "
+          f"{len(failed)} failed")
+    if args.json_path:
+        _keep(args.json_path, args.org, results, passed=passed, no_data=len(no_data),
+              failed=len(failed))
+    # ⛔ NO DATA is not a failure and not a pass: nothing was judged. It is printed and counted
+    # apart — never folded into "passed" — and exits 2 only when the run asked for data.
+    if args.require_data and not failed and no_data:
+        return 2
     return 1 if failed else 0
+
+
+def _keep(path: str, org: str, results: list[Check], *, passed: int, no_data: int,
+          failed: int) -> None:
+    """Every verdict, as JSON, to `path` — the record a deploy keeps."""
+    import json
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    Path(path).write_text(json.dumps({
+        "org": org,
+        "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "summary": {"checks": len(results), "passed": passed, "no_data": no_data,
+                    "failed": failed},
+        "checks": [{"name": c.name, "verdict": c.verdict, "measured": c.measured,
+                    "expected": c.expected, "fix": c.fix, "detail": list(c.detail)}
+                   for c in results],
+    }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":        # pragma: no cover

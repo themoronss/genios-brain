@@ -45,7 +45,18 @@ pytestmark = pytest.mark.pg
 #: still seeded at `NOW` (2026-08-20), so from 2026-10-04 — `NOW` plus the 45 days after which a
 #: situation goes dormant — the tenant's only situation was dormant, the live query reads
 #: `active`/`partial` only, and every run reasoned over nothing. The seed now uses `_AT` as well.
-_AT = datetime.now(timezone.utc)
+#: ⛔ Read when each test runs, never when this module is imported (`yc2_w27_s17`
+#: M41.C1.L-integration.V1.U02, `YC-II W27/03` F142): an instant taken at import is hours old by the
+#: time a long run — a sleeping laptop, a slow CI runner — reaches the test. Set by `_clock` when
+#: the module's first test starts: its module-scoped fixtures seed rows with these instants.
+_AT: datetime = None  # type: ignore[assignment]
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _clock():
+    global _AT
+    _AT = datetime.now(timezone.utc)
+
 
 _UNITS_WITH_FINDINGS = (
     "select r.reasoner_id, r.status, r.output from reasoning_reasoner_results r "
