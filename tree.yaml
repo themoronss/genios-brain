@@ -8333,6 +8333,19 @@ yc2_w27_s17:
                       artifact: "scripts/qa/database_skips.py"
                       verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py"
                       depends_on: []
+                    - id: M40.C4.L-contract.V0.U03
+                      what: >
+                        S17X-F1 (the STEP-17/18 crosscheck) — a log is a finished run only if it
+                        PASSED more than `PASSED_FLOOR` (19,000: the hermetic suite, which runs no
+                        database test, passed 18,013 at 7766a06a; the database suite 20,569 at
+                        c97155cd). pytest's collect-only line — `20689/20800 tests collected (111
+                        deselected)` — read as a finished run with no skips, exit 0, so a `--co` from
+                        $GITHUB_ENV or addopts turned the database job green after running nothing.
+                        A collection, `no tests ran`, a run that deselected everything and one narrowed
+                        to the floor or below are each exit 2, named.
+                      artifact: "scripts/qa/database_skips.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py"
+                      depends_on: [M40.C4.L-contract.V0.U01]
             - layer: integration
               levels:
                 - level: 1

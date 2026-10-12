@@ -12,6 +12,12 @@ database suite that skipped is one.
 Exit 0: none. Exit 1: some, each named. Exit 2: the log cannot answer — it is missing, it is not a
 finished pytest run, or it counts skips it did not report (run pytest with `-rs`). Reads a file and
 nothing else: no database, no network.
+
+A finished run is one that PASSED more than `PASSED_FLOOR` tests (`M40.C4.L-contract.V0.U03`,
+S17X-F1). pytest's collect-only line — `20689/20800 tests collected (111 deselected) in 31.20s` — read
+as a finished run with no skips, so a `--co` from `$GITHUB_ENV` or from `addopts` made the database
+job green after running nothing. A collection, a run where no test ran, one where every test was
+deselected, and one narrowed below the floor (a path, `-k`, `--deselect`) are each exit 2.
 """
 from __future__ import annotations
 
@@ -24,8 +30,18 @@ from pathlib import Path
 #: 2,088 says `GENIOS_TEST_DATABASE_URL`, "database" or "Postgres"; none of the other four does.
 FOR_WANT_OF_A_DATABASE = re.compile(r"GENIOS_TEST_DATABASE_URL|\bdatabase\b|postgres", re.I)
 
+#: A database run that passed this many tests or fewer is not the database suite — it was narrowed,
+#: collected only, or ran none of its database tests. Measured: the hermetic suite, which runs no
+#: database test, passed 18,013 at `7766a06a`; the database suite passed 20,569 at `c97155cd`
+#: (STEP-17 §2) and the whole suite 20,868 at `ae24ee22`. The floor sits between the two. Raise it as
+#: the suite grows; lower it only with the measurement that says why, never to make a run pass.
+PASSED_FLOOR = 19_000
+
 _SKIPPED = re.compile(r"^SKIPPED \[(\d+)\] (\S+?): (.*)$")
-_SUMMARY = re.compile(r"\b\d+ (?:passed|failed|errors?|skipped|xfailed|deselected)\b.* in [\d.]+s")
+_SUMMARY = re.compile(r"\b\d+ (?:passed|failed|errors?|skipped|xfailed|deselected)\b.* in [\d.]+s"
+                      r"|\b(?:no tests ran|collected)\b.* in [\d.]+s")
+_COLLECTED = re.compile(r"\bcollected\b")
+_PASSED = re.compile(r"\b(\d+) passed\b")
 _SKIP_COUNT = re.compile(r"\b(\d+) skipped\b")
 
 
@@ -35,6 +51,15 @@ def scan(text: str) -> tuple[int, str]:
     summary = next((line for line in reversed(lines) if _SUMMARY.search(line)), None)
     if summary is None:
         return 2, "no pytest summary line — this log is not a finished pytest run"
+    if _COLLECTED.search(summary):
+        return 2, (f"this log is a collection, not a run ({summary.strip()}) — `--co` came from "
+                   "the command, `addopts` or PYTEST_ADDOPTS, and nothing ran")
+    passed = _PASSED.search(summary)
+    passed = int(passed.group(1)) if passed else 0
+    if passed <= PASSED_FLOOR:
+        return 2, (f"the run passed {passed:,} test(s), not more than the floor of {PASSED_FLOOR:,} "
+                   f"({summary.strip()}) — no tests ran, or a path, -k, --deselect or second -m "
+                   "narrowed it: this log is not the database suite")
     skipped = [m for m in (_SKIPPED.match(line) for line in lines) if m]
     counted = _SKIP_COUNT.search(summary)
     if counted and int(counted.group(1)) and not skipped:
