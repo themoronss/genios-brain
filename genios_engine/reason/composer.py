@@ -325,10 +325,10 @@ def compose_deal_health(store, org_id: str, eval_time, snapshot_id, adj: dict | 
                 "subject_node_id, score, score_inputs, reason_code, evidence, play, eval_time, "
                 "config_snapshot_id, reasoning_run_id, reasoning_candidate_id, "
                 "reasoning_decision_hash, authority_expires_at, authority_pack_revision, "
-                "authority_binding_version) "
+                "authority_binding_version, output_lane, lane_reason) "
                 "values (:id,:o,:pack,:packv,:r,:v,:lv,:n,:s,cast(:si as jsonb),:rc,"
                 "cast(:ev as jsonb),:p,:et,"
-                ":cs,:rr,:candidate,:decision_hash,:expires,:pack_revision,1) "
+                ":cs,:rr,:candidate,:decision_hash,:expires,:pack_revision,1,:lane,:lane_reason) "
                 "on conflict (org_id,pack_id,pack_version,rule_id,subject_node_id) "
                 "where status='open' do nothing "
                 "returning signal_id"),
@@ -342,7 +342,12 @@ def compose_deal_health(store, org_id: str, eval_time, snapshot_id, adj: dict | 
                  "candidate": audit_bundle["output"]["selected_candidate_id"],
                  "decision_hash": audit_bundle["output"]["decision_hash"],
                  "expires": execution.decision.expires_at,
-                 "pack_revision": pack_authority_revision}).first()
+                 "pack_revision": pack_authority_revision,
+                 # The lane its composite decision was routed to, and why (`reason/output_lane`;
+                 # STEP-13 `yc2_w27_s13` M36.C1.L-data.V0.U04, `03` F186).
+                 "lane": (execution.decision.output_lane.value
+                          if execution.decision.output_lane is not None else None),
+                 "lane_reason": execution.decision.lane_reason}).first()
         if row:
             emitted += 1
             active.add(p["deal_id"])

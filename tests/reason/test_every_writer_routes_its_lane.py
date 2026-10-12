@@ -115,3 +115,28 @@ def test_native_publish_writes_the_lane(engine):
                                 publication=publication, eval_time=AT, config_snapshot_id="cs_2",
                                 pack_id="pk", pack_version="1", authority_pack_revision=1)
     assert _lane(engine, sid) == ("decision", "a decision at 7000 bp, at or above the 6000 bp floor")
+
+
+# ── U04 · the deal-health composer ──────────────────────────────────────────────────────────────
+@pytest.mark.pg
+def test_deal_health_the_composite_writes_its_decisions_lane(engine, monkeypatch):
+    from genios_engine.reason import composer as K
+    plan = {"deal_id": "deal_lane", "codes": ["cooling_deal"], "members": [],
+            "inputs": {"composite_member_ids": ["sig_m1"], "parent_reasoning_run_ids": ["run_m1"]},
+            "evidence": [{"field": "signal", "value": "cooling_deal"}]}
+    monkeypatch.setattr(K, "plan_composites", lambda *_a, **_kw: [plan])
+    decision = _decision(OutputLane.MONITOR, "a decision at 5000 bp is under the 6000 bp floor")
+    execution = SimpleNamespace(authorizes_delivery=True, decision=decision,
+                                selected_candidate=SimpleNamespace(play_id=K.COMPOSITE_PLAY,
+                                                                   utility_bp=7_000))
+    monkeypatch.setattr(K, "_reason_composite", lambda **_kw: execution)
+    monkeypatch.setattr(K, "persist_execution", lambda **_kw: {
+        "run": {"run_id": "run_dh"}, "output": {"selected_candidate_id": "cand_dh", "decision_hash": "h"}})
+    out = K.compose_deal_health(SimpleNamespace(engine=_without_references()), ORG, AT, "cfg_lane",
+                                adj={}, reasoning_store=SimpleNamespace(), graph_version=1,
+                                pack_authority_revision=1)
+    assert out["emitted"] == 1
+    with engine.connect() as c:
+        sid = c.execute(text("select signal_id from signals where org_id = :o and rule_id = :r"),
+                        {"o": ORG, "r": K.COMPOSITE_RULE_ID}).scalar()
+    assert _lane(engine, sid) == ("monitor", "a decision at 5000 bp is under the 6000 bp floor")
