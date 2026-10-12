@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_080, (
+    assert r["statements"] == 3_078, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -448,6 +448,12 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,079 → 3,080 by yc2_w27_s18/M48.C1.L-data.V0.U02 (STEP-18 B4, a review object waits for
     # review): one UPDATE, `feedback/publisher._rest_for_review` — the weekly road's review object rests at
     # `human_review`. A literal at its own call.
+    # ⛔ MOVED 3,080 → 3,078 by yc2_w27_s18/M48.C2.L-data.V0.U04 (STEP-18 B12), measured per file with
+    # NO SQL removed: `context/runner._pull`'s SELECT was counted THREE times — the whole `"select …" +
+    # PENDING_FROM + "order by …"`, its inner sum and its column literal, each a node `_statements`
+    # walks. Its columns are now ONE constant, `ROAD_COLUMNS`, read by `_pull` and by the new
+    # `_rows_for_rebuild` (over `ROADS_FROM`), and each select is a Name-led sum the counter does not
+    # render: 3 → 1 for the drain, 0 for the rebuild. The instrument's over-count is `03` F100's kind.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

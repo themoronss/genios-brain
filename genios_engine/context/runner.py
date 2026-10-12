@@ -262,6 +262,24 @@ _L2_OWN_EXTRACTIONS = ("select event_id from l1_extraction_results "
                        "where org_id=:o and profile_id is null")
 
 
+#: THE COLUMNS THE DRAIN READS FOR EACH EVENT — one spelling, selected by `_pull` over what memory
+#: does not hold yet and by `_rows_for_rebuild` over everything (STEP-18 B12): a rebuild that read
+#: other columns would replay other memory.
+ROAD_COLUMNS = (
+            "select se.event_id, se.source, se.object_type, se.outcome, "
+            "se.actor->>'email' as sender, se.actor->>'name' as sender_name, se.recipients, "
+            "se.occurred_at, se.source_object_id, se.triage_lane, se.internal_kind, "
+            "se.parent_object_id, se.domain_hints, "
+            "q.qes_confidence_bp, q.qes_signal_types, q.qes_domain_hints, "
+            "(q.qes_extraction_ref is not null) as has_signal, "
+            "xr.output as qes_output, "
+            "own.output as own_output, "
+            # AN ARCHIVE'S PAYLOAD NEVER LEAVES THE DATABASE ON THIS ROAD: its memory is the
+            # ledger's own columns, with no decryption (STEP-05 §8.3; `03` F37, F57).
+            "case when se.outcome = 'archived' then null else rp.enc_content end as enc_content, "
+            "pc.clean_text as prepared_text ")
+
+
 def _pull(store: GraphStore, org_id: str, limit: int):
     """Pull every kept event that has a road into memory (STEP-05, `context/memory_lanes`).
 
@@ -284,27 +302,33 @@ def _pull(store: GraphStore, org_id: str, limit: int):
     """
     with store.engine.connect() as c:
         return c.execute(text(
-            "select se.event_id, se.source, se.object_type, se.outcome, "
-            "se.actor->>'email' as sender, se.actor->>'name' as sender_name, se.recipients, "
-            "se.occurred_at, se.source_object_id, se.triage_lane, se.internal_kind, "
-            "se.parent_object_id, se.domain_hints, "
-            "q.qes_confidence_bp, q.qes_signal_types, q.qes_domain_hints, "
-            "(q.qes_extraction_ref is not null) as has_signal, "
-            "xr.output as qes_output, "
-            "own.output as own_output, "
-            # AN ARCHIVE'S PAYLOAD NEVER LEAVES THE DATABASE ON THIS ROAD: its memory is the
-            # ledger's own columns, with no decryption (STEP-05 §8.3; `03` F37, F57).
-            "case when se.outcome = 'archived' then null else rp.enc_content end as enc_content, "
-            "pc.clean_text as prepared_text "
-            + PENDING_FROM +
+            ROAD_COLUMNS + PENDING_FROM +
             "order by coalesce(se.triage_lane, 'P3') asc, se.occurred_at asc "
             "limit :lim"), {**pending_params(org_id), "lim": limit}).fetchall()
 
 
-#: WHAT IS KEPT AND NOT YET IN MEMORY — the drain's question, in ONE spelling: `_pull` selects its
-#: columns over it and `api/routes._pending_count` counts it, so the progress bar and the drain cannot
-#: disagree (they did twice before; see `_L2_OWN_EXTRACTIONS`). Bound by `pending_params`.
-PENDING_FROM = (
+def _rows_for_rebuild(store: GraphStore, org_id: str):
+    """EVERY kept event of the tenant that has a road into memory, oldest first, with the drain's
+    own columns — what `scripts/rebuild_graph.py` replays through `_process_one`.
+
+    ⛔ STEP-18 B12 (`yc2_w27_s18` M48.C2.L-data.V0.U04). The rebuild pulled its rows with a query
+    of its own: `outcome = 'emitted'` only, and none of `ROAD_COLUMNS` — so a mail that had reached
+    memory through a signal arrived with no `qes_output` and was held
+    `held_missing_qes_extraction`, and a rebuild restored the calendar and none of the mail; the
+    archived and below-floor roads STEP-05 opened were never replayed at all. This is `_pull` over
+    the same roads (`ROADS_FROM`) without the one question a rebuild must not ask — whether memory
+    already holds the event — and with no limit: a rebuild replays the whole ledger.
+    """
+    with store.engine.connect() as c:
+        return c.execute(text(
+            ROAD_COLUMNS + ROADS_FROM +
+            "order by se.occurred_at asc, se.event_id asc"), pending_params(org_id)).fetchall()
+
+
+#: WHAT IS KEPT AND HAS A ROAD INTO MEMORY — every event `memory_lanes.lane_for` gives one, held or
+#: not. `_rows_for_rebuild` reads it whole; `PENDING_FROM` narrows it to what memory does not hold yet.
+#: Bound by `pending_params`.
+ROADS_FROM = (
             "from source_events se "
             # SCOPED, like the `prepared_content` join on the very next line. This one was not, and the
             # two are the same shape of lookup on the same event: a payload belongs to a tenant,
@@ -344,7 +368,12 @@ PENDING_FROM = (
             "and (q.qes_extraction_ref is not null "
             "     or (se.source || ':' || se.object_type) = any(:structured) "
             "     or se.outcome = 'archived' "
-            "     or (se.source <> :screen and own.output is not null)) "
+            "     or (se.source <> :screen and own.output is not null)) ")
+
+#: WHAT IS KEPT AND NOT YET IN MEMORY — the drain's question, in ONE spelling: `_pull` selects its
+#: columns over it and `api/routes._pending_count` counts it, so the progress bar and the drain cannot
+#: disagree (they did twice before; see `_L2_OWN_EXTRACTIONS`). Bound by `pending_params`.
+PENDING_FROM = ROADS_FROM + (
             # RESTORED. The QES rewrite of this query dropped this clause and left the constant,
             # its eighteen-line rationale and the other consumer (`api/routes._pending_count`)
             # standing — so the drain and the progress bar disagreed again, which is the exact
