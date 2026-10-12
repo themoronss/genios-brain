@@ -48,6 +48,9 @@ class _Conn:
     def __init__(self, rows): self._rows = rows
     def execute(self, *_a, **_k): return self
     def fetchall(self): return self._rows
+    # ⛔ A SAVEPOINT PER READ since `03` F120 (yc2_w27_s18 M48.C2.L-data.V0.U07): a real connection
+    # rolls a failed read back to it; this double has nothing to roll back.
+    def begin_nested(self): return contextlib.nullcontext()
 
 
 def _window(*runs: _Run) -> WindowCoverage:
