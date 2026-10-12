@@ -18,7 +18,7 @@
 -- only the three — runs against this schema unchanged (`tests/platform/test_the_code_can_always_be_
 -- rolled_back.py`). The old rule is found by what it says, not by the name Postgres gave it, because
 -- an unnamed CHECK's name is the server's choice; the new one is named, so the next change can say
--- which it means. Idempotent: a second run finds the old rule gone and the named one present.
+-- which it means. Idempotent: a second run finds the old rule gone and replaces the named one.
 
 do $$
 declare
@@ -38,26 +38,20 @@ begin
     end loop;
 end $$;
 
-do $$
-begin
-    if not exists (select 1 from pg_constraint
-                    where conrelid = 'public.card_feedback_verdicts'::regclass
-                      and conname = 'card_feedback_verdicts_reason_vocabulary') then
-        alter table card_feedback_verdicts add constraint card_feedback_verdicts_reason_vocabulary
-            check (cause <> 'wrong' or
-                   (reason is not null and reason in (
-                       'not_relevant', 'wrong_facts', 'bad_timing',
-                       'misread_source', 'stale_data', 'wrong_subject', 'bad_link',
-                       'bad_reasoning', 'wrong_playbook', 'wrong_person', 'badly_written')));
-    end if;
-    if not exists (select 1 from pg_constraint
-                    where conrelid = 'public.card_feedback_revisions'::regclass
-                      and conname = 'card_feedback_revisions_reason_vocabulary') then
-        alter table card_feedback_revisions add constraint card_feedback_revisions_reason_vocabulary
-            check (cause <> 'wrong' or
-                   (reason is not null and reason in (
-                       'not_relevant', 'wrong_facts', 'bad_timing',
-                       'misread_source', 'stale_data', 'wrong_subject', 'bad_link',
-                       'bad_reasoning', 'wrong_playbook', 'wrong_person', 'badly_written')));
-    end if;
-end $$;
+-- The house pattern (`tests/platform/test_migrations_apply.py`): `add constraint` is not idempotent
+-- in Postgres, so each is preceded by its own `drop constraint if exists`.
+alter table card_feedback_verdicts drop constraint if exists card_feedback_verdicts_reason_vocabulary;
+alter table card_feedback_verdicts add constraint card_feedback_verdicts_reason_vocabulary
+    check (cause <> 'wrong' or
+           (reason is not null and reason in (
+               'not_relevant', 'wrong_facts', 'bad_timing',
+               'misread_source', 'stale_data', 'wrong_subject', 'bad_link',
+               'bad_reasoning', 'wrong_playbook', 'wrong_person', 'badly_written')));
+
+alter table card_feedback_revisions drop constraint if exists card_feedback_revisions_reason_vocabulary;
+alter table card_feedback_revisions add constraint card_feedback_revisions_reason_vocabulary
+    check (cause <> 'wrong' or
+           (reason is not null and reason in (
+               'not_relevant', 'wrong_facts', 'bad_timing',
+               'misread_source', 'stale_data', 'wrong_subject', 'bad_link',
+               'bad_reasoning', 'wrong_playbook', 'wrong_person', 'badly_written')));
