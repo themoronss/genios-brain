@@ -68,7 +68,9 @@ def test_every_switch_says_what_it_does():
     """An operator who can see a switch and not its effect assumes it turned on everything."""
     for layer, kind, name in script.PLAN:
         key = (layer, "semantic" if kind == "semantic" else name)
-        assert script.EFFECT.get(key), f"{layer} {name} has no stated effect"
+        # ⛔ RESTATED by yc2_w27_s18/M49.C2.L-interface.V0.U06 (`03` F135): the line an operator reads
+        # is `effect_of`'s — a Layer 3 domain's comes from `platform/l3_activation.EFFECTS`.
+        assert script.effect_of(*key), f"{layer} {name} has no stated effect"
 
 
 def test_the_two_that_spend_say_so():
