@@ -1,9 +1,12 @@
 """The golden set against a model — the ideal reader's recordings, or the real model, outside CI.
 
     python scripts/golden_eval.py --dry-run                      # what a live run would cost; no DB
+    python scripts/golden_eval.py --dry-run --site expert        # …the expert's calls alone (06 D50)
     GENIOS_TEST_DATABASE_URL=… python scripts/golden_eval.py --record [F03 F07 …]
     GENIOS_TEST_DATABASE_URL=… GENIOS_GOLDEN_LIVE_KEY=sk-… python scripts/golden_eval.py \\
         --live --model claude-haiku-4-5-20251001 --spend-ok [--record] [F03 …]
+    GENIOS_TEST_DATABASE_URL=… GENIOS_GOLDEN_LIVE_KEY=sk-… python scripts/golden_eval.py \\
+        --live --site expert --spend-ok [F03 …]                  # the expert on its own model
 
 `speedrun008/YC-II W27/` STEP-01 §3.9.
 
@@ -17,6 +20,14 @@
               Model spend is the founder's call (06-DECISIONS D12c, default: no spend), so it
               needs BOTH a key in GENIOS_GOLDEN_LIVE_KEY and `--spend-ok`. With `--record` it also
               replaces the cassettes, which then say `live:<model>`.
+
+  --site      One model site only (a `tests/replays/harness.SITE_MARKERS` name). The dry run counts
+              that site's recorded calls and prices them on its own model — the expert's is its tier's,
+              `claude-sonnet-5` (`06` D7) — and the live pass asks the real model that site's prompts
+              alone, every other site answered by the ideal reader (no spend). STEP-12 M33.C3
+              (`06` D50): the expert's judgment on the real model, its answers and its board kept
+              BESIDE the authored ones (`scores/<date>-<model>-<site>/`) and compared case by case —
+              never instead of them, so `--record` is refused with `--site`.
 
 The live model is handed to the chain through the same doors the recorded one is
 (`tests/replays/model_sites.DOORS`); the runner's transport refusal still applies to every other
@@ -36,9 +47,35 @@ sys.path.insert(0, str(REPO))
 
 SCORES = REPO / "speedrun008" / "YC-II W27" / "scores"
 LIVE_KEY_ENV = "GENIOS_GOLDEN_LIVE_KEY"
-#: List price per million tokens (input, output), for the dry-run estimate. Haiku 4.5 is the model
-#: production runs every site on (`Settings.anthropic_model`).
-PRICES = {"claude-haiku-4-5-20251001": (1.0, 5.0)}
+#: The model a run is priced and asked on when none is named: Haiku 4.5, the model production runs
+#: every site on (`Settings.anthropic_model`) — except a site with a tier of its own (`SITE_TIERS`).
+DEFAULT_MODEL = "claude-haiku-4-5-20251001"
+#: A cassette site whose production model is its tier's, not the default: the expert's (R-7, T2).
+SITE_TIERS = {"expert": "R-7"}
+
+
+def price_per_mtok(model: str) -> tuple[float, float]:
+    """List price per million tokens (input, output) — the product's one table
+    (`platform/metrics.LLM_PRICE`), never a second copy here."""
+    from genios_engine.platform.metrics import llm_price
+    price_in, price_out = llm_price(model)
+    return round(price_in * 1e6, 6), round(price_out * 1e6, 6)
+
+
+def model_for(site: str | None, model: str | None) -> str:
+    """The named model, else the site's own tier's model, else the default."""
+    if model:
+        return model
+    if site in SITE_TIERS:
+        from genios_engine.reason.bundle.sites import tier_for
+        from genios_engine.reason.llm_sites import tier_model
+        return tier_model(tier_for(SITE_TIERS[site]))
+    return DEFAULT_MODEL
+
+
+def sites() -> tuple[str, ...]:
+    from tests.replays.harness import SITE_MARKERS
+    return tuple(site for site, _module, _marker in SITE_MARKERS)
 
 
 def _cases(ids: list[str]):
@@ -52,9 +89,9 @@ def _cases(ids: list[str]):
     return cases
 
 
-def dry_run(ids: list[str], model: str) -> int:
+def dry_run(ids: list[str], model: str, site: str | None = None) -> int:
     from tests.replays import cassettes
-    price_in, price_out = PRICES.get(model, PRICES["claude-haiku-4-5-20251001"])
+    price_in, price_out = price_per_mtok(model)
     total_calls = total_in = total_out = 0
     print(f"{'case':<5} {'source':<16} {'calls':>5} {'tokens in':>10} {'tokens out':>10}  title")
     for case in _cases(ids):
@@ -63,15 +100,19 @@ def dry_run(ids: list[str], model: str) -> int:
             source = cassettes.source_of(case)
         except AssertionError:
             answers, source = {}, "NO CASSETTE"
+        if site is not None:
+            answers = {k: a for k, a in answers.items() if a.get("site") == site}
         tin = sum(int(a.get("input_tokens") or 0) for a in answers.values())
         tout = sum(int(a.get("output_tokens") or 0) for a in answers.values())
         total_calls, total_in, total_out = total_calls + len(answers), total_in + tin, total_out + tout
         print(f"{case.case_id:<5} {source:<16} {len(answers):>5} {tin:>10} {tout:>10}  "
               f"{case.title[:60]}")
     cost = total_in / 1e6 * price_in + total_out / 1e6 * price_out
-    print(f"\n{total_calls} model calls · {total_in} tokens in · {total_out} tokens out · "
-          f"≈ ${cost:.2f} for one live pass on {model} at list price (the recorded token counts "
-          "are the ideal reader's estimates). Nothing was run.")
+    which = f"{site} " if site is not None else ""
+    print(f"\n{total_calls} {which}model calls · {total_in} tokens in · {total_out} tokens out · "
+          f"≈ ${cost:.2f} for one live pass on {model} at list price (${price_in:g} / ${price_out:g} "
+          "a million tokens in / out; the recorded token counts are the ideal reader's estimates). "
+          "Nothing was run.")
     return 0
 
 
@@ -86,6 +127,24 @@ def record(ids: list[str], model=None, source=None) -> list:
         rows.append((case, run, answers, mark))
         print(f"{case.case_id} {mark.verdict:<15} {len(answers):>3} answers  {mark.reason[:100]}")
     return rows
+
+
+class SiteModel:
+    """One site's prompts to `live`, every other site's to `rest` — `LLMClient`'s `.model` / `.call()`.
+    The live pass of one site: the real model judges, and nothing else it would ask is spent."""
+
+    def __init__(self, site: str, live, rest) -> None:
+        self.site, self._live, self._rest = site, live, rest
+        self.model = getattr(live, "model", "")
+
+    @staticmethod
+    def content_hash(material: str) -> str:
+        from genios_engine.context.llm.client import LLMClient
+        return LLMClient.content_hash(material)
+
+    def call(self, prompt: str, **kw):
+        from tests.replays.harness import identify_site
+        return (self._live if identify_site(prompt) == self.site else self._rest).call(prompt, **kw)
 
 
 class LiveModel:
@@ -106,33 +165,46 @@ class LiveModel:
         return self._call(self._client, prompt, max_tokens=max_tokens, **kw)
 
 
-def live(ids: list[str], model: str, keep: bool) -> int:
+def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int:
     from tests.replays import cassettes
     from tests.replays.engine_runner import pin_scratch_database, run_case
     from tests.replays.harness import CassetteRecorder
+    from tests.replays.ideal_reader import IdealReader
     from tests.replays.marking import FAIL, NOT_EXERCISED, PASS, cards_about, judge
 
     pin_scratch_database()
     key = os.environ[LIVE_KEY_ENV]
     rows, tokens_in, tokens_out = [], 0, 0
+    beside = SCORES / f"{date.today().isoformat()}-{model}-{site}" if site is not None else None
     for case in _cases(ids):
-        recorder = CassetteRecorder(LiveModel(key, model))
+        inner = (SiteModel(site, LiveModel(key, model), IdealReader(case)) if site is not None
+                 else LiveModel(key, model))
+        recorder = CassetteRecorder(inner)
         run = run_case(case, recorder)
         mark = judge(case, run)
-        tokens_in += sum(int(a["input_tokens"] or 0) for a in recorder.cassette.values())
-        tokens_out += sum(int(a["output_tokens"] or 0) for a in recorder.cassette.values())
-        if keep:
+        spent = [a for a in recorder.cassette.values() if site is None or a.get("site") == site]
+        tokens_in += sum(int(a["input_tokens"] or 0) for a in spent)
+        tokens_out += sum(int(a["output_tokens"] or 0) for a in spent)
+        if beside is not None:
+            # BESIDE, never instead: the live answers and the verdict they reach, kept apart from the
+            # authored cassettes, and the authored verdict replayed for the comparison.
+            beside.mkdir(parents=True, exist_ok=True)
+            (beside / f"{case.case_id}.json").write_text(
+                json.dumps(recorder.cassette, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+            recorded = judge(case, cassettes.replay(case))
+        elif keep:
             cassettes.save(case, recorder.cassette, source=f"{cassettes.LIVE_PREFIX}{model}")
         expected = sum(len(cards_about(run, e.about)) for e in case.cards if e.min >= 1)
         rows.append({"case": case.case_id, "kind": case.kind, "verdict": mark.verdict,
                      "lost_at": mark.lost_at, "cards": len(run.cards),
                      "cards_about_the_subject": expected,
-                     "forbidden": [list(h) for h in mark.forbidden_hits], "reason": mark.reason})
+                     "forbidden": [list(h) for h in mark.forbidden_hits], "reason": mark.reason,
+                     **({"authored_verdict": recorded.verdict} if beside is not None else {})})
         print(f"{case.case_id} {mark.verdict:<15} {mark.reason[:100]}")
     detect = [r for r in rows if r["kind"] == "must_detect" and r["verdict"] != "not_expressible"]
     cards = sum(r["cards"] for r in rows)
-    price_in, price_out = PRICES.get(model, (0.0, 0.0))
-    card = {"model": model, "date": date.today().isoformat(), "cases": rows,
+    price_in, price_out = price_per_mtok(model)
+    card = {"model": model, "site": site, "date": date.today().isoformat(), "cases": rows,
             "recall": round(sum(r["verdict"] == PASS for r in detect) / len(detect), 3)
             if detect else None,
             "precision": round(sum(r["cards_about_the_subject"] for r in rows) / cards, 3)
@@ -142,8 +214,10 @@ def live(ids: list[str], model: str, keep: bool) -> int:
             "forbidden_outputs": sum(len(r["forbidden"]) for r in rows),
             "tokens_in": tokens_in, "tokens_out": tokens_out,
             "cost_usd": round(tokens_in / 1e6 * price_in + tokens_out / 1e6 * price_out, 4)}
+    if beside is not None:
+        card["moved"] = [r["case"] for r in rows if r["verdict"] != r["authored_verdict"]]
     SCORES.mkdir(parents=True, exist_ok=True)
-    out = SCORES / f"{card['date']}-{model}.json"
+    out = SCORES / f"{card['date']}-{model}{'-' + site if site is not None else ''}.json"
     out.write_text(json.dumps(card, indent=1) + "\n", encoding="utf-8")
     print(f"\nrecall {card['recall']} · precision {card['precision']} · forbidden "
           f"{card['forbidden_outputs']} · ${card['cost_usd']} → {out}")
@@ -157,7 +231,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--record", action="store_true",
                     help="(re)write cassettes: with --live the live model's, alone the ideal "
                          "reader's")
-    ap.add_argument("--model", default="claude-haiku-4-5-20251001")
+    ap.add_argument("--model", default=None,
+                    help=f"the model (default: the site's own tier's, else {DEFAULT_MODEL})")
+    ap.add_argument("--site", default=None,
+                    help="one model site only — a tests/replays/harness.SITE_MARKERS name")
     ap.add_argument("--spend-ok", action="store_true",
                     help="confirm that a live run may spend model money (D12c)")
     ap.add_argument("cases", nargs="*", help="case ids (default: every case)")
@@ -165,15 +242,21 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.dry_run and (args.live or args.record):
         ap.error("--dry-run runs nothing; it cannot be combined with --live or --record")
+    if args.site is not None and args.site not in sites():
+        ap.error(f"no such site: {args.site!r} — one of {', '.join(sites())}")
+    if args.site is not None and args.record:
+        ap.error("--site's live pass is kept BESIDE the authored cassettes, never instead (06 D50): "
+                 "drop --record")
+    model = model_for(args.site, args.model)
     if args.dry_run:
-        return dry_run(args.cases, args.model)
+        return dry_run(args.cases, model, args.site)
     if args.live:
         if not os.environ.get(LIVE_KEY_ENV) or not args.spend_ok:
             print(f"--live spends model money: it needs a key in {LIVE_KEY_ENV} and --spend-ok "
                   "(06-DECISIONS D12c — the default is no spend). Run --dry-run for the "
                   "estimate.", file=sys.stderr)
             return 2
-        return live(args.cases, args.model, args.record)
+        return live(args.cases, model, args.record, args.site)
     if args.record:
         from tests.replays.engine_runner import pin_scratch_database
         pin_scratch_database()
