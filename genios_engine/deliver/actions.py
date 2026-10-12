@@ -15,6 +15,7 @@ from genios_engine.platform.ids import new_id
 from genios_engine.reason.authority import (
     AUTHORITATIVE_SIGNAL_JOINS,
     AUTHORITATIVE_SIGNAL_PREDICATE,
+    QUESTION_SIGNAL_JOINS,
 )
 
 #: Buttons that mean a human started doing the work, as opposed to `wrong` (this was never a
@@ -29,7 +30,16 @@ _CLAIMING_ACTIONS = frozenset({"run_play", "do_it_myself"})
 
 from genios_engine.contracts.learning_attribution import ALL_REASONS as _ALL_WRONG_REASONS
 
-BUTTONS = {"run_play", "do_it_myself", "snooze", "wrong", "requeue"}
+BUTTONS = {"run_play", "do_it_myself", "snooze", "wrong", "requeue", "answer"}
+
+# STEP-13 · YOUR ANSWER (`yc2_w27_s13` M36.C2.L-interface.V4.U06; `06` D60). A held file asks one question on
+# its own card (`deliver/pipeline.question_card`), and `answer` — with your words — answers it: kept once on
+# the file (`context/founder_questions.answer`), the card resolved, its signal acted. The file's dossier
+# shows the answer, its fingerprint moves, and the next sweep reviews the file with your answer in front of
+# the expert. A question card offers `answer` and the deferrals, nothing else; no other card is a question.
+QUESTION_OFFERS = frozenset({"answer", "snooze", "requeue"})
+#: A founder's answer is a sentence or a paragraph, not a document.
+MAX_ANSWER_CHARS = 4000
 # ⛔ THE ONE VOCABULARY, IMPORTED — never a fourth hand-written copy of it.
 #
 # This held three literals while the card offered three, and widening one without the other gives
@@ -58,7 +68,8 @@ def snooze_until(option: str | None, eval_time: datetime, custom=None) -> dateti
 def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, action: str,
                   reason: str | None = None, snooze_option: str | None = None,
                   custom_until=None, eval_time: datetime | None = None,
-                  allow_any_assignee: bool = False, surface: str | None = None) -> dict:
+                  allow_any_assignee: bool = False, surface: str | None = None,
+                  words: str | None = None) -> dict:
     """Land a button press. Returns the resulting card state. Orphan actions (no card) are a
     counted no-op (V-09), never an exception loop."""
     eval_time = eval_time or datetime.now(timezone.utc)
@@ -67,6 +78,12 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
     if action == "wrong" and reason not in WRONG_REASONS:
         return {"ok": False, "error": "invalid_wrong_reason",
                 "allowed_reasons": sorted(WRONG_REASONS)}
+    if action == "answer":
+        words = str(words or "").strip()
+        if not words:
+            return {"ok": False, "error": "answer_says_nothing"}
+        if len(words) > MAX_ANSWER_CHARS:
+            return {"ok": False, "error": "answer_too_long", "max_chars": MAX_ANSWER_CHARS}
     del card_store  # production actions commit through the graph/database transaction below
     allowed = {
         "run_play": ("queued", "surfaced", "snoozed", "delivered"),
@@ -74,6 +91,7 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
         "wrong": ("queued", "surfaced", "snoozed", "delivered"),
         "snooze": ("queued", "surfaced", "delivered"),
         "requeue": ("snoozed", "surfaced", "delivered"),
+        "answer": ("queued", "surfaced", "snoozed", "delivered"),
     }
     with graph.engine.begin() as c:
         # All graph writers lock this tenant row when bumping the graph version. Holding a shared
@@ -102,8 +120,30 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
                 " for update of k, s"),
                 {"card": card_id, "o": org_id, "authority_time": eval_time,
                  "situation_builder": SITUATION_CARD_BUILDER}).mappings().first()
+        question_id = None
+        if card is None:
+            # A QUESTION CARD (deliver/store.QUESTION_CARD_SQL): proved by its own question's authority —
+            # the run that asked it, the signal bound to that run, the question still open — and nothing
+            # else. Its question row is locked with the card: an answer is kept once.
+            from genios_engine.deliver.store import QUESTION_CARD_BUILDER, QUESTION_CARD_SQL
+            card = c.execute(text(
+                "select k.card_id, k.signal_id, k.org_id, k.assignee, k.state, k.expires_at, "
+                "question_asked.question_id "
+                "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+                + QUESTION_SIGNAL_JOINS +
+                " where k.card_id=:card and k.org_id=:o and s.status='open' "
+                "and k.expires_at > :authority_time and " + QUESTION_CARD_SQL +
+                " for update of k, s, question_asked for share of question_rr, question_ro"),
+                {"card": card_id, "o": org_id, "authority_time": eval_time,
+                 "question_builder": QUESTION_CARD_BUILDER}).mappings().first()
+            if card is not None:
+                question_id = card["question_id"]
         if card is None:
             return {"ok": False, "error": "stale_or_unauthorized_card", "code": "V-09"}
+        if question_id is not None and action not in QUESTION_OFFERS:
+            return {"ok": False, "error": "not_offered", "offered": sorted(QUESTION_OFFERS)}
+        if question_id is None and action == "answer":
+            return {"ok": False, "error": "not_a_question"}
         if (not allow_any_assignee and card["assignee"] is not None
                 and card["assignee"] != actor):
             return {"ok": False, "error": "assigned_to_different_seat"}
@@ -111,8 +151,11 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             return {"ok": False, "error": "card_not_actionable"}
 
         state = "acted" if action in {"run_play", "do_it_myself", "wrong"} \
-            else ("snoozed" if action == "snooze" else "queued")
+            else ("snoozed" if action == "snooze" else ("resolved" if action == "answer" else "queued"))
         detail = {"reason": reason} if reason else {}
+        if action == "answer":
+            # Your words are kept on the question, once — never copied into the event log.
+            detail = {"question_id": question_id}
         snooze_at = None
         if action == "snooze":
             snooze_at = min(snooze_until(snooze_option, eval_time, custom_until),
@@ -128,6 +171,16 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             "where card_id=:card and org_id=:o"),
             {"state": state, "snooze": snooze_at, "card": card_id, "o": org_id})
         if state == "acted":
+            c.execute(text(
+                "update signals set status='acted' where signal_id=:signal and org_id=:o"),
+                {"signal": card["signal_id"], "o": org_id})
+        if action == "answer":
+            from genios_engine.context import founder_questions
+
+            founder_questions.answer(c, org_id=org_id, question_id=question_id, words=words, by=actor,
+                                     at=eval_time)
+            c.execute(text("update cards set resolved_at=:at where card_id=:card and org_id=:o"),
+                      {"at": eval_time, "card": card_id, "o": org_id})
             c.execute(text(
                 "update signals set status='acted' where signal_id=:signal and org_id=:o"),
                 {"signal": card["signal_id"], "o": org_id})
@@ -179,4 +232,5 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
     if action == "snooze":
         return {"ok": True, "state": state, "snooze_until": snooze_at.isoformat()}
     return {"ok": True, "state": state, "action": action,
-            **({"reason": reason} if action == "wrong" else {})}
+            **({"reason": reason} if action == "wrong" else {}),
+            **({"question_id": question_id} if action == "answer" else {})}

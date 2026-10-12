@@ -5484,6 +5484,7 @@ class CardAction(BaseModel):
     snooze_option: str | None = None        # 4h | tomorrow_09 | 3d | custom
     custom_until: str | None = None
     surface: str | None = None              # web | desktop | extension | mobile — where it was pressed
+    words: str | None = None                # STEP-13: your answer, for 'answer' on a question card
 
 
 @router.post("/cards/{card_id}/action")
@@ -5503,7 +5504,8 @@ def card_action(card_id: str, body: CardAction,
                         custom_until=body.custom_until,
                         # a member's reach was proved above; the actor stays their address
                         allow_any_assignee=ctx.sees_org_queue or ctx.is_member,
-                        surface=body.surface if body.surface in _CARD_SURFACES else None)
+                        surface=body.surface if body.surface in _CARD_SURFACES else None,
+                        words=body.words)
     if not out.get("ok"):
         status = 403 if out.get("error") == "assigned_to_different_seat" else 422
         raise HTTPException(status, out)

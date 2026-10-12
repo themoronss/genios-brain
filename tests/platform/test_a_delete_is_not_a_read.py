@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_099, (
+    assert r["statements"] == 3_106, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -452,6 +452,10 @@ def test_the_statement_count_did_NOT_move():
     # check of the question's authority (five renders: three literals around `QUESTION_SIGNAL_JOINS`
     # and `QUESTION_SIGNAL_PREDICATE`), the card read's third door (four) and the queue's (five). U05, in
     # `deliver/pipeline._QUESTIONS_WITHOUT_CARDS`, the open questions with no live card (five).
+    # ⛔ MOVED 3,099 → 3,106 by yc2_w27_s13/M36.C2.L-interface.V4.U06 (your answer): in
+    # `deliver/actions.ingest_action`, the question card's door (five renders around
+    # `QUESTION_SIGNAL_JOINS` and `QUESTION_CARD_SQL`), the answered card's `resolved_at` (an UPDATE), and
+    # its signal acted (an UPDATE, the same words as the decision path's own, at its own call). Seven.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

@@ -114,10 +114,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "⛔ RETIRED WITH R-6, 2026-10-11 (`06` D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02). Its one caller was the sweep's R-6 consult, which wrote a `situation_interpretations` row per compiled situation per pass ahead of the change gate (`03` F141) — an empty proposal on every tenant, because R-6's feature was off everywhere. The sweep no longer consults R-6; the table and its rows stay, for history and for `/reset`",
         "MOVES WHEN the module is deleted with R-6's own tests in a clean-up — ⛔ never by re-wiring it: the expert pass (STEP-12) reviews the file instead"),
 
-    "founder_questions.answer": (
-        "STEP-13 (`yc2_w27_s13` M36.C2.L-data.V1.U02): the founder's answer, kept once — built bottom-up, ahead of its caller, the card's Answer action (`deliver/actions`, M36.C2.L-interface.V4.U06)",
-        "MOVES WHEN M36.C2.L-interface.V4.U06 lands — this entry goes in that unit's own commit"),
-
     "projections.node_projections": (
         "*'Every lens one entity appears in.'* One test caller. The multi-lens view of a node, and every live reader asks for one lens at a time",
         "MOVES WHEN a surface shows one entity across lenses — an entity page is the obvious caller and does not exist"),
