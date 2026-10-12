@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import random
 import re
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -439,6 +440,82 @@ def test_a_forty_kilobyte_document_scans_inside_its_budget() -> None:
     assert best_ms < 100, f"40KB scanned in {best_ms:.0f}ms, budget is 100ms"
 
 
+#: The circuit breaker's bound, per hostile input — see the test below for why it is not 10ms.
+LINEAR_BOUND_MS = 250
+
+
+def _fastest_ms(matcher, text: str, *, bound_ms: float, tries: int = 3,
+                clock=time.perf_counter) -> float:
+    """The fastest of up to `tries` scans, stopping at the first one inside the bound.
+
+    ⛔ `YC-II W27/03` F156 (`yc2_w27_s17` M41.C2.L-logic.V0.U01). One sample per input was read as
+    the pattern's speed: on the push of `68ab62f3` a CI runner stalled and `currency_token` "took
+    299ms on 40KB" — measured here at 1.1ms, linear, and the next two pushes passed it. A stall is
+    the machine; backtracking is the pattern, and it is slow EVERY time. So the minimum of three
+    — the rule the lane's own budget test beside it already follows — and a pattern that
+    backtracks still fails, on all three."""
+    best = float("inf")
+    for _ in range(tries):
+        started = clock()
+        list(matcher.finditer(text))
+        best = min(best, (clock() - started) * 1000)
+        if best < bound_ms:
+            break
+    return best
+
+
+class _Scheduled:
+    """A matcher whose scans take the scheduled milliseconds on a fake clock."""
+
+    def __init__(self, schedule_ms):
+        self.schedule = list(schedule_ms)
+        self.now = 0.0
+        self.calls = 0
+
+    def clock(self) -> float:
+        return self.now
+
+    def finditer(self, text):
+        self.now += self.schedule[self.calls] / 1000
+        self.calls += 1
+        return iter(())
+
+
+def _assert_linear(token_type: str, matcher, hostile: str, *, clock=time.perf_counter) -> None:
+    elapsed_ms = _fastest_ms(matcher, hostile, bound_ms=LINEAR_BOUND_MS, clock=clock)
+    assert elapsed_ms < LINEAR_BOUND_MS, (
+        f"{token_type} rule took {elapsed_ms:.0f}ms on 40KB of {hostile[:8]!r}, at best of "
+        "three — that is a backtracking pattern, not a slow machine")
+
+
+def test_the_breaker_still_trips_on_a_pattern_slow_every_time() -> None:
+    """The negative control for the row below: its own assertion, handed a matcher that takes
+    three seconds on every scan, must fail."""
+    backtracking = _Scheduled([2_990, 2_900, 3_010])
+    with pytest.raises(AssertionError, match="backtracking pattern"):
+        _assert_linear("(a+)+b", backtracking, "a" * 40_960, clock=backtracking.clock)
+
+
+def test_one_stalled_sample_is_not_read_as_backtracking() -> None:
+    stalled = _Scheduled([299, 1.1, 1.1])
+    assert _fastest_ms(stalled, "x", bound_ms=LINEAR_BOUND_MS, clock=stalled.clock) < 2
+    assert stalled.calls == 2, "it stops at the first scan inside the bound"
+
+
+def test_a_pattern_slow_every_time_still_fails() -> None:
+    backtracking = _Scheduled([2_990, 2_900, 3_010])
+    assert _fastest_ms(backtracking, "x", bound_ms=LINEAR_BOUND_MS,
+                       clock=backtracking.clock) == pytest.approx(2_900)
+    assert backtracking.calls == 3
+
+
+def test_a_healthy_pattern_is_scanned_once() -> None:
+    quick = _Scheduled([1.0, 1.0, 1.0])
+    assert _fastest_ms(quick, "x", bound_ms=LINEAR_BOUND_MS, clock=quick.clock) == \
+        pytest.approx(1.0)
+    assert quick.calls == 1
+
+
 @pytest.mark.parametrize("token_type,matcher", _COMPILED_RULES,
                          ids=[f"{i}:{t}" for i, (t, _) in enumerate(_COMPILED_RULES)])
 def test_every_shipped_rule_runs_linearly_on_a_forty_kilobyte_adversarial_input(
@@ -457,12 +534,7 @@ def test_every_shipped_rule_runs_linearly_on_a_forty_kilobyte_adversarial_input(
                     ("Oct 1 " * 6_827)[:40_960], "a.b-" * 10_240, "a_b-" * 10_240,
                     "a@b." * 10_240, "+91 " * 10_240, "9:0" * 13_654,
                     "www.a-" * 6_827, "x.pdf" * 8_192):
-        started = time.perf_counter()
-        list(matcher.finditer(hostile))
-        elapsed_ms = (time.perf_counter() - started) * 1000
-        assert elapsed_ms < 250, (
-            f"{token_type} rule took {elapsed_ms:.0f}ms on 40KB of {hostile[:8]!r} — "
-            "that is a backtracking pattern, not a slow machine")
+        _assert_linear(token_type, matcher, hostile)
 
 
 # --------------------------------------------------------------------------------------------
@@ -481,3 +553,15 @@ def test_the_structural_lane_reads_no_clock_and_carries_no_float() -> None:
                 for needle in banned
                 if needle in path.read_text()]
     assert offences == []
+
+
+def test_the_row_holds_every_hostile_input_to_the_breaker(monkeypatch) -> None:
+    """The parametrized row hands each of its twelve hostile inputs to `_assert_linear` — so the
+    negative control above is a control for the row, not for a helper the row stopped calling."""
+    seen: list[str] = []
+    monkeypatch.setattr(sys.modules[__name__], "_assert_linear",
+                        lambda token_type, matcher, hostile, **_: seen.append(hostile[:8]))
+    token_type, matcher = _COMPILED_RULES[0]
+    test_every_shipped_rule_runs_linearly_on_a_forty_kilobyte_adversarial_input(token_type,
+                                                                                matcher)
+    assert len(seen) == 12 and len(set(seen)) == 12, seen
