@@ -212,3 +212,38 @@ SQL removed) → 3,077 (U05) → 3,078 (U06) → 3,079 (U11): net 0, each move n
 ⛔ before the deploy, production's `GENIOS_JWT_SECRET` must be set (s18-F11 — Harsh); after it, the
 read-only probe of s18-F9 (published behaviour entries of the counterparty's latency) and s18-F3's
 `learning_objects` state count. Nothing here arms calibration or changes a model prompt.
+
+## 9 · Verify
+
+Added 12 Oct with the crosscheck's follow-ups (`yc2_w27_s17` M40.C5.L-logic.V0.U02, S17X-G2): STEP-18
+is `status: built` in `tree.yaml`, so the plan-folder guard holds it as built, and a built step says
+how to verify it. Each line is a unit's own verify (`yc2_w27_s18`), run on a database created fresh
+on the second scratch server; the database suite is the whole proof.
+
+```
+# a fresh database first:  docker exec genios-yc2w27-pg2 psql -U postgres -c "create database s18_verify"
+export GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify
+
+# M48.C1 — your verdicts are kept (B3 0210, B4)
+.venv/bin/python -m pytest -q tests/feedback/test_every_wrong_reason_is_kept.py tests/feedback/test_every_feedback_reason_is_stored_pg.py tests/platform/test_the_code_can_always_be_rolled_back.py
+.venv/bin/python -m pytest -q tests/feedback/test_a_review_object_waits_for_review.py tests/api/test_a_proposal_is_written_once.py tests/feedback/test_no_transition_takes_an_edge_the_contract_forbids.py
+
+# M48.C2 — memory: B21, B12, B13 (0211), F120, F65, s18-F1
+.venv/bin/python -m pytest -q tests/context/lifecycle/test_a_decimal_answer_is_audited.py
+.venv/bin/python -m pytest -q tests/context/test_a_rebuild_reads_every_road.py tests/context/test_memory_lanes.py tests/test_rebuild_graph_rebuilds_the_mail.py
+.venv/bin/python -m pytest -q tests/test_migration_0211_a_followup_names_its_observation.py tests/test_a_followup_has_one_observation_pg.py tests/test_screen_memory_batch_pg.py
+.venv/bin/python -m pytest -q tests/capture/coverage/test_a_failed_coverage_read_loses_itself_alone.py tests/test_every_read_closes_its_connection.py
+
+# M48.C3 — a wipe takes its claims (B20)
+.venv/bin/python -m pytest -q tests/test_every_mail_wipe_takes_its_fingerprints.py tests/test_a_disconnect_takes_its_fingerprints.py
+
+# M49 — B25, F117, B11, F97, F128, F135, B7
+.venv/bin/python -m pytest -q tests/capture/test_a_calendar_event_buys_no_relevance_call.py tests/capture/test_a_company_brief_sender_is_kept_and_read.py tests/capture/connectors/test_a_bounce_is_read_whole_on_the_fast_path.py
+.venv/bin/python -m pytest -q tests/packs/brains/test_behavior_distill.py tests/platform/test_a_brief_read_in_a_transaction_sees_it.py tests/context/test_one_list_of_public_mail_hosts.py tests/test_activate_tenant_names_every_effect.py
+.venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py tests/test_migrate_read_only.py
+
+# and the whole database suite, as CI's database job runs it
+.venv/bin/python -m pytest -q -m "not golden" -rfEs > pytest.log 2>&1; python scripts/qa/database_skips.py pytest.log
+```
+
+On production, each bug closes on its own probe after the deploy (`08`).

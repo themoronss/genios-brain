@@ -8408,6 +8408,17 @@ yc2_w27_s17:
                       artifact: "tests/test_the_plan_folder_is_consistent.py"
                       verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py"
                       depends_on: []
+                    - id: M40.C5.L-logic.V0.U02
+                      what: >
+                        S17X-G2 — a step is built when its file's name says so OR when tree.yaml says
+                        so of its block (`yc2_w27_s<NN>: status: built`). STEP-17 and STEP-18 are
+                        built in the tree and named TO BUILD on disk, so the guard held neither;
+                        STEP-18 had no Verify section at all, and is given one first (§9, the units'
+                        own verifies). A block that says anything else (STEP-13's
+                        approved_in_progress) leaves a TO BUILD step unbuilt.
+                      artifact: "tests/test_the_plan_folder_is_consistent.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py"
+                      depends_on: [M40.C5.L-logic.V0.U01]
     - id: M41
       name: Tests that tell the truth (the findings 03 gave STEP-17)
       ships: >
