@@ -8048,6 +8048,18 @@ yc2_w27_s13:
                       depends_on: [M36.C2.L-contract.V0.U01]
             - layer: interface
               levels:
+                - level: 2
+                  units:
+                    - id: M36.C2.L-interface.V2.U09
+                      what: >
+                        The question card's own door in the card store (added 12 Oct, found while building U05:
+                        every reader of a card re-proves the DECISION's authority, so a question card written
+                        to `cards` would reach nobody): the insert holds the question's authority, and the
+                        queue (`/cards`) and the card read (`/cards/{id}`) show a question card while its
+                        question is open — never through the decision's door, never a decision through it.
+                      artifact: "genios_engine/deliver/store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_a_question_card_has_its_door.py"
+                      depends_on: [M36.C2.L-logic.V1.U04]
                 - level: 3
                   units:
                     - id: M36.C2.L-interface.V3.U05
@@ -8058,7 +8070,7 @@ yc2_w27_s13:
                         decision retires it).
                       artifact: "genios_engine/deliver/pipeline.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_a_question_card.py"
-                      depends_on: [M36.C2.L-logic.V1.U04, M36.C2.L-integration.V2.U03]
+                      depends_on: [M36.C2.L-interface.V2.U09, M36.C2.L-integration.V2.U03]
                 - level: 4
                   units:
                     - id: M36.C2.L-interface.V4.U06

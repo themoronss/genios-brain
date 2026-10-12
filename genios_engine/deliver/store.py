@@ -12,6 +12,8 @@ from genios_engine.reason.authority import (
     AUTHORITATIVE_SCORE_SQL,
     AUTHORITATIVE_SIGNAL_JOINS,
     AUTHORITATIVE_SIGNAL_PREDICATE,
+    QUESTION_SIGNAL_JOINS,
+    QUESTION_SIGNAL_PREDICATE,
     authority_time,
 )
 
@@ -25,6 +27,16 @@ SITUATION_CARD_BUILDER = "team.emit.v1"
 SITUATION_CARD_SQL = (
     "k.builder_version = :situation_builder and s.reasoning_run_id is null "
     "and s.rule_id = s.capability_id and split_part(s.capability_id, '.', 1) in ('team', 'verify')")
+
+# STEP-13 · A QUESTION CARD'S OWN DOOR (`yc2_w27_s13` M36.C2.L-interface.V2.U09). A held file asks the founder
+# one question on its own card (`06` D60), and its signal is authorised AS A QUESTION
+# (`reason/authority.QUESTION_SIGNAL_PREDICATE`): the expert's live run that ended insufficient, the signal
+# bound to it, the question that run asked still open. Every door above re-proves a DECISION's authority — a
+# selected move a question never has — so a question card written to `cards` reached nobody. It is read
+# through this door, joined with `QUESTION_SIGNAL_JOINS`, and only a card its builder wrote passes: never a
+# decision through it, never a question through the decision's.
+QUESTION_CARD_BUILDER = "founder_question.v1"
+QUESTION_CARD_SQL = "k.builder_version = :question_builder and " + QUESTION_SIGNAL_PREDICATE
 
 # CardStore — persistence + the queue state machine (§5.12). Every transition writes a timestamped
 # card_event with an enumerated cause; nothing moves without one. One card per signal (enforced by
@@ -176,6 +188,31 @@ class CardStore:
             if (not str(copy.get("headline") or "").strip()
                     or not str(copy.get("situation") or "").strip()):
                 return None, False, False
+            question = card.get("_question_authority") or {}
+            if card.get("builder_version") == QUESTION_CARD_BUILDER or question:
+                # A QUESTION CARD, held to its question's own authority — and only to it: a card that
+                # names the question builder without that authority, or carries it under another
+                # builder, is refused, as a decision card is without its own.
+                if not question or card.get("builder_version") != QUESTION_CARD_BUILDER:
+                    return None, False, False
+                c.execute(text(
+                    "select graph_version from graph_versions where org_id=:o for share"),
+                    {"o": card["org_id"]})
+                held = c.execute(text(
+                    "select 1 from signals s " + QUESTION_SIGNAL_JOINS +
+                    " where s.org_id=:o and s.signal_id=:signal and s.status='open' "
+                    "and s.reasoning_run_id=:run and s.reasoning_decision_hash=:decision "
+                    "and s.config_snapshot_id=:cfg and question_asked.question_id=:question "
+                    "and " + QUESTION_SIGNAL_PREDICATE +
+                    " for share of s, question_rr, question_ro, question_asked"),
+                    {"o": card["org_id"], "signal": card["signal_id"],
+                     "run": question.get("reasoning_run_id"),
+                     "decision": question.get("reasoning_decision_hash"),
+                     "cfg": question.get("config_snapshot_id"),
+                     "question": question.get("question_id"),
+                     "authority_time": as_of}).first()
+                if held is None:
+                    return None, False, False
             authority = card.get("_authority") or {}
             if authority:
                 c.execute(text(
@@ -407,6 +444,19 @@ class CardStore:
                     "and k.expires_at > :authority_time and " + SITUATION_CARD_SQL),
                     {"id": card_id, "o": org_id, "authority_time": now,
                      "situation_builder": SITUATION_CARD_BUILDER}).mappings().first()
+            if r is None:
+                # A question card (QUESTION_CARD_SQL): live while the question its run asked is open,
+                # its signal bound to that run and the run's authority unexpired.
+                r = c.execute(text(
+                    "select k.*, s.candidate_steps, s.rejected_candidates, "
+                    "s.uncertainty as decision_uncertainty "
+                    "from cards k join signals s on s.signal_id=k.signal_id "
+                    "and s.org_id=k.org_id " + QUESTION_SIGNAL_JOINS +
+                    " where k.card_id=:id and k.org_id=:o and s.status='open' "
+                    "and k.state in ('queued','surfaced','snoozed','claimed','delivered') "
+                    "and k.expires_at > :authority_time and " + QUESTION_CARD_SQL),
+                    {"id": card_id, "o": org_id, "authority_time": now,
+                     "question_builder": QUESTION_CARD_BUILDER}).mappings().first()
         return dict(r) if r else None
 
     def get_by_signal(self, signal_id: str) -> dict | None:
@@ -486,9 +536,16 @@ class CardStore:
               "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at "
               "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id"
               + common + "and " + SITUATION_CARD_SQL)
+        # THE THIRD DOOR, for question cards only (QUESTION_CARD_SQL): the same states, surface, expiry
+        # and seat-visibility clauses, the question's own authority in place of the decision's.
+        qq = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, s.subject_node_id, "
+              "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at "
+              "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+              + QUESTION_SIGNAL_JOINS + common + "and " + QUESTION_CARD_SQL)
         params = {"o": org_id, "states": list(states),
                   "authority_time": datetime.now(timezone.utc),
-                  "situation_builder": SITUATION_CARD_BUILDER}
+                  "situation_builder": SITUATION_CARD_BUILDER,
+                  "question_builder": QUESTION_CARD_BUILDER}
         if not admin and assignee is not None and strict_seat:
             # A MEMBER SEAT sees what is routed to it and nothing else (deliver/seat_access.py):
             # its assignment and its declared responsibilities. An unassigned card sits in the
@@ -496,6 +553,7 @@ class CardStore:
             from genios_engine.deliver.seat_access import SEAT_REACH_SQL
             q += " and " + SEAT_REACH_SQL
             sq += " and " + SEAT_REACH_SQL
+            qq += " and " + SEAT_REACH_SQL
             params["seat"] = assignee
         elif not admin and assignee is not None:
             # A seat- or agent-bound credential sees loops routed to IT plus the org's UNCLAIMED
@@ -516,10 +574,12 @@ class CardStore:
                      "and cr.card_id=k.card_id and cr.seat_id=:a))")
             q += reach
             sq += reach
+            qq += reach
             params["a"] = assignee
         q += (" order by selected_rc.final_utility_bp desc, k.created_at asc, k.card_id "
               "for share of k,s,rr,ro,selected_rc,rcap,authority_ctx,authority_cfg,authority_pack")
         sq += " order by k.score desc, k.created_at asc, k.card_id for share of k,s"
+        qq += " order by k.score desc, k.created_at asc, k.card_id for share of k,s"
         with self._engine.begin() as c:
             # Impression and the exact authority projection it describes share one transaction.
             # Graph/config writers and card claims cannot interleave a revocation after SELECT but
@@ -528,10 +588,12 @@ class CardStore:
                       {"o": org_id})
             rows = [dict(r) for r in c.execute(text(q), params).mappings()]
             situation_rows = [dict(r) for r in c.execute(text(sq), params).mappings()]
-            if situation_rows:
+            question_rows = [dict(r) for r in c.execute(text(qq), params).mappings()]
+            if situation_rows or question_rows:
                 # One ranked list: a stable sort by score keeps the L4 utility order (score is
-                # its monotone rounding) and slots situation cards in by their own score.
-                rows = sorted(rows + situation_rows, key=lambda r: -(r.get("score") or 0))
+                # its monotone rounding) and slots situation and question cards in by their own score.
+                rows = sorted(rows + situation_rows + question_rows,
+                              key=lambda r: -(r.get("score") or 0))
             if rows and record_impressions:
                 c.execute(text(
                     "insert into card_events (id,card_id,org_id,kind,cause,actor_id) "
