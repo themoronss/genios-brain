@@ -355,7 +355,9 @@ def _prep(conn, org_id: str, seat_id: str, email: str | None, meeting_id: str, n
             if att is None:
                 return None
             content = P.compose(P.read(conn, org_id=org_id, att=att, email=email, now=now, seat_id=seat_id), now=now)
-            return (content or {}).get("body") or None
+            body = (content or {}).get("body") or ""
+            # The prep's lines, one sentence apart — a material's words keep no line breaks.
+            return "; ".join(line.strip() for line in body.splitlines() if line.strip()) or None
     except Exception:      # noqa: BLE001 — one meeting's prep is never the brief
         return None
 

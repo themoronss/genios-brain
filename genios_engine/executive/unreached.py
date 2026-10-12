@@ -187,17 +187,11 @@ UNREACHED: dict[str, tuple[str, str]] = {
     # STEP-15 builds bottom-up (tree `yc2_w27_s15`): the morning brief's parts land before the composer that calls
     # them. Each entry is deleted in the commit that wires its caller, and the pinned set in
     # `tests/test_the_executive_says_what_it_does_not_call.py` moves with it, said there.
-    "morning_order.order": (
-        "STEP-15 M44.C3.L-logic.V0.U01, built bottom-up: the day ordered by code from the expert's own "
-        "appraisals — today's five with what is always in, then the sections, each capped and its cut "
-        "counted. Its one caller is the template brief, the next unit; until it lands nothing orders a day.",
-        "MOVES WHEN M44.C3.L-logic.V1.U03 (`executive/morning_template`) lands: every brief is ordered there"),
-
-    "morning_order.fit": (
-        "STEP-15 M44.C3.L-logic.V0.U01, built bottom-up: the brief kept inside its six hundred words by "
-        "cutting from the last section back, never an always-in item, the cut counted. Its one caller is the "
-        "template brief, the next unit; until it lands no brief is fitted to its budget.",
-        "MOVES WHEN M44.C3.L-logic.V1.U03 (`executive/morning_template`) lands: every brief is fitted there"),
+    "morning_template.template_brief": (
+        "STEP-15 M44.C3.L-logic.V1.U03, built bottom-up: the day in code's words — ordered, fitted to its six "
+        "hundred words, every line with its id and sources, the one line saying what needs you or that nothing "
+        "does. Its one caller is the composer, M44.C4.L-integration.V1.U02; until it lands no brief is written.",
+        "MOVES WHEN M44.C4.L-integration.V1.U02 (`executive/morning.compose`) lands: every brief is written there"),
 
     "morning_day.read_day": (
         "STEP-15 M44.C3.L-logic.V0.U02, built bottom-up: every item of one seat's day — each file's checked "

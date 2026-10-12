@@ -20,8 +20,9 @@ and this module is what it is made of:
     check's verdict on a written line: KEPT, or GIVEN BACK its template words with the reason;
   * the BRIEF is one seat's morning: its org, seat, local date and timezone, the instant it was read as of, the
     one line, the lines in the sections' order, the items they came from, how it was written (the template,
-    written, or escalated — and why), the model, tier and cost, what each section cut, the digest of the day's
-    material — and its word budget: 600 words, three minutes at 200 a minute.
+    written, or escalated — and why), the model, tier and cost, what each section cut, how far today's five
+    flexed for what is always in, the digest of the day's material — and its word budget: 600 words, three
+    minutes at 200 a minute.
 
 AN EMPTY MORNING is a brief with no line outside `changed`: nothing open, asked, due or watched. Only then does
 it say so (s15-F2).
@@ -363,6 +364,9 @@ class Brief:
     cut: tuple[tuple[str, int], ...]
     material_digest: str
     version: str = BRIEF_VERSION
+    #: How far today's five flexed: a meeting today and a dated deadline or promise within 48 hours are always
+    #: in, so today may hold more than its cap — by exactly this many, said.
+    flexed: int = 0
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "lines", tuple(self.lines))
@@ -390,10 +394,15 @@ class Brief:
         order = [SECTIONS.index(l.section) for l in self.lines]
         if order != sorted(order):
             raise ValueError("a brief's lines keep the sections' order")
+        if not isinstance(self.flexed, int) or self.flexed < 0:
+            raise ValueError("how far today flexed is a count, never negative")
         for section in SECTIONS:
             n = sum(1 for l in self.lines if l.section == section)
-            if n > CAPS[section]:
+            if n > CAPS[section] + (self.flexed if section == TODAY else 0):
                 raise ValueError(f"{section} holds {n} lines, past its cap of {CAPS[section]}")
+            if section == TODAY and self.flexed != max(0, n - CAPS[TODAY]):
+                raise ValueError(f"today holds {n} lines: it flexed by {max(0, n - CAPS[TODAY])}, "
+                                 f"and says {self.flexed}")
         ids = [l.line_id for l in self.lines]
         if len(ids) != len(set(ids)):
             raise ValueError("a line stands once in a brief")
@@ -428,7 +437,7 @@ class Brief:
                 "lines": [l.as_mapping() for l in self.lines], "items": [i.as_mapping() for i in self.items],
                 "written_by": self.written_by, "why": self.why, "model": self.model, "tier": self.tier,
                 "cost_micro_usd": self.cost_micro_usd, "cut": [list(c) for c in self.cut],
-                "material_digest": self.material_digest}
+                "material_digest": self.material_digest, "flexed": self.flexed}
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "Brief":
@@ -441,7 +450,7 @@ class Brief:
                    tier=raw.get("tier"), cost_micro_usd=int(raw.get("cost_micro_usd") or 0),
                    cut=tuple((s, int(n)) for s, n in raw.get("cut") or ()),
                    material_digest=str(raw.get("material_digest") or ""),
-                   version=str(raw.get("version") or BRIEF_VERSION))
+                   version=str(raw.get("version") or BRIEF_VERSION), flexed=int(raw.get("flexed") or 0))
 
 
 __all__ = ["ASKED", "BRIEF_VERSION", "BY", "Brief", "CAPS", "CHANGE", "CHANGED", "DECISION", "DESK", "ESCALATED",

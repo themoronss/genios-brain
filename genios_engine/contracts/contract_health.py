@@ -113,13 +113,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "⛔ MOVES WHEN somebody who knows whether `snapshot` is supposed to consult it writes one "
         "line above it. Flagged in `HANDOFF-CODING-AGENT.md` rather than guessed at here"),
 
-    # STEP-15 builds bottom-up (tree `yc2_w27_s15`): the brief's contract lands before the readers that
-    # mint its ids. Each entry is deleted in the commit that wires its caller.
-    "morning_brief.line_id_for": (
-        "STEP-15 M44.C1.L-contract.V0.U01: a line's id, its place in one seat's day — built before the "
-        "template that mints it, bottom-up",
-        "MOVES WITH M44.C3.L-logic.V1.U03 (`executive/morning_template`), which mints every line"),
-
 }
 
 

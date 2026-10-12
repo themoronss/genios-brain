@@ -185,6 +185,23 @@ def test_the_lines_keep_the_sections_order_and_caps():
         _brief(lines=out_of_order, items=(watch, items[0]))
 
 
+def test_today_flexes_past_five_only_by_what_it_says():
+    items = tuple(_item(about=f"node_{i}") for i in range(7))
+    seven = tuple(_line(i, words=f"Line {n}.") for n, i in enumerate(items))
+    brief = _brief(lines=seven, items=items, flexed=2)
+    assert B.Brief.from_mapping(brief.as_mapping()).flexed == 2
+    with pytest.raises(ValueError, match="cap"):
+        _brief(lines=seven, items=items, flexed=1)
+    with pytest.raises(ValueError, match="flexed by 0, and says 1"):
+        _brief(flexed=1)                                    # one line today has not flexed
+    with pytest.raises(ValueError, match="never negative"):
+        _brief(flexed=-1)
+    watch = tuple(_item(kind=B.WATCHED, about=f"w{i}") for i in range(5))
+    with pytest.raises(ValueError, match="watching holds 4 lines, past its cap"):    # only today flexes
+        _brief(lines=seven + tuple(_line(w, section=B.WATCHING, words="w.") for w in watch[:4]),
+               items=items + watch[:4], flexed=2)
+
+
 def test_a_brief_over_its_word_budget_is_refused():
     item = _item()
     long = " ".join(["word"] * (B.WORD_BUDGET + 1))

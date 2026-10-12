@@ -98,7 +98,7 @@ def test_every_declared_entry_is_still_unreached():
 #: ⛔ STEP-15 (`yc2_w27_s15`) builds the morning brief bottom-up, so for a few commits a part lands before the
 #: composer that calls it. Each is declared in `executive/unreached.UNREACHED` and named here, and leaves both
 #: in the commit that wires its caller — the ten above are the layer's own and do not move.
-STEP_15_BUILDING = frozenset({"morning_order.order", "morning_order.fit", "morning_day.read_day", "morning_store.keep",
+STEP_15_BUILDING = frozenset({"morning_template.template_brief", "morning_day.read_day", "morning_store.keep",
                               "morning_store.last_before", "morning_store.mark_line"})
 
 
