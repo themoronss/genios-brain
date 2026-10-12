@@ -7857,6 +7857,15 @@ yc2_w27_s13:
                       artifact: "genios_engine/deliver/card_builder.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_an_expert_card_is_checked.py"
                       depends_on: [M35.C3.L-integration.V2.U02]
+                    - id: M35.C3.L-interface.V3.U07
+                      what: >
+                        One file shows what the expert's check let stand (added 12 Oct by the STEP-13 crosscheck,
+                        X28): `GET /v1/workstreams/{file_id}` serves `says` — the checked card words, only when a
+                        check ran and did not refuse — and `check` (fate, why, the question, each line's
+                        verdict); the review's raw words are never served.
+                      artifact: "genios_engine/api/workstream_routes.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/api/test_a_review_shows_what_its_check_let_stand.py tests/api/test_a_file_shows_its_review.py"
+                      depends_on: [M35.C3.L-integration.V1.U01]
             - layer: integration
               levels:
                 - level: 1
@@ -7957,6 +7966,17 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/llm_decision_maker.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/test_the_llm_decider_routes_its_lane.py"
                       depends_on: []
+                - level: 1
+                  units:
+                    - id: M36.C1.L-logic.V1.U08
+                      what: >
+                        D61 held in a test (added 12 Oct by the STEP-13 crosscheck, X31): the expert routes its
+                        lane with no conflict — no conflict mode, declared — while the deciders that pass one keep
+                        the CONFLICT lane reachable; the day the expert routes a conflict the test fails, the
+                        signal to revisit D61.
+                      artifact: "tests/reason/expert/test_d61_the_expert_has_no_conflict_mode.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_d61_the_expert_has_no_conflict_mode.py"
+                      depends_on: [M36.C1.L-logic.V0.U01]
             - layer: data
               levels:
                 - level: 0
@@ -7981,6 +8001,14 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/team/emit.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_every_writer_routes_its_lane.py -k team"
                       depends_on: []
+                    - id: M36.C1.L-data.V0.U07
+                      what: >
+                        A team or verify card carries its signal's lane (added 12 Oct by the STEP-13 crosscheck,
+                        X29): the card insert and the in-place refresh write `output_lane` and `lane_reason` — a
+                        lane that stops at `signals` reached nobody (0190).
+                      artifact: "genios_engine/reason/team/emit.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_a_team_card_carries_its_lane.py"
+                      depends_on: [M36.C1.L-data.V0.U05]
             - layer: integration
               levels:
                 - level: 1
@@ -7990,9 +8018,11 @@ yc2_w27_s13:
                         No signal without a lane: a guard reads every statement that inserts into
                         `signals` in the engine and requires `output_lane` and `lane_reason` in each; a
                         health check counts signals written since the deploy with a NULL lane (0 to pass).
+                        AMENDED 12 Oct by the crosscheck (X29, X47): the scan reads `scripts/` too (the pilot
+                        seed writes its lane), and every statement that inserts into `cards` names the lane.
                       artifact: "tests/test_every_signal_has_a_lane.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/test_every_signal_has_a_lane.py"
-                      depends_on: [M36.C1.L-logic.V0.U01, M36.C1.L-data.V0.U02, M36.C1.L-data.V0.U03, M36.C1.L-data.V0.U04, M36.C1.L-data.V0.U05]
+                      depends_on: [M36.C1.L-logic.V0.U01, M36.C1.L-data.V0.U02, M36.C1.L-data.V0.U03, M36.C1.L-data.V0.U04, M36.C1.L-data.V0.U05, M36.C1.L-data.V0.U07]
         - id: M36.C2
           name: What is missing is asked
           layers:

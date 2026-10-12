@@ -190,10 +190,14 @@ def _write_card(c, *, org_id, kind, key, seat_id, subjects, headline, body, acti
             "update cards set assignee = :seat, urgency_band = :band, headline = :head, "
             "situation = :sit, score = :score, actions = cast(:act as jsonb), "
             "why = cast(:why as jsonb), expires_at = greatest(expires_at, :exp), "
+            # The lane rides on the card the surface reads (M36.C1.L-data.V0.U07): a lane that
+            # stops at `signals` reached nobody (0190).
+            "output_lane = :lane, lane_reason = :lane_reason, "
             "builder_version = :bver where card_id = :id and org_id = :o "
             "and state = any(:refreshable) and resolved_at is null returning signal_id"),
             {"seat": seat_id, "band": band, "head": head, "sit": sit, "score": score,
              "act": card_actions, "why": why, "exp": expires_at, "bver": BUILDER_VERSION,
+             "lane": _LANE[kind].lane.value, "lane_reason": _LANE[kind].reason,
              "id": held_card_id, "o": org_id, "refreshable": list(_REFRESHABLE)}).first()
         if refreshed is not None:
             c.execute(text(
@@ -229,14 +233,16 @@ def _write_card(c, *, org_id, kind, key, seat_id, subjects, headline, body, acti
     row = c.execute(text(
         "insert into cards (card_id, signal_id, org_id, assignee, domain, level, urgency_band, "
         "headline, situation, score, score_block, actions, why, context_tags, render_mode, "
-        "template_version, capability_key, capability_version, builder_version, state, "
-        "expires_at) values (:id, :sig, :o, :seat, :dom, 'observation', :band, :head, :sit, "
-        ":score, '{}'::jsonb, cast(:act as jsonb), cast(:why as jsonb), '{}', 'template', "
-        ":tv, :cap, '1', :bver, 'queued', :exp) on conflict (signal_id) do nothing "
+        "template_version, capability_key, capability_version, builder_version, output_lane, "
+        "lane_reason, state, expires_at) values (:id, :sig, :o, :seat, :dom, 'observation', :band, "
+        ":head, :sit, :score, '{}'::jsonb, cast(:act as jsonb), cast(:why as jsonb), '{}', "
+        "'template', :tv, :cap, '1', :bver, :lane, :lane_reason, 'queued', :exp) "
+        "on conflict (signal_id) do nothing "
         "returning card_id"),
         {"id": card_id, "sig": signal_id, "o": org_id, "seat": seat_id, "dom": kind,
          "band": band, "head": head, "sit": sit, "score": score, "act": card_actions,
          "why": why, "tv": f"{capability}@1", "cap": capability, "bver": BUILDER_VERSION,
+         "lane": _LANE[kind].lane.value, "lane_reason": _LANE[kind].reason,
          "exp": expires_at}).first()
     if row is None:        # the same generation already carded (a retried emit)
         return c.execute(text("select card_id from cards where signal_id = :s and org_id = :o"),

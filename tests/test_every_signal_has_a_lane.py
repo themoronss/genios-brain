@@ -11,6 +11,11 @@ passed its tests; M36.C1.U01–U05 made each write the lane and its reason. This
     sixth, a held file's question, M36.C2.U03): another is added to `WRITERS` on purpose, with its lane;
   * against real data, `scripts/pipeline_health.check_every_new_signal_has_a_lane` counts the signals of
     the last day with no lane — 0 to pass, a day after the deploy.
+
+AMENDED by the STEP-13 crosscheck (X29, X47): the scan reads `scripts/` as well as the engine — a seed script
+that writes signals writes them with a lane too — and the CARD side is held the same way: every statement that
+inserts into `cards` names `output_lane` and `lane_reason`, because the surface reads the card and a lane that
+stops at `signals` reached nobody (0190).
 """
 from __future__ import annotations
 
@@ -23,7 +28,10 @@ from sqlalchemy import create_engine, text
 
 from genios_engine.reason.situation_binding import signal_insert_columns
 
-ENGINE = Path(__file__).resolve().parents[1] / "genios_engine"
+ROOT = Path(__file__).resolve().parents[1]
+ENGINE = ROOT / "genios_engine"
+#: Where a statement that writes signals or cards may live: the engine, and the scripts that seed tenants.
+SCANNED = (ENGINE, ROOT / "scripts")
 LANE = frozenset({"output_lane", "lane_reason"})
 
 #: Every module that inserts into `signals`, and where its lane comes from.
@@ -35,18 +43,66 @@ WRITERS: dict[str, str] = {
     "reason/team/emit.py": "a post-pass's observation: a discrepancy is a conflict, a team situation is watched",
     # M36.C2.L-integration.V2.U03: a sixth, on purpose — the question a held file asks.
     "reason/expert/asks.py": "a held file's question: the Investigation lane of the decision that asked it",
+    # X47: the scan reads scripts/ too — the pilot seed writes an audited decision, in the decision lane.
+    "scripts/brain_pilot_seed.py": "a seeded pilot decision: the decision lane, said as seeded",
 }
+
+#: Every module that inserts into `cards` — each names the lane its signal carries (X29).
+CARD_WRITERS: dict[str, str] = {
+    "deliver/store.py": "the card pipeline's insert: the lane the draft resolved (`lane_display.describe`)",
+    "reason/team/emit.py": "a post-pass's card: its signal's lane (M36.C1.L-data.V0.U07)",
+    "scripts/brain_pilot_seed.py": "a seeded pilot card: its signal's decision lane",
+}
+
+
+def _key(path: Path) -> str:
+    """A module by the name WRITERS gives it: engine-relative, or `scripts/…`."""
+    return (path.relative_to(ENGINE).as_posix() if ENGINE in path.parents
+            else path.relative_to(ROOT).as_posix())
+
+
+def card_insert_columns(source: str) -> tuple[frozenset[str], ...]:
+    """Every `insert into cards (...)` column list in `source`, out of the AST — the statement, never prose
+    (the same reading `situation_binding.signal_insert_columns` gives `signals`)."""
+    import ast
+
+    out = []
+    for node in ast.walk(ast.parse(source)):
+        if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+            continue
+        text_ = node.value
+        if "insert into cards" not in text_:
+            continue
+        tail = text_.split("insert into cards", 1)[1]
+        if not (tail.lstrip().startswith("(") and "values" in tail.lower()):
+            continue
+        out.append(frozenset(c.strip() for c in tail.split("(", 1)[1].split(")", 1)[0].split(",")))
+    return tuple(out)
+
+
+def _card_inserts() -> dict[str, tuple[frozenset[str], ...]]:
+    out = {}
+    for root in SCANNED:
+        for path in sorted(root.rglob("*.py")):
+            source = path.read_text(encoding="utf-8")
+            if "insert into cards" not in source:
+                continue
+            found = card_insert_columns(source)
+            if found:
+                out[_key(path)] = found
+    return out
 
 
 def _inserts() -> dict[str, tuple[frozenset[str], ...]]:
     out = {}
-    for path in sorted(ENGINE.rglob("*.py")):
-        source = path.read_text(encoding="utf-8")
-        if "insert into signals" not in source:
-            continue
-        found = signal_insert_columns(source)
-        if found:
-            out[path.relative_to(ENGINE).as_posix()] = found
+    for root in SCANNED:
+        for path in sorted(root.rglob("*.py")):
+            source = path.read_text(encoding="utf-8")
+            if "insert into signals" not in source:
+                continue
+            found = signal_insert_columns(source)
+            if found:
+                out[_key(path)] = found
     return out
 
 
@@ -67,6 +123,24 @@ def test_every_statement_that_inserts_a_signal_writes_its_lane():
     assert unrouted(inserts) == []
     assert undeclared(inserts) == [], \
         "a writer of signals came or went — add it to WRITERS with where its lane comes from"
+
+
+def test_every_statement_that_inserts_a_card_writes_its_lane():
+    """X29 · the card side, held as the signal side is: every card insert names the lane, and the writers are
+    the ones `CARD_WRITERS` names."""
+    inserts = _card_inserts()
+    assert unrouted(inserts) == []
+    assert sorted(inserts) == sorted(CARD_WRITERS), \
+        "a writer of cards came or went — add it to CARD_WRITERS with where its lane comes from"
+
+
+def test_a_card_writer_that_forgets_the_lane_is_named():
+    """The negative control for the card side: a statement without the lane is named, a comment is no column."""
+    source = ('# insert into cards (output_lane, lane_reason) values — a comment is no column\n'
+              'SQL = ("insert into cards (card_id, signal_id, org_id) "\n'
+              '       "values (:k, :s, :o)")\n')
+    assert unrouted({"deliver/new.py": card_insert_columns(source)}) == [
+        "deliver/new.py: ['lane_reason', 'output_lane']"]
 
 
 def test_a_writer_that_forgets_the_lane_is_named():
