@@ -192,3 +192,12 @@ def test_a_question_you_answered_is_never_carded_again(world, cards):
     assert states == sorted([("Did Arjun ask for last quarter's metrics or this quarter's?", Q.ANSWERED, None),
                              ("Who at the fund decides?", Q.RETIRED, Q.NO_LONGER_ASKED)])
     assert _queued(cards, org, last) == []
+
+
+def test_the_answer_button_says_what_it_does():
+    """⛔ `03` X42: the card's Answer action was annotated `none` (`api/routes._ACTION_EFFECT`) — a surface labelling
+    transitions honestly read "answer" as a button that does nothing. It keeps your words; it sends nothing."""
+    from genios_engine.api.routes import _annotate_effects
+    [answer, snooze] = _annotate_effects([{"type": "answer", "label": "Answer", "question_id": "fq_x"},
+                                         {"type": "snooze"}])
+    assert (answer["effect"], snooze["effect"]) == ("answer_kept", "defer_surface")

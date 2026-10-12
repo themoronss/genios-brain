@@ -4940,6 +4940,7 @@ _ACTION_EFFECT: dict[str, str] = {
     "do_it_myself": "claim_only",   # claims ownership; does NOT mark the work complete
     "snooze": "defer_surface",      # defers delivery to a chosen time; decision unchanged
     "wrong": "feedback",            # records structured feedback, suppresses per policy
+    "answer": "answer_kept",        # STEP-13: keeps your words on the file's question; sends nothing
     "open_source": "none",          # read-only navigation
 }
 
