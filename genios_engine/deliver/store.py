@@ -514,9 +514,11 @@ class CardStore:
                 # The row already existed and carried an older builder. Its identity is the HELD
                 # card_id, not the one minted above — returning the fresh id would name a row
                 # that was never written.
+                # STEP-14 (s14-F14): the words a refresh writes, kept — a card is judged on every version it showed.
                 self.log_event(inserted.card_id, card["org_id"], "card.rebuilt",
                                cause=card.get("resolved_rule"),
-                               detail={**detail, "builder_version": card.get("builder_version")},
+                               detail={**detail, "builder_version": card.get("builder_version"),
+                                       "words": _words_of(card, copy).as_mapping()},
                                conn=c)
                 return inserted.card_id, False, True
             # STEP-14: the words the card showed first — what its first version (`card.versioned`) keeps as before.

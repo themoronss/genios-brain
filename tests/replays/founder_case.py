@@ -349,6 +349,12 @@ class CardView:
     #: expert_check`): the mails a move rests on and their QUOTES. Evidence, not what the card says — so
     #: kept apart from `text`: a card that quotes "Introly connected us" is not a card about Introly (F37).
     sources: tuple = ()
+    #: STEP-14 (`yc2_w27_s14` M42.C4.L-integration.V1.U02, s14-D4). The sweeps after which the APP queue showed it —
+    #: read at the sweep's instant by the queue's own predicate; a subset of `sweeps`. Must-detect counts these.
+    app_sweeps: tuple[int, ...] = ()
+    #: …and every version's words, oldest first (s14-F14): a card rewritten in place — a refresh, a version of a
+    #: file's card — is judged on each, never on its last alone. Empty for a card that kept none.
+    versions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
