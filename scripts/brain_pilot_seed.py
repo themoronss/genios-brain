@@ -98,6 +98,9 @@ CAPABILITY_VERSION = "1.0.0"
 PACK_ID = "admin"
 PACK_VERSION = "1.0.1"
 PLAY_ID = "hold_the_line"
+#: A seeded audited decision is in the decision lane, and says it was seeded (STEP-13 crosscheck X47:
+#: every writer of signals and cards writes the lane — `tests/test_every_signal_has_a_lane.py`).
+SEEDED_LANE_REASON = "a seeded pilot decision: the audited move this tenant is seeded with"
 PLAY_VERSION = "1.0.0"
 
 #: The root the seeded reasoning ran on. `reasoning_context_root_type_required` (migration 0034)
@@ -387,21 +390,24 @@ def seed_audited_card(conn, *, org_id: str, index: int, at: datetime, node_id: s
         "insert into signals (signal_id, org_id, rule_id, subject_node_id, score, reason_code, "
         "play, status, eval_time, config_snapshot_id, reasoning_run_id, reasoning_candidate_id, "
         "reasoning_decision_hash, authority_expires_at, authority_pack_revision, "
-        "authority_binding_version, pack_id, pack_version, capability_id, capability_version) "
+        "authority_binding_version, pack_id, pack_version, capability_id, capability_version, "
+        "output_lane, lane_reason) "
         "values (:s, :o, :rid, :n, :sc, :rid, :play, 'open', :t, :cfg, :r, :cd, :dh, :exp, 1, 1, "
-        ":p, :pv, :c, :cv) on conflict (signal_id) do nothing"),
+        ":p, :pv, :c, :cv, 'decision', :lr) on conflict (signal_id) do nothing"),
         {"s": signal_id, "o": org_id, "rid": rule_id, "n": node_id, "sc": score, "t": at,
          "cfg": config_id, "r": run_id, "cd": candidate_id, "dh": decision_hash,
          "exp": expires_at, "p": PACK_ID, "pv": PACK_VERSION, "c": CAPABILITY,
-         "cv": CAPABILITY_VERSION, "play": PLAY_ID})
+         "cv": CAPABILITY_VERSION, "play": PLAY_ID, "lr": SEEDED_LANE_REASON})
     conn.execute(text(
         "insert into cards (card_id, signal_id, org_id, level, urgency_band, headline, situation, "
-        "score, state, expires_at, created_at, capability_key, capability_version) values "
-        "(:k, :s, :o, 'prescriptive', 'standard', :head, :sit, :sc, 'queued', :exp, :t, :c, :cv) "
+        "score, state, expires_at, created_at, capability_key, capability_version, output_lane, "
+        "lane_reason) values "
+        "(:k, :s, :o, 'prescriptive', 'standard', :head, :sit, :sc, 'queued', :exp, :t, :c, :cv, "
+        "'decision', :lr) "
         "on conflict (card_id) do nothing"),
         {"k": card_id, "s": signal_id, "o": org_id, "sc": score, "exp": expires_at, "t": at,
          "head": "Chase the countersignature", "sit": "A commitment is open and the clock is on",
-         "c": CAPABILITY, "cv": CAPABILITY_VERSION})
+         "c": CAPABILITY, "cv": CAPABILITY_VERSION, "lr": SEEDED_LANE_REASON})
     return card_id
 
 

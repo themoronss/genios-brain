@@ -885,8 +885,9 @@ def check_every_new_signal_has_a_lane(conn, org: str) -> Check:
         measured=f"{unrouted} of {total} signals written in 24 h have no lane",
         expected="0 — every writer routes its lane (reason/output_lane), and says why",
         fix="a writer inserts into signals without output_lane and lane_reason: "
-            "tests/test_every_signal_has_a_lane.py names the five there are — find the sixth, or the "
-            "one whose decision was never routed (reason/decision_maker, reason/llm_decision_maker)",
+            "tests/test_every_signal_has_a_lane.py names every writer there is (the engine's six and the "
+            "pilot seed) — find the new one, or the one whose decision was never routed "
+            "(reason/decision_maker, reason/llm_decision_maker)",
         detail=[f"{r.pack} {r.rule_id} × {int(r.n)}" for r in rows])
 
 
