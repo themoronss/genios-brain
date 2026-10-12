@@ -97,6 +97,32 @@ def check_every_emitted_event_is_routed(conn, org: str) -> Check:
     )
 
 
+#: ⛔ `03` F24 (`yc2_w27_s17` M40.C3.L-logic.V0.U02): a lane that called in this many days and not in
+#: the window is SILENT, and the two LLM checks cannot vouch for it — NO DATA, named. Longer ago than
+#: this, a lane is retired rather than silent.
+SILENT_LANE_LOOKBACK_DAYS = 7
+
+
+def _silent_lanes(conn, org: str, *, hours: int) -> list:
+    """Lanes (`llm_costs.purpose`) that called in the lookback and not in the window, with the time
+    of each one's last call."""
+    return conn.execute(sql(
+        "select purpose, max(created_at) as last_call from llm_costs "
+        " where org_id = :o and created_at > now() - make_interval(days => :d) "
+        " group by 1 having max(created_at) <= now() - make_interval(hours => :h) "
+        " order by 1"), {"o": org, "d": SILENT_LANE_LOOKBACK_DAYS, "h": hours}).fetchall()
+
+
+def _silence(silent, hours: int) -> tuple[str, list[str]]:
+    """The measured-line suffix and the detail lines that name each silent lane."""
+    if not silent:
+        return "", []
+    return ("; no call in " + f"{hours}h from: "
+            + ", ".join(f"{r.purpose} (last {r.last_call:%Y-%m-%d})" for r in silent),
+            [f"{r.purpose}: no call in {hours}h — its last was {r.last_call:%Y-%m-%d %H:%M} UTC; "
+             "nothing here says it is healthy" for r in silent])
+
+
 def check_llm_failure_rate(conn, org: str, *, hours: int, ceiling_bp: int) -> Check:
     """⛔ `l4_bundle` ran at 8 failures in 12 calls and nothing anywhere said so.
 
@@ -109,15 +135,17 @@ def check_llm_failure_rate(conn, org: str, *, hours: int, ceiling_bp: int) -> Ch
         " where org_id = :o and created_at > now() - make_interval(hours => :h) "
         " group by 1 having count(*) >= 5 order by 2 desc"), {"o": org, "h": hours}).fetchall()
     bad = [(r.purpose, r.bad, r.n) for r in rows if r.n and (r.bad * 10000 // r.n) > ceiling_bp]
+    silent = _silent_lanes(conn, org, hours=hours)
+    suffix, silent_detail = _silence(silent, hours)
     return Check(
         name="no LLM lane is mostly failing",
-        ok=not bad, no_data=not rows,
+        ok=not bad, no_data=not rows or bool(silent),
         measured=(", ".join(f"{p}: {b}/{n}" for p, b, n in bad) if bad
-                  else f"{len(rows)} lane(s) under {ceiling_bp / 100:g}% in {hours}h"),
+                  else f"{len(rows)} lane(s) under {ceiling_bp / 100:g}% in {hours}h") + suffix,
         expected=f"every purpose under {ceiling_bp / 100:g}% failures",
         fix="read llm_costs.error for that purpose — a 400 means the request shape is wrong for "
             "the model, a truncation means the budget is too small for the question",
-        detail=[f"{p}: {b} of {n} failed" for p, b, n in bad],
+        detail=[f"{p}: {b} of {n} failed" for p, b, n in bad] + silent_detail,
     )
 
 
@@ -136,15 +164,18 @@ def check_no_silent_truncation(conn, org: str, *, hours: int) -> Check:
     pinned = [(r.purpose, r.lo, r.n) for r in rows if r.lo == r.hi and r.lo > 0]
     calls = _scalar(conn, "select count(*) from llm_costs where org_id = :o "
                           "and created_at > now() - make_interval(hours => :h)", o=org, h=hours)
+    silent = _silent_lanes(conn, org, hours=hours)
+    suffix, silent_detail = _silence(silent, hours)
     return Check(
         name="no lane is failing at a fixed token ceiling",
-        ok=not pinned, no_data=calls == 0,
+        ok=not pinned, no_data=calls == 0 or bool(silent),
         measured=(", ".join(f"{p}: {n} failures all at {lo} tokens" for p, lo, n in pinned)
-                  if pinned else "no failure cluster pinned to one output size"),
+                  if pinned else "no failure cluster pinned to one output size") + suffix,
         expected="failures spread across output sizes — a single size means truncation",
         fix="raise that lane's max_tokens, or ask it a smaller question; the error text will "
             "name the ceiling since LLMClient reads stop_reason",
-        detail=[f"{p}: {n} failures, every one at {lo} output tokens" for p, lo, n in pinned],
+        detail=[f"{p}: {n} failures, every one at {lo} output tokens" for p, lo, n in pinned]
+               + silent_detail,
     )
 
 

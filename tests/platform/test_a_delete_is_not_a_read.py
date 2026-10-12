@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_070, (
+    assert r["statements"] == 3_071, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -438,6 +438,8 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,063 → 3,070 by yc2_w27_s17/M40.C3.L-contract.V0.U01 (STEP-17 §3.4): seven health
     # checks count the population they judge, so an empty one says NO DATA, not PASS — seven SELECTs,
     # each a literal at its own `_scalar` call in `scripts/pipeline_health.py`.
+    # ⛔ MOVED 3,070 → 3,071 by yc2_w27_s17/M40.C3.L-logic.V0.U02 (`03` F24): the two LLM checks name
+    # the lanes that called this week and not in the window (`_silent_lanes`) — one SELECT, a literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
