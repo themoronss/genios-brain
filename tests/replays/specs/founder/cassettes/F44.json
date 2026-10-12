@@ -1,7 +1,7 @@
 {
  "case_id": "F44",
  "source": "ideal_reader",
- "recorded_at": "a10f3140",
+ "recorded_at": "53a1e89f",
  "answers": {
   "147e323813a069b5b44fcd4e3821aa7941f146988d287b24202526ee3aebedf0": {
    "site": "extraction",
@@ -74,7 +74,43 @@
    "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "7d4415907f857e5a88bc63c9b564e28f68195aea29039908488da58b5bb536b8": {
+  "87223ddc5d16e87570be5ef74264410276e1fc473e7b99ed021174d3d09a0e10": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Kitebird deck?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Kitebird deck?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1184,
+   "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "af37bd6669a5bde00bd5e65988071d09611eb2b8b779a97a8caf15475e480159": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1525,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b2b520c9ba0f233757d85439729eb8398e6c4b52149de591604243a882ba9e40": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -82,13 +118,15 @@
       "claim": "Kavita Rao wrote on the eighteenth of September that she is an angel investor in health tech and loved Kitebird's clinic scheduling demo.",
       "evidence": [
        "evt_#1"
-      ]
+      ],
+      "quote": "angel investor in health tech and loved your clinic scheduling demo."
      },
      {
       "claim": "She asked for the deck and a time to talk this week.",
       "evidence": [
        "evt_#1"
-      ]
+      ],
+      "quote": "deck and a time to talk this week?"
      },
      {
       "claim": "Her ask is open and waits on us, and the file names the move as ours.",
@@ -199,53 +237,24 @@
      "who": "Meera, the founder",
      "what": "Reply to Kavita with your deck and ask her to pick a time to talk.",
      "for_whom": "Kavita Rao, angel investor",
-     "by_when": null
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "to": "Kavita",
+     "answers": "loop:loop_#1"
     },
     "alternative": "If the deck is not ready to share, reply now with an offer to talk and say the deck follows after the call.",
     "wait_or_stop": "Do not wait: she asked for this week. After the deck goes, give her a few days; if nothing comes, one short note with something new, then stop.",
     "done_when": "Kavita has the deck and a call with her is on the calendar.",
     "draft": "Hi Kavita, thank you — I'm glad the clinic scheduling demo landed. Here is the Kitebird deck. I'd love to talk: which time suits you? I'll send an invite. Best, Meera"
    },
-   "raw": "{\"facts\": [{\"claim\": \"Kavita Rao wrote on the eighteenth of September that she is an angel investor in health tech and loved Kitebird's clinic scheduling demo.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"She asked for the deck and a time to talk this week.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Her ask is open and waits on us, and the file names the move as ours.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"She writes from a personal Gmail address, not a firm's.\", \"evidence\": [\"num:their_reply_time:kavita.rao.vc@gmail.com\"]}, {\"claim\": \"The brief names no kind of work for her; the engine filed her as an investor contact under fundraising.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"An angel who saw the demo and asked for the deck is a warm investor for the seed round, and she is waiting on us.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, {\"claim\": \"She named this week; the longer the deck takes, the cooler her interest.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"Writing from Gmail, as the founder also does, does not make her one of us: she is a counterparty waiting on an answer.\", \"based_on\": [\"fact:3\", \"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Kavita invests on her own account, so a call could lead straight to a decision.\", \"needs\": \"The call itself, or her saying how she invests.\"}], \"unknowns\": [{\"question\": \"Whether the founder has already answered her on another channel.\", \"relevance\": \"A reply the file cannot see would make this one a duplicate.\"}, {\"question\": \"How Kavita saw the demo — at an event, through an introduction, or a recording.\", \"relevance\": \"If someone introduced her, they should hear what came of it.\"}, {\"question\": \"Her usual cheque size, and whether she leads or follows.\", \"relevance\": \"It decides how much of the founder's time the round can give her.\"}], \"frames\": {\"primary\": \"A warm inbound angel investor asking for the deck and a call this week; the move is ours.\", \"rivals\": [\"A health-tech angel collecting decks across the sector, where the call is a first look rather than a decision.\", \"Someone not yet a serious investor — the file holds only her own description.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Kavita introduces herself as an angel investor in health tech and asks for the deck and a call, and the engine already treats her as an investor contact.\", \"evidence\": [\"evt_#1\", \"sit:sit_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, her own ask sets it: the deck and a time to talk, this week.\", \"actual\": \"Her mail of the eighteenth waits on us; nothing has gone back yet.\"}, \"scenarios\": {\"do_nothing\": \"The week she named passes, her interest cools, and an investor who came to the founder unasked is lost quietly.\", \"act\": \"The deck and a time reach her while the demo is fresh, and a first call goes in the calendar.\", \"best\": \"A first call leads to a cheque in the seed round.\", \"worst\": \"A late answer reads as a company not raising in earnest, and she moves on.\", \"signals_to_watch\": [\"Her answer to the deck, and a time agreed.\", \"Questions from her after reading the deck.\", \"Silence from her after the deck goes.\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and she came to the founder unasked.\", \"She asked for this week, and the move is ours.\", \"Interest from a demo cools quickly; a late answer cannot be taken back.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Meera, the founder\", \"what\": \"Reply to Kavita with your deck and ask her to pick a time to talk.\", \"for_whom\": \"Kavita Rao, angel investor\", \"by_when\": null}, \"alternative\": \"If the deck is not ready to share, reply now with an offer to talk and say the deck follows after the call.\", \"wait_or_stop\": \"Do not wait: she asked for this week. After the deck goes, give her a few days; if nothing comes, one short note with something new, then stop.\", \"done_when\": \"Kavita has the deck and a call with her is on the calendar.\", \"draft\": \"Hi Kavita, thank you — I'm glad the clinic scheduling demo landed. Here is the Kitebird deck. I'd love to talk: which time suits you? I'll send an invite. Best, Meera\"}",
+   "raw": "{\"facts\": [{\"claim\": \"Kavita Rao wrote on the eighteenth of September that she is an angel investor in health tech and loved Kitebird's clinic scheduling demo.\", \"evidence\": [\"evt_#1\"], \"quote\": \"angel investor in health tech and loved your clinic scheduling demo.\"}, {\"claim\": \"She asked for the deck and a time to talk this week.\", \"evidence\": [\"evt_#1\"], \"quote\": \"deck and a time to talk this week?\"}, {\"claim\": \"Her ask is open and waits on us, and the file names the move as ours.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"She writes from a personal Gmail address, not a firm's.\", \"evidence\": [\"num:their_reply_time:kavita.rao.vc@gmail.com\"]}, {\"claim\": \"The brief names no kind of work for her; the engine filed her as an investor contact under fundraising.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"An angel who saw the demo and asked for the deck is a warm investor for the seed round, and she is waiting on us.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, {\"claim\": \"She named this week; the longer the deck takes, the cooler her interest.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"Writing from Gmail, as the founder also does, does not make her one of us: she is a counterparty waiting on an answer.\", \"based_on\": [\"fact:3\", \"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Kavita invests on her own account, so a call could lead straight to a decision.\", \"needs\": \"The call itself, or her saying how she invests.\"}], \"unknowns\": [{\"question\": \"Whether the founder has already answered her on another channel.\", \"relevance\": \"A reply the file cannot see would make this one a duplicate.\"}, {\"question\": \"How Kavita saw the demo — at an event, through an introduction, or a recording.\", \"relevance\": \"If someone introduced her, they should hear what came of it.\"}, {\"question\": \"Her usual cheque size, and whether she leads or follows.\", \"relevance\": \"It decides how much of the founder's time the round can give her.\"}], \"frames\": {\"primary\": \"A warm inbound angel investor asking for the deck and a call this week; the move is ours.\", \"rivals\": [\"A health-tech angel collecting decks across the sector, where the call is a first look rather than a decision.\", \"Someone not yet a serious investor — the file holds only her own description.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Kavita introduces herself as an angel investor in health tech and asks for the deck and a call, and the engine already treats her as an investor contact.\", \"evidence\": [\"evt_#1\", \"sit:sit_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, her own ask sets it: the deck and a time to talk, this week.\", \"actual\": \"Her mail of the eighteenth waits on us; nothing has gone back yet.\"}, \"scenarios\": {\"do_nothing\": \"The week she named passes, her interest cools, and an investor who came to the founder unasked is lost quietly.\", \"act\": \"The deck and a time reach her while the demo is fresh, and a first call goes in the calendar.\", \"best\": \"A first call leads to a cheque in the seed round.\", \"worst\": \"A late answer reads as a company not raising in earnest, and she moves on.\", \"signals_to_watch\": [\"Her answer to the deck, and a time agreed.\", \"Questions from her after reading the deck.\", \"Silence from her after the deck goes.\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and she came to the founder unasked.\", \"She asked for this week, and the move is ours.\", \"Interest from a demo cools quickly; a late answer cannot be taken back.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Meera, the founder\", \"what\": \"Reply to Kavita with your deck and ask her to pick a time to talk.\", \"for_whom\": \"Kavita Rao, angel investor\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Kavita\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If the deck is not ready to share, reply now with an offer to talk and say the deck follows after the call.\", \"wait_or_stop\": \"Do not wait: she asked for this week. After the deck goes, give her a few days; if nothing comes, one short note with something new, then stop.\", \"done_when\": \"Kavita has the deck and a call with her is on the calendar.\", \"draft\": \"Hi Kavita, thank you — I'm glad the clinic scheduling demo landed. Here is the Kitebird deck. I'd love to talk: which time suits you? I'll send an invite. Best, Meera\"}",
    "framed": true,
-   "input_tokens": 3067,
-   "output_tokens": 1088,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "87223ddc5d16e87570be5ef74264410276e1fc473e7b99ed021174d3d09a0e10": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Kitebird deck?",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Kitebird deck?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "framed": true,
-   "input_tokens": 1184,
-   "output_tokens": 37,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "af37bd6669a5bde00bd5e65988071d09611eb2b8b779a97a8caf15475e480159": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1525,
-   "output_tokens": 143,
+   "input_tokens": 3347,
+   "output_tokens": 1147,
    "model": "claude-haiku-4-5-20251001"
   },
   "d6a31b20a4f9f30953312d3e9983665e037b1459e8a7ff1ccd00f85225a7e4dd": {
