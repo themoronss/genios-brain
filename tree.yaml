@@ -12,26 +12,27 @@
 #   yc2_w27_s02                       M20         ← YC-II W27 STEP-02, the change gate (2026-10-06);
 #                                                   numbered past every other block for the same reason
 #   yc2_w27_s03                       M21         ← YC-II W27 STEP-03, the gate keeps everything
-#                                                   (2026-10-06); past every other block again
+#                                                   (2026-10-06)
 #   yc2_w27_s04                       M22         ← YC-II W27 STEP-04, who is us (built 2026-10-06);
 #                                                   past every other block again
 #   yc2_w27_s05                       M23         ← YC-II W27 STEP-05, every kept item enters memory
-#                                                   (2026-10-06); past every other block again
+#                                                   (2026-10-06)
 #   yc2_w27_s06                       M24         ← YC-II W27 STEP-06, nothing is lost silently
-#                                                   (built 2026-10-07); past every other block again
+#                                                   (built 2026-10-07)
 #   yc2_w27_s07                       M25         ← YC-II W27 STEP-07, the company brief
-#                                                   (built 2026-10-07); past every other block again
+#                                                   (built 2026-10-07)
 #   yc2_w27_s08                       M26         ← YC-II W27 STEP-08, the deleted mail comes back
-#                                                   (built 2026-10-07); past every other block again
+#                                                   (built 2026-10-07)
 #   yc2_w27_s09                       M27         ← YC-II W27 STEP-09, a file for every piece of work
-#                                                   (built 2026-10-07); past every other block again
+#                                                   (built 2026-10-07)
 #   yc2_w27_s10                       M29         ← YC-II W27 STEP-10, the expert's numbers (built
 #                                                   2026-10-08); M28 never drawn (D2: STEP-11)
 #   yc2_w27_s11                       M30, M31    ← YC-II W27 STEP-11, founder playbooks (M30 built
-#                                                   2026-10-09; M31 after the review); past every other block again
+#                                                   2026-10-09; M31 after the review)
 #   yc2_w27_s12                       M32, M33    ← STEP-12, the expert pass (go 10 Oct, after M34)
 #   yc2_w27_align                     M34         ← before STEP-12, all aligned (built 10 Oct)
 #   yc2_w27_s13                       M35, M36    ← STEP-13, check every claim (planned 12 Oct)
+#   yc2_w27_s17 · yc2_w27_s18         M40, M41 · M48, M49 ← STEP-17, STEP-18 (built, merged 12 Oct)
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -8150,3 +8151,617 @@ yc2_w27_s13:
                       artifact: "tests/replays/atlas_expression.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_golden_replays.py"
                       depends_on: [M36.C2.L-integration.V6.U08]
+
+yc2_w27_s17:
+  status: built   # 2026-10-12 in the worktree s17-build (branch yc2w27-s17, eb1e98dc); merged into the STEP-13 line 12 Oct
+  source: >
+    speedrun008/YC-II W27/STEP-17 §1-§5, re-checked claim by claim against speedrun008 @ c97155cd
+    (STEP-17 §8): a fresh scratch database migrated 0001-0199, every SQL string the engine holds
+    prepared and explained against it (the first probe: 2,298 whole expressions — 2,040 plan, 41 are
+    not SQL, 217 are assembled at run time, 1 is broken, scripts/slice_weight.py; the census built in
+    M40.C1 reads 2,323 — 2,053 whole, 270 assembled at run time), every Python file parsed on 3.11,
+    and the lead's QA at the same commit (the database suite 20,569 passed, 0 failed). CI's hermetic
+    job skips 324 database-gated files that no job runs; six health checks print PASS on nothing.
+  vision: >
+    The suite goes red on the things that broke production while it was green: a statement naming a
+    column that does not exist, a value the schema refuses, a feature that cannot be switched on, a
+    lane that made no call read as a lane that is healthy, a test that passes only on the day it was
+    written. CI runs every test on a real Postgres, on production's Python; the health gate says
+    pass, fail or no data, and its output can be kept.
+  order_note: >
+    M40 first. C1 bottom-up: the census (U01) and the planner (U02) before the fix they find (U03),
+    the test over the whole tree last (U04), so it lands green. C2, C3 and C5 are independent of C1.
+    C4 last: the database job's verify is the whole suite on 3.11, which includes every unit above.
+    M41 after M40. Repo guards per group of two or three units (Rohit, 12 Oct): the root suite,
+    tests/platform and each folder the group touched, each on a fresh database on the second scratch
+    server (55433), never before the lead's STEP-12 QA has finished. Verify commands name the database
+    s17_verify; create it fresh first (docker exec genios-yc2w27-pg2 psql -U postgres -c "create
+    database s17_verify").
+  milestones:
+    - id: M40
+      name: The suite fails when production would (STEP-17 §3.1-§3.5)
+      ships: >
+        Every SQL statement the engine and its scripts hold that can be rendered from the source is
+        prepared and planned by Postgres on every push, with the run-time-assembled ones counted under
+        a ceiling; every feedback reason the API offers is stored or named as STEP-16's; every default
+        feature is switched on against a real database; the health gate has a no-data verdict and a
+        kept output; CI runs the whole suite on Postgres on production's Python and fails on a skip
+        for want of a database.
+      categories:
+        - id: M40.C1
+          name: Every statement is planned by Postgres (§3.2)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C1.L-contract.V0.U01
+                      what: >
+                        The statement census — `statements()`: every OUTERMOST string expression of
+                        genios_engine/ and scripts/ shaped like SQL (table_coverage's own reader:
+                        `_sources`, `_template`, `_SQL_SHAPE`), never a piece of a larger expression,
+                        never a docstring, never a single word; each `{NAME}` resolved through the
+                        module's own value (an engine module imported, a script read from its AST and
+                        never run); what stays a hole is named. The `card_level` statement of
+                        feedback/calibrate resolves whole.
+                      artifact: "genios_engine/platform/statement_plans.py"
+                      verify: ".venv/bin/python -m pytest -q tests/platform/test_the_statement_census.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C1.L-logic.V0.U02
+                      what: >
+                        A statement as Postgres sees it, and whether it plans — `positional()`:
+                        SQLAlchemy's own bind parsing for psycopg (`:x::int` is not a bind, as in
+                        production), an expanding `in :ids` as a list, `$n` for each bind; `plan()`:
+                        PREPARE then EXPLAIN EXECUTE in a transaction that is rolled back, the
+                        prepared statement deallocated; a bind Postgres cannot type is typed by a
+                        search that accepts only a typing that plans, and only on a type error — a
+                        missing column or table is never retried.
+                      artifact: "genios_engine/platform/statement_plans.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/platform/test_a_statement_is_planned_as_postgres_sees_it.py"
+                      depends_on: [M40.C1.L-contract.V0.U01]
+                - level: 1
+                  units:
+                    - id: M40.C1.L-logic.V1.U03
+                      what: >
+                        S17-F1 — scripts/slice_weight.py reads the anchor's type from graph_nodes, as
+                        the sweep it copies does (`reason/domain_shadow._ACTIVE_SITUATIONS`); its
+                        first statement selected `anchor_type` from context_situations, a column
+                        that table does not have, so the script has raised on every run since
+                        aa6ab06e.
+                      artifact: "scripts/slice_weight.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/scripts/test_slice_weight_reads_what_the_sweep_reads.py"
+                      depends_on: [M40.C1.L-logic.V0.U02]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M40.C1.L-integration.V2.U04
+                      what: >
+                        tests/platform/test_every_statement_plans.py — every statement the census
+                        renders whole plans on the migrated scratch database, each failure named by
+                        file and line; the strings that look like SQL and are not are declared one by
+                        one and checked both ways; the statements assembled at run time are held
+                        under a ceiling; the number planned is held over a floor. A mutation that
+                        drops `card_level` from `canonical_judgments` (STEP-18 B1) fails it.
+                      artifact: "tests/platform/test_every_statement_plans.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/platform/test_every_statement_plans.py"
+                      depends_on: [M40.C1.L-contract.V0.U01, M40.C1.L-logic.V0.U02, M40.C1.L-logic.V1.U03]
+        - id: M40.C2
+          name: Write paths that cannot write (§3.3)
+          layers:
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C2.L-integration.V0.U01
+                      what: >
+                        Every feedback reason the route accepts (`WRONG_REASONS`, eleven) is stored
+                        on Postgres — a verdict and its revision, with the route's own columns. The
+                        three of migration 0034's CHECK pass; the eight it refuses (STEP-18 B3,
+                        S17-F7) are strict expected failures naming STEP-16 §3.1, so the day the
+                        schema admits them the marker must come off.
+                      artifact: "tests/feedback/test_every_feedback_reason_is_stored_pg.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/feedback/test_every_feedback_reason_is_stored_pg.py"
+                      depends_on: []
+                    - id: M40.C2.L-integration.V0.U02
+                      what: >
+                        On a real database a new tenant made live (`make_tenant_live`) has every
+                        default Layer 4 feature switched on — a row each, no error collected — and
+                        none of NOT_DEFAULT_ON. The in-memory test proves the order; this proves the
+                        write.
+                      artifact: "tests/platform/test_the_onboarding_switches_on_every_default_pg.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/platform/test_the_onboarding_switches_on_every_default_pg.py"
+                      depends_on: []
+        - id: M40.C3
+          name: The health gate says no data (§3.4)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C3.L-contract.V0.U01
+                      what: >
+                        A third verdict, NO DATA — printed as such, counted apart, never a pass and
+                        never a failure; exit 1 only on a FAIL. `ok` keeps answering "did it fail?"
+                        (the golden replays read it) and `no_data` answers "did it judge anything?".
+                        Every check knows its population — measured on a tenant with no data, 17 of
+                        19 said PASS; now each says NO DATA, but the two that fail on nothing by
+                        design (no brief, no memory reaching the window).
+                      artifact: "scripts/pipeline_health.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_says_no_data.py tests/scripts/test_the_gate_that_runs_on_real_data.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C3.L-logic.V0.U02
+                      what: >
+                        F24's shape — an LLM lane that called in the last 7 days and not in the
+                        window is NO DATA for that lane in both LLM checks, named, never a pass.
+                      artifact: "scripts/pipeline_health.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_a_silent_lane_is_no_data_pg.py"
+                      depends_on: [M40.C3.L-contract.V0.U01]
+            - layer: interface
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C3.L-interface.V0.U03
+                      what: >
+                        The output is kept: `--json PATH` writes every verdict (name, verdict,
+                        measured, expected, fix, detail) as pure JSON — a file, so the `[db]` lines
+                        on stdout cannot spoil it (03 F36) — and `--require-data` makes a run with a
+                        NO DATA exit 2 when nothing failed.
+                      artifact: "scripts/pipeline_health.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_keeps_its_output.py"
+                      depends_on: [M40.C3.L-contract.V0.U01]
+        - id: M40.C4
+          name: CI runs the database suite on production's Python (§3.1)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C4.L-contract.V0.U01
+                      what: >
+                        scripts/qa/database_skips.py — reads a pytest log (`-rs` summary lines) and
+                        exits 1 naming every test skipped for want of a database, 0 when there is
+                        none; a log with no summary at all is an error, never a pass.
+                      artifact: "scripts/qa/database_skips.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py"
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M40.C4.L-integration.V1.U02
+                      what: >
+                        .github/workflows/ci.yml — a `database` job: a Postgres 17 service, production's
+                        dependency set, the whole suite but the golden set (`-m "not golden"`) with
+                        GENIOS_TEST_DATABASE_URL, its failures as annotations, then the skip scan; and
+                        every job on the Dockerfile's Python (3.11), read from the Dockerfile by the
+                        guard — which also closes the ways the job could be green over nothing (a
+                        path, -k or second -m; PYTEST_ADDOPTS or an emptied URL; continue-on-error;
+                        a job-level if:; anything after the scan; a golden test off golden-pg's
+                        paths). Verified by the guard; the job's own command over the whole suite
+                        on python:3.11-slim-bookworm against a fresh scratch database is the lead's
+                        run before the push (a bounded smoke of it passed at the build).
+                      artifact: ".github/workflows/ci.yml"
+                      verify: ".venv/bin/python -m pytest -q tests/test_ci_runs_the_database_suite.py tests/test_ci_runs_the_golden_set_on_postgres.py"
+                      depends_on: [M40.C4.L-contract.V0.U01, M40.C1.L-integration.V2.U04, M40.C2.L-integration.V0.U01, M40.C2.L-integration.V0.U02, M40.C3.L-logic.V0.U02]
+        - id: M40.C5
+          name: The plan's own checks (§3.5)
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C5.L-logic.V0.U01
+                      what: >
+                        S17-F5 — a built step's Verify is read whatever its section number (STEP-01
+                        §7 and STEP-08 §5 were never read), and a built step with no Verify section
+                        fails rather than passing on nothing.
+                      artifact: "tests/test_the_plan_folder_is_consistent.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py"
+                      depends_on: []
+    - id: M41
+      name: Tests that tell the truth (the findings 03 gave STEP-17)
+      ships: >
+        No test reads the wall clock when it is imported; a timestamp the database wrote is read
+        against the database's clock; a timing guard is not failed by one stalled sample; the warm
+        lane's test claims its own rows whatever ran before it.
+      categories:
+        - id: M41.C1
+          name: A test reads its own clock
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M41.C1.L-logic.V0.U01
+                      what: >
+                        03 F142 — tests/test_device_api.py reads the clock when each test runs, not
+                        when the module is imported, so a run that spans more than an hour (a
+                        sleeping laptop, a slow runner) no longer finds the seat's pause over.
+                      artifact: "tests/test_device_api.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_device_api.py"
+                      depends_on: []
+                    - id: M41.C1.L-logic.V0.U03
+                      what: >
+                        03 F115's fourth — the scheduler's cursor round trip reads the gap against the
+                        DATABASE's clock (the row was back-dated by its `now()`), and asserts the exact
+                        round trip: the value stored is the value read. Read off the host's clock, it
+                        measured two clocks' distance too — "24.17 h" when a Docker VM's clock lagged
+                        the host's after the laptop slept.
+                      artifact: "tests/capture/acquire/test_scheduler.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/capture/acquire/test_scheduler.py"
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M41.C1.L-integration.V1.U02
+                      what: >
+                        S17-F6 — the guard: no test module reads the wall clock at import (a
+                        module-level `datetime.now()`, `utcnow()`, `date.today()`, `time.time()`);
+                        the 22 found are made to read it per test, or pin a fixed instant where the
+                        product is handed `now` explicitly. Read from the AST.
+                      artifact: "tests/test_no_test_reads_the_clock_at_import.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_no_test_reads_the_clock_at_import.py"
+                      depends_on: [M41.C1.L-logic.V0.U01]
+        - id: M41.C2
+          name: A timing guard takes the best of three
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M41.C2.L-logic.V0.U01
+                      what: >
+                        03 F156 — the linear-time guard over every shipped token rule measures each
+                        input three times and judges the fastest, as the lane's own budget test does,
+                        so one stalled CI sample is never read as backtracking and a backtracking
+                        pattern still fails every time.
+                      artifact: "tests/capture/structural/test_tokens.py"
+                      verify: ".venv/bin/python -m pytest -q tests/capture/structural/test_tokens.py"
+                      depends_on: []
+        - id: M41.C3
+          name: A test claims its own rows
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M41.C3.L-logic.V0.U01
+                      what: >
+                        03 F67 and F136 — the warm lane's coalescing test claims the batch of its
+                        own org, whatever another test left in l2_work_queue, and reads one clock;
+                        run after tests/test_screen_promoter_pg.py on one database it passes, as it
+                        does alone.
+                      artifact: "tests/platform/test_warm_lane_pg.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/test_screen_promoter_pg.py tests/platform/test_warm_lane_pg.py"
+                      depends_on: []
+
+yc2_w27_s18:
+  status: built   # 2026-10-12 on `yc2w27-s18` (c885d677..), 20 units + 3 fixes, every unit mutation-tested; not pushed
+  source: >
+    speedrun008/YC-II W27/STEP-18 B1-B29 and the rows of `03` that name STEP-18 as their owner (F65, F79,
+    F97, F100, F108, F109, F111, F117, F120, F128, F135, F158, F159, F165, F166, F180), each re-checked at
+    `fbd0aeaa` with its file and line (STEP-18 §8.1-§8.2). Of the 29: B1, B2, B5, B6, B14, B17, B18, B19 are
+    fixed by earlier steps, B20 by half; B16 was retired by STEP-09's own measurement; B8 is half fixed
+    (fundraising) and half a declared choice (`general`); B9, B10, B22-B24, B26 wait on a decision or on
+    arming; B27-B29 need a design of their own. What is left and buildable without a decision, without
+    a re-record of the golden set and without a file STEP-13 is building is below.
+  vision: >
+    What you tell GeniOS is kept: every "wrong because" reason saves, and a learning that waits for your
+    review can be reviewed. Memory is never aborted by a number, never rebuilt without its mail, never
+    doubled by a screen follow-up, and a failed read loses itself alone. A wipe takes its claims with it.
+    Nothing is paid for that nothing reads — no relevance call about a calendar event, no junk verdict
+    on a bounce. What the engine says about itself is true: the behaviour brain holds this company's
+    conduct, a brief read inside a transaction sees it, one list says which hosts are public mail, the
+    operator's activation table names every effect, and a production boot refuses the dev secret.
+  order_note: >
+    Every unit has no dependency outside its own category except where `depends_on` says, so the order is
+    the categories' — M48.C1, C2, C3, then M49.C1, C2, C3 — with the repo guards (root, platform and the
+    folders a group touched) run on fresh databases on the second scratch server (pg2, 127.0.0.1:55433)
+    after every two or three units that change together. Every unit: a failing test first, its verify, a
+    mutation run (`SP/s12/mutants.py`), its own commit. The verify commands name `genios_test`; each run
+    uses a database created fresh for it on pg2. No unit changes a model prompt, so no golden cassette is
+    re-recorded (B25 removes a calendar page's relevance call; the golden runner lands calendars on their
+    own pages, so no mail prompt changes).
+  milestones:
+    - id: M48
+      name: What you tell it is kept, and nothing memory holds is aborted, lost or doubled (STEP-18 B3, B4, B12, B13, B20, B21; 03 F65, F120)
+      ships: >
+        Each of the eleven reasons a card offers saves through `POST /v1/intelligence/feedback` (0 × 500,
+        was 8 of 11); a weekly learning routed to review rests at `human_review` and the review route takes
+        it (was 409); a parsed answer holding a decimal is audited and the resolution pass goes on; a
+        rebuilt graph holds the mail it was built from; a screen follow-up has one active observation however
+        often it changes; a coverage read that fails loses itself alone; no read leaves its connection open;
+        every wipe of mail events deletes their fingerprints first.
+      categories:
+        - id: M48.C1
+          name: Your verdicts are kept — L6 Learning (`feedback/`)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M48.C1.L-contract.V0.U01
+                      what: >
+                        STEP-18 B3. `0210_every_wrong_reason_is_kept`: the two CHECKs `0034` put on
+                        `card_feedback_verdicts` and `card_feedback_revisions` (`reason in ('not_relevant',
+                        'wrong_facts', 'bad_timing')`, `0034:168, 189`) take the eleven reasons of
+                        `contracts/learning_attribution.ALL_REASONS` — the set the card offers
+                        (`deliver/card_builder`) and the route accepts (`api/intelligence_routes._FB_WRONG_REASONS`).
+                        A `wrong` verdict still needs a reason; every other rule of the table is unchanged.
+                        Additive: it drops a constraint and adds a looser one, so the previous image runs.
+                        Nothing is armed: calibration stays in shadow (`06` D13), and the Adaptive lease
+                        counts `bad_timing` rows only, so a new reason only adds to its denominator.
+                      artifact: "migrations/0210_every_wrong_reason_is_kept.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/feedback/test_every_wrong_reason_is_kept.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M48.C1.L-data.V0.U02
+                      what: >
+                        STEP-18 B4. A weekly learning that governance routes to a human
+                        (`feedback/governance`: a knowledge suggestion, an Organization or a constrained
+                        brain) rests at `human_review`: `feedback/publisher.publish` moves the row's state
+                        with the transition it logs (`publisher.py:242-245, 278` logged it and left the row
+                        `governed`), so `api/learning_routes.review` (`:136`, 409 on anything else) takes it
+                        and the console's queue (`api/brain_routes`, `learning_routes` counts) lists it. One
+                        state-only UPDATE — the write-once guard's measured set of updaters moves from two to
+                        three, deliberately.
+                      artifact: "genios_engine/feedback/publisher.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/feedback/test_a_review_object_waits_for_review.py tests/api/test_a_proposal_is_written_once.py tests/feedback/test_no_transition_takes_an_edge_the_contract_forbids.py"
+                      depends_on: []
+        - id: M48.C2
+          name: Memory is never aborted, lost on a rebuild, doubled, or failed by a neighbour's read — L3 Context Graph (`context/`) and its writers
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M48.C2.L-contract.V0.U12
+                      what: >
+                        ADDED IN BUILD (STEP-18 B13). `0211_a_followup_names_its_observation`:
+                        `screen_followups.observation_id` — the graph observation a follow-up was last
+                        written as, so the next write of a changed follow-up can retire it (finding it
+                        through `graph_source_refs`' evidence has no index). Additive, idempotent.
+                      artifact: "migrations/0211_a_followup_names_its_observation.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/test_migration_0211_a_followup_names_its_observation.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M48.C2.L-logic.V0.U03
+                      what: >
+                        STEP-18 B21 (`03` F32). `context/model_audit.record_model_run` audits a parsed
+                        answer that holds a decimal: the response hash reads each float as its decimal text
+                        (`platform/canonical` refuses floats, `:51-53`), so the call already paid is
+                        recorded and its run goes on — the resolution pass (`context/lifecycle/resolution`,
+                        which audits before it reads `ok`), the angle store and the cohort reader alike. An
+                        answer with no float hashes exactly as before.
+                      artifact: "genios_engine/context/model_audit.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/context/lifecycle/test_a_decimal_answer_is_audited.py"
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M48.C2.L-data.V0.U04
+                      what: >
+                        STEP-18 B12, the read. `context/runner._rows_for_rebuild` (private, as `_safe_process_one`): every kept event that has
+                        a road into memory (`memory_lanes.lane_for` — a signal, below the floor, metadata,
+                        calendar), with the drain's own columns (the cached extraction, the prepared text,
+                        the recipients, the thread) — one spelling with `_pull`, which reads the same columns
+                        over the same roads and then keeps only what memory does not hold yet. Ordered by
+                        when it happened.
+                      artifact: "genios_engine/context/runner.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/context/test_a_rebuild_reads_every_road.py tests/context/test_memory_lanes.py"
+                      depends_on: []
+                    - id: M48.C2.L-data.V0.U06
+                      what: >
+                        STEP-18 B13. A screen follow-up whose words, date or person change is written to
+                        memory again (`reason/moments/followups.upsert` clears `graph_written_at`,
+                        `:629-632`) — and `reason/moments/screen_memory.write_items` now retires the
+                        follow-up's earlier observation (`status = 'superseded'`) before it writes the new one,
+                        so a follow-up has one active observation however often it changes (each write mints
+                        a fresh id, `graph_store.write_observation`).
+                      artifact: "genios_engine/reason/moments/screen_memory.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/test_a_followup_has_one_observation_pg.py tests/test_screen_memory_batch_pg.py"
+                      depends_on: [M48.C2.L-contract.V0.U12]
+                    - id: M48.C2.L-data.V0.U07
+                      what: >
+                        `03` F120, the first read. `capture/coverage/window.coverage_for_window` reads its
+                        runs in a SAVEPOINT: on Postgres a failed statement aborts the transaction that holds
+                        it, and the three situation passes that call it inside their own transaction lost
+                        every later read and write of the pass. The same guard its neighbour
+                        `coverage_for_connection` already has (`_optional`).
+                      artifact: "genios_engine/capture/coverage/window.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/capture/coverage/test_a_failed_coverage_read_loses_itself_alone.py"
+                      depends_on: []
+                    - id: M48.C2.L-data.V0.U09
+                      what: >
+                        `03` F65. `context/backfill.name_thread_nodes` closes the connection it reads with
+                        (`store.engine.connect().execute(...)`, `backfill.py:680`). A guard reads the engine and
+                        the scripts for a connection opened inside an expression and never closed; the second
+                        site it finds (`reason/runner.py:343`) is a strict expected failure until U10.
+                      artifact: "genios_engine/context/backfill.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_every_read_closes_its_connection.py"
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M48.C2.L-data.V1.U08
+                      what: >
+                        `03` F120, the second read. The source list of `context/situations.window_coverage_gaps`
+                        is read in a SAVEPOINT: a failed read loses that read alone, never the situation
+                        pass that called it.
+                      artifact: "genios_engine/context/situations.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/capture/coverage/test_a_failed_coverage_read_loses_itself_alone.py"
+                      depends_on: [M48.C2.L-data.V0.U07]
+                    - id: M48.C2.L-data.V1.U10
+                      what: >
+                        s18-F1 (F65's twin, on the live sweep path). `reason/runner._bulk_load_situations`
+                        closes the connection it reads every node's situation with (`runner.py:343`); the
+                        guard's expected failure comes off.
+                      artifact: "genios_engine/reason/runner.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_every_read_closes_its_connection.py"
+                      depends_on: [M48.C2.L-data.V0.U09]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M48.C2.L-integration.V1.U05
+                      what: >
+                        STEP-18 B12, the script. `scripts/rebuild_graph.py` replays `_rows_for_rebuild`: its own
+                        pull selected no cached extraction (`rebuild_graph.py:77-83`), so every mail that had
+                        reached memory through a signal was held `held_missing_qes_extraction` and only the
+                        calendar was rebuilt — and it pulled `emitted` only, so the archived and below-floor
+                        roads STEP-05 opened were never replayed either. Dry run and backup unchanged.
+                      artifact: "scripts/rebuild_graph.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/test_rebuild_graph_rebuilds_the_mail.py"
+                      depends_on: [M48.C2.L-data.V0.U04]
+        - id: M48.C3
+          name: A wipe takes its claims with it — L1 Signals (`capture/`) and its scripts
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M48.C3.L-data.V0.U11
+                      what: >
+                        STEP-18 B20, its second half (s18-F2). `scripts/gmail_l1.py` deletes the gmail
+                        events' `message_fingerprints` before the events (`gmail_l1.py:18-24` deleted
+                        `source_events` and left them; a claim by a deleted event is still honoured,
+                        `capture/screen/fingerprint.py:126-128`, so every re-synced message would be skipped
+                        as `seen_on_screen`). A guard reads every statement in the engine and the scripts that
+                        deletes `source_events`: a fingerprinted source's (gmail, outlook) deletes its
+                        fingerprints first, and every other deleter is declared with its reason.
+                      artifact: "scripts/gmail_l1.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_every_mail_wipe_takes_its_fingerprints.py tests/test_a_disconnect_takes_its_fingerprints.py"
+                      depends_on: []
+    - id: M49
+      name: Nothing is paid for that nothing reads, and what the engine says about itself is true (STEP-18 B7, B11, B25; 03 F97, F117, F128, F135)
+      ships: >
+        A calendar page buys no relevance call (a structured object is decided by rule at capture); a bounce
+        on the connector's fast path is never primed for the junk filter and never left a snippet; the
+        behaviour brain holds this company's conduct only; a brief read through a connection sees that
+        transaction and is never served from the cache; the 24 public mail hosts are one list everywhere a
+        company is minted; `scripts/activate_tenant.py` names the effect of every Layer 3 domain; a boot outside
+        dev with the default JWT secret refuses.
+      categories:
+        - id: M49.C1
+          name: No paid call about nothing — L1 Signals (`capture/`)
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M49.C1.L-logic.V0.U01
+                      what: >
+                        STEP-18 B25 (`03` F42). `capture/pipeline.page_relevance_candidate` marks an object the
+                        way `capture_event` routes it — a mapped kind (a calendar event) or an enterprise
+                        system is structured — so `RelevancePage.prime` never pre-judges it: at capture the
+                        cascade settles it by `RULE_STRUCTURED_SOURCE` and the page's paid verdict was never
+                        read (and a page of unknown organisers raised a false "graph-coverage" alert). Mail is
+                        primed exactly as before.
+                      artifact: "genios_engine/capture/pipeline.py"
+                      verify: ".venv/bin/python -m pytest -q tests/capture/test_a_calendar_event_buys_no_relevance_call.py tests/capture/test_a_company_brief_sender_is_kept_and_read.py"
+                      depends_on: []
+                    - id: M49.C1.L-logic.V0.U02
+                      what: >
+                        `03` F117, the bounce. On the connector's fast path a delivery report
+                        (`capture/gate/rules.is_a_delivery_report`, the one way Layer 1 asks it) is neither
+                        primed for the junk filter nor left a list snippet on a "drop" verdict: the gate keeps
+                        and reads it (`06` D38), so the batch call was bought for nothing, and a confident
+                        drop skipped the body the bounce parser reads.
+                      artifact: "genios_engine/capture/connectors/composio.py"
+                      verify: ".venv/bin/python -m pytest -q tests/capture/connectors/test_a_bounce_is_read_whole_on_the_fast_path.py"
+                      depends_on: []
+        - id: M49.C2
+          name: What it says about itself is what it measured — L2 Plane D (`packs/`), L3 (`context/`), platform
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M49.C2.L-logic.V0.U03
+                      what: >
+                        STEP-18 B11. `packs/brains/behavior_distill`: `relationship.response_latency_hours` is
+                        the COUNTERPARTY's reply latency (`context/analytic/sampler._reply_latencies_hours`:
+                        from our outbound to their next inbound) and leaves `BEHAVIOR_ELIGIBLE_METRICS`
+                        (`:105`, labelled "how fast this company answers") — declared, with the reason, beside
+                        the other metrics that measure the world's conduct. A published entry of a metric that
+                        is no longer eligible is named (`metric_not_ours`), never read as a series gone dark.
+                      artifact: "genios_engine/packs/brains/behavior_distill.py"
+                      verify: ".venv/bin/python -m pytest -q tests/packs/brains/test_behavior_distill.py"
+                      depends_on: []
+                    - id: M49.C2.L-logic.V0.U04
+                      what: >
+                        `03` F97. `platform/company_brief.current` keeps its promise: a CONNECTION is read
+                        through `brief_for` on that connection, never through a second one of its engine and
+                        never from or into the per-process cache — so a caller inside a transaction sees its
+                        own writes, and an empty brief read mid-transaction is not served after the commit.
+                      artifact: "genios_engine/platform/company_brief.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/platform/test_a_brief_read_in_a_transaction_sees_it.py"
+                      depends_on: []
+                    - id: M49.C2.L-logic.V0.U05
+                      what: >
+                        `03` F128. One list of public mail hosts: `capture/structured/apply._PERSONAL_DOMAINS`
+                        (8 hosts — read by the structured lane, `context/pipeline._company_domain` and
+                        `context/introductions._stem`) is `capture/validate/canonical.CONSUMER_EMAIL_DOMAINS`
+                        (24 — `platform/self_identity.PUBLIC_MAIL_DOMAINS`), so rediffmail.com, zoho.com,
+                        yahoo.co.in and thirteen more no longer mint one company file shared by everyone
+                        writing from them.
+                      artifact: "genios_engine/capture/structured/apply.py"
+                      verify: ".venv/bin/python -m pytest -q tests/context/test_one_list_of_public_mail_hosts.py"
+                      depends_on: []
+            - layer: interface
+              levels:
+                - level: 0
+                  units:
+                    - id: M49.C2.L-interface.V0.U06
+                      what: >
+                        `03` F135. `scripts/activate_tenant.py` names a Layer 3 domain's effect from
+                        `platform/l3_activation.EFFECTS` — its own `EFFECT` table had no `founder_office` line,
+                        so the dry run an operator reads before `--apply` showed it blank.
+                      artifact: "scripts/activate_tenant.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_activate_tenant_names_every_effect.py"
+                      depends_on: []
+        - id: M49.C3
+          name: The dev secret never signs a production session — platform
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M49.C3.L-contract.V0.U07
+                      what: >
+                        STEP-18 B7. `platform/config.insecure_boot`: why this configuration may not serve —
+                        an environment named outside dev (`dev`, `development`, `test`, `local`) whose
+                        `jwt_secret` is still the shipped default (`config.py:37`), with which anyone can sign a
+                        session. `None` when it may. An unset `GENIOS_ENV` reads `dev` as it always has.
+                      artifact: "genios_engine/platform/config.py"
+                      verify: ".venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py"
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M49.C3.L-integration.V1.U08
+                      what: >
+                        STEP-18 B7, the boot. `main.lifespan` asks `insecure_boot` first and refuses to start
+                        with its reason, before migrations and before any worker. ⛔ Deploy precondition
+                        (Harsh, `08`): production's `GENIOS_JWT_SECRET` is set — with the default and a
+                        non-dev `GENIOS_ENV` the new image will not boot, by design.
+                      artifact: "genios_engine/main.py"
+                      verify: ".venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py tests/test_migrate_read_only.py"
+                      depends_on: [M49.C3.L-contract.V0.U07]
