@@ -116,3 +116,64 @@ def test_a_review_that_names_no_move_still_clears_the_card(world, expiries, over
     assert counts.get("expert_cleared") == 1, counts
     assert expiries == [("rule_cleared", (first.signal_id,))]
     assert [c.state for c in _cards(store, org)] == ["expired"]
+
+
+# ── M42.C2.L-integration.V2.U05 · a file's QUESTION hands the file on (`reason/expert/asks`) ───────────────────
+def _asked_and_carded(store, org, registry):
+    """The file asks its question, and the question's card is built."""
+    from tests.reason.expert.test_a_held_file_asks import _find_out
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
+    [question] = _open_signals(store, org, anchor)
+    pipeline.build_cards_for_org(graph=store, card_store=CardStore(os.environ["GENIOS_TEST_DATABASE_URL"]),
+                                 org_id=org, eval_time=NOW)
+    [card] = _cards(store, org)
+    assert (card.signal_id, card.state) == (question.signal_id, "queued"), card
+    return anchor, events, question, card
+
+
+def test_a_new_question_retires_the_old_and_leaves_its_card_to_the_new(world, expiries):
+    from tests.reason.expert.test_a_held_file_asks import _find_out
+    store, org, registry, _ = world
+    anchor, events, question, card = _asked_and_carded(store, org, registry)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-001", events, question="Who at the fund decides?")
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=NOW + timedelta(hours=1))
+    [new] = _open_signals(store, org, anchor)
+    assert new.signal_id != question.signal_id and _signal_status(store, org, question.signal_id) == "expired"
+    assert _cards(store, org) == [card] and expiries == [], "never expired REPLACED: asked again, a version"
+
+
+def test_a_decision_after_a_question_retires_it_and_leaves_its_card_to_the_decision(world, expiries):
+    store, org, registry, _ = world
+    anchor, events, question, card = _asked_and_carded(store, org, registry)
+    _write(store, org, anchor, "ffp-fund-act-review-000000", events)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-act-review-000000"},
+                      at=NOW + timedelta(hours=1))
+    assert counts.get("expert_question_retired") == 1 and counts.get("expert_emitted") == 1, counts
+    assert [s.rule_id for s in _open_signals(store, org, anchor)] == ["file_review"]
+    assert _signal_status(store, org, question.signal_id) == "expired"
+    assert _cards(store, org) == [card] and expiries == [], "the decision is the card's next version"
+
+
+def test_a_question_no_move_follows_still_closes_its_card(world, expiries):
+    """A review that names no move and asks nothing: nothing will version the question's card, so it goes."""
+    store, org, registry, _ = world
+    anchor, events, question, _card = _asked_and_carded(store, org, registry)
+    _write(store, org, anchor, "ffp-fund-wait-review-00000", events, mode="wait", next_move=None)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-wait-review-00000"}, at=NOW + timedelta(hours=1))
+    assert _open_signals(store, org, anchor) == [] and [c.state for c in _cards(store, org)] == ["expired"]
+    assert expiries == [("replaced", (question.signal_id,))]
+
+
+def test_a_question_whose_file_left_coverage_still_closes_its_card(world, expiries):
+    """`03` X26: the file is no longer the expert's — its situations decide on their own — so its question's card
+    goes with the question: nothing of the file's will version it."""
+    from tests.reason.expert.test_a_held_file_asks import _other_file
+    store, org, registry, _ = world
+    _anchor, _events, question, _card = _asked_and_carded(store, org, registry)
+    other, other_events = _other_file(store, org)
+    _write(store, org, other, "ffp-programme-review-0000", other_events)
+    _compile(store, org, registry, covered={other: "ffp-programme-review-0000"}, at=NOW + timedelta(hours=1))
+    assert [c.state for c in _cards(store, org)] == ["expired"]
+    assert ("replaced", (question.signal_id,)) in expiries

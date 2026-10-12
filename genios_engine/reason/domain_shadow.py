@@ -780,7 +780,9 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
                     store, org_id=org_id, file_id=file_id, review=review, decision=execution.decision,
                     bundle=bundle, pack=pack, eval_time=eval_time, situation_id=str(home.situation_id))
                 counts[f"expert_question_{asked}"] += 1
-            elif asks.retire_question(store, org_id=org_id, file_id=file_id, eval_time=eval_time):
+            elif asks.retire_question(store, org_id=org_id, file_id=file_id, eval_time=eval_time,
+                                      # STEP-14: a decision the file emits or keeps is its card's next version.
+                                      hand_on=outcome in ("emitted", "standing")):
                 counts["expert_question_retired"] += 1
             if outcome != "rule_id_collision":
                 decided[file_id] = review.fingerprint
