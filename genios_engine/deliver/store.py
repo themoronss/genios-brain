@@ -61,6 +61,13 @@ _VERSION_WORDS = (
     "output_lane=:lane, lane_reason=:lreason "
     " where org_id=:o and card_id=:id")
 
+#: STEP-14 (M42.C3.L-interface.V3.U04): the open cards a door is asked about (`CardStore.doors`) — a file's card, or
+#: an expert or question card from before 0220 that names no file. A module constant, so the statement census
+#: resolves every door it is joined to (`tests/platform/test_every_statement_plans.py`).
+_FILE_CARDS = (" k.org_id=:o and k.state = any(:open) and s.status='open' and k.expires_at > :authority_time "
+               "and (k.file_id is not null or k.capability_key = 'expert.file_review' "
+               "     or k.builder_version = :question_builder) ")
+
 #: The card's own last words: its newest `card.created`, `card.rebuilt` or `card.versioned` event that kept them.
 _LAST_WORDS = (
     "select detail -> 'words' as words from card_events where org_id=:o and card_id=:id "
@@ -663,12 +670,6 @@ class CardStore:
                            actor=actor_id, detail={"tag": matched_tag}, conn=c)
         return {"ok": True, "surfaced": True, "card_id": card_id}
 
-    #: STEP-14 (M42.C3.L-interface.V3.U04): the open cards a door is asked about — a file's card, or an expert or
-    #: question card from before 0220 that names no file — and each door's own predicate, as the queue reads it.
-    _FILE_CARDS = (" k.org_id=:o and k.state = any(:open) and s.status='open' and k.expires_at > :authority_time "
-                   "and (k.file_id is not null or k.capability_key = 'expert.file_review' "
-                   "     or k.builder_version = :question_builder) ")
-
     def doors(self, org_id: str, *, eval_time=None) -> dict[str, tuple[str, ...]]:
         """Which door each open file card passes now (STEP-14 M42.C3.L-interface.V3.U04): `decision` (the
         decision's authority) or `question` (STEP-13's third door, keyed on the question builder's stamp a version
@@ -678,16 +679,16 @@ class CardStore:
                   "question_builder": QUESTION_CARD_BUILDER}
         found = {
             "decision": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id "
-                         "and s.org_id=k.org_id " + AUTHORITATIVE_SIGNAL_JOINS + " where" + self._FILE_CARDS +
+                         "and s.org_id=k.org_id " + AUTHORITATIVE_SIGNAL_JOINS + " where" + _FILE_CARDS +
                          "and " + AUTHORITATIVE_SIGNAL_PREDICATE),
             "question": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id "
-                         "and s.org_id=k.org_id " + QUESTION_SIGNAL_JOINS + " where" + self._FILE_CARDS +
+                         "and s.org_id=k.org_id " + QUESTION_SIGNAL_JOINS + " where" + _FILE_CARDS +
                          "and " + QUESTION_CARD_SQL),
         }
         with self._engine.connect() as c:
             every = [r.card_id for r in c.execute(text(
                 "select k.card_id from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
-                "where" + self._FILE_CARDS), params)]
+                "where" + _FILE_CARDS), params)]
             passed = {door: {r.card_id for r in c.execute(text(sql), params)} for door, sql in found.items()}
         return {card: tuple(door for door in ("decision", "question") if card in passed[door])
                 for card in every}
