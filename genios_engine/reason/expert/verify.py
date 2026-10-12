@@ -406,7 +406,11 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
             draft = None                    # its words were for someone it may not go to
     met = None
     if move is not None and move.answers:
-        if any("we wait on them" in dl.line for dl in run.lines.get(move.answers, ())):
+        if move.answers not in run.lines:
+            # An ask its dossier never printed: whether it is answered cannot be read — the line drops,
+            # as a fact citing an unshown id does; the move stands on its facts.
+            run.say("answers", C.DROPPED, C.UNKNOWN_EVIDENCE, move.answers)
+        elif any("we wait on them" in dl.line for dl in run.lines.get(move.answers, ())):
             run.say("answers", C.DROPPED, C.NOT_OURS_TO_ANSWER, move.answers)
         elif (met := answered_by(dossier_text, move.answers)) is not None:
             run.say("answers", C.DROPPED, C.ANSWERED, f"{move.answers} by {met}")

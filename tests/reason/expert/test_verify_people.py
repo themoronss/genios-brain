@@ -94,6 +94,15 @@ def test_a_move_answering_an_ask_answers_one_that_waits_on_us():
     assert _verdict(_check(), "answers").verdict == C.KEPT
 
 
+def test_a_move_answering_an_ask_its_dossier_never_printed_drops_the_link():
+    """Whether it is answered cannot be read: the `answers` line drops as an unshown citation does, and
+    the move stands on its facts — never KEPT on an ask nobody can see."""
+    checked = _check(move={"answers": "loop:never_printed"})
+    assert _verdict(checked, "answers") == C.LineVerdict("answers", C.DROPPED, C.UNKNOWN_EVIDENCE,
+                                                         "loop:never_printed")
+    assert checked.fate == C.SHOWN and checked.words.headline
+
+
 @pytest.mark.parametrize("over, line", [
     ({"frames": {"primary": "The deck is owed by the founder", "rivals": ["a pass"]}}, "situation"),
     ({"done_when": "Marco has the deck from Arjun Rao"}, "done_when"),
