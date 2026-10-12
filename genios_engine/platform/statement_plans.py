@@ -301,5 +301,110 @@ def import_failures() -> tuple[tuple[str, str], ...]:
     return _cached()[2]
 
 
-__all__ = ["AUGMENTED", "HOLE", "PERCENT_FORMAT", "Statement", "build_statements", "census",
-           "census_of", "import_failures", "statements"]
+# ── planning ──────────────────────────────────────────────────────────────────────────────────
+
+#: Each statement gets this long. EXPLAIN without ANALYZE never executes, so nothing should come
+#: near it; it is there so a planner bug cannot hang the suite.
+PLAN_TIMEOUT_MS = 5_000
+
+#: The errors that are about a BIND's type and nothing else — the only ones a typing search may
+#: answer. ⛔ A missing column, a missing table or a syntax error is never in here.
+TYPE_ERRORS = re.compile(
+    r"operator does not exist|function .* is not unique|function .* does not exist"
+    r"|inconsistent types deduced for parameter|is of type .* but expression is of type"
+    r"|could not determine data type of parameter|operator is not unique")
+
+#: What a bind may be, at run time, in this engine: psycopg sends a datetime as timestamptz, a
+#: timedelta as interval, an int as an integer, a str as text, a list as an array, a dict as jsonb.
+CANDIDATE_TYPES = ("timestamptz", "interval", "bigint", "double precision", "text", "boolean",
+                   "jsonb", "date", "text[]")
+
+_PYFORMAT = re.compile(r"%\((\w+)\)s")
+_EXPANDING_IN = re.compile(r"(?i)\b(in)\s+(%\(\w+\)s)")
+_UNTYPED = re.compile(r"could not determine data type of parameter \$(\d+)")
+
+
+def positional(sql: str) -> tuple[str, tuple[str, ...]]:
+    """The statement as the driver sends it, with ``$n`` for each bind, in order of first use.
+
+    ⛔ SQLALCHEMY'S OWN PARSE, NOT A REGEX OF OURS. `text()` decides what a bind is — and it does
+    NOT take `:x::int` as one, so production sends that colon to Postgres, which refuses it. A
+    planner that bound it anyway would pass a statement production cannot run. ``in :ids`` is an
+    expanding bind (`bindparam(expanding=True)`) and is sent as a parenthesised list."""
+    from sqlalchemy import text
+    from sqlalchemy.dialects import postgresql
+
+    compiled = str(text(sql).compile(dialect=postgresql.psycopg.dialect()))
+    names: list[str] = []
+
+    def number(match: re.Match) -> str:
+        if match.group(1) not in names:
+            names.append(match.group(1))
+        return f"${names.index(match.group(1)) + 1}"
+
+    compiled = _EXPANDING_IN.sub(r"\1 (\2)", compiled)
+    return _PYFORMAT.sub(number, compiled).replace("%%", "%"), tuple(names)
+
+
+def _first_line(exc: BaseException) -> str:
+    return str(getattr(exc, "orig", None) or exc).strip().split("\n")[0]
+
+
+def _attempt(conn, sql: str, types: list[str]) -> str | None:
+    """One PREPARE + EXPLAIN EXECUTE, rolled back. None when it plans, else Postgres's error."""
+    from sqlalchemy.exc import DBAPIError
+
+    declared = f"({', '.join(types)})" if types else ""
+    arguments = f"({', '.join(['null'] * len(types))})" if types else ""
+    error: str | None = None
+    tx = conn.begin()
+    try:
+        conn.exec_driver_sql(f"set local statement_timeout = {PLAN_TIMEOUT_MS}")
+        # ⛔ `%%`: the driver reads `%` as a placeholder even with no parameters.
+        conn.exec_driver_sql(f"prepare s17_plan{declared} as {sql}".replace("%", "%%"))
+        conn.exec_driver_sql(f"explain execute s17_plan{arguments}")
+    except DBAPIError as exc:
+        error = _first_line(exc)
+    finally:
+        tx.rollback()
+    # ⛔ A PREPARE SURVIVES THE ROLLBACK — it is not transactional — so it is dropped on its own.
+    tx = conn.begin()
+    conn.exec_driver_sql("deallocate all")
+    tx.commit()
+    return error
+
+
+def plan(conn, sql: str) -> str | None:
+    """None when Postgres can prepare and plan the statement, else its error's first line.
+
+    ``conn`` is a SQLAlchemy connection with no transaction open; it is left with none, and with
+    no prepared statement. Nothing is executed: EXPLAIN without ANALYZE plans and stops.
+
+    ⛔ THE TYPING SEARCH, AND WHAT IT MAY CLAIM. Untyped, a bind is `unknown` and Postgres guesses —
+    `current_date - :d` reads as `date - date`, though psycopg will send an integer. So on a TYPE
+    error only, each free bind is given each of `CANDIDATE_TYPES` in turn, and a typing is accepted
+    only if the statement then PLANS. The claim is therefore *"some typing of one free bind plans
+    it"*, weaker than *"the run-time typing plans it"*, and it is never applied to a missing column,
+    a missing table or a syntax error. One bind at a time is what the tree needs — measured at
+    `c97155cd`, 14 statements needed the search and each needed exactly one bind typed; a statement
+    that needs two fails here and says so, and widening the search is then a decision."""
+    sql, names = positional(sql)
+    types = ["unknown"] * len(names)
+    error = _attempt(conn, sql, types)
+    while error and (match := _UNTYPED.search(error)) and types[int(match.group(1)) - 1] == "unknown":
+        types[int(match.group(1)) - 1] = "text"
+        error = _attempt(conn, sql, types)
+    if error is None or not TYPE_ERRORS.search(error):
+        return error
+    for position in [i for i, t in enumerate(types) if t == "unknown"]:
+        for candidate in CANDIDATE_TYPES:
+            trial = list(types)
+            trial[position] = candidate
+            if _attempt(conn, sql, trial) is None:
+                return None
+    return error
+
+
+__all__ = ["AUGMENTED", "CANDIDATE_TYPES", "HOLE", "PERCENT_FORMAT", "PLAN_TIMEOUT_MS",
+           "Statement", "TYPE_ERRORS", "build_statements", "census", "census_of",
+           "import_failures", "plan", "positional", "statements"]
