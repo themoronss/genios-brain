@@ -7981,6 +7981,14 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/team/emit.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_every_writer_routes_its_lane.py -k team"
                       depends_on: []
+                    - id: M36.C1.L-data.V0.U07
+                      what: >
+                        A team or verify card carries its signal's lane (added 12 Oct by the STEP-13 crosscheck,
+                        X29): the card insert and the in-place refresh write `output_lane` and `lane_reason` — a
+                        lane that stops at `signals` reached nobody (0190).
+                      artifact: "genios_engine/reason/team/emit.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_a_team_card_carries_its_lane.py"
+                      depends_on: [M36.C1.L-data.V0.U05]
             - layer: integration
               levels:
                 - level: 1
