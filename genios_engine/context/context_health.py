@@ -125,6 +125,11 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "day, which reads it, bottom-up",
         "MOVES WITH M44.C3.L-logic.V0.U02 (`executive/morning_day`), which reads your desk into the day"),
 
+    "meeting_days.meetings_of_day": (
+        "STEP-15 M44.C2.L-data.V0.U04: the seat's meetings of today and tomorrow, and the external meetings "
+        "nobody followed up — built before the morning brief's day, which reads them, bottom-up",
+        "MOVES WITH M44.C3.L-logic.V0.U02 (`executive/morning_day`), which reads the day's meetings"),
+
 }
 
 
