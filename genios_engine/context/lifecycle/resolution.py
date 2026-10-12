@@ -38,6 +38,7 @@ speaker above the floor.
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from time import perf_counter
 from typing import Any
@@ -253,6 +254,9 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
         claim = judge(description, situation_id=situation.situation_id, message=message,
                       obligations=obligations, internal_emails=internal,
                       model=getattr(llm, "model", "") or "")
+        # The claim names the brief it was made under, as its audit row does (`03` F83, STEP-13
+        # `yc2_w27_s13` M35.C5.L-data.V0.U01): `judge` knows only its own `PROMPT_VERSION`.
+        claim = replace(claim, prompt_version=prompt_version)
         review_state = "pending" if claim.decision == DECISION_REVIEW else None
         with store.engine.begin() as conn:
             store_mod.write_claim(conn, org_id, claim, review_state=review_state)
