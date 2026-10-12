@@ -126,7 +126,11 @@ def test_a_review_that_names_no_move_now_clears_the_files_decision(world, expiri
     _write(store, org, anchor, SECOND, events, **over)
     counts = _compile(store, org, registry, covered={anchor: SECOND}, at=NOW + timedelta(hours=6))
     assert counts.get("expert_cleared") == 1 and counts.get("expert_nothing_to_emit") == 1, counts
-    assert _open_signals(store, org, anchor) == [] and _status(store, org, first.signal_id) == "expired"
+    # ⛔ RESTATED by STEP-13 (`yc2_w27_s13` M36.C2.L-integration.V2.U03): a file that must find out first
+    # now ASKS — its decision is cleared all the same, and its one open signal is its question's.
+    asking = ["founder_question"] if mode == "find_out" else []
+    assert [s.rule_id for s in _open_signals(store, org, anchor)] == asking
+    assert _status(store, org, first.signal_id) == "expired"
     assert expiries == [("rule_cleared", (first.signal_id,))]
     assert counts["decided"] == {anchor: SECOND}, "a review that decides no move still decided its file"
 
