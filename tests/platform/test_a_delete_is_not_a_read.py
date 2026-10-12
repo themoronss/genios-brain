@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_136, (
+    assert r["statements"] == 3_137, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -508,6 +508,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,134 → 3,136 by yc2_w27_s16/M46.C5.L-data.V1.U02 (the brief keeps what you corrected):
     # `platform/company_brief_store` — `propose`'s read of the line a proposal replaces, and `accept`'s
     # removal of it. Two literals; `pending`'s read gained a self-join, not a statement.
+    # ⛔ MOVED 3,136 → 3,137 by yc2_w27_s16/M46.C5.L-logic.V2.U03 (the expert may propose correcting an
+    # accepted kind): one SELECT, `reason/expert/kind_proposal._PEOPLE_KEYS` — the file's people's keys, which
+    # the line giving the file its kind may name. A module constant.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
