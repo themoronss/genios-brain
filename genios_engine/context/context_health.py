@@ -118,6 +118,13 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "*'Every lens one entity appears in.'* One test caller. The multi-lens view of a node, and every live reader asks for one lens at a time",
         "MOVES WHEN a surface shows one entity across lenses — an entity page is the obvious caller and does not exist"),
 
+    # STEP-15 builds bottom-up (tree `yc2_w27_s15`): the day's readers land before the day that reads them. Each
+    # entry is deleted in the commit that wires its caller.
+    "your_desk.desk_for": (
+        "STEP-15 M44.C2.L-data.V0.U03: your last mail out and who waits on you — built before the morning brief's "
+        "day, which reads it, bottom-up",
+        "MOVES WITH M44.C3.L-logic.V0.U02 (`executive/morning_day`), which reads your desk into the day"),
+
 }
 
 

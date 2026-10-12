@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_114, (
+    assert r["statements"] == 3_116, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -489,6 +489,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,113 → 3,114 by yc2_w27_s15/M44.C2.L-data.V0.U01 (STEP-15, every file's current judgment):
     # one SELECT, `reason/expert/store._CURRENT` — each file's newest standing review and the change gate's
     # record of its decision, for the whole tenant in one read. A literal.
+    # ⛔ MOVED 3,114 → 3,116 by yc2_w27_s15/M44.C2.L-data.V0.U03 (STEP-15, your desk): two SELECTs in
+    # `context/your_desk` — every sender's newest mail as of the instant (`_LAST_BY_SENDER`, which are ours is asked
+    # of the identity) and the names of who asked (`_NAMES`). Two literals.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
