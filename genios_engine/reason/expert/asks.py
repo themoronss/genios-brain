@@ -39,6 +39,8 @@ _EXPIRE_QUESTION_SIGNALS = (
 ASKED = "asked"
 STANDING = "standing"
 ANSWERED_ALREADY = "answered_already"
+#: What leaves the file's question standing — what the change gate remembers as STANDING on its window.
+ASKING: frozenset[str] = frozenset({ASKED, STANDING})
 
 
 # ── what is asked, in checked words (STEP-13 M36.C2.L-logic.V2.U10, `03` X06, X10, X34) ──────────────────────────
@@ -164,10 +166,16 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
         bound = {"o": org_id, "run": run.get("run_id"), "dhash": output.get("decision_hash"),
                  "exp": decision.expires_at, "cfg": run.get("config_snapshot_id"), "et": eval_time}
         if standing is not None and before is not None and before.question_id == asked.question_id:
+            # RE-BOUND, ITS CARD'S WINDOW WITH IT (M36.C2.L-integration.V2.U11, `03` X04): one statement, so
+            # the signal's authority and the window of its unresolved card never disagree — a card is never
+            # capped at an authority its signal has since outgrown. A card that already lapsed stays lapsed
+            # here: reviving it is the card builder's (`deliver/store`), and a resolved one is nobody's.
             conn.execute(text(
-                "update signals set reasoning_run_id = :run, reasoning_decision_hash = :dhash, "
+                "with rebound as (update signals set reasoning_run_id = :run, reasoning_decision_hash = :dhash, "
                 "authority_expires_at = :exp, config_snapshot_id = :cfg, eval_time = :et "
-                "where org_id = :o and signal_id = :s"), {**bound, "s": standing.signal_id})
+                "where org_id = :o and signal_id = :s returning signal_id) "
+                "update cards set expires_at = :exp where org_id = :o and signal_id = :s "
+                "and resolved_at is null"), {**bound, "s": standing.signal_id})
             return STANDING
         if standing is not None:
             conn.execute(text("update signals set status = 'expired' where org_id = :o and signal_id = :s"),
@@ -195,12 +203,13 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
     return ASKED
 
 
-def retire_question(store, *, org_id: str, file_id: str, eval_time) -> bool:
-    """A decision that is no question: the file's open question retires, and its signal and card with it."""
+def retire_question(store, *, org_id: str, file_id: str, eval_time, why: str | None = None) -> bool:
+    """A decision that is no question — or a file no longer the expert's to decide (`LEFT_COVERAGE`): the
+    file's open question retires, saying why, and its signal and card with it."""
     from genios_engine.context import founder_questions as questions
 
     with store.engine.begin() as conn:
-        retired = questions.retire(conn, org_id=org_id, file_id=file_id, why=questions.NO_LONGER_ASKED,
+        retired = questions.retire(conn, org_id=org_id, file_id=file_id, why=why or questions.NO_LONGER_ASKED,
                                    at=eval_time)
         expired = conn.execute(text(_EXPIRE_QUESTION_SIGNALS), {"o": org_id, "n": file_id}).fetchall()
         if expired:

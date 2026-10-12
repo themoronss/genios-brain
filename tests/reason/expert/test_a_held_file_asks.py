@@ -301,3 +301,138 @@ def test_a_held_file_asks_the_checks_question_and_says_why_in_founder_words(over
     question, said = asks.question_words(row)
     assert question == row.checked.question and said == getattr(asks, why)
     assert said in asks.WHYS and row.checked.because not in said and ":" not in said
+
+
+# ── M36.C2.L-integration.V2.U11 · a question lives while it is asked (`03` X04, X26, X27) ───────────────────────
+
+def _signal_of(store, org, anchor):
+    with store.engine.connect() as c:
+        return c.execute(text("select signal_id, authority_expires_at, reasoning_run_id from signals where org_id = :o "
+                              "and subject_node_id = :n and rule_id = 'founder_question' and status = 'open'"),
+                         {"o": org, "n": anchor}).one()
+
+
+def test_an_asking_run_is_remembered_and_the_file_is_decided_again_before_its_question_lapses(world):
+    """⛔ `03` X04: an insufficient run was gated SUPPRESSED — skipped forever (`reason/change_gate`), its question's
+    authority lapsing at 168 h with nothing to renew it. An asking run is STANDING on its question's window: skipped
+    while the window holds, decided again — re-bound, the window moved — in the day before it closes. The gate's
+    memory is never deleted here."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    covered = {anchor: "ffp-fund-findout-review-000"}
+    _compile(store, org, registry, covered=covered)
+    first = _signal_of(store, org, anchor)
+    quiet = _compile(store, org, registry, covered=covered, at=NOW + timedelta(hours=100))
+    assert quiet.get("expert_unchanged") == 1 and quiet.get("expert_decided", 0) == 0, quiet
+    renew = NOW + timedelta(hours=150)
+    again = _compile(store, org, registry, covered=covered, at=renew)
+    assert again.get("expert_decided") == 1 and again.get("expert_question_standing") == 1, again
+    now = _signal_of(store, org, anchor)
+    assert now.signal_id == first.signal_id and now.reasoning_run_id != first.reasoning_run_id
+    assert now.authority_expires_at == renew + timedelta(hours=168)
+    after = _compile(store, org, registry, covered=covered, at=renew + timedelta(hours=1))
+    assert after.get("expert_unchanged") == 1, "renewed once, not on every sweep of its last day"
+    assert _asking(store, org, at=NOW + timedelta(hours=169)) == [first.signal_id], "alive past seven days"
+    # …and the re-bound question is remembered as standing too: its next window is renewed the same way.
+    third = _compile(store, org, registry, covered=covered, at=renew + timedelta(hours=150))
+    assert third.get("expert_question_standing") == 1, third
+    assert _signal_of(store, org, anchor).authority_expires_at == renew + timedelta(hours=318)
+
+
+def test_a_question_whose_window_lapsed_unseen_is_asked_again_on_the_next_sweep(world):
+    """No sweep in its last day (the machine slept): the first sweep after the lapse decides the file again."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    covered = {anchor: "ffp-fund-findout-review-000"}
+    _compile(store, org, registry, covered=covered)
+    later = NOW + timedelta(hours=169)
+    assert _asking(store, org, at=later) == []
+    counts = _compile(store, org, registry, covered=covered, at=later)
+    assert counts.get("expert_question_standing") == 1, counts
+    assert len(_asking(store, org, at=later)) == 1
+
+
+def _other_file(store, org):
+    """The programme's file — another covered file, so this pass's coverage is the expert's, not empty."""
+    from tests.reason.test_a_programme_is_not_decided_as_an_investor import PROGRAMME, _by_counterparty
+    situations = _by_counterparty(store, org)[PROGRAMME]
+    with store.engine.connect() as c:
+        rows = c.execute(text(
+            "select s.anchor_node_id, m.event_id from context_situations s "
+            "  join context_correlation_members m on m.org_id = s.org_id and m.correlation_id = s.correlation_id "
+            " where s.org_id = :o and s.situation_id = any(:s)"), {"o": org, "s": list(situations)}).all()
+    return {r.anchor_node_id for r in rows}.pop(), {r.event_id for r in rows}
+
+
+def test_a_file_that_leaves_coverage_retires_its_question_and_its_signal(world):
+    """⛔ `03` X26 (`06` D60, the file's one card): the file is no longer the expert's to decide — its situations are
+    decided on their own again — so its question retires (`LEFT_COVERAGE`) and its signal expires, its card REPLACED."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
+    other, other_events = _other_file(store, org)
+    _write(store, org, other, "ffp-programme-review-0000", other_events)
+    later = NOW + timedelta(hours=1)
+    counts = _compile(store, org, registry, covered={other: "ffp-programme-review-0000"}, at=later)
+    assert counts.get("expert_question_uncovered") == 1, counts
+    [q] = _questions(store, org, anchor)
+    assert (q.state, q.retired_why) == (Q.RETIRED, Q.LEFT_COVERAGE)
+    assert _asking(store, org, at=later) == []
+
+
+def test_a_pass_that_covered_nothing_takes_no_question_down(world):
+    """⛔ THE NEGATIVE CONTROL. A pass whose expert covered nothing — it failed, or it did not run — is our failure,
+    not the file's: its question stays open (its window ends it, as declared)."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
+    counts = _compile(store, org, registry, covered={}, at=NOW + timedelta(hours=1))
+    assert counts.get("expert_question_uncovered", 0) == 0
+    [q] = _questions(store, org, anchor)
+    assert q.state == Q.OPEN and len(_asking(store, org, at=NOW + timedelta(hours=1))) == 1
+
+
+@pytest.fixture
+def spent(monkeypatch):
+    """A day whose cap is spent: no allowance left, across every lane."""
+    from genios_engine.reason import domain_shadow
+    monkeypatch.setattr(domain_shadow, "_daily_allowance", lambda *_a, **_k: 0)
+
+
+def test_on_a_day_the_cap_is_spent_the_file_still_asks(world, spent):
+    """⛔ `03` X27: the cap stopped the pass before the outcome — a held or finding-out file neither asked nor
+    cleared. The cap is the emitted decision's; a question emits none."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
+    assert counts.get("expert_question_asked") == 1 and counts.get("budget_exhausted", 0) == 0, counts
+    assert len(_asking(store, org)) == 1
+
+
+def test_on_a_day_the_cap_is_spent_a_review_that_names_no_move_still_clears(world, monkeypatch):
+    from genios_engine.reason import domain_shadow
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _write(store, org, anchor, "ffp-fund-act-review-000000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-act-review-000000"})
+    assert [s.rule_id for s in _open_signals(store, org, anchor)] == ["file_review"]
+    monkeypatch.setattr(domain_shadow, "_daily_allowance", lambda *_a, **_k: 0)
+    _write(store, org, anchor, "ffp-fund-nothing-review-00", events, mode="nothing", next_move=None, draft=None)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-nothing-review-00"},
+                      at=NOW + timedelta(hours=1))
+    assert counts.get("expert_cleared") == 1 and counts.get("budget_exhausted", 0) == 0, counts
+    assert _open_signals(store, org, anchor) == []
+
+
+def test_on_a_day_the_cap_is_spent_a_decision_still_waits(world, spent):
+    """The cap still holds what it is for: a decision that would be shown."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _write(store, org, anchor, "ffp-fund-act-review-000000", events)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-act-review-000000"})
+    assert counts.get("budget_exhausted") == 1 and counts.get("expert_emitted", 0) == 0, counts

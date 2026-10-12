@@ -8,7 +8,8 @@ whose review must find out first, asks the founder ONE question:
     question retires the file's old one, saying so (`REPLACED`); words the file already answered are
     that answer, whatever review asks them (M36.C2.L-data.V2.U12);
   * `answer` keeps the founder's words, once;
-  * `retire` closes a file's open question the review no longer asks (`NO_LONGER_ASKED`);
+  * `retire` closes a file's open question the review no longer asks (`NO_LONGER_ASKED`), or one whose
+    file is no longer the expert's to decide (`LEFT_COVERAGE`, M36.C2.L-integration.V2.U11);
   * `open_question` and `answers_for` read a file's open question and the answers it holds; `by_id` one.
 
 A question's id is its content's — the tenant, the file, the review that asks it, the words — so asking
@@ -30,6 +31,7 @@ RETIRED = "retired"
 #: Why a question was retired — closed, so each is counted by kind.
 REPLACED = "a newer question of the file replaced it"
 NO_LONGER_ASKED = "the file's latest review no longer asks it"
+LEFT_COVERAGE = "the file is no longer the expert's to decide"
 
 
 
@@ -149,5 +151,5 @@ def answer(conn, *, org_id: str, question_id: str, words: str, by: str, at: date
     return _row(r)
 
 
-__all__ = ["ANSWERED", "NO_LONGER_ASKED", "OPEN", "Question", "REPLACED", "RETIRED", "answer", "answers_for",
-           "ask", "by_id", "open_question", "question_id_for", "retire"]
+__all__ = ["ANSWERED", "LEFT_COVERAGE", "NO_LONGER_ASKED", "OPEN", "Question", "REPLACED", "RETIRED", "answer",
+           "answers_for", "ask", "by_id", "open_question", "question_id_for", "retire"]

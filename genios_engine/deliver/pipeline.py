@@ -206,7 +206,7 @@ _QUESTIONS_WITHOUT_CARDS = (
     "s.reasoning_run_id, s.reasoning_decision_hash, s.authority_expires_at, s.output_lane, s.lane_reason, "
     "s.capability_id, s.capability_version, s.capability_review_state, "
     "question_asked.question_id, question_asked.question, question_asked.why, "
-    "question_asked.fingerprint "
+    "question_asked.fingerprint, question_rr.trigger_ref as asking_review "
     "from signals s " + QUESTION_SIGNAL_JOINS +
     # The same rule as the decision selector's join: an expired card reopens the door, and so does a
     # stale one nobody has touched; any other card is the file's answer already.
@@ -259,8 +259,11 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
     # WHOEVER THE FILE'S DECISION WOULD REACH: the same routing, so a question goes where its answer is.
     assignee, rule = resolve_assignee(graph, org_id, facts, {**(attrs or {}), **_group_memberships(
         graph, org_id, node)})
+    # THE REVIEW ASKING IT NOW (STEP-13 M36.C2.L-integration.V2.U11, `03` X41): the same words asked by a later
+    # review re-bind the question to the run asking now, whose trigger is that review (`reason/expert/decide`);
+    # the question's own fingerprint is the review that asked it FIRST.
     with graph.engine.connect() as c:
-        review = reviews.read_review(c, org_id, node, str(row["fingerprint"]))
+        review = reviews.read_review(c, org_id, node, str(row.get("asking_review") or row["fingerprint"]))
     checked = review.checked if review is not None else None
     reading = checked.words.situation if checked is not None and checked.words.situation else None
     because = row["why"] if row["why"] in WHYS else WHY_FIND_OUT

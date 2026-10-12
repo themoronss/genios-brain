@@ -261,3 +261,104 @@ def test_a_question_filed_with_raw_words_is_carded_in_closed_ones(world, cards):
     [card] = _cards(store, org)
     assert card.abstained_because == card.why[0]["because"] == card.situation == asks.WHY_FIND_OUT
     assert "Tiger" not in " ".join(str(x) for x in (card.situation, card.abstained_because, card.why))
+
+
+# ── M36.C2.L-integration.V2.U11 · a question lives while it is asked (`03` X04, X26, X41) ────────────────────────
+
+def _answer_at(store, cards, org, card_id, at):
+    from genios_engine.deliver import actions
+    return actions.ingest_action(card_store=cards, graph=store, org_id=org, card_id=card_id,
+                                 actor="founder@meridian.test", action="answer", eval_time=at,
+                                 allow_any_assignee=True, words="This quarter's.")
+
+
+def test_a_question_card_lives_past_seven_days_with_the_gate_intact(world, cards):
+    """⛔ `03` X04, at NOW+169 h with the change gate's memory intact: the card died at its first authority (168 h)
+    and was never revived — no card, Answer refused V-09, the question still open. The file is decided again
+    before its window closes, and the card's window moves with its authority: one card, the same card, live."""
+    store, org, registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    covered = {anchor: "ffp-fund-findout-review-000"}
+    renew = NOW + timedelta(hours=150)
+    _compile(store, org, registry, covered=covered, at=renew)
+    assert _build(store, cards, org, at=renew)["question_cards"] == 0, "the same card — never torn down"
+    [moved] = _cards(store, org)
+    assert moved.card_id == card.card_id and moved.expires_at == renew + timedelta(hours=168) > card.expires_at
+    later = NOW + timedelta(hours=169)
+    _compile(store, org, registry, covered=covered, at=later)
+    _build(store, cards, org, at=later)
+    assert _queued(cards, org, later) == [card.card_id]
+    assert _answer_at(store, cards, org, card.card_id, later)["ok"] is True
+
+
+def test_a_question_card_that_lapsed_is_revived_while_its_question_is_asked(world, cards):
+    """No sweep in its last day: the card lapsed (the cron's sweep, `window.lapsed`) with its question still open.
+    The next sweep asks it again — re-bound — and the card comes back: the same card, queued, its window moved."""
+    from genios_engine.platform import card_lifecycle
+    store, org, registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    with store.engine.begin() as c:
+        # The cron's own sweep — every tenant's; this one's card is among what it lapsed.
+        assert (card.card_id, org) in card_lifecycle.expire_lapsed(c, now=NOW + timedelta(hours=168, minutes=1))
+    later = NOW + timedelta(hours=169)
+    assert _answer_at(store, cards, org, card.card_id, later)["code"] == "V-09", "lapsed: nothing to answer"
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"}, at=later)
+    _build(store, cards, org, at=later)
+    [revived] = _cards(store, org)
+    assert (revived.card_id, revived.state) == (card.card_id, "queued") and revived.expires_at > later
+    assert _queued(cards, org, later) == [card.card_id]
+    assert _answer_at(store, cards, org, card.card_id, later)["ok"] is True
+
+
+def test_a_lapsed_decision_card_is_never_revived(world, cards):
+    """⛔ THE NEGATIVE CONTROL: only a question card comes back. A decision card that lapsed while its signal still
+    stands is rebuilt in place (its words), and stays lapsed — its revival is not this unit's to give."""
+    from genios_engine.platform import card_lifecycle
+    from tests.reason.expert.test_a_covered_file_decides_once import _write as _write_act
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _write_act(store, org, anchor, "ffp-fund-act-review-000000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-act-review-000000"})
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    with store.engine.begin() as c:
+        card_lifecycle.expire_cards(c, org_id=org, card_ids=[card.card_id], cause=card_lifecycle.LAPSED,
+                                    kind=card_lifecycle.LAPSED_KIND)
+    later = NOW + timedelta(hours=2)
+    assert _build(store, cards, org, at=later)["refreshed"] == 1, "its signal stands: rebuilt in place"
+    assert [(c.card_id, c.state) for c in _cards(store, org)] == [(card.card_id, "expired")]
+
+
+def test_a_file_that_leaves_coverage_takes_its_question_card_with_it(world, cards):
+    """⛔ `03` X26: the file is decided on its situations again; its question card is not left beside them."""
+    from tests.reason.expert.test_a_held_file_asks import _other_file
+    from tests.reason.expert.test_a_covered_file_decides_once import _write as _write_act
+    store, org, registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    other, other_events = _other_file(store, org)
+    _write_act(store, org, other, "ffp-programme-review-0000", other_events)
+    later = NOW + timedelta(hours=1)
+    _compile(store, org, registry, covered={other: "ffp-programme-review-0000"}, at=later)
+    _build(store, cards, org, at=later)
+    assert [c.state for c in _cards(store, org) if c.builder_version == QUESTION_CARD_BUILDER] == ["expired"]
+
+
+def test_a_rebound_question_card_reads_the_review_asking_it_now(world, cards):
+    """⛔ `03` X41: the same words asked by a later review re-bind the question to the run asking now — and its card
+    was built from the FIRST review's reading. It reads the review the run asking it was triggered by."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
+    later_reading = "a fund that has moved its partner meeting up a week"
+    _write(store, org, anchor, "ffp-fund-findout-review-001", events, mode="find_out", draft=None,
+           frames={"primary": later_reading, "rivals": ["a polite check-in"]},
+           next_move={"who": "you", "what": FIND_OUT, "for_whom": "Arjun", "by_when": None})
+    later = NOW + timedelta(hours=1)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
+    assert counts.get("expert_question_standing") == 1, counts
+    _build(store, cards, org, at=later)
+    [card] = _cards(store, org)
+    assert (card.headline, card.situation) == (FIND_OUT, later_reading)

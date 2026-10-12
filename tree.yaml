@@ -8132,6 +8132,23 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/domain_shadow.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/capture/test_the_needs_queue_gets_worked.py"
                       depends_on: [M36.C2.L-data.V1.U02, M35.C3.L-integration.V2.U02]
+                    - id: M36.C2.L-integration.V2.U11
+                      what: >
+                        A question lives while it is asked (fix-first, crosscheck `03` X04, X26, X27, X41): an
+                        asking run is remembered STANDING on its question's window (never SUPPRESSED, which the
+                        change gate skipped forever) and the file is decided again in the day before that window
+                        closes (`change_gate.QUESTION_RENEW_MARGIN`) — a re-run re-binds the question, and the
+                        re-bind moves its card's `expires_at` with its authority in the same statement; a question
+                        card that lapsed while its question is still open and asked is revived — the same card,
+                        queued (`deliver/store`'s upsert, the question builder's only); a file that leaves
+                        coverage retires its question (`LEFT_COVERAGE`) and its card (`06` D60, the file's one
+                        card) — but a pass whose expert covered nothing takes no question down; on a day the cap
+                        is spent the question is still asked or the old decision cleared (the cap applies after
+                        the outcome, to a decision that would be shown); and a re-bound question card reads the
+                        review asking it now (the run's trigger). Proven at NOW+169 h with the gate intact.
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_a_question_card.py tests/reason/test_change_gate.py"
+                      depends_on: [M36.C2.L-integration.V2.U03, M36.C2.L-interface.V3.U05, M36.C2.L-logic.V2.U10]
                 - level: 6
                   units:
                     - id: M36.C2.L-integration.V6.U08
