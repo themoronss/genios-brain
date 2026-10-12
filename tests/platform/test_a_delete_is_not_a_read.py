@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_119, (
+    assert r["statements"] == 3_121, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -495,6 +495,9 @@ def test_the_statement_count_did_NOT_move():
     # the cache count behind the "may cost LLM" estimate; no road calls a model, so the estimate, the
     # refusal and the count are gone. A literal. (M48.C3.L-data.V1.U17 moved `gmail_l1`'s seven
     # statements into one tuple and counts the same: net 0.)
+    # ⛔ MOVED 3,119 → 3,121 by yc2_w27_s18/M48.C1.L-data.V1.U14 (crosscheck S18-X09): the one-off
+    # `scripts/rest_stuck_reviews.py` — its SELECT of the review objects stuck at `governed` (`STUCK`) and
+    # its UPDATE back to `human_review` (`REST`). Two literals, each a constant.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

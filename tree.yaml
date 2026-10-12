@@ -8597,6 +8597,22 @@ yc2_w27_s18:
                       artifact: "genios_engine/feedback/publisher.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/feedback/test_a_review_object_waits_for_review.py tests/api/test_a_proposal_is_written_once.py tests/feedback/test_no_transition_takes_an_edge_the_contract_forbids.py"
                       depends_on: []
+                - level: 1
+                  units:
+                    - id: M48.C1.L-data.V1.U14
+                      what: >
+                        S18-X09 (the STEP-17/18 crosscheck) — review objects persisted before B4's fix
+                        stay at `governed`: `persist` answers `unchanged` every week, the review route
+                        answers 409, the queues never list them. `scripts/rest_stuck_reviews.py`, a
+                        one-off (dry run by default, `--apply` to write, a named target): every
+                        `governed` row whose LATEST `learning_transitions` edge goes to `human_review`
+                        (latest by time; at one instant the edge with a predecessor) moves to
+                        `human_review`, in one transaction, state only, no transition written. Listed
+                        in 08 §4.11 beside the s18-F3 probe. The learning ledger's measured updaters
+                        3 → 4 and the statement pin 3,119 → 3,121, each with its reason.
+                      artifact: "scripts/rest_stuck_reviews.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/scripts/test_rest_stuck_reviews.py tests/api/test_a_proposal_is_written_once.py tests/platform/test_a_delete_is_not_a_read.py"
+                      depends_on: [M48.C1.L-data.V0.U02]
         - id: M48.C2
           name: Memory is never aborted, lost on a rebuild, doubled, or failed by a neighbour's read — L3 Context Graph (`context/`) and its writers
           layers:

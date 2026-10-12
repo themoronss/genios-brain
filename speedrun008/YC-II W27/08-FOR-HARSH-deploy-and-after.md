@@ -791,6 +791,41 @@ select o.outcome, o.reason, count(*) as situations, max(o.last_seen_at) as last_
 Zero `unsupported · unreviewed` rows after a sweep means the switch did not take, or the org has no
 open fundraising situation — `--status` says which. Keep the outputs in `baseline/<date>-after-founder/`.
 
+### 4.11 · STEP-18 — after the deploy
+
+Every command on production needs `GENIOS_ALLOW_PROD_WRITE=1` (`scripts/_db.py`), the dry run too.
+
+**1 · s18-F3 — each learning object's row against its own ledger** (read-only). Since B4
+(`feedback/publisher._rest_for_review`) a NEW object the weekly sweep sends for review rests at
+`human_review`; for every other sink the row still says `governed` while its latest transition says
+otherwise — STEP-16's to mend, this is the count:
+
+```
+select lo.state as row_state, lt.to_state as ledger_state, count(*)
+  from learning_objects lo
+  left join lateral (select t.to_state from learning_transitions t
+                      where t.org_id = lo.org_id and t.learning_id = lo.learning_id
+                      order by t.occurred_at desc, (t.from_state is null) asc, t.id desc
+                      limit 1) lt on true
+ group by 1, 2 order by 3 desc;
+```
+
+**2 · The backfill beside it — a review object stuck at `governed` waits for review again**
+(`scripts/rest_stuck_reviews.py`, `yc2_w27_s18` M48.C1.L-data.V1.U14; the crosscheck's S18-X09).
+Objects sent for review before B4's fix stay at `governed`: never listed, and the review route answers
+them 409. The probe's `governed` / `human_review` row is their count. Dry run first; send its output
+(ids, one line each) to Rohit; `--apply` after he reads it:
+
+```
+GENIOS_ALLOW_PROD_WRITE=1 PGOPTIONS='-c default_transaction_read_only=on' \
+    python scripts/rest_stuck_reviews.py --database-url "$URL"            # dry run: writes nothing
+GENIOS_ALLOW_PROD_WRITE=1 python scripts/rest_stuck_reviews.py --database-url "$URL" --apply
+```
+
+It moves exactly the rows whose state is `governed` and whose latest transition goes to
+`human_review`, in one transaction, and writes no transition (the ledger already holds that edge).
+Run the probe again after: the `governed` / `human_review` row reads 0.
+
 ## 5 · Do not
 
 - switch **`calibration_apply`** on for any tenant. It is Rohit's decision (`06` D13), and not
