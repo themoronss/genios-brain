@@ -7,8 +7,8 @@ passed its tests; M36.C1.U01–U05 made each write the lane and its reason. This
 
   * every statement in the engine that inserts into `signals` names `output_lane` and `lane_reason` — read
     out of the AST (`reason/situation_binding.signal_insert_columns`), so a comment cannot satisfy it and a
-    statement wrapped over eight lines cannot hide from it — and the writers are the five there are: a
-    sixth is added to `WRITERS` on purpose, with its lane;
+    statement wrapped over eight lines cannot hide from it — and the writers are the six there are (the
+    sixth, a held file's question, M36.C2.U03): another is added to `WRITERS` on purpose, with its lane;
   * against real data, `scripts/pipeline_health.check_every_new_signal_has_a_lane` counts the signals of
     the last day with no lane — 0 to pass, a day after the deploy.
 """
@@ -33,6 +33,8 @@ WRITERS: dict[str, str] = {
     "reason/publication.py": "the native publication: its decision's lane",
     "reason/composer.py": "the deal-health composite: its decision's lane",
     "reason/team/emit.py": "a post-pass's observation: a discrepancy is a conflict, a team situation is watched",
+    # M36.C2.L-integration.V2.U03: a sixth, on purpose — the question a held file asks.
+    "reason/expert/asks.py": "a held file's question: the Investigation lane of the decision that asked it",
 }
 
 

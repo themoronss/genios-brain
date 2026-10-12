@@ -46,6 +46,10 @@ and `LINEAGE_UNPROTECTED`. What this module adds is that it can no longer be LOS
 guard below reads the real column list out of each writer's AST, so a fifth writer that appears
 without a declaration is a build failure, and the day the decision is revisited the change is one
 line per writer with a test already standing over it.
+
+STEP-13 ADDED A SIXTH (`yc2_w27_s13` M36.C2.L-integration.V2.U03): the question a held file asks the
+founder, `reason/expert/asks.ask_the_founder`. It binds, and for the compiled lane's own reason — it is
+that lane's decision on one file, filed under the situation the file was decided at.
 """
 
 from __future__ import annotations
@@ -92,6 +96,13 @@ SIGNAL_WRITERS: tuple[SignalWriter, ...] = (
         "a corpus FOR THE SITUATION'S DOMAIN and reasons over the situation itself, so the id it "
         "writes is provenance rather than co-location. It is also feature-flagged, which is why "
         "the column reads as null on almost every row in production today."),
+    SignalWriter(
+        "genios_engine.reason.expert.asks", "ask_the_founder", True,
+        "STEP-13 · A HELD FILE'S QUESTION, AND IT BINDS FOR THE COMPILED LANE'S REASON. It is the "
+        "same file's decision — the expert's run that ended insufficient on its review — filed "
+        "under the situation `domain_shadow` decided that file at (`home.situation_id`), so the id "
+        "is that decision's provenance, never co-location. Its own writer because a question is "
+        "not a decision: it is authorised by its own fragment (`reason/authority`)."),
     SignalWriter(
         "genios_engine.reason.team.emit", "_write_card", False,
         "⛔ A DIFFERENT VOCABULARY, AND IT MUST NOT BE WIRED. The team lane's 'situation' is a "
@@ -183,7 +194,8 @@ def missing(modules_writing_signals: frozenset[str]) -> tuple[str, ...]:
 #: ⛔ The one number that says how large the silence is, so it is read as a held decision rather
 #: than as a healthy lane. Recomputed by the test from `SIGNAL_WRITERS`, never hand-maintained.
 def bound_fraction() -> tuple[int, int]:
-    """`(writers that bind, writers total)` — 1 of 5 until the decision in the docstring is made."""
+    """`(writers that bind, writers total)` — 2 of 6 until the decision in the docstring is made: the
+    compiled lane and, since STEP-13, the question one of its files asks (`reason/expert/asks`)."""
     return sum(1 for w in SIGNAL_WRITERS if w.binds), len(SIGNAL_WRITERS)
 
 
