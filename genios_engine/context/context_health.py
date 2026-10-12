@@ -130,6 +130,11 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "nobody followed up — built before the morning brief's day, which reads them, bottom-up",
         "MOVES WITH M44.C3.L-logic.V0.U02 (`executive/morning_day`), which reads the day's meetings"),
 
+    "promises_due.promises_due": (
+        "STEP-15 M44.C2.L-data.V0.U05: every open promise of ours overdue or due within a week, with its mail and "
+        "whom it is owed to — built before the morning brief's day, which reads it, bottom-up",
+        "MOVES WITH M44.C3.L-logic.V0.U02 (`executive/morning_day`), which reads your promises due"),
+
 }
 
 

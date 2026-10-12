@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_120, (
+    assert r["statements"] == 3_122, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -496,6 +496,9 @@ def test_the_statement_count_did_NOT_move():
     # `context/meeting_days` — the seat's meetings, their attendees, the titles a series shares, the mail to them.
     # Each one literal: the seat-visibility predicate is written into each, not concatenated from a constant,
     # which the census would have counted as one render per prefix (measured: 10, and four new holes).
+    # ⛔ MOVED 3,120 → 3,122 by yc2_w27_s15/M44.C2.L-data.V0.U05 (STEP-15, your promises due): two SELECTs in
+    # `context/promises_due` — every promise with its due date, status, owner, maker and mail, and the people its
+    # mail went to. Two literals.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
