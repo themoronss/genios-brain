@@ -383,10 +383,16 @@ def unmet_source_families(conn, org_id: str, domain: str | None) -> tuple[str, .
     if not domain:
         return ()
     try:
-        row = conn.execute(text(
-            "select required, connected from source_coverage "
-            "where org_id = :o and domain = :d limit 1"),
-            {"o": org_id, "d": str(domain)}).first()
+        # ⛔ IN A SAVEPOINT (`03` F120's shape, its third site — STEP-18 S18-X08, `yc2_w27_s18`
+        # M48.C2.L-data.V2.U18): the support and outreach passes call this inside their own
+        # transaction, right before `window_coverage_gaps`. A failed statement left bare aborts that
+        # transaction on Postgres, and every later read and write of the pass failed the same
+        # swallowed way.
+        with conn.begin_nested():
+            row = conn.execute(text(
+                "select required, connected from source_coverage "
+                "where org_id = :o and domain = :d limit 1"),
+                {"o": org_id, "d": str(domain)}).first()
     except Exception:      # noqa: BLE001 — a sentence is never worth the sweep
         return ()
     if row is None:

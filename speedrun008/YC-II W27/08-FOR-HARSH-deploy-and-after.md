@@ -96,7 +96,7 @@ here when the step lands. Nothing in this table switches anything on by itself.
 |---|---|---|---|---|
 | STEP-13, check every claim | first part **pushed** (`7766a06a`); the check's and the question's fixes from its crosscheck are merged and being re-recorded; next push | `0200_expert_review_checks` (one nullable column on `expert_reviews`: the check), `0201_founder_questions` (one table; `/reset` wipes it) | §1.14, §3.12, §4.10 — nothing runs until the expert is on (§3.11); wire the needs queue's fetchers when you can (§3.12) | the **question card** and its **Answer** box; each card sentence's **source**; the workstream page reads `says` and `check` (§1.14) |
 | STEP-17, real tests | **built**, merged on the integration branch | none | CI gains a `database` job (Postgres 17) and every job runs Python **3.11**, the Dockerfile's; after each deploy keep the health gate's output (`scripts/pipeline_health.py … --json <release record>/health.json`) and run it again the next day with `--require-data` — STEP-17's follow-up adds the exact step to §2/§3 | — |
-| STEP-18, the known bugs | **built**, merged on the integration branch | `0210_every_wrong_reason_is_kept`, `0211_a_followup_names_its_observation` | **before the deploy:** set `GENIOS_JWT_SECRET` in production (a non-dev boot with the default secret refuses to start, exit 3). If you also set `GENIOS_ENV` to a non-dev value: a rotated secret signs every user and paired desktop app out (they sign in again), and unsigned Composio webhooks get 403 unless `GENIOS_COMPOSIO_WEBHOOK_SECRET` is set — read `GET /config` first. **After:** the s18-F9 and s18-F3 probes, and the backfill of review objects stuck at `governed` (dry run first) — STEP-18's follow-up adds the exact commands. Open, Rohit's: what happens when `GENIOS_ENV` is unset | — |
+| STEP-18, the known bugs | **built**, merged on the integration branch | `0210_every_wrong_reason_is_kept`, `0211_a_followup_names_its_observation` | **before the deploy:** set `GENIOS_JWT_SECRET` in production (a non-dev boot with the default secret refuses to start, exit 3). If you also set `GENIOS_ENV` to a non-dev value: a rotated secret signs every user and paired desktop app out (they sign in again), and unsigned Composio webhooks get 403 unless `GENIOS_COMPOSIO_WEBHOOK_SECRET` is set — read `GET /config` first — and since `06` D62 an UNSET `GENIOS_ENV` counts as not dev too, so the image refuses to boot on a public secret until both are set (§3.14). **After:** the s18-F9 and s18-F3 probes and the backfill of review objects stuck at `governed`, dry run first (§4.11) | — |
 | STEP-14, the card | **being built** | `0220_the_living_card`, `0221_the_gold_card` (planned) | read the board as the app showed it (s14-D4) | one **living card per file**: a card has versions, and its history shows them; a question card stays open after your answer (*"your answer is in; the file is read again"*, s14-D3); the headline is cut by code, the move whole under *recommended* |
 | STEP-15, the morning brief | **being built** | `0230_morning_briefs` (planned) | at deploy, **set `orgs.timezone` for Rohit's org** (otherwise it is inferred from his send hours); a Slack tenant gets the brief as its digest | the **Today view** (Atlas A.10 has the wireframe) reads the brief's route at 08:00 in the org's timezone; e-mail and WhatsApp come later |
 | STEP-16, learning from you | **being built** | `0241_founder_corrections`, `0242_company_brief_corrections` (planned; `0240` is not needed — STEP-18's `0210` already keeps every reason) | do **not** arm calibration (D13 stays shadow) | the card's *wrong* shows four groups and a words box; a question card can be called *wrong* (*"don't ask me this"*); your corrections show on the file |
@@ -336,6 +336,7 @@ files; the deploy is not done until the boot log names each.
 ⛔ **STEP-13 (12 Oct) adds `0200_expert_review_checks.sql`** (one nullable column on `expert_reviews`, written by
 the review store) **and `0201_founder_questions.sql`** (one table; `/reset` fails until it is applied) — the boot
 log names eleven files from `0191`.
+⛔ **STEP-18 (12 Oct) adds `0210_every_wrong_reason_is_kept.sql` and `0211_a_followup_names_its_observation.sql`** (both additive), and BEFORE the deploy needs `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` in the deployment's environment, or the new image refuses to boot — §3.14.
 No new environment variable. One value we need from the
 deploy's environment:
 **`GENIOS_L4_LLM_DECISION_MAKER`** — on or off? The golden set runs the LLM decider on, as
@@ -539,7 +540,7 @@ correlation rebuild re-derives every file from it, and the graph rebuild alone k
 ```
 ORG=org_e97e86f858ad48b2bbf64b8a
 # 1 · read every event again with the brief in force (dry by default; --apply backs up every graph
-#     table first; it refuses if an uncached event would call the model). ⛔ It has no
+#     table first; no road calls a model — S18-X06 took its refusal away). ⛔ It has no
 #     --database-url: it reads the application's own DATABASE_URL, so run it where the app runs
 python -m scripts.rebuild_graph --org $ORG
 python -m scripts.rebuild_graph --org $ORG --apply
@@ -623,6 +624,89 @@ Switch it on for no other tenant. A day later run the expert's health check
    the founder never waits on it.
 4. Known and open (a unit is planned): an Answer pressed at the very moment the sweep re-binds the same question can
    deadlock with it; PostgreSQL aborts one of the two and a second press succeeds.
+
+### 3.13 · STEP-17 — keep the health gate's output, and read it again the next day
+
+The last step of every deploy (`06` D69, STEP-17 S17-D3). `scripts/pipeline_health.py` has three
+verdicts since STEP-17 (`yc2_w27_s17` M40.C3): **PASS**, **FAIL** and **NO DATA** — a check whose
+population was empty in its window judged nothing, and says so instead of PASS (measured on a tenant
+with no data: 17 of 19 checks used to print PASS). NO DATA is never a failure and never a pass: it is
+counted apart in the last line, `N/M checks passed, K with no data, F failed`.
+
+**1 · Right after the deploy** — the record of the release. Keep the file with the deploy's log; send
+it to Rohit:
+
+```
+REL="$HOME/genios-releases/$(date +%F)-$(git rev-parse --short origin/harsh/mvp)"; mkdir -p "$REL"
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL" \
+    --json "$REL/health.json"
+```
+
+Exit 0: nothing failed — NO DATA allowed, and on the deploy day expected for any lane that has not
+run since the boot. Exit 1: a check FAILED — read its `fix:` line before the next deploy (`06` D69).
+`--json` writes every verdict (name, verdict, measured, expected, fix, detail) to the file as pure
+JSON, PASS and NO DATA included, so the `[db]` lines on stdout cannot spoil it (`03` F36).
+
+**2 · The next day** — every lane should have run by now, so NO DATA is no longer an answer:
+
+```
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL" \
+    --json "$REL/health-next-day.json" --require-data
+```
+
+Exit 2: nothing failed, but a check still judged nothing. What that means: the lane it reads made no
+call, wrote no row or saw no event in its window — an LLM lane that called in the last 7 days and
+not in the window is named in the check's own line (`03` F24's shape: a silent lane once read as a
+healthy one). Send Rohit the file and the names of the NO DATA checks; a silent lane is a finding,
+not a pass. Exit 1: as above. Exit 0: every check judged something, and none failed.
+
+Where a section above says a check *must pass*, NO DATA on the deploy day is not a breach of it; on
+the next day's `--require-data` run it is.
+
+### 3.14 · STEP-18 — before and after the deploy
+
+STEP-18 (`yc2_w27_s18`, its 20 units and the crosscheck's follow-ups) ships two migrations and one
+boot rule. §0c's row is the summary; these are the steps.
+
+**⛔ Before the deploy — the boot refuses a public secret, and an unset `GENIOS_ENV` is not dev**
+(STEP-18 B7, s18-F11; `06` D62, Rohit 12 Oct; the crosscheck's S18-X02, X03, X04). From this image
+on, a boot refuses to start — before it migrates or starts a worker — when `GENIOS_ENV` is **unset**
+or names anything but `dev`, `development`, `test` or `local`, **and** `GENIOS_JWT_SECRET` is empty,
+the default the repository ships, or `.env.example`'s `change-me-in-prod`
+(`platform/config.insecure_boot`; `main.py` raises, uvicorn exits 3, the reason is the last line of
+the deploy log). Until D62 an unset `GENIOS_ENV` read `dev` and booted on the public key; it no longer
+does.
+
+1. Read what production says it is. `env` is the deployed `GENIOS_ENV` — and `dev` when it is
+   **unset** (the setting's default), so `"dev"` here means *read the deployment's environment*:
+   ```
+   curl -s "$API/config"        # {"env": "...", "composio": "real", "database": "postgres", ...}
+   ```
+2. In the deployment's environment (DigitalOcean), read — do not print — whether `GENIOS_ENV`,
+   `GENIOS_JWT_SECRET` and `GENIOS_COMPOSIO_WEBHOOK_SECRET` are set.
+3. **If production does not set `GENIOS_ENV`, or sets it outside dev, the new image will not boot
+   until `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` are set.** Set them together, in one change,
+   before the deploy, knowing what each does:
+   * **A new `GENIOS_JWT_SECRET` signs every user and every paired desktop app out.** Every session
+     and device token is signed and checked with it (`platform/sessions.py`, `platform/auth.py`,
+     `platform/devices.py`), and the dashboard, the desktop app and the extension do not call
+     `/auth/refresh` yet (`platform/config.py`): each signs in again, each desktop app pairs again.
+     If production already carries a secret of its own, keep it — nobody signs out. If it carries
+     the default (or none), schedule the rotation and tell Rohit and the design partner first.
+   * **A `GENIOS_ENV` other than exactly `dev` turns every unsigned Composio webhook into a 403**
+     unless `GENIOS_COMPOSIO_WEBHOOK_SECRET` is set (`api/routes.py`, the Composio webhook route:
+     *"webhook secret not configured"*) — push ingestion stops; the scheduled sync still runs. Set
+     the webhook secret (Composio's signing secret) in the same change. The environment's name also
+     tags every analytics event and decides the device-verification fallback (`platform/analytics.py`,
+     `api/device_routes.py`).
+4. Send Rohit what `/config` said, which of the three were already set, and what you set.
+
+**The boot log** names `0210_every_wrong_reason_is_kept.sql` (every wrong-because reason a card's
+*wrong* offers is kept: one NAMED check per table on `card_feedback_verdicts` and
+`card_feedback_revisions`) and `0211_a_followup_names_its_observation.sql` (one nullable column,
+`screen_followups.observation_id`) — §2. Both are additive; the previous image runs on them.
+
+**After the deploy** — the two probes and the one-off backfill, in that order: §4.11.
 
 ## 4 · The probes — send the outputs
 
@@ -814,6 +898,55 @@ select (checked->>'fate') as fate, count(*) from expert_reviews
 
 and `python scripts/pipeline_health.py --org $ORG --database-url "$URL"` — *every new signal has a lane* must PASS
 (it says NO DATA on a day with no signal). Send all of it; the fates say how often a real model's claims are held.
+
+### 4.11 · STEP-18 — after the deploy
+
+Every command on production needs `GENIOS_ALLOW_PROD_WRITE=1` (`scripts/_db.py`), the dry run too.
+The two probes are read-only (`PGOPTIONS='-c default_transaction_read_only=on' psql "$URL"`); send
+both outputs to Rohit.
+
+**0 · s18-F9 — the behaviour brain's published entries of THEIR reply latency** (read-only). B11
+(`packs/brains/behavior_distill`, M49.C2.L-logic.V0.U03) stops publishing the counterparty's latency
+as our behaviour; an entry published before stays active, and nothing retracts it:
+
+```
+select count(*) from learned_brain_entries
+ where brain = 'behavior' and active
+   and subject like 'behavior:relationship.response_latency_hours:%';
+```
+
+0 closes it. Anything else is STEP-16's retraction path — send the count; change nothing.
+
+**1 · s18-F3 — each learning object's row against its own ledger** (read-only). Since B4
+(`feedback/publisher._rest_for_review`) a NEW object the weekly sweep sends for review rests at
+`human_review`; for every other sink the row still says `governed` while its latest transition says
+otherwise — STEP-16's to mend, this is the count:
+
+```
+select lo.state as row_state, lt.to_state as ledger_state, count(*)
+  from learning_objects lo
+  left join lateral (select t.to_state from learning_transitions t
+                      where t.org_id = lo.org_id and t.learning_id = lo.learning_id
+                      order by t.occurred_at desc, (t.from_state is null) asc, t.id desc
+                      limit 1) lt on true
+ group by 1, 2 order by 3 desc;
+```
+
+**2 · The backfill beside it — a review object stuck at `governed` waits for review again**
+(`scripts/rest_stuck_reviews.py`, `yc2_w27_s18` M48.C1.L-data.V1.U14; the crosscheck's S18-X09).
+Objects sent for review before B4's fix stay at `governed`: never listed, and the review route answers
+them 409. The probe's `governed` / `human_review` row is their count. Dry run first; send its output
+(ids, one line each) to Rohit; `--apply` after he reads it:
+
+```
+GENIOS_ALLOW_PROD_WRITE=1 PGOPTIONS='-c default_transaction_read_only=on' \
+    python scripts/rest_stuck_reviews.py --database-url "$URL"            # dry run: writes nothing
+GENIOS_ALLOW_PROD_WRITE=1 python scripts/rest_stuck_reviews.py --database-url "$URL" --apply
+```
+
+It moves exactly the rows whose state is `governed` and whose latest transition goes to
+`human_review`, in one transaction, and writes no transition (the ledger already holds that edge).
+Run the probe again after: the `governed` / `human_review` row reads 0.
 
 ## 5 · Do not
 

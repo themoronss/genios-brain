@@ -216,9 +216,12 @@ def _in_3h() -> str:
     return (datetime.now(timezone.utc) + timedelta(hours=3)).strftime("%Y-%m-%dT%H:%M")
 
 
-POPUP = {"work": True, "remember": True, "adds": "urgent_risk",
-         "items": [{**ASK_ITEM, "due": _in_3h(), "quote": "send the revised pricing"}],
-         "note": "Priya asked for this pricing on Monday too"}
+def _popup() -> dict:
+    """Built when the test runs (S17X-F3): its due is three hours from NOW, not from the import —
+    a run that spans three hours would otherwise hand the gate an overdue ask (`03` F142)."""
+    return {"work": True, "remember": True, "adds": "urgent_risk",
+            "items": [{**ASK_ITEM, "due": _in_3h(), "quote": "send the revised pricing"}],
+            "note": "Priya asked for this pricing on Monday too"}
 
 
 @pytest.mark.pg
@@ -267,7 +270,8 @@ def test_popup_actions_snooze_and_draft(client, monkeypatch):  # noqa: F811
         c.execute(text("update orgs set timezone='Asia/Kolkata' where id=:o"), {"o": org})
     client.get("/v1/seats/me/slice", headers=dev_h)            # the seat has a slice version
     monkeypatch.setattr(SP, "ensure_profile", lambda *a, **kw: None)
-    monkeypatch.setattr(SI, "llm_insight", lambda *a, **kw: dict(POPUP))
+    popup = _popup()
+    monkeypatch.setattr(SI, "llm_insight", lambda *a, **kw: dict(popup))
 
     m = _look(client, dev, [ASK]).json()
     (fu,) = _q("select * from screen_followups where org_id=:o", o=org)
@@ -336,7 +340,7 @@ def test_popup_actions_snooze_and_draft(client, monkeypatch):  # noqa: F811
     assert r.json() == {"text": "Hi Priya, sending the revised pricing by Friday evening."}
     assert seen["client"]["timeout"] == RD.TIMEOUT_S and seen["client"]["max_retries"] == 0
     prompt = seen["call"]["messages"][0]["content"]
-    assert POPUP["items"][0]["quote"] in prompt and "Priya Shah" in prompt
+    assert popup["items"][0]["quote"] in prompt and "Priya Shah" in prompt
     (cost,) = _q("select purpose, input_tokens, output_tokens from llm_costs where org_id=:o "
                  "and purpose='followup_draft'", o=org)
     assert (cost.input_tokens, cost.output_tokens) == (120, 18)

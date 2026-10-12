@@ -37,8 +37,14 @@ _TABLE = "learning_objects"
 #: at `human_review` — the state the ledger already logged for it, and the one state the review route
 #: takes. State only, and only on that road: `persist` still writes nothing to an existing row (the
 #: `_Conn` tests below), and the two tests after this one hold where the new statement may live.
+#: ⛔ MOVED 3 → 4 by yc2_w27_s18/M48.C1.L-data.V1.U14 (crosscheck S18-X09), read and deliberate:
+#: `scripts/rest_stuck_reviews.py`, a one-off an operator runs once after the STEP-18 deploy (dry run
+#: by default). It sets `state` only, `governed` → `human_review`, only on a row whose LATEST
+#: `learning_transitions` edge already goes to `human_review` — the same write `_rest_for_review` makes
+#: for a new object, for the ones persisted before B4's fix. It writes no transition; the per-updater
+#: test below holds it to `state`.
 _UPDATERS = {"genios_engine/api/learning_routes.py", "genios_engine/feedback/org_rule_ingest.py",
-             "genios_engine/feedback/publisher.py"}
+             "genios_engine/feedback/publisher.py", "scripts/rest_stuck_reviews.py"}
 
 
 # ── the invariant, both directions ─────────────────────────────────────────────────────────────
