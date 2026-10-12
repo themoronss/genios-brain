@@ -42,7 +42,7 @@ VERDICTS: tuple[str, ...] = (KEPT, CORRECTED, DROPPED, NOTED)
 UNCITED = "uncited"                          # a fact citing nothing
 UNKNOWN_EVIDENCE = "unknown_evidence"        # citing an id the dossier never showed
 UNQUOTED = "unquoted"                        # a fact a move rests on, citing a mail, with no quote
-MISQUOTED = "misquoted"                      # a quote the cited mail's words do not hold
+MISQUOTED = "misquoted"                      # a quote the cited mail's words do not hold — or no word shown
 UNSUPPORTED = "unsupported"                  # a name its lines do not hold
 WRONG_NUMBER = "wrong_number"                # a number its lines do not hold, and no calculator to fix it
 UNGROUNDED = "ungrounded"                    # an inference or pattern whose grounds all fell
@@ -72,11 +72,12 @@ SUPPRESSED = "suppressed"
 REFUSED = "refused"
 FATES: tuple[str, ...] = (SHOWN, HELD, SUPPRESSED, REFUSED)
 
-#: The lines a verdict may name: a review's own, by kind and number; what reaches the founder — the
-#: card's words, whom its draft goes to, the ask the move answers, the kind it proposes; its prose; and
-#: the facts the move names as its ground (`rests_on`: a ref that names no fact of the review drops
-#: there, M35.C1.L-contract.V0.U04).
-LINE_KINDS: tuple[str, ...] = ("fact", "inference", "pattern")
+#: The lines a verdict may name: a review's own, by kind and number — a fact's QUOTE among them, by its
+#: fact's number (`quote:<n>`: a quote the cited words do not hold drops there, the fact needing none,
+#: M35.C2.L-logic.V1.U09); what reaches the founder — the card's words, whom its draft goes to, the ask
+#: the move answers, the kind it proposes; its prose; and the facts the move names as its ground
+#: (`rests_on`: a ref that names no fact of the review drops there, M35.C1.L-contract.V0.U04).
+LINE_KINDS: tuple[str, ...] = ("fact", "inference", "pattern", "quote")
 CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", "answers", "kind", "prose",
                                "rests_on")
 

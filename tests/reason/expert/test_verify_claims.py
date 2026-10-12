@@ -111,7 +111,12 @@ def test_a_month_written_out_is_grounded_by_its_short_form(claim, kept):
     """A month written out is the month its lines write short (F51: the mail's "4 Aug", the claim's
     "August") — here a month no date on the line expands to (the mail is of 11 Aug); a month no line
     writes is still a name nobody wrote."""
-    checked = _check(fact1={"claim": claim}, ask_words="Thanks Arjun — could you send a short deck before "
+    # ⛔ RESTATED by M35.C2.L-logic.V1.U09: a decisive fact's numbers come from its QUOTE (the mail's head and
+    # its calculators aside), so the quote carries the "3 Sep" the claim restates — before, the claim's 3
+    # was grounded by another sentence of the mail its quote did not hold.
+    checked = _check(fact1={"claim": claim, "quote": "could you send a short deck before we set up a call? "
+                                                     "By 3 Sep"},
+                     ask_words="Thanks Arjun — could you send a short deck before "
                      "we set up a call? By 3 Sep, ideally. I read everything within a week.")
     assert (_verdict(checked, "fact:1").verdict == C.KEPT) is kept, _verdict(checked, "fact:1")
 

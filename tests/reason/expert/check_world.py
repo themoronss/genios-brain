@@ -54,11 +54,15 @@ MEETING = "evt_meeting"
 def parts(*, ask_words: str = ("Thanks Arjun — could you send a short deck before we set up a call? "
                                "I read everything within a week."),
           kind: str = "intro", introduced_by: str | None = INTROLY, asks_a_call: bool = False,
-          meeting_at: datetime | None = None) -> D.DossierParts:
+          meeting_at: datetime | None = None, older: int = 0) -> D.DossierParts:
     """The file's parts. `asks_a_call`: Marco's mail also asks for a call (`loop:ask_meet`, a
     `meeting_request` that waits on us). `meeting_at`: a meeting on the file — held, before `NOW`, or
-    booked ahead, after it."""
-    touches = _touches(ask_words=ask_words)
+    booked ahead, after it. `older`: that many earlier mails from Marco, one a day from 1 Jul
+    (`evt_old_0`, `evt_old_1`, …) — past `dossier.TOUCHES_WHOLE`, the oldest are listed without words."""
+    touches = tuple(Touch(at=datetime(2026, 7, 1 + i, 10, 0, tzinfo=timezone.utc), kind="mail",
+                          direction="in", who=MARCO, who_name="Marco Ruiz", event_id=f"evt_old_{i}",
+                          thread="t_old", words=f"An earlier note from Marco, number {i + 1}.")
+                    for i in range(older)) + _touches(ask_words=ask_words)
     upcoming: tuple[Touch, ...] = ()
     if meeting_at is not None:
         meeting = Touch(at=meeting_at, kind="meeting", direction="meeting", who=MARCO,

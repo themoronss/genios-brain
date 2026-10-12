@@ -15,10 +15,15 @@ ONE PASS, IN ONE ORDER.
   1 · A FACT stands on its own lines (`reason/expert/dossier.lines_by_id`). It cites at least one id (else
       `uncited`), and every id it cites was printed (else `unknown_evidence`). If the move rests on it and
       it cites a mail whose words the dossier shows, it QUOTES those words, and they are there — case,
-      spacing, quote marks and punctuation aside (else `unquoted`, `misquoted`). Every name it writes is on
-      its lines, by the card validator's own rule (`platform/grounding.invention_ok`, else `unsupported`).
-      Every number it writes is on its lines — else it is CORRECTED to the one value its one cited
-      calculator line holds, or it drops (`wrong_number`, RULE 08).
+      spacing, quote marks, punctuation, a hyphen and a comma grouping digits aside, two words at least
+      that carry anything (else `unquoted`, `misquoted`). A quote grounds nothing until it is MATCHED
+      (M35.C2.L-logic.V1.U09): one the cited words do not hold — or given on an item whose words are not
+      shown, an ask, a calculator, a situation, an older touch — drops on its own line (`quote:<n>`,
+      `misquoted`) and reaches no line and no card. Every name it writes is on its lines, by the card
+      validator's own rule (`platform/grounding.invention_ok`, else `unsupported`). Every number it writes
+      is on its lines — a decisive fact's on its quote, its mail's head and the readings it cites, never
+      another sentence of the mail — else it is CORRECTED to the one value its one cited calculator line
+      holds, or it drops (`wrong_number`, RULE 08).
   2 · AN INFERENCE OR A PATTERN stands while one of its grounds stands (else `ungrounded`).
   3 · THE CARD'S WORDS. The headline (the move, or the reading when there is no move) stands on the lines
       of the facts the move rests on and the file's own head; the situation, what done looks like and a
@@ -63,8 +68,16 @@ from genios_engine.reason.expert.dossier import DossierLine, FilePeople, Person,
 
 #: What `validate` still refuses whole — the review's STRUCTURE, never its grounding.
 STRUCTURAL: frozenset[str] = frozenset({NO_NEXT_MOVE, UNGROUNDED_MOVE, UNKNOWN_STAGE})
-#: A quote is the mail's own words — at least this many of them.
+#: A quote is the mail's own words — at least this many of them that carry anything (`FUNCTION_WORDS`
+#: aside): "a call" is in a mail asking FOR a call, and proves nothing about it (crosscheck X17).
 QUOTE_MIN_WORDS = 2
+#: The words that carry no claim of their own — articles, pronouns, auxiliaries, prepositions,
+#: conjunctions. A closed class: counted out of a quote's length, never out of what it must match.
+FUNCTION_WORDS: frozenset[str] = frozenset(
+    "a an the i me my we us our you your he him his she her it its they them their this that these those "
+    "is am are was were be been being do does did have has had will would shall should can could may might "
+    "must to of in on at by for with from into about up out over as and or but so if then than not no"
+    .split())
 #: Ordinary words the expert's card texts open a sentence with that the card validator's own stop-list does
 #: not hold (`platform/grounding._GRAMMAR_WORDS`) — each EARNED by an observed failure, as that list's own
 #: rule asks: the golden set's authored answers (12 Oct) — "Download the certificate" (F02), "Attaching the
@@ -96,21 +109,41 @@ _THE_FOUNDER = re.compile(r"\bthe founder\b", re.I)
 # ── words ─────────────────────────────────────────────────────────────────────────────────────────
 
 def _flat(text: str | None) -> str:
-    """A text as a quote is matched: compatibility-folded and lowercased, quote marks gone, every other
-    mark but those inside a word (an address, a decimal, a hyphen) a space, the spacing one space."""
+    """A text as a quote is matched: compatibility-folded and lowercased, a comma grouping digits gone
+    ("1,400" is "1400", "12,50,000" is "1250000" — X18), quote marks gone, every other mark but those inside
+    a word (an address, a decimal, a hyphen) a space, the spacing one space."""
     value = unicodedata.normalize("NFKC", str(text or "")).casefold()
+    value = re.sub(r"(?<=\d),(?=\d)", "", value)
     value = re.sub(r"[\"'`“”‘’«»]", "", value)
     value = re.sub(r"[^\w\s@.%$€£₹-]", " ", value)
     value = re.sub(r"(?<!\w)[.@%-]+|[.@%-]+(?!\w)", " ", value)
     return " ".join(value.split())
 
 
+def _pattern(flat: str) -> re.Pattern[str]:
+    """A flat quote as the words it may be found in: whole words, a hyphen a boundary that may be written
+    or not — "follow-up" is "follow up", "e-mail" is "email" (X18) — and a space a space or a hyphen."""
+    out: list[str] = []
+    for i, ch in enumerate(flat):
+        if ch == " ":
+            out.append(r"[\s-]")
+        elif ch == "-":
+            out.append(r"[\s-]?")
+        else:
+            out.append(re.escape(ch))
+            if i + 1 < len(flat) and ch.isalnum() and flat[i + 1].isalnum():
+                out.append("-?")
+    return re.compile(r"(?<!\w)" + "".join(out) + r"(?!\w)")
+
+
 def quoted_in(quote: str | None, words: Iterable[str]) -> bool:
-    """Do these mail words hold this quote — whole words, at least `QUOTE_MIN_WORDS` of them?"""
+    """Do these mail words hold this quote — whole words, at least `QUOTE_MIN_WORDS` of them that carry
+    anything (`FUNCTION_WORDS` aside)?"""
     q = _flat(quote)
-    if len(q.split()) < QUOTE_MIN_WORDS:
+    if len([w for w in q.split() if w not in FUNCTION_WORDS]) < QUOTE_MIN_WORDS:
         return False
-    return any(f" {q} " in f" {_flat(w)} " for w in words)
+    found = _pattern(q)
+    return any(found.search(_flat(w)) for w in words)
 
 
 def value_of(line: str, ref: str) -> str | None:
@@ -214,6 +247,9 @@ class _Run:
     people: FilePeople
     verdicts: list[C.LineVerdict] = field(default_factory=list)
     corrections: dict[str, str] = field(default_factory=dict)
+    #: Each fact's quote, by number, once it is MATCHED in a worded line its fact cites — the only quotes
+    #: that ground anything (M35.C2.L-logic.V1.U09): an unmatched one grounds no line and reaches no card.
+    quotes: dict[int, str] = field(default_factory=dict)
 
     @property
     def names(self) -> str:
@@ -299,20 +335,34 @@ def _fact(run: _Run, n: int, decisive: bool) -> bool:
     if unseen:
         run.say(line, C.DROPPED, C.UNKNOWN_EVIDENCE, unseen[0])
         return False
-    worded = [dl.words for e in fact.evidence if is_event(e) for dl in run.lines[e] if dl.words]
+    # A quote grounds nothing until it is MATCHED (X01): in the words of a mail or meeting the fact cites,
+    # as the dossier printed them — an ask, a calculator, a situation or an older touch prints none.
+    worded = {e: dls for e in fact.evidence if is_event(e)
+              if (dls := [dl for dl in run.lines[e] if dl.words])}
+    quoted = [dl for dls in worded.values() for dl in dls
+              if fact.quote and quoted_in(fact.quote, [dl.words or ""])]
     if decisive and worded:
         if not fact.quote:
             run.say(line, C.DROPPED, C.UNQUOTED)
             return False
-        if not quoted_in(fact.quote, worded):
+        if not quoted:
             run.say(line, C.DROPPED, C.MISQUOTED, fact.quote)
             return False
-    own = "\n".join([run.items(fact.evidence), fact.quote or ""])
+    elif fact.quote and not quoted:
+        run.say(f"quote:{n}", C.DROPPED, C.MISQUOTED, fact.quote)    # the fact needs none: it alone drops
+    if quoted:
+        run.quotes[n] = str(fact.quote)
+    own = "\n".join([run.items(fact.evidence), run.quotes.get(n, "")])
     why = _invented(fact.claim, "\n".join([own, run.people.head, run.names]), run.people)
     if why is not None:
         run.say(line, C.DROPPED, C.UNSUPPORTED, why)
         return False
-    missing = sorted(numbers_in(fact.claim) - numbers_in(own))            # its own lines, never the head
+    # A decisive fact's NUMBERS are its quote's: the quote, the head of the mail it is in (its date), and
+    # the readings it cites beside it — never another sentence of that mail, which the quote does not hold.
+    ground = own if not (decisive and quoted) else "\n".join(
+        [run.items(e for e in fact.evidence if e not in worded), *(dl.line for dl in quoted),
+         run.quotes[n]])
+    missing = sorted(numbers_in(fact.claim) - numbers_in(ground))         # its own lines, never the head
     if not missing:
         run.say(line, C.KEPT)
         return True
@@ -370,7 +420,8 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
 
     def corpus(numbers: Iterable[int]) -> str:
         facts = [review.facts[n - 1] for n in sorted(numbers)]
-        return "\n".join([run.items(e for f in facts for e in f.evidence), *(f.quote or "" for f in facts)])
+        return "\n".join([run.items(e for f in facts for e in f.evidence),
+                          *(run.quotes.get(n, "") for n in sorted(numbers))])
 
     standing_corpus, move_corpus = corpus(standing), corpus(rested & standing)
     move = review.next_move
@@ -453,7 +504,8 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     words = C.CardWords(headline=headline if shown else None, situation=situation, done_when=done_when,
                         draft=draft if shown else None, to=to if shown and draft else None,
                         evidence=tuple(e for f in grounds for e in f.evidence) if shown else (),
-                        quotes=tuple(f.quote for f in grounds if f.quote) if shown else ())
+                        quotes=tuple(run.quotes[n] for n in sorted(rested & standing) if n in run.quotes)
+                        if shown else ())
     return C.CheckedReview(
         verdicts=tuple(run.verdicts), fate=fate, words=words,
         cited=tuple(e for n in sorted(standing) for e in review.facts[n - 1].evidence),
@@ -461,5 +513,6 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         because=held if fate in (C.HELD, C.SUPPRESSED) else None)
 
 
-__all__ = ["EARNED", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL", "answered_by", "check_review", "matches",
+__all__ = ["EARNED", "FUNCTION_WORDS", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL", "answered_by",
+           "check_review", "matches",
            "quoted_in", "value_of"]

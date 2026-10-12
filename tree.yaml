@@ -7839,6 +7839,24 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify.py tests/reason/expert/test_verify_claims.py tests/reason/expert/test_verify_numbers.py tests/reason/expert/test_verify_people.py tests/reason/expert/test_an_answered_ask_is_not_raised_again.py"
                       depends_on: [M35.C1.L-contract.V0.U02, M35.C2.L-logic.V0.U01, M35.C2.L-logic.V0.U08]
+                    - id: M35.C2.L-logic.V1.U09
+                      what: >
+                        A quote grounds nothing until it is matched (crosscheck X01, X17, X18): every given
+                        quote is matched against the worded lines of the items its fact cites; one they do
+                        not hold, or one on an item whose words are not shown (a `num:`, `loop:`, `sit:` id,
+                        an older touch past `TOUCHES_WHOLE`), is dropped `misquoted` — on its own `quote:<n>`
+                        line when its fact needs no quote — and kept out of the fact's own lines, the
+                        headline and situation corpus and `CardWords.quotes`. Matching folds a hyphen
+                        ("follow-up" = "follow up", "e-mail" = "email") and a comma grouping digits ("1,400"
+                        = "1400"); a quote holds at least two words that carry anything (`FUNCTION_WORDS`
+                        aside: "a call" proves nothing); a decisive fact's numbers come from its quote, its
+                        mail's head and the readings it cites, never another sentence of the mail. Its
+                        names stay on its items' lines (measured: holding them to the quote alone would drop
+                        23 of the golden set's 118 authored quotes over a sender's company in the
+                        signature).
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_quotes.py tests/reason/expert/test_verify_claims.py"
+                      depends_on: [M35.C2.L-logic.V1.U02]
         - id: M35.C3
           name: Where the check runs
           layers:
