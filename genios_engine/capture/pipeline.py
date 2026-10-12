@@ -1366,6 +1366,19 @@ def run_esqe_stage(event: SourceEvent, prepared: PreparedContent | None, raw: Ma
                        intent=folded, intent_disagreements=disagreements)
 
 
+def _routes_structured(source: str, object_type: str) -> bool:
+    """Does capture route this object STRUCTURED — typed fields, no prose, no model?
+
+    A registry mapping makes an object typed (a calendar event, a CRM row); an enterprise-system
+    source (CRM, billing, the client's own database) is structured even with no mapping yet — its
+    rows carry no prose `body`, and marking it structured routes it to the gate's `mapping_missing`
+    PARK instead of an N-10 drop. ONE question, asked by `capture_event` and by the page pass's
+    candidate alike (STEP-18 B25): two spellings of it are how the page came to judge, and pay for,
+    objects capture never asks it about.
+    """
+    return has_mapping(source, object_type) or family_of(source) == "enterprise_system"
+
+
 def page_relevance_candidate(raw, *, sender_known: bool) -> RelevanceCandidate:
     """One pushed object as a relevance candidate, from what the RAW object already carries.
 
@@ -1380,6 +1393,11 @@ def page_relevance_candidate(raw, *, sender_known: bool) -> RelevanceCandidate:
         page_key=raw.source_object_id,
         sender=raw.actor_email or "",
         sender_known=sender_known,
+        # ⛔ STEP-18 B25 (`03` F42, `yc2_w27_s18` M49.C1.L-logic.V0.U01). Routed as `capture_event`
+        # routes it: a calendar event is structured there, settled by `RULE_STRUCTURED_SOURCE`
+        # before the page's verdict is read — so a page that pre-judged it as ambiguous paid a model
+        # call ("(no readable text)": it has a `summary`, no `subject`) that no capture ever read.
+        is_structured=_routes_structured(raw.source, raw.object_type),
         headers=_esqe_headers(raw.raw),
         subject=str(raw.raw.get("subject") or ""),
         snippet=body[:MAX_ITEM_CHARS])
@@ -1585,8 +1603,7 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     # would read "" and the noise gate would N-10 DROP the whole table as empty. Marking it
     # structured routes it to the gate's mapping_missing PARK (recoverable, human-review)
     # instead of silently losing it — store-don't-delete. (gcal etc. always have a mapping.)
-    if not is_structured and (has_mapping(event.source, event.object_type)
-                              or family_of(event.source) == "enterprise_system"):
+    if not is_structured and _routes_structured(event.source, event.object_type):
         is_structured = True
 
     # preprocess (unstructured text only; structured events carry typed fields).
