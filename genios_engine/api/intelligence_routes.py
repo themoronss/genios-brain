@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from genios_engine.deliver import verdicts
 from genios_engine.deliver.actions import WRONG_REASONS
 from genios_engine.deliver.seat_access import SEAT_REACH_SQL, may_touch_card
 from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org, require_scope,
@@ -1060,69 +1061,25 @@ def intelligence_feedback(
                 changed = inserted is not None
             else:
                 reason = detail.get("reason") if cause == "wrong" else None
-                # `occurred_at` IS `as_of`, not the database's own `clock_timestamp()`. One
-                # request evaluates at one instant: `as_of` is what the authority SELECT above
-                # judged the card against and what `lease_from_card_feedback` below counts its
-                # cohort up to. Leaving the column default in place stamped the row a few
-                # milliseconds AFTER `as_of` — from a different clock, at that, since one is the
-                # app process and the other the database — so the verdict that triggered the
-                # lease evaluation fell outside its own cohort's `until` and was not counted.
-                # A founder's fourth click then earned a lease on the strength of the first
-                # three, and on a host whose clocks drifted the other way it would have counted
-                # itself. Neither is a decision anybody made; both disappear when the request has
-                # one instant.
-                inserted = c.execute(text(
-                    "insert into card_feedback_verdicts "
-                    "(feedback_id,org_id,card_id,pack_id,pack_version,authority_pack_revision,"
-                    "capability_id,"
-                    "capability_version,rule_id,cause,reason,detail,actor_id,verdict_version,"
-                    "occurred_at) "
-                    "values (:id,:o,:card,:p,:pv,:pr,:cap,:capv,:r,:cause,:reason,"
-                    "cast(:d as jsonb),:actor,1,:as_of) "
-                    "on conflict (org_id,card_id) do nothing returning verdict_version"),
-                    {"id": fid, "o": org_id, "card": body.insight_id,
-                     "p": card.pack_id, "pv": card.pack_version,
-                     "pr": int(card.authority_pack_revision),
-                     "cap": card.capability_id, "capv": card.capability_version,
-                     "r": card.rule_id, "cause": cause, "reason": reason,
-                     "d": encoded_detail, "actor": actor_id, "as_of": as_of}).first()
-                if inserted is not None:
-                    verdict_version = int(inserted.verdict_version)
-                    changed = True
-                else:
-                    updated = c.execute(text(
-                        "update card_feedback_verdicts set cause=:cause,reason=:reason,"
-                        "detail=cast(:d as jsonb),actor_id=:actor,"
-                        "verdict_version=verdict_version+1,occurred_at=:as_of "
-                        "where org_id=:o and card_id=:card and "
-                        "(cause,reason,detail) is distinct from "
-                        "(:cause,:reason,cast(:d as jsonb)) returning verdict_version"),
-                        {"o": org_id, "card": body.insight_id, "cause": cause,
-                         "reason": reason, "d": encoded_detail, "actor": actor_id,
-                         "as_of": as_of}).first()
-                    if updated is not None:
-                        verdict_version = int(updated.verdict_version)
-                        changed = True
-                    else:
-                        existing = c.execute(text(
-                            "select feedback_id,verdict_version from card_feedback_verdicts "
-                            "where org_id=:o and card_id=:card"),
-                            {"o": org_id, "card": body.insight_id}).first()
-                        if existing is None:
-                            raise RuntimeError("feedback verdict disappeared while card was locked")
-                        fid = existing.feedback_id
-                        verdict_version = int(existing.verdict_version)
+                # ⛔ THE ONE WRITER (STEP-16, `yc2_w27_s16` M46.C2.L-data.V1.U02, `s16-F1`): this route's
+                # two statements — the verdict and its revision — moved byte for byte into
+                # `deliver/verdicts.record`, which the dashboard's door writes through too, so what you say
+                # on a card reaches every reader of this ledger whichever door you said it by. Bound to the
+                # authority the SELECT above just proved and locked; `occurred_at` is still `as_of`, the
+                # request's one instant — the instant that SELECT judged the card against and the lease
+                # below counts its cohort up to (a database default stamped it a few milliseconds later, from
+                # another clock, and the verdict that triggered the lease fell outside its own cohort).
+                recorded = verdicts.record(
+                    c, org_id=org_id, card_id=body.insight_id, binding=verdicts.Binding(
+                        pack_id=card.pack_id, pack_version=card.pack_version,
+                        authority_pack_revision=int(card.authority_pack_revision),
+                        capability_id=card.capability_id, capability_version=card.capability_version,
+                        rule_id=card.rule_id),
+                    cause=cause, reason=reason, detail=detail, actor=actor_id, as_of=as_of,
+                    feedback_id=fid)
+                fid, verdict_version, changed = (recorded.feedback_id, recorded.verdict_version,
+                                                 recorded.changed)
                 if changed:
-                    revision_id = stable_id("fbrev", {
-                        "feedback_id": fid, "verdict_version": verdict_version})
-                    c.execute(text(
-                        "insert into card_feedback_revisions "
-                        "(revision_id,feedback_id,org_id,card_id,verdict_version,cause,reason,"
-                        "detail,actor_id) values (:rid,:fid,:o,:card,:v,:cause,:reason,"
-                        "cast(:d as jsonb),:actor)"),
-                        {"rid": revision_id, "fid": fid, "o": org_id,
-                         "card": body.insight_id, "v": verdict_version, "cause": cause,
-                         "reason": reason, "d": encoded_detail, "actor": actor_id})
                     # THE ADAPTIVE LEASE, IMMEDIATELY. A `bad_timing` verdict is not a complaint
                     # about the card's quality — it says the card was right and the moment was
                     # wrong, which is a statement about NOW with a clock already on it. That is a

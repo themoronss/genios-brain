@@ -307,3 +307,13 @@ and stays yours.
   no branch at `fbd0aeaa` (STEP-13's question card, M36.C2.L-interface.V3.U05, was not yet committed);
   M46.C3.U05–U07 follow whatever STEP-13 lands. And a question called wrong leaves its move held with no
   card — never silent, because the scorecard and the file say so, but a file can go quiet that way.
+
+### 8.8 · Found while building (12 Oct, provisional ids)
+
+- **s16-F14 · A write-only declaration names its writer by a file that only has to exist.**
+  `platform/table_coverage.UNREAD_WRITES` gives each write-only table its writer, and
+  `tests/platform/test_a_table_nothing_reads_is_declared.py` checks only that the named file exists — not
+  that it writes the table. When M46.C2.L-data.V1.U02 moved `card_feedback_revisions`' INSERT from
+  `api/intelligence_routes.py` to `deliver/verdicts.py`, the declaration kept naming the route and stayed
+  green; it was corrected in the same commit by hand. A stale writer reads as a measurement. Not built
+  here (a new guard, not this unit's): each declared writer ∈ `writers_of(table)`.

@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_120, (
+    assert r["statements"] == 3_128, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -490,6 +490,13 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,078 → 3,079 by yc2_w27_s18/M48.C3.L-data.V0.U11 (STEP-18 B20's second half): one
     # DELETE, `scripts/gmail_l1.py` — the gmail events' `message_fingerprints`, before the events. A
     # literal in its statement list.
+    # ⛔ MOVED 3,120 → 3,128 by yc2_w27_s16/M46.C2.L-data.V1.U02 (STEP-16, the one writer of a verdict),
+    # measured per file: `api/intelligence_routes.py` 62 → 58 — its four ledger statements (the verdict's
+    # INSERT, UPDATE and SELECT, the revision's INSERT) moved byte for byte into `deliver/verdicts.py`,
+    # which holds 12: those four, and the two authority reads a verdict is bound by (a decision's, a
+    # question's), each counted four times — the template walk records every prefix of its
+    # `"…" + JOINS + "…" + PREDICATE` concatenation, as it counts the route's own authority SELECT. Two
+    # real statements; the loop hop expanded nothing.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
