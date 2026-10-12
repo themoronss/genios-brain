@@ -228,6 +228,23 @@ def test_an_unknown_that_can_be_a_question_is_asked_as_one(unknown, asked):
     assert asks.question_words(row)[0] == asked
 
 
+def test_a_question_that_names_us_is_never_asked_in_those_words():
+    """⛔ STEP-04's rule on the question card (the golden lane, 12 Oct: F22's and F52's cards asked "Can you tell us
+    whether Nimbus Labs is…?" and "…how many paying customers Nimbus Labs has today?"). A candidate that names us — our
+    company, the founder — is passed over: the next one, else the closed question."""
+    from genios_engine.reason.expert import asks
+    row = _find_out_row(unknowns=["Does Altavia lead seed rounds?"], what="Ask Marco how the round is shaping up",
+                        primary="An introduced investor at Altavia has asked for a deck before a call")
+    names = lambda word: (lambda text: word in text.lower())               # noqa: E731 — as the sweep binds names_us
+    assert asks.question_words(row, ours=names("nimbus"))[0] == "Does Altavia lead seed rounds?", \
+        "nothing of ours in it: the first unknown, as before (the negative control)"
+    assert asks.question_words(row, ours=names("altavia"))[0] == \
+        "Can you tell us: Ask Marco how the round is shaping up?", "the unknown names us: the move"
+    assert asks.question_words(row, ours=names("marco"))[0] == "Does Altavia lead seed rounds?"
+    held_both = _find_out_row(unknowns=["Does Altavia lead seed rounds?"], what="Ask Altavia how the round looks")
+    assert asks.question_words(held_both, ours=names("altavia"))[0] == asks.NOTHING_TO_ASK
+
+
 _DATED = {"fact4": {"claim": "Introly introduced Marco on 4 Aug 2026"}}       # a kept fact holding "2026"
 _DROPPED = {"facts": [*W.ANSWER["facts"], {"claim": "Tiger Global co-leads the round", "evidence": [W.ASK]}]}
 _WITHHELD = {"primary": "Marco is deciding whether Tiger Global co-leads the round"}
