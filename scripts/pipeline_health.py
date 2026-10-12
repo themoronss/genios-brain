@@ -953,8 +953,10 @@ def check_every_new_signal_has_a_lane(conn, org: str) -> Check:
     total = _scalar(conn, "select count(*) from signals where org_id = :o "
                           "and created_at > now() - interval '24 hours'", o=org)
     if not total:
+        # NO DATA, never PASS (STEP-17's rule, `03` F24's shape; crosscheck S17X-B3): an empty window
+        # judged nothing.
         return Check(name=name, ok=True, measured="no signal written in the last 24 hours",
-                     expected="skipped — nothing to judge", fix="")
+                     expected="skipped — nothing to judge", fix="", no_data=True)
     rows = conn.execute(sql(
         "select coalesce(pack_id, '-') as pack, rule_id, count(*) as n from signals "
         " where org_id = :o and created_at > now() - interval '24 hours' and output_lane is null "

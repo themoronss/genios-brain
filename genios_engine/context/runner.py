@@ -264,9 +264,10 @@ _L2_OWN_EXTRACTIONS = ("select event_id from l1_extraction_results "
 
 #: THE COLUMNS THE DRAIN READS FOR EACH EVENT — one spelling, selected by `_pull` over what memory
 #: does not hold yet and by `_rows_for_rebuild` over everything (STEP-18 B12): a rebuild that read
-#: other columns would replay other memory.
+#: other columns would replay other memory. The column list alone — each reader writes its own `select`, so
+#: no string here reads as a statement it is not (STEP-17's census plans every whole statement).
 ROAD_COLUMNS = (
-            "select se.event_id, se.source, se.object_type, se.outcome, "
+            "se.event_id, se.source, se.object_type, se.outcome, "
             "se.actor->>'email' as sender, se.actor->>'name' as sender_name, se.recipients, "
             "se.occurred_at, se.source_object_id, se.triage_lane, se.internal_kind, "
             "se.parent_object_id, se.domain_hints, "
@@ -302,7 +303,7 @@ def _pull(store: GraphStore, org_id: str, limit: int):
     """
     with store.engine.connect() as c:
         return c.execute(text(
-            ROAD_COLUMNS + PENDING_FROM +
+            "select " + ROAD_COLUMNS + PENDING_FROM +
             "order by coalesce(se.triage_lane, 'P3') asc, se.occurred_at asc "
             "limit :lim"), {**pending_params(org_id), "lim": limit}).fetchall()
 
@@ -321,7 +322,7 @@ def _rows_for_rebuild(store: GraphStore, org_id: str):
     """
     with store.engine.connect() as c:
         return c.execute(text(
-            ROAD_COLUMNS + ROADS_FROM +
+            "select " + ROAD_COLUMNS + ROADS_FROM +
             "order by se.occurred_at asc, se.event_id asc"), pending_params(org_id)).fetchall()
 
 
