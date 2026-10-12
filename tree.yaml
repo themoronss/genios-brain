@@ -7887,6 +7887,19 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_figures.py tests/reason/expert/test_verify_numbers.py tests/reason/expert/test_the_review_contract.py"
                       depends_on: [M35.C2.L-logic.V1.U09]
+                    - id: M35.C2.L-logic.V1.U11
+                      what: >
+                        A correction rewrites only the sentence that restates the fact (crosscheck X08): a
+                        number a calculator corrected in a fact (`verify.Correction`: its value, unit and
+                        currency — a bare count, the word after it) is swapped into a card text only where
+                        that text writes the same figure as a value — never inside a date, a time or a code,
+                        "9:20", "9 Aug", "Q2" (a code is read whole) — in a sentence that repeats two of the
+                        fact's words (`RESTATES_WORDS`; months and function words aside). "9 slides", "a
+                        call at 9:20" and "within 9 days" in a sentence about something else are left as
+                        written and held to their own lines.
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_corrections.py tests/reason/expert/test_verify_numbers.py"
+                      depends_on: [M35.C2.L-logic.V1.U10]
         - id: M35.C3
           name: Where the check runs
           layers:

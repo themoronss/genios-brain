@@ -34,7 +34,10 @@ ONE PASS, IN ONE ORDER.
   3 · THE CARD'S WORDS. The headline (the move, or the reading when there is no move) stands on the lines
       of the facts the move rests on and the file's own head; the situation, what done looks like and a
       proposed kind on every standing fact's lines; the draft on the whole dossier. A number corrected in a
-      fact is corrected wherever the card repeats it. A headline that fails HOLDS a moving review; a
+      fact is corrected where the card restates it (M35.C2.L-logic.V1.U11): the same figure, as a value in
+      its unit — never a date, a time or a code ("9:20", "9 Aug", "Q2") — in a sentence that repeats two of
+      the fact's words; anywhere else it is held to its lines as written. A headline that fails HOLDS a
+      moving review; a
       situation, a done-when, a draft or a proposed kind that fails is WITHHELD — the card shows the rest.
   4 · THE RIGHT PEOPLE (§3.3). A draft goes to someone the file's mail shows (`to`): with no `to`, or to
       someone not on the file, the draft is withheld; to us, the move is held; to the connector that
@@ -204,6 +207,8 @@ _CLOCK = re.compile(r"\b(\d{1,2})(?::(\d{2})\s*(am|pm|a\.m\.|p\.m\.)?|\.(\d{2})\
                     r"(?!\d)", re.I)
 _HOUR = re.compile(r"\b(\d{1,2})\s*(am|pm|a\.m\.|p\.m\.)(?!\w)", re.I)
 _ORDINAL = re.compile(r"\b(\d{1,2})(?:st|nd|rd|th)\b", re.I)
+#: A code — letters, then digits, in one word ("Q2", "FY26", "B2B"): a name for a thing, read whole.
+_CODE = re.compile(r"\b[A-Za-z]+\d+[A-Za-z\d]*\b")
 #: A value — its currency before it, its unit or magnitude after it, the words a text writes them in.
 _VALUE = re.compile(
     r"(?P<cur>₹|\brs\.?\s?|\binr\s?|\$|\busd\s?|€|\beur\s?|£|\bgbp\s?)?"
@@ -246,7 +251,37 @@ def _hour(h: str, ampm: str | None) -> int:
 def figures_in(text: str | None) -> Figures:
     """Every figure `text` writes (see `Figures`) — its printed ids aside, and every date and time taken
     out BEFORE a value is read: a timestamp's digits are no count (crosscheck X02)."""
-    rest = _PRINTED_ID.sub(" ", str(text or ""))
+    rest, figures = _masked(text)
+    for m in _VALUE.finditer(rest):
+        raw = m.group("n")
+        if raw.count(".") > 1:                         # a version: each part on its own, as number_tokens
+            figures.values.update((_norm(part), "", "") for part in raw.replace(",", "").split("."))
+            continue
+        figures.values.add(_figure(m))
+    return Figures(frozenset(figures.dates), frozenset(figures.times), frozenset(figures.days),
+                   frozenset(figures.values))
+
+
+def _figure(m: re.Match[str]) -> tuple[str, str, str]:
+    """A value `_VALUE` found: its number, its unit, its currency — each as one name."""
+    unit = " ".join((m.group("unit") or "").strip(" -").lower().split())
+    cur = (m.group("cur") or "").strip().rstrip(".").lower()
+    return _norm(m.group("n")), UNITS.get(unit, unit), CURRENCIES.get(cur, cur)
+
+
+@dataclass
+class _Read:
+    dates: set[tuple[int, int, int | None]]
+    times: set[tuple[int, int]]
+    days: set[int]
+    values: set[tuple[str, str, str]]
+
+
+def _masked(text: str | None) -> tuple[str, _Read]:
+    """`text` with its printed ids, dates, times, days of a month and codes blanked out — the same length,
+    so what is left is found where it is written — and what was blanked, read (a code as a value of its
+    own: "Q2" is Q2, never 2)."""
+    rest = _PRINTED_ID.sub(lambda m: " " * len(m.group(0)), str(text or ""))
     dates: set[tuple[int, int, int | None]] = set()
     times: set[tuple[int, int]] = set()
     days: set[int] = set()
@@ -286,21 +321,18 @@ def figures_in(text: str | None) -> Figures:
         days.add(int(m.group(1)))
         return cut(m)
 
+    def code(m: re.Match[str]) -> str:
+        values.add((m.group(0).lower(), "", ""))
+        return cut(m)
+
     rest = _ISO.sub(iso, rest)
     rest = _DAY_MONTH.sub(day_month, rest)
     rest = _MONTH_DAY.sub(month_day, rest)
     rest = _CLOCK.sub(clock, rest)
     rest = _HOUR.sub(hour, rest)
     rest = _ORDINAL.sub(ordinal, rest)
-    for m in _VALUE.finditer(rest):
-        raw = m.group("n")
-        unit = " ".join((m.group("unit") or "").strip(" -").lower().split())
-        cur = (m.group("cur") or "").strip().rstrip(".").lower()
-        if raw.count(".") > 1:                         # a version: each part on its own, as number_tokens
-            values.update((_norm(part), "", "") for part in raw.replace(",", "").split("."))
-            continue
-        values.add((_norm(raw), UNITS.get(unit, unit), CURRENCIES.get(cur, cur)))
-    return Figures(frozenset(dates), frozenset(times), frozenset(days), frozenset(values))
+    rest = _CODE.sub(code, rest)
+    return rest, _Read(dates, times, days, values)
 
 
 @dataclass(frozen=True, slots=True)
@@ -337,10 +369,85 @@ def unheld(text: Figures, lines: Figures) -> list[Stray]:
     return sorted(out, key=lambda s: s.detail)
 
 
-def _swap(text: str, corrections: dict[str, str]) -> str:
-    """`text` with each corrected number replaced by its calculator's value, as a whole number."""
-    for old, new in sorted(corrections.items()):
-        text = re.sub(rf"(?<![\d.,]){re.escape(old)}(?!\d|[.,]\d)", new, text)
+@dataclass(frozen=True, slots=True)
+class Correction:
+    """A fact's number its calculator corrected (M35.C2.L-logic.V1.U11): the figure as the fact wrote it —
+    its number, unit and currency, and, a bare count, the word after it — the calculator's value, and the
+    fact's own words, by which a card sentence is known to restate it."""
+    said: str
+    unit: str
+    cur: str
+    follows: str | None
+    value: str
+    words: frozenset[str]
+
+
+_WORD = re.compile(r"[a-z]+")
+
+
+#: A month as a word — written out or short — which a date writes, and no sentence restates a fact by.
+_MONTH_WORDS: frozenset[str] = frozenset({*_MONTHS, "sept", "january", "february", "march", "april", "june",
+                                          "july", "august", "september", "october", "november", "december"})
+
+
+def _content(text: str) -> frozenset[str]:
+    """A text's words that carry anything — its function words, its units and its months aside."""
+    return frozenset(w for w in _WORD.findall(text.lower()) if len(w) > 2 and w not in FUNCTION_WORDS
+                     and w not in UNITS and w not in _MONTH_WORDS)
+
+
+def _after(text: str, end: int) -> str | None:
+    """The word right after position `end` of `text`, lowercased — None when none follows."""
+    m = re.match(r"\s*-?\s*([A-Za-z]+)", text[end:])
+    return m.group(1).lower() if m else None
+
+
+#: A card text's sentences: split after a stop, a question, an exclamation or a semicolon.
+_SENTENCE = re.compile(r"(?<=[.!?;])\s+|\n+")
+#: How many of a fact's words a sentence repeats to restate it, beside the number.
+RESTATES_WORDS = 2
+
+
+def _restates(text: str, at: int, correction: Correction) -> bool:
+    """Does the sentence of `text` holding position `at` restate the corrected fact?"""
+    start = 0
+    for m in _SENTENCE.finditer(text):
+        if m.start() >= at:
+            return len(_content(text[start:m.start()]) & correction.words) >= RESTATES_WORDS
+        start = m.end()
+    return len(_content(text[start:]) & correction.words) >= RESTATES_WORDS
+
+
+def correction_of(claim: str, said: tuple[str, str, str], value: str) -> Correction:
+    """The correction of `claim`'s figure `said` (number, unit, currency) to `value`."""
+    masked, _ = _masked(claim)
+    follows = next((_after(masked, m.end("n")) for m in _VALUE.finditer(masked) if _figure(m) == said), None)
+    return Correction(said=said[0], unit=said[1], cur=said[2], follows=follows if not said[1] else None,
+                      value=value, words=_content(claim))
+
+
+def _swap(text: str, corrections: Iterable[Correction]) -> str:
+    """`text` with a corrected figure replaced by its calculator's value — ONLY where it writes the same
+    figure as a value (never inside a date, a time or a code), in the same unit and currency (a bare count:
+    with the same word after it), in a sentence that restates the fact (`_restates`). Anywhere else it is
+    left as written, and held to its lines like any number (crosscheck X08)."""
+    corrections = list(corrections)
+    if not corrections:
+        return text
+    masked, _ = _masked(text)
+    edits: list[tuple[int, int, str]] = []
+    for m in _VALUE.finditer(masked):
+        number, unit, cur = _figure(m)
+        for c in corrections:
+            if (number, unit) != (c.said, c.unit) or cur not in ("", c.cur):
+                continue
+            if not c.unit and _after(masked, m.end("unit") if m.group("unit") else m.end("n")) != c.follows:
+                continue
+            if _restates(text, m.start("n"), c):
+                edits.append((m.start("n"), m.end("n"), c.value))
+                break
+    for start, end, value in reversed(edits):
+        text = text[:start] + value + text[end:]
     return text
 
 
@@ -421,7 +528,7 @@ class _Run:
     lines: dict[str, tuple[DossierLine, ...]]
     people: FilePeople
     verdicts: list[C.LineVerdict] = field(default_factory=list)
-    corrections: dict[str, str] = field(default_factory=dict)
+    corrections: list[Correction] = field(default_factory=list)
     #: Each fact's quote, by number, once it is MATCHED in a worded line its fact cites — the only quotes
     #: that ground anything (M35.C2.L-logic.V1.U09): an unmatched one grounds no line and reaches no card.
     quotes: dict[int, str] = field(default_factory=dict)
@@ -472,7 +579,7 @@ class _Run:
         dates and times would ground any number at all."""
         swapped = _swap(text, self.corrections)
         stray = [s for s in unheld(figures_in(swapped), figures_in(corpus if figures is None else figures))
-                 if s.value is None or s.value[0] not in self.corrections.values()]
+                 if s.value is None or not any(s.value[:2] == (c.value, c.unit) for c in self.corrections)]
         if stray:
             return None, stray[0].detail
         names = "\n".join([corpus, self.people.head, self.names]) if head else corpus
@@ -585,7 +692,7 @@ def _fact(run: _Run, n: int, decisive: bool) -> bool:
     if len(missing) == 1 and len(calculators) == 1 and len(values) == 1 and missing[0].value is not None:
         (said, unit, cur), (value, its_unit, its_cur) = missing[0].value, next(iter(values))
         if unit in ("", its_unit) and cur in ("", its_cur):          # within its unit: 9 weeks is no 8.99 days
-            run.corrections[said] = value
+            run.corrections.append(correction_of(fact.claim, missing[0].value, value))
             run.say(line, C.CORRECTED, C.BY_CALCULATOR, f"number:{said} -> {value} ({calculators[0]})")
             return True
     run.say(line, C.DROPPED, C.WRONG_NUMBER, missing[0].detail)
@@ -732,5 +839,6 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
 
 
 __all__ = ["CURRENCIES", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
-           "Stray", "UNITS", "answered_by", "check_review", "figures_in", "matches", "unheld",
+           "Correction", "RESTATES_WORDS", "Stray", "UNITS", "answered_by", "check_review", "correction_of",
+           "figures_in", "matches", "unheld",
            "quoted_in", "value_of"]
