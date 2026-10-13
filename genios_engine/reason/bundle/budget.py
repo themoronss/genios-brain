@@ -27,7 +27,8 @@ from decimal import Decimal
 from genios_engine.capture.semantic.batch import DEFAULT_TIER_PRICES
 from genios_engine.platform.logging import get_logger
 
-from .sites import R_SITES, SITE_EXPERT, TIER_T1, TIER_T2, require_site, tier_for
+from .sites import (R_SITES, SITE_BRIEF, SITE_BRIEF_ESCALATE, SITE_EXPERT, TIER_T1, TIER_T2,
+                    require_site, tier_for)
 
 _log = get_logger("genios.reason.bundle.budget")
 
@@ -51,7 +52,19 @@ DEFAULT_PER_DECISION_USD_CAP = "0.05"
 #: refuses a whole review on every call — a review at its bound, a 60,000-character dossier (15,000
 #: tokens: 3 cents on T2) and the 4,000-token ceiling (4 cents), is 7 cents; 10 cents leaves room for
 #: the dossier's bound and still refuses a runaway prompt.
-OWN_BUDGETS: dict[str, tuple[str, str]] = {SITE_EXPERT: ("2.00", "0.10")}
+#: STEP-15: the morning brief's writer (R-8) and its one Sonnet-class escalation (R-8E) each spend
+#: **$0.25 a day per org, $0.03 a call, of their own** — two entries, not one pool split between
+#: them: R-8E failing twice must not have spent R-8's day first, the same separation R-7 already
+#: has from the narrative's. Sized from the plan's own model — a brief is about 6,000 tokens in and
+#: 800 out, about $0.01 on T1 and $0.02 on T2 — with the per-call ceiling left room for the real
+#: ceiling (`sites.SITE_MAX_OUTPUT_TOKENS`, 1,600, not the modelled 800): R-8E's worst case prices at
+#: $0.028 of the $0.03, a margin the live look (s15-D1) should watch rather than one this module can
+#: widen on its own — the two numbers are the plan's, not a sizing this file chose.
+OWN_BUDGETS: dict[str, tuple[str, str]] = {
+    SITE_EXPERT: ("2.00", "0.10"),
+    SITE_BRIEF: ("0.25", "0.03"),
+    SITE_BRIEF_ESCALATE: ("0.25", "0.03"),
+}
 
 
 def usd_to_micro(value: object) -> int:
