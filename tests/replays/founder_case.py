@@ -94,6 +94,8 @@ REAL_NAMES: frozenset[str] = frozenset({
     "actual.ai",
     # vendors the real mailbox carries
     "Composio", "Stripe", "Notion", "Apple", "Google",
+    # STEP-14 (s14-F17): the narrator's old headline examples, the founder's real contacts
+    "Divyanshu", "Leslie",
 })
 
 _REAL = re.compile(r"(?<![0-9A-Za-z])(?:" + "|".join(
