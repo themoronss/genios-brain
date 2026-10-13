@@ -39,7 +39,9 @@ def test_the_ceiling_holds_a_whole_review():
     ceiling is set above every other site's, and a truncated answer is a recorded refusal
     (`03` F140), never a parse."""
     ceiling = S.max_output_tokens(S.SITE_EXPERT)
-    assert ceiling == 4000
+    # 4,000 → 6,000 (`yc2_w27_s18` M50.C2.L-contract.V1.U02): Haiku's reviews measured p90 3,509, max
+    # 3,990, six cut at 4,000 — and Sonnet 5 asked with thinking off (`06` D71).
+    assert ceiling == 6000
     assert ceiling > max(v for k, v in S.SITE_MAX_OUTPUT_TOKENS.items() if k != S.SITE_EXPERT)
     assert set(S.SITE_MAX_OUTPUT_TOKENS) == set(S.SITE_TIERS) == set(S.R_SITES)
 
