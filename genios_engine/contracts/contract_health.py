@@ -113,6 +113,14 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "⛔ MOVES WHEN somebody who knows whether `snapshot` is supposed to consult it writes one "
         "line above it. Flagged in `HANDOFF-CODING-AGENT.md` rather than guessed at here"),
 
+    "card_contract.check": (
+        "STEP-14 · the card contract, built before its writers on purpose (bottom-up, `yc2_w27_s14` "
+        "M43.C4.L-contract.V0.U01): what no card may say — us, a field's name or an unfilled slot, money with none "
+        "in its evidence, a quote not in its quotes, a number its corpus lacks. Its tests are its only callers "
+        "until a card writer runs it.",
+        "MOVES WITH `yc2_w27_s14/M43.C4.L-integration.V1.U02` — `deliver/pipeline` runs it before every card it "
+        "writes (and M43.C4.L-integration.V1.U03, `reason/team/emit`)"),
+
 }
 
 
