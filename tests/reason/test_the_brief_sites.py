@@ -34,6 +34,17 @@ def test_the_escalation_is_a_separate_site_in_the_closed_list():
     assert S.require_site(S.SITE_BRIEF_ESCALATE) == S.SITE_BRIEF_ESCALATE
 
 
+def test_the_closed_list_is_pinned_exactly_in_order():
+    """Restate, don't loosen (the lead's correction, 14 Oct): `test_the_expert_site_and_feature.py`'s
+    `R_SITES[-1] == SITE_EXPERT` broke the moment R-8/R-8E were appended and was loosened to
+    membership-only, which means nothing anywhere pins the WHOLE ordered tuple any more — a tenth
+    site could be added silently. This is that pin: a new site must be added here, in this
+    assertion, in the same change that registers it."""
+    assert S.R_SITES == (
+        S.SITE_INTERPRET, S.SITE_NARRATE, S.SITE_ALTERNATIVES, S.SITE_EFFECT, S.SITE_CONSULT,
+        S.SITE_SITUATION, S.SITE_EXPERT, S.SITE_BRIEF, S.SITE_BRIEF_ESCALATE)
+
+
 def test_an_unregistered_brief_id_is_refused():
     """A typo must be a refusal, not a ledger row — the module's own first lesson (R-7's)."""
     with pytest.raises(ValueError, match="unknown R-site"):

@@ -38,6 +38,19 @@ NOW = datetime(2026, 10, 14, 12, 0, tzinfo=timezone.utc)
 
 # ── the registration ──────────────────────────────────────────────────────────────────────────
 
+def test_the_own_budgets_set_is_pinned_exactly():
+    """Restate, don't loosen (the lead's correction, 14 Oct): `test_tiers_and_the_cache_key.py`'s
+    `OWN_BUDGETS == {SITE_EXPERT: (...)}` broke the moment R-8/R-8E were added and was loosened to
+    that one entry, which means nothing anywhere pins the WHOLE set any more — a fourth site could
+    gain a budget of its own silently. This is that pin: a new entry must be added here, in this
+    assertion, in the same change that registers it."""
+    assert B.OWN_BUDGETS == {
+        S.SITE_EXPERT: ("2.00", "0.10"),
+        S.SITE_BRIEF: ("0.25", "0.03"),
+        S.SITE_BRIEF_ESCALATE: ("0.25", "0.03"),
+    }
+
+
 def test_the_writer_and_its_escalation_each_have_their_own_ceilings():
     assert B.OWN_BUDGETS[S.SITE_BRIEF] == ("0.25", "0.03")
     assert B.OWN_BUDGETS[S.SITE_BRIEF_ESCALATE] == ("0.25", "0.03")
