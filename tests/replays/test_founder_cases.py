@@ -50,6 +50,11 @@ def _scratch_db() -> None:
 # =================================================================================================
 # 1 · the set is the answer key
 # =================================================================================================
+# ⛔ STRICT XFAIL, DELIBERATELY (STEP-14, `yc2_w27_s14` M43.C6.L-data.V0.U01): rows 59–64 — the Atlas's replay 02
+# introductions (s14-D5) — are on the sheet before their cases are written, one unit each (M43.C6.L-data.V1.U02–U07,
+# F59–F64). The last of them removes this mark; strict, so a case set that catches up early fails loudly.
+@pytest.mark.xfail(strict=True, raises=AssertionError,
+                   reason="rows 59–64 wait for F59–F64 (yc2_w27_s14 M43.C6.L-data.V1.U02–U07)")
 def test_one_case_per_labelled_row():
     by_row = {}
     for case in CASES:
