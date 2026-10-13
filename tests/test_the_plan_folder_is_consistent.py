@@ -58,11 +58,22 @@ def _drift(key: str):
 
 
 def _params(kind: str, paths: list[pathlib.Path]) -> list:
-    return [pytest.param(p, id=p.name[:7], marks=_drift(f"{kind}:{p.name[:7]}")) for p in paths]
+    return [pytest.param(p, id=_step_id(p), marks=_drift(f"{kind}:{_step_id(p)}")) for p in paths]
 
 
 def _steps() -> list[pathlib.Path]:
     return sorted(FOLDER.glob("STEP-*.md"))
+
+
+def _step_id(path: pathlib.Path) -> str:
+    """`STEP-13`, or `STEP-13b` for a step planned between two others (`06` D64) — never the first
+    seven characters, which read STEP-13b as a second STEP-13 (and its block as `yc2_w27_s13`)."""
+    return re.match(r"STEP-\d\d[a-z]?", path.name).group(0)
+
+
+#: The step files the folder holds, in order: STEP-00 to STEP-18, and STEP-13b (`06` D64, Rohit 12 Oct —
+#: the GeniOS Engine in the expert's hands, planned after STEP-13 closes).
+STEP_IDS = [f"STEP-{n:02d}" for n in range(14)] + ["STEP-13b"] + [f"STEP-{n:02d}" for n in range(14, 19)]
 
 
 def _title(path: pathlib.Path) -> str:
@@ -79,10 +90,10 @@ def _title_status(path: pathlib.Path) -> str | None:
 
 def test_the_folder_has_its_step_files():
     """If this goes to zero every test below passes vacuously."""
-    assert [p.name[:7] for p in _steps()] == [f"STEP-{n:02d}" for n in range(19)]
+    assert [_step_id(p) for p in _steps()] == STEP_IDS
 
 
-@pytest.mark.parametrize("path", _steps(), ids=lambda p: p.name[:7])
+@pytest.mark.parametrize("path", _steps(), ids=_step_id)
 def test_a_step_files_status_word_is_its_names(path):
     assert _name_status(path) is not None, f"{path.name}: no status word in the name"
     assert _title_status(path) == _name_status(path), (
@@ -173,9 +184,10 @@ def _tree() -> dict:
 
 
 def _tree_status(path: pathlib.Path) -> str | None:
-    """The status `tree.yaml` gives the step's block — `yc2_w27_s<NN>` for `STEP-<NN>` — or None
+    """The status `tree.yaml` gives the step's block — `yc2_w27_s<NN>` for `STEP-<NN>`, `yc2_w27_s13b` for
+    `STEP-13b` — or None
     for a step with no block of its own."""
-    block = _tree().get(f"yc2_w27_s{path.name[5:7]}")
+    block = _tree().get(f"yc2_w27_s{_step_id(path)[5:]}")
     return str(block.get("status")) if isinstance(block, dict) and "status" in block else None
 
 
@@ -195,9 +207,9 @@ def test_built_is_read_from_the_tree_as_well_as_the_name():
     assert not _is_built("TO BUILD", "approved_in_progress")
     assert not _is_built("TO BUILD", None)
     assert _is_built("PENDING", None) and _is_built("DONE", "approved_in_progress")
-    built = {p.name[:7] for p in _built()}
+    built = {_step_id(p) for p in _built()}
     assert {"STEP-17", "STEP-18"} <= built, sorted(built)
-    statuses = {p.name[:7]: _tree_status(p) for p in _steps()}
+    statuses = {_step_id(p): _tree_status(p) for p in _steps()}
     assert statuses["STEP-17"] == statuses["STEP-18"] == "built", statuses
 
 
@@ -206,14 +218,14 @@ def test_the_tree_status_is_the_blocks_own_word(monkeypatch):
     monkeypatch.setattr(sys.modules[__name__], "_tree", lambda: {
         "yc2_w27_s13": {"status": "approved_in_progress"}, "yc2_w27_s14": {"source": "no status"},
         "yc2_w27_s17": {"status": "built"}})
-    status = {p.name[:7]: _tree_status(p) for p in _steps()}
+    status = {_step_id(p): _tree_status(p) for p in _steps()}
     assert (status["STEP-13"], status["STEP-14"], status["STEP-17"], status["STEP-00"]) == (
         "approved_in_progress", None, "built", None), status
-    built = {p.name[:7] for p in _built()}
+    built = {_step_id(p) for p in _built()}
     assert "STEP-17" in built and not {"STEP-13", "STEP-14", "STEP-18"} & built, sorted(built)
 
 
-@pytest.mark.parametrize("path", _built(), ids=lambda p: p.name[:7])
+@pytest.mark.parametrize("path", _built(), ids=_step_id)
 def test_a_built_step_says_how_to_verify_it(path):
     """A built step with no Verify section would pass the test below on nothing."""
     assert _verify_section(path) is not None, f"{path.name} has no Verify section"

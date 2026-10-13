@@ -55,13 +55,19 @@ def run_company_brief_reviews(engine, *, now: datetime, llm: Any, cost_sink=None
             out = draft_company_brief(engine, org, llm, now=now, cost_sink=cost_sink,
                                       proposed_by="weekly")
             outcome, n = (out.skipped or "proposed"), out.proposed
+            # ⛔ A DRAFT THE MODEL FAILED IS A FAILED WEEK (`yc2_w27_s18` M50.C3.L-logic.V2.U07, s5t-F5):
+            # cut, not JSON or unreachable, the week is claimed and lost — never counted `reviewed`.
+            failed_week = outcome.startswith("model:")
         except Exception as exc:                          # noqa: BLE001 — one tenant ≠ the rest
             _log.exception("company brief review failed org=%s", org)
             outcome, n = f"error:{type(exc).__name__}", 0
-            failed += 1
+            failed_week = True
         with engine.begin() as c:
             c.execute(_FINISH, {"o": org, "wk": wk, "at": now, "out": outcome[:200], "n": n})
-        reviewed += 1
+        if failed_week:
+            failed += 1
+        else:
+            reviewed += 1
         proposed += n
     return {"orgs": len(orgs), "reviewed": reviewed, "already_this_week": already,
             "proposed": proposed, "failed": failed, "week": wk}

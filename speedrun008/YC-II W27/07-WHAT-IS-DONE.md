@@ -1,7 +1,8 @@
 # 07 · What is done — each finished step, its proof, and what is still owed
 
-**Written for:** Rohit, Harsh, and whoever picks this folder up next. **As of:** 2026-10-12,
-after Claude's pushes of 11–12 Oct (§2d) — STEP-12 built (§6l). A step is listed here once everything that is Claude's in it is done. It
+**Written for:** Rohit, Harsh, and whoever picks this folder up next. **As of:** 2026-10-13,
+after Claude's pushes of 11–12 Oct (§2d) — STEP-12 built (§6l); STEP-13, STEP-17 and STEP-18 built and crosschecked
+on the integration line, their QA and push next (§6m–§6o). A step is listed here once everything that is Claude's in it is done. It
 becomes **DONE** only when its number moves on production (`00-START-HERE.md`, "How we work
 through it" §3), and this page says, step by step, what is still owed before that.
 
@@ -65,14 +66,14 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`, `03`, `06` **PENDING — Harsh (deploy)** · `04` and `05` **PENDING — Rohit (D14, D23 — read the two lists), Harsh (deploy)**: built, QA green (§6b–§6f), pushed 9 Oct |
 | 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Rohit (the window, D5/D16), Harsh (the run, after the brief — `06` D26, and after STEP-09's deploy)**: built, QA green (§6h) · `09` **PENDING — Rohit (accept the brief's connectors and watchlist; D35), Harsh (deploy before STEP-08's run; re-file history if the health check names it)**: built, QA green (§6i) · `10` **PENDING — Rohit (`06` D42–D44), Harsh (deploy, no migration; the health check after one sweep)**: built, QA green (§6j) |
 | 3 · Expertise | `STEP-11` founder playbooks | **M30 PENDING — Rohit (review the two playbooks, `06` D45; give your in-motion lines their kind), Harsh (deploy, migration `0196`; the Founder Office for your org only)**: built, QA green (§6k) · M31 — introductions, compliance, hiring, meetings — after your review |
-| 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | `12` **PENDING — Rohit (the live pass, `06` D50; D48, D57, D58), Harsh (deploy, migrations `0197`–`0199`; `expert_review` for your org only)**: built, QA green (§6l), pushed · `13` TO BUILD |
+| 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | `12` **PENDING — Rohit (the live pass, `06` D50; D48, D57, D58), Harsh (deploy, migrations `0197`–`0199`; `expert_review` for your org only)**: built, QA green (§6l), pushed · `13` built 12 Oct — QA and push next (§6m) |
 | 5 · What you see | `STEP-14` the card · `15` the morning brief | TO BUILD |
 | 6 · Learning from you | `STEP-16` | TO BUILD |
-| Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
+| Across all phases | `STEP-17` real tests · `18` known bugs | both built 12 Oct — QA and push next (§6n, §6o); six of `STEP-18`'s bugs were fixed and pushed before it (§5) |
 
 **19 steps: 12 finished by Claude and pushed (`00`, `01` on 6 Oct; `02`–`10` on 9 Oct — `08`'s run is
-Harsh's; `12` on 12 Oct, §6l), `STEP-11` half (M30 built and pushed 9 Oct, waiting for your review), 6 to
-build.** `STEP-11` was
+Harsh's; `12` on 12 Oct, §6l), `STEP-11` half (M30 built and pushed 9 Oct, waiting for your review), 6 not
+pushed — `13`, `17` and `18` built 12 Oct (§6m–§6o), `14`–`16` to build.** `STEP-11` was
 checked on 9 Oct (`STEP-11` §8), planned as tree `yc2_w27_s11` and built on your go of the same day
 (*Go — recommended*: `06` D2, D3, D31, D45–D47 as recommended): M30 — the Founder Office, the playbook
 contract, the decider reading the corpus whole, each file's kind of work, the playbook a file reads, the
@@ -80,7 +81,8 @@ fundraising and programmes playbooks, your review sheets — 31 units (§6k). It
 compliance, hiring, meetings — waits for your review of the first two, by the plan's depth-first rule
 (`STEP-11` §8.7). `STEP-12`, the expert pass, was checked (10 Oct), widened by the alignment block and
 built on your go: 60 units, QA green on every tier (§6l). `STEP-13`, check every claim, is checked against
-the code and planned (12 Oct, `STEP-13` §8: tree `yc2_w27_s13`, 29 units) and built next.
+the code and planned (12 Oct, `STEP-13` §8: tree `yc2_w27_s13`, 29 units) — ✅ built 12 Oct with its crosscheck's fixes, 45 of
+47 units (§6m), beside `STEP-17` and `STEP-18` (§6n, §6o).
 
 ## 4 · STEP-00 · one branch, one baseline
 
@@ -400,6 +402,135 @@ expert calls, ≈ $2.08 on `claude-sonnet-5`; it runs on your yes with a key in 
 D50); the push; the deploy — migrations `0197`–`0199`, `expert_review` switched on for your org only, the
 expert's health check a day later (`08`); decisions D48, D57, D58.
 
+## 6m · STEP-13 · check every claim — built (M35, M36)
+
+**What was built** (`STEP-13-TO-BUILD-check-every-claim.md` §8; tree `yc2_w27_s13`, 47 units — 30 planned, 17 drawn
+by its crosscheck — 45 built; not built: M35's acceptance by mutation, `M35.C4.L-integration.V1.U03`, and the Atlas
+replays that tighten, `M36.C3.L-integration.V0.U01`): nothing the expert says reaches you unchecked, and what is
+missing is asked. M35, in L2 (`reason/expert/`): the review's second version (`quote`, `rests_on`, `to`, `answers`),
+the check's closed verdicts and migration `0200`; the card validator's invention rule moved to `platform/grounding`
+so reasoning may ask it; the check itself — each line kept, corrected or dropped, never the whole review for one bad
+line (`06` D59): a quote must be in the mail it cites, a number is its value with its unit and never a date's digits,
+a name stands on its own lines as a whole word, a draft never goes to us or to the connector who introduced the
+person, an ask already answered drops its move and not the file; the prompt (`expert-review.v3`) asks for what the
+check reads and speaks to "you"; every text you read — the cost of ignoring and a proposed kind's reason included —
+is the checked one, each sentence with its source; `GET /v1/workstreams/{file_id}` serves only what the check let
+stand. M36: every writer of signals and cards writes its lane, and a guard holds it; a held file asks you ONE
+question on its own card (migration `0201`, its own authority and door in L5 `deliver/`, the Investigation lane, `06`
+D60), in checked words, alive while it is asked; your Answer is kept once and your words go back into the file; the
+needs queue has its reader (it refuses while no connector is wired).
+
+**Measured** (`03` §F.1): the golden board must-detect **21 → 22** of 45 — F01 and F52 pass on their question card,
+F07 moves pass → lost in reasoning (the move's card before the call, the question's after it: two cards where
+`STEP-14`'s living card is one, `03` F176) — must-abstain 13/13, forbidden outputs 0, Atlas 6/80. The crosscheck's
+fixes moved none of it: their re-record (`8acb8377`) moved 70 cassettes, kept 441 citations over 53 cases, and every
+case's mark; each fix of the check re-ran the 95–97 golden checks captured at `be27bffe` and moved 0. The statement
+pin 3,064 → 3,108 on the STEP-13 line, 3,123 on the integration (`03` F270); statements assembled at run time 270 →
+272, both STEP-13's question doors (`03` F241).
+
+**The live passes** (`06` D50, D65). **Haiku 4.5**, the first real-model pass ever run (12 Oct; it could not run
+before `7d88ef25`): 19 pass / 28 fail / 11 not expressible of 58, $2.17 counted; replayed through the check, 68 of 86
+valid reviews are held — for their format (they cite dossier lines that carry no id, rest a move on an inference,
+read their own advice's *"24 hours"* as a claim), not their judgment (`03` F266) → `STEP-13b`. **The Sonnet pass is
+NOT a measure of Sonnet.** Claude Sonnet 5 thinks by default and its thinking counts toward `max_tokens`; the expert
+site's ceiling is 4,000, so all 203 calls stopped there and not one Sonnet review reached the check — every file went
+back to the paths the expert replaced and was replayed from the cassettes, so the board its scorecard printed is
+theirs (`03` F267). The live harness then turned each cut answer into an exception the gate retried uncharged, so
+its scorecard's cost is not the spend (F268): about $12.8 of D65's $20 is spent, estimated (F269). Nothing about
+Sonnet's judgment is known until the lead's audit of every T2 site (13 Oct) and a pass run after it.
+
+**The crosscheck** (12 Oct, at `be27bffe`; `03` F187–F240): **fix first** — 54 findings, all confirmed by two
+verifiers: 9 blocking, 10 fragile, 19 gaps, 16 info; 13 of the 27 units then built were
+not shown to do what their commits claimed.
+**Fixed: 31** — all nine blocking (F187–F195), F200–F215, F220, F221, F227, F231, F233, F236 — by the 17 units it
+drew and fixes to built units (`34504377`, `9d8a18e2`, `886e16c5`), each with a mutation run; **declared in a test:
+1** (F217, `06` D61); **partly: 7** (F196, F218, F228, F229, F234, F235, F237); **written by a commit that names no id: 1** (F238, `08`'s STEP-13 sections);
+**open: 14** — F197, F198, F199, F222 (a version change: `06` D48, answered 12 Oct, and the unit it names,
+`M35.C3.L-integration.V1.U06`, is not in `tree.yaml` yet; STEP-13b for F197), F216 and F230 (Rohit's calls), F219
+and F239 (STEP-13b, `06` D63, D64), F223 (the acceptance by mutation, not built), F224 (Harsh's fetchers), F225,
+F226, F232, F240 (no unit — the lead, at STEP-13's close-out). **Refuted: none** — X53 and X54 were refuted by one
+verifier each and kept with their corrected claims (F239, F240).
+
+**QA:** the lead's run, after this page — recorded in §7
+
+**Still owed:** the lead's QA, then the push — 104 commits past `origin/speedrun008` (`7766a06a`, which holds
+STEP-13's first part); the deploy, as `08` §0c lists it for STEP-13 (12 Oct): migrations `0200` and `0201`, which the
+boot log must name; nothing runs until the expert is on for your org (`08` §3.11); the needs queue's fetchers when
+Harsh can (`08` §3.12); the front end renders the question card and its Answer box, each sentence's source, and the
+workstream page's `says` and `check` (`08` §1.14); the probes a day after the expert is on (`08` §4.10). The two
+units not built; D48's re-check unit, to be drawn; the open findings above, each with its owner in `03`; a live pass that measures a real model's
+judgment, after the audit (F267); `STEP-13b` (D63, D64 — planned on `yc2w27-s13b-plan`, built after `STEP-14`).
+Rohit: F216 (does the quote rule cover what a wait, nothing or blocked verdict rests on) and F230 (does §3.5 bind the
+LLM decider); D57, D58 (STEP-12's).
+
+## 6n · STEP-17 · real tests — built (M40, M41)
+
+**What was built** (`STEP-17-TO-BUILD-real-tests.md` §8.8; tree `yc2_w27_s17`, 23 units — 17 planned, 6 drawn by its
+crosscheck — all built): the suite goes red on what broke production while it was green. M40: a census of every whole
+SQL expression of the engine and its scripts, its constants resolved, and every one planned by Postgres the way it
+will be asked (PREPARE, then EXPLAIN, rolled back), with an exact ratchet on what is assembled at run time;
+`scripts/slice_weight.py` runs again; every feedback reason stored on Postgres; a new tenant switched on against a
+real database; the health gate's third verdict, NO DATA, its output kept (`--json`) and `--require-data`; CI's
+`database` job on Postgres 17 and every job on the Dockerfile's Python 3.11, the job's skip scan inverted and held to a
+floor of passes, the routes by which it could pass over nothing closed; a step's Verify read whatever its number, and
+"built" read from the tree. M41: tests that read the clock when they run, the scheduler read on the database's clock,
+a timing guard that takes the best of three, the warm lane's test claiming its own rows.
+
+**Measured:** the census at the merge — 2,358 statements, 2,086 whole, 272 assembled at run time (the crosscheck, at
+`8da2ecda`); on a tenant with no data 17 of the gate's 19 checks said PASS (S17-F3), and a check that judged nothing
+now says NO DATA; 324 database-gated files that no CI job ran are now the `database` job's; the whole suite on
+Postgres passed 20,868 at `ae24ee22` with exactly the four allowed skips (`156e2e12`); the hermetic tier passed
+18,247 after the crosscheck's fixes (`944608a2`). Not measured yet: the whole suite on Python 3.11 (STEP-17 §8.7).
+
+**The crosscheck** (12 Oct, the STEP-17/18 crosscheck at `8da2ecda`; `03` F241–F251): **fix first** — 12 findings, 9
+confirmed, 3 partly; the three blocking were the merge's, a line or two each, fixed at the integration (`1dcfe511`,
+F241–F243). **Fixed: 8** (F241–F248). **Open: 3** — F249 (the package drift: the lead's pre-push run on 3.11), F250
+(two checks pass over thin data: no unit), F251 (production's Postgres version: Harsh). **Refuted: none.** Looked at
+and nothing found: S17X-I3 — no Python 3.11 or CI-runner hazard (every `.py` file parses on 3.11.15, no `in` check
+against an Enum, tests read git only at HEAD); no row.
+
+**QA:** the lead's run, after this page — recorded in §7
+
+**Still owed:** the whole suite on Python 3.11 in Docker before the push (STEP-17 §8.7); the push, and CI's first
+`database` run on GitHub; after each deploy, Harsh keeps the gate's output with `--json` and runs it again the next
+day with `--require-data` (`08` §0c, §3.13; `06` D68, D69). `03` F30 stays open (`06` D70).
+
+## 6o · STEP-18 · known bugs — built (M48, M49)
+
+**What was built** (`STEP-18-TO-BUILD-known-bugs.md` §8.6; tree `yc2_w27_s18`, 27 units — 20 built on its branch, 7
+drawn by its crosscheck — all built): of B1–B29 and the 16 rows of `03` given to it, what could be built without a
+decision, a re-record of the golden set, or a file STEP-13 was building. L6 Learning (`feedback/`): every "wrong
+because" reason a card offers is kept (`0210`, B3); a learning sent to you for review waits for your review (B4), and
+a one-off moves back the ones stuck before the fix. L3 Context Graph (`context/`): a model answer with a decimal, NaN
+or Infinity is audited and the pass goes on (B21); a rebuild reads every kept event with its road and estimates no
+model call it never makes (B12); a screen follow-up is one active observation (`0211`, B13); three coverage reads
+lose themselves alone, in a savepoint (F120 and its third site); no read leaves its connection open (F65, s18-F1). L1
+Signals (`capture/`): a calendar event buys no relevance call (B25); a bounce is read whole on the fast path (F117);
+`scripts/gmail_l1.py` takes its fingerprints with its events, in one transaction (B20). L2 (`packs/`): the behaviour
+brain holds this company's conduct, never the counterparty's reply time (B11). Platform: a brief read inside a
+transaction sees it (F97); one list of public mail hosts (F128); the activation script names every effect (F135); a
+boot outside dev refuses a public JWT secret, and an unset `GENIOS_ENV` is not dev (B7, `06` D62).
+
+**Measured:** two additive migrations; every unit's mutations killed (STEP-18 §8.6); the statement pin net 0 on its
+branch, then +7 at the integration (the drain's columns rendered again), −1 and +2 by the crosscheck's units — 3,121
+at `944608a2`; the s18-F9 and s18-F3 probes ran read-only on a scratch database (`707c55c1`) — production's numbers
+are Harsh's to read.
+
+**The crosscheck** (12 Oct, at `8da2ecda`; `03` F242, F252–F265): **fix first** — 15 findings, 13 confirmed, 2
+partly; one blocking, S18-X01, the same defect as STEP-17's S17X-B2 (one row, F242, fixed in `1dcfe511`). **Fixed:
+11** (F242, F252–F260, F264). **Declared: 1** (F265). **Open: 3** — F261 (`03` itself does not yet record what
+STEP-18 built: the lead, at STEP-18's merge), F262 (no unit), F263 (Rohit's call on the Indian mail hosts; Harsh's
+count of the company nodes already minted). **Refuted: none.**
+
+**QA:** the lead's run, after this page — recorded in §7
+
+**Still owed:** the push; the deploy, as `08` §0c lists it for STEP-18 — **before** it, Harsh reads `GET /config` and
+sets `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` together (an unset env now refuses to boot on a public secret, `06`
+D62; a new secret signs every user and paired desktop app out; a non-dev env needs the Composio webhook secret) —
+the boot log names `0210` and `0211`; **after** it, the s18-F9 and s18-F3 probes and the stuck-review backfill, dry
+run first, which Rohit reads (`08` §3.14, §4.11). Left by STEP-18 to others: `03` F79, F100, F108, F109, F111, F158, F159,
+F165, F166, F180 (STEP-18 §8.2); its decisions s18-D1–D3 (STEP-18 §8.5).
+
 ## 7 · CI on the push
 
 | Job | Run `37407196202`, on `77aba10e` |
@@ -459,7 +590,7 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 | | Question | What holds until you answer |
 |---|---|---|
 | `06` D12a | label the 40 golden items yourself? | my labels, every row marked `claude` |
-| `06` D12c | spend on a live evaluation of the golden set? | no spend; ≈ $0.63 a pass on Haiku 4.5 |
+| `06` D12c | spend on a live evaluation of the golden set? | ✅ answered — `06` D50, D65 (12 Oct): up to $20; about $12.8 spent, estimated (`03` F269) |
 | `06` D13 | may calibration mute or nudge on your account? | shadow — it records, applies nothing; arming not before `STEP-18` B22–B24 |
 | — | is `GENIOS_L4_LLM_DECISION_MAKER` on in production? | the golden set assumes on; one look at the deploy's environment |
 | `06` D5 / D16 | how far back does STEP-08 re-read? | nothing runs: `--apply` refuses without a number; 365 recommended |
@@ -469,4 +600,12 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 | `06` D43 | show a connector's rate on the brief's entry for a connector that only introduces? | shown only on a connector's own file (`03` F114) |
 | `06` D44 | re-point the corpus rules written to mean their reply time? | each reads what it reads today (`03` F105) |
 | `golden-labels.md` rows 45–47 | your labels for the three new cases (F45–F47) | Claude's, each row marked `claude` |
-| `06` D48 | may a prompt change re-decide every live subject once? | a prompt change waits for each subject's inputs to move (`03` F134) |
+| `06` D48 | may a prompt change re-decide every live subject once? | ✅ answered 12 Oct — yes, and for the expert a re-check against the dossier it was reviewed on; its unit, `M35.C3.L-integration.V1.U06`, is not in `tree.yaml` yet (`03` F198, F199, F222) |
+| `06` D57 | when does the expert look again at a file with no pattern yet (`03` F169)? | only the file's own measured pattern re-thinks a quiet file |
+| `06` D58 | F19 — one card naming each person's ask, or a card per person? | the case as written: a card per person |
+| the STEP-13 crosscheck, X30 (`03` F216) | does the quote rule (STEP-13 §8.4.2) cover what a *wait*, *nothing* or *blocked* verdict rests on? | not held; its names and numbers are still checked |
+| the STEP-13 crosscheck, X44 (`03` F230) | does §3.5's confidence rule bind the LLM decider? | its lane rides on its own confidence |
+| the STEP-17/18 crosscheck, S18-X13 (`03` F263) | which Indian public mail hosts join the one list (yahoo.in, outlook.in, hotmail.co.in, live.in, ymail.com, zohomail.in)? | the 24 hosts listed today |
+| `STEP-18` s18-D1–D3 (§8.5) | a durable decider cap and a dollar governor (B9); the vendor gate (B10); the junk filter's re-record (B26, F79) | nothing changes |
+| `STEP-13b`'s decisions (`yc2w27-s13b-plan`, STEP-13b §8) | an Opus rung, where the ladder starts, the reasoning units in the dossier, one repair before a climb, the expert's own line on your card, … | each one's default there |
+| the live passes after the audit (`03` F267–F269) | more than the ≈ $7.2 left of `06` D65 (s13b-D8 asks $15 more) | within D65 |

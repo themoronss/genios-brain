@@ -89,13 +89,16 @@ CONNECTOR_BASIS = "connector"
 
 @dataclass(frozen=True, slots=True)
 class Ask:
-    """One open loop on a file: who asked, and who owes the answer."""
+    """One open loop on a file: who asked, and who owes the answer — when it was first asked, and when it
+    was LAST asked (`open_loops.last_seen_at`: a follow-up repeating it, or an ask after our reply that
+    reopened it — STEP-13 M35.C2.L-logic.V1.U17)."""
     loop_id: str
     kind: str
     asked_by: str
     owed_by: str                       # "us" — they wait on us · "them" — we wait on them
     thread_id: str | None
     opened_at: datetime | None
+    last_seen_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -179,7 +182,8 @@ _TURNS = text(
     "   and visibility_scope <> 'private' and subject_node_id = any(:ids)")
 
 _ASKS = text(
-    "select l.loop_id, l.subject_node_id, l.awaited_from_node_id, l.kind, l.thread_id, l.opened_at "
+    "select l.loop_id, l.subject_node_id, l.awaited_from_node_id, l.kind, l.thread_id, l.opened_at, "
+    "       l.last_seen_at "
     "  from open_loops l "
     "  left join source_events se on se.org_id = l.org_id and se.event_id = l.opened_by_event "
     " where l.org_id = :o and l.status = 'open' "
@@ -507,7 +511,7 @@ def _files(conn, org_id: str, brief: CompanyBrief | None, *, now: datetime,
             open_asks=tuple(
                 Ask(loop_id=r.loop_id, kind=r.kind, asked_by=r.subject_node_id,
                     owed_by="them" if r.awaited_from_node_id in mine else "us",
-                    thread_id=r.thread_id, opened_at=r.opened_at)
+                    thread_id=r.thread_id, opened_at=r.opened_at, last_seen_at=r.last_seen_at)
                 for r in asks if r.subject_node_id in mine or r.awaited_from_node_id in mine),
             introductions=rate[0], replied=rate[1], calls=rate[2], people=tuple(sorted(mine)),
             work_kind=_work_kind(work, {str(keys[p]).strip().lower() for p in mine if p in keys},

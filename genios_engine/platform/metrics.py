@@ -33,9 +33,17 @@ INR_PER_USD = 83.0
 # must come first, because `sonnet-5` and Sonnet 4.6 are priced differently. The Python lookup and
 # the generated SQL CASE both walk this order. Unknown models fall back to the CHEAPEST family,
 # which under-reports rather than inflating spend — an analytics number should never flatter us.
+#
+# ⛔ `opus-5-5` BEFORE `opus` (`yc2_w27_s18` M50.C4.L-data.V0.U16, s5t-F11): Opus 5.5 is $4 / $20, and
+# `opus` priced it at Opus 5's $5 / $25 — 25% over. This table prices HISTORY. A call about to be made
+# is priced by TIER in the gate (`capture/semantic/batch.DEFAULT_TIER_PRICES`, read by
+# `reason/bundle/budget.cost_micro_usd`): T2 is Sonnet 5's $2 / $10, so an Opus rung on a T2 site
+# (R-7, STEP-13b's s13b-D1) would be charged and budgeted at half Opus 5.5's price and 40% of Opus 5's,
+# and T3 (Opus 5's $5 / $25) over-counts Opus 5.5 by 25%. That rung needs its own price.
 LLM_PRICE: dict[str, tuple[float, float]] = {
     "fable":    (10.0e-6, 50.0e-6),       # Fable 5 / 5.1
     "mythos":   (10.0e-6, 50.0e-6),       # Mythos 5 / 5.1
+    "opus-5-5": (4.0e-6,  20.0e-6),       # Opus 5.5
     "opus":     (5.0e-6,  25.0e-6),       # Opus 5, 4.8, 4.7, 4.6
     "sonnet-5": (2.0e-6,  10.0e-6),       # Sonnet 5
     "sonnet":   (3.0e-6,  15.0e-6),       # Sonnet 4.6

@@ -101,6 +101,63 @@ here when the step lands. Nothing in this table switches anything on by itself.
 | STEP-15, the morning brief | **being built** | `0230_morning_briefs` (planned) | at deploy, **set `orgs.timezone` for Rohit's org** (otherwise it is inferred from his send hours); a Slack tenant gets the brief as its digest | the **Today view** (Atlas A.10 has the wireframe) reads the brief's route at 08:00 in the org's timezone; e-mail and WhatsApp come later |
 | STEP-16, learning from you | **being built** | `0241_founder_corrections`, `0242_company_brief_corrections` (planned; `0240` is not needed — STEP-18's `0210` already keeps every reason) | do **not** arm calibration (D13 stays shadow) | the card's *wrong* shows four groups and a words box; a question card can be called *wrong* (*"don't ask me this"*); your corrections show on the file |
 
+## 0d · ⛔ Claude 5 thinks by default — R-2 is probably cut in production today (13 Oct)
+
+**The defect** (STEP-18 §9; `06` D71). Claude Sonnet 5 thinks unless the request turns it off, and the
+tokens it spends thinking count toward `max_tokens` with the answer. Every model site here was sized for a
+model that does not think, and `context/llm/client.LLMClient` — the one client R-1, R-2 and deep analyze
+use — sends no thinking control. On `harsh/mvp` the R-2 narrator (`l4_bundle`) runs `claude-sonnet-5` at a
+2,400-token ceiling: its answer is ~450 tokens, and a call whose thinking fills the rest is cut, retried
+once at the same ceiling, and ends as the template — two charged calls for no narrative. Measured on the
+golden set on 12 Oct: the R-7 expert on Sonnet 5 at 4,000 was cut on **203 of 203** calls (R-7 is not
+on `harsh/mvp`).
+
+**1 · Rohit runs this first** — read-only, the four `@thinking_*` blocks of the probe file (§4):
+
+```
+PGOPTIONS='-c default_transaction_read_only=on' psql "$URL" -f "speedrun008/YC-II W27/baseline/production_state.sql"
+```
+
+| Block | Confirms the defect | Refutes it |
+|---|---|---|
+| `@thinking_lanes` | `l4_bundle` × `claude-sonnet-5`: ≥ 10% of calls at 2,400 (`failures_at_ceiling` + `parsed_but_cut`) | every call since 4 Oct under 2,400 — the patch then only saves ~40% of R-2's output spend |
+| `@thinking_r_sites` | R-2 `failed_generation` with `every_attempt_at_ceiling` (2 attempts, 4,800 tokens) | none |
+| `@thinking_sonnet_by_day` | the Sonnet 5 lanes still at a ceiling after 4 Oct | — |
+| `@thinking_models_in_use` | a T1 lane on a model other than Haiku (an override: the shared client would then think there too) | Haiku plus the two Sonnet 5 lanes only |
+
+The blocks read Rohit's org only (the probe file's rule); `@thinking_expert_after_deploy` and
+`@thinking_brief_after_deploy` read tables that come with the speedrun008 deploy (`0195`, `0197`) and
+error before it — run them after.
+
+**2 · The hotfix for `harsh/mvp`** — one file and its test, nothing else:
+`speedrun008/YC-II W27/baseline/thinking/harsh-mvp-r2-thinking-off.diff`. It sends
+`thinking: {"type": "disabled"}` to `claude-sonnet-5` — its own id or a dated snapshot, never a longer id
+(Opus 5.5 and Fable cannot turn thinking off; `disabled` is a 400 there) — from `context/llm/client.py`,
+and adds two tests to `tests/context/test_sampling_is_omitted_where_it_is_refused.py`. Haiku's requests do
+not change by a byte.
+
+```
+git switch harsh/mvp && git pull --ff-only
+git apply --check "speedrun008/YC-II W27/baseline/thinking/harsh-mvp-r2-thinking-off.diff"   # from a speedrun008 checkout, or copy the file
+git apply "speedrun008/YC-II W27/baseline/thinking/harsh-mvp-r2-thinking-off.diff"
+.venv/bin/python -m pytest -q tests/context/test_sampling_is_omitted_where_it_is_refused.py tests/context/test_a_truncated_call_is_not_bad_json.py
+git commit -am "R-2: Sonnet 5 asked with thinking off (STEP-18 §9 hotfix)" && git push   # then deploy as you do
+```
+
+Proved on an extract of `origin/harsh/mvp` @ `84f00a40` (never a checkout):
+`bash 'speedrun008/YC-II W27/baseline/thinking/check-harsh-mvp-hotfix.sh'` — it applies, harsh/mvp's two
+client test files pass (25), and so do its `tests/context` and the R-site gauntlet and doctrine tests.
+A day after, `@thinking_lanes` should show `l4_bundle` with no call at 2,400.
+
+**3 · The speedrun008 deploy carries the whole fix** (`yc2_w27_s18` M50): a thinking control per model
+family in the shared client, OFF by default; every R-site asks with thinking off (R-7 at 6,000 with a 120 s
+timeout); deep analyze, the brief drafter (4,000) and the four moment lanes the same; a cut answer is a
+failure on every ledger; `scripts/pipeline_health.py` sees a cut that parsed and fails an expert day more
+than half cut. No migration. ⛔ Once the hotfix is committed on `harsh/mvp`, `harsh/mvp` is one commit
+ahead of `speedrun008` and §2's `--ff-only` refuses: the lead merges that commit back into `speedrun008`
+first, taking `speedrun008`'s side in `context/llm/client.py` and the test file (its table already sends
+Sonnet 5 `disabled`), so the deploy fast-forwards again.
+
 ## 1 · What the deploy changes in production
 
 33 commits in the push touch `genios_engine/`. Two groups.

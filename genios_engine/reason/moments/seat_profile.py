@@ -179,13 +179,16 @@ def t1_text(engine, *, org_id: str, prompt: str, max_tokens: int, timeout_s: flo
     from anthropic import Anthropic
 
     from genios_engine.platform.config import get_settings
+    from genios_engine.context.llm.client import request_controls
     from genios_engine.reason.llm_sites import tier_model
     model = tier_model("T1")
     try:
         client = Anthropic(api_key=get_settings().anthropic_api_key, timeout=timeout_s,
                            max_retries=0)
+        # `temperature` only where the model takes it, and thinking off — `LLMClient`'s own answer
+        # (`yc2_w27_s18` M50.C3.L-logic.V1.U12, s5t-F9): under a Claude 5 T1 model this was a 400.
         resp = client.messages.create(model=model, max_tokens=max_tokens,
-                                      temperature=temperature,
+                                      **request_controls(model, temperature=temperature),
                                       messages=[{"role": "user", "content": prompt}])
     except Exception:      # noqa: BLE001 — timeout / transport: nothing, never an error
         _log.info("%s: model call failed or timed out org=%s", purpose, org_id)

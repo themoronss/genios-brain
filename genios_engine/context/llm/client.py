@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import copy
 import hashlib
+import logging
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -35,6 +38,118 @@ def accepts_sampling(model: str) -> bool:
     """Whether `model` will accept `temperature`. A model we do not recognise is assumed to, which
     is the same default every Haiku-class call has always run under."""
     return not str(model).startswith(NO_SAMPLING_PREFIXES)
+
+
+#: ⛔ CLAUDE 5 THINKS BY DEFAULT, AND ITS THINKING IS SPENT FROM `max_tokens` (the 13 Oct audit,
+#: s5t-F1; `yc2_w27_s18` M50.C1.L-contract.V0.U01). Sonnet 5's adaptive thinking is on unless the
+#: request turns it off, and the tokens it spends reasoning are billed as output and count toward
+#: `max_tokens` alongside the answer. MEASURED: the golden live pass of 12 Oct sent R-7's 4,000-token
+#: ceiling to `claude-sonnet-5` — 203 calls, every one stopped at 4,000, thinking ~2,600–3,500 of it
+#: (`scratchpad/live/sonnet_facts.md`). This client sent no thinking control at all; the fix lived only
+#: in `reason/llm_decision_maker`, behind a bare prefix match that sent Opus 5's `disabled` to Opus 5.5.
+#:
+#: What a site may ask: OFF (every ceiling in this engine was sized for a model that does not think —
+#: `06` D71, the default) or ADAPTIVE (a site that sized its ceiling for thinking, `06` D72).
+THINKING_OFF = "off"
+THINKING_ADAPTIVE = "adaptive"
+THINKING_MODES = (THINKING_OFF, THINKING_ADAPTIVE)
+
+#: How many tokens a model that CANNOT turn thinking off needs beyond the visible answer when it is
+#: asked at the lowest effort. ⛔ A SIZING, NOT A MEASUREMENT: the most thinking measured on any model
+#: here is Sonnet 5's at its default effort on R-7, ~2,600–3,500 tokens; `low` thinks less, so 3,500 is
+#: an upper sizing. Measure it on the model before a site depends on it (STEP-13b's Opus rung).
+THINKING_HEADROOM_AT_LOW_EFFORT = 3500
+
+
+@dataclass(frozen=True)
+class ThinkingFamily:
+    """One model family's thinking controls. `off` / `adaptive` are the request fields each mode
+    sends; `can_be_off` is False for a family whose thinking is always on, which is then asked at the
+    lowest effort and given `headroom` tokens beside the answer (`output_ceiling`)."""
+
+    family: str
+    off: Any
+    adaptive: Any
+    can_be_off: bool = True
+    headroom: int = 0
+
+
+_DISABLED = {"thinking": {"type": "disabled"}}
+_ADAPTIVE = {"thinking": {"type": "adaptive"}}
+_LOWEST_EFFORT = {"output_config": {"effort": "low"}}
+
+#: ⛔ ONE ROW PER FAMILY, matched as the family's own id or its dated snapshot (`-YYYYMMDD`), never as a
+#: prefix of a longer id, and tried longest id first. Per Anthropic's model notes (13 Oct):
+#:   * Sonnet 5, Opus 5, Opus 4.8 / 4.7 accept `disabled` (Opus 5 only at effort ≤ high; its default is
+#:     high). Sonnet 5 and Opus 5 think when nothing is sent.
+#:   * Opus 5.5 and Fable 5 / 5.1 CANNOT turn thinking off — `disabled` is a 400 at every effort — so
+#:     OFF asks the lowest effort and the ceiling gets the family's headroom.
+#:   * Haiku 4.5 does not think unless it is given a budget, and it is never given one: nothing sent.
+#:   * A model not in the table gets nothing (its own default) and is logged — never another family's
+#:     control. Sonnet 5.5's no-tools behaviour is unverified (the audit's §4.1), so it is not a row.
+THINKING_FAMILIES = (
+    ThinkingFamily("claude-haiku-4-5", off={}, adaptive={}),
+    ThinkingFamily("claude-sonnet-5", off=_DISABLED, adaptive=_ADAPTIVE),
+    ThinkingFamily("claude-opus-5", off=_DISABLED, adaptive=_ADAPTIVE),
+    ThinkingFamily("claude-opus-5-5", off=_LOWEST_EFFORT, adaptive=_ADAPTIVE, can_be_off=False,
+                   headroom=THINKING_HEADROOM_AT_LOW_EFFORT),
+    ThinkingFamily("claude-opus-4-8", off=_DISABLED, adaptive=_ADAPTIVE),
+    ThinkingFamily("claude-opus-4-7", off=_DISABLED, adaptive=_ADAPTIVE),
+    ThinkingFamily("claude-fable-5", off=_LOWEST_EFFORT, adaptive=_ADAPTIVE, can_be_off=False,
+                   headroom=THINKING_HEADROOM_AT_LOW_EFFORT),
+    ThinkingFamily("claude-fable-5-1", off=_LOWEST_EFFORT, adaptive=_ADAPTIVE, can_be_off=False,
+                   headroom=THINKING_HEADROOM_AT_LOW_EFFORT),
+)
+
+_SNAPSHOT = re.compile(r"-\d{8}")
+_unknown_logged: set[str] = set()
+_log = logging.getLogger("genios.context.llm.client")
+
+
+def _by_length() -> list[ThinkingFamily]:
+    return sorted(THINKING_FAMILIES, key=lambda f: len(f.family), reverse=True)
+
+
+def thinking_family(model: str) -> ThinkingFamily | None:
+    """The family `model` belongs to, or None. `claude-opus-5-5` is Opus 5.5's, never Opus 5's."""
+    name = str(model or "").strip()
+    for family in _by_length():
+        if name == family.family or (name.startswith(family.family)
+                                     and _SNAPSHOT.fullmatch(name[len(family.family):])):
+            return family
+    return None
+
+
+def thinking_kwargs(model: str, mode: str = THINKING_OFF) -> dict[str, Any]:
+    """The request fields that ask `model` for `mode` — a fresh copy, so a caller cannot edit the
+    table. A model the table has not met gets nothing, logged once."""
+    if mode not in THINKING_MODES:
+        raise ValueError(f"unknown thinking mode {mode!r}; expected one of {THINKING_MODES}")
+    family = thinking_family(model)
+    if family is None:
+        if model not in _unknown_logged:
+            _unknown_logged.add(model)
+            _log.warning("no thinking control known for model %r — sent nothing (its own default)",
+                         model)
+        return {}
+    return copy.deepcopy(dict(family.off if mode == THINKING_OFF else family.adaptive))
+
+
+def output_ceiling(model: str, ceiling: int, mode: str = THINKING_OFF) -> int:
+    """The `max_tokens` a call needs: the site's own, plus the family's headroom when the site asked
+    for thinking OFF and the model cannot turn it off. ADAPTIVE is sized by the site itself."""
+    family = thinking_family(model)
+    if mode == THINKING_OFF and family is not None and not family.can_be_off:
+        return int(ceiling) + family.headroom
+    return int(ceiling)
+
+
+def request_controls(model: str, *, thinking: str = THINKING_OFF,
+                     temperature: float = 0.0) -> dict[str, Any]:
+    """Sampling and thinking together, for every caller that builds its own request: `temperature`
+    only where the model takes it (`NO_SAMPLING_PREFIXES`), and the family's thinking control."""
+    sampling = {"temperature": temperature} if accepts_sampling(model) else {}
+    return {**sampling, **thinking_kwargs(model, thinking)}
 
 
 @dataclass
@@ -83,6 +198,8 @@ class LLMClient:
 
     #: `call` accepts `cache_prefix_chars`. Callers check this so test fakes need not.
     supports_prompt_cache = True
+    #: `call` accepts `thinking=` (and `timeout_s=`). Callers check this so test fakes need not.
+    supports_thinking = True
 
     def __init__(self, *, api_key: str, model: str) -> None:
         self._api_key = api_key
@@ -108,7 +225,8 @@ class LLMClient:
 
     def call(self, prompt: str, *, max_tokens: int = 4096, cache_prefix_chars: int = 0,
              cache_ttl: str | None = None,
-             timeout_s: float | None = None, max_retries: int | None = None) -> LLMResult:
+             timeout_s: float | None = None, max_retries: int | None = None,
+             thinking: str = THINKING_OFF) -> LLMResult:
         """`cache_prefix_chars` > 0 marks `prompt[:n]` as a cacheable prefix (the fixed
         instructions). The model sees the identical text either way; only the price changes.
         A prefix under the model's minimum cacheable length is simply not cached.
@@ -121,7 +239,9 @@ class LLMClient:
         `timeout_s` / `max_retries` override the client's own for ONE call, without building a
         second client (a new client is a new connection pool, and an interactive lane cannot
         afford a TLS handshake): the screen lane answers a person who is looking at the screen
-        and has ~3 s, where a drain has a minute and wants the retries."""
+        and has ~3 s, where a drain has a minute and wants the retries.
+
+        `thinking` is OFF unless the site sized its ceiling for thinking (`THINKING_FAMILIES`)."""
         if 0 < cache_prefix_chars < len(prompt):
             control: Any = {"type": "ephemeral"}
             if cache_ttl:
@@ -145,9 +265,10 @@ class LLMClient:
             # `temperature=0` is the determinism this engine runs on and stays the default. It is
             # OMITTED, never changed, for the models that refuse it — see NO_SAMPLING_PREFIXES.
             # Those models are deterministic enough without it; sending it costs the whole call.
-            sampling = {"temperature": 0} if accepts_sampling(self._model) else {}
+            # The thinking control rides with it: `request_controls`.
+            controls = request_controls(self._model, thinking=thinking)
             resp = client.messages.create(
-                model=self._model, max_tokens=max_tokens, **sampling,
+                model=self._model, max_tokens=max_tokens, **controls,
                 messages=[{"role": "user", "content": content}])
         except Exception as e:      # noqa: BLE001 — network/API errors surfaced, not raised
             return LLMResult(parsed={}, raw="", ok=False, error=str(e)[:400], model=self._model)
@@ -172,10 +293,14 @@ class LLMClient:
         # PARSED, BUT STILL CUT SHORT. `parse_json_lenient` is deliberately forgiving and will
         # close an unterminated object, so a truncated call can come back `ok=True` carrying a
         # SHORTER answer than the model meant to give — a half-written list of observations that
-        # nothing downstream can tell from a complete one. The flag travels either way.
+        # nothing downstream can tell from a complete one. The flag travels either way — and so does
+        # the error text (M50.C1.L-contract.V0.U01, s5t-F6): every ledger row is written from `ok`
+        # and `error`, so without it a cut that parsed was a success with no error, invisible to every
+        # health check. `ok` stays true: the answer is usable, and the caller decides.
         if cut_off:
             return LLMResult(parsed=parsed, raw=raw, input_tokens=it, output_tokens=ot,
                              model=self._model, truncated=True,
+                             error=f"{TRUNCATED} (max_tokens={max_tokens})",
                              cache_write_tokens=cw, cache_read_tokens=cr)
         return LLMResult(parsed=parsed, raw=raw, input_tokens=it, output_tokens=ot,
                          model=self._model, cache_write_tokens=cw, cache_read_tokens=cr)

@@ -53,7 +53,7 @@ _REVIEWS = text(
     " order by reviewed_at desc, fingerprint limit :n")
 
 _CARDS = text(
-    "select c.card_id, s.subject_node_id, c.headline, c.level, c.state, c.created_at, "
+    "select c.card_id, s.subject_node_id, s.rule_id, c.headline, c.level, c.state, c.created_at, "
     "       c.resolved_at, count(*) over () as total, "
     "       (select coalesce(json_agg(json_build_object('kind', e.kind, 'cause', e.cause, "
     "                                                  'at', e.occurred_at, 'detail', "
@@ -165,6 +165,9 @@ class PriorCard:
     events: tuple[CardEvent, ...]
     verdicts: tuple[Verdict, ...]
     versions: tuple[PriorVersion, ...] = ()
+    #: The rule its signal fired under — `founder_question` for a question card (STEP-13
+    #: M36.C2.L-logic.V2.U12: its headline is OUR question, never a ground for the claim it asked about).
+    rule_id: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {"card_id": self.card_id, "subject_node_id": self.subject_node_id,
@@ -294,7 +297,7 @@ def judgments_for(conn, org_id: str, file_id: str, *, people: Iterable[str] = ()
             resolved_at=_utc(r.resolved_at), events=tuple(kept),
             verdicts=tuple(Verdict(cause=v["cause"], reason=v.get("reason"), at=_utc(v.get("at")))
                            for v in _json_list(r.verdicts)),
-            versions=tuple(shown)))
+            versions=tuple(shown), rule_id=r.rule_id))
 
     rows = conn.execute(_SITUATIONS, {"o": org_id, "f": file_id,
                                       "n": limits["situations"]}).fetchall()

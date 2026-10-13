@@ -49,8 +49,12 @@ def test_a_move_whose_ground_fell_is_held_and_asks_about_it():
     # founder reads on the question card — the model's quote stays in the verdict, never on the card.
     assert checked.because == C.HELD_BECAUSE[C.MISQUOTED]
     assert _verdict_of(checked, "fact:1").detail == "could you send your financials before we set up a call"
-    assert checked.question == ("Is it so: “Marco asked for a short deck before setting up a call”? "
-                                "It is not in what it cites.")
+    # ⛔ RESTATED by M36.C2.L-logic.V2.U10 (fix, the second crosscheck G2, `03` X10): the question asked
+    # "Is it so: “<the fell fact's claim>”? It is not in what it cites." — the words the check dropped, on the
+    # question card. It asks what the next step is, and says truly why the one found is held.
+    assert checked.question == ("What is the next step with Marco Ruiz? We held the one we found: "
+                                f"{C.HELD_BECAUSE[C.MISQUOTED]}.")
+    assert "short deck" not in checked.question
     assert checked.words.headline is None and checked.words.draft is None and checked.words.to is None
     assert checked.words.situation, "why it matters is still the expert's reading"
     assert W.ASK not in checked.cited, "a dropped fact's mail is not counted"
@@ -72,7 +76,9 @@ def test_a_find_out_review_is_shown_asking_its_own_move():
 def test_a_find_out_review_whose_ground_fell_asks_about_the_fact_instead():
     checked = _check(mode="find_out", move={"what": "Find out whether Marco wants the deck first"},
                      draft=None, fact1={"quote": None})
-    assert checked.fate == C.HELD and checked.question.startswith("Is it so: “Marco asked")
+    # ⛔ RESTATED by M36.C2.L-logic.V2.U10 (fix, G2): asked about the next step, never in the fell claim's words.
+    assert checked.fate == C.HELD and checked.question.startswith("What is the next step with Marco Ruiz?")
+    assert "Marco asked" not in checked.question
 
 
 @pytest.mark.parametrize("mode", ["wait", "nothing", "blocked"])

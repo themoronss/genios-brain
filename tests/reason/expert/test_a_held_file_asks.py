@@ -161,10 +161,20 @@ def test_on_the_shadow_lane_nothing_is_asked(world):
     assert _questions(store, org, anchor) == [] and _open_signals(store, org, anchor) == []
 
 
-def test_a_question_you_answered_is_not_asked_again_by_a_later_review(world):
+def _gate(store, org):
+    with store.engine.connect() as c:
+        return [r.outcome for r in c.execute(text(
+            "select outcome from reasoning_fingerprints where org_id = :o and subject_key like '%file_review%'"),
+            {"o": org})]
+
+
+def test_a_question_you_answered_is_not_asked_again_and_the_file_asks_what_is_next(world):
     """⛔ `03` X25 (M36.C2.L-data.V2.U12): your answer moves the file's fingerprint, so the review that asks the
-    same words next is a new review. It asks nothing: no signal is filed for words you answered, and the
-    file's open question signal expires — `answered_already`, counted."""
+    same words next is a new review — and the words you answered are never asked again.
+
+    ⛔ RESTATED by M36.C2.L-data.V2.U14 (the second crosscheck F2): this pinned that the file then asked NOTHING —
+    no signal, no card, and the gate remembered it SUPPRESSED, skipped until the file moved: the file you
+    answered went silent. It asks what should happen next, quoting your words, on its own card."""
     store, org, registry, _ = world
     anchor, _situations, events = _fund(store, org)
     _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
@@ -176,11 +186,94 @@ def test_a_question_you_answered_is_not_asked_again_by_a_later_review(world):
     _find_out(store, org, anchor, "ffp-fund-findout-review-001", events)
     later = NOW + timedelta(hours=2)
     counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
+    assert counts.get("expert_question_asked") == 1 and not counts.get("expert_question_answered_already"), counts
+    first, follow = _questions(store, org, anchor)
+    assert (first.question_id, first.state) == (asked.question_id, Q.ANSWERED), "the words you answered stay answered"
+    assert (follow.question, follow.why, follow.state) == (
+        "You answered: “This quarter's.”. What should happen next on this file?", asks.WHY_AFTER_YOUR_ANSWER, Q.OPEN)
+    assert len(_asking(store, org, at=later)) == 1 and _gate(store, org) == ["standing"]
+
+
+def test_with_nothing_left_to_ask_the_file_is_decided_again_never_skipped(world):
+    """You answered the follow-up in the very words it quotes: nothing is left to ask. The gate remembers it
+    INDETERMINATE — the next sweep decides the file again (its review read again, no model) — never
+    SUPPRESSED, which `should_skip` honours until the file moves (F2)."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
+    [asked] = _questions(store, org, anchor)
+    with store.engine.begin() as c:
+        Q.answer(c, org_id=org, question_id=asked.question_id, words="Yes.", by="u", at=NOW + timedelta(hours=1))
+    _find_out(store, org, anchor, "ffp-fund-findout-review-001", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=NOW + timedelta(hours=2))
+    follow = _questions(store, org, anchor)[-1]
+    with store.engine.begin() as c:
+        Q.answer(c, org_id=org, question_id=follow.question_id, words="Yes.", by="u", at=NOW + timedelta(hours=3))
+    _find_out(store, org, anchor, "ffp-fund-findout-review-002", events)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-002"},
+                      at=NOW + timedelta(hours=4))
     assert counts.get("expert_question_answered_already") == 1, counts
-    assert counts.get("expert_question_asked", 0) == 0 and counts.get("expert_question_standing", 0) == 0
-    assert [(q.question_id, q.state) for q in _questions(store, org, anchor)] == [(asked.question_id, Q.ANSWERED)]
-    assert _open_signals(store, org, anchor) == [], "no signal for words you answered"
-    assert _asking(store, org, at=later) == []
+    assert _gate(store, org) == ["indeterminate"]
+    again = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-002"},
+                     at=NOW + timedelta(hours=5))
+    assert not again.get("expert_unchanged") and again.get("expert_decided") == 1, again
+
+
+def test_a_new_answer_to_the_follow_up_is_the_one_the_next_asks_about(world):
+    """The chain goes on while you answer: the follow-up quotes your LATEST words, never the first ones."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
+    [asked] = _questions(store, org, anchor)
+    with store.engine.begin() as c:
+        Q.answer(c, org_id=org, question_id=asked.question_id, words="This quarter's.", by="u",
+                 at=NOW + timedelta(hours=1))
+    _find_out(store, org, anchor, "ffp-fund-findout-review-001", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=NOW + timedelta(hours=2))
+    follow = _questions(store, org, anchor)[-1]
+    with store.engine.begin() as c:
+        Q.answer(c, org_id=org, question_id=follow.question_id, words="Send the Q3 numbers.", by="u",
+                 at=NOW + timedelta(hours=3))
+    _find_out(store, org, anchor, "ffp-fund-findout-review-002", events)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-002"},
+                      at=NOW + timedelta(hours=4))
+    assert counts.get("expert_question_asked") == 1, counts
+    assert _questions(store, org, anchor)[-1].question == \
+        "You answered: “Send the Q3 numbers.”. What should happen next on this file?"
+
+
+def test_f2_a_held_file_you_answered_is_never_silenced(world):
+    """The second crosscheck's run (`notes/ska/test_f4_yes.py`): you answer "Yes" to a held file's question; its
+    next review holds the same claim and asks the same words. The file was SILENT — 0 open signals, 0 cards, and
+    `expert_unchanged` the next day. It asks what is next, on a card."""
+    import os
+
+    from genios_engine.deliver import actions
+    from genios_engine.deliver.store import CardStore
+    from tests.deliver.test_a_question_card import _build, _cards
+    store, org, registry, _ = world
+    cards = CardStore(os.environ["GENIOS_TEST_DATABASE_URL"])
+    anchor, _situations, events = _fund(store, org)
+    review = ExpertReview.from_mapping(_review(sorted(events)[0]))
+    _write(store, org, anchor, "ffp-f2-1", events, checked=_held(review))
+    _compile(store, org, registry, covered={anchor: "ffp-f2-1"})
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    assert actions.ingest_action(card_store=cards, graph=store, org_id=org, card_id=card.card_id,
+                                 actor="founder@meridian.test", action="answer", eval_time=NOW + timedelta(minutes=5),
+                                 allow_any_assignee=True, words="Yes")["ok"]
+    later = NOW + timedelta(hours=2)
+    _write(store, org, anchor, "ffp-f2-2", events, checked=_held(review))
+    counts = _compile(store, org, registry, covered={anchor: "ffp-f2-2"}, at=later)
+    assert counts.get("expert_question_asked") == 1, counts
+    _build(store, cards, org, at=later)
+    assert len(_open_signals(store, org, anchor)) == 1, "the file is not silent"
+    [open_card] = [k for k in _cards(store, org) if k.state != "resolved"]
+    assert open_card.headline == "You answered: “Yes”. What should happen next on this file?"
+    day = _compile(store, org, registry, covered={anchor: "ffp-f2-2"}, at=later + timedelta(days=1))
+    assert day.get("expert_unchanged") == 1 and _gate(store, org) == ["standing"], "it stands on its question"
 
 
 # ── M36.C2.L-logic.V2.U10 · the question is asked in checked words (`03` X06, X10, X34) ─────────────────────────
@@ -238,8 +331,11 @@ def test_a_question_that_names_us_is_never_asked_in_those_words():
     names = lambda word: (lambda text: word in text.lower())               # noqa: E731 — as the sweep binds names_us
     assert asks.question_words(row, ours=names("nimbus"))[0] == "Does Altavia lead seed rounds?", \
         "nothing of ours in it: the first unknown, as before (the negative control)"
-    assert asks.question_words(row, ours=names("altavia"))[0] == \
-        "Can you tell us: Ask Marco how the round is shaping up?", "the unknown names us: the move"
+    # ⛔ RESTATED by M36.C2.L-logic.V2.U17 (the second crosscheck G8): this pinned the move framed as a question
+    # ("Can you tell us: Ask Marco how the round is shaping up?") — an instruction behind "Can you tell us:". The
+    # unknown names us, the move is no question: the closed one.
+    assert asks.question_words(row, ours=names("altavia"))[0] == asks.NOTHING_TO_ASK, \
+        "the unknown names us, and the move is an instruction"
     assert asks.question_words(row, ours=names("marco"))[0] == "Does Altavia lead seed rounds?"
     held_both = _find_out_row(unknowns=["Does Altavia lead seed rounds?"], what="Ask Altavia how the round looks")
     assert asks.question_words(held_both, ours=names("altavia"))[0] == asks.NOTHING_TO_ASK
@@ -261,7 +357,10 @@ _WITHHELD = {"primary": "Marco is deciding whether Tiger Global co-leads the rou
     ids=["none", "a-statement", "an-unchecked-name", "a-dropped-facts-name", "a-withheld-readings-name",
          "an-unchecked-number",
          "a-number-inside-another"])
-def test_with_no_question_its_checked_words_stand_behind_the_checked_move_is_asked(unknowns, more):
+def test_with_no_question_its_checked_words_stand_behind_the_closed_question_is_asked(unknowns, more):
+    """⛔ RESTATED by M36.C2.L-logic.V2.U17 (the second crosscheck G8, `03` X34): this pinned the checked move
+    asked as "Can you tell us: Ask Marco whether Altavia leads seed rounds?" — an instruction, asking you to
+    do what the move says (golden F22, F52). A move that is no question is never asked: the closed one."""
     from genios_engine.reason.expert import asks
     row = _find_out_row(unknowns=unknowns, **more)
     verdicts = {v.line: v.verdict for v in row.checked.verdicts if v.verdict != "noted"}
@@ -269,8 +368,7 @@ def test_with_no_question_its_checked_words_stand_behind_the_checked_move_is_ask
     assert more is not _DROPPED or verdicts["fact:5"] == "dropped", "the name is in a DROPPED fact only"
     assert more is not _WITHHELD or verdicts["situation"] == "dropped", "the name is in a WITHHELD reading only"
     assert row.checked.words.headline == "Ask Marco whether Altavia leads seed rounds"
-    assert asks.question_words(row) == ("Can you tell us: Ask Marco whether Altavia leads seed rounds?",
-                                        asks.WHY_FIND_OUT)
+    assert asks.question_words(row) == (asks.NOTHING_TO_ASK, asks.WHY_FIND_OUT)
 
 
 def test_with_nothing_checked_the_file_asks_our_own_closed_question():
@@ -281,6 +379,37 @@ def test_with_nothing_checked_the_file_asks_our_own_closed_question():
     row = _find_out_row(unknowns=["Does Altavia lead seed rounds?"])
     assert asks.question_words(SimpleNamespace(review=row.review, checked=None)) == (
         asks.NOTHING_TO_ASK, asks.WHY_FIND_OUT)
+
+
+@pytest.mark.parametrize("what", ["Find out whether Marco wants the deck or a call first",
+                                  "Check whether Altavia leads seed rounds; if it does, send the deck",
+                                  "Ask Marco whether Altavia leads seed rounds"])
+def test_g8_a_find_out_file_never_asks_an_instruction(what):
+    """The second crosscheck's G8: F22 asked "Can you tell us: Find out whether you count as…?", F52 "Can you tell
+    us: Check the current count of paying customers…?" — 4 of the 8 authored find-out reviews asked this way."""
+    from genios_engine.reason.expert import asks
+    row = _find_out_row(what=what, unknowns=[])
+    question, _why = asks.question_words(row)
+    assert question == asks.NOTHING_TO_ASK and "Can you tell us:" not in question
+
+
+def test_the_next_real_question_is_asked_when_the_first_unknown_is_none():
+    from genios_engine.reason.expert import asks
+    row = _find_out_row(unknowns=["Altavia's appetite for seed rounds.", "Does Marco want the deck first?"],
+                        what="Find out whether Marco wants the deck first")
+    assert asks.question_words(row)[0] == "Does Marco want the deck first?"
+
+
+def test_a_checked_move_written_as_an_indirect_question_is_asked_as_one():
+    """A move the check let stand as "Whether …" reads as a question: asked as one, never as an instruction."""
+    import dataclasses
+    from types import SimpleNamespace
+
+    from genios_engine.reason.expert import asks
+    row = _find_out_row(unknowns=[])
+    words = dataclasses.replace(row.checked.words, headline="Whether Marco wants the deck before a call")
+    row = SimpleNamespace(review=row.review, checked=dataclasses.replace(row.checked, words=words))
+    assert asks.question_words(row)[0] == "Can you tell us whether Marco wants the deck before a call?"
 
 
 def test_a_checked_move_that_is_a_question_is_asked_as_written():

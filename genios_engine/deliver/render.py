@@ -7,6 +7,8 @@ from datetime import datetime
 
 from .slots import SENTINELS, grounded_slots
 
+from genios_engine.context.llm.client import TRUNCATED
+
 # THE INVENTION RULE IS THE ENGINE'S, NOT THE CARD'S (STEP-13, `yc2_w27_s13` M35.C2.L-logic.V0.U08). It
 # moved, byte for byte, to `platform/grounding`, so reasoning can hold the expert's claims to the card
 # validator's own rule without importing upward. Re-exported here under the names every caller has
@@ -567,11 +569,18 @@ def render_copy(*, reason_code: str, template: dict, facts: dict, slots: dict,
     prompt = _prompt(reason_code, template, facts, slots, quotes)
     res = llm.call(prompt, max_tokens=600)
     if cost_sink is not None and (res.input_tokens or res.output_tokens):
+        # ⛔ HOW THE CALL ENDED (`yc2_w27_s18` M50.C3.L-logic.V1.U15, s5t-F6): the sink was handed the
+        # tokens alone and `record_cost` defaults to success, so every `l5_render` call was one — a
+        # 400, an unparseable answer and a cut one included. A cut answer is a failure, parsed or not.
+        cut = bool(getattr(res, "truncated", False))
         try:
             # Attributed to the signal this render served — the difference between a monthly
             # bill and a computable cost-per-decision.
             cost_sink(org_id=org_id, model=res.model, purpose="l5_render",
                       input_tokens=res.input_tokens, output_tokens=res.output_tokens,
+                      success=bool(getattr(res, "ok", False)) and not cut,
+                      error=(getattr(res, "error", None)
+                             or (f"{TRUNCATED} (max_tokens=600)" if cut else None)),
                       subject_ref=subject_ref)
         except Exception:       # noqa: BLE001 — cost logging never blocks delivery
             pass

@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_181, (
+    assert r["statements"] == 3_183, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -536,6 +536,15 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ Both commits left this pin red: neither ran tests/platform before it was committed.
     # ⛔ MERGED 13 Oct: STEP-13's 3,106 → 3,108 above, on top of the integration's 3,121, re-measured on
     # the merge: 3,123 (`table_coverage.resolution()`), the same two SELECTs.
+    # ⛔ MOVED 3,108 → 3,110, deliberately, by two literals at their own call sites: STEP-13
+    # M36.C2.L-interface.V4.U07 (the second crosscheck G11, one lock order) — `context/founder_questions.lock_file`'s
+    # advisory lock on the file's question (one SELECT), and `deliver/actions.ingest_action`'s read, with no lock,
+    # of whose question card a press is on (one SELECT), so the press takes the file's lock before any row.
+    # ⛔ MERGED 13 Oct: STEP-13's second fix wave (its 3,108 → 3,110, G11's two advisory-lock literals) into
+    # the integration line (3,123), re-measured on the merge (`table_coverage.resolution()`): 3,125.
+    # ⛔ MERGED 13 Oct: the integration line at 884f0ea4 (3,125 — the fix wave's two G11 literals on 3,123) into
+    # yc2w27-s14 (3,181 — STEP-14's moves above, on 3,123), re-measured on the merge (`table_coverage.resolution()`):
+    # 3,183 — the same two literals; nothing else moved. The run-time ratchet stays 272.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

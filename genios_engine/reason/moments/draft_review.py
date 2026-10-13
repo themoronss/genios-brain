@@ -295,6 +295,7 @@ def llm_notes(engine, *, org_id: str, facts: list[dict], findings: list[dict], d
         return None
     from anthropic import Anthropic
 
+    from genios_engine.context.llm.client import request_controls
     from genios_engine.reason.llm_sites import tier_model
     model = tier_model("T1")
     ids = {f"F{i + 1}": f for i, f in enumerate(facts)}
@@ -307,7 +308,8 @@ def llm_notes(engine, *, org_id: str, facts: list[dict], findings: list[dict], d
         digest=digest[:12], draft=draft[:6000])
     try:
         client = Anthropic(api_key=settings.anthropic_api_key, timeout=remaining, max_retries=0)
-        resp = client.messages.create(model=model, max_tokens=300, temperature=0,
+        # `yc2_w27_s18` M50.C3.L-logic.V1.U13 (s5t-F9): `temperature` only where it is taken, thinking off.
+        resp = client.messages.create(model=model, max_tokens=300, **request_controls(model),
                                       messages=[{"role": "user", "content": prompt}])
     except Exception:      # noqa: BLE001 — timeout / transport: the deterministic notes stand
         _log.info("draft review: model call failed or timed out org=%s", org_id)

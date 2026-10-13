@@ -792,8 +792,12 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
                 if cleared:
                     counts["expert_cleared"] += cleared
             # An asking run leaves its question standing (U11, `03` X04): remembered as STANDING on the
-            # question's window, never SUPPRESSED — which the gate skips forever, the question lapsing.
+            # question's window, never SUPPRESSED — which the gate skips forever, the question lapsing. ⛔ And a
+            # file with nothing left to ask after your answers (M36.C2.L-data.V2.U14, second crosscheck F2) is
+            # INDETERMINATE — decided again on the next sweep, its review read again (no model: the
+            # fingerprint is unchanged) — never SUPPRESSED, which `should_skip` honours until the file moves.
             gate.record(key, fingerprint, fs.STANDING if asked in asks.ASKING else
+                        fs.INDETERMINATE if asked == asks.ANSWERED_ALREADY else
                         _gate_outcome(execution, outcome), run_id)
             if outcome == "emitted":
                 remaining[0] -= 1

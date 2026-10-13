@@ -388,8 +388,21 @@ def test_newer_models_get_no_sampling_params_and_haiku_keeps_temperature_zero():
     # Sonnet 5 / Opus 5 answer a `temperature` with a 400, which would DEFER every decision.
     assert llm_dm.request_kwargs("claude-sonnet-5") == {"thinking": {"type": "disabled"}}
     assert llm_dm.request_kwargs("claude-opus-5") == {"thinking": {"type": "disabled"}}
-    assert llm_dm.request_kwargs("claude-fable-5-1") == {}
+    # `yc2_w27_s18` M50.C1.L-logic.V1.U10: Fable cannot turn thinking off — the lowest effort (was {}).
+    assert llm_dm.request_kwargs("claude-fable-5-1") == {"output_config": {"effort": "low"}}
     assert llm_dm.request_kwargs("claude-haiku-4-5-20251001") == {"temperature": 0}
+
+
+def test_opus_5_5_is_never_sent_opus_5s_disabled():
+    """⛔ s5t-F8: `"claude-opus-5-5".startswith("claude-opus-5")` — a 400 on every decision."""
+    assert llm_dm.request_kwargs("claude-opus-5-5") == {"output_config": {"effort": "low"}}
+    assert llm_dm.request_kwargs("claude-opus-5-5-20261101") == {"output_config": {"effort": "low"}}
+    assert llm_dm.request_kwargs("claude-sonnet-5-20260601") == {"thinking": {"type": "disabled"}}
+
+
+def test_a_model_the_table_has_not_met_keeps_temperature_and_gets_no_thinking_control():
+    assert llm_dm.request_kwargs("claude-sonnet-5-5") == {}
+    assert llm_dm.request_kwargs("some-model-we-have-never-seen") == {"temperature": 0}
 
 
 def test_the_answer_parser_refuses_rather_than_repairs():

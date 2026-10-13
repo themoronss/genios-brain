@@ -57,7 +57,11 @@ def test_a_headline_whose_number_its_ground_does_not_hold_holds_the_move():
     checked = _check(move={"what": "Send Marco the 12-slide deck and offer two times for a call"})
     assert _verdict(checked, "move") == C.LineVerdict("move", C.DROPPED, C.WRONG_NUMBER, "number:12")
     assert checked.fate == C.HELD and checked.words.headline is None and checked.words.draft is None
-    assert checked.question and "12-slide" in checked.question
+    # ⛔ RESTATED by M36.C2.L-logic.V2.U10 (fix, the second crosscheck G2, `03` X10): this pinned the question
+    # REPEATING the wrong number ("12-slide") — the very echo the acceptance's strict xfails recorded. The
+    # question says why the move is held, never the number its check refused.
+    assert checked.question and "12" not in checked.question
+    assert checked.question.endswith("the move has a number the facts it rests on do not hold.")
 
 
 @pytest.mark.parametrize("part, text, word", [
@@ -100,3 +104,28 @@ def test_an_ids_digits_are_no_number():
 ])
 def test_a_calculator_prints_one_value_beside_its_id(line, ref, value):
     assert value_of(line, ref) == value
+
+
+# ── M35.C2.L-logic.V1.U10 (fix) · the second crosscheck G6: a count is never the sample size ────────────────────
+
+def test_g6_a_count_is_never_the_sample_size():
+    """G6's run: "Marco has 2 open asks", citing the usual gap ("2 times, median 3.48 days"), was KEPT — the count
+    the median was taken over grounded a count of something else. It is held to the calculator's value (a bare
+    count corrected within no unit, as declared: the noun is not read)."""
+    checked = _check(fact3={"claim": "Marco has 2 open asks", "evidence": ["num:usual_gap"]})
+    assert _verdict(checked, "fact:3") == C.LineVerdict("fact:3", C.CORRECTED, C.BY_CALCULATOR,
+                                                        "number:2 -> 3.48 (num:usual_gap)")
+
+
+def test_g6_a_card_text_is_never_grounded_on_a_sample_size():
+    """The run's own figures (`_Run.figures`) are what every card text's numbers are held to: the sample is
+    no figure of theirs either."""
+    checked = _check(fact3={"claim": "His usual gap is 3.48 days", "evidence": ["num:usual_gap"]},
+                     frames={"primary": "Marco has written 2 times since the introduction", "rivals": ["a pass"]})
+    assert _verdict(checked, "situation") == C.LineVerdict("situation", C.DROPPED, C.WRONG_NUMBER, "number:2")
+
+
+def test_the_calculator_s_own_value_still_grounds():
+    """The negative control: the median itself is the calculator's value."""
+    checked = _check(fact3={"claim": "His usual gap is 3.48 days", "evidence": ["num:usual_gap"]})
+    assert _verdict(checked, "fact:3").verdict == C.KEPT
