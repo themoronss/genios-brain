@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter
 from sqlalchemy import text
 
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.cache import get_cache
 from genios_engine.platform.wiring import make_graph_store
 
@@ -22,7 +23,8 @@ _graph = make_graph_store()
 
 _MIN_N = 30
 _WINDOW_DAYS = 30
-_CACHE_KEY = "benchmarks:scorecard:v2"
+#: v3 since STEP-16: the acted rate counts what you did (F76) — a cached v2 body must not answer for it.
+_CACHE_KEY = "benchmarks:scorecard:v3"
 _CACHE_TTL = 3600
 
 
@@ -69,18 +71,73 @@ def _faithfulness(conn) -> dict:
         return _insufficient()
 
 
+# ── the acted rate: what you did with the cards, not what was delivered (STEP-16, `03` F76, `s16-F8`) ──
+#
+# ⛔ WHAT WAS WRONG. Acted was `claimed` + `delivered` — a card DELIVERED counted as one you acted on, though
+# delivering is ours; the card's own `acted` and `resolved` states were never counted; `dismissed` is no card
+# state; and every expiry was ignored, a card REPLACED by a fresher one and a card whose rule CLEARED among
+# them — the engine moving on, counted against the founder (`yc2_w27_s16` M47.C3.L-logic.V0.U04).
+#
+# NOW, over the cards of the window: TAKEN is a card `acted` on `run_play` or `do_it_myself` (the button its
+# last action event names), or `resolved`; CALLED WRONG — `acted` on `wrong` — is its own count; IGNORED is
+# what was in front of you and ended with nothing: its window LAPSED, or you DISMISSED it from the extension.
+# The rate is taken ÷ (taken + called wrong + lapsed + dismissed). A card the engine retired (replaced,
+# cleared, held by the budget, no longer authorised, its plan gone, muted, its subject one of us) is not
+# ignored and is in no denominator; a card still open, or an ending with no recorded cause, is counted
+# beside the rate and never in it.
+
+#: Why a card left that is not you ignoring it — STEP-06's causes for the engine moving on.
+MOVED_ON = frozenset(card_lifecycle.CAUSES - {card_lifecycle.LAPSED, card_lifecycle.EXTENSION})
+#: The buttons that are you taking a card.
+TAKEN_ACTIONS = frozenset({"run_play", "do_it_myself"})
+
+#: Each card of the window: its state, the last button pressed on it, and the cause its ending recorded.
+_ACTED_ROWS = (
+    "select k.state, "
+    "(select ce.cause from card_events ce where ce.org_id = k.org_id and ce.card_id = k.card_id "
+    " and ce.kind = 'human.card_action' order by ce.occurred_at desc, ce.id desc limit 1) as pressed, "
+    "(select ce.cause from card_events ce where ce.org_id = k.org_id and ce.card_id = k.card_id "
+    " and ce.kind in ('card.expired', 'window.lapsed', 'card.dismissed', 'card.retired') "
+    " order by ce.occurred_at desc, ce.id desc limit 1) as ended, count(*) as c "
+    "from cards k where k.created_at > now() - interval '30 days' group by 1, 2, 3")
+
+
+def acted_counts(rows) -> dict[str, int]:
+    """What each card of the window came to — `(state, pressed, ended, n)` rows, pure."""
+    out = {"taken": 0, "called_wrong": 0, "lapsed": 0, "dismissed": 0, "moved_on": 0, "open": 0,
+           "unattributed": 0}
+    for state, pressed, ended, n in rows:
+        n = int(n)
+        if state == "resolved" or (state == "acted" and pressed in TAKEN_ACTIONS):
+            out["taken"] += n
+        elif state == "acted" and pressed == "wrong":
+            out["called_wrong"] += n
+        elif state == "expired" and ended == card_lifecycle.LAPSED:
+            out["lapsed"] += n
+        elif state == "expired" and ended == card_lifecycle.EXTENSION:
+            out["dismissed"] += n
+        elif state == "expired" and ended in MOVED_ON:
+            out["moved_on"] += n
+        elif state in card_lifecycle.OPEN_STATES:
+            out["open"] += n
+        else:
+            out["unattributed"] += n
+    return out
+
+
+def acted_rate(counts: dict[str, int]) -> dict:
+    """Taken ÷ (taken + called wrong + lapsed + dismissed), min-N gated; its parts beside it."""
+    considered = counts["taken"] + counts["called_wrong"] + counts["lapsed"] + counts["dismissed"]
+    if considered < _MIN_N:
+        return _insufficient(considered)
+    return {"value": round(counts["taken"] / considered, 4), "n": considered, **counts,
+            "method": "taken_of_ended_by_you_v3"}
+
+
 def _acted_rate(conn) -> dict:
-    """Acted / (acted + dismissed + expired) over cards in the window, when there are enough."""
+    """The acted rate over the cards of the window, when there are enough."""
     try:
-        rows = conn.execute(text(
-            "select state, count(*) c from cards "
-            "where created_at > now() - interval '30 days' group by state")).mappings().all()
-        by = {r["state"]: int(r["c"]) for r in rows}
-        acted = by.get("claimed", 0) + by.get("delivered", 0)
-        considered = acted + by.get("dismissed", 0) + by.get("expired", 0)
-        if considered < _MIN_N:
-            return _insufficient(considered)
-        return {"value": round(acted / considered, 4), "n": considered}
+        return acted_rate(acted_counts(conn.execute(text(_ACTED_ROWS)).all()))
     except Exception:
         return _insufficient()
 
@@ -135,7 +192,8 @@ def methodology() -> dict:
         "sources": [
             "decisions (30d volume + confidence)",
             "graph_facts (grounded fact proxy)",
-            "cards (acted vs dismissed/expired)",
+            "cards (taken — acted on run_play or do_it_myself, or resolved — of taken, called wrong, "
+            "lapsed and dismissed; a card the engine replaced or cleared is not ignored)",
             "graph_nodes / graph_edges (scale)",
         ],
         "notes": [
