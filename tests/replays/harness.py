@@ -101,7 +101,7 @@ SITE_MARKERS: tuple[tuple[str, str, str], ...] = (
      "You are the chief of staff of a busy founder."),
     ("r1", "reason/llm_interpretation.py",
      "You are R1, the reader inside GeniOS's reasoning layer."),
-    ("narrator", "deliver/render.py", "You are GeniOS, writing ONE decision card"),
+    ("narrator", "deliver/render.py", "You are the founder's chief of staff, writing ONE card"),
     ("bundle_narrator", "reason/bundle/prompt.py",
      "You are the reasoning narrator for GeniOS."),
     # STEP-12 · R-7, the expert's review of one file (`reason/expert/prompt.ROLE`'s own opening).
