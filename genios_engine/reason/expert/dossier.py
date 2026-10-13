@@ -202,6 +202,14 @@ def _brief(p: DossierParts, cite: _Ids) -> Section:
     return Section("brief", block or "No company brief is accepted for this tenant.")
 
 
+def _again(ask: Any) -> datetime | None:
+    """When an open ask was asked AGAIN — the ledger's `last_seen_at`, when it is later than the ask was
+    opened (a follow-up repeating it, or an ask after our reply that reopened it) — else None (STEP-13
+    M35.C2.L-logic.V1.U17)."""
+    last, opened = getattr(ask, "last_seen_at", None), ask.opened_at
+    return last if last is not None and opened is not None and last > opened else None
+
+
 def _file(p: DossierParts, cite: _Ids) -> Section:
     f = p.file
     lines = [f"Counterparty: {f.counterparty} <{f.counterparty_key}> ({f.counterparty_type})",
@@ -223,9 +231,13 @@ def _file(p: DossierParts, cite: _Ids) -> Section:
     if f.open_asks:
         lines.append("Open asks:")
         for a in f.open_asks:
+            # WHEN IT WAS LAST ASKED, when it was asked again (M35.C2.L-logic.V1.U17): a reply before that
+            # answered nothing — the asking again says so. An ask asked once is printed as before.
+            again = _again(a)
             lines.append(f"- {cite('loop:' + a.loop_id)} {a.kind}, "
                          + ("they wait on us" if a.owed_by == "us" else "we wait on them")
-                         + f", open since {_when(a.opened_at)}")
+                         + f", open since {_when(a.opened_at)}"
+                         + (f", last asked {_when(again)}" if again is not None else ""))
     else:
         lines.append("Open asks: none")
     return Section("file", "\n".join(lines))
@@ -643,13 +655,15 @@ class Person:
 @dataclass(frozen=True, slots=True)
 class AskSeen:
     """An open ask of the file as the check reads it: its id as printed, its kind, whether it waits on US,
-    when it was opened, its thread, and who asked (None when the file cannot name them)."""
+    when it was opened, its thread, who asked (None when the file cannot name them) — and when it was LAST
+    asked (`open_loops.last_seen_at`, None when never again: STEP-13 M35.C2.L-logic.V1.U17)."""
     ref: str
     kind: str
     ours: bool
     opened_at: datetime | None
     thread: str | None
     asker: "Person | None"
+    last_asked_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -727,7 +741,8 @@ def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str]
                for p in (getattr(parts.numbers, "people", None) or ()) if getattr(p, "node_id", None)}
     asks = tuple(AskSeen(ref=f"loop:{a.loop_id}", kind=a.kind, ours=a.owed_by == "us",
                          opened_at=a.opened_at, thread=a.thread_id,
-                         asker=counterparty if a.asked_by == f.file_id else by_node.get(a.asked_by))
+                         asker=counterparty if a.asked_by == f.file_id else by_node.get(a.asked_by),
+                         last_asked_at=_again(a))
                  for a in (f.open_asks or ()))
     replies = tuple(Seen(event_id=t.event_id, at=t.at, thread=t.thread)
                     for t in parts.timeline.touches if t.direction == "out")

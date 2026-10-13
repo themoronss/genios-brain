@@ -7971,6 +7971,23 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s13_u15 .venv/bin/python -m pytest -q tests/reason/expert/test_verify_answered.py tests/reason/expert/test_an_answered_ask_is_not_raised_again.py tests/context/test_a_meeting_says_when_it_was_booked.py tests/context/test_a_file_has_a_timeline.py"
                       depends_on: [M35.C2.L-logic.V1.U14]
+                    - id: M35.C2.L-logic.V1.U17
+                      what: >
+                        An ask asked again is not answered by the reply before it (added 13 Oct by the STEP-13
+                        second crosscheck, B1 — a regression of U15's reply rule): the ledger reopens an ask
+                        asked again after our reply and keeps its `opened_at` (`context/open_loops.record_ask`),
+                        so our earlier reply "answered" the chase, the move was suppressed and the file's card
+                        cleared exactly when the counterparty chased (be27bffe showed it). The ledger's
+                        `last_seen_at` now rides into `workstreams.Ask` and `dossier.AskSeen`
+                        (`last_asked_at`), the dossier prints it when the ask was asked again ("open since …,
+                        last asked …"; an ask asked once is printed byte for byte as before), and
+                        `verify.answered_by` answers an ask only by our reply after its LATEST asking — a
+                        meeting ask by a meeting held or booked ahead after its latest asking, first booked
+                        after the ask was first made. A stale loop never asked again (golden F45's shape) keeps
+                        its answer.
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_an_ask_asked_again.py tests/reason/expert/test_verify_answered.py tests/context/test_the_files_are_listed.py"
+                      depends_on: [M35.C2.L-logic.V1.U15]
         - id: M35.C3
           name: Where the check runs
           layers:

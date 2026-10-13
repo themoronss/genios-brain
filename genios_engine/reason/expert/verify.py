@@ -61,8 +61,9 @@ ONE PASS, IN ONE ORDER.
       whose headline failed, or whose recipient is us or a connector with no alternative: HELD — the file
       goes to Investigation and asks ONE question. Otherwise SHOWN — a find-out review asking its own move.
       Whether the ask a move answers is already ANSWERED is read here (`answered_by`, M35.C2.L-logic.V1.U15):
-      the ask it names, or the one owed ask its ground cites; answered by our reply in its thread after it,
-      or — a meeting ask — by a meeting with the asker booked after it. The move is then moot: SUPPRESSED,
+      the ask it names, or the one owed ask its ground cites; answered by our reply in its thread after it
+      was LAST asked (M35.C2.L-logic.V1.U17: an ask asked again after our reply is not answered by that
+      reply), or — a meeting ask — by a meeting with the asker booked after it. The move is then moot: SUPPRESSED,
       or — another ask still waiting on us — HELD, asking the next move on that one: never the whole file.
 
 WHAT `validate` STILL REFUSES WHOLE — the structure (`STRUCTURAL`): a moving mode with no move, a move
@@ -125,7 +126,8 @@ _MONTH = re.compile(r"\b(?:January|February|March|April|May|June|July|August|Sep
 MEETING_ASKS: frozenset[str] = frozenset({"meeting_request", "demo_requested"})
 #: How the dossier prints an open ask, and a meeting — held, or booked ahead (`reason/expert/dossier`).
 _ASKED = re.compile(r"^- \[(?P<ask>loop:[^\[\]\s]+)\] (?P<kind>[\w-]+), .*open since "
-                    r"(?P<at>\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC")
+                    r"(?P<at>\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC"
+                    r"(?:, last asked (?P<last>\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC)?")
 _MET = re.compile(r"\[(?P<evt>[^\[\]\s:]+)\] (?:(?P<held>\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC · a meeting\b"
                   r"|a meeting at (?P<booked>\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC)")
 #: How a calculator prints its sample size, never its value (`contracts/measured.Measured.says`).
@@ -473,30 +475,38 @@ def _swap(text: str, corrections: Iterable[Correction]) -> str:
 
 def answered_by(dossier_text: str, ask: str, people: FilePeople | None = None) -> str | None:
     """What answers this open ask, as an event id — or None (M35.C2.L-logic.V1.U15, crosscheck X14, X21):
-      * our reply in the ask's thread, after it was asked — any ask;
-      * a MEETING ask: a meeting on the file after it was asked (held or booked ahead, as the dossier
-        prints both), first BOOKED after the ask, and WITH THE ASKER — set up by them, or by us on the
-        asker's own file (the counterparty's). A meeting booked before the ask, or with somebody else,
-        answers nothing; a meeting never answers a question (replay 04).
+      * our reply in the ask's thread, after it was LAST asked — any ask;
+      * a MEETING ask: a meeting on the file after it was last asked (held or booked ahead, as the dossier
+        prints both), first BOOKED after the ask was first made, and WITH THE ASKER — set up by them, or
+        by us on the asker's own file (the counterparty's). A meeting booked before the ask, or with
+        somebody else, answers nothing; a meeting never answers a question (replay 04).
+    ⛔ AFTER ITS LATEST ASKING (M35.C2.L-logic.V1.U17, second crosscheck B1). The ledger reopens an ask
+    asked again after our reply and keeps its `opened_at` (`context/open_loops.record_ask`): their asking
+    again is direct evidence our reply did not resolve it, so a reply — or a meeting held — before the
+    latest asking answers nothing. The latest asking is the ledger's `last_seen_at`, as the dossier prints
+    it (`last asked`) and the file's people carry it (`AskSeen.last_asked_at`); an ask asked once is
+    answered after it was opened, as before (a stale loop never asked again keeps its answer, golden F45).
     What a meeting's booking, its organiser, the ask's thread and asker are, the file's people say
     (`dossier.people_of`); without them nothing can be said to answer an ask. A closed ask needs no
     reading: the dossier shows open asks only, so a move cannot name one (`validate`)."""
     seen = next((a for a in (people.asks if people is not None else ()) if a.ref == ask), None)
-    opened = kind = None
+    opened = latest = kind = None
     for line in dossier_text.splitlines():
         if (m := _ASKED.match(line.strip())) is not None and m.group("ask") == ask:
             kind, opened = m.group("kind"), m.group("at")
+            latest = max(opened, m.group("last") or opened)              # the dossier's own clock, as text
             break
     if seen is None or opened is None or seen.opened_at is None:
         return None
+    asked = max(seen.opened_at, seen.last_asked_at or seen.opened_at)
     if seen.thread:
-        reply = next((r for r in people.replies if r.thread == seen.thread and r.at > seen.opened_at), None)
+        reply = next((r for r in people.replies if r.thread == seen.thread and r.at > asked), None)
         if reply is not None:
             return reply.event_id
     if kind not in MEETING_ASKS:
         return None
     met = {m.group("evt") for line in dossier_text.splitlines() for m in _MET.finditer(line)
-           if (m.group("held") or m.group("booked")) > opened}         # the dossier's own clock, as text
+           if (m.group("held") or m.group("booked")) > latest}
     for meeting in people.meetings:
         if meeting.event_id in met and meeting.booked_at is not None and meeting.booked_at > seen.opened_at \
                 and _with_the_asker(meeting, seen, people):
