@@ -293,7 +293,7 @@
       ]
      },
      "alternative": "Write to the centre for its closing date and who the programme is for, then decide.",
-     "wait_or_stop": "Do not wait on the centre — its mail is templated. Stop once a receipt is found, or once the founder decides not to apply, and close the file with that reason.",
+     "wait_or_stop": "Do not wait on the centre — its mail is templated. Stop once a receipt is found, or once you decide not to apply, and close the file with that reason.",
      "done_when": "The file shows the application's receipt, or your decision not to apply with its reason.",
      "draft": null
     }
@@ -441,7 +441,7 @@
       ]
      },
      "alternative": "Write to the centre for its closing date and who the programme is for, then decide.",
-     "wait_or_stop": "Do not wait on the centre — its mail is templated. Stop once a receipt is found, or once the founder decides not to apply, and close the file with that reason.",
+     "wait_or_stop": "Do not wait on the centre — its mail is templated. Stop once a receipt is found, or once you decide not to apply, and close the file with that reason.",
      "done_when": "The file shows the application's receipt, or your decision not to apply with its reason.",
      "draft": null
     }

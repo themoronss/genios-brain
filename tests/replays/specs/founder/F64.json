@@ -372,7 +372,7 @@
      "mode": "nothing",
      "next_move": null,
      "alternative": "If you want to keep the door open, leave it to Zara: she knows where to find you.",
-     "wait_or_stop": "Stop: the introduction is declined. Only a new word from Zara reopens it; the connector's activity never does.",
+     "wait_or_stop": "Stop: the introduction is declined. A new word from Zara is what reopens it; the connector's activity never does.",
      "done_when": "Nothing remains to do: the introduction is closed with its reason.",
      "draft": null
     }
@@ -483,7 +483,7 @@
      "mode": "nothing",
      "next_move": null,
      "alternative": "If you want to keep the door open, leave it to Zara: she knows where to find you.",
-     "wait_or_stop": "Stop: the introduction is declined. Only a new word from Zara reopens it; the connector's activity never does.",
+     "wait_or_stop": "Stop: the introduction is declined. A new word from Zara is what reopens it; the connector's activity never does.",
      "done_when": "Nothing remains to do: the introduction is closed with its reason.",
      "draft": null
     }

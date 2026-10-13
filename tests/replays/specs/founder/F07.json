@@ -652,7 +652,7 @@
       ]
      },
      "alternative": "If the call did not take place, write to Leela to find a new time.",
-     "wait_or_stop": "Send nothing to Leela until the founder says what was agreed; stop if he says nothing was promised and no next step is wanted.",
+     "wait_or_stop": "Send nothing to Leela until you say what was agreed; stop if you say nothing was promised and no next step is wanted.",
      "done_when": "What was agreed on the call is on record, and any promise of yours has gone to Leela or been dropped on purpose.",
      "draft": null
     }
@@ -791,5 +791,5 @@
    }
   ]
  },
-  "blocked_on": "two cards about the file: before the call the review's move (accept the invite, read the brief), after it the question the file asks (did the call take place, and what was promised?) — each right in its sweep, the second a new card where the founder should see one card change: STEP-14's living card (F176)"
+ "blocked_on": "two cards about the file: before the call the review's move (accept the invite, read the brief), after it the question the file asks (did the call take place, and what was promised?) — each right in its sweep, the second a new card where the founder should see one card change: STEP-14's living card (F176)"
 }

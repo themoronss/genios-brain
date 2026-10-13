@@ -315,7 +315,7 @@
       ],
       "to": "Sana"
      },
-     "alternative": "If neither time suits, answer by Monday with two or three other times this week.",
+     "alternative": "If neither time suits, answer with two or three other times this week.",
      "wait_or_stop": "Do not wait: answer before Tuesday afternoon. Once a time is agreed, wait for Sana's invite; if none has come by the evening before the call, ask her once for it.",
      "done_when": "You have picked a time, Sana's invite is in the calendar, and the call is set.",
      "draft": "Hi Sana, thanks for the two options. Tuesday 4 Aug at 3pm works for me; please send the invite when you can. Looking forward to talking. Arjun"

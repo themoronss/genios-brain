@@ -402,7 +402,7 @@
      },
      "mode": "nothing",
      "next_move": null,
-     "alternative": "If the founder wants certainty, sign in to DigiVault once and check the certificate's details.",
+     "alternative": "If you want certainty, sign in to DigiVault once and check the certificate's details.",
      "wait_or_stop": "Nothing to wait for; reopen this file only when an application asks for the certificate.",
      "done_when": "You know the certificate is in the DigiVault account; nothing else is owed.",
      "draft": null

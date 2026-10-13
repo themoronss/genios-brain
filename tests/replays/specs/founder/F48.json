@@ -331,7 +331,7 @@
       "to": "Tarun"
      },
      "alternative": "If Tarun does not answer within a week, send one short second note with a specific time for a call, then let it rest.",
-     "wait_or_stop": "Do not wait: the introduction is already about two weeks old. After Arjun writes, give Tarun about a week; after one unanswered nudge, stop and keep the file for a later reason to write.",
+     "wait_or_stop": "Do not wait: the introduction is already about two weeks old. After you write, give Tarun about a week; after one unanswered nudge, stop and keep the file for a later reason to write.",
      "done_when": "Tarun has heard from you directly, and either a call is set or Tarun has said where Quillstack stands.",
      "draft": "Hi Tarun, picking up Mira's introduction, and sorry for the slow start on my side. I run Nimbus Labs; we are building an AI chief of staff for founders. Mira mentioned you are looking at workflow tools for Quillstack's founder community, and I would love to hear what you have in mind. Would a short call next week work? Arjun"
     }
@@ -466,7 +466,7 @@
      },
      "mode": "nothing",
      "next_move": null,
-     "alternative": "Make sure Tarun has heard from Arjun directly; that is the introduction's open move, and it lies with Tarun, not here.",
+     "alternative": "Make sure Tarun has heard from you directly; that is the introduction's open move, and it lies with Tarun's file, not here.",
      "wait_or_stop": "Nothing to wait for here: treat Mira's file as closed, and reopen it only if she writes again.",
      "done_when": "Mira's introduction has become a direct conversation between you and Tarun, and her file needs nothing more.",
      "draft": null

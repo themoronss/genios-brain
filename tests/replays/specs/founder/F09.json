@@ -316,7 +316,7 @@
       "to": "Introly",
       "answers": "loop:loop_ecf0fdaf98d15926d517352e"
      },
-     "alternative": "If Arjun would rather not state an amount to an automated matcher, give the stage alone and the kind of investor he wants, and accept looser matches.",
+     "alternative": "If you would rather not state an amount to an automated matcher, give the stage alone and the kind of investor you want, and accept looser matches.",
      "wait_or_stop": "Nothing to wait for on our side. After answering, wait for the introductions Introly lines up, and stop feeding it details if what it lines up does not fit the seed round or AI tooling.",
      "done_when": "Introly has the stage and the amount from you, and the introductions it lines up next sit on their own files.",
      "draft": "Seed round — raising [amount]. As before, I'm most keen on investors in AI tooling. Arjun"
