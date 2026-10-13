@@ -133,7 +133,10 @@ def test_compose_reads_the_day_of_a_golden_tenant():
     engine_runner.pin_scratch_database()
     from genios_engine.api import routes
     eng = routes._graph.engine
-    run = engine_runner.run_case(case, RecordedLLM(cassettes.load(case)), keep=True)
+    # STEP-15 (03 provisional s15-F18): `run_case` composes and keeps a brief by default since
+    # M44.C5.L-integration.V0.U03 (06fbb2c8) — `brief=False` keeps this test's own `MB.compose` the first and
+    # only composer of the day, as it was before that default existed.
+    run = engine_runner.run_case(case, RecordedLLM(cassettes.load(case)), keep=True, brief=False)
     try:
         brief, wrote = MB.compose(eng, run.org_id, "seat_owner", now=case.sweeps[-1])
         assert wrote and brief.one_line == "1 thing needs you."

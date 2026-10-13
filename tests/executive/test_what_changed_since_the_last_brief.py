@@ -43,7 +43,13 @@ def world():
     runs = {}
     try:
         for cid in CASES:
-            runs[cid] = engine_runner.run_case(cases[cid], RecordedLLM(cassettes.load(cases[cid])), keep=True)
+            # STEP-15 (03 provisional s15-F18): `run_case` composes and keeps a brief by default since
+            # M44.C5.L-integration.V0.U03 (06fbb2c8); `brief=False` keeps this suite's own `read_day`/`compose`
+            # calls below the first and only composer of each golden tenant's day, as before that default existed
+            # — a kept brief at the exact sweep instant would otherwise be read back as "the last brief", and
+            # `test_a_first_brief_reads_one_day_back_and_no_review_not_yet_written` would see 0 changes, not 1.
+            runs[cid] = engine_runner.run_case(cases[cid], RecordedLLM(cassettes.load(cases[cid])), keep=True,
+                                               brief=False)
         yield engine, cases, runs
     finally:
         for run in runs.values():

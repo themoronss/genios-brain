@@ -339,7 +339,7 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
                                     dates=(("last_touch", _local(f.last_touch, zone)),), names=names),
                 sources=tuple(sources + base_sources), our_move=False, **common))
 
-    items += _desk(conn, org_id, files, now, zone)
+    items += _desk(conn, org_id, [f for f in files if f.file_id not in _resolved_nothing(judgments)], now, zone)
     items += _meetings(conn, org_id, seat_id, emails, now, tz, zone)
     items += _promises(conn, org_id, files, file_names, now, zone)
     local = now.astimezone(zone).date()
@@ -347,6 +347,19 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
     items += read_changes(conn, org_id, now=now, items=items, last=last, file_names=shown, founder=founder,
                           zone=zone)
     return Day(org_id=org_id, seat_id=seat_id, now=now, tz=tz, local_date=local, items=tuple(items))
+
+
+def _resolved_nothing(judgments) -> frozenset[str]:
+    """File ids whose current valid judgment's effective mode is "nothing" (`reason/expert/decide.mode_of`): the
+    expert has read the file and found nothing owed, even where its open ask is stale (`03` s15-F17 — a question
+    answered on another channel leaves the loop open, but the review's own facts and `wait_or_stop` say it is
+    closed; the desk must read the same judgment the day's items do, not the raw loop)."""
+    from genios_engine.reason.expert.decide import mode_of
+    out = set()
+    for file_id, j in judgments.items():
+        if j.valid and j.checked is not None and mode_of(j.stored.review, j.checked) == "nothing":
+            out.add(file_id)
+    return frozenset(out)
 
 
 def _desk(conn, org_id: str, files, now: datetime, zone: ZoneInfo) -> list[B.Item]:

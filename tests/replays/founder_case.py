@@ -390,6 +390,11 @@ class BriefLineView:
     #: (STEP-13, F37: a line that quotes "Introly connected us" is not a line about Introly). The template quotes
     #: nothing; a writer's line may.
     quotes: tuple[str, ...] = ()
+    #: M44's acceptance (`yc2_w27_s15` M44.C5.L-integration.V2.U05): the open card this line's item sources
+    #: (`contracts.morning_brief.SOURCE_CARD`) — a decision card from the book re-rank, or a question's own card
+    #: (STEP-13) — when one is open; None when the line names no card. So the brief and the card queue can be read
+    #: against each other: no open card this run produced is missing from both.
+    card_id: str | None = None
 
 
 @dataclass(frozen=True)

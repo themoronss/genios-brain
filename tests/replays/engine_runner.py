@@ -415,11 +415,14 @@ def switch_on_the_expert(engine: Any, org: str) -> None:
 def compose_brief(engine: Any, org: str, *, at: datetime) -> tuple[BriefLineView, ...]:
     """The founder's morning brief after the last sweep, composed at its instant for the owner's seat
     (`executive/morning.compose`, in the template's words — no model), as lines the marking reads."""
+    from genios_engine.contracts.morning_brief import SOURCE_CARD
     from genios_engine.executive.morning import compose
     from genios_engine.platform.seats import OWNER_SEAT_ID
     kept, _wrote = compose(engine, org, OWNER_SEAT_ID, now=at)
-    return tuple(BriefLineView(line_id=line.line_id, section=line.section, kind=line.kind, text=line.words,
-                               subject=line.subject) for line in kept.lines)
+    return tuple(BriefLineView(
+        line_id=line.line_id, section=line.section, kind=line.kind, text=line.words, subject=line.subject,
+        card_id=next((s.ref for s in line.sources if s.kind == SOURCE_CARD), None))
+        for line in kept.lines)
 
 
 def remove_tenant(engine: Any, org: str) -> None:
