@@ -82,7 +82,10 @@ FATES: tuple[str, ...] = (SHOWN, HELD, SUPPRESSED, REFUSED)
 #: (`rests_on`: a ref that names no fact of the review drops there, M35.C1.L-contract.V0.U04).
 LINE_KINDS: tuple[str, ...] = ("fact", "inference", "pattern", "quote")
 CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", "answers", "kind", "prose",
-                               "rests_on", "do_nothing")
+                               "rests_on", "do_nothing",
+                               # STEP-14 (`yc2_w27_s14` M43.C1.L-contract.V0.U02): the gold card shows them (0221), so
+                               # they are card words the check holds — no longer prose no founder is shown.
+                               "alternative", "wait_or_stop")
 
 #: Why a move is HELD, as the founder reads it on the question card — closed, one phrase per cause
 #: (M35.C3.L-integration.V2.U05, crosscheck X10): the check's own detail ("misquoted: <the model's
@@ -149,7 +152,9 @@ class CardWords:
     `quotes` are where the headline came from: the ids the facts it rests on cite, and those facts'
     quotes — what the card shows beside it (STEP-13 §5: every sentence carries its source). `do_nothing`
     is what doing nothing costs, as checked — the card's "cost of ignoring" — and `kind` the proposed kind's
-    reason, as checked: what the brief's pending line is written from (M35.C3.L-integration.V2.U05)."""
+    reason, as checked: what the brief's pending line is written from (M35.C3.L-integration.V2.U05). And — STEP-14
+    (`yc2_w27_s14` M43.C1.L-contract.V0.U02, s14-F8) — the review's `alternative` and when to wait or stop
+    (`wait_or_stop`), as checked: the gold card shows both (0221). None withheld, or checked before they were."""
     headline: str | None
     situation: str | None
     done_when: str | None
@@ -159,6 +164,8 @@ class CardWords:
     quotes: tuple[str, ...] = ()
     do_nothing: str | None = None
     kind: str | None = None
+    alternative: str | None = None
+    wait_or_stop: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence", tuple(dict.fromkeys(str(e) for e in self.evidence)))
@@ -167,12 +174,14 @@ class CardWords:
     def as_mapping(self) -> dict[str, Any]:
         return {"headline": self.headline, "situation": self.situation, "done_when": self.done_when,
                 "draft": self.draft, "to": self.to, "evidence": list(self.evidence),
-                "quotes": list(self.quotes), "do_nothing": self.do_nothing, "kind": self.kind}
+                "quotes": list(self.quotes), "do_nothing": self.do_nothing, "kind": self.kind,
+                "alternative": self.alternative, "wait_or_stop": self.wait_or_stop}
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "CardWords":
         return cls(**{k: (str(raw[k]) if raw.get(k) else None)
-                      for k in ("headline", "situation", "done_when", "draft", "to", "do_nothing", "kind")},
+                      for k in ("headline", "situation", "done_when", "draft", "to", "do_nothing", "kind",
+                                "alternative", "wait_or_stop")},
                    evidence=tuple(raw.get("evidence") or ()), quotes=tuple(raw.get("quotes") or ()))
 
 
