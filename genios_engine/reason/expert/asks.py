@@ -196,6 +196,7 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
 
     run, output = bundle.get("run") or {}, bundle.get("output") or {}
     with store.engine.begin() as conn:
+        questions.lock_file(conn, org_id, file_id)       # ⛔ the file's question first (G11, `lock_file`)
         ours, you = _names_us_for(conn, org_id)
         question, why = question_words(review, ours=ours, you=you)
         before = questions.open_question(conn, org_id, file_id)
@@ -263,6 +264,7 @@ def retire_question(store, *, org_id: str, file_id: str, eval_time, why: str | N
     from genios_engine.context import founder_questions as questions
 
     with store.engine.begin() as conn:
+        questions.lock_file(conn, org_id, file_id)       # ⛔ the file's question first (G11, `lock_file`)
         retired = questions.retire(conn, org_id=org_id, file_id=file_id, why=why or questions.NO_LONGER_ASKED,
                                    at=eval_time)
         expired = conn.execute(text(_EXPIRE_QUESTION_SIGNALS), {"o": org_id, "n": file_id}).fetchall()

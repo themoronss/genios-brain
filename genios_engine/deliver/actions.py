@@ -98,6 +98,16 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
         # lock closes the check-to-action race for this irreversible authority transition.
         c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
                   {"o": org_id})
+        # ⛔ ONE LOCK ORDER (M36.C2.L-interface.V4.U07, the second crosscheck G11): a QUESTION card's press takes its
+        # file's question lock before any row — the order the sweep takes (`context/founder_questions.lock_file`).
+        # Read with no lock: whose question card this is.
+        asking = c.execute(text(
+            "select s.subject_node_id from cards k join signals s on s.signal_id = k.signal_id "
+            "and s.org_id = k.org_id where k.card_id = :card and k.org_id = :o "
+            "and s.rule_id = 'founder_question'"), {"card": card_id, "o": org_id}).scalar()
+        if asking is not None:
+            from genios_engine.context import founder_questions as _questions
+            _questions.lock_file(c, org_id, asking)
         card = c.execute(text(
             "select k.card_id, k.signal_id, k.org_id, k.assignee, k.state, k.expires_at "
             "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "

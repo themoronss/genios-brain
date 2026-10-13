@@ -8452,6 +8452,20 @@ yc2_w27_s13:
                       artifact: "genios_engine/deliver/actions.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_answering_a_question.py"
                       depends_on: [M36.C2.L-interface.V3.U05]
+                    - id: M36.C2.L-interface.V4.U07
+                      what: >
+                        The Answer press and the sweep lock in ONE order (added 13 Oct by the STEP-13 second
+                        crosscheck, G11; 886e16c5 "NOT FIXED, NOTICED"): the press locked card → signal → question
+                        in one statement, the sweep question → signal → card — a deadlock when they meet. Both take
+                        the file's question lock first (`context/founder_questions.lock_file`, a transaction-scoped
+                        advisory lock on tenant and file), then rows: the press before its door, the sweep before it
+                        asks or retires. Proven on two connections with pg_locks: while one holds the file's lock,
+                        the press, the asking sweep and the retiring sweep each wait on that advisory lock holding
+                        no row of the card, its signal or its question (each lockable NOWAIT). The statement pin
+                        moves 3,108 → 3,110 by the two literals, the reason beside it.
+                      artifact: "genios_engine/context/founder_questions.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/deliver/test_answering_a_question.py tests/reason/expert/test_a_held_file_asks.py tests/platform/test_a_delete_is_not_a_read.py"
+                      depends_on: [M36.C2.L-interface.V4.U06, M36.C2.L-data.V2.U14]
             - layer: integration
               levels:
                 - level: 2

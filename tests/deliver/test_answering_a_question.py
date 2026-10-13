@@ -260,3 +260,107 @@ def test_an_answer_pressed_while_the_question_is_rebound_is_kept(world, cards):
     assert out.get("ok") is True, out
     [kept] = _questions(store, org, anchor)
     assert (kept.state, kept.run_id) == (Q.ANSWERED, two.reasoning_run_id)
+
+
+# ── M36.C2.L-interface.V4.U07 · the press and the sweep lock in ONE order (the second crosscheck G11) ─────────────
+#
+# 886e16c5 noticed and left it: the press locked card → signal → question in one statement, the sweep question →
+# signal → card. Both now take the file's question lock (`context/founder_questions.lock_file`, an advisory lock)
+# BEFORE any row. Proven on two connections: one holds the file's lock; the other — the press, the sweep — waits on
+# that advisory lock (pg_locks) holding no row of the card, its signal or its question (each lockable NOWAIT).
+
+def _waits_on_the_file_lock(store) -> int:
+    """How many backends of this database wait on an advisory lock — read afresh each time: `pg_stat_activity` is
+    a snapshot per TRANSACTION, so one held across the loop never sees a backend that connected after it."""
+    import time
+    for _ in range(1200):                       # up to a minute: a sweep reaches its question after its reads
+        with store.engine.connect() as c:
+            n = c.execute(text(
+                "select count(*) from pg_locks l join pg_stat_activity a on a.pid = l.pid "
+                "where a.datname = current_database() and l.locktype = 'advisory' and not l.granted")).scalar()
+        if n:
+            return n
+        time.sleep(0.05)
+    return 0
+
+
+def _rows_are_free(store, org, card_id, signal_id, question_id) -> None:
+    with store.engine.connect() as c, c.begin():
+        c.execute(text("set local lock_timeout = '2s'"))
+        for sql, k in (("select 1 from cards where org_id = :o and card_id = :k for update nowait", card_id),
+                       ("select 1 from signals where org_id = :o and signal_id = :k for update nowait", signal_id),
+                       ("select 1 from founder_questions where org_id = :o and question_id = :k for update nowait",
+                        question_id)):
+            assert c.execute(text(sql), {"o": org, "k": k}).scalar() == 1
+
+
+def _holding_the_file(store, org, anchor):
+    """The file's question lock, held on a connection of its own — by its documented key, not by the function
+    under test, so the red is the right one (the other side never waits)."""
+    holder = store.engine.connect()
+    tx = holder.begin()
+    holder.execute(text("select pg_advisory_xact_lock(hashtextextended(:k, 0))"),
+                   {"k": f"founder_question\x1f{org}\x1f{anchor}"})
+    return holder, tx
+
+
+def test_g11_the_press_takes_the_files_question_lock_before_any_row(world, cards):
+    import threading
+    store, org, _registry, anchor, card = _card(world, cards)
+    [asked] = _questions(store, org, anchor)
+    holder, tx = _holding_the_file(store, org, anchor)          # the sweep, asking on this file
+    out: dict = {}
+    press = threading.Thread(target=lambda: out.update(_press(store, cards, org, card.card_id, "answer",
+                                                              words=WORDS)))
+    press.start()
+    try:
+        assert _waits_on_the_file_lock(store) == 1, "the press never waited on the file's question lock"
+        _rows_are_free(store, org, card.card_id, card.signal_id, asked.question_id)
+    finally:
+        tx.rollback()
+        holder.close()
+        press.join(timeout=30)
+    assert out.get("ok") is True, out
+
+
+def test_g11_the_sweep_takes_the_files_question_lock_before_any_row(world, cards):
+    import threading
+
+    from genios_engine.reason.expert import asks
+    store, org, _registry, anchor, card = _card(world, cards)
+    [asked] = _questions(store, org, anchor)
+    holder, tx = _holding_the_file(store, org, anchor)          # the press, pressing on this file
+    sweep = threading.Thread(target=lambda: asks.retire_question(store, org_id=org, file_id=anchor,
+                                                                eval_time=AT))
+    sweep.start()
+    try:
+        assert _waits_on_the_file_lock(store) == 1, "the sweep never waited on the file's question lock"
+        _rows_are_free(store, org, card.card_id, card.signal_id, asked.question_id)
+    finally:
+        tx.rollback()
+        holder.close()
+        sweep.join(timeout=30)
+    assert _questions(store, org, anchor)[0].state == Q.RETIRED
+
+
+def test_g11_the_sweep_asking_takes_the_files_question_lock_before_any_row(world, cards):
+    """The asking side too (`asks.ask_the_founder`): a re-decided file re-binds its question — after the file's
+    lock, never before it."""
+    import threading
+    store, org, registry, anchor, card = _card(world, cards)
+    [asked] = _questions(store, org, anchor)
+    with store.engine.begin() as c:            # the gate has no memory of it: decided again, re-bound
+        c.execute(text("delete from reasoning_fingerprints where org_id = :o"), {"o": org})
+    holder, tx = _holding_the_file(store, org, anchor)          # the press, pressing on this file
+    counts: dict = {}
+    sweep = threading.Thread(target=lambda: counts.update(_compile(
+        store, org, registry, covered={anchor: "ffp-fund-findout-review-000"}, at=NOW + timedelta(minutes=1))))
+    sweep.start()
+    try:
+        assert _waits_on_the_file_lock(store) == 1, "the asking sweep never waited on the file's question lock"
+        _rows_are_free(store, org, card.card_id, card.signal_id, asked.question_id)
+    finally:
+        tx.rollback()
+        holder.close()
+        sweep.join(timeout=60)
+    assert counts.get("expert_question_standing") == 1, counts
