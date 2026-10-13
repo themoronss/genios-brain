@@ -99,8 +99,9 @@ DENIED = "Neel asked for the deck and the 2M SAFE terms from Sequoia"
 YOUR_NO = "No. He asked for the roadmap, not the deck."
 
 
-def _neel(*answers) -> tuple:
-    """Neel's file — our first mail, his ask for the roadmap — its dossier and its people, as the check reads them."""
+def _neel(*answers, judgments=None) -> tuple:
+    """Neel's file — our first mail, his ask for the roadmap — its dossier and its people, as the check reads them
+    (`judgments`: what was judged before on it — its cards, M36.C2.L-logic.V2.U12's question card)."""
     from genios_engine.context.file_judgments import FileJudgments
     from genios_engine.context.workstream_numbers import FileNumbers, PersonNumbers
     from genios_engine.context.workstream_timeline import FileTimeline, Touch
@@ -139,7 +140,8 @@ def _neel(*answers) -> tuple:
             domain="sequoia.test")]),
         file=work, timeline=timeline, numbers=numbers, playbook=PlaybookAnswer(kind="investor", playbook=None,
                                                                               reason="no_kind"),
-        judgments=FileJudgments(file_id=NEEL_FILE), lifecycle=Lifecycle(file_id=NEEL_FILE, situations=()),
+        judgments=judgments or FileJudgments(file_id=NEEL_FILE),
+        lifecycle=Lifecycle(file_id=NEEL_FILE, situations=()),
         answers=tuple(answers))
     return D.build_dossier(parts), D.people_of(parts, us=W.US, our_names=W.OUR_NAMES)
 

@@ -58,8 +58,9 @@ WHY_NOT_CONFIRMED = "we could not confirm what it rests on from what it cites"
 WHY_SAYS_MORE = "its next step says more than the file shows"
 WHY_ADDRESSED_TO_YOU = "its next step is addressed to you"
 WHY_TO_THE_CONNECTOR = "its next step goes to whoever introduced them"
+WHY_CONFIRM = "its next step rests only on what you told us, so we confirm it with you first"
 WHYS: tuple[str, ...] = (WHY_FIND_OUT, WHY_NOT_CONFIRMED, WHY_SAYS_MORE, WHY_ADDRESSED_TO_YOU,
-                         WHY_TO_THE_CONNECTOR)
+                         WHY_TO_THE_CONNECTOR, WHY_CONFIRM)
 #: What a file asks when nothing checked can be asked — ours, closed.
 NOTHING_TO_ASK = "Can you tell us where this file stands?"
 #: An unknown written as an indirect question ("Whether the examiner has raised a query.") reads as one.
@@ -132,6 +133,8 @@ def _why_held(review, checked) -> str:
         return WHY_NOT_CONFIRMED
     if any(line == "move" for line, _ in dropped):
         return WHY_SAYS_MORE
+    if ("rests_on", "on_your_answer") in dropped:
+        return WHY_CONFIRM
     if ("to", "recipient_is_us") in dropped:
         return WHY_ADDRESSED_TO_YOU
     if ("to", "recipient_is_connector") in dropped:

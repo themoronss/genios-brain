@@ -53,9 +53,12 @@ RECIPIENT_IS_CONNECTOR = "recipient_is_connector"
 NOT_OURS_TO_ANSWER = "not_ours_to_answer"    # answering an ask that waits on THEM
 ANSWERED = "answered"                        # the ask it answers is answered already
 NOTHING_STANDS = "nothing_stands"            # no fact of the review stands
+ON_YOUR_ANSWER = "on_your_answer"            # a move resting only on what you told us: confirmed with you first
+DECLINED_BY_YOU = "declined_by_you"          # …and you did not confirm it
 REASONS: tuple[str, ...] = (UNCITED, UNKNOWN_EVIDENCE, UNQUOTED, MISQUOTED, UNSUPPORTED, WRONG_NUMBER,
                             UNGROUNDED, NO_RECIPIENT, RECIPIENT_NOT_ON_FILE, RECIPIENT_IS_US,
-                            RECIPIENT_IS_CONNECTOR, NOT_OURS_TO_ANSWER, ANSWERED, NOTHING_STANDS)
+                            RECIPIENT_IS_CONNECTOR, NOT_OURS_TO_ANSWER, ANSWERED, NOTHING_STANDS,
+                            ON_YOUR_ANSWER, DECLINED_BY_YOU)
 #: How a line is corrected — closed, as a reason is.
 BY_CALCULATOR = "by_calculator"              # a number replaced by the one its calculator line holds
 BY_ALTERNATIVE = "by_alternative"            # a move to a connector replaced by the review's alternative
@@ -63,7 +66,8 @@ CORRECTIONS: tuple[str, ...] = (BY_CALCULATOR, BY_ALTERNATIVE)
 #: Kept, and written down — for the live pass to count (`06` D50), never a reason to drop.
 SPEAKS_OF_YOU = "speaks_of_you"              # a card text calling the founder "the founder", or naming us
 UNHELD_NUMBER = "unheld_number"              # a number in prose no founder is shown, not in the dossier
-NOTES: tuple[str, ...] = (SPEAKS_OF_YOU, UNHELD_NUMBER)
+CONFIRMED_BY_YOU = "confirmed_by_you"        # a move resting only on what you told us, that you confirmed
+NOTES: tuple[str, ...] = (SPEAKS_OF_YOU, UNHELD_NUMBER, CONFIRMED_BY_YOU)
 
 # ── what happens to the move ───────────────────────────────────────────────────────────────────
 SHOWN = "shown"
@@ -97,6 +101,7 @@ HELD_BECAUSE: dict[str, str] = {
     RECIPIENT_IS_US: "the move is addressed to you",
     RECIPIENT_IS_CONNECTOR: "the move goes to whoever made the introduction",
     ANSWERED: "the ask the move answers is already answered",
+    ON_YOUR_ANSWER: "the move rests only on what you told us",
 }
 
 

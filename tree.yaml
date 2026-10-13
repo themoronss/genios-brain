@@ -8279,9 +8279,21 @@ yc2_w27_s13:
                         the same words under any fingerprint, retiring an open other one (`NO_LONGER_ASKED`) —
                         a question retired unanswered may still be asked again; and `asks.ask_the_founder`
                         files no signal for it (`answered_already`), the file's open question signal expired
-                        and its card REPLACED.
-                      artifact: "genios_engine/reason/expert/dossier.py"
-                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_your_answer_feeds_the_file.py tests/context/test_a_file_asks_one_question.py tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_answering_a_question.py"
+                        and its card REPLACED. Amended 13 Oct (fix, the STEP-13 second crosscheck B2 — X05 was
+                        still open): names and numbers are all a fact's check reads, so your "No. He asked for
+                        the roadmap" still grounded "Neel asked for the deck", and in the database path the
+                        resolved QUESTION card's line (its headline the claim the check dropped) grounded the
+                        claim again, its move shown. Now a question card's headline grounds nothing (the file's
+                        people name its question cards by their signal's rule, `file_judgments.PriorCard.
+                        rule_id`; never printed), and a move whose standing ground is only what you told us —
+                        your answer, a question card; no mail or meeting — is confirmed with you first: held,
+                        "You said: “…”. Should we go ahead with “<the move>”?" (`asks.WHY_CONFIRM`); your yes
+                        to that (`verify.confirms`: a closed yes, no negation, no "but") lets it stand, noted
+                        `confirmed_by_you`; any other answer suppresses it (`declined_by_you`). The bound,
+                        declared: a move resting on a mail beside your answer stands on the mail; polarity is
+                        not read.
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_move_on_your_answer_is_confirmed.py tests/reason/expert/test_your_answer_feeds_the_file.py tests/context/test_a_file_asks_one_question.py tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_answering_a_question.py"
                       depends_on: [M36.C2.L-data.V2.U07, M36.C2.L-integration.V2.U03, M36.C2.L-interface.V4.U06]
             - layer: logic
               levels:

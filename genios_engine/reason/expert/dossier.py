@@ -678,6 +678,19 @@ class Seen:
 
 
 @dataclass(frozen=True, slots=True)
+class Answered:
+    """A question the file asked you and you answered, as the check reads it (never printed — the dossier
+    prints your words only, M36.C2.L-data.V2.U12): the answer's id, the question, your words."""
+    ref: str                           # `answer:<question id>`
+    question: str
+    words: str
+
+
+#: The rule a question card's signal fires under (`reason/expert/asks.QUESTION_RULE`).
+QUESTION_CARD_RULE = "founder_question"
+
+
+@dataclass(frozen=True, slots=True)
 class FilePeople:
     """Whom a draft of this file may go to: who its mail shows, who is us, and the connector that
     introduced its counterparty (None on the connector's own file, and on a file nobody introduced) —
@@ -692,6 +705,10 @@ class FilePeople:
     asks: tuple[AskSeen, ...] = ()
     replies: tuple[Seen, ...] = ()     # the mails WE wrote in the file
     meetings: tuple[Seen, ...] = ()    # held and booked ahead
+    #: STEP-13 M36.C2.L-logic.V2.U12 (second crosscheck B2): the file's QUESTION cards, as `card:` ids — their
+    #: headline is our question, never a ground for the claim it asked about — and the questions you answered.
+    question_cards: tuple[str, ...] = ()
+    answered: tuple[Answered, ...] = ()
 
 
 def label_of(key: str | None) -> str | None:
@@ -749,9 +766,15 @@ def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str]
     meetings = tuple(Seen(event_id=t.event_id, at=t.at, booked_at=getattr(t, "booked_at", None),
                           by=Person(name=t.who_name, key=t.who) if (t.who or t.who_name) else None)
                      for t in (*parts.timeline.touches, *parts.timeline.upcoming) if t.kind == "meeting")
+    cards = getattr(parts.judgments, "cards", None) or ()
     return FilePeople(counterparty=counterparty, people=people, us=us,
                       our_names=tuple(n for n in our_names if n), connector=connector,
-                      head=_file(parts, _Ids()).text, asks=asks, replies=replies, meetings=meetings)
+                      head=_file(parts, _Ids()).text, asks=asks, replies=replies, meetings=meetings,
+                      question_cards=tuple(f"card:{c.card_id}" for c in cards
+                                           if getattr(c, "rule_id", None) == QUESTION_CARD_RULE),
+                      answered=tuple(Answered(ref=f"answer:{a.question_id}", question=str(a.question),
+                                              words=" ".join(str(a.answer).split()))
+                                     for a in (parts.answers or ()) if a.answer))
 
 
 def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | None:
@@ -760,7 +783,7 @@ def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | 
     return build_dossier(parts) if parts is not None else None
 
 
-__all__ = ["AskSeen", "CLAIMS_LIMIT", "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine",
+__all__ = ["Answered", "AskSeen", "QUESTION_CARD_RULE", "CLAIMS_LIMIT", "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine",
            "DossierParts", "Seen",
            "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",
            "OPTIONAL", "RELATIVE_WORDS", "SECTIONS", "Section", "TITLES", "TOUCHES_LISTED", "TOUCHES_WHOLE",

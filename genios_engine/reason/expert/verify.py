@@ -65,6 +65,13 @@ ONE PASS, IN ONE ORDER.
       was LAST asked (M35.C2.L-logic.V1.U17: an ask asked again after our reply is not answered by that
       reply), or — a meeting ask — by a meeting with the asker booked after it. The move is then moot: SUPPRESSED,
       or — another ask still waiting on us — HELD, asking the next move on that one: never the whole file.
+      A move whose standing ground is only what YOU told us — your answer, a question card; no mail, no
+      meeting (M36.C2.L-logic.V2.U12, second crosscheck B2) — is confirmed with you first: HELD, asking "You
+      said: “…”. Should we go ahead with “<the move>”?"; your yes to that (`confirms`: a closed yes, no
+      negation, no "but") lets it stand, noted `confirmed_by_you`; any other answer SUPPRESSES it
+      (`declined_by_you`). Whether a claim says what you SAID is not read (your "No" grounded the claim you
+      denied): that is the bound, and the confirmation is what holds it. A question card's headline is our
+      own question, never a ground (`_ours_blanked`).
 
 WHAT `validate` STILL REFUSES WHOLE — the structure (`STRUCTURAL`): a moving mode with no move, a move
 resting on no fact the review has, a stage the playbook does not name. A slip of one optional move field
@@ -145,6 +152,18 @@ _SAYING = re.compile(r"\b(?:said|says|say|told|tells|asked|asks|agreed|agrees|pr
                      r"proposed|proposes|replied|replies|explained|explains|stated|states|wrote|writes|"
                      r"declined|declines|refused|refuses|accepted|accepts)\b", re.I)
 _NEGATION = re.compile(r"\b(?:no|not|nothing|never|none|nobody|neither|nor)\b", re.I)
+#: How the dossier prints a card of the file — its headline in quotes, then its state (`dossier._judged_before`);
+#: greedy, so a headline holding quotes of its own is blanked whole (and, at worst, more with it).
+_CARD_HEADLINE = re.compile(r"(\ba card )“.*”(, [a-z_]+(?:;|$))")
+#: How the dossier prints your answer (`dossier._answers`): its id, then your words.
+_YOUR_WORDS = re.compile(r"^- \[(?P<ref>answer:[^\[\]\s]+)\] “(?P<words>.*)”$")
+#: The prefix of your answer's id (`dossier._answers`).
+ANSWER_PREFIX = "answer:"
+#: A confirmation you gave: your words OPEN with a yes — a closed class — and hold no negation, no "but" (STEP-13
+#: M36.C2.L-logic.V2.U12). Anything else does not confirm: the move is not made on it.
+_YES = re.compile(r"^\W*(?:yes|yeah|yep|yup|sure|ok|okay|correct|right|confirmed|agreed|absolutely|definitely|"
+                  r"exactly|go ahead|please do|do it)\b", re.I)
+_BUT = re.compile(r"\bbut\b", re.I)
 
 
 # ── words ─────────────────────────────────────────────────────────────────────────────────────────
@@ -744,8 +763,16 @@ class _Run:
         for i in ids:
             places = self.lines.get(i, ())
             own = [dl for dl in places if dl.line.startswith(f"- [{i}]")]
-            out += [dl.item for dl in (own or places)]
+            out += [self._ours_blanked(i, dl.item) for dl in (own or places)]
         return "\n".join(dict.fromkeys(out))
+
+    def _ours_blanked(self, ref: str, item: str) -> str:
+        """A QUESTION card's item with its headline blanked (M36.C2.L-logic.V2.U12, second crosscheck B2): the
+        headline is our own question — for a held review the very claim its check dropped — never a ground
+        for the claim it asked about. What it shows is that it was asked, and what became of it."""
+        if ref not in self.people.question_cards:
+            return item
+        return _CARD_HEADLINE.sub(lambda m: f"{m.group(1)}“…”{m.group(2)}", item, count=1)
 
     def figures(self, ids: Iterable[str]) -> str:
         """The lines `ids` hold NUMBERS on: each id's items (`items`) — but a calculator only its own
@@ -805,6 +832,26 @@ class _Run:
             if found or us or first:
                 self.say(line, C.NOTED, C.SPEAKS_OF_YOU, found.group(0) if found else "us" if us else first)
         return checked
+
+
+def _your_words(run: "_Run", told: list[str]) -> str | None:
+    """Your words, as the dossier prints them, of the first answer among `told` — or None."""
+    for ref in told:
+        for dl in run.lines.get(ref, ()):
+            if (m := _YOUR_WORDS.match(dl.line)) is not None:
+                return m.group("words")
+    return None
+
+
+def _go_ahead(headline: str) -> str:
+    """How a confirmation asks: whether to go ahead with the move, in its checked words."""
+    return f"Should we go ahead with {_quoted(headline)}?"
+
+
+def confirms(words: str | None) -> bool:
+    """Do your words confirm — a yes, opening them, with no negation and no "but"?"""
+    said = str(words or "")
+    return _YES.search(said) is not None and _NEGATION.search(said) is None and _BUT.search(said) is None
 
 
 def _reports_speech(claim: str) -> bool:
@@ -1042,6 +1089,19 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         else:
             run.say("answers", C.KEPT)
 
+    # A MOVE RESTING ONLY ON WHAT YOU TOLD US (M36.C2.L-logic.V2.U12, second crosscheck B2): the standing facts
+    # it rests on cite your answer — or a question card — and no mail or meeting of the file. Its names and
+    # numbers are on your words, but whether it says what you SAID is not read (your "No" grounded the claim
+    # you denied): it is confirmed with you before it is shown — "You said: “…”. Should we go ahead with
+    # “<the move>”?". You answered that: a yes (`confirms`) and it stands, noted; anything else and it is
+    # not made — suppressed, the file's decision clearing. A move resting on a mail beside your answer is
+    # grounded on the mail, and is not asked (the bound, declared: a claim's polarity is not read).
+    yours = declined = None
+    if move is not None and review.mode == "act" and headline:
+        ground = [e for n in sorted(rested & standing) for e in review.facts[n - 1].evidence]
+        told = [e for e in ground if e.startswith(ANSWER_PREFIX) or e in people.question_cards]
+        if told and not any(is_event(e) for e in ground):
+            yours = told
     fate = C.SHOWN
     if review.mode in MOVING and move is not None:
         fell = sorted(rested - standing)
@@ -1052,6 +1112,19 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         elif headline is None:
             held = C.HELD_BECAUSE[C.HELD_MOVE]
             question = f"Is it so: “{said.rstrip('.')}”? It is not in what it rests on."
+        elif yours is not None and held is None:
+            tail = _go_ahead(headline)
+            answered = next((a for a in people.answered if a.question.endswith(tail)), None)
+            if answered is not None and confirms(answered.words):
+                run.say("move", C.NOTED, C.CONFIRMED_BY_YOU, answered.ref)
+            elif answered is not None:
+                declined = answered.ref
+                run.say("rests_on", C.DROPPED, C.DECLINED_BY_YOU, answered.ref)
+            else:
+                run.say("rests_on", C.DROPPED, C.ON_YOUR_ANSWER, ", ".join(yours))
+                held = C.HELD_BECAUSE[C.ON_YOUR_ANSWER]
+                words = _your_words(run, yours)
+                question = f"You said: “{words}”. {tail}" if words else tail
         if met is not None:
             # Already done (§3.4): whatever else the move lacked, it is moot — the ask it answers is
             # answered. One ask, and only it (replay 04): the move drops, never the file — another ask
@@ -1064,6 +1137,8 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
                 question = (f"{_quoted(headline, capital=True)} is already answered. What is the next move "
                             f"on the {_ASK_WORDS.get(ask_kind, ask_kind.replace('_', ' '))} still waiting "
                             f"on you since {when.day} {when.strftime('%b')}?")
+        elif declined is not None:
+            fate, held, question = C.SUPPRESSED, f"{C.DECLINED_BY_YOU}:{declined}", None
         elif held:
             fate = C.HELD
         elif review.mode == "find_out":
@@ -1083,7 +1158,7 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         because=held if fate in (C.HELD, C.SUPPRESSED) else None)
 
 
-__all__ = ["CURRENCIES", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
+__all__ = ["ANSWER_PREFIX", "CURRENCIES", "confirms", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
            "Correction", "RESTATES_WORDS", "Stray", "UNITS", "about_us", "answered_by", "check_review",
            "correction_of",
            "figures_in", "matches", "unheld",
