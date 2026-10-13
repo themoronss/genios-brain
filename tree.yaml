@@ -8358,6 +8358,19 @@ yc2_w27_s13:
                       artifact: "genios_engine/platform/self_identity.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_question_never_names_you.py tests/reason/expert/test_a_held_file_asks.py tests/reason/expert/test_verify_recipient.py tests/reason/expert/test_verify_people.py"
                       depends_on: [M36.C2.L-logic.V2.U10]
+                    - id: M36.C2.L-logic.V2.U17
+                      what: >
+                        A find-out file never asks an instruction (added 13 Oct by the STEP-13 second crosscheck,
+                        G8 — X34 partly closed): with no unknown its checked words stand behind, the file framed
+                        its checked MOVE "Can you tell us: <the move>?", and a move is an instruction (F22 "…: Find
+                        out whether you count as…?", F52 "…: Check the current count of paying customers…?"; 4 of
+                        the 8 authored find-out reviews). `asks._find_out_question` asks the review's unknowns in
+                        order — the first that is, or reads as, a question and stands on the checked words —
+                        else the checked move only when it IS a question, else our closed question
+                        (`NOTHING_TO_ASK`); the two tests that pinned the framed move are restated with the reason.
+                      artifact: "genios_engine/reason/expert/asks.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_a_question_card.py"
+                      depends_on: [M36.C2.L-logic.V2.U19]
             - layer: interface
               levels:
                 - level: 2

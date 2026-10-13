@@ -48,10 +48,12 @@ ASKING: frozenset[str] = frozenset({ASKED, STANDING})
 #
 # Every word a question card says is a word the check let stand, or one of ours, closed. A held file asks
 # the check's own question (`contracts/claim_check.CheckedReview.question`). A file that must find out first
-# asks YOU a real question: its review's first unknown, when that is a question — or reads as one — and
-# every name and number in it is in the checked words; else its checked move, framed as a question. Never
-# the raw reading (`frames.primary`): a find-out reading is checked like any other, and the check may have
-# withheld it. And WHY is one closed, founder-facing phrase — never the check's internal reason string.
+# asks YOU a real question: its review's unknowns in order, the first that is a question — or reads as one —
+# and every name and number of which is in the checked words; else its checked move, WHEN THAT IS A QUESTION;
+# else our closed one. ⛔ NEVER AN INSTRUCTION (M36.C2.L-logic.V2.U17, the second crosscheck G8): a move is
+# an instruction ("Find out whether…", "Check the count…") and "Can you tell us: <it>?" asked you to do it.
+# Never the raw reading (`frames.primary`): a find-out reading is checked like any other, and the check may
+# have withheld it. And WHY is one closed, founder-facing phrase — never the check's internal reason string.
 #
 # One name to a line: `tests/test_no_missing_module_deps` reads a module's names by their assignments.
 WHY_FIND_OUT = "we hold this file until you answer"
@@ -109,15 +111,15 @@ def _find_out_question(review, checked, ours=None, you=None) -> str:
     `platform/self_identity.to_you`: "whether Arjun went" → "whether you went"), else passed over; else the
     closed question."""
     corpus = _checked_corpus(review, checked) if checked is not None else ""
-    first = " ".join(review.unknowns[0].question.split()) if review.unknowns else ""
-    asked = _as_question(first)
     candidates = []
-    if asked is not None and _stands_on(first, corpus):
-        candidates.append(asked)
+    for unknown in review.unknowns:
+        said = " ".join(unknown.question.split())
+        asked = _as_question(said)
+        if asked is not None and _stands_on(said, corpus):
+            candidates.append(asked)
     move = checked.words.headline if checked is not None else None
-    if move:
-        said = " ".join(move.split()).rstrip(" .;:")
-        candidates.append(said if said.endswith("?") else f"Can you tell us: {said}?")
+    if move and (asked := _as_question(move)) is not None:
+        candidates.append(asked)                      # a move that IS a question — never one framed as one
     for candidate in candidates:
         if ours is None or not ours(candidate):
             return candidate

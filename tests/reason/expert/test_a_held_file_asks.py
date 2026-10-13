@@ -238,8 +238,11 @@ def test_a_question_that_names_us_is_never_asked_in_those_words():
     names = lambda word: (lambda text: word in text.lower())               # noqa: E731 — as the sweep binds names_us
     assert asks.question_words(row, ours=names("nimbus"))[0] == "Does Altavia lead seed rounds?", \
         "nothing of ours in it: the first unknown, as before (the negative control)"
-    assert asks.question_words(row, ours=names("altavia"))[0] == \
-        "Can you tell us: Ask Marco how the round is shaping up?", "the unknown names us: the move"
+    # ⛔ RESTATED by M36.C2.L-logic.V2.U17 (the second crosscheck G8): this pinned the move framed as a question
+    # ("Can you tell us: Ask Marco how the round is shaping up?") — an instruction behind "Can you tell us:". The
+    # unknown names us, the move is no question: the closed one.
+    assert asks.question_words(row, ours=names("altavia"))[0] == asks.NOTHING_TO_ASK, \
+        "the unknown names us, and the move is an instruction"
     assert asks.question_words(row, ours=names("marco"))[0] == "Does Altavia lead seed rounds?"
     held_both = _find_out_row(unknowns=["Does Altavia lead seed rounds?"], what="Ask Altavia how the round looks")
     assert asks.question_words(held_both, ours=names("altavia"))[0] == asks.NOTHING_TO_ASK
@@ -261,7 +264,10 @@ _WITHHELD = {"primary": "Marco is deciding whether Tiger Global co-leads the rou
     ids=["none", "a-statement", "an-unchecked-name", "a-dropped-facts-name", "a-withheld-readings-name",
          "an-unchecked-number",
          "a-number-inside-another"])
-def test_with_no_question_its_checked_words_stand_behind_the_checked_move_is_asked(unknowns, more):
+def test_with_no_question_its_checked_words_stand_behind_the_closed_question_is_asked(unknowns, more):
+    """⛔ RESTATED by M36.C2.L-logic.V2.U17 (the second crosscheck G8, `03` X34): this pinned the checked move
+    asked as "Can you tell us: Ask Marco whether Altavia leads seed rounds?" — an instruction, asking you to
+    do what the move says (golden F22, F52). A move that is no question is never asked: the closed one."""
     from genios_engine.reason.expert import asks
     row = _find_out_row(unknowns=unknowns, **more)
     verdicts = {v.line: v.verdict for v in row.checked.verdicts if v.verdict != "noted"}
@@ -269,8 +275,7 @@ def test_with_no_question_its_checked_words_stand_behind_the_checked_move_is_ask
     assert more is not _DROPPED or verdicts["fact:5"] == "dropped", "the name is in a DROPPED fact only"
     assert more is not _WITHHELD or verdicts["situation"] == "dropped", "the name is in a WITHHELD reading only"
     assert row.checked.words.headline == "Ask Marco whether Altavia leads seed rounds"
-    assert asks.question_words(row) == ("Can you tell us: Ask Marco whether Altavia leads seed rounds?",
-                                        asks.WHY_FIND_OUT)
+    assert asks.question_words(row) == (asks.NOTHING_TO_ASK, asks.WHY_FIND_OUT)
 
 
 def test_with_nothing_checked_the_file_asks_our_own_closed_question():
@@ -281,6 +286,37 @@ def test_with_nothing_checked_the_file_asks_our_own_closed_question():
     row = _find_out_row(unknowns=["Does Altavia lead seed rounds?"])
     assert asks.question_words(SimpleNamespace(review=row.review, checked=None)) == (
         asks.NOTHING_TO_ASK, asks.WHY_FIND_OUT)
+
+
+@pytest.mark.parametrize("what", ["Find out whether Marco wants the deck or a call first",
+                                  "Check whether Altavia leads seed rounds; if it does, send the deck",
+                                  "Ask Marco whether Altavia leads seed rounds"])
+def test_g8_a_find_out_file_never_asks_an_instruction(what):
+    """The second crosscheck's G8: F22 asked "Can you tell us: Find out whether you count as…?", F52 "Can you tell
+    us: Check the current count of paying customers…?" — 4 of the 8 authored find-out reviews asked this way."""
+    from genios_engine.reason.expert import asks
+    row = _find_out_row(what=what, unknowns=[])
+    question, _why = asks.question_words(row)
+    assert question == asks.NOTHING_TO_ASK and "Can you tell us:" not in question
+
+
+def test_the_next_real_question_is_asked_when_the_first_unknown_is_none():
+    from genios_engine.reason.expert import asks
+    row = _find_out_row(unknowns=["Altavia's appetite for seed rounds.", "Does Marco want the deck first?"],
+                        what="Find out whether Marco wants the deck first")
+    assert asks.question_words(row)[0] == "Does Marco want the deck first?"
+
+
+def test_a_checked_move_written_as_an_indirect_question_is_asked_as_one():
+    """A move the check let stand as "Whether …" reads as a question: asked as one, never as an instruction."""
+    import dataclasses
+    from types import SimpleNamespace
+
+    from genios_engine.reason.expert import asks
+    row = _find_out_row(unknowns=[])
+    words = dataclasses.replace(row.checked.words, headline="Whether Marco wants the deck before a call")
+    row = SimpleNamespace(review=row.review, checked=dataclasses.replace(row.checked, words=words))
+    assert asks.question_words(row)[0] == "Can you tell us whether Marco wants the deck before a call?"
 
 
 def test_a_checked_move_that_is_a_question_is_asked_as_written():
