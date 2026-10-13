@@ -196,6 +196,11 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "through (`reason/bundle/sites.py`, M45.C1.L-contract.V0.U01) — themselves waiting on the Claude 5 "
         "thinking fix's merge; until then no prompt is built for a real pass.",
         "MOVES WHEN M45.C2.L-logic.V1.U03 (the writer) lands and calls it"),
+    "morning_check.check_answer": (
+        "STEP-15 M45.C2.L-logic.V0.U02, built bottom-up: the whole answer's check — one line per item, in "
+        "order, each held to its own item's material. Its caller is the same writer as `build_prompt` above, "
+        "and waits on the same thing.",
+        "MOVES WHEN M45.C2.L-logic.V1.U03 (the writer) lands and calls it"),
 
 }
 
