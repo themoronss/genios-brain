@@ -28,6 +28,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
+from genios_engine.context.llm.client import THINKING_OFF
+from genios_engine.context.llm.client import TRUNCATED
 from genios_engine.contracts.company_brief import PROPOSABLE, WORK_KINDS, CompanyBriefLine
 
 #: v2 (STEP-11): the prompt asks for each in-motion line's kind of work and counterparty.
@@ -36,7 +38,14 @@ COST_PURPOSE = "company_brief_draft"
 MAX_LINES = 30
 MAX_PER_SECTION = 8
 MAX_TEXT = 160
-MAX_TOKENS = 2400
+#: ⛔ 2,400 → 4,000, asked with thinking OFF (`yc2_w27_s18` M50.C3.L-logic.V1.U06, the 13 Oct audit's
+#: s5t-F5, `06` D71). Thirty lines of at most 160 characters with their evidence run ~1,370–2,410
+#: tokens — 57–100% of 2,400 before any thinking, and `claude-sonnet-5` thinks by default from the
+#: same ceiling. `06` D73 (open) weighs adaptive thinking at 8,000 against this.
+MAX_TOKENS = 4000
+#: Seconds one draft may take. 4,000 tokens took 37–45 s on 12 Oct (p50 45.3 s) — close to the
+#: client's own 60 s, after which the SDK retries a call whose answer may already be paid for.
+TIMEOUT_S = 90.0
 
 _PROMPT = """You are a chief of staff with thirty years of experience, on your first day with a \
 founder. Before you judge a single message for them you write down the company brief: what the \
@@ -212,17 +221,24 @@ def draft_company_brief(engine, org_id: str, llm: Any, *, now: datetime, cost_si
     if not patterns["items"]:
         return DraftOutcome(skipped="no_patterns")
     model = str(getattr(llm, "model", "") or "unknown")
-    res = llm.call(build_prompt(patterns, company_brief=current), max_tokens=MAX_TOKENS)
+    sized = ({"thinking": THINKING_OFF, "timeout_s": TIMEOUT_S}
+             if getattr(llm, "supports_thinking", False) else {})
+    res = llm.call(build_prompt(patterns, company_brief=current), max_tokens=MAX_TOKENS, **sized)
     it, ot = int(getattr(res, "input_tokens", 0) or 0), int(getattr(res, "output_tokens", 0) or 0)
+    # ⛔ A CUT ANSWER IS NOT A DRAFT (s5t-F5). The lenient parser closes a cut list of lines, and 22.5%
+    # of random cut points still parsed — a shortened brief proposed as whole. Parsed or not, it
+    # proposes nothing and is billed as the failure it is.
+    cut = bool(getattr(res, "truncated", False))
+    error = getattr(res, "error", None) or (f"{TRUNCATED} (max_tokens={MAX_TOKENS})" if cut else None)
     if cost_sink is not None:
         try:
             cost_sink(org_id=org_id, model=getattr(res, "model", "") or model, purpose=COST_PURPOSE,
-                      input_tokens=it, output_tokens=ot, success=bool(getattr(res, "ok", False)),
-                      error=getattr(res, "error", None))
+                      input_tokens=it, output_tokens=ot,
+                      success=bool(getattr(res, "ok", False)) and not cut, error=error)
         except Exception:      # noqa: BLE001 — accounting never costs the draft
             pass
-    if not getattr(res, "ok", False):
-        return DraftOutcome(skipped=f"model:{getattr(res, 'error', '') or 'no answer'}"[:200],
+    if not getattr(res, "ok", False) or cut:
+        return DraftOutcome(skipped=f"model:{error or 'no answer'}"[:200],
                             model=model, input_tokens=it, output_tokens=ot)
     proposals, refused = parse(res.parsed, patterns)
     written = 0
@@ -237,5 +253,5 @@ def draft_company_brief(engine, org_id: str, llm: Any, *, now: datetime, cost_si
                         output_tokens=ot, lines=tuple(proposals))
 
 
-__all__ = ["COST_PURPOSE", "DraftOutcome", "MAX_LINES", "MAX_PER_SECTION", "PROMPT_VERSION",
+__all__ = ["COST_PURPOSE", "DraftOutcome", "MAX_LINES", "MAX_PER_SECTION", "PROMPT_VERSION", "TIMEOUT_S",
            "Proposal", "build_prompt", "draft_company_brief", "parse"]
