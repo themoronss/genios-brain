@@ -66,3 +66,26 @@ def test_t1_text_on_haiku_keeps_its_temperature_and_sends_nothing_new(monkeypatc
     kw = _t1_text(monkeypatch, "claude-haiku-4-5-20251001")
     assert kw["temperature"] == 0.3
     assert set(kw) == {"model", "max_tokens", "temperature", "messages"}
+
+
+# ── draft_review.llm_notes (U13) ─────────────────────────────────────────────────────────────────
+def _notes(monkeypatch, model):
+    from genios_engine.reason.moments import draft_review as DR
+    sent = _sdk(monkeypatch)
+    _t1(monkeypatch, model)
+    DR.llm_notes(None, org_id="org_t5", facts=[{"node_id": "n", "name": "Acme deal",
+                                                 "field": "deal.stage", "value": "closed lost"}],
+                 findings=[], draft="Hi Priya, sending the order form today.",
+                 digest=DR.draft_digest("x"), deadline=time.monotonic() + 3)
+    (kw,) = sent
+    return kw
+
+
+def test_draft_review_on_a_claude_5_model_sends_no_temperature_and_thinking_off(monkeypatch):
+    kw = _notes(monkeypatch, "claude-sonnet-5")
+    assert "temperature" not in kw and kw["thinking"] == _DISABLED
+
+
+def test_draft_review_on_haiku_is_asked_exactly_as_before(monkeypatch):
+    kw = _notes(monkeypatch, "claude-haiku-4-5-20251001")
+    assert kw["temperature"] == 0 and set(kw) == {"model", "max_tokens", "temperature", "messages"}
