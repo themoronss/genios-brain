@@ -181,10 +181,13 @@ def _your_no(question: str) -> Question:
 
 
 def _asked() -> Question:
-    """Pass 1: the misquoted claim is dropped, the move held, and the file asks you — in the claim's words."""
+    """Pass 1: the misquoted claim is dropped, the move held, and the file asks you.
+
+    ⛔ RESTATED by M36.C2.L-logic.V2.U10 (fix, the second crosscheck G2): this pinned the question asking "in the
+    claim's words" (`DENIED in held.question`) — the echo X10 names. It never repeats them now."""
     from genios_engine.contracts import claim_check as C
     held = _check(_neel_review({"evidence": [NEEL_MAIL], "quote": "send me the deck and the 2M SAFE terms"}))
-    assert held.fate == C.HELD and DENIED in held.question, held
+    assert held.fate == C.HELD and DENIED not in held.question and "SAFE" not in held.question, held
     return _your_no(held.question)
 
 

@@ -57,7 +57,11 @@ def test_a_headline_whose_number_its_ground_does_not_hold_holds_the_move():
     checked = _check(move={"what": "Send Marco the 12-slide deck and offer two times for a call"})
     assert _verdict(checked, "move") == C.LineVerdict("move", C.DROPPED, C.WRONG_NUMBER, "number:12")
     assert checked.fate == C.HELD and checked.words.headline is None and checked.words.draft is None
-    assert checked.question and "12-slide" in checked.question
+    # ⛔ RESTATED by M36.C2.L-logic.V2.U10 (fix, the second crosscheck G2, `03` X10): this pinned the question
+    # REPEATING the wrong number ("12-slide") — the very echo the acceptance's strict xfails recorded. The
+    # question says why the move is held, never the number its check refused.
+    assert checked.question and "12" not in checked.question
+    assert checked.question.endswith("the move has a number the facts it rests on do not hold.")
 
 
 @pytest.mark.parametrize("part, text, word", [

@@ -710,6 +710,22 @@ def _quoted(headline: str | None, *, capital: bool = False) -> str:
     return "The move" if capital else "the move"
 
 
+#: Why a move whose OWN words failed is held, as its question says it — per reason (G2).
+_MOVE_FELL: dict[str, str] = {
+    C.UNSUPPORTED: "the move names someone the facts it rests on do not",
+    C.WRONG_NUMBER: "the move has a number the facts it rests on do not hold",
+}
+
+
+def _held_question(people: FilePeople, why: str) -> str:
+    """What a held file asks you when what its move rests on — or the move itself — failed (M36.C2.L-logic.V2.U10,
+    second crosscheck G2, `03` X10): what the next step is, and truly why the one found is held, worded per the
+    reason it fell. ⛔ NEVER THE WORDS THAT FAILED: not the fell fact's claim, not the move as written — the
+    name it misattributed, the number it got wrong — only the file's own counterparty and closed words of ours."""
+    them = people.counterparty.name or people.counterparty.key or "them"
+    return f"What is the next step with {them}? We held the one we found: {why}."
+
+
 def _is_us(to: str, people: FilePeople) -> bool:
     return any("@" in w and people.us.is_us(w) for w in _words(to)) \
         or names_us(to, people.us, people.our_names)
@@ -1107,11 +1123,10 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         fell = sorted(rested - standing)
         if fell:
             held = C.HELD_BECAUSE.get(run.reason(f"fact:{fell[0]}"), C.HELD_BECAUSE[C.HELD_MOVE])
-            claim = review.facts[fell[0] - 1].claim.rstrip(".")
-            question = f"Is it so: “{claim}”? It is not in what it cites."
+            question = _held_question(people, held)
         elif headline is None:
             held = C.HELD_BECAUSE[C.HELD_MOVE]
-            question = f"Is it so: “{said.rstrip('.')}”? It is not in what it rests on."
+            question = _held_question(people, _MOVE_FELL.get(run.reason("move"), held))
         elif yours is not None and held is None:
             tail = _go_ahead(headline)
             answered = next((a for a in people.answered if a.question.endswith(tail)), None)

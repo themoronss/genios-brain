@@ -94,7 +94,9 @@ HELD_BECAUSE: dict[str, str] = {
     UNCITED: "a fact your move rests on cites nothing on the file",
     UNKNOWN_EVIDENCE: "a fact your move rests on cites something the file does not show",
     UNQUOTED: "a fact your move rests on quotes nothing from the mail it cites",
-    MISQUOTED: "a fact your move rests on is not in the words it cites",
+    # ⛔ TRUE OF WHAT FAILED (M36.C2.L-logic.V2.U10, second crosscheck G2): the QUOTE is not in the mail — the
+    # claim may well be (a paraphrase); "is not in the words it cites" was said of words the mail holds.
+    MISQUOTED: "the words a fact your move rests on quotes are not in the mail it cites",
     UNSUPPORTED: "a fact your move rests on names someone its lines do not",
     WRONG_NUMBER: "a fact your move rests on has a number its lines do not hold",
     HELD_MOVE: "the move says something the facts it rests on do not hold",

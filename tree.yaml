@@ -8110,7 +8110,8 @@ yc2_w27_s13:
                         of one file's review, read off the stored check and the `cards` table's every text
                         (do_nothing_consequence, success_signal, abstained_because and the `expert_check`
                         sources among them), question cards included; where the held question repeats the
-                        words that failed (a fell fact's claim, a failed move) that is xfail-strict on X10.
+                        words that failed (a fell fact's claim, a failed move) that was xfail-strict on X10 —
+                        until M36.C2.L-logic.V2.U10's fix (13 Oct): it never does, the markers removed.
                         F15's Lattice fact 6 (`unsupported name:Capital`) is a declared drop, pinned exactly.
                         Not expressible on the golden set, declared: a lakh figure (only F18's mail, reviewed
                         by no expert), a person who introduced a file, an answered ask beside one still owed,
@@ -8325,8 +8326,16 @@ yc2_w27_s13:
                         golden lane: STEP-11's founder-card clause.) The question card says what answering does
                         and what waiting costs — `success_signal` and `do_nothing_consequence`, closed phrases
                         of ours, never model prose — and has no play window (`outcome_window_days` None).
-                      artifact: "genios_engine/reason/expert/asks.py"
-                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_a_question_card.py"
+                        Amended 13 Oct (fix, the STEP-13 second crosscheck G2 and the acceptance's echo): a
+                        held question asked "Is it so: “<the fell fact's claim / the move as written>”? It is not
+                        in what it cites." — the words the check dropped (a misattributed name, a wrong number) on
+                        the question card, and "not in what it cites" said of words the mail holds. It asks "What
+                        is the next step with <the counterparty>? We held the one we found: <why>.", why worded
+                        per the reason it fell (`claim_check.HELD_BECAUSE`, MISQUOTED reworded true of what
+                        failed; the move's own words by `verify._MOVE_FELL`), never a word that failed; the
+                        acceptance's three strict xfails XPASS and lose their markers.
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_question_says_truly_why.py tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_a_question_card.py tests/replays/test_every_claim_is_checked.py"
                       depends_on: [M36.C2.L-integration.V2.U03, M36.C2.L-interface.V3.U05, M36.C2.L-data.V2.U12]
             - layer: interface
               levels:

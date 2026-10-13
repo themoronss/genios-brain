@@ -285,8 +285,9 @@ def _answers(p: DossierParts, cite: _Ids) -> Section:
 
     ⛔ YOUR ANSWER IS YOUR WORDS (STEP-13 M36.C2.L-data.V2.U12, `03` X05). The answer's line — the item a
     fact citing `answer:<id>` is held to (`reason/expert/verify`) — carries the id and the words and NOTHING
-    else. Never the question's text: a held review's question IS the claim its check dropped ("Is it so:
-    “…”?"), so a line carrying it let "No. He asked for the roadmap" ground "Send Neel the deck" again.
+    else. Never the question's text: a held review's question carried the claim its check dropped ("Is it so:
+    “…”?", until M36.C2.L-logic.V2.U10's fix), so a line carrying it let "No. He asked for the roadmap" ground
+    "Send Neel the deck" again — and whatever a question says, it is ours, never your words.
     Never its date either: a date's digits would ground any small number, and the invention rule reads a
     date's own month and day (`platform/grounding.corpus_of`) — so the date heads the answer on a line of
     its own, which no id prints on and no fact can cite."""
