@@ -6,7 +6,8 @@ from datetime import datetime, timezone
 from sqlalchemy import text
 
 from genios_engine.packs.wiring import ensure_default, make_registry
-from genios_engine.platform.self_identity import identity_for
+from genios_engine.contracts import card_contract
+from genios_engine.platform.self_identity import SelfIdentity, identity_for
 from .lane_display import TALLY_KEYS, tally_lane
 from .lane_recall import recall_verdict
 from genios_engine.reason.authority import (
@@ -24,7 +25,7 @@ from genios_engine.contracts.abstention import downgrade_to_observation, is_acti
 from genios_engine.contracts.outcomes import interrupts, project
 from genios_engine.deliver.render import state_not_command
 from .card_builder import BUILDER_VERSION, SubjectIsUs, build_draft, load_evidence_quotes
-from .render import render_copy, review_copy
+from .render import _corpus, render_copy, review_copy
 from genios_engine.reason.expert.decide import is_expert
 from .router import budget_full
 
@@ -317,7 +318,8 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
     return card, copy
 
 
-def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: datetime, out: dict) -> None:
+def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: datetime, out: dict, *,
+                          us=None, our_names: tuple[str, ...] = (), identities: tuple[str, ...] = ()) -> None:
     """Each open question with no live card gets one — counted where it is written, its lane tallied as
     every card's is. ⛔ A pass that could not read its questions says so (`questions_unread`) and keeps
     the decisions' cards: a read refused here must never cost a card the founder was owed elsewhere."""
@@ -337,6 +339,10 @@ def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: 
             continue
         try:
             card, copy = question_card(graph, org_id, row, eval_time)
+            # STEP-14 · the card contract first (M43.C4.L-integration.V1.U02): a question is the expert's checked words.
+            if _refused(out, org_id, card, _contract_refusals(card, copy, us=us, our_names=our_names,
+                                                              identities=identities, expert=True)):
+                continue
             # STEP-14: the file's card, asking — a VERSION of the file's one card when it has one.
             versioned = _version_file_card(card_store, card, copy, token, out)
             if versioned is not None:
@@ -447,6 +453,62 @@ def _close_the_files_pass(graph, org_id: str, out: dict) -> None:
 
         logging.getLogger(__name__).warning("could not close the files' pass for org=%s: %s", org_id, exc)
         out["file_cards_unmeasured"] = 1
+
+
+# ── STEP-14 · THE CARD CONTRACT, BEFORE EVERY CARD THIS PIPELINE WRITES (`yc2_w27_s14` M43.C4.L-integration.V1.U02) ──
+#
+# A decision's card or a question's, new or a version: its words pass `contracts/card_contract` against what they were
+# made from — refused, it is not written (a refused version leaves the file's card as it was), counted
+# `refused_contract:<rule>` and logged. Production's *"nsrcel — a dated payment obligation is open"* (a template's
+# money claim, no money in the evidence) and *"Which is right? Maria Exconde: party.role"* are its cases.
+
+#: A fact or quote that holds money: a key naming an amount, or a currency in its value.
+_MONEY_KEYS = ("amount", "price", "invoice", "payment", "fee", "revenue", "budget", "cost", "valuation")
+_CURRENCY = ("₹", "$", "€", "£", " inr", " usd", "lakh", "crore")
+
+
+def _holds_money(facts: dict, quotes) -> bool:
+    if any(any(k in str(name).lower() for k in _MONEY_KEYS) for name in (facts or {})):
+        return True
+    said = " ".join(str(q.get("quote") or "") for q in quotes or () if isinstance(q, dict)).lower()
+    values = json.dumps({k: (v.get("value") if isinstance(v, dict) else v) for k, v in (facts or {}).items()},
+                        default=str, ensure_ascii=False).lower()
+    return any(c in said or c in values for c in _CURRENCY)
+
+
+def _contract_refusals(card: dict, copy: dict, *, us, our_names, identities, expert: bool):
+    """What the card contract refuses in this card (see above). An expert's card — a decision or a question — was
+    held to its dossier by its check (`reason/expert/verify`), so its own checked words are its corpus and its quotes;
+    every other card's corpus is the narrator's own (`render._corpus`: its facts, slots, quotes and our names)."""
+    quotes = card.get("_quotes") or []
+    draft = (copy.get("artifact") or {}).get("body") or None
+    text_ = card_contract.CardText(
+        headline=str(copy.get("headline") or ""), situation=str(copy.get("situation") or ""),
+        subject=card.get("business_subject"), recipient=card.get("_recipient"), draft=draft,
+        why_now=card.get("why_now"),
+        what_remains=tuple(x for x in (card.get("unresolved_item"),) if x))
+    corpus = [_corpus(card.get("_facts") or {}, card.get("_slots") or {}, identities, quotes)[0],
+              card.get("success_signal") or "", card.get("do_nothing_consequence") or ""]
+    if expert:
+        corpus += [text_.headline, text_.situation, draft or "", *(card.get("_checked_quotes") or ())]
+    return card_contract.check(text_, us=us or SelfIdentity(), our_names=our_names,
+                               quotes=[str(q.get("quote") or "") for q in quotes if isinstance(q, dict)],
+                               corpus=corpus, money_evidence=expert or _holds_money(card.get("_facts") or {},
+                                                                                    quotes))
+
+
+def _refused(out: dict, org_id: str, card: dict, refusals) -> bool:
+    """Count and log what the contract refused; True when the card must not be written."""
+    if not refusals:
+        return False
+    import logging
+
+    for r in refusals:
+        out[f"refused_contract:{r.rule}"] = out.get(f"refused_contract:{r.rule}", 0) + 1
+    logging.getLogger(__name__).warning(
+        "card refused by the card contract org=%s signal=%s: %s", org_id, card.get("signal_id"),
+        "; ".join(f"{r.rule}: {r.found}" for r in refusals))
+    return True
 
 
 def _apply_abstention(signal: dict, effective: dict) -> dict:
@@ -623,6 +685,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
            # next version waiting on an agent or refused, the file cards no version reached, and the measurement.
            "versioned": 0, "renewed": 0, "reworded": 0, "quiet_version_not_pushed": 0, "version_waits": 0,
            "version_refused": 0, "file_cards_replaced": 0, "files_with_two_open_cards": 0,
+           # STEP-14 · the card contract — each rule counted from zero (M43.C4.L-integration.V1.U02).
+           **{f"refused_contract:{rule}": 0 for rule in card_contract.RULES},
            # ⛔ THE LANE MIX. Zeroed for the same reason as the three above — "a key that appears
            # only when it fires is a key nobody knows exists" — and ALL SIX are zeroed, including
            # `unrouted`, because today every production signal is unrouted and a mix that hid that
@@ -806,6 +870,16 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             over_budget = budget_full(card_store, org_id, draft["assignee"], eval_time, budget)
             if over_budget:
                 out["over_budget_no_push"] += 1
+            # STEP-14 · THE CARD CONTRACT FIRST: refused, nothing is written — not a card, not a version.
+            if from_review:
+                draft["_recipient"] = (sig.get("play_metadata") or {}).get("to") \
+                    if isinstance(sig.get("play_metadata"), dict) else None
+                draft["_checked_quotes"] = [q for part in ((sig.get("capability_render") or {}).get("sources")
+                                                           or {}).values() if isinstance(part, dict)
+                                            for q in (part.get("quotes") or ())]
+            if _refused(out, org_id, draft, _contract_refusals(draft, copy, us=us, our_names=our_names,
+                                                               identities=identities, expert=from_review)):
+                continue
             # STEP-14: an expert card is its FILE's — the file's next decision VERSIONS it, never a second card.
             if draft.get("file_id"):
                 draft["_words"] = _decision_words(sig, draft)
@@ -927,7 +1001,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
 
     # STEP-13 · the questions held files ask, each on its own card (M36.C2.L-interface.V3.U05) — after the
     # decisions, inside the recall guard below: a question card is a card, its lane tallied.
-    _build_question_cards(graph, card_store, org_id, eval_time, out)
+    _build_question_cards(graph, card_store, org_id, eval_time, out, us=us, our_names=our_names,
+                          identities=identities)
     # STEP-14 · the file cards no version reached, and the files with two open cards (see `_close_the_files_pass`).
     _close_the_files_pass(graph, org_id, out)
 
