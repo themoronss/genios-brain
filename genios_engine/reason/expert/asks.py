@@ -62,8 +62,10 @@ WHY_SAYS_MORE = "its next step says more than the file shows"
 WHY_ADDRESSED_TO_YOU = "its next step is addressed to you"
 WHY_TO_THE_CONNECTOR = "its next step goes to whoever introduced them"
 WHY_CONFIRM = "its next step rests only on what you told us, so we confirm it with you first"
+#: Why a file asks after your answer, when its review asks what you already answered (M36.C2.L-data.V2.U14).
+WHY_AFTER_YOUR_ANSWER = "we read your answer, and what its next step rests on still does not hold"
 WHYS: tuple[str, ...] = (WHY_FIND_OUT, WHY_NOT_CONFIRMED, WHY_SAYS_MORE, WHY_ADDRESSED_TO_YOU,
-                         WHY_TO_THE_CONNECTOR, WHY_CONFIRM)
+                         WHY_TO_THE_CONNECTOR, WHY_CONFIRM, WHY_AFTER_YOUR_ANSWER)
 #: What a file asks when nothing checked can be asked — ours, closed (`contracts/claim_check`, one place).
 NOTHING_TO_ASK = claim_check.NOTHING_TO_ASK
 #: An unknown written as an indirect question ("Whether the examiner has raised a query.") reads as one.
@@ -176,12 +178,20 @@ def question_words(review, *, ours=None, you=None) -> tuple[str, str]:
     return _find_out_question(review.review, checked, ours, you), WHY_FIND_OUT
 
 
+def after_your_answer(words: str) -> str:
+    """What a file asks when its review asks again what you already answered (M36.C2.L-data.V2.U14, second
+    crosscheck F2): your latest words, and what should happen next — ours, closed, and your own words."""
+    return f"You answered: “{' '.join(str(words).split())}”. What should happen next on this file?"
+
+
 def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundle: dict, pack: dict,
                      eval_time, situation_id: str | None) -> str:
-    """File the file's question and its signal: `asked`, or `standing` (re-bound to this run) — or
-    `answered_already`: words the file already answered are not asked again (M36.C2.L-data.V2.U12, `03`
-    X25), so no signal is filed, and the file's open question signal expires, its card REPLACED — the
-    question it carried is one this review no longer asks (`context/founder_questions.ask` retired it)."""
+    """File the file's question and its signal: `asked`, or `standing` (re-bound to this run). Words the file
+    already answered are never asked again (M36.C2.L-data.V2.U12, `03` X25) — ⛔ and the file is never silenced
+    by them (M36.C2.L-data.V2.U14, the second crosscheck F2): it asks what should happen next instead
+    (`after_your_answer`), quoting your latest words. Only when that was answered too: `answered_already` — no
+    signal is filed, and the file's open question signal expires, its card REPLACED (the question it carried
+    is one this review no longer asks: `context/founder_questions.ask` retired it)."""
     from genios_engine.context import founder_questions as questions
 
     run, output = bundle.get("run") or {}, bundle.get("output") or {}
@@ -191,6 +201,15 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
         before = questions.open_question(conn, org_id, file_id)
         asked = questions.ask(conn, org_id=org_id, file_id=file_id, fingerprint=review.fingerprint,
                               run_id=run.get("run_id"), question=question, why=why, at=eval_time)
+        if asked.state == questions.ANSWERED:
+            # ⛔ NEVER SILENCED (M36.C2.L-data.V2.U14, second crosscheck F2): the review asks what you already
+            # answered — it read your answer and its move still does not stand. The file does not go quiet: it
+            # asks what should happen next, quoting your latest words. Only when THAT was answered too — your
+            # latest words are the answer to it — is there nothing left to ask.
+            latest = questions.answers_for(conn, org_id, file_id)[0]
+            asked = questions.ask(conn, org_id=org_id, file_id=file_id, fingerprint=review.fingerprint,
+                                  run_id=run.get("run_id"), question=after_your_answer(latest.answer),
+                                  why=WHY_AFTER_YOUR_ANSWER, at=eval_time)
         if asked.state == questions.ANSWERED:
             expired = conn.execute(text(_EXPIRE_QUESTION_SIGNALS), {"o": org_id, "n": file_id}).fetchall()
             if expired:

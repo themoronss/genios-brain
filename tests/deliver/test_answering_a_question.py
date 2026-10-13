@@ -163,8 +163,12 @@ def test_a_card_whose_question_is_no_longer_open_takes_no_press(world, cards, ac
 
 def test_a_question_you_answered_is_never_carded_again(world, cards):
     """⛔ `03` X25 (M36.C2.L-data.V2.U12). Your answer moves the file; a later review asks another question, on its
-    own card; a later one still asks the words you answered. Nothing is asked: the open question it no longer
-    asks retires, its card REPLACED, and no card asks you again what you told us."""
+    own card; a later one still asks the words you answered. Those words are not asked: the open question it no
+    longer asks retires, its card REPLACED, and no card asks you again what you told us.
+
+    ⛔ RESTATED by M36.C2.L-data.V2.U14 (the second crosscheck F2): this pinned that NOTHING was asked then — no
+    question card at all, the file silent after your answer. It asks what should happen next, quoting your
+    words — one new card, never the words you answered."""
     from genios_engine.platform import card_lifecycle
     from tests.reason.expert.test_a_covered_file_decides_once import _fund
     from tests.reason.expert.test_a_held_file_asks import _find_out
@@ -178,11 +182,12 @@ def test_a_question_you_answered_is_never_carded_again(world, cards):
     last = later + timedelta(hours=1)
     _find_out(store, org, anchor, "ffp-fund-findout-review-002", events)
     counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-002"}, at=last)
-    assert counts.get("expert_question_answered_already") == 1, counts
-    assert _build(store, cards, org, at=last)["question_cards"] == 0
-    answered, other = _cards(store, org)
+    assert counts.get("expert_question_asked") == 1 and not counts.get("expert_question_answered_already"), counts
+    assert _build(store, cards, org, at=last)["question_cards"] == 1
+    answered, other, follow = sorted(_cards(store, org), key=lambda k: (k.state != "resolved", k.state != "expired"))
     assert (answered.card_id, answered.state) == (card.card_id, "resolved")
-    assert other.state == "expired"
+    assert other.state == "expired" and follow.state == "queued"
+    assert follow.headline == f"You answered: “{WORDS}”. What should happen next on this file?"
     with store.engine.connect() as c:
         cause = c.execute(text("select cause from card_events where org_id = :o and card_id = :k "
                                "and kind = :kind"), {"o": org, "k": other.card_id,
@@ -190,8 +195,9 @@ def test_a_question_you_answered_is_never_carded_again(world, cards):
     assert cause == card_lifecycle.REPLACED
     states = sorted((q.question, q.state, q.retired_why) for q in _questions(store, org, anchor))
     assert states == sorted([("Did Arjun ask for last quarter's metrics or this quarter's?", Q.ANSWERED, None),
-                             ("Who at the fund decides?", Q.RETIRED, Q.NO_LONGER_ASKED)])
-    assert _queued(cards, org, last) == []
+                             ("Who at the fund decides?", Q.RETIRED, Q.NO_LONGER_ASKED),
+                             (f"You answered: “{WORDS}”. What should happen next on this file?", Q.OPEN, None)])
+    assert _queued(cards, org, last) == [follow.card_id]
 
 
 def test_the_answer_button_says_what_it_does():

@@ -8301,6 +8301,19 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_move_on_your_answer_is_confirmed.py tests/reason/expert/test_your_answer_feeds_the_file.py tests/context/test_a_file_asks_one_question.py tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_answering_a_question.py"
                       depends_on: [M36.C2.L-data.V2.U07, M36.C2.L-integration.V2.U03, M36.C2.L-interface.V4.U06]
+                    - id: M36.C2.L-data.V2.U14
+                      what: >
+                        An answered file is never silenced (added 13 Oct by the STEP-13 second crosscheck, F2):
+                        a review that, after your answer, asks the very words you answered got
+                        `answered_already` — no signal, no card — and the gate remembered it SUPPRESSED, skipped
+                        until the file moved (0 signals, 0 cards, `expert_unchanged` the next day). The words you
+                        answered are still never asked again (X25); the file asks what should happen next,
+                        quoting your latest words (`asks.after_your_answer`, `WHY_AFTER_YOUR_ANSWER`), on its own
+                        card; only when that too was answered is nothing left to ask, and the gate remembers it
+                        INDETERMINATE (decided again next sweep, no model), never SUPPRESSED.
+                      artifact: "genios_engine/reason/expert/asks.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_answering_a_question.py tests/deliver/test_a_question_card.py"
+                      depends_on: [M36.C2.L-data.V2.U12, M36.C2.L-integration.V2.U11]
             - layer: logic
               levels:
                 - level: 1
