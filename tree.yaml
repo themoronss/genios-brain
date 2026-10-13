@@ -7886,7 +7886,12 @@ yc2_w27_s13:
                         itself ("a call is booked for the 25th", "memory holds no words for it") stands on
                         it — as the golden set's authored answers rest on it (F07, F28, F29, F54: holding
                         every decisive fact on a wordless event would drop six of them, F28 a passing
-                        must-detect).
+                        must-detect). Amended 13 Oct (fix, the STEP-13 second crosscheck G4): "At the meeting
+                        Marco decided to lead the round", "In the meeting Marco will lead the round" and "Marco
+                        did not hesitate and said…" stood. The verbs of DECIDING and INTENDING report too, and a
+                        negation counts only in its verb's own clause. The bound, measured and declared: holding
+                        every word to the meeting's own line would drop all 7 authored decisive meeting facts
+                        (F07, F28, F29, F54 ×4); under the verb rule none moves — meaning is not read.
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_unquoted.py tests/reason/expert/test_verify_quotes.py"
                       depends_on: [M35.C2.L-logic.V1.U09]

@@ -90,3 +90,30 @@ def test_a_decisive_fact_quoting_a_shown_mail_beside_one_not_shown_is_held_to_it
     """The quote rule governs a fact that cites a mail whose words ARE shown (U09)."""
     checked = _check({"older": 6}, fact1={"evidence": [W.ASK, "evt_old_0"]})
     assert _verdict(checked, "fact:1").verdict == C.KEPT and checked.fate == C.SHOWN
+
+
+# ── M35.C2.L-logic.V1.U16 (fix) · the second crosscheck G4: a wordless meeting grounds only itself ──────────────
+
+@pytest.mark.parametrize("claim", [
+    "At the meeting Marco decided to lead the round",
+    "In the meeting Marco will lead the round",
+    "Marco did not hesitate and said he will lead the round",
+    "At the meeting Marco chose to lead the round"])
+def test_g4_what_was_decided_at_a_meeting_with_no_words_is_unquoted(claim):
+    """G4's run: each stood under "Send Marco the term sheet draft", its draft shown — no verb of saying, or one
+    behind a negation that does not govern it."""
+    checked = _check({"meeting_at": HELD_ON}, fact1={"claim": claim, "evidence": [W.MEETING], "quote": None},
+                     move=TERM_SHEET, draft="Hi Marco, the term sheet draft is attached. Arjun")
+    assert _verdict(checked, "fact:1") == C.LineVerdict("fact:1", C.DROPPED, C.UNQUOTED, W.MEETING)
+    assert checked.fate == C.HELD and checked.words.draft is None
+
+
+@pytest.mark.parametrize("claim", [
+    "Marco met us on 14 Aug",
+    "Memory holds no words for that meeting, so nothing on file says what was said or agreed there",
+    "A meeting with Marco was on the calendar, and memory holds no words for it"])
+def test_a_claim_about_the_wordless_meeting_itself_still_stands(claim):
+    """The negative control — the golden set's own shapes (F07, F54): when, with whom, that nothing is on file."""
+    checked = _check({"meeting_at": HELD_ON}, fact1={"claim": claim, "evidence": [W.MEETING], "quote": None},
+                     move=TERM_SHEET, draft=None)
+    assert _verdict(checked, "fact:1").verdict == C.KEPT, checked.verdicts

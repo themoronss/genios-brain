@@ -21,8 +21,11 @@ ONE PASS, IN ONE ORDER.
       shown, an ask, a calculator, a situation, an older touch — drops on its own line (`quote:<n>`,
       `misquoted`) and reaches no line and no card. A fact the move rests on that cites only mails whose
       words are not shown — or a meeting with none, to report what was said there — needs a quote it
-      cannot have (`unquoted`, M35.C2.L-logic.V1.U16); a claim about the meeting itself stands on its
-      line. Every name it writes is on its lines, by the card
+      cannot have (`unquoted`, M35.C2.L-logic.V1.U16) — and to report what was decided or meant there
+      (U16 fix, G4); a claim about the meeting itself stands on its line. ⛔ THE BOUND, MEASURED: holding every
+      word of such a claim to the meeting's own line would drop all 7 of the golden set's authored decisive
+      facts on a wordless meeting ("on the calendar", "booked", "listed as a past touch") — the verbs are read,
+      not the meaning. Every name it writes is on its lines, by the card
       validator's own rule (`platform/grounding.invention_ok`, else `unsupported`) — as a WHOLE word, or
       as how a domain on them begins ("Larkspur", `larkspurvc.test`; never "Avi" in `altavia`) — its own
       lines being its items, its matched quote and our names; beside them only the file's counterparty, a
@@ -146,12 +149,18 @@ _PRINTED_ID = re.compile(r"\[[^\[\]\s]+\]")
 _THE_FOUNDER = re.compile(r"\bthe founder\b", re.I)
 #: How the dossier prints a meeting — held (`· a meeting ·`) or booked ahead (`a meeting at`).
 _A_MEETING = re.compile(r"(?:· a meeting\b|\ba meeting at\b)")
-#: A claim that reports what was SAID or agreed — a verb of saying, with no negation before it ("nothing on
-#: file says what was agreed" says that nothing was shown, not what was said).
+#: A claim that reports what was SAID, agreed or DECIDED — a verb of saying, deciding or intending, with no
+#: negation before it in its own clause ("nothing on file says what was agreed" says that nothing was shown, not
+#: what was said; "did not hesitate and said" says what was said). ⛔ DECIDING AND INTENDING TOO (M35.C2.L-logic.
+#: V1.U16 fix, the second crosscheck G4): "At the meeting Marco decided to lead the round" and "In the meeting
+#: Marco will lead the round" report what a wordless meeting cannot show, as "Marco said…" does.
 _SAYING = re.compile(r"\b(?:said|says|say|told|tells|asked|asks|agreed|agrees|promised|promises|committed|"
                      r"commits|offered|offers|confirmed|confirms|mentioned|mentions|suggested|suggests|"
                      r"proposed|proposes|replied|replies|explained|explains|stated|states|wrote|writes|"
-                     r"declined|declines|refused|refuses|accepted|accepts)\b", re.I)
+                     r"declined|declines|refused|refuses|accepted|accepts|decided|decides|decide|will|would|"
+                     r"plans|planned|intends|intended|wants|wanted|chose|chooses)\b", re.I)
+#: What ends a negation's reach before a verb: a conjunction or a clause mark between them.
+_CLAUSE = re.compile(r"[,;:—–]|\b(?:and|but|or|so|then|yet|while)\b", re.I)
 _NEGATION = re.compile(r"\b(?:no|not|nothing|never|none|nobody|neither|nor)\b", re.I)
 #: How the dossier prints a card of the file — its headline in quotes, then its state (`dossier._judged_before`);
 #: greedy, so a headline holding quotes of its own is blanked whole (and, at worst, more with it).
@@ -906,9 +915,10 @@ def confirms(words: str | None) -> bool:
 
 
 def _reports_speech(claim: str) -> bool:
-    """Does the claim say what someone SAID — a verb of saying, no negation before it?"""
+    """Does the claim say what someone SAID, agreed or decided — such a verb, and no negation before it IN ITS
+    OWN CLAUSE (`_CLAUSE`: "did not hesitate and said" says what was said)?"""
     found = _SAYING.search(claim)
-    return found is not None and _NEGATION.search(claim[:found.start()]) is None
+    return found is not None and _NEGATION.search(_CLAUSE.split(claim[:found.start()])[-1]) is None
 
 
 def _unshown(run: "_Run", fact) -> str | None:
