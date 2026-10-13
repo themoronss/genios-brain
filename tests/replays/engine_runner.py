@@ -604,9 +604,10 @@ _VERSIONS = (
 
 
 def _said(words: Any) -> str:
-    """One version's words as the founder read them: headline, situation, the move, the draft."""
+    """One version's words as the founder read them: headline, situation, the draft. Not the move whole — no card
+    shows it yet (STEP-14 M43 puts it under *recommended*, and then it is read here)."""
     words = words if isinstance(words, dict) else {}
-    return "\n".join(str(words[k]) for k in ("headline", "situation", "move", "draft") if words.get(k))
+    return "\n".join(str(words[k]) for k in ("headline", "situation", "draft") if words.get(k))
 
 
 def _cards(engine: Any, org: str, open_after: list[set[str]],

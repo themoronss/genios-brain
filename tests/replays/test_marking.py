@@ -302,3 +302,16 @@ def test_a_witness_at_the_card_stage_is_any_card_the_engine_wrote():
     hidden = _card("c1", "Lotus Ventures: nothing to do", shown=())
     assert judge(case, _run(cards=[hidden])).verdict == PASS
     assert judge(case, _run(cards=[])).verdict == NOT_EXERCISED
+
+
+
+def test_a_living_card_is_about_every_version_the_app_showed():
+    """F24: one file's card was about the unit economics sheet, then about the review deck — a card about each."""
+    raw = copy.deepcopy(BASE)
+    raw["expected"] = {"cards": [{"about": ["unit economics"], "min": 1, "max": 1},
+                                 {"about": ["review deck"], "min": 1, "max": 1, "mentions": ["Phase-1"]}]}
+    case = fc.parse_case(raw, source="t.json")
+    living = _card("c1", "Upload the Phase-1 review deck", versions=(
+        "Finish the unit economics sheet", "Upload the Phase-1 review deck"))
+    assert judge(case, _run(cards=[living])).verdict == PASS
+    assert judge(case, _run(cards=[_card("c1", "Upload the Phase-1 review deck")])).verdict == FAIL

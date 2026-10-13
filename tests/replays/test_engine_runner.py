@@ -477,7 +477,8 @@ def test_the_card_reader_says_when_the_app_showed_it_and_every_versions_words(pg
     at = datetime(2026, 9, 18, 12, tzinfo=timezone.utc)
     v1 = {"headline": "Reply to Kavya", "situation": "Kavya asked for the deck", "move": None, "draft": None,
           "lane": "decision", "mode": "act", "ask": None, "recipient": None, "by_when": None}
-    v2 = {**v1, "headline": "Send Kavya the deck by Friday", "by_when": "2026-09-19"}
+    v2 = {**v1, "headline": "Send Kavya the deck by Friday", "by_when": "2026-09-19",
+          "move": "Send Kavya the deck by Friday and tell Ritika"}       # no card shows the move whole yet
     with pg_store.engine.begin() as c:
         c.execute(text("insert into orgs (id, name) values (:o, 'versions') on conflict do nothing"), {"o": org})
         c.execute(text("delete from card_events where org_id = :o"), {"o": org})

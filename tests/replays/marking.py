@@ -19,8 +19,9 @@ Four verdicts:
 
 ⛔ WHAT YOU SEE (STEP-14, `yc2_w27_s14` M42.C4.L-logic.V2.U03, s14-D4, s14-F2, s14-F14). A must-detect case counts a
 card only once the APP showed it — the queue at a sweep's instant (`CardView.app_sweeps`, read by the runner): 6 of
-the 21 passes were cards that sat in `cards` and reached no surface the founder opens. Its `mentions` are read on
-the card's final words. Forbidden names and phrases, `forbidden:us` and a must-abstain case read EVERY card, shown
+the 21 passes were cards that sat in `cards` and reached no surface the founder opens. What a shown card is ABOUT is
+read on every version it showed (a living card that was about the unit economics sheet and then about the review
+deck was a card about each — F24); its `mentions` on its final words. Forbidden names and phrases, `forbidden:us` and a must-abstain case read EVERY card, shown
 or not, and every version's words (`CardView.versions`) — a word a card once showed was shown. A case reports the
 cards about its subject the app never showed (`unshown`), beside the verdict and deciding nothing.
 """
@@ -142,7 +143,7 @@ def _unshown(case: FounderCase, run: CaseRun) -> list[str]:
 def _card_check(index: int, exp: CardExpectation, run: CaseRun, kind: str = "must_detect") -> Check:
     name = f"cards[{index}]"
     # STEP-14 (s14-D4): a must-detect card counts once the app showed it; silence is judged over every card.
-    matched = (cards_about(run, exp.about, shown=True) if kind == "must_detect"
+    matched = (cards_about(run, exp.about, shown=True, ever=True) if kind == "must_detect"
                else cards_about(run, exp.about, ever=True))
     n = len(matched)
     subject = "/".join(exp.about)
