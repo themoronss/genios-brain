@@ -7828,7 +7828,11 @@ yc2_w27_s13:
                         domain keeps that domain's label. So `verify`'s own `matches` (verify unedited) catches
                         "Send Pankaj the short deck to forward to Marco", to "Pankaj Mehta", as the connector:
                         the draft never goes to whoever made the introduction. The graph's node name is not
-                        read (the name the connector's mail signs is the one the graph took it from).
+                        read (the name the connector's mail signs is the one the graph took it from). Amended 13
+                        Oct (fix, the STEP-13 second crosscheck G1): named as the person only, the firm case
+                        regressed — `to='Saka'` (pankaj@saka.vc) was `recipient_is_connector` at be27 and then
+                        shown. `verify.the_connector` matches the person OR the firm (their host's first label,
+                        never a public mail host's), in both connector checks and in whom a headline names first.
                       artifact: "genios_engine/reason/expert/dossier.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_connector_is_named_as_the_person.py tests/reason/expert/test_the_dossier_lines.py tests/reason/expert/test_verify_people.py"
                       depends_on: [M35.C2.L-logic.V0.U01, M35.C2.L-logic.V1.U02]

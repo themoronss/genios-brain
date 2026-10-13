@@ -99,7 +99,7 @@ from genios_engine.contracts.expert_review import (
 from genios_engine.platform.grounding import corpus_of, digit_runs, fold, haystack, invention_ok, proper_nouns
 from genios_engine.platform.self_identity import names_us, speaks_of_us, to_you
 from genios_engine.reason.expert.decide import is_event
-from genios_engine.reason.expert.dossier import DossierLine, FilePeople, Person, lines_by_id
+from genios_engine.reason.expert.dossier import DossierLine, FilePeople, Person, label_of, lines_by_id
 
 #: What `validate` still refuses whole — the review's STRUCTURE, never its grounding.
 STRUCTURAL: frozenset[str] = frozenset({NO_NEXT_MOVE, UNGROUNDED_MOVE, UNKNOWN_STAGE})
@@ -610,6 +610,20 @@ def matches(to: str | None, person: Person | None) -> bool:
     return all(w in said for w in name) or (len(said) == 1 and said[0] == name[0])
 
 
+def the_connector(to: str | None, people: FilePeople) -> bool:
+    """Does `to` name the connector that introduced the file's counterparty — as the PERSON (`matches`:
+    "Pankaj Mehta", "Pankaj", pankaj@saka.vc) or by their FIRM: the first label of their address's host, never a
+    public mail host's (`dossier.label_of`: "Saka" for pankaj@saka.vc) — M35.C2.L-logic.V0.U13 (fix), second
+    crosscheck G1. Named as the person only, `to='Saka'` went out to the very firm that made the introduction."""
+    connector = people.connector
+    if connector is None or not to:
+        return False
+    if matches(to, connector):
+        return True
+    firm = label_of(connector.key)
+    return bool(firm) and firm in re.findall(r"[a-z0-9]+", str(to).casefold())
+
+
 def _invented(text: str, corpus: str, people: FilePeople) -> str | None:
     """The first NAME `text` writes that `corpus` and our own names do not hold — the card validator's own
     rule (`platform/grounding.invention_ok`), its numbers left to `figures_in` — or None. Each name as a
@@ -689,8 +703,12 @@ def _target(text: str | None, people: FilePeople) -> str | None:
             ours.append((m.start(), m.group(0)))
     for m in _AN_ADDRESS.finditer(text):
         (ours if people.us.is_us(m.group(0)) else theirs).append((m.start(), m.group(0)))
+    firm = label_of(people.connector.key) if people.connector is not None else None
     for person in (people.connector, *people.people):
-        for word in (_name_of(person)[:1] if person is not None else ()):
+        words = _name_of(person)[:1] if person is not None else []
+        if person is not None and person is people.connector and firm and firm not in words:
+            words = [*words, firm]                    # the connector's firm names it too (G1)
+        for word in words:
             for m in re.finditer(rf"(?<!\w){re.escape(word)}(?!\w)", text, re.I):
                 if m.group(0)[0].isupper():
                     theirs.append((m.start(), m.group(0)))
@@ -1069,14 +1087,13 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
             run.say("to", C.DROPPED, C.RECIPIENT_IS_US, to)
             held = C.HELD_BECAUSE[C.RECIPIENT_IS_US]
             question = f"Whom should {_quoted(headline)} go to? It is addressed to you."
-        elif target and people.connector is not None and matches(target, people.connector) \
-                and not matches(target, people.counterparty):
+        elif target and the_connector(target, people) and not matches(target, people.counterparty):
             to = target
             run.say("to", C.DROPPED, C.RECIPIENT_IS_CONNECTOR, to)
             other, _ = run.stands(review.alternative, move_corpus, figures=move_figures) \
                 if review.alternative else (None, "")
             them = people.counterparty.name or people.counterparty.key
-            if other is not None and not matches(other, people.connector):
+            if other is not None and not the_connector(other, people):
                 run.verdicts = [v for v in run.verdicts if v.line != "move" or v.verdict == C.NOTED]
                 run.say("move", C.CORRECTED, C.BY_ALTERNATIVE, f"{said} -> {other}")
                 headline, to = other, them
@@ -1203,7 +1220,7 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         because=held if fate in (C.HELD, C.SUPPRESSED) else None)
 
 
-__all__ = ["ANSWER_PREFIX", "CURRENCIES", "confirms", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
+__all__ = ["ANSWER_PREFIX", "CURRENCIES", "confirms", "the_connector", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
            "Correction", "RESTATES_WORDS", "Stray", "UNITS", "about_us", "answered_by", "check_review",
            "correction_of",
            "figures_in", "matches", "unheld",
