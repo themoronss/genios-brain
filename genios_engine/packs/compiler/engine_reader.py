@@ -45,7 +45,10 @@ from datetime import datetime
 from types import MappingProxyType
 from typing import Any
 
+from sqlalchemy import text
+
 from genios_engine.contracts import engine_read as E
+from genios_engine.contracts.domain_expertise import BrainKind
 from genios_engine.platform.canonical import semantic_hash
 
 from .authoring import ExpertBrainCatalog
@@ -53,6 +56,7 @@ from .capability_resolver import (DOMAIN_ALIASES, UNCLASSIFIED_DOMAINS, _admissi
                                   artifact_admission_reason, situation_admission_reason)
 from .context_adapter import ContextAdapter, PredicateState
 from .playbook_reader import KIND_CAPABILITY, _shipped_catalog, _steps, _text
+from .runtime_brains import _entry_from_l6_row, _entry_from_lease_row
 
 #: The most lines a family shows for one file; the rest are counted in `EngineRead.cut`.
 LIMITS: Mapping[str, int] = MappingProxyType({
@@ -66,6 +70,12 @@ ROUTE_NONE = "none"
 NO_ANCHOR = "the anchor's facts were not read"
 
 _FRAME_KEYS = ("mental_models", "decision_frameworks")
+
+#: Which `EngineRead` family a published brain kind becomes (`contracts.engine_read.FAMILIES`).
+_BRAIN_FAMILY: Mapping[BrainKind, str] = MappingProxyType({
+    BrainKind.ORGANIZATION: E.ORGANIZATION, BrainKind.BEHAVIOR: E.BEHAVIOUR,
+    BrainKind.ADAPTIVE: E.ADAPTIVE})
+
 
 
 @dataclass(frozen=True, slots=True)
@@ -349,5 +359,69 @@ def route_key(situations: Sequence[FileSituation], *, kind: str | None, activate
     return "route-" + semantic_hash(sorted(reached.items()))[:12]
 
 
+def _learned_words(entry) -> str:
+    """The producer's own sentence (`statement`, or Behaviour's `pattern_statement`), its
+    confidence and since when it has stood. Never the module's own words about the entry — a
+    learned line is the company's own history, not a reading of it."""
+    statement = _text(entry.value.get("statement")) or _text(entry.value.get("pattern_statement"))
+    words = statement or entry.subject_key
+    pct = entry.confidence_bp / 100
+    tail = f"confidence {pct:g}%, since {entry.effective_at.date().isoformat()}"
+    return f"{words} — {tail}"
+
+
+def learned_for(connection, *, org_id: str, tokens: Iterable[str],
+                eval_time: datetime | None = None, limits: Mapping[str, int] | None = None) -> E.EngineRead:
+    """What the tenant's Organization, Behaviour and Adaptive brains hold for a file — see the
+    module docstring's family table (`org:`, `pat:`, `pref:`) and STEP-13b §8.4 item 1.
+
+    `tokens` are the file's own address tokens (`contracts/brain_address`) — the vocabulary a
+    published entry's `value.address.tokens` speaks, not a `BusinessSituationObject`'s: a file is
+    not a compiled situation and has none to build one from. An Organization rule is tenant-wide
+    and is read whatever tokens are given (`06` D3: an approved policy binds everywhere); a
+    Behaviour pattern or an Adaptive entry binds only where a token matches its address, or, for a
+    row published before an address existed, its raw `subject` (the same legacy fallback
+    `PostgresRuntimeBrains.snapshot` keeps, for the same reason).
+
+    `eval_time` gates the Adaptive LEASE store (`temporary_memories`) alone, pinned to the
+    caller's own frozen clock, never `now()`: with none given, no lease is read at all, exactly as
+    `PostgresRuntimeBrains` already refuses to invent one rather than fall back to the wall clock.
+
+    Read, never gated (`06` D3, D-s13b-6): every line is `reviewed=True` — the company's own
+    history is not a corpus draft awaiting one — though `EngineLine.label` carries the
+    `NOT_REVIEWED` word to no family but `AUTHORED`, so this changes nothing a reader sees. Issues
+    no insert, update or delete (`tests/packs/test_the_engine_reader_writes_nothing.py`).
+    """
+    out = _Lines(limits or {})
+    token_list = sorted({str(t) for t in tokens})
+    rows = connection.execute(text(
+        "select org_id, brain, subject, version, value, learning_id, created_at, visibility "
+        "from learned_brain_entries "
+        "where org_id=:o and active and brain in ('organization','behavior','adaptive') "
+        "and (brain='organization' or subject=any(cast(:tokens as text[])) "
+        "or jsonb_exists_any(coalesce(value->'address'->'tokens', '[]'::jsonb), cast(:tokens as text[]))) "
+        "order by brain, subject, version"),
+        {"o": org_id, "tokens": token_list}).mappings().all()
+    for row in rows:
+        entry = _entry_from_l6_row(row)
+        family = _BRAIN_FAMILY[entry.brain]
+        out.add(family, f"{E.PREFIX[family]}{entry.entry_id}", _learned_words(entry),
+                source=entry.entry_id, version=str(entry.version), reviewed=True)
+    if eval_time is not None and token_list:
+        lease_rows = connection.execute(text(
+            "select memory_id, subject, value, learning_id, created_at, visibility, expires_at "
+            "from temporary_memories "
+            "where org_id=:o and active and expires_at > :at "
+            "and (subject=any(cast(:tokens as text[])) "
+            "or jsonb_exists_any(coalesce(value->'address'->'tokens', '[]'::jsonb), cast(:tokens as text[])))"
+            "order by subject, memory_id"),
+            {"o": org_id, "tokens": token_list, "at": eval_time}).mappings().all()
+        for row in lease_rows:
+            entry = _entry_from_lease_row(row, org_id=org_id)
+            out.add(E.ADAPTIVE, f"{E.PREFIX[E.ADAPTIVE]}{entry.entry_id}", _learned_words(entry),
+                    source=entry.entry_id, version=str(entry.version), reviewed=True)
+    return E.EngineRead(lines=out.lines(), cut=out.cut)
+
+
 __all__ = ["Anchor", "FileEngine", "FileSituation", "LIMITS", "LINE_CHARS", "NO_ANCHOR", "ROUTE_NONE",
-           "engine_for", "route_key"]
+           "engine_for", "learned_for", "route_key"]

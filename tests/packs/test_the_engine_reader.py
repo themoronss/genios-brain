@@ -388,8 +388,17 @@ def test_a_sales_opportunity_on_a_founder_s_tenant_is_named_switched_off():
 
 
 def test_the_reader_is_pure():
-    """No database, no clock, no model: `engine_for` is a function of its inputs and the catalog."""
+    """No database, no clock, no model: `engine_for` is a function of its inputs and the catalog.
+
+    Excludes `learned_for` and its `_learned_words` helper by name — M37.C2.L-data.V2.U02's one
+    deliberate DB read, added to this same module afterwards. Its OWN purity claim is narrower
+    ("issues no insert, update or delete") and held separately by
+    `tests/packs/test_the_engine_reader_writes_nothing.py`; this test still holds every other
+    function in the file, including any added later, to reading nothing at all.
+    """
     tree = ast.parse(Path(R.__file__).read_text())
+    excluded = {node for top in ast.walk(tree) if isinstance(top, ast.FunctionDef)
+               and top.name in {"learned_for", "_learned_words"} for node in ast.walk(top)}
     calls = {node.func.attr for node in ast.walk(tree)
-             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)}
+             if node not in excluded and isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)}
     assert not calls & {"now", "utcnow", "today", "execute", "messages", "create"}, calls
