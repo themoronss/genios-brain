@@ -199,7 +199,9 @@ def situations(conn, ctx: TeamContext) -> list[Situation]:
             evidence=(
                 {"kind": "milestone", "milestone_id": m.milestone_id, "title": m.title,
                  "due": m.due.isoformat()},
-                {"kind": "readiness", "done": c["done"], "pending": c["pending"],
+                # STEP-14: the away count the headline says, as done and pending are (the card contract
+                # holds a card's numbers to its evidence).
+                {"kind": "readiness", "done": c["done"], "pending": c["pending"], "away": c["away"],
                  "tasks": c["tasks"]},
                 *(window_evidence(p, w) for p, w in c["away_windows"])),
             digest=digest(m.milestone_id, m.title, m.due, c["done"], c["pending"],

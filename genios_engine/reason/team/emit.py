@@ -110,13 +110,15 @@ def _money_in(evidence) -> bool:
     return any(f'"{k}' in flat for k in _MONEY_KEYS) or any(s in flat for s in ("₹", "$", "€", "£"))
 
 
-def refusals(*, headline: str, body: str | None, evidence) -> tuple:
-    """What `contracts/card_contract` refuses in a situation's card and moment, against its own evidence."""
+def refusals(*, headline: str, body: str | None, evidence, corpus: Iterable[str] = ()) -> tuple:
+    """What `contracts/card_contract` refuses in a situation's card and moment, against its own evidence and what its
+    writer composed its words from (`corpus`: the facts' values and the counts code computed — never the words)."""
     texts = [_CLIPPED.sub("", t) for t in (headline, body or "") if t]
     card = card_contract.CardText(headline=texts[0] if texts else "", situation=texts[-1] if texts else "",
                                   draft=None)
-    return card_contract.check(card, us=SelfIdentity(), corpus=[json.dumps(evidence, default=str,
-                                                                           ensure_ascii=False)],
+    return card_contract.check(card, us=SelfIdentity(),
+                               corpus=[json.dumps(evidence, default=str, ensure_ascii=False),
+                                       *(str(c) for c in corpus or () if c is not None)],
                                money_evidence=_money_in(evidence))
 
 
@@ -136,10 +138,11 @@ def emit_situation(engine, card_store, org_id: str, *, kind: str, key: str, seat
                    subject_node_ids, headline: str, body: str | None, actions, evidence,
                    priority: str = "high", ttl_seconds: int, digest: str,
                    capability_id: str | None = None, now: datetime | None = None,
-                   expires_at: datetime | None = None, counts: dict | None = None) -> tuple[str, str] | None:
+                   expires_at: datetime | None = None, counts: dict | None = None,
+                   corpus: Iterable[str] = ()) -> tuple[str, str] | None:
     """See the module docstring. `capability_id`, `now` and `expires_at` are optional extensions
     (defaults: `<kind>.situation`, the wall clock, now + 7 d for the card); `counts` gathers what the
-    card contract refused."""
+    card contract refused; `corpus` is what the words were composed from beyond the evidence (`refusals`)."""
     if kind not in KINDS:
         raise ValueError(f"kind must be one of {KINDS}")
     if priority not in PRIORITIES:
@@ -150,7 +153,7 @@ def emit_situation(engine, card_store, org_id: str, *, kind: str, key: str, seat
     capability = capability_id or f"{kind}.situation"
     subjects = sorted({str(s) for s in (subject_node_ids or ()) if s})
     evidence = [dict(e) for e in (evidence or ()) if isinstance(e, dict)][:20]
-    refused = refusals(headline=headline, body=body, evidence=evidence)
+    refused = refusals(headline=headline, body=body, evidence=evidence, corpus=corpus)
     if refused:
         for r in refused:
             if counts is not None:
