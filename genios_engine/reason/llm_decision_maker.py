@@ -140,18 +140,23 @@ _clients: dict[tuple[str, str], Any] = {}
 #: for exactly that reason. `context/llm/client.py` now owns the set and omits the field; this
 #: module reads it so the two cannot drift apart again.
 from genios_engine.context.llm.client import NO_SAMPLING_PREFIXES as _NO_SAMPLING_PREFIXES
+from genios_engine.context.llm.client import THINKING_OFF
+from genios_engine.context.llm.client import request_controls
 
 
 def request_kwargs(model: str) -> dict[str, Any]:
     """The model-specific part of one decision request.
 
     Newer models: no sampling parameters, and thinking OFF — the answer is a small JSON object
-    and thinking tokens would be billed without being read (Fable cannot disable it, so it is
-    left to its default there). Haiku-class: `temperature=0`, as every other engine call.
+    and thinking tokens would be billed without being read. Haiku-class: `temperature=0`, as every
+    other engine call.
+
+    ⛔ ONE TABLE (`yc2_w27_s18` M50.C1.L-logic.V1.U10, s5t-F8). This used a bare prefix match, so
+    `claude-opus-5-5` — which cannot turn thinking off — was sent Opus 5's `disabled`: a 400, and every
+    decision would DEFER. It reads `context/llm/client.THINKING_FAMILIES` now, matched longest id
+    first: Opus 5.5 and Fable are asked at the lowest effort instead.
     """
-    if str(model).startswith(_NO_SAMPLING_PREFIXES):
-        return {} if str(model).startswith("claude-fable") else {"thinking": {"type": "disabled"}}
-    return {"temperature": 0}
+    return request_controls(str(model), thinking=THINKING_OFF, temperature=0)
 
 
 class DecisionClient:
