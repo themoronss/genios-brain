@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_123, (
+    assert r["statements"] == 3_125, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -506,6 +506,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ Both commits left this pin red: neither ran tests/platform before it was committed.
     # ⛔ MERGED 13 Oct: STEP-13's 3,106 → 3,108 above, on top of the integration's 3,121, re-measured on
     # the merge: 3,123 (`table_coverage.resolution()`), the same two SELECTs.
+    # ⛔ MOVED 3,123 → 3,125 by yc2_w27_s13b/M37.C2.L-data.V0.U04 (what the company says of itself,
+    # `06` D63): `context/company_record` — the tenant's own kept mail, read once a sweep (`_OURS`), and
+    # the company's name (`_COMPANY`). Two SELECTs, each a literal at its own `text()`; both plan.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

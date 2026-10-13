@@ -114,6 +114,10 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "⛔ RETIRED WITH R-6, 2026-10-11 (`06` D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02). Its one caller was the sweep's R-6 consult, which wrote a `situation_interpretations` row per compiled situation per pass ahead of the change gate (`03` F141) — an empty proposal on every tenant, because R-6's feature was off everywhere. The sweep no longer consults R-6; the table and its rows stay, for history and for `/reset`",
         "MOVES WHEN the module is deleted with R-6's own tests in a clean-up — ⛔ never by re-wiring it: the expert pass (STEP-12) reviews the file instead"),
 
+    "company_record.read_company_record": (
+        "*'The record, read once for a sweep'* — what the company says of itself in its own kept mail, across every file (`06` D63, D-s13b-7). Built ahead of its reader on purpose (`yc2_w27_s13b` M37.C2.L-data.V0.U04, a new file): the dossier that reads it is shared with two other steps and waits for them (D-s13b-11), so for now F52's Ridgeline file still cannot see the founder's own 12 Sep \"we crossed 12 paying customers\"",
+        "MOVES WHEN `reason/expert/dossier.read_parts` reads it once a sweep and prints its lines as `self:<event>` (`yc2_w27_s13b` M37.C2.L-integration.V3.U05, M37.C3.L-interface.V6.U03) — after the card's and the corrections' dossier units merge"),
+
     "projections.node_projections": (
         "*'Every lens one entity appears in.'* One test caller. The multi-lens view of a node, and every live reader asks for one lens at a time",
         "MOVES WHEN a surface shows one entity across lenses — an entity page is the obvious caller and does not exist"),
