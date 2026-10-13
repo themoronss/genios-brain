@@ -8342,6 +8342,22 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_question_says_truly_why.py tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_a_question_card.py tests/replays/test_every_claim_is_checked.py"
                       depends_on: [M36.C2.L-integration.V2.U03, M36.C2.L-interface.V3.U05, M36.C2.L-data.V2.U12]
+                    - id: M36.C2.L-logic.V2.U19
+                      what: >
+                        A question to you never names you, held or find-out (added 13 Oct by the STEP-13 second
+                        crosscheck, F3): `names_us` is a SUBJECT matcher — a one-word company name must be the
+                        whole subject, a first name claims nothing — so "…whether GeniOS is incubated…" and
+                        golden F54's "…whether Arjun went to the event…" were asked, and a held question skipped
+                        the filter. `platform/self_identity.speaks_of_us` reads PROSE: the company's name
+                        whole-word at any length, written as a name; a first or a full name (a title, an article
+                        aside); our addresses and domains. A question that names us is asked in the second person
+                        (`to_you`: "whether you went…", "your deck", "Do you want…"; an address of ours "you")
+                        where it can be — else passed over (find-out) or our closed question (held) — your own
+                        quoted words left as you wrote them; each hit noted `speaks_of_you` on the `question`
+                        line, and every card text's own note reads prose too.
+                      artifact: "genios_engine/platform/self_identity.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_question_never_names_you.py tests/reason/expert/test_a_held_file_asks.py tests/reason/expert/test_verify_recipient.py tests/reason/expert/test_verify_people.py"
+                      depends_on: [M36.C2.L-logic.V2.U10]
             - layer: interface
               levels:
                 - level: 2

@@ -23,6 +23,7 @@ import re
 
 from sqlalchemy import text
 
+from genios_engine.contracts import claim_check
 from genios_engine.platform import card_lifecycle
 
 QUESTION_RULE = "founder_question"
@@ -61,8 +62,8 @@ WHY_TO_THE_CONNECTOR = "its next step goes to whoever introduced them"
 WHY_CONFIRM = "its next step rests only on what you told us, so we confirm it with you first"
 WHYS: tuple[str, ...] = (WHY_FIND_OUT, WHY_NOT_CONFIRMED, WHY_SAYS_MORE, WHY_ADDRESSED_TO_YOU,
                          WHY_TO_THE_CONNECTOR, WHY_CONFIRM)
-#: What a file asks when nothing checked can be asked — ours, closed.
-NOTHING_TO_ASK = "Can you tell us where this file stands?"
+#: What a file asks when nothing checked can be asked — ours, closed (`contracts/claim_check`, one place).
+NOTHING_TO_ASK = claim_check.NOTHING_TO_ASK
 #: An unknown written as an indirect question ("Whether the examiner has raised a query.") reads as one.
 _INDIRECT = re.compile(r"^(?:whether|if|what|which|who|whom|whose|when|where|why|how)\b", re.I)
 _FACT_LINE = re.compile(r"^fact:(\d+)$")
@@ -100,10 +101,13 @@ def _as_question(text: str) -> str | None:
     return None
 
 
-def _find_out_question(review, checked, ours=None) -> str:
+def _find_out_question(review, checked, ours=None, you=None) -> str:
     """A find-out file's question: its first unknown, or its checked move (see above) — never one that names us
-    (`ours`, the sweep's `platform/self_identity.names_us` over the tenant's names: STEP-04's rule — we are
-    never a card's party; the golden lane, 12 Oct, F22 and F52), else the closed question."""
+    (`ours`, the sweep's `platform/self_identity.speaks_of_us` over the tenant's names: STEP-04's rule — we are
+    never a card's party; the golden lane, 12 Oct, F22 and F52). ⛔ A QUESTION TO YOU NEVER NAMES YOU
+    (M36.C2.L-logic.V2.U19, second crosscheck F3): one that does is asked in the second person (`you`,
+    `platform/self_identity.to_you`: "whether Arjun went" → "whether you went"), else passed over; else the
+    closed question."""
     corpus = _checked_corpus(review, checked) if checked is not None else ""
     first = " ".join(review.unknowns[0].question.split()) if review.unknowns else ""
     asked = _as_question(first)
@@ -117,6 +121,9 @@ def _find_out_question(review, checked, ours=None) -> str:
     for candidate in candidates:
         if ours is None or not ours(candidate):
             return candidate
+        said = you(candidate) if you is not None else None
+        if said and not ours(said):
+            return said
     return NOTHING_TO_ASK
 
 
@@ -143,25 +150,28 @@ def _why_held(review, checked) -> str:
 
 
 def _names_us_for(conn, org_id: str):
-    """Whether a text names one of us — the tenant's identity and names, as `reason/expert/sweep` reads them for
-    its own "ours" rule (`03` F158)."""
-    from genios_engine.platform.self_identity import identity_for, names_us
+    """Whether a text names one of us — and the same text said to you — over the tenant's identity and names, as
+    `reason/expert/sweep` reads them (`03` F158): ⛔ as PROSE (`platform/self_identity.speaks_of_us`,
+    M36.C2.L-logic.V2.U19 — the company's name at any length, a first or full name, our domains), never as a
+    subject (`names_us`, where "GeniOS" alone and "Rohit" claim nothing)."""
+    from genios_engine.platform.self_identity import identity_for, speaks_of_us, to_you
 
     us = identity_for(conn, org_id)
     org = conn.execute(text("select name, company, first_name, last_name from orgs where id = :o"),
                        {"o": org_id}).first()
     names = tuple(n for n in ((org.company, org.name, " ".join(p for p in (org.first_name, org.last_name) if p))
                               if org is not None else ()) if n)
-    return lambda words: names_us(words, us, names=names)
+    return (lambda words: speaks_of_us(words, us, names=names)), (lambda words: to_you(words, us, names=names))
 
 
-def question_words(review, *, ours=None) -> tuple[str, str]:
-    """What the file asks, and why — in checked words (see above): a held file the check's own question,
-    a find-out file a real question to you that names none of us (`ours`); why, one of `WHYS`."""
+def question_words(review, *, ours=None, you=None) -> tuple[str, str]:
+    """What the file asks, and why — in checked words (see above): a held file the check's own question (which
+    names none of us: `reason/expert/verify`), a find-out file a real question to you that names none of us
+    (`ours`; said to you, `you`, where it can be); why, one of `WHYS`."""
     checked = review.checked
     if checked is not None and checked.fate == "held" and checked.question:
         return " ".join(checked.question.split()), _why_held(review.review, checked)
-    return _find_out_question(review.review, checked, ours), WHY_FIND_OUT
+    return _find_out_question(review.review, checked, ours, you), WHY_FIND_OUT
 
 
 def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundle: dict, pack: dict,
@@ -174,7 +184,8 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
 
     run, output = bundle.get("run") or {}, bundle.get("output") or {}
     with store.engine.begin() as conn:
-        question, why = question_words(review, ours=_names_us_for(conn, org_id))
+        ours, you = _names_us_for(conn, org_id)
+        question, why = question_words(review, ours=ours, you=you)
         before = questions.open_question(conn, org_id, file_id)
         asked = questions.ask(conn, org_id=org_id, file_id=file_id, fingerprint=review.fingerprint,
                               run_id=run.get("run_id"), question=question, why=why, at=eval_time)

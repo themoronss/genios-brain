@@ -92,11 +92,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from genios_engine.contracts import claim_check as C
+from genios_engine.contracts.claim_check import NOTHING_TO_ASK
 from genios_engine.contracts.expert_review import (
     ASK_PREFIX, MOVING, NO_NEXT_MOVE, NUMBER_PATTERN, UNGROUNDED_MOVE, UNKNOWN_STAGE, ExpertReview, fact_ref,
     number_tokens)
 from genios_engine.platform.grounding import corpus_of, digit_runs, fold, haystack, invention_ok, proper_nouns
-from genios_engine.platform.self_identity import names_us
+from genios_engine.platform.self_identity import names_us, speaks_of_us, to_you
 from genios_engine.reason.expert.decide import is_event
 from genios_engine.reason.expert.dossier import DossierLine, FilePeople, Person, lines_by_id
 
@@ -164,6 +165,21 @@ ANSWER_PREFIX = "answer:"
 _YES = re.compile(r"^\W*(?:yes|yeah|yep|yup|sure|ok|okay|correct|right|confirmed|agreed|absolutely|definitely|"
                   r"exactly|go ahead|please do|do it)\b", re.I)
 _BUT = re.compile(r"\bbut\b", re.I)
+#: Your own words as a question quotes them ("You said: “…”", "You answered: “…”") — yours to say, never us
+#: naming you.
+_YOUR_QUOTED = re.compile(r"\bYou (?:said|answered): “[^”]*”")
+
+
+def _to_you_beside_yours(question: str, people: FilePeople) -> str | None:
+    """A held question said to you — every name of ours outside your own quoted words as "you"
+    (`platform/self_identity.to_you`), your words left as you wrote them — or None (M36.C2.L-logic.V2.U19)."""
+    kept: list[str] = []
+
+    def hide(m: re.Match[str]) -> str:
+        kept.append(m.group(0))
+        return f"\x00{len(kept) - 1}\x00"
+    said = to_you(_YOUR_QUOTED.sub(hide, question), people.us, people.our_names)
+    return None if said is None else re.sub(r"\x00(\d+)\x00", lambda m: kept[int(m.group(1))], said)
 
 
 # ── words ─────────────────────────────────────────────────────────────────────────────────────────
@@ -654,12 +670,6 @@ def _person(person: Person) -> str:
     return " ".join([person.name or "", person.key or ""])
 
 
-def _first_names(people: FilePeople) -> list[str]:
-    """Our names' first words — the founder's first name among them (crosscheck X35: a card that says
-    "Arjun" speaks of you, as one that says "the founder" does)."""
-    return [n.split()[0] for n in people.our_names if len(n.split()) >= 2]
-
-
 #: An address, as a text writes one.
 _AN_ADDRESS = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 
@@ -847,12 +857,13 @@ class _Run:
         else:
             self.say(line, C.KEPT)
         if speaks:
+            # ⛔ PROSE, NOT A SUBJECT (M36.C2.L-logic.V2.U19, second crosscheck F3): a card text names us by the
+            # company's name at any length, a first or full name, an address or domain of ours
+            # (`platform/self_identity.speaks_of_us`) — "the founder" as before.
             found = _THE_FOUNDER.search(text)
-            first = next((f for f in _first_names(self.people)
-                          if re.search(rf"(?<!\w){re.escape(f)}(?!\w)", text)), None)
-            us = names_us(text, self.people.us, self.people.our_names)
-            if found or us or first:
-                self.say(line, C.NOTED, C.SPEAKS_OF_YOU, found.group(0) if found else "us" if us else first)
+            us = speaks_of_us(text, self.people.us, self.people.our_names)
+            if found or us:
+                self.say(line, C.NOTED, C.SPEAKS_OF_YOU, found.group(0) if found else us)
         return checked
 
 
@@ -1164,6 +1175,19 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
             fate = C.HELD
         elif review.mode == "find_out":
             question = headline
+    # A QUESTION TO YOU NEVER NAMES YOU (M36.C2.L-logic.V2.U19, second crosscheck F3): a held question that names
+    # us — outside your own quoted words — is noted and asked as our closed question; a find-out file's
+    # candidates (its first unknown, its move) are noted here, and asked in the second person, or passed over,
+    # where it asks (`reason/expert/asks`).
+    if question and (fate == C.HELD) and (hit := speaks_of_us(_YOUR_QUOTED.sub(" ", question), people.us,
+                                                               people.our_names)):
+        run.say("question", C.NOTED, C.SPEAKS_OF_YOU, hit)
+        question = _to_you_beside_yours(question, people) or NOTHING_TO_ASK
+    elif review.mode == "find_out" and fate == C.SHOWN:
+        asked = [review.unknowns[0].question] if review.unknowns else []
+        if (hit := next((h for t in (*asked, question) if t
+                         and (h := speaks_of_us(t, people.us, people.our_names))), None)):
+            run.say("question", C.NOTED, C.SPEAKS_OF_YOU, hit)
     shown = fate == C.SHOWN
     grounds = [review.facts[n - 1] for n in sorted(rested & standing)]
     words = C.CardWords(do_nothing=do_nothing, kind=kind,

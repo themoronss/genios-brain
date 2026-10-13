@@ -83,7 +83,10 @@ FATES: tuple[str, ...] = (SHOWN, HELD, SUPPRESSED, REFUSED)
 #: (`rests_on`: a ref that names no fact of the review drops there, M35.C1.L-contract.V0.U04).
 LINE_KINDS: tuple[str, ...] = ("fact", "inference", "pattern", "quote")
 CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", "answers", "kind", "prose",
-                               "rests_on", "do_nothing")
+                               "rests_on", "do_nothing", "question")
+#: What a file asks when nothing checked can be asked — ours, closed (`reason/expert/asks`, and a held question
+#: that would name you, M36.C2.L-logic.V2.U19).
+NOTHING_TO_ASK = "Can you tell us where this file stands?"
 
 #: Why a move is HELD, as the founder reads it on the question card — closed, one phrase per cause
 #: (M35.C3.L-integration.V2.U05, crosscheck X10): the check's own detail ("misquoted: <the model's
