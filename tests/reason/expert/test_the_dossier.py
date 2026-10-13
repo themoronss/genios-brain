@@ -516,11 +516,10 @@ def test_a_files_card_is_printed_with_its_versions():
     """The expert still sees the advice it gave before — one card, each version under it, what changed and when."""
     parts = dataclasses.replace(_parts(), judgments=_versioned_judgments())
     judged = _section(D.build_dossier(parts), "judged_before")
-    at = NOW - timedelta(days=20)
     assert "- [card:card_1] a card “Send Kunal the deck by Friday”, queued" in judged
-    assert f"  version 1 of {D._when(at)}: “Reply to Kunal”" in judged
-    assert f"  version 2 of {D._when(at + timedelta(days=2))}, updated (headline, by_when): “Send Kunal the deck " \
-           f"by Friday”" in judged
+    assert "  version 1: “Reply to Kunal”" in judged
+    assert "  version 2, updated (headline, by_when): “Send Kunal the deck by Friday”" in judged
+    assert "UTC" not in judged.split("[card:card_1]")[1].split("\n- ")[0], "no instant: a dossier replays exactly"
     assert judged.index("version 1") < judged.index("version 2")
 
 

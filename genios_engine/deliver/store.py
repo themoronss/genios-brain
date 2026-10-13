@@ -68,11 +68,12 @@ _FILE_CARDS = (" k.org_id=:o and k.state = any(:open) and s.status='open' and k.
                "and (k.file_id is not null or k.capability_key = 'expert.file_review' "
                "     or k.builder_version = :question_builder) ")
 
-#: The card's own last words: its newest `card.created`, `card.rebuilt` or `card.versioned` event that kept them.
+#: The card's own last words: its latest `card.created`, `card.rebuilt` or `card.versioned` event that kept them —
+#: by VERSION first (a version is dated by its decision, a creation by the database's clock), then by when.
 _LAST_WORDS = (
     "select detail -> 'words' as words from card_events where org_id=:o and card_id=:id "
     "   and kind in ('card.created', 'card.rebuilt', 'card.versioned') and detail ? 'words' "
-    " order by occurred_at desc, id desc limit 1")
+    " order by coalesce((detail ->> 'version')::int, 1) desc, occurred_at desc, id desc limit 1")
 
 
 def _words_of(card: dict, copy: dict) -> VersionWords:
@@ -246,7 +247,7 @@ class CardStore:
             version = version_of(before, _words_of(card, copy), version=int(row.version) + 1,
                                  signal_id=card["signal_id"], reopened=row.state == "expired")
             if not card_lifecycle.version_card(c, org_id=card["org_id"], card_id=file_card.card_id,
-                                               version=version, expires_at=card["expires_at"]):
+                                               version=version, expires_at=card["expires_at"], at=as_of):
                 return None
             c.execute(text(_VERSION_WORDS), {**_words_params(card, copy), "o": card["org_id"],
                                              "id": file_card.card_id})
@@ -457,7 +458,7 @@ class CardStore:
                 "where (cards.state = 'expired' and cards.resolved_at is null) "
                 "or (cards.builder_version is distinct from excluded.builder_version "
                 "and cards.state in :refreshable and cards.resolved_at is null) "
-                "returning card_id, (xmax = 0) as inserted").bindparams(
+                "returning card_id, (xmax = 0) as inserted, version").bindparams(
                     bindparam("refreshable", expanding=True)),
                 {"id": card_id, "sig": card["signal_id"], "o": card["org_id"],
                  "asg": card["assignee"], "dom": card["domain"], "lvl": card["level"],
@@ -518,6 +519,7 @@ class CardStore:
                 self.log_event(inserted.card_id, card["org_id"], "card.rebuilt",
                                cause=card.get("resolved_rule"),
                                detail={**detail, "builder_version": card.get("builder_version"),
+                                       "version": inserted.version,
                                        "words": _words_of(card, copy).as_mapping()},
                                conn=c)
                 return inserted.card_id, False, True
@@ -743,7 +745,8 @@ class CardStore:
               "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
               + QUESTION_SIGNAL_JOINS + common + "and " + QUESTION_CARD_SQL)
         params = {"o": org_id, "states": list(states),
-                  "authority_time": authority_time(eval_time),
+                  # The instant asked for — else this module's own clock, as before (a reader patches it).
+                  "authority_time": eval_time or datetime.now(timezone.utc),
                   "situation_builder": SITUATION_CARD_BUILDER,
                   "question_builder": QUESTION_CARD_BUILDER}
         if not admin and assignee is not None and strict_seat:

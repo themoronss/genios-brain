@@ -201,7 +201,7 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             founder_questions.answer(c, org_id=org_id, question_id=question_id, words=words, by=actor,
                                      at=eval_time)
             answered_version = _version_answered(c, org_id=org_id, card=card, question_id=question_id,
-                                                 actor=actor)
+                                                 actor=actor, at=eval_time)
 
         c.execute(text(
             "insert into human_events (id, org_id, type, actor_id, target, detail, occurred_at) "
@@ -254,7 +254,7 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             **({"question_id": question_id, "version": answered_version} if action == "answer" else {})}
 
 
-def _version_answered(c, *, org_id: str, card, question_id: str, actor: str) -> int | None:
+def _version_answered(c, *, org_id: str, card, question_id: str, actor: str, at) -> int | None:
     """The answered version of the file's card (s14-D3, see `ANSWERED_HEADLINE`): one `card.versioned` event, its
     words before the question's — and none of your words — the card kept on its open signal, its words in place."""
     from genios_engine.contracts.card_version import ANSWERED_MODE, VersionWords, version_of
@@ -270,7 +270,7 @@ def _version_answered(c, *, org_id: str, card, question_id: str, actor: str) -> 
                          mode=ANSWERED_MODE, ask=question_id)
     version = version_of(before, after, version=int(row.version) + 1, signal_id=card["signal_id"], answered=True)
     if not card_lifecycle.version_card(c, org_id=org_id, card_id=card["card_id"], version=version,
-                                       expires_at=card["expires_at"], actor=actor):
+                                       expires_at=card["expires_at"], actor=actor, at=at):
         return None
     c.execute(text(
         "update cards set headline=:h, situation=:s, output_lane=:lane, lane_reason=:why, "

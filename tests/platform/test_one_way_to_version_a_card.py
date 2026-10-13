@@ -232,6 +232,19 @@ def test_a_created_version_is_no_version(engine):
     assert _row(engine, "c_open").signal_id == "sig_a"
 
 
+def test_a_version_is_dated_by_its_decision(engine):
+    from sqlalchemy import text
+
+    from genios_engine.platform import card_lifecycle as cl
+    decided = AT - timedelta(days=30)
+    with engine.begin() as c:
+        assert cl.version_card(c, org_id=ORG, card_id="c_open", version=_version(2, "sig_a2"), expires_at=AT,
+                               at=decided)
+        when = c.execute(text("select occurred_at from card_events where card_id = 'c_open' "
+                              "and kind = 'card.versioned'")).scalar()
+    assert when == decided
+
+
 def test_the_callers_transaction_owns_the_move_and_its_event(engine):
     from genios_engine.platform import card_lifecycle as cl
     with engine.connect() as c:

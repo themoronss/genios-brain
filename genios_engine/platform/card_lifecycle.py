@@ -80,14 +80,16 @@ _EXPIRE_LAPSED = text(
     "returning card_id, org_id, signal_id")
 
 _EVENT = text(
-    "insert into card_events (id, card_id, org_id, kind, cause, actor_id, detail) "
-    "values (:id, :card, :o, :kind, :cause, :actor, cast(:detail as jsonb))")
+    "insert into card_events (id, card_id, org_id, kind, cause, actor_id, detail, occurred_at) "
+    "values (:id, :card, :o, :kind, :cause, :actor, cast(:detail as jsonb), "
+    "        coalesce(cast(:at as timestamptz), now()))")
 
 
 def _event(conn, *, card_id: str, org_id: str, kind: str, cause: str, actor: str,
-           detail: Mapping | None, signal_id: str | None) -> None:
+           detail: Mapping | None, signal_id: str | None, at=None) -> None:
+    """One event — at the database's clock, or (`at`) at the instant the caller decided it."""
     conn.execute(_EVENT, {"id": new_id("cev"), "card": card_id, "o": org_id, "kind": kind,
-                          "cause": cause, "actor": actor,
+                          "cause": cause, "actor": actor, "at": at,
                           "detail": json.dumps({**(detail or {}), "signal_id": signal_id},
                                                default=str)})
 
@@ -188,11 +190,13 @@ def file_card(conn, *, org_id: str, file_id: str) -> FileCard | None:
 
 
 def version_card(conn, *, org_id: str, card_id: str, version: CardVersion, expires_at,
-                 actor: str = "system") -> bool:
+                 actor: str = "system", at=None) -> bool:
     """Move this tenant's file card onto `version.signal_id`, its window to `expires_at` (the new signal's),
     reopen it if the clock, a replacement or a clearing closed it, and write its one `card.versioned` event — in
-    the caller's transaction. False, nothing moved and nothing written: the card is decided, held by an agent,
-    no file's, another tenant's, not at the version before this one, or the signal already has a card."""
+    the caller's transaction, at `at`: the instant the version was decided (the pass's evaluation time, the
+    press's), so a version is dated by the decision and never by when a database happened to write it. False,
+    nothing moved and nothing written: the card is decided, held by an agent, no file's, another tenant's, not at
+    the version before this one, or the signal already has a card."""
     if not isinstance(version, CardVersion):
         raise TypeError("a card is versioned by a contracts/card_version.CardVersion")
     if version.change == CREATED:
@@ -204,6 +208,6 @@ def version_card(conn, *, org_id: str, card_id: str, version: CardVersion, expir
     _event(conn, card_id=card_id, org_id=org_id, kind=VERSIONED, cause=version.change, actor=actor,
            detail={**version.as_mapping(), "from_signal": moved.from_signal,
                    "reopened": moved.from_state == "expired"},
-           signal_id=version.signal_id)
+           signal_id=version.signal_id, at=at)
     return True
 

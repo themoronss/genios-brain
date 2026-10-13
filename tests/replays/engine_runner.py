@@ -600,7 +600,7 @@ def _shown_cards(card_store: Any, org: str, at: datetime) -> set[str]:
 _VERSIONS = (
     "select card_id, detail from card_events where org_id = :o and card_id = any(:ids) "
     "   and kind in ('card.created', 'card.rebuilt', 'card.versioned') and detail ? 'words' "
-    " order by card_id, occurred_at, id")
+    " order by card_id, coalesce((detail ->> 'version')::int, 1), occurred_at, id")
 
 
 def _said(words: Any) -> str:

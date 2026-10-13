@@ -58,6 +58,9 @@ def test_your_answer_versions_the_files_card_and_closes_nothing(world, cards):
     [(cause, detail)] = _versions(store, card.card_id)
     assert cause == "answered" and detail["before"]["headline"] == FIND_OUT and detail["words"]["mode"] == "answered"
     assert detail["words"]["ask"] == asked.question_id, "the ask it answered"
+    with store.engine.connect() as c:
+        assert c.execute(text("select occurred_at from card_events where card_id = :c and kind = 'card.versioned'"),
+                         {"c": card.card_id}).scalar() == AT, "dated by your press"
     assert WORDS not in str(detail), "your words are kept on the question, never in the card's history"
     assert _queued(cards, org, AT) == [], "its question answered, no door shows it until the file's next version"
 

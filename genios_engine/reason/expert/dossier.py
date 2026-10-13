@@ -465,7 +465,9 @@ def _judged_before(p: DossierParts, cite: _Ids) -> Section:
             # STEP-14: one card, the advice it gave each time — what changed, and when.
             changed = "" if v.change == "created" else (
                 f", {v.change}" + (f" ({', '.join(v.changed)})" if v.changed else ""))
-            lines.append(f"  version {v.version} of {_when(v.at)}{changed}: “{v.headline}”")
+            # ⛔ NO INSTANT (STEP-14 fix): a card's first version is dated by the database's clock, not the
+            # decision's — printed, it would make a dossier differ from run to run of the same file.
+            lines.append(f"  version {v.version}{changed}: “{v.headline}”")
     for s in j.situations:
         # An outcome on a situation still open is a DECISION, not an ending (`03` F161).
         why = f" — {s.reason}" if s.reason else ""

@@ -94,6 +94,9 @@ def test_a_files_card_is_versioned_onto_its_new_signal_its_words_in_place(world,
     [versioned] = _events(store, row["card_id"], "card.versioned")
     assert versioned["before"] == created["words"] and versioned["words"] == V2.as_mapping()
     assert versioned["from_signal"] == row["signal_id"] and versioned["changed"][0] == "headline"
+    with store.engine.connect() as c:          # dated by its decision (the pass's instant), never the database's clock
+        assert c.execute(text("select occurred_at from card_events where card_id = :c and kind = 'card.versioned'"),
+                         {"c": row["card_id"]}).scalar() == LATER
     with store.engine.connect() as c:
         assert c.execute(text("select count(*) from cards where org_id = :o"), {"o": org}).scalar() == 1
 
