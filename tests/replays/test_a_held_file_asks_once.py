@@ -27,7 +27,7 @@ CASES = load_cases()
 #: The cases whose question card is what the founder must see (STEP-13 §8.1).
 ASKED_FOR = ("F01", "F52")
 #: Every case with an authored review that must find out first (`model.expert[*].answer.mode`).
-FIND_OUT = ("F01", "F07", "F21", "F22", "F52", "F54")
+FIND_OUT = ("F01", "F07", "F21", "F22", "F52", "F54", "F63")
 
 
 def _scratch_db() -> None:

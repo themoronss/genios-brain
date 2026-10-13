@@ -134,7 +134,10 @@ ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-
                                "F52": "yc2_w27_align", "F53": "yc2_w27_align",
                                "F54": "yc2_w27_align", "F55": "yc2_w27_align",
                                "F56": "yc2_w27_align", "F57": "yc2_w27_align",
-                               "F58": "yc2_w27_align"}
+                               "F58": "yc2_w27_align",
+                               # STEP-14 (`yc2_w27_s14` M43.C6, s14-D5): the Atlas's replay 02 introductions.
+                               "F59": "STEP-14", "F60": "STEP-14", "F61": "STEP-14", "F62": "STEP-14",
+                               "F63": "STEP-14", "F64": "STEP-14"}
 
 #: A case added after STEP-03 whose mail today's gate ARCHIVES — held to that code, as the dropped mail
 #: of the cases before it is. F56: a vendor's renewal notice, which the junk filter's own prompt drops

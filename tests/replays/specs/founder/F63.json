@@ -128,8 +128,7 @@
   "expert": [
    {
     "when": [
-     "<introly.test>",
-     "Ishaan Mehra"
+     "<introly.test>"
     ],
     "by": "claude",
     "answer": {
