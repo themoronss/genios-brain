@@ -17,6 +17,11 @@ different things to do about it.
 
 from __future__ import annotations
 
+#: `context/llm/client.THINKING_OFF`, as its literal: no module of the bundle package but the gate
+#: may import a model client (`tests/reason/test_bundle_doctrine`), and
+#: `tests/reason/test_every_site_says_whether_it_thinks` holds the two words equal.
+_THINKING_OFF = "off"
+
 #: R-1 · the ambiguity interpreter. Returns a typed classification with a confidence, consumed as
 #: EVIDENCE by units; never a verdict. Owned by the R-sites wave; the gate is shared.
 SITE_INTERPRET = "R-1"
@@ -80,6 +85,13 @@ SITE_TIERS = {
 #: the next measurement rather than guessed again: `LLMClient` reads `stop_reason` now, so a call
 #: that still truncates says so in its own words instead of being filed as bad JSON, and
 #: `scripts/pipeline_health.py` fails the moment a lane's failures cluster on one output size.
+#:
+#: ⛔ AND THAT MEASUREMENT WAS NOT OF PROSE (the 13 Oct audit, s5t-F4; `yc2_w27_s18`
+#: M50.C2.L-contract.V1.U02). R-2 ran on `claude-sonnet-5`, which THINKS BY DEFAULT and spends its
+#: thinking from the same `max_tokens`: the 737–1,400 above were thinking plus answer, read as answer.
+#: The answer itself is ~450 tokens (doc 11), at most ~1,000 by its field caps
+#: (`contracts/reasoning`). Every site now asks with thinking OFF (`SITE_THINKING`, `06` D71), which is
+#: what these ceilings were sized for; a site that thinks sizes its ceiling for thinking plus answer.
 SITE_MAX_OUTPUT_TOKENS = {
     SITE_INTERPRET: 400,
     SITE_NARRATE: 2400,
@@ -89,13 +101,39 @@ SITE_MAX_OUTPUT_TOKENS = {
     # Structured output, not prose: a proposal is a mapping of at most fourteen fields, and a
     # model that decides to explain itself is a cost incident and a V-8 failure at once.
     SITE_SITUATION: 500,
-    # ⛔ A SIZING, NOT A MEASUREMENT — nothing has run yet. A review is fourteen sections and a
-    # draft (`contracts/expert_review`): a full one runs about 800-1,600 tokens, so 4,000 is about
-    # 2.5x that, and at the T2 price (1,000 cents a million) its worst case is 4 cents of output.
-    # R-2's lesson is why it is
-    # not tighter: a ceiling below the real distribution reads as bad JSON. Here a cut answer is a
-    # RECORDED refusal (`truncated`, `03` F140) and the first live pass (`06` D50) measures it.
-    SITE_EXPERT: 4000,
+    # ⛔ MEASURED, AND THE OLD SIZING WAS WRONG (s5t-F2, F4). The 4,000 here was sized from "a full
+    # review runs about 800-1,600 tokens". The golden live passes of 12 Oct measured it: on Haiku 4.5,
+    # which does not think, a review ran p50 2,737, p90 3,509, max 3,990 output tokens and six more
+    # were cut at 4,000; on Sonnet 5, which thinks by default, all 203 calls stopped at 4,000 (thinking
+    # ~2,600-3,500 of it). Asked with thinking OFF (`06` D71), 6,000 is 1.7x Haiku's p90 — ~$0.06 of
+    # output at the T2 price, $0.09 with a 60,000-character dossier, under the expert's own $0.10 per
+    # call. A cut answer is still a RECORDED refusal (`truncated`, `03` F140). `06` D72 measures
+    # whether thinking (adaptive at 12,000) earns its cost.
+    SITE_EXPERT: 6000,
+}
+
+#: ⛔ WHETHER A SITE MAY THINK (`yc2_w27_s18` M50.C2.L-contract.V1.U02). Claude 5 models think unless
+#: told not to, and the thinking is spent from the site's ceiling above. `06` D71 (13 Oct): every site
+#: asks with thinking OFF until a measurement says otherwise — the ceilings were sized for a model that
+#: does not think, so this restores what they were sized for and costs nothing that works today. The
+#: gate sends it (`RSiteGate.consult`) to a client that takes it; `context/llm/client` turns it into
+#: what each model family honours (Opus 5.5 cannot turn thinking off: lowest effort, its own headroom).
+SITE_THINKING = {
+    SITE_INTERPRET: _THINKING_OFF,
+    SITE_NARRATE: _THINKING_OFF,
+    SITE_ALTERNATIVES: _THINKING_OFF,
+    SITE_EFFECT: _THINKING_OFF,
+    SITE_CONSULT: _THINKING_OFF,
+    SITE_SITUATION: _THINKING_OFF,
+    SITE_EXPERT: _THINKING_OFF,
+}
+
+#: How long one call of a site may take, in seconds, where the client's own 60 s is too short. None
+#: is the client's. MEASURED (s5t-F10): on 12 Oct a 4,000-token Sonnet 5 answer took 37–45 s (the
+#: gaps between calls, p50 45.3 s), so R-7's 6,000 needs ~56–68 s — past 60 s, where the SDK retries
+#: a call whose answer may already be paid for. 120 s is 1.8x the slow end.
+SITE_TIMEOUT_S = {
+    SITE_EXPERT: 120.0,
 }
 
 # ── what a consult may END as ────────────────────────────────────────────────────────────────
@@ -160,11 +198,23 @@ def max_output_tokens(site: str) -> int:
     return SITE_MAX_OUTPUT_TOKENS[require_site(site)]
 
 
+def thinking_mode(site: str) -> str:
+    """`SITE_THINKING`'s word for the site — `context/llm/client.THINKING_MODES`."""
+    return SITE_THINKING[require_site(site)]
+
+
+def timeout_s(site: str) -> float | None:
+    """The site's own per-call timeout, or None for the client's."""
+    return SITE_TIMEOUT_S.get(require_site(site))
+
+
 __all__ = ["FALLBACK_OUTCOMES", "OUTCOMES", "OUTCOME_CACHED", "OUTCOME_FAILED_GENERATION",
            "OUTCOME_FAILED_VALIDATION", "OUTCOME_FORCE_FAILED", "OUTCOME_NOT_ACTIVATED",
            "OUTCOME_NO_BUDGET", "OUTCOME_NO_CLIENT", "OUTCOME_NO_PRECONDITION", "OUTCOME_RAN",
            "OUTCOME_TRUNCATED",
            "R_SITES", "SITE_ALTERNATIVES", "SITE_CONSULT", "SITE_EFFECT", "SITE_EXPERT",
            "SITE_INTERPRET", "SITE_SITUATION",
-           "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_TIERS", "TIER_T1", "TIER_T2",
-           "max_output_tokens", "require_outcome", "require_site", "tier_for"]
+           "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_THINKING", "SITE_TIERS", "SITE_TIMEOUT_S",
+           "TIER_T1", "TIER_T2",
+           "max_output_tokens", "require_outcome", "require_site", "thinking_mode", "tier_for",
+           "timeout_s"]

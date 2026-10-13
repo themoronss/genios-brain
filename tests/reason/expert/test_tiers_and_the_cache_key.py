@@ -87,14 +87,15 @@ def test_a_site_without_a_budget_of_its_own_is_refused():
 
 def _whole_review_estimate() -> int:
     """A review at its bound: a 60,000-character dossier (15,000 tokens at T2's 200 cents a million:
-    3 cents) and the 4,000-token ceiling (at 1,000 cents a million: 4 cents) — 7 cents."""
+    3 cents) and the 6,000-token ceiling (at 1,000 cents a million: 6 cents) — 9 cents, under the
+    expert's own 10 (`yc2_w27_s18` M50.C2.L-contract.V1.U02: 4,000 → 6,000)."""
     return B.estimate_micro_usd(site=S.SITE_EXPERT, prompt_chars=60_000,
                                 max_output_tokens=S.max_output_tokens(S.SITE_EXPERT))
 
 
 def test_a_whole_review_passes_its_own_ceiling_and_never_the_narratives():
     estimate = _whole_review_estimate()
-    assert estimate == 70_000
+    assert estimate == 90_000
     assert B.NarrativeBudget.for_site(S.SITE_EXPERT, org_id=ORG).check(estimate).allowed
     refused = B.NarrativeBudget(org_id=ORG).check(estimate)
     assert not refused.allowed and refused.reason == B.REASON_PER_CALL

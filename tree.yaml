@@ -33,6 +33,7 @@
 #   yc2_w27_align                     M34         ← before STEP-12, all aligned (built 10 Oct)
 #   yc2_w27_s13                       M35, M36    ← STEP-13, check every claim (planned 12 Oct)
 #   yc2_w27_s17 · yc2_w27_s18         M40, M41 · M48, M49 ← STEP-17, STEP-18 (built, merged 12 Oct)
+#                                     M50 ← STEP-18's Claude 5 thinking fix (13 Oct)
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -8762,7 +8763,7 @@ yc2_w27_s17:
                       depends_on: []
 
 yc2_w27_s18:
-  status: built   # 2026-10-12 on `yc2w27-s18` (c885d677..), 20 units + 3 fixes, every unit mutation-tested; not pushed
+  status: built   # M48, M49 2026-10-12 on `yc2w27-s18` (c885d677..), 20 units + 3 fixes; M50 (Claude 5 thinks by default) 2026-10-13 on `yc2w27-s18-thinking`, 20 units; every unit mutation-tested; not pushed
   source: >
     speedrun008/YC-II W27/STEP-18 B1-B29 and the rows of `03` that name STEP-18 as their owner (F65, F79,
     F97, F100, F108, F109, F111, F117, F120, F128, F135, F158, F159, F165, F166, F180), each re-checked at
@@ -9187,3 +9188,252 @@ yc2_w27_s18:
                       artifact: "speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md"
                       verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py && grep -c 'GENIOS_JWT_SECRET\\|0210_every_wrong_reason_is_kept\\|s18-F9\\|rest_stuck_reviews' 'speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md'"
                       depends_on: [M49.C3.L-integration.V1.U08, M49.C3.L-contract.V1.U10, M48.C1.L-data.V1.U14]
+    - id: M50
+      name: Claude 5 thinks by default — every model call asks for what its ceiling was sized for, and every cut is counted (13 Oct audit, s5t-F1…F13; 06 D71)
+      ships: >
+        `context/llm/client.LLMClient` sends a thinking control matched to the model's family, longest id
+        first (Sonnet 5, Opus 5 and Opus 4.8/4.7 OFF with `disabled`; Opus 5.5 and Fable, which cannot turn
+        it off, at `effort: low` with their own headroom; Haiku 4.5 and an unknown model nothing), and names a
+        cut that still parsed. Every site sized for a model that does not think asks with thinking off
+        (`06` D71): R-1, R-2, deep and standard analyze, query, draft, the moment lanes, the R-7 expert at a
+        6,000 ceiling and the company-brief drafter at 4,000. A cut is a failure on every ledger; the
+        golden live pass sums every call, stops at a dollar cap and can run the R-7 comparison (`06` D72);
+        pipeline_health sees a cut that parsed; production gets read-only probes and a one-file hotfix for
+        R-2 on `harsh/mvp`.
+      categories:
+        - id: M50.C1
+          name: The shared client knows which model thinks — L3 Context Graph (`context/llm`), and the decision maker reads the same table
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M50.C1.L-contract.V0.U01
+                      what: >
+                        T5-1 (s5t-F1, F8). `context/llm/client`: the thinking table, one row per model
+                        family, matched longest id first and never by a bare prefix (an id is its family's
+                        or the family's plus a dated snapshot) — `claude-opus-5-5` never gets Opus 5's
+                        `disabled`: it cannot turn thinking off, so `off` sends `output_config.effort:
+                        low` and the row carries its own headroom (`output_ceiling`). `LLMClient.call(
+                        thinking="off"|"adaptive")`, OFF by default (`06` D71); `supports_thinking` beside
+                        `supports_prompt_cache`, so the test fakes without `**kw` keep working; a cut that
+                        still parsed names the truncation in `error` while `ok` stays true; one
+                        `request_controls` for the raw-SDK callers.
+                      artifact: "genios_engine/context/llm/client.py"
+                      verify: ".venv/bin/python -m pytest -q tests/context/test_thinking_is_sent_where_it_is_honoured.py tests/context/test_sampling_is_omitted_where_it_is_refused.py tests/context/test_a_truncated_call_is_not_bad_json.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M50.C1.L-logic.V1.U10
+                      what: >
+                        T5-2 (s5t-F8). `reason/llm_decision_maker.request_kwargs` reads U01's table with
+                        thinking off: Sonnet 5 still `disabled`, Opus 5.5 and Fable `effort: low` (the
+                        prefix match sent Opus 5.5 `disabled`, a 400, and every decision would defer),
+                        Haiku `temperature=0`. The decision client says when an answer was cut.
+                      artifact: "genios_engine/reason/llm_decision_maker.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_llm_decision_maker.py tests/context/test_sampling_is_omitted_where_it_is_refused.py"
+                      depends_on: [M50.C1.L-contract.V0.U01]
+        - id: M50.C2
+          name: The R-sites ask for what they were sized for — L4 Reasoning (`reason/bundle`)
+          layers:
+            - layer: contract
+              levels:
+                - level: 1
+                  units:
+                    - id: M50.C2.L-contract.V1.U02
+                      what: >
+                        T5-3 (s5t-F2, F4, F10). `reason/bundle/sites`: a thinking mode per site
+                        (`SITE_THINKING`, every one OFF by `06` D71) and a timeout per site where the
+                        client's 60 s is too short (R-7: 6,000 tokens at the measured 37–45 s per 4,000);
+                        R-7's ceiling 4,000 → 6,000; the two sizing comments rewritten with the truth — R-2's
+                        measured 737–1,400 counted thinking tokens as prose, and R-7's 800–1,600 is wrong
+                        (Haiku, which does not think: p50 2,737, p90 3,509, max 3,990).
+                      artifact: "genios_engine/reason/bundle/sites.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_every_site_says_whether_it_thinks.py tests/reason/expert/test_the_expert_site_and_feature.py tests/reason/expert/test_tiers_and_the_cache_key.py tests/reason/expert/test_one_review.py"
+                      depends_on: [M50.C1.L-contract.V0.U01]
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M50.C2.L-logic.V2.U03
+                      what: >
+                        T5-4. `RSiteGate.consult` sends the site's thinking mode and timeout to a client
+                        that says `supports_thinking`, and prices and calls at the client's own ceiling for
+                        that mode (`output_ceiling`: the site's, plus the headroom of a model that cannot
+                        turn thinking off).
+                      artifact: "genios_engine/reason/bundle/gate.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_the_gate_sends_the_sites_thinking.py tests/reason/test_a_truncated_answer_is_refused.py tests/reason/test_bundle_gauntlet.py tests/reason/test_the_gate_is_counted.py"
+                      depends_on: [M50.C1.L-contract.V0.U01, M50.C2.L-contract.V1.U02]
+                - level: 3
+                  units:
+                    - id: M50.C2.L-logic.V3.U04
+                      what: >
+                        T5-5 (s5t-F6). A cut the lenient parser closed is recorded in `llm_costs` as
+                        `success=False` with the truncation error, on every R-site — it was a success, so
+                        no health check filtering on `not success` could see it.
+                      artifact: "genios_engine/reason/bundle/gate.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_the_gate_sends_the_sites_thinking.py tests/reason/test_a_truncated_answer_is_refused.py tests/reason/test_the_gate_is_counted.py"
+                      depends_on: [M50.C2.L-logic.V2.U03]
+        - id: M50.C3
+          name: Every other model call is asked without thinking, and says when it was cut — L4 Reasoning (`reason/`), L5 (`deliver/`)
+          layers:
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M50.C3.L-logic.V1.U05
+                      what: >
+                        T5-6 (s5t-F7). `reason/intelligence.run_query` — deep analyze (Sonnet 5, 700),
+                        standard analyze and query — asks with thinking off. The draft route
+                        (`api/intelligence_routes.draft`) is not `run_query`; it rides U01's default.
+                      artifact: "genios_engine/reason/intelligence.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_run_query_asks_without_thinking.py tests/test_intelligence_authority_routes.py"
+                      depends_on: [M50.C1.L-contract.V0.U01]
+                    - id: M50.C3.L-logic.V1.U06
+                      what: >
+                        T5-7 (s5t-F5). `reason/brief_drafter`: `06` D71's mode and ceiling (thinking off,
+                        2,400 → 4,000 — the visible answer alone fills 57–100% of 2,400), a timeout, and a
+                        cut answer — parsed or not — proposes nothing and is recorded `success=False` with
+                        its truncation error.
+                      artifact: "genios_engine/reason/brief_drafter.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_brief_drafter.py tests/scripts/test_draft_company_brief.py tests/reason/test_the_drafter_names_the_work.py"
+                      depends_on: [M50.C1.L-contract.V0.U01]
+                    - id: M50.C3.L-logic.V1.U12
+                      what: >
+                        T5-12 (s5t-F9). `reason/moments/seat_profile.t1_text` — the seat profile's and the
+                        reply draft's raw-SDK call — sends `temperature` only to a model that takes it and
+                        thinking off, from U01's `request_controls`.
+                      artifact: "genios_engine/reason/moments/seat_profile.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/moments/test_the_raw_lanes_ask_without_thinking.py"
+                      depends_on: [M50.C1.L-contract.V0.U01]
+                    - id: M50.C3.L-logic.V1.U13
+                      what: >
+                        T5-12b (s5t-F9). `reason/moments/draft_review` — the same, for its raw-SDK call.
+                      artifact: "genios_engine/reason/moments/draft_review.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/moments/test_the_raw_lanes_ask_without_thinking.py tests/reason/moments/test_draft_review_reads_the_company_brief.py"
+                      depends_on: [M50.C1.L-contract.V0.U01]
+                    - id: M50.C3.L-logic.V1.U14
+                      what: >
+                        T5-12c (s5t-F9). `reason/moments/screen_memory_batch` — the same, for each request
+                        of its batch.
+                      artifact: "genios_engine/reason/moments/screen_memory_batch.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/moments/test_the_raw_lanes_ask_without_thinking.py tests/reason/moments/test_screen_memory_reads_the_company_brief.py"
+                      depends_on: [M50.C1.L-contract.V0.U01]
+                    - id: M50.C3.L-logic.V1.U15
+                      what: >
+                        T5-13 (s5t-F6). `deliver/render.render_copy` records each call's success and error
+                        — `l5_render` recorded every call as a success, a failure and a cut included.
+                      artifact: "genios_engine/deliver/render.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_render_records_how_the_call_ended.py tests/test_every_llm_call_site_is_metered.py tests/test_render_compiled_copy.py"
+                      depends_on: [M50.C1.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M50.C3.L-logic.V2.U07
+                      what: >
+                        T5-7b (s5t-F5). `reason/brief_review`: a week whose draft failed at the model is
+                        counted `failed`, not `reviewed`.
+                      artifact: "genios_engine/reason/brief_review.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_a_failed_draft_is_not_a_review.py"
+                      depends_on: [M50.C3.L-logic.V1.U06]
+        - id: M50.C4
+          name: What a live pass and a health check count is true — the golden harness, the scripts, the price
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M50.C4.L-data.V0.U16
+                      what: >
+                        T5-14 (s5t-F11). `platform/metrics.LLM_PRICE` prices `claude-opus-5-5` at $4 / $20
+                        a million, ahead of `opus` (which priced it at Opus 5's $5 / $25).
+                      artifact: "genios_engine/platform/metrics.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_admin_analytics.py tests/test_llm_cost_attribution.py tests/scripts/test_golden_eval.py"
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M50.C4.L-integration.V0.U08
+                      what: >
+                        T5-9 (s5t-F12). `tests/replays/harness.CassetteRecorder.call` returns a cut or
+                        unparseable answer as production's client would — the gate then does what
+                        production does, a cut never retried — and raises only on a transport failure;
+                        an append-only `ledger` of every call, with its tokens and whether it was cut.
+                      artifact: "tests/replays/harness.py"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_the_recorder_keeps_every_call.py tests/replays/test_recorded_llm.py"
+                      depends_on: []
+            - layer: interface
+              levels:
+                - level: 1
+                  units:
+                    - id: M50.C4.L-interface.V1.U09
+                      what: >
+                        T5-10 (s5t-F12, `06` D72). `scripts/golden_eval.py --live` sums every call from
+                        U08's ledger (a cut included), reports the cut calls, takes `--thinking`,
+                        `--ceiling` and `--per-call-usd` for the site's R-site for the run only, and stops
+                        at `--max-usd` — refusing to start without one — before a call whose worst case
+                        would cross it.
+                      artifact: "scripts/golden_eval.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_golden_eval.py tests/scripts/test_the_live_pass_counts_every_call.py"
+                      depends_on: [M50.C4.L-integration.V0.U08, M50.C2.L-contract.V1.U02]
+                    - id: M50.C4.L-interface.V1.U11
+                      what: >
+                        T5-8 (s5t-F6). `scripts/pipeline_health.py` counts calls cut at the ceiling whether
+                        or not they parsed (an error that says `truncated:`), and the expert's check fails
+                        when more than half of a day's reviews were cut.
+                      artifact: "scripts/pipeline_health.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_expert.py tests/scripts/test_pipeline_health_a_silent_lane_is_no_data_pg.py tests/scripts/test_pipeline_health_sees_a_cut_that_parsed.py"
+                      depends_on: [M50.C2.L-logic.V3.U04, M50.C1.L-contract.V0.U01]
+        - id: M50.C5
+          name: Production — what Rohit reads first, the hotfix for harsh/mvp, and the record
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M50.C5.L-data.V0.U17
+                      what: >
+                        The audit's `thinking_ceiling.sql` as blocks of the production probe — per lane
+                        and model the calls at their ceiling whether or not they parsed, the R-site
+                        receipts, the Sonnet 5 lanes by day, the models in use — one read-only statement
+                        each, under `tests/test_production_probes_are_read_only.py`'s rules.
+                      artifact: "speedrun008/YC-II W27/baseline/production_state.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/test_production_probes_are_read_only.py"
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M50.C5.L-integration.V0.U18
+                      what: >
+                        The hotfix for production (s5t-F3): the smallest patch to `harsh/mvp`'s
+                        `context/llm/client.py` that sends `thinking: {"type": "disabled"}` to
+                        `claude-sonnet-5` (R-2 is cut there today and retried once at the same ceiling).
+                        Applied and tested on an extract of `origin/harsh/mvp`, never on the branch.
+                      artifact: "speedrun008/YC-II W27/baseline/thinking/harsh-mvp-r2-thinking-off.diff"
+                      verify: "bash 'speedrun008/YC-II W27/baseline/thinking/check-harsh-mvp-hotfix.sh'"
+                      depends_on: []
+            - layer: interface
+              levels:
+                - level: 1
+                  units:
+                    - id: M50.C5.L-interface.V1.U19
+                      what: >
+                        `08-FOR-HARSH-deploy-and-after.md`: Claude 5 thinks by default — the defect, the
+                        probe blocks Rohit runs first, the patch and how to apply it, and that the
+                        speedrun008 deploy carries the full fix. Docs only.
+                      artifact: "speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py && grep -c 'harsh-mvp-r2-thinking-off.diff\\|thinking_lanes' 'speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md'"
+                      depends_on: [M50.C5.L-data.V0.U17, M50.C5.L-integration.V0.U18]
+                - level: 2
+                  units:
+                    - id: M50.C5.L-interface.V2.U20
+                      what: >
+                        `STEP-18` §9 "13 Oct — Claude 5 thinks by default": the findings (s5t-F1…F13,
+                        provisional — the lead mints `03` numbers), the units, and `06` D71–D73; this block
+                        back to `built`. Docs only.
+                      artifact: "speedrun008/YC-II W27/STEP-18-TO-BUILD-known-bugs.md"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py tests/test_tree_ids_are_addressable.py && grep -c 's5t-F13\\|D73' 'speedrun008/YC-II W27/STEP-18-TO-BUILD-known-bugs.md' 'speedrun008/YC-II W27/06-DECISIONS.md'"
+                      depends_on: [M50.C5.L-interface.V1.U19, M50.C1.L-logic.V1.U10, M50.C3.L-logic.V2.U07, M50.C3.L-logic.V1.U12, M50.C3.L-logic.V1.U13, M50.C3.L-logic.V1.U14, M50.C3.L-logic.V1.U15, M50.C4.L-data.V0.U16, M50.C4.L-interface.V1.U09, M50.C4.L-interface.V1.U11]
