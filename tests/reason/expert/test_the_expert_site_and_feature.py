@@ -22,7 +22,9 @@ pytestmark = pytest.mark.unit
 
 def test_the_expert_is_a_site_in_the_closed_list():
     assert S.SITE_EXPERT == "R-7"
-    assert S.SITE_EXPERT in S.R_SITES and S.R_SITES[-1] == S.SITE_EXPERT
+    # STEP-15 registered R-8/R-8E after it (`tests/reason/test_the_brief_sites.py`) — this file's
+    # own claim is only that the seventh is registered at all, never that it is last forever.
+    assert S.SITE_EXPERT in S.R_SITES
     assert S.require_site(S.SITE_EXPERT) == S.SITE_EXPERT
     assert len(set(S.R_SITES)) == len(S.R_SITES)
 

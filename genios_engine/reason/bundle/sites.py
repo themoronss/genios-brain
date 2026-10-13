@@ -49,9 +49,19 @@ SITE_SITUATION = "R-6"
 #: (`contracts/expert_review`) out, validated against what the dossier holds. T2, and only T2:
 #: `06` D7 (answered 10 Oct) is Sonnet-class only — no Opus tier exists, and none is added.
 SITE_EXPERT = "R-7"
+#: R-8 · the morning brief's writer (STEP-15). The day's checked material in, one line per item
+#: out — written once a day, never per event and never per situation. Haiku-class: the same
+#: pattern as R-6's own note, a deterministic check (`executive/morning_check`) is what makes a
+#: cheap model safe here, not that the brief is unimportant.
+SITE_BRIEF = "R-8"
+#: R-8E · the same brief asked once more, on the Sonnet-class tier, after the Haiku draft fails
+#: its check twice or comes back malformed past its one repair (STEP-15 §8.3 point 3; s15-D1).
+#: Never escalated again and never Opus: failing twice more, the template stands and the brief
+#: says so.
+SITE_BRIEF_ESCALATE = "R-8E"
 
 R_SITES = (SITE_INTERPRET, SITE_NARRATE, SITE_ALTERNATIVES, SITE_EFFECT, SITE_CONSULT,
-           SITE_SITUATION, SITE_EXPERT)
+           SITE_SITUATION, SITE_EXPERT, SITE_BRIEF, SITE_BRIEF_ESCALATE)
 
 #: Tier per site, exactly as doc 11 §1 prints it. T1 = Haiku-class, T2 = Sonnet-class, the same
 #: two names `capture.semantic.batch.DEFAULT_TIER_PRICES` prices — reused rather than re-declared,
@@ -66,6 +76,8 @@ SITE_TIERS = {
     SITE_CONSULT: TIER_T2,
     SITE_SITUATION: TIER_T1,
     SITE_EXPERT: TIER_T2,
+    SITE_BRIEF: TIER_T1,
+    SITE_BRIEF_ESCALATE: TIER_T2,
 }
 
 #: The output ceiling per site, in tokens. A cap rather than a hope: doc 11 sizes R-2 at ~450
@@ -110,6 +122,15 @@ SITE_MAX_OUTPUT_TOKENS = {
     # call. A cut answer is still a RECORDED refusal (`truncated`, `03` F140). `06` D72 measures
     # whether thinking (adaptive at 12,000) earns its cost.
     SITE_EXPERT: 6000,
+    # ⛔ NOT YET MEASURED (`[MODELLED]`) — unlike every number above. The plan caps a brief at 600
+    # words and models its output at ~800 tokens (`reason/bundle/budget.OWN_BUDGETS`'s own comment:
+    # "a brief is about 6,000 tokens in and 800 out"). R-2's history (this dict's own lesson) is
+    # that a ceiling equal to the estimate truncates a real answer two times in three, so this is
+    # 2x the modelled figure rather than the figure itself — headroom, not a hope. The live look
+    # (s15-D1, M45.C5) measures the real distribution before any tenant reads a written brief; this
+    # number is revisited then, the way R-2's was.
+    SITE_BRIEF: 1600,
+    SITE_BRIEF_ESCALATE: 1600,
 }
 
 #: ⛔ WHETHER A SITE MAY THINK (`yc2_w27_s18` M50.C2.L-contract.V1.U02). Claude 5 models think unless
@@ -126,6 +147,8 @@ SITE_THINKING = {
     SITE_CONSULT: _THINKING_OFF,
     SITE_SITUATION: _THINKING_OFF,
     SITE_EXPERT: _THINKING_OFF,
+    SITE_BRIEF: _THINKING_OFF,
+    SITE_BRIEF_ESCALATE: _THINKING_OFF,
 }
 
 #: How long one call of a site may take, in seconds, where the client's own 60 s is too short. None
@@ -212,8 +235,8 @@ __all__ = ["FALLBACK_OUTCOMES", "OUTCOMES", "OUTCOME_CACHED", "OUTCOME_FAILED_GE
            "OUTCOME_FAILED_VALIDATION", "OUTCOME_FORCE_FAILED", "OUTCOME_NOT_ACTIVATED",
            "OUTCOME_NO_BUDGET", "OUTCOME_NO_CLIENT", "OUTCOME_NO_PRECONDITION", "OUTCOME_RAN",
            "OUTCOME_TRUNCATED",
-           "R_SITES", "SITE_ALTERNATIVES", "SITE_CONSULT", "SITE_EFFECT", "SITE_EXPERT",
-           "SITE_INTERPRET", "SITE_SITUATION",
+           "R_SITES", "SITE_ALTERNATIVES", "SITE_BRIEF", "SITE_BRIEF_ESCALATE", "SITE_CONSULT",
+           "SITE_EFFECT", "SITE_EXPERT", "SITE_INTERPRET", "SITE_SITUATION",
            "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_THINKING", "SITE_TIERS", "SITE_TIMEOUT_S",
            "TIER_T1", "TIER_T2",
            "max_output_tokens", "require_outcome", "require_site", "thinking_mode", "tier_for",
