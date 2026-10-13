@@ -190,6 +190,12 @@ UNREACHED: dict[str, tuple[str, str]] = {
     "morning_store.mark_line": (
         "STEP-15 M44.C4.L-data.V0.U01, built bottom-up: your mark on a line — useful, or not useful with your words — the latest standing, the line naming its brief. Its caller is the mark route, M45.C3.L-interface.V0.U02; until it lands no mark is taken.",
         "MOVES WHEN M45.C3.L-interface.V0.U02 (`POST /v1/executive/morning/lines/{line_id}/mark`) lands"),
+    "morning_prompt.build_prompt": (
+        "STEP-15 M45.C2.L-logic.V0.U01, built bottom-up: the writer's prompt, from the day's items and "
+        "nothing else. Its caller is the writer, M45.C2.L-logic.V1.U03, waiting on the sites it writes "
+        "through (`reason/bundle/sites.py`, M45.C1.L-contract.V0.U01) — themselves waiting on the Claude 5 "
+        "thinking fix's merge; until then no prompt is built for a real pass.",
+        "MOVES WHEN M45.C2.L-logic.V1.U03 (the writer) lands and calls it"),
 
 }
 

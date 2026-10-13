@@ -98,7 +98,7 @@ def test_every_declared_entry_is_still_unreached():
 #: ⛔ STEP-15 (`yc2_w27_s15`) builds the morning brief bottom-up, so for a few commits a part lands before the
 #: composer that calls it. Each is declared in `executive/unreached.UNREACHED` and named here, and leaves both
 #: in the commit that wires its caller — the ten above are the layer's own and do not move.
-STEP_15_BUILDING = frozenset({"morning_store.mark_line"})
+STEP_15_BUILDING = frozenset({"morning_store.mark_line", "morning_prompt.build_prompt"})
 
 
 def test_the_count_is_ten_and_they_are_the_measured_ten():
@@ -148,6 +148,9 @@ def test_the_count_is_ten_and_they_are_the_measured_ten():
                                 "lifecycle.is_open",
                                 "lifecycle.is_terminal",
                                 "readiness.read"} | STEP_15_BUILDING
+    # ⛔ STEP-15 (`yc2_w27_s15`) builds the morning brief bottom-up: `morning_store.mark_line` waits on
+    # M45.C3.L-interface.V0.U02 (the mark route); `morning_prompt.build_prompt` is the same shape now,
+    # waiting on the writer (M45.C2.L-logic.V1.U03) — the ten above are the layer's own and never move.
     # ⛔ AND NONE OF THE FIVE IS NOW UNTESTED. Two were — `blocking_action` (wired in U3) and
     # `lifecycle.is_terminal`, which got its first tests in
     # `tests/executive/test_a_closed_set_with_two_spellings.py`. Measured there: the guard at
