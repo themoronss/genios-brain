@@ -8753,7 +8753,7 @@ yc2_w27_s17:
                       depends_on: []
 
 yc2_w27_s18:
-  status: building   # M48, M49 built 2026-10-12 on `yc2w27-s18` (c885d677..), 20 units + 3 fixes, every unit mutation-tested; M50 (Claude 5 thinks by default, 13 Oct) building on `yc2w27-s18-thinking`
+  status: built   # M48, M49 2026-10-12 on `yc2w27-s18` (c885d677..), 20 units + 3 fixes; M50 (Claude 5 thinks by default) 2026-10-13 on `yc2w27-s18-thinking`, 20 units; every unit mutation-tested; not pushed
   source: >
     speedrun008/YC-II W27/STEP-18 B1-B29 and the rows of `03` that name STEP-18 as their owner (F65, F79,
     F97, F100, F108, F109, F111, F117, F120, F128, F135, F158, F159, F165, F166, F180), each re-checked at
