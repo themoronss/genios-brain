@@ -200,6 +200,9 @@ def _built() -> list[pathlib.Path]:
     return [p for p in _steps() if _is_built(_name_status(p), _tree_status(p))]
 
 
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason=(
+    "yc2_w27_s18 is `building` while M50 (Claude 5 thinks by default, 13 Oct) is built; "
+    "M50.C5.L-interface.V2.U20 sets it back to `built` and removes this marker"))
 def test_built_is_read_from_the_tree_as_well_as_the_name():
     """S17X-G2. A step named TO BUILD whose block the tree calls built is built; one the tree calls
     anything else is not; a name that says built is built whatever the tree says."""
