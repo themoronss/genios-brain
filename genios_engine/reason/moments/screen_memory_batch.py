@@ -181,9 +181,12 @@ def submit(engine, *, client, now: datetime, crypto_key: str, wait_minutes: int,
     same job; a failed create leaves them queued. Returns jobs submitted."""
     from genios_engine.platform import company_brief as CB
     from genios_engine.platform.crypto import decrypt
+    from genios_engine.context.llm.client import request_controls
     from genios_engine.reason.llm_sites import tier_model
     from genios_engine.reason.moments import screen_insight as SI
     model = tier_model("T1")
+    # `yc2_w27_s18` M50.C3.L-logic.V1.U14 (s5t-F9): `temperature` only where it is taken, thinking off.
+    controls = request_controls(model)
     with engine.begin() as c:
         head = c.execute(sql(
             "select min(created_at) as oldest, count(*) as n from screen_memory_jobs "
@@ -216,7 +219,7 @@ def submit(engine, *, client, now: datetime, crypto_key: str, wait_minutes: int,
                                   now_local=SI.local_label(aware(r.created_at), tz),
                                   company_brief=briefs[r.org_id])
             requests.append({"custom_id": r.id, "params": {
-                "model": model, "max_tokens": MAX_TOKENS, "temperature": 0,
+                "model": model, "max_tokens": MAX_TOKENS, **controls,
                 "messages": [{"role": "user", "content": prompt}]}})
             sent.append(r.id)
         if broken:
