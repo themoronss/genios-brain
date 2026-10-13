@@ -7911,7 +7911,12 @@ yc2_w27_s13:
                         crore, M ≠ K, %, ₹ ≠ $) and needs the same on its lines — a bare count needs none;
                         a calculator corrects only within its unit, and never a date. Indian digit grouping
                         `12,50,000` is one number (`contracts/expert_review.number_tokens`, every STEP-12
-                        reading kept). Measured on the golden set's 95 captured checks: none moves.
+                        reading kept). Measured on the golden set's 95 captured checks: none moves. Amended 13
+                        Oct (fix, the STEP-13 second crosscheck G6): "Marco has 2 open asks" on the usual gap
+                        ("2 times, median 3.48 days") was KEPT — the run's own figures (`_Run.figures`) kept a
+                        calculator's sample size. They strip it as `value_of` does: a count is never the sample
+                        size (a bare count then corrected within no unit, as declared). Measured: no authored
+                        fact writes a cited calculator's sample size.
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_figures.py tests/reason/expert/test_verify_numbers.py tests/reason/expert/test_the_review_contract.py"
                       depends_on: [M35.C2.L-logic.V1.U09]

@@ -847,7 +847,11 @@ class _Run:
         out: list[str] = []
         for i in ids:
             if i.startswith("num:"):
-                out += [f"{c}[{i}]" for dl in self.lines.get(i, ()) if (c := _clause(dl.line, i)) is not None]
+                # ⛔ NEVER ITS SAMPLE SIZE (M35.C2.L-logic.V1.U10 fix, the second crosscheck G6): "2 times,
+                # median 3.48 days" grounded "Marco has 2 open asks" — the count a median was taken over is no
+                # value the calculator says, as `value_of` already read it.
+                out += [f"{_SAMPLE.sub(' ', c)}[{i}]" for dl in self.lines.get(i, ())
+                        if (c := _clause(dl.line, i)) is not None]
             else:
                 out.append(self.items([i]))
         return "\n".join(dict.fromkeys(out))

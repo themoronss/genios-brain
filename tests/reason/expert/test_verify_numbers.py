@@ -104,3 +104,28 @@ def test_an_ids_digits_are_no_number():
 ])
 def test_a_calculator_prints_one_value_beside_its_id(line, ref, value):
     assert value_of(line, ref) == value
+
+
+# ── M35.C2.L-logic.V1.U10 (fix) · the second crosscheck G6: a count is never the sample size ────────────────────
+
+def test_g6_a_count_is_never_the_sample_size():
+    """G6's run: "Marco has 2 open asks", citing the usual gap ("2 times, median 3.48 days"), was KEPT — the count
+    the median was taken over grounded a count of something else. It is held to the calculator's value (a bare
+    count corrected within no unit, as declared: the noun is not read)."""
+    checked = _check(fact3={"claim": "Marco has 2 open asks", "evidence": ["num:usual_gap"]})
+    assert _verdict(checked, "fact:3") == C.LineVerdict("fact:3", C.CORRECTED, C.BY_CALCULATOR,
+                                                        "number:2 -> 3.48 (num:usual_gap)")
+
+
+def test_g6_a_card_text_is_never_grounded_on_a_sample_size():
+    """The run's own figures (`_Run.figures`) are what every card text's numbers are held to: the sample is
+    no figure of theirs either."""
+    checked = _check(fact3={"claim": "His usual gap is 3.48 days", "evidence": ["num:usual_gap"]},
+                     frames={"primary": "Marco has written 2 times since the introduction", "rivals": ["a pass"]})
+    assert _verdict(checked, "situation") == C.LineVerdict("situation", C.DROPPED, C.WRONG_NUMBER, "number:2")
+
+
+def test_the_calculator_s_own_value_still_grounds():
+    """The negative control: the median itself is the calculator's value."""
+    checked = _check(fact3={"claim": "His usual gap is 3.48 days", "evidence": ["num:usual_gap"]})
+    assert _verdict(checked, "fact:3").verdict == C.KEPT
