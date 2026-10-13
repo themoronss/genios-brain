@@ -380,3 +380,62 @@ def test_a_verified_close_is_a_declared_gap_until_step_16():
         _parse(raw)
     raw["not_expressible"]["outcome"] = "STEP-16 — no card's end records the evidence that closed it"
     assert _parse(raw).expected_other["outcome"] == "verified on 3 Sep by the signed NDA"
+
+
+# =================================================================================================
+# STEP-15 · a case's brief is an expectation like its cards (`yc2_w27_s15` M44.C5.L-contract.V0.U01)
+# =================================================================================================
+def _brief_only(**brief) -> dict:
+    case = _case()
+    case["expected"]["cards"] = [{"about": ["Kavya", "Lotus"], "min": 1, "max": 1}]
+    case["expected"]["brief"] = brief or {"says": "the deck, in today's five",
+                                          "lines": [{"section": "today", "about": ["Kavya", "Lotus"],
+                                                     "mentions": ["deck"]}]}
+    case["not_expressible"] = {**case["not_expressible"],
+                               "cards": "brief only — the founder's answer is a line in the morning brief (D12d)"}
+    return case
+
+
+def test_the_brief_is_expressible_now():
+    assert "brief" not in fc.NOT_EXPRESSIBLE_TODAY and "brief" in fc.EXPRESSIBLE_KEYS
+
+
+def test_a_brief_expectation_names_its_lines_section_subject_and_words():
+    case = _parse(_brief_only())
+    assert case.expressible("brief") and not case.expressible("cards")
+    (line,) = case.brief.lines
+    assert (line.section, line.about, line.min, line.max, line.mentions) == ("today", ("Kavya", "Lotus"), 1, 1,
+                                                                              ("deck",))
+    assert case.brief.says == "the deck, in today's five" and "brief" not in case.expected_other
+
+
+def test_a_brief_expectation_in_prose_alone_is_declared_not_expressible():
+    raw = _brief_only()
+    raw["expected"]["brief"] = "a line about the deck"
+    with pytest.raises(fc.CaseError, match="prose the marking cannot judge"):
+        _parse(raw)
+    raw["not_expressible"]["brief"] = "the line is not restated yet"
+    case = _parse(raw)
+    assert case.brief.says == "a line about the deck" and case.brief.lines == () and not case.expressible("brief")
+
+
+@pytest.mark.parametrize("brief, message", [
+    ({"says": "x", "lines": [{"section": "later", "about": ["Kavya"]}]}, "section"),
+    ({"says": "x", "lines": [{"section": "today", "about": []}]}, "about"),
+    ({"says": "x", "lines": [{"section": "today", "about": ["Kavya"], "min": 2, "max": 1}]}, "min and max"),
+    ({"says": "x", "lines": [{"section": "today", "about": ["Kavya"], "where": "top"}]}, "unknown key"),
+    ({"says": " ", "lines": [{"section": "today", "about": ["Kavya"]}]}, "says"),
+    ({"lines": [], "says": "x", "extra": 1}, "unknown key"),
+])
+def test_a_brief_expectation_that_is_not_one_is_refused(brief, message):
+    with pytest.raises(fc.CaseError, match=message):
+        _parse(_brief_only(**brief))
+
+
+def test_a_brief_line_defaults_to_exactly_one():
+    case = _parse(_brief_only(says="x", lines=[{"section": "watching", "about": ["Tara"]}]))
+    assert (case.brief.lines[0].min, case.brief.lines[0].max, case.brief.lines[0].mentions) == (1, 1, ())
+
+
+def test_a_case_with_no_brief_expectation_has_none():
+    assert _parse(_case()).brief is None
