@@ -341,7 +341,8 @@ def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: 
             card, copy = question_card(graph, org_id, row, eval_time)
             # STEP-14 · the card contract first (M43.C4.L-integration.V1.U02): a question is the expert's checked words.
             if _refused(out, org_id, card, _contract_refusals(card, copy, us=us, our_names=our_names,
-                                                              identities=identities, expert=True)):
+                                                              identities=identities, expert=True),
+                        engine=getattr(graph, "engine", None)):
                 continue
             # STEP-14: the file's card, asking — a VERSION of the file's one card when it has one.
             versioned = _version_file_card(card_store, card, copy, token, out)
@@ -497,17 +498,29 @@ def _contract_refusals(card: dict, copy: dict, *, us, our_names, identities, exp
                                                                                     quotes))
 
 
-def _refused(out: dict, org_id: str, card: dict, refusals) -> bool:
-    """Count and log what the contract refused; True when the card must not be written."""
+def _refused(out: dict, org_id: str, card: dict, refusals, *, engine=None) -> bool:
+    """Count, log and keep what the contract refused (`platform/card_refusals`, 0222 — a refused card is never
+    written, so it is kept where `scripts/pipeline_health` reads it); True when the card must not be written.
+    ⛔ Keeping it may never cost the pass: unkept, it is counted `refusals_unkept` and logged."""
     if not refusals:
         return False
     import logging
 
     for r in refusals:
         out[f"refused_contract:{r.rule}"] = out.get(f"refused_contract:{r.rule}", 0) + 1
-    logging.getLogger(__name__).warning(
-        "card refused by the card contract org=%s signal=%s: %s", org_id, card.get("signal_id"),
-        "; ".join(f"{r.rule}: {r.found}" for r in refusals))
+    log = logging.getLogger(__name__)
+    log.warning("card refused by the card contract org=%s signal=%s: %s", org_id, card.get("signal_id"),
+                "; ".join(f"{r.rule}: {r.found}" for r in refusals))
+    if engine is not None:
+        from genios_engine.platform import card_refusals
+
+        try:
+            with engine.begin() as c:
+                card_refusals.record(c, org_id=org_id, writer=card_refusals.PIPELINE,
+                                     ref=str(card.get("signal_id") or "-"), refusals=refusals)
+        except Exception as exc:      # noqa: BLE001 — see the docstring
+            out["refusals_unkept"] = out.get("refusals_unkept", 0) + 1
+            log.warning("could not keep the card contract's refusal org=%s: %s", org_id, exc)
     return True
 
 
@@ -878,7 +891,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                                                            or {}).values() if isinstance(part, dict)
                                             for q in (part.get("quotes") or ())]
             if _refused(out, org_id, draft, _contract_refusals(draft, copy, us=us, our_names=our_names,
-                                                               identities=identities, expert=from_review)):
+                                                               identities=identities, expert=from_review),
+                        engine=getattr(graph, "engine", None)):
                 continue
             # STEP-14: an expert card is its FILE's — the file's next decision VERSIONS it, never a second card.
             if draft.get("file_id"):

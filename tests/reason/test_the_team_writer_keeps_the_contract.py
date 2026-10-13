@@ -82,6 +82,20 @@ def test_a_team_card_that_breaks_the_contract_is_never_written(engine, over, rul
     assert _emit(engine, counts, **over) is None
     assert _written(engine) == (0, 0, 0), "no card, no moment, no situation row"
     assert counts == {f"refused_contract:{rule}": 1}
+    with engine.connect() as c:          # STEP-14 M43.C4.L-integration.V2.U05: kept where the health check reads it
+        kept = c.execute(text("select writer, ref, rule from card_refusals where org_id = :o"), {"o": ORG}).all()
+    key = over.get("key", "deadline_at_risk:c1")
+    assert [tuple(r) for r in kept] == [("team", f"{over.get('kind', 'team')}:{key}", rule)]
+
+
+def test_a_refusal_that_cannot_be_kept_still_refuses(engine, monkeypatch):
+    def _down(*_a, **_k):
+        raise RuntimeError("card_refusals is not there")
+    monkeypatch.setattr(E.card_refusals, "record", _down)
+    counts: dict = {}
+    assert _emit(engine, counts, body="Shalini can cover — due 19 Sep.") is None
+    assert _written(engine) == (0, 0, 0)
+    assert counts == {"refused_contract:number": 1, "refusals_unkept": 1}
 
 
 def test_money_in_its_evidence_lets_a_card_say_money(engine):

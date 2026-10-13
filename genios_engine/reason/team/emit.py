@@ -43,6 +43,7 @@ from typing import Iterable
 from sqlalchemy import text
 
 from genios_engine.contracts import card_contract
+from genios_engine.platform import card_refusals
 from genios_engine.platform import realtime
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
@@ -119,6 +120,18 @@ def refusals(*, headline: str, body: str | None, evidence) -> tuple:
                                money_evidence=_money_in(evidence))
 
 
+def _keep_refusals(engine, org_id: str, *, ref: str, refused, counts: dict | None) -> None:
+    """Keep what the contract refused where `scripts/pipeline_health` reads it (`platform/card_refusals`, 0222).
+    ⛔ Keeping it may never cost the emitter: unkept, it is counted `refusals_unkept` and logged."""
+    try:
+        with engine.begin() as c:
+            card_refusals.record(c, org_id=org_id, writer=card_refusals.TEAM, ref=ref, refusals=refused)
+    except Exception as exc:      # noqa: BLE001 — see the docstring
+        if counts is not None:
+            counts["refusals_unkept"] = counts.get("refusals_unkept", 0) + 1
+        _log.warning("could not keep the card contract's refusal org=%s key=%s: %s", org_id, ref, exc)
+
+
 def emit_situation(engine, card_store, org_id: str, *, kind: str, key: str, seat_id: str,
                    subject_node_ids, headline: str, body: str | None, actions, evidence,
                    priority: str = "high", ttl_seconds: int, digest: str,
@@ -144,6 +157,7 @@ def emit_situation(engine, card_store, org_id: str, *, kind: str, key: str, seat
                 counts[f"refused_contract:{r.rule}"] = counts.get(f"refused_contract:{r.rule}", 0) + 1
         _log.warning("team card refused by the card contract org=%s key=%s: %s", org_id, key,
                      "; ".join(f"{r.rule}: {r.found}" for r in refused))
+        _keep_refusals(engine, org_id, ref=f"{kind}:{key}", refused=refused, counts=counts)
         return None
     card_exp = expires_at or now + timedelta(days=CARD_TTL_DAYS)
     ttl = max(60, min(int(ttl_seconds or 900), 86400))

@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_166, (
+    assert r["statements"] == 3_181, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -495,6 +495,13 @@ def test_the_statement_count_did_NOT_move():
     # constant `deliver/store._FILE_CARDS`, so `platform/statement_plans` resolves the three door statements (the
     # run-time ratchet back at 272) — and the template walk now renders the constant's own `+` chain as well:
     # 92 → 99 in `deliver/store.py`, measured per file against the merge 360766a3. No SQL added.
+    # ⛔ MOVED 3,166 → 3,181 by yc2_w27_s14/M43.C4.L-integration.V2.U05 (the health check says what the founder
+    # sees), measured per file against the branch's head: +1 `platform/card_refusals.py` (the one INSERT of
+    # `card_refusals`, 0222) and +14 `scripts/pipeline_health.py` 42 → 56 — seven real statements: two literals
+    # (the cards that name a file, the refusals of 7 days) and five assembled from `_EXPERT_CARD` or `_SINCE_0220`
+    # (the open file cards, the files with two, the file cards replaced since 0220, the live expert cards and those
+    # of them with no app surface), whose prefixes the template walk records as well. The run-time ratchet did
+    # not move (272).
     # ⛔ MOVED 3,079 → 3,080 by yc2_w27_s18/M48.C1.L-data.V0.U02 (STEP-18 B4, a review object waits for
     # review): one UPDATE, `feedback/publisher._rest_for_review` — the weekly road's review object rests at
     # `human_review`. A literal at its own call.

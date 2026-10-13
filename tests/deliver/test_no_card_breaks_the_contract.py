@@ -140,6 +140,7 @@ def test_a_refused_version_leaves_the_files_card_as_it_was(world):
                              {"c": card_id}).scalar()
         n = c.execute(text("select count(*) from cards where org_id = :o"), {"o": org}).scalar()
     assert (headline, versions, n) == (before, 0, 1), "its words are the ones before, and no second card"
+    assert _kept(pg_store, org) == [("pipeline", "internal", "party.role")]
 
 
 @pytest.mark.pg
@@ -155,3 +156,26 @@ def test_a_question_that_names_a_field_is_never_carded(world):
     assert out["refused_contract:internal"] == 1 and out["question_cards"] == 0, out
     with pg_store.engine.connect() as c:
         assert c.execute(text("select count(*) from cards where org_id = :o"), {"o": org}).scalar() == 0
+    assert _kept(pg_store, org) == [("pipeline", "internal", "party.role")]
+
+
+def _kept(pg_store, org):
+    """STEP-14 M43.C4.L-integration.V2.U05: what the contract refused is kept where the health check reads it
+    (`card_refusals`, 0222), the refused signal named."""
+    with pg_store.engine.connect() as c:
+        rows = c.execute(text("select r.writer, r.rule, r.found from card_refusals r join signals s "
+                              "on s.org_id = r.org_id and s.signal_id = r.ref where r.org_id = :o"), {"o": org}).all()
+    return [tuple(r) for r in rows]
+
+
+class _Down:
+    def begin(self):
+        raise RuntimeError("card_refusals is not there")
+
+
+def test_a_refusal_that_cannot_be_kept_still_refuses():
+    from genios_engine.contracts.card_contract import Refusal
+    out: dict = {}
+    assert pipeline._refused(out, "org_c", {"signal_id": "s1"}, (Refusal("money", "payment"),), engine=_Down())
+    assert out == {"refused_contract:money": 1, "refusals_unkept": 1}
+    assert pipeline._refused(out, "org_c", {"signal_id": "s1"}, ()) is False
