@@ -53,8 +53,10 @@ from genios_engine.context.your_desk import desk_for, open_questions
 from genios_engine.contracts import morning_brief as B
 from genios_engine.contracts.claim_check import HELD, SHOWN
 from genios_engine.contracts.measured import count_of
+from genios_engine.executive.morning_screen import screen_items
 from genios_engine.executive.morning_store import last_before
 from genios_engine.platform.grounding import corpus_of, invention_ok
+from genios_engine.platform.identity import person_name_key
 from genios_engine.platform.self_identity import identity_for, spoken_name
 from genios_engine.reason.expert.store import SHADOW_LANE, current_judgments
 from genios_engine.reason.expert.verify import EARNED
@@ -354,6 +356,8 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
     items += _desk(conn, org_id, [f for f in files if f.file_id not in _resolved_nothing(judgments)], now, zone)
     items += _meetings(conn, org_id, seat_id, emails, now, tz, zone)
     items += _promises(conn, org_id, files, file_names, now, zone)
+    items += screen_items(conn, org_id=org_id, seat_id=seat_id, file_by_person=_file_by_person(files, said),
+                          file_names=file_names, now=now)
     local = now.astimezone(zone).date()
     last = last_before(conn, org_id, seat_id, local)
     items += read_changes(conn, org_id, now=now, items=items, last=last, file_names=shown, founder=founder,
@@ -372,6 +376,19 @@ def _resolved_nothing(judgments) -> frozenset[str]:
         if j.valid and j.checked is not None and mode_of(j.stored.review, j.checked) == "nothing":
             out.add(file_id)
     return frozenset(out)
+
+
+def _file_by_person(files, said: dict[str, str | None]) -> dict[str, str]:
+    """`06` D8 — every file's own people, by `platform/identity.person_name_key`, so a screen follow-up naming
+    one of them reads beside that file rather than standing alone. The first file a name is shown on wins; two
+    files sharing a person is the weak case `person_name_key`'s own docstring already names."""
+    out: dict[str, str] = {}
+    for f in sorted(files, key=lambda f: f.file_id):
+        for p in f.people:
+            key = person_name_key(said.get(p))
+            if key:
+                out.setdefault(key, f.file_id)
+    return out
 
 
 def _desk(conn, org_id: str, files, now: datetime, zone: ZoneInfo) -> list[B.Item]:
