@@ -1002,6 +1002,29 @@ def _sync_headroom(org_id: str) -> int:
         return 1 << 30
 
 
+#: The clock the sweep's tail composes the morning briefs by — a seam a test sets; production reads the wall.
+def _brief_clock():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc)
+
+
+def _compose_due_briefs() -> dict:
+    """STEP-15 (`yc2_w27_s15` M44.C4.L-integration.V2.U03; `03` s15-F12: nothing in the engine ran at a local hour).
+    Every sweep ends here — `run_sync_sweep`, which the 6-hour heavy tick (`run_maintenance_sweep`) and the 15-minute
+    light tick both run, and `/ingest/all` once its reasoning is done: each account owner whose 08:00 has passed in
+    the org's timezone, with no brief kept for that local day, gets it composed (`executive/morning.compose_due`) —
+    so a brief lands within one light tick of the hour, after the morning's mail. In a block of its own: a brief
+    that cannot be composed is counted and logged, and never kills the beat."""
+    if _graph is None:
+        return {}
+    try:
+        from genios_engine.executive.morning import compose_due
+        return compose_due(_graph.engine, now=_brief_clock())
+    except Exception as exc:                          # noqa: BLE001 — never kill the heartbeat
+        _log.exception("the morning briefs could not be composed")
+        return {"error": type(exc).__name__}
+
+
 def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
                    chain_only_on_new_data: bool = False) -> dict:
     """Full auto-sync sweep across EVERY active connection (all orgs): L1 pull for all connections,
@@ -1166,7 +1189,9 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
     _log.info("auto-sync sweep complete: %d/%d connection(s) pulled, %d due this tick, %d "
               "skipped on budget, %d skipped as paused, %d org(s) reasoned, %d skipped (nothing new)",
               l1_ok, len(conns), l1_due, l1_skipped, l1_paused, len(orgs), len(no_new))
-    return {"connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err,
+    # STEP-15 · and the briefs that are due — after the morning's mail and its reasoning, in a block of its own.
+    briefs = _compose_due_briefs()
+    return {"briefs": briefs, "connections": len(conns), "l1_ok": l1_ok, "l1_err": l1_err,
             # Reported rather than silent: "why did this connection not sync" is the question
             # L1.2.6 is always asked, and a sweep that left no number behind could not answer
             # it. `l1_due` is the scheduler's own count for this tick — how many of the active
@@ -1659,6 +1684,8 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
     if auto_l2 and _graph is not None:              # L2 runs in the background per org
         for org in {c.org_id for c in conns}:
             background_tasks.add_task(_run_l2, org)
+    if _graph is not None:                          # STEP-15 · then the briefs due, after every org's reasoning
+        background_tasks.add_task(_compose_due_briefs)
     return {"using": {"composio": s.use_real_composio, "db": s.use_real_db},
             "connections": len(conns), "totals": totals, "per_connection": per,
             "l2_background": auto_l2 and _graph is not None}

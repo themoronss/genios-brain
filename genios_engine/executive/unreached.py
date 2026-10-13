@@ -187,13 +187,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
     # STEP-15 builds bottom-up (tree `yc2_w27_s15`): the morning brief's parts land before the composer that calls
     # them. Each entry is deleted in the commit that wires its caller, and the pinned set in
     # `tests/test_the_executive_says_what_it_does_not_call.py` moves with it, said there.
-    "morning.compose_due": (
-        "STEP-15 M44.C4.L-integration.V1.U02, built bottom-up: every account owner's brief that is due — past "
-        "08:00 in the org's timezone, none kept for that local day — composed once, a failing seat counted and "
-        "never raised past. Its caller is the sweep's tail, M44.C4.L-integration.V2.U03; until it lands no tick "
-        "composes a brief.",
-        "MOVES WHEN M44.C4.L-integration.V2.U03 (`api/routes.run_sync_sweep`) lands: every sweep ends with it"),
-
     "morning_store.mark_line": (
         "STEP-15 M44.C4.L-data.V0.U01, built bottom-up: your mark on a line — useful, or not useful with your words — the latest standing, the line naming its brief. Its caller is the mark route, M45.C3.L-interface.V0.U02; until it lands no mark is taken.",
         "MOVES WHEN M45.C3.L-interface.V0.U02 (`POST /v1/executive/morning/lines/{line_id}/mark`) lands"),
