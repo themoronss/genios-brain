@@ -232,7 +232,20 @@
     "max": 1
    }
   ],
-  "brief": "Larkspur went quiet after four exchanges in March - six months"
+  "brief": {
+   "says": "Larkspur went quiet after four exchanges in March - six months",
+   "lines": [
+    {
+     "section": "stuck",
+     "about": [
+      "Larkspur"
+     ],
+     "mentions": [
+      "outside your switched-on work"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -243,8 +256,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only - a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 - there is no morning brief to appear in"
+  "cards": "brief only - a line in the morning brief, not a card (D12d)"
  },
  "model": {
   "expert": [
@@ -623,5 +635,5 @@
   ]
  },
  "notes": "09 G1, the benchmark's March exchanges: four real exchanges, both ways, then six months of nothing. A line in the brief, not a card.",
- "blocked_on": null
+ "blocked_on": "s15-D2 — its file is decided on the shadow lane (its home situation a Sales opportunity, Sales off, 06 D2): no line reaches a brief until a file on the shadow lane is a labelled line (STEP-15 M45.C4.L-logic.V0.U01)"
 }

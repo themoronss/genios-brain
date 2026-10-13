@@ -243,7 +243,25 @@
     "max": 1
    }
   ],
-  "brief": "you have sent nothing for 28 days while three people wait"
+  "brief": {
+   "says": "you have sent nothing for 28 days while three people wait",
+   "lines": [
+    {
+     "section": "desk",
+     "about": [
+      "Dev",
+      "Rhea",
+      "Kabir"
+     ],
+     "mentions": [
+      "28 days",
+      "Dev",
+      "Rhea",
+      "Kabir"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -254,8 +272,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only - a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 - there is no morning brief to appear in"
+  "cards": "brief only - a line in the morning brief, not a card (D12d)"
  },
  "model": {
   "decider": [

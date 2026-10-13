@@ -123,7 +123,20 @@
     "max": 1
    }
   ],
-  "brief": "one line: a programme you could apply to"
+  "brief": {
+   "says": "one line: a programme you could apply to",
+   "lines": [
+    {
+     "section": "today",
+     "about": [
+      "Awadh"
+     ],
+     "mentions": [
+      "application"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -134,8 +147,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 — there is no morning brief to appear in"
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)"
  },
  "notes": "The founder's brief names the Awadh Enterprise Centre as work in motion (a program line, its domain awadhec.test), so since STEP-12 (03 F125, yc2_w27_s12 M32.C1.L-contract.V0.U05) its mail is a named sender's: the gate keeps it as W-07 without asking, and it is read. The `gate` and `relevance` above are what those readers would answer if asked; the extraction is what a faithful reader takes from two templated notices — a programme starting in November, and a reminder that applications close 'soon', which names no date (06 D56).",
  "model": {

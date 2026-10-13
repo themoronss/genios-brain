@@ -86,7 +86,20 @@
     "max": 1
    }
   ],
-  "brief": "your open promises, each in the file it belongs to"
+  "brief": {
+   "says": "your open promises, each in the file it belongs to",
+   "lines": [
+    {
+     "section": "promises",
+     "about": [
+      "Gaurav"
+     ],
+     "mentions": [
+      "pilot proposal"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -97,8 +110,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "the screen door — WhatsApp promises arrive through the screen, which the runner does not drive; and the founder's answer is a brief line (D12d)",
-  "brief": "STEP-15 — there is no morning brief to appear in"
+  "cards": "the screen door — WhatsApp promises arrive through the screen, which the runner does not drive; and the founder's answer is a brief line (D12d)"
  },
  "model": {
   "expert": [

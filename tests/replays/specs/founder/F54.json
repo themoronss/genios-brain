@@ -55,7 +55,21 @@
     "max": 1
    }
   ],
-  "brief": "the Bluebay mixer of 20 Aug - no follow-up to anyone you met"
+  "brief": {
+   "says": "the Bluebay mixer of 20 Aug - no follow-up to anyone you met",
+   "lines": [
+    {
+     "section": "meetings",
+     "about": [
+      "Bluebay",
+      "mixer"
+     ],
+     "mentions": [
+      "no follow-up"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [
@@ -65,8 +79,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only - a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 - there is no morning brief to appear in"
+  "cards": "brief only - a line in the morning brief, not a card (D12d)"
  },
  "model": {
   "decider": [

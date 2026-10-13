@@ -163,7 +163,25 @@
     "max": 1
    }
   ],
-  "brief": "a monitor line, then closed with a reason after two weeks of silence"
+  "brief": {
+   "says": "a monitor line, then closed with a reason after two weeks of silence",
+   "lines": [
+    {
+     "section": "watching",
+     "about": [
+      "Simon",
+      "Lumenpath"
+     ]
+    },
+    {
+     "section": "watching",
+     "about": [
+      "Omar",
+      "Tidewell"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -174,8 +192,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 — there is no morning brief to appear in"
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)"
  },
  "model": {
   "decider": [
