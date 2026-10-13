@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_147, (
+    assert r["statements"] == 3_148, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -538,6 +538,8 @@ def test_the_statement_count_did_NOT_move():
     # so the pin the merge measured, 3,142, held at U03's head only by its omission; measured per file here.)
     # ⛔ MOVED 3,146 → 3,147 by yc2_w27_s15/M44.C4.L-integration.V1.U02 (STEP-15, compose): one SELECT,
     # `executive/morning._OWNERS` — each org's account owner's seat. A literal.
+    # ⛔ MOVED 3,147 → 3,148 by yc2_w27_s15/M44.C4.L-interface.V2.U04 (STEP-15, GET /v1/executive/morning): one
+    # SELECT, `api/executive_routes._brief_seat` — an owner-level key's brief is the account owner's seat. A literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
