@@ -9235,6 +9235,7 @@ yc2_w27_s16:
                 - level: 0
                   units:
                     - id: M46.C1.L-integration.V0.U01
+                      status: built   # 12-13 Oct, 84ff0e84
                       what: >
                         Written first, so every later unit runs it: no module this block adds or edits
                         writes `rule_mutes`, `calibration_nudges`, `tenant_packs.authority_revision`,
@@ -9274,6 +9275,7 @@ yc2_w27_s16:
                 - level: 1
                   units:
                     - id: M46.C2.L-data.V1.U02
+                      status: built   # 12-13 Oct, 1b5aff69, fix c134200f
                       what: >
                         The one writer of a verdict (`deliver/verdicts.record`): the extension route's two
                         statements (`api/intelligence_routes.py:1071-1125`) move here byte for byte — the
@@ -9310,6 +9312,7 @@ yc2_w27_s16:
                 - level: 0
                   units:
                     - id: M46.C3.L-contract.V0.U01
+                      status: built   # 12-13 Oct, fa28ae61
                       what: >
                         `0241_founder_corrections`: your correction of a file — the file (its anchor; no
                         foreign key, as `founder_questions`), the card and the verdict it rides on (optional),
@@ -9326,6 +9329,7 @@ yc2_w27_s16:
                 - level: 0
                   units:
                     - id: M46.C3.L-data.V0.U05
+                      status: built   # 12-13 Oct, fbe1ad19 — the caller's half in reason/expert/asks rides with M46.C3.L-integration.V4.U06 (s16-F15)
                       what: >
                         A question you call wrong is retired and not asked again (`context/founder_questions`):
                         `retire` takes a third closed why, `CALLED_WRONG`; `ask` does not file again, on the
@@ -9337,6 +9341,7 @@ yc2_w27_s16:
                 - level: 1
                   units:
                     - id: M46.C3.L-data.V1.U02
+                      status: built   # 12-13 Oct, 4e12c718
                       what: >
                         The corrections, kept (`context/founder_corrections`): `correct` — its id the
                         content's (tenant, file, words, scope), so the same words again are the same
@@ -9354,6 +9359,7 @@ yc2_w27_s16:
                 - level: 2
                   units:
                     - id: M46.C3.L-interface.V2.U03
+                      status: built   # 12-13 Oct, 33199c4f
                       what: >
                         Your door on a file: `POST /v1/workstreams/{file_id}/corrections` (words, scope, an
                         optional card) and `…/corrections/{id}/withdraw`; `GET /v1/workstreams/{file_id}`
@@ -9494,6 +9500,7 @@ yc2_w27_s16:
                 - level: 0
                   units:
                     - id: M46.C5.L-contract.V0.U01
+                      status: built   # 12-13 Oct, ea304a64, fix ea893319
                       what: >
                         `0242_company_brief_corrections`: `company_brief_lines.proposed_kind` — the drafter's
                         kind when you accepted another (F126) — and `replaces` — the accepted line a proposal
@@ -9506,6 +9513,7 @@ yc2_w27_s16:
                 - level: 1
                   units:
                     - id: M46.C5.L-data.V1.U02
+                      status: built   # 12-13 Oct, 7117ffc5
                       what: >
                         The brief keeps what you corrected: `accept` with another kind keeps the proposal's in
                         `proposed_kind`; `propose(replaces=…)` proposes a correction of an accepted line, and
@@ -9519,6 +9527,7 @@ yc2_w27_s16:
                 - level: 2
                   units:
                     - id: M46.C5.L-logic.V2.U03
+                      status: built   # 12-13 Oct, 34584923
                       what: >
                         The expert may propose correcting an accepted kind: a review whose proposed kind
                         differs from the accepted line's writes a proposal that replaces it, labelled, for you
@@ -9654,6 +9663,7 @@ yc2_w27_s16:
                 - level: 0
                   units:
                     - id: M47.C3.L-logic.V0.U04
+                      status: built   # 12-13 Oct, ee087c21
                       what: >
                         The public acted rate counts what you did (`03` F76, `s16-F8`): taken is a card
                         `acted` on `run_play` or `do_it_myself`, or `resolved` — never `delivered`; a card

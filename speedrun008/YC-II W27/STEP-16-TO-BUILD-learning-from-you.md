@@ -326,3 +326,12 @@ and stays yours.
   question is retired `CALLED_WRONG` until M46.C3.L-integration.V4.U06 (the question card's *wrong*, in
   `deliver/actions`). `asks.py` is STEP-14's until it merges; the caller's half — treat it as
   `ANSWERED_ALREADY`, file no signal, count the file *held — its question called wrong* — rides with U06.
+- **s16-F16 · Two steps name the same golden cases.** STEP-14's tree (`M43.C6.L-data.V1.U02`–`U07`) authors
+  F59–F64 (the Boardy introductions); this block's `M47.C4.L-data.V1.U04`–`U06` author F59–F61 (a
+  correction on one file, one for a kind of work, one click is never a pattern). Whichever merges second
+  renumbers; these three are not written yet (they wait for `tests/replays/`).
+- **s16-F17 · The prompt waits for the dossier.** `M46.C4.L-interface.V0.U02` (`expert-review.v4`, the
+  checklist's words for a correction) is buildable now, but it moves every expert cassette key: the golden
+  lane is red from it until the ONE re-record (`M47.C4.L-integration.V5.U07`), which waits on STEP-14's
+  files and `tests/replays/` — and its words name dossier sections (`WHAT YOU CORRECTED`, `[corr:…]`) the
+  dossier will not print until `M46.C4.L-logic.V2.U03`. Built with the dossier, just before the re-record.
