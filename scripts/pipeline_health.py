@@ -161,11 +161,17 @@ def check_no_silent_truncation(conn, org: str, *, hours: int) -> Check:
 
     A lane whose failures cluster on one output size is not writing bad JSON; it is running out
     of budget, and `LLMResult.truncated` now says so. This asserts the shape stays visible.
+
+    ⛔ WHETHER OR NOT IT PARSED (`yc2_w27_s18` M50.C4.L-interface.V1.U11, s5t-F6). A cut the lenient
+    parser closed was a SUCCESS with no error — on every R-site, in the drafter, in `l5_render` — so a
+    lane whose every call was cut could pass here. A cut call now names itself in `error`
+    (`truncated: …`, `context/llm/client.TRUNCATED`), and it is counted whatever `success` says.
     """
     rows = conn.execute(sql(
         "select purpose, min(output_tokens) lo, max(output_tokens) hi, count(*) n "
         "  from llm_costs "
-        " where org_id = :o and not success and created_at > now() - make_interval(hours => :h) "
+        " where org_id = :o and (not success or error like 'truncated:%') "
+        "   and created_at > now() - make_interval(hours => :h) "
         " group by 1 having count(*) >= 3"), {"o": org, "h": hours}).fetchall()
     pinned = [(r.purpose, r.lo, r.n) for r in rows if r.lo == r.hi and r.lo > 0]
     calls = _scalar(conn, "select count(*) from llm_costs where org_id = :o "
@@ -895,7 +901,9 @@ def check_the_expert_says_why_and_stays_in_budget(conn, org: str) -> Check:
 
     It FAILS while a row that is not valid has no reason — the schema refuses one, so that is the
     schema changed under it — or while today's spend is over the cap, which is a gate that let a call
-    through. No review in the window is nothing to judge, and passes saying so.
+    through — or while MORE THAN HALF of the day's reviews were cut at the ceiling (`yc2_w27_s18`
+    M50.C4.L-interface.V1.U11): the Sonnet live pass of 12 Oct had 203 of 203 cut and this check would
+    have passed it. No review in the window is nothing to judge, and passes saying so.
     """
     name = "the expert says why, and stays in its budget"
     rows = conn.execute(sql(
@@ -918,18 +926,26 @@ def check_the_expert_says_why_and_stays_in_budget(conn, org: str) -> Check:
         " where org_id = :o and reviewed_at > now() - interval '24 hours' and status <> 'valid' "
         " group by status, reason order by count(*) desc, status, reason limit 10"),
         {"o": org}).fetchall()
+    # `reason/expert/store.TRUNCATED`: a review cut at R-7's token ceiling.
+    cut = sum(int(r.n) for r in rows if r.status == "truncated")
     measured = (f"{total} reviews in 24 h — "
                 + ", ".join(f"{r.status} {int(r.n)}" for r in rows)
                 + f"; spent today ${spent / 1_000_000:.2f} of ${EXPERT_DAILY_CAP_MICRO_USD / 1_000_000:.2f}"
-                + (f"; {silent} not valid with no reason" if silent else ""))
+                + (f"; {silent} not valid with no reason" if silent else "")
+                + (f"; {cut} of {total} truncated" if cut else ""))
     over = spent > EXPERT_DAILY_CAP_MICRO_USD
+    mostly_cut = cut * 2 > total
     return Check(
-        name=name, ok=not silent and not over, measured=measured,
-        expected="every refused, truncated, carried or failed review says why, and the day's spend "
-                 "stays within the expert's own $2",
+        name=name, ok=not silent and not over and not mostly_cut, measured=measured,
+        expected="every refused, truncated, carried or failed review says why, the day's spend "
+                 "stays within the expert's own $2, and no more than half of the reviews are cut",
         fix=("a row that is not valid has no reason: the expert_reviews_reason_check constraint "
              "(migration 0197) was dropped or bypassed — restore it, and find the writer that is not "
              "reason/expert/store.write_review" if silent else
+             "more than half of the day's reviews were cut at R-7's token ceiling: the model's answer — "
+             "its thinking included, which counts toward max_tokens — does not fit. Read R-7's "
+             "SITE_MAX_OUTPUT_TOKENS and SITE_THINKING in reason/bundle/sites.py (06 D71, D72)"
+             if mostly_cut and not over else
              "the day's R-7 spend is over its budget: a consult ran that RSiteGate's budget should have "
              "refused — check reason/expert/sweep builds its gate with NarrativeBudget.for_site and "
              "the BundleStore ledger"),
