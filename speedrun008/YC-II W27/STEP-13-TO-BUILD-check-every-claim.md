@@ -200,3 +200,45 @@ and the authored answers changed and re-recorded once, and only then is the chec
   therefore mutates served answers, one rule at a time, and needs each mutation caught on its own case.
 - **One more re-record** — the prompt changes, so every expert answer is re-recorded and the board restated
   in its five places; and in production, every file is reviewed once more after the deploy.
+
+### 8.8 · The second fix wave (13 Oct) — what the second crosscheck found, and what this wave left out
+
+Built on `yc2w27-s13-fixD` from `a07230b8`, one commit per unit: B1 `M35.C2.L-logic.V1.U17` (1c983a02), B2
+`M36.C2.L-logic.V2.U12` fix (35ca28cd), G2 `M36.C2.L-logic.V2.U10` fix (89373a21 — the acceptance's three strict
+xfails pass), F1 `M35.C2.L-logic.V1.U14` fix (653a60d6), F3 `M36.C2.L-logic.V2.U19` (4822602e), G8
+`M36.C2.L-logic.V2.U17` (68b9d6dd), F2 `M36.C2.L-data.V2.U14` (854eeae9), G1 `M35.C2.L-logic.V0.U13` fix (859a00a6),
+G4 `M35.C2.L-logic.V1.U16` fix (2d0b3cc1), G5 `M35.C2.L-logic.V1.U09` fix — a bound declared (2fe28eda), G6
+`M35.C2.L-logic.V1.U10` fix (12e78d72), F4+G10 `M35.C4.L-integration.V2.U05` (13555022), G11
+`M36.C2.L-interface.V4.U07` (e4a2fa89); then the one re-record (`M35.C4.L-integration.V0.U02`).
+
+**Not in this wave, and why** (one line each):
+- **G3** (an answered ask is found only when the move's facts cite it) — a declared reading (verify §5, U15,
+  §8.3 N4): widening it to the move's own words, or requiring `answers` on every sending move, is Rohit's call.
+- **G7 / I5 / I1 / I2** — `M35.C3.L-integration.V1.U06`, the D48 re-check (a check-version change re-checks, keys
+  the decision on (fingerprint, check version), `checked_at`, the digest compared, PROMPT/CHECK_VERSION bumped
+  once with a prompt hash pin): the lead plans it as its own unit.
+- **G9** (a re-bound question card keeps the first review's reading) — STEP-14's living card versions a
+  re-bound question card; fixing it here would build half of that.
+- **I3** (74a10b12 says 16 passed, the file runs 13) — a record correction only; the lead's.
+- **I4** (the route serves the dropped words; a refused re-check is served as valid) — needs the D48 re-check
+  (U06) first: what a stale check is cannot be said before it exists.
+- **I6** (a find-out `CheckedReview.question` is the move, the card asks the unknown) — one source is U06's
+  re-check of the stored question; until then the card's words are `asks.question_words`', declared.
+- **I7** (the fix-commit list omits four commits) — the lead's record (`--grep 'STEP-13'`).
+- **I8** (D63 decided before F52's words changed) — Rohit's to re-see; G8 changes F52's question again.
+
+**New findings (provisional — the lead mints `03` numbers):**
+- **s13-F21** · a move resting only on your answer that you CONFIRM is shown by the check, then decided under the
+  confidence floor: your answer is no source event (`decide.NO_EVENT_BP` 4,000 < 6,000) — DEFER, the monitor
+  lane, no card. Your "Yes" to the confirmation yields no card. Whether a confirmed answer counts as a source
+  event is a product call (`decide._confidence`).
+- **s13-F22** · after your answers, when a file has nothing left to ask (you answered its follow-up in the very
+  words it quotes), it is remembered INDETERMINATE and decided again every sweep — no model (the fingerprint is
+  unchanged), but an audited run per sweep. Bounded by your answers; a cheaper "unchanged since your answer"
+  outcome is the gate's to grow.
+- **s13-F23** · G5 measured: a lexical polarity rule (a negation or a verb of refusal on one side of claim and
+  quote only) would drop 13 of the golden set's 130 authored quoted facts — all decisive, every one faithful.
+  Declared in verify and U09: a matched quote is never read for its meaning.
+- **s13-F24** · G4 measured: holding every word of a decisive claim on a wordless meeting to the meeting's own
+  line would drop all 7 authored decisive meeting facts (F07, F28, F29, F54); the verbs of saying, deciding and
+  intending are read, in their own clause — the meaning is not.

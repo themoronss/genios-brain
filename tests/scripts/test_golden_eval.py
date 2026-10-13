@@ -180,6 +180,57 @@ def test_a_sites_live_pass_keeps_its_answers_and_board_beside_the_authored(monke
     assert set(row["reviews"]) == {"valid"} and row["reviews"]["valid"] >= 1
     assert row["fates"] == {"shown": row["reviews"]["valid"]} and row["dropped"] == {}
     assert card["reviews"] == row["reviews"] and card["fates"] == row["fates"] and card["dropped"] == {}
+    assert card["noted"] == row["noted"], "the wording notes summed as the rest are (G10)"
     [beside] = list(tmp_path.glob("*-claude-sonnet-5-expert/F13.json"))
     assert json.loads(beside.read_text()) and cassettes.load(case) == before, \
         "the authored cassette is never replaced"
+
+
+def test_the_live_pass_counts_a_held_review_its_drop_and_its_note(monkeypatch, tmp_path):
+    """STEP-13 M35.C4.L-integration.V2.U05 (the second crosscheck F4 + G10): the only assertions on the live pass's
+    fates and drops were for the faithful case — every review shown, nothing dropped — so a counter that called
+    every fate "shown", or counted no drop, passed (both mutants survived, notes/b/x32_mutants_out.txt), and the
+    NOTED verdicts were counted nowhere. Here the "live" model is the ideal reader with ONE misquote and ONE
+    "the founder": F13's review is held, its fact dropped `misquoted`, its situation noted `speaks_of_you`."""
+    import copy
+    import dataclasses
+    import json
+    import os
+
+    import pytest
+    if not os.environ.get("GENIOS_TEST_DATABASE_URL"):
+        pytest.skip("GENIOS_TEST_DATABASE_URL not set — the live pass runs only on a scratch database")
+    from tests.replays.founder_case import load_cases
+    from tests.replays.ideal_reader import IdealReader
+    from tests.replays.harness import identify_site
+    module = _module()
+    case = next(c for c in load_cases() if c.case_id == "F13")
+
+    class _OneMisquote:
+        def __init__(self, _key, model):
+            self._reader, self.model, self.served = IdealReader(case), model, 0
+
+        def content_hash(self, material):
+            return self._reader.content_hash(material)
+
+        def call(self, prompt, **kw):
+            result = self._reader.call(prompt, **kw)
+            if identify_site(prompt) != "expert" or self.served:
+                return result
+            self.served += 1
+            answer = copy.deepcopy(result.parsed)
+            answer["facts"][0]["quote"] = "words no mail of the file holds at all"
+            answer["frames"]["primary"] = "the founder owes Mohit the traction summary before Monday"
+            return dataclasses.replace(result, parsed=answer, raw=json.dumps(answer))
+    monkeypatch.setattr(module, "LiveModel", _OneMisquote)
+    monkeypatch.setattr(module, "SCORES", tmp_path)
+    monkeypatch.setenv(module.LIVE_KEY_ENV, "sk-not-a-real-key")
+    # MERGED 13 Oct: `--max-usd` is required since `yc2_w27_s18` M50.C4.L-interface.V1.U09 (as above).
+    assert module.main(["--live", "--site", "expert", "--spend-ok", "--max-usd", "1", "F13"]) == 0
+    [card_file] = list(tmp_path.glob("*-claude-sonnet-5-expert.json"))
+    card = json.loads(card_file.read_text())
+    [row] = card["cases"]
+    assert row["reviews"] == {"valid": 1}, row
+    assert row["fates"] == {"held": 1} and card["fates"] == {"held": 1}
+    assert row["dropped"] == {"misquoted": 1} and card["dropped"] == {"misquoted": 1}
+    assert row["noted"] == {"speaks_of_you": 1} and card["noted"] == {"speaks_of_you": 1}

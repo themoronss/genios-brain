@@ -160,3 +160,19 @@ def test_the_faithful_review_keeps_its_matched_quote():
 ])
 def test_how_a_quote_is_matched(quote, words, held):
     assert quoted_in(quote, words) is held
+
+
+# ── M35.C2.L-logic.V1.U09 (fix) · the second crosscheck G5: the bound, declared and pinned ──────────────────────
+
+@pytest.mark.parametrize("claim, quote", [
+    ("Marco refuses to set up a call", "set up a call"),
+    ("Marco said he does not want a short deck", "short deck"),
+    ("Marco does not read anything within a week", "read everything within a week")])
+def test_g5_the_declared_bound_a_matched_quote_is_not_read_for_its_meaning(claim, quote):
+    """⛔ DECLARED, NOT FIXED (verify's docstring, 1; tree U09): a claim inverting its matched quote stands — a
+    lexical polarity rule would drop 13 of the golden set's 130 authored quoted facts, every one faithful. The
+    quote reaches the card beside the move (`CardWords.quotes`), so the founder reads what it rests on."""
+    dossier, people = W.world()
+    checked = check_review(W.review(fact1={"claim": claim, "quote": quote}), dossier.text, people)
+    assert next(v for v in checked.verdicts if v.line == "fact:1").verdict == C.KEPT
+    assert quote in checked.words.quotes, "what it rests on is on the card, for the founder to read"

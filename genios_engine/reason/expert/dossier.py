@@ -202,6 +202,14 @@ def _brief(p: DossierParts, cite: _Ids) -> Section:
     return Section("brief", block or "No company brief is accepted for this tenant.")
 
 
+def _again(ask: Any) -> datetime | None:
+    """When an open ask was asked AGAIN — the ledger's `last_seen_at`, when it is later than the ask was
+    opened (a follow-up repeating it, or an ask after our reply that reopened it) — else None (STEP-13
+    M35.C2.L-logic.V1.U17)."""
+    last, opened = getattr(ask, "last_seen_at", None), ask.opened_at
+    return last if last is not None and opened is not None and last > opened else None
+
+
 def _file(p: DossierParts, cite: _Ids) -> Section:
     f = p.file
     lines = [f"Counterparty: {f.counterparty} <{f.counterparty_key}> ({f.counterparty_type})",
@@ -223,9 +231,13 @@ def _file(p: DossierParts, cite: _Ids) -> Section:
     if f.open_asks:
         lines.append("Open asks:")
         for a in f.open_asks:
+            # WHEN IT WAS LAST ASKED, when it was asked again (M35.C2.L-logic.V1.U17): a reply before that
+            # answered nothing — the asking again says so. An ask asked once is printed as before.
+            again = _again(a)
             lines.append(f"- {cite('loop:' + a.loop_id)} {a.kind}, "
                          + ("they wait on us" if a.owed_by == "us" else "we wait on them")
-                         + f", open since {_when(a.opened_at)}")
+                         + f", open since {_when(a.opened_at)}"
+                         + (f", last asked {_when(again)}" if again is not None else ""))
     else:
         lines.append("Open asks: none")
     return Section("file", "\n".join(lines))
@@ -273,8 +285,9 @@ def _answers(p: DossierParts, cite: _Ids) -> Section:
 
     ⛔ YOUR ANSWER IS YOUR WORDS (STEP-13 M36.C2.L-data.V2.U12, `03` X05). The answer's line — the item a
     fact citing `answer:<id>` is held to (`reason/expert/verify`) — carries the id and the words and NOTHING
-    else. Never the question's text: a held review's question IS the claim its check dropped ("Is it so:
-    “…”?"), so a line carrying it let "No. He asked for the roadmap" ground "Send Neel the deck" again.
+    else. Never the question's text: a held review's question carried the claim its check dropped ("Is it so:
+    “…”?", until M36.C2.L-logic.V2.U10's fix), so a line carrying it let "No. He asked for the roadmap" ground
+    "Send Neel the deck" again — and whatever a question says, it is ours, never your words.
     Never its date either: a date's digits would ground any small number, and the invention rule reads a
     date's own month and day (`platform/grounding.corpus_of`) — so the date heads the answer on a line of
     its own, which no id prints on and no fact can cite."""
@@ -643,13 +656,15 @@ class Person:
 @dataclass(frozen=True, slots=True)
 class AskSeen:
     """An open ask of the file as the check reads it: its id as printed, its kind, whether it waits on US,
-    when it was opened, its thread, and who asked (None when the file cannot name them)."""
+    when it was opened, its thread, who asked (None when the file cannot name them) — and when it was LAST
+    asked (`open_loops.last_seen_at`, None when never again: STEP-13 M35.C2.L-logic.V1.U17)."""
     ref: str
     kind: str
     ours: bool
     opened_at: datetime | None
     thread: str | None
     asker: "Person | None"
+    last_asked_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -661,6 +676,19 @@ class Seen:
     thread: str | None = None
     booked_at: datetime | None = None
     by: "Person | None" = None
+
+
+@dataclass(frozen=True, slots=True)
+class Answered:
+    """A question the file asked you and you answered, as the check reads it (never printed — the dossier
+    prints your words only, M36.C2.L-data.V2.U12): the answer's id, the question, your words."""
+    ref: str                           # `answer:<question id>`
+    question: str
+    words: str
+
+
+#: The rule a question card's signal fires under (`reason/expert/asks.QUESTION_RULE`).
+QUESTION_CARD_RULE = "founder_question"
 
 
 @dataclass(frozen=True, slots=True)
@@ -678,6 +706,10 @@ class FilePeople:
     asks: tuple[AskSeen, ...] = ()
     replies: tuple[Seen, ...] = ()     # the mails WE wrote in the file
     meetings: tuple[Seen, ...] = ()    # held and booked ahead
+    #: STEP-13 M36.C2.L-logic.V2.U12 (second crosscheck B2): the file's QUESTION cards, as `card:` ids — their
+    #: headline is our question, never a ground for the claim it asked about — and the questions you answered.
+    question_cards: tuple[str, ...] = ()
+    answered: tuple[Answered, ...] = ()
 
 
 def label_of(key: str | None) -> str | None:
@@ -727,16 +759,23 @@ def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str]
                for p in (getattr(parts.numbers, "people", None) or ()) if getattr(p, "node_id", None)}
     asks = tuple(AskSeen(ref=f"loop:{a.loop_id}", kind=a.kind, ours=a.owed_by == "us",
                          opened_at=a.opened_at, thread=a.thread_id,
-                         asker=counterparty if a.asked_by == f.file_id else by_node.get(a.asked_by))
+                         asker=counterparty if a.asked_by == f.file_id else by_node.get(a.asked_by),
+                         last_asked_at=_again(a))
                  for a in (f.open_asks or ()))
     replies = tuple(Seen(event_id=t.event_id, at=t.at, thread=t.thread)
                     for t in parts.timeline.touches if t.direction == "out")
     meetings = tuple(Seen(event_id=t.event_id, at=t.at, booked_at=getattr(t, "booked_at", None),
                           by=Person(name=t.who_name, key=t.who) if (t.who or t.who_name) else None)
                      for t in (*parts.timeline.touches, *parts.timeline.upcoming) if t.kind == "meeting")
+    cards = getattr(parts.judgments, "cards", None) or ()
     return FilePeople(counterparty=counterparty, people=people, us=us,
                       our_names=tuple(n for n in our_names if n), connector=connector,
-                      head=_file(parts, _Ids()).text, asks=asks, replies=replies, meetings=meetings)
+                      head=_file(parts, _Ids()).text, asks=asks, replies=replies, meetings=meetings,
+                      question_cards=tuple(f"card:{c.card_id}" for c in cards
+                                           if getattr(c, "rule_id", None) == QUESTION_CARD_RULE),
+                      answered=tuple(Answered(ref=f"answer:{a.question_id}", question=str(a.question),
+                                              words=" ".join(str(a.answer).split()))
+                                     for a in (parts.answers or ()) if a.answer))
 
 
 def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | None:
@@ -745,7 +784,7 @@ def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | 
     return build_dossier(parts) if parts is not None else None
 
 
-__all__ = ["AskSeen", "CLAIMS_LIMIT", "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine",
+__all__ = ["Answered", "AskSeen", "QUESTION_CARD_RULE", "CLAIMS_LIMIT", "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine",
            "DossierParts", "Seen",
            "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",
            "OPTIONAL", "RELATIVE_WORDS", "SECTIONS", "Section", "TITLES", "TOUCHES_LISTED", "TOUCHES_WHOLE",
