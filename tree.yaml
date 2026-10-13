@@ -8088,9 +8088,19 @@ yc2_w27_s13:
                         M35's acceptance: every claim is checked, on the golden set — each authored review
                         stands whole; each mutation of a served answer is caught on its own case with its
                         reason and no card shows it; with the check switched off, each mutation reaches a
-                        card (the negative control).
+                        card (the negative control). Amended 13 Oct, as built: 21 mutations — M35's ships and
+                        the STEP-13 crosscheck's "Acceptance by mutation" row (X37) — each on the LAST serving
+                        of one file's review, read off the stored check and the `cards` table's every text
+                        (do_nothing_consequence, success_signal, abstained_because and the `expert_check`
+                        sources among them), question cards included; where the held question repeats the
+                        words that failed (a fell fact's claim, a failed move) that is xfail-strict on X10.
+                        F15's Lattice fact 6 (`unsupported name:Capital`) is a declared drop, pinned exactly.
+                        Not expressible on the golden set, declared: a lakh figure (only F18's mail, reviewed
+                        by no expert), a person who introduced a file, an answered ask beside one still owed,
+                        a fact citing the founder's answer. The bundle narrator a mutated decision reaches
+                        is answered by the ideal reader from its prompt alone; every other site replays.
                       artifact: "tests/replays/test_every_claim_is_checked.py"
-                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_every_claim_is_checked.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_every_claim_is_checked.py"
                       depends_on: [M35.C3.L-interface.V3.U03, M35.C3.L-integration.V2.U02]
                 - level: 2
                   units:
