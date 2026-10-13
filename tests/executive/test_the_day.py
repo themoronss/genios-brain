@@ -177,6 +177,12 @@ def test_a_node_of_ours_is_never_a_name_the_brief_gives():
     assert M.spoken_names(rows, us) == {"n2": "Meera Shah"}
 
 
+def test_a_file_whose_last_touch_is_still_to_come_is_quiet_for_no_days():
+    from types import SimpleNamespace
+    assert M._quiet(SimpleNamespace(days_quiet=-1.4)).n == 0 and M._quiet(SimpleNamespace(days_quiet=None)) is None
+    assert M._quiet(SimpleNamespace(days_quiet=25.12)).says == "25 days"
+
+
 def test_the_name_a_company_brief_line_gives():
     assert M._line_name("Program · Awadh Enterprise Centre — applied") == "Awadh Enterprise Centre"
     assert M._line_name("StartupSetu — the startup recognition portal") == "StartupSetu"

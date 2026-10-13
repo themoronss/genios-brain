@@ -34,6 +34,13 @@ first draft in the golden world's names (`specs/founder/brief/company_brief.json
 `_fresh_tenant` as the founder's own lines — so every judging and reading prompt carries it, and the
 gate keeps what it names (W-07), as in a tenant whose founder has confirmed the draft.
 
+**The founder's morning brief** (STEP-15, `yc2_w27_s15` M44.C5.L-integration.V0.U03). After the last sweep the
+runner composes the brief at that instant, as the tick would — the owner's seat, the org's timezone — with NO
+model: the template's words. The brief's CONTENT (what is in it, in which section, in what order, with which
+numbers and names) is code's, and the golden set judges it; its WORDS are the writer's, judged by the line check and
+the live look (STEP-12 §8.3 N8's split). `run_case(brief=False)` composes none — the negative control, which reads
+every brief-only case not expressible again.
+
 **The scratch database, pinned first.** `api.routes` binds its stores at import, so the database
 is pinned BEFORE it is imported, and the runner refuses to start without a scratch URL or with a
 production host — a golden set that skipped would be "a pass over an empty table" again.
@@ -49,8 +56,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from tests.replays.founder_case import (FOUNDER_DIR, CardView, CaseObject, CaseRun, FounderCase,
-                                        Landed, SituationView)
+from tests.replays.founder_case import (FOUNDER_DIR, BriefLineView, CardView, CaseObject, CaseRun,
+                                        FounderCase, Landed, SituationView)
 
 SCRATCH_ENV = "GENIOS_TEST_DATABASE_URL"
 #: Set as the model key for a golden run so every factory takes its production branch. It never
@@ -298,7 +305,7 @@ def _connectors():
 # the run
 # =================================================================================================
 def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
-             keep: bool = False, expert: bool | None = None) -> CaseRun:
+             keep: bool = False, expert: bool | None = None, brief: bool = True) -> CaseRun:
     """Run every sweep of `case` through the real chain with `llm` as the model; report it.
 
     The tenant is REMOVED once the report is read, unless `keep`: the scratch database is shared
@@ -351,13 +358,14 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
                 chain_ok.append(bool(routes._run_l2_chain(org, eval_time=at)))
                 funnel.append(_funnel(engine, org, at))
                 open_after.append(_open_cards(engine, org))
+            lines = compose_brief(engine, org, at=case.sweeps[-1]) if brief else None
         calls = tuple(getattr(llm, "calls", ()) or ())
         misses = tuple(getattr(llm, "misses", ()) or ())
         report = CaseRun(case_id=case.case_id, org_id=org, landed=tuple(landed),
                          memory=_memory(engine, org, case, landed),
                          situations=_situations(engine, org),
                          cards=_cards(engine, org, open_after), funnel=tuple(funnel),
-                         chain_ok=tuple(chain_ok), model_calls=calls, misses=misses)
+                         chain_ok=tuple(chain_ok), model_calls=calls, misses=misses, brief=lines)
         finished = True
     finally:
         # On EVERY exit — a cassette miss included — or the tenant stays switched on. `keep` is for
@@ -402,6 +410,16 @@ def switch_on_the_expert(engine: Any, org: str) -> None:
     from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW, activate
     activate(engine, org, feature=FEATURE_EXPERT_REVIEW, by="golden_runner",
              notes="the golden founder's files reviewed by the expert, in shadow (STEP-12)")
+
+
+def compose_brief(engine: Any, org: str, *, at: datetime) -> tuple[BriefLineView, ...]:
+    """The founder's morning brief after the last sweep, composed at its instant for the owner's seat
+    (`executive/morning.compose`, in the template's words — no model), as lines the marking reads."""
+    from genios_engine.executive.morning import compose
+    from genios_engine.platform.seats import OWNER_SEAT_ID
+    kept, _wrote = compose(engine, org, OWNER_SEAT_ID, now=at)
+    return tuple(BriefLineView(line_id=line.line_id, section=line.section, kind=line.kind, text=line.words,
+                               subject=line.subject) for line in kept.lines)
 
 
 def remove_tenant(engine: Any, org: str) -> None:

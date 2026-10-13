@@ -197,7 +197,8 @@ def _named_by_brief(lines, key: str | None, keys: set[str]):
 def _quiet(f) -> B.Number | None:
     if f.days_quiet is None:
         return None
-    days = count_of(math.floor(f.days_quiet), basis="file", unit="days")
+    # A file's last touch may be a meeting still to come — no quiet at all, never a negative one.
+    days = count_of(max(0, math.floor(f.days_quiet)), basis="file", unit="days")
     return B.Number(name="quiet", says=days.says(), value=days.value, n=days.n,
                     calculator="context/workstreams.days_quiet", unit="days")
 
