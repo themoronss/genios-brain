@@ -7871,7 +7871,12 @@ yc2_w27_s13:
                         mail's head and the readings it cites, never another sentence of the mail. Its
                         names stay on its items' lines (measured: holding them to the quote alone would drop
                         23 of the golden set's 118 authored quotes over a sender's company in the
-                        signature).
+                        signature). Amended 13 Oct (the STEP-13 second crosscheck G5, a bound DECLARED): a
+                        matched quote is never read for its meaning — "Marco refuses to set up a call" stands on
+                        "set up a call". Measured: a lexical polarity rule (a negation or a verb of refusal on one
+                        side of claim and quote only) would drop 13 of the golden set's 130 authored quoted facts,
+                        all decisive, every one faithful; polarity cannot be read without reading meaning. Pinned
+                        in tests/reason/expert/test_verify_quotes.py; the quote is on the card beside the move.
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_quotes.py tests/reason/expert/test_verify_claims.py"
                       depends_on: [M35.C2.L-logic.V1.U02]

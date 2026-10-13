@@ -19,7 +19,14 @@ ONE PASS, IN ONE ORDER.
       that carry anything (else `unquoted`, `misquoted`). A quote grounds nothing until it is MATCHED
       (M35.C2.L-logic.V1.U09): one the cited words do not hold — or given on an item whose words are not
       shown, an ask, a calculator, a situation, an older touch — drops on its own line (`quote:<n>`,
-      `misquoted`) and reaches no line and no card. A fact the move rests on that cites only mails whose
+      `misquoted`) and reaches no line and no card. ⛔ THE BOUND, DECLARED (M35.C2.L-logic.V1.U09 fix, the
+      second crosscheck G5): a matched quote is never compared with its claim's MEANING — "Marco refuses to set
+      up a call" stands on the quote "set up a call". Measured, 13 Oct: a lexical polarity rule (a negation or
+      a verb of refusal in the claim and not the quote, or the reverse) would drop 13 of the golden set's 130
+      authored quoted facts, all 13 decisive and every one faithful ("asks nothing of Nimbus Labs" on "Dear
+      Founder", "memory holds no words for either"): polarity cannot be read without reading meaning. What
+      holds it: the quote must be the mail's own words, two that carry anything, and the card shows it beside
+      the move — the founder reads what it rests on. A fact the move rests on that cites only mails whose
       words are not shown — or a meeting with none, to report what was said there — needs a quote it
       cannot have (`unquoted`, M35.C2.L-logic.V1.U16) — and to report what was decided or meant there
       (U16 fix, G4); a claim about the meeting itself stands on its line. ⛔ THE BOUND, MEASURED: holding every
