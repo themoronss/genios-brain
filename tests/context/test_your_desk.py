@@ -74,8 +74,8 @@ def _person(engine, node, name, key):
                        "values (:n, :o, 'person', :k, :d)"), {"n": node, "o": ORG, "k": key, "d": name})
 
 
-def _file(file_id, *asks):
-    return SimpleNamespace(file_id=file_id, open_asks=tuple(asks))
+def _file(file_id, *asks, move="ours"):
+    return SimpleNamespace(file_id=file_id, open_asks=tuple(asks), whose_move=move)
 
 
 def _ask(loop, by, owed, at):
@@ -139,6 +139,8 @@ def test_who_waits_on_you_by_name_since_their_oldest_ask_oldest_first(pg):
         _file("f_events", _ask("l_ev", "n_events", "us", NOW - timedelta(days=22))),
         _file("f_theirs", _ask("l_th", "n_dev", "them", NOW - timedelta(days=40))),  # we wait on them
         _file("f_undated", _ask("l_un", "n_dev", "us", None)),
+        _file("f_their_turn", _ask("l_tt", "n_dev", "us", NOW - timedelta(days=42)), move="theirs"),
+        _file("f_no_turn", _ask("l_nt", "n_dev", "us", NOW - timedelta(days=42)), move=None),
         _file("f_quiet"),
     ]
     desk = _desk(pg, files)

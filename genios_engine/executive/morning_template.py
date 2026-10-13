@@ -83,7 +83,9 @@ def words_for(item: B.Item, section: str, *, local_date: date | None = None) -> 
     if item.kind == B.MEETING:
         out = f"{m.word('when')}: {m.word('title')}"
         if m.names:
-            out += " with " + ", ".join(m.names)
+            # ", with" and not " with": the SQL census reads a literal that opens on `with` as a statement
+            # (`platform/table_coverage._SQL_SHAPE`) — measured, one false statement.
+            out += ", with " + ", ".join(m.names)
         out += "."
         if m.word("prep"):
             out += " " + _sentence(m.word("prep"))

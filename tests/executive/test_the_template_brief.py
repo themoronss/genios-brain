@@ -81,7 +81,7 @@ CHANGE = _item(B.CHANGE, "node_ssm:change", subject="State Startup Mission",
                           "updates to Tara and wait for a real milestone. Quiet for 25 days."),
     (PROMISE, B.PROMISES, "You promised Gaurav: send the pilot proposal (Stackfield) — due 4 Oct."),
     (LATE, B.TODAY, "You promised Tara Bose: share the numbers — was due 28 Sep."),
-    (MEETING, B.TODAY, "Wed 30 Sep, 14:30: Insight call with Neel Shah. Neel Shah (Partner) · last touch 3 d ago; "
+    (MEETING, B.TODAY, "Wed 30 Sep, 14:30: Insight call, with Neel Shah. Neel Shah (Partner) · last touch 3 d ago; "
                        "Still open: the pre-read."),
     (MIXER, B.MEETINGS, "Fintech founders mixer - Bluebay, 20 Aug: no follow-up from you to anyone you met there — "
                         "Kavya, Rhea."),

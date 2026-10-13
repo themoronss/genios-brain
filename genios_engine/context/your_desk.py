@@ -11,7 +11,8 @@ first: three people asked you something, and you have written to nobody since th
   MAY IT BE SAID — "nothing for 28 days" is a claim about every mailbox of ours: it stands only where EVERY
     connected mailbox's receipt reads back past that mail and a completed sync has looked since
     (`context/coverage_receipt.covers`). A mailbox that cannot vouch makes the silence unsayable — said so.
-  WHO WAITS ON YOU — each file with an open ask owed by us (`context/workstreams.Ask.owed_by`), by the person who
+  WHO WAITS ON YOU — each file whose move is ours with an open ask owed by us (`context/workstreams.Ask.owed_by`;
+    an ask left open in a file whose turn is theirs waits on nobody — F45's Meera, answered since), by the person who
     asked (a name, never an address: `platform/self_identity.spoken_name`), since their oldest such ask, its age a
     count of whole days; oldest first. Their count is a count too.
 
@@ -126,6 +127,8 @@ def desk_for(conn, org_id: str, files: Iterable, *, now: datetime) -> Desk:
 
     owed: dict[str, tuple[datetime, str, str]] = {}      # file → (since, loop, asker)
     for f in files:
+        if f.whose_move != "ours":
+            continue                     # an ask left open in a file whose turn is theirs waits on nobody (F45)
         for ask in f.open_asks:
             if ask.owed_by != "us" or ask.opened_at is None:
                 continue

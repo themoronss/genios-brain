@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_142, (
+    assert r["statements"] == 3_146, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -531,6 +531,11 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MERGED 13 Oct: STEP-13's 3,106 → 3,108 above, on top of the integration's 3,121, re-measured on
     # the merge: 3,123 (`table_coverage.resolution()`), the same two SELECTs.
     # ⛔ MERGED 13 Oct: the integration line (3,123) into STEP-15's line (3,139), re-measured on the merge (`table_coverage.resolution()`): 3,142.
+    # ⛔ MOVED 3,142 → 3,146 by yc2_w27_s15/M44.C3.L-logic.V1.U04 (STEP-15, what changed since your last brief):
+    # four SELECTs in `executive/morning_day.read_changes` — the reviews since an instant, who sent the mails a
+    # trigger names, the states of the questions and of the cards a gone line named. Four literals. (U03's template
+    # had a false fifth: the literal `" with "` opens on `with`, the census's own SQL shape — rewritten `", with "`,
+    # so the pin the merge measured, 3,142, held at U03's head only by its omission; measured per file here.)
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

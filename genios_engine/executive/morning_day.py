@@ -18,7 +18,11 @@ with no model:
   * the day's MEETINGS with their prep (`reason/meetings/prep`, composed for the day — not the desktop's three-hour
     precompute), and the external meetings nobody followed up (`context/meeting_days`);
   * your PROMISES due (`context/promises_due`), each in the file it belongs to;
-  * your REPLY TIME beside a file waiting on you, where it holds (n >= 5, `06` D37 — F45).
+  * your REPLY TIME beside a file waiting on you, where it holds (n >= 5, `06` D37 — F45);
+  * WHAT CHANGED since the seat's last kept brief (`executive/morning_store.last_before`; a first brief reads the
+    day before): each file's latest review since, with what triggered it in words — "Hub71 wrote", "their move,
+    quiet 18 days — past the 5 days they usually take" (0199's triggers, a mail's id said as who wrote it) — and
+    each line of the last brief gone today, with why: answered, no longer asked, done on its card, closed.
 
 EVERY ITEM CARRIES ITS MATERIAL — what its words may use, and nothing else: the CHECKED words (the headline, the
 situation, what done looks like, the question); the expert's wait rule and appraisal reasons only where they pass
@@ -35,7 +39,7 @@ import re
 from collections.abc import Iterable
 from contextlib import nullcontext
 from dataclasses import dataclass
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import text
@@ -47,6 +51,7 @@ from genios_engine.context.your_desk import desk_for, open_questions
 from genios_engine.contracts import morning_brief as B
 from genios_engine.contracts.claim_check import HELD, SHOWN
 from genios_engine.contracts.measured import count_of
+from genios_engine.executive.morning_store import last_before
 from genios_engine.platform.grounding import corpus_of, invention_ok
 from genios_engine.platform.self_identity import identity_for, spoken_name
 from genios_engine.reason.expert.store import SHADOW_LANE, current_judgments
@@ -122,6 +127,27 @@ def spoken_names(rows: Iterable, us) -> dict[str, str | None]:
     ours is never a name the brief gives a file, a meeting or a promise."""
     return {r.node_id: spoken_name(r.display_name, r.canonical_key) for r in rows
             if not us.is_us_node(r.node_type, r.canonical_key)}
+
+
+#: What a question line says when neither the question nor the review's checked words can say it to you as "you".
+ASKED_ON_ITS_CARD = "a question waits for your answer on its card"
+
+
+def _asked_as_you(question: str | None, headline: str | None, founder: Iterable[str | None]) -> str | None:
+    """A question in words that speak of you as you: the question; else the review's checked headline; else code's
+    words. F54's question asked "whether Arjun went to the event" — the founder's name, in his own brief."""
+    for words in (question, headline):
+        if str(words or "").strip() and not speaks_of_you(words, founder):
+            return words
+    return ASKED_ON_ITS_CARD if str(question or headline or "").strip() else None
+
+
+def _answered_since(conn, org_id: str, file_id: str, reviewed_at: datetime) -> bool:
+    """Whether you answered the file's question after this review asked it — then the brief asks nothing until the
+    expert reads your answer (`context/founder_questions.answers_for`, read only)."""
+    from genios_engine.context.founder_questions import answers_for
+    return any(a.answered_at is not None and a.answered_at >= reviewed_at
+               for a in answers_for(conn, org_id, file_id))
 
 
 def zone_of(conn, org_id: str) -> str:
@@ -227,6 +253,7 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
 
     items: list[B.Item] = []
     file_names: dict[str, str] = {}
+    shown: dict[str, str] = {}                                # the files this brief may speak of, by name
     for f in sorted(files, key=lambda f: f.file_id):
         keys = {str(people[p].canonical_key or "").lower() for p in f.people if p in people}
         line, name = _named_by_brief(lines, f.counterparty_key, keys)
@@ -236,6 +263,7 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
         j = judgments.get(f.file_id)
         if j is not None and j.lane == SHADOW_LANE:
             continue                                          # s15-D2's default: the shadow lane reaches no brief
+        shown[f.file_id] = name
         q = asked.get(f.file_id)
         base_sources = [B.Source(B.SOURCE_BRIEF, line.line_id)] if line is not None else []
         quiet = _quiet(f)
@@ -251,7 +279,9 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
                 sources.append(B.Source(B.SOURCE_REVIEW, f"{f.file_id}@{j.stored.fingerprint}"))
             items.append(B.Item(
                 item_id=B.item_id_for(B.QUESTION, f.file_id), kind=B.QUESTION, about=f.file_id, subject=name,
-                material=B.Material(words=(("name", name), ("question", q.question)),
+                material=B.Material(words=(("name", name), ("question", _asked_as_you(
+                                        q.question, checked.words.headline if checked is not None else None,
+                                        founder))),
                                     dates=(("asked", _local(q.asked_at, zone)), ("by", _local(by, zone))),
                                     names=names),
                 sources=tuple(sources + base_sources), mode=review.mode if review else None,
@@ -271,11 +301,11 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
         common = dict(about=f.file_id, subject=name, mode=review.mode, stakes=review.appraisal.stakes,
                       urgency=review.appraisal.urgency, quiet_days=f.days_quiet, lane=j.lane)
         if q is None and (checked.fate == HELD or (checked.fate == SHOWN and review.mode == "find_out")):
-            asked = checked.question or words.headline
-            if asked:
+            wording = _asked_as_you(checked.question, words.headline, founder)
+            if wording and not _answered_since(conn, org_id, f.file_id, j.stored.reviewed_at):
                 items.append(B.Item(
                     item_id=B.item_id_for(B.QUESTION, f.file_id), kind=B.QUESTION,
-                    material=B.Material(words=(("name", name), ("question", asked)),
+                    material=B.Material(words=(("name", name), ("question", wording)),
                                         dates=(("by", _local(by, zone)),), names=names),
                     sources=tuple(sources + base_sources), our_move=True, at=j.stored.reviewed_at, **common))
             continue
@@ -311,8 +341,11 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
     items += _desk(conn, org_id, files, now, zone)
     items += _meetings(conn, org_id, seat_id, emails, now, tz, zone)
     items += _promises(conn, org_id, files, file_names, now, zone)
-    return Day(org_id=org_id, seat_id=seat_id, now=now, tz=tz, local_date=now.astimezone(zone).date(),
-               items=tuple(items))
+    local = now.astimezone(zone).date()
+    last = last_before(conn, org_id, seat_id, local)
+    items += read_changes(conn, org_id, now=now, items=items, last=last, file_names=shown, founder=founder,
+                          zone=zone)
+    return Day(org_id=org_id, seat_id=seat_id, now=now, tz=tz, local_date=local, items=tuple(items))
 
 
 def _desk(conn, org_id: str, files, now: datetime, zone: ZoneInfo) -> list[B.Item]:
@@ -410,5 +443,127 @@ def _promises(conn, org_id: str, files, file_names: dict[str, str], now: datetim
     return out
 
 
-__all__ = ["DEFAULT_TZ", "Day", "NAMING_SECTIONS", "REASONS_KEPT", "read_day", "speaks_of_you", "spoken_names",
+# ── what changed since your last brief (M44.C3.L-logic.V1.U04) ─────────────────────────────────────────────────
+
+#: With no brief kept before, what changed is read over the day before — "since yesterday".
+FIRST_BRIEF_LOOKBACK = timedelta(days=1)
+#: How a trigger (`reason/expert/triggers`, kept with each review since 0199) is said in the brief.
+_TRIGGER_WORDS = {"founder_asked": "you asked about it", "date_closing_in": "a date it holds is closer"}
+#: Triggers that say the same thing — how long the file has been quiet — of which a change line keeps the first.
+_QUIET_TRIGGERS = ("reply_overdue", "past_normal")
+#: A number as a trigger writes it ("quiet 25.12 days") and as the brief says it: whole days.
+_DECIMAL = re.compile(r"\b(\d+)\.\d+\b")
+_EVENT_ID = re.compile(r"\bevt_[0-9a-f]+\b")
+
+#: Every review since an instant, up to now — with what triggered it (0199).
+_REVIEWS_SINCE = text(
+    "select file_id, fingerprint, reviewed_at, triggers from expert_reviews "
+    " where org_id = :o and status = 'valid' and reviewed_at > :since and reviewed_at <= :now "
+    " order by reviewed_at, file_id")
+
+#: Who sent each mail a trigger names — a name, or an address said as one.
+_ACTORS = text(
+    "select event_id, source, actor->>'name' as name, lower(actor->>'email') as email from source_events "
+    " where org_id = :o and event_id = any(:ids)")
+
+#: The questions and cards a brief's gone lines named — what came of each.
+_QUESTION_STATES = text("select question_id, state from founder_questions where org_id = :o and question_id = any(:ids)")
+_CARD_STATES = text("select card_id, state from cards where org_id = :o and card_id = any(:ids)")
+
+
+def _said_triggers(triggers, actors: dict[str, str], us) -> str | None:
+    """What triggered a review, in the brief's words: who wrote — never you: your own mail is no news to you — or
+    the file's own words for a quiet crossed, once, in whole days. A first look is no change: a new file stands in
+    its own section, or needs nothing of you."""
+    parts: list[str] = []
+    quiet = False
+    for kind, says in triggers or ():
+        if kind == "new_evidence":
+            for eid in _EVENT_ID.findall(says or ""):
+                who = actors.get(eid)
+                if who and who != "you" and f"{who} wrote" not in parts:
+                    parts.append(f"{who} wrote")
+        elif kind in _TRIGGER_WORDS:
+            if _TRIGGER_WORDS[kind] not in parts:
+                parts.append(_TRIGGER_WORDS[kind])
+        elif kind in _QUIET_TRIGGERS and says and not quiet:
+            quiet = True
+            parts.append(_DECIMAL.sub(r"\1", says))
+    return "; ".join(parts[:2]) if parts else None
+
+
+def read_changes(conn, org_id: str, *, now: datetime, items: Iterable[B.Item], last: B.Brief | None,
+                 file_names: dict[str, str], founder: Iterable[str | None], zone: ZoneInfo) -> list[B.Item]:
+    """What changed since the seat's last brief (or since the day before, for a first brief): each review since,
+    with what triggered it, in words; and each item of the last brief that is gone today, with why."""
+    items = list(items)
+    since = last.as_of if last is not None else now - FIRST_BRIEF_LOOKBACK
+    us = identity_for(conn, org_id)
+    reviews = list(conn.execute(_REVIEWS_SINCE, {"o": org_id, "since": since, "now": now}))
+    ids = sorted({e for r in reviews for _k, says in ((t.get("kind"), t.get("says")) for t in (r.triggers or ()))
+                  for e in _EVENT_ID.findall(says or "")})
+    actors = {}
+    for a in (conn.execute(_ACTORS, {"o": org_id, "ids": ids}) if ids else ()):
+        actors[a.event_id] = "you" if us.is_us(a.email) else spoken_name(a.name, a.email)
+    out: list[B.Item] = []
+    latest: dict[str, object] = {}
+    for r in reviews:
+        latest[r.file_id] = r                                   # one change line per file: its latest review
+    for file_id, r in sorted(latest.items()):
+        name = file_names.get(file_id)
+        if name is None:
+            continue                                            # a file not in this brief (the shadow lane's)
+        what = _said_triggers([(t.get("kind"), t.get("says")) for t in (r.triggers or ())], actors, us)
+        if not what or speaks_of_you(what, founder):
+            continue
+        out.append(B.Item(
+            item_id=B.item_id_for(B.CHANGE, file_id, "review"), kind=B.CHANGE, about=file_id, subject=name,
+            material=B.Material(words=(("name", name), ("what", what)),
+                                dates=(("reviewed", _local(r.reviewed_at, zone)),), names=(name,)),
+            sources=(B.Source(B.SOURCE_REVIEW, f"{file_id}@{r.fingerprint}"),), at=r.reviewed_at))
+    if last is None:
+        return out
+    today = {i.item_id for i in items}
+    gone = [l for l in last.lines if l.item_id not in today and l.kind != B.CHANGE]
+    refs = {kind: sorted({s.ref for l in gone for s in l.sources if s.kind == kind})
+            for kind in (B.SOURCE_QUESTION, B.SOURCE_CARD)}
+    questions = dict(conn.execute(_QUESTION_STATES, {"o": org_id, "ids": refs[B.SOURCE_QUESTION]}).all()) \
+        if refs[B.SOURCE_QUESTION] else {}
+    cards = dict(conn.execute(_CARD_STATES, {"o": org_id, "ids": refs[B.SOURCE_CARD]}).all()) \
+        if refs[B.SOURCE_CARD] else {}
+    for l in gone:
+        why = _why_gone(l, questions, cards)
+        about = last.item(l.item_id).about if last.item(l.item_id) is not None else None
+        out.append(B.Item(
+            item_id=B.item_id_for(B.CHANGE, about or l.item_id, "gone"), kind=B.CHANGE, about=about,
+            subject=l.subject,
+            material=B.Material(words=(("name", l.subject or "A line of your last brief"), ("what", why)),
+                                names=tuple(n for n in (l.subject,) if n)),
+            sources=tuple(l.sources), at=last.as_of))
+    return out
+
+
+def _why_gone(line: B.Line, questions: dict[str, str], cards: dict[str, str]) -> str:
+    """Why a line of the last brief is not in today's — answered, closed, done, or no longer open."""
+    for source in line.sources:
+        if source.kind == B.SOURCE_QUESTION:
+            state = questions.get(source.ref)
+            if state == "answered":
+                return "answered — you answered its question"
+            if state == "retired":
+                return "no longer asked"
+        if source.kind == B.SOURCE_CARD:
+            state = cards.get(source.ref)
+            if state == "acted":
+                return "done — you acted on its card"
+            if state in ("dismissed", "expired", "superseded"):
+                return f"closed — its card was {state}"
+    if line.kind == B.PROMISE:
+        return "no longer due — kept, or no longer open"
+    if line.kind == B.MEETING:
+        return "the meeting has passed"
+    return "no longer open"
+
+
+__all__ = ["ASKED_ON_ITS_CARD", "DEFAULT_TZ", "Day", "FIRST_BRIEF_LOOKBACK", "NAMING_SECTIONS", "REASONS_KEPT", "read_changes", "read_day", "speaks_of_you", "spoken_names",
            "zone_of"]
