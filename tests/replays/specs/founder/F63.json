@@ -1,0 +1,266 @@
+{
+ "case_id": "F63",
+ "title": "The introduction leaves the contact's address out: one question, never a guessed address",
+ "kind": "must_detect",
+ "label_row": 63,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-12T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-12T06:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Arjun, meet Ishaan Mehra (Corvane)",
+   "body": "Arjun, meet Ishaan Mehra, who runs sales at Corvane and wants to pilot an AI chief of staff with his team this quarter. He asked me to put you two in touch, so write to him when you can.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-ishaan",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ishaan Mehra",
+       "entity_type": "person",
+       "quote": "Ishaan Mehra"
+      },
+      {
+       "surface_form": "Corvane",
+       "entity_type": "organization",
+       "quote": "Corvane"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Ishaan Mehra",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Ishaan Mehra"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     },
+     "questions": [
+      {
+       "text": "Will Arjun write to Ishaan Mehra about a pilot at Corvane?",
+       "asked_by": "Ishaan Mehra",
+       "asked_of": "Arjun Rao",
+       "quote": "wants to pilot an AI chief of staff with his team this quarter"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "memory": {
+   "intro": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Ishaan",
+     "Corvane"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "address"
+    ]
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [
+   "ishaan@corvane.test",
+   "ishaan.mehra@corvane.test",
+   "ishaan@corvane.com"
+  ],
+  "phrases": [
+   "Reply to Introly",
+   "reply to Introly",
+   "write to Introly",
+   "Write to Introly"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {},
+ "notes": "Replay 02 m05: the introduction names Ishaan and his company but carries no address of his; the file asks you one question — his address — and no card guesses one from the company's name. No file can form for a contact with no address, so the question comes from the connector's own file.",
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<introly.test>",
+     "Ishaan Mehra"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly introduced Ishaan Mehra, who runs sales at Corvane and wants to pilot an AI chief of staff with his team this quarter.",
+       "evidence": [
+        "evt_7bdc3b26715e17ae17f500fd"
+       ],
+       "quote": "Ishaan Mehra, who runs sales at Corvane and wants to pilot an AI chief of staff with his team this quarter"
+      },
+      {
+       "claim": "The introduction asks you to write to Ishaan.",
+       "evidence": [
+        "evt_7bdc3b26715e17ae17f500fd"
+       ],
+       "quote": "He asked me to put you two in touch, so write to him when you can"
+      },
+      {
+       "claim": "The mail carries no address for Ishaan.",
+       "evidence": [
+        "evt_7bdc3b26715e17ae17f500fd"
+       ]
+      },
+      {
+       "claim": "The introduction's ask is open in this file and waits on you.",
+       "evidence": [
+        "loop:loop_3491e85cd38e4f73bc62a5d9"
+       ]
+      },
+      {
+       "claim": "The file sits under a situation seen for the first time.",
+       "evidence": [
+        "sit:sit_5ad442ca27911e44388397f9",
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "You cannot write to Ishaan until you have his address, and a guessed one is never sent.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "The note goes to Ishaan, never back to the connector.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+       "based_on": [
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Corvane may pilot the product with its sales team.",
+       "needs": "A first conversation with Ishaan."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Ishaan Mehra's email address.",
+       "relevance": "Without it nobody can write to him, and a guess may reach the wrong person."
+      },
+      {
+       "question": "Whether Ishaan will write first.",
+       "relevance": "His own mail would carry his address."
+      }
+     ],
+     "frames": {
+      "primary": "Your connector introduced a sales lead who wants a pilot, but gave no address to reach him by: one thing to find out before anyone writes.",
+      "rivals": [
+       "An introduction where Ishaan writes first, and the address arrives with his mail.",
+       "An introduction the connector will complete with a second mail."
+      ]
+     },
+     "proposed_kind": null,
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: an introduction gives both sides a way to reach each other.",
+      "actual": "The introduction names Ishaan and Corvane and asks you to write, but carries no address for him."
+     },
+     "scenarios": {
+      "do_nothing": "Ishaan's interest in a pilot goes cold while nobody can write to him.",
+      "act": "Finding his address now lets you write while the introduction is warm.",
+      "best": "You have his address, write, and Corvane pilots the product.",
+      "worst": "A guessed address reaches the wrong person, or nobody writes and the pilot is lost.",
+      "signals_to_watch": [
+       "A mail from Ishaan in the file",
+       "A second mail from the connector with his address"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "A sales lead who wants a pilot waits to hear from you.",
+       "Nobody can write to him until his address is known.",
+       "Asking costs nothing and a guess can reach the wrong person."
+      ]
+     },
+     "mode": "find_out",
+     "next_move": {
+      "who": "You",
+      "what": "Ishaan Mehra's address at Corvane, so you can write to him as the introduction asks: it gives none",
+      "for_whom": "Ishaan Mehra at Corvane",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": null,
+      "answers": null
+     },
+     "alternative": "If Ishaan writes first, answer him at the address his mail comes from.",
+     "wait_or_stop": "Ask once; until his address is known nothing is sent, and never to a guessed address.",
+     "done_when": "You have Ishaan Mehra's address and have written to him.",
+     "draft": null
+    }
+   }
+  ]
+ }
+}
