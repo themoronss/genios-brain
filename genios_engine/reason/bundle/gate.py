@@ -45,7 +45,16 @@ the expert's review is never argued into passing.
 
 **A CUT ANSWER IS NOT AN ANSWER** (`03` F140). `LLMClient.call` says when the API stopped at the
 token ceiling (`truncated`); the consult then ends as `truncated` — not validated, not retried at the
-same ceiling, its cost charged and recorded — whether or not the cut JSON parsed.
+same ceiling, its cost charged and recorded — whether or not the cut JSON parsed — and on the platform
+ledger (`llm_costs`) it is a FAILURE carrying the truncation error (M50.C2.L-logic.V3.U04, s5t-F6): a cut
+the lenient parser closed was recorded `success=True`, so no check that filters on `not success` saw it.
+
+**WHAT THE SITE WAS SIZED FOR** (`yc2_w27_s18` M50.C2.L-logic.V2.U03). Claude 5 models think by default
+and spend their thinking from the same `max_tokens` as the answer. Each site says whether it may think
+(`sites.SITE_THINKING`, OFF by `06` D71) and how long a call may take (`SITE_TIMEOUT_S`); the gate sends
+both to a client that says it takes them (`supports_thinking`), and prices and calls at the client's own
+ceiling for that mode (`context/llm/client.output_ceiling`: the site's, plus the headroom of a model
+that cannot turn thinking off).
 
 **Nothing here raises.** A consult is an enhancement on top of a decision that is already made and
 already stored; an exception escaping this module would turn a model outage into a failed sweep.
@@ -60,6 +69,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
+from genios_engine.context.llm.client import TRUNCATED
+from genios_engine.context.llm.client import output_ceiling
 from genios_engine.platform.l4_activation import FEATURE_BUNDLE
 from genios_engine.platform.logging import get_logger
 
@@ -77,7 +88,9 @@ from .sites import (
     OUTCOME_TRUNCATED,
     max_output_tokens,
     require_site,
+    thinking_mode,
     tier_for,
+    timeout_s,
 )
 
 _log = get_logger("genios.reason.bundle.gate")
@@ -270,7 +283,11 @@ class RSiteGate:
                 reason_codes=("prompt_build_failed", type(exc).__name__), **base))
 
         # ── 5 · budget, against the ACTUAL prompt rather than a guess at one. ────────────────
-        ceiling = max_output_tokens(site)
+        # Priced at the ceiling the call will be made at — the site's, or more for a model that
+        # cannot turn thinking off (M50.C2.L-logic.V2.U03).
+        mode = thinking_mode(site)
+        ceiling = output_ceiling(str(getattr(self._client, "model", "") or ""),
+                                 max_output_tokens(site), mode)
         verdict = self._budget.check(estimate_micro_usd(
             site=site, prompt_chars=len(prompt), max_output_tokens=ceiling))
         if not verdict.allowed:
@@ -289,6 +306,13 @@ class RSiteGate:
         # outcome derived from the shape of the trace is an outcome that changes meaning the next
         # time the loop grows a branch.
         last_outcome = OUTCOME_FAILED_GENERATION
+        # What the site was sized for, to a client that takes it; a fake without `**kw` is called
+        # exactly as before.
+        sized: dict[str, Any] = {}
+        if getattr(self._client, "supports_thinking", False):
+            sized["thinking"] = mode
+            if timeout_s(site) is not None:
+                sized["timeout_s"] = timeout_s(site)
         for attempt in range(1, MAX_ATTEMPTS + 1):
             if attempt > 1:
                 try:
@@ -304,7 +328,7 @@ class RSiteGate:
                     last_codes = (*last_codes, verdict.reason or "budget_refused")
                     break
             try:
-                result = self._client.call(prompt, max_tokens=ceiling)
+                result = self._client.call(prompt, max_tokens=ceiling, **sized)
             except Exception as exc:      # noqa: BLE001 — a client that raises is a failed call
                 _log.warning("%s call raised for org=%s: %s", site, self.org_id, exc)
                 trace.append({"attempt": attempt, "error": type(exc).__name__})
@@ -318,13 +342,16 @@ class RSiteGate:
             charged = cost_micro_usd(tier=tier, input_tokens=call_in, output_tokens=call_out)
             spent += charged
             self._budget.charge(charged)
+            cut = bool(getattr(result, "truncated", False))
             self._record_platform_cost(model=getattr(result, "model", model) or "",
                                        purpose=purpose or f"l4_{site.lower().replace('-', '')}",
                                        input_tokens=call_in, output_tokens=call_out,
-                                       ok=bool(getattr(result, "ok", True)),
-                                       error=getattr(result, "error", None),
+                                       ok=bool(getattr(result, "ok", True)) and not cut,
+                                       error=(getattr(result, "error", None)
+                                              or (f"{TRUNCATED} (max_tokens={ceiling})" if cut
+                                                  else None)),
                                        subject_ref=subject_ref)
-            if getattr(result, "truncated", False):
+            if cut:
                 # `03` F140: cut at the ceiling. Not validated, not retried at the same ceiling.
                 trace.append({"attempt": attempt, "truncated": True})
                 return self._record(ConsultResult(
