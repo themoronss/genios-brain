@@ -665,21 +665,27 @@ _AN_ADDRESS = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 
 
 def _target(text: str | None, people: FilePeople) -> str | None:
-    """The first person `text` names, as written — one of our names or an address, the connector, a person
-    of the file — or None: whom a move with no `to` goes to (M35.C2.L-logic.V1.U14, X20). A name is a
-    capitalised whole word: "Send Introly the deck to pass on to Marco" goes to Introly."""
+    """The first person `text` names, as written — the connector, a person of the file, an address not ours —
+    or, when it names none of them, the first of our names or addresses; else None: whom a move with no `to`
+    goes to (M35.C2.L-logic.V1.U14, X20). A name is a capitalised whole word: "Send Introly the deck to pass on
+    to Marco" goes to Introly. ⛔ NEVER TO US BESIDE THEM (second crosscheck F1): "Send the Nimbus Labs short
+    deck to Marco", "Have Arjun Rao send Marco the short deck" name us FIRST and go to Marco — we are the
+    recipient only of a move that names nobody else."""
     text = str(text or "")
-    found: list[tuple[int, str]] = []
+    ours: list[tuple[int, str]] = []
+    theirs: list[tuple[int, str]] = []
     for name in people.our_names:
         if (m := re.search(rf"(?<!\w){re.escape(name)}(?!\w)", text, re.I)) is not None:
-            found.append((m.start(), m.group(0)))
-    found += [(m.start(), m.group(0)) for m in _AN_ADDRESS.finditer(text)]
+            ours.append((m.start(), m.group(0)))
+    for m in _AN_ADDRESS.finditer(text):
+        (ours if people.us.is_us(m.group(0)) else theirs).append((m.start(), m.group(0)))
     for person in (people.connector, *people.people):
         for word in (_name_of(person)[:1] if person is not None else ()):
             for m in re.finditer(rf"(?<!\w){re.escape(word)}(?!\w)", text, re.I):
                 if m.group(0)[0].isupper():
-                    found.append((m.start(), m.group(0)))
+                    theirs.append((m.start(), m.group(0)))
                     break
+    found = theirs or ours
     return min(found)[1] if found else None
 
 

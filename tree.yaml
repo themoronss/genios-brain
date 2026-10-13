@@ -7946,8 +7946,13 @@ yc2_w27_s13:
                         about their company), never on the rest of the dossier (another line of work in
                         motion, the what-if numbers). The golden set's 95 captured checks: none moves (the
                         brief's own lines are what two authored drafts rest on, "AI", "Private Limited").
+                        Amended 13 Oct (fix, the STEP-13 second crosscheck F1): our own names were counted among
+                        "the first person its headline names", so "Send the Nimbus Labs short deck to Marco" and
+                        "Have Arjun Rao send Marco the short deck" were held "addressed to you" (be27 showed
+                        them). The file's people — the connector, a person of the file, an address not ours —
+                        are read first; we are the recipient only of a move that names nobody else.
                       artifact: "genios_engine/reason/expert/verify.py"
-                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_recipient.py tests/reason/expert/test_verify_people.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_move_goes_to_whom_it_names.py tests/reason/expert/test_verify_recipient.py tests/reason/expert/test_verify_people.py"
                       depends_on: [M35.C2.L-logic.V1.U12]
                     - id: M35.C2.L-logic.V1.U15
                       what: >
