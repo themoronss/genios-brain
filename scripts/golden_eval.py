@@ -7,6 +7,8 @@
         --live --model claude-haiku-4-5-20251001 --spend-ok [--record] [F03 …]
     GENIOS_TEST_DATABASE_URL=… GENIOS_GOLDEN_LIVE_KEY=sk-… python scripts/golden_eval.py \\
         --live --site expert --spend-ok [F03 …]                  # the expert on its own model
+        --live --site expert --spend-ok --max-usd 7 --thinking adaptive --ceiling 12000 --per-call-usd 0.15
+                                                                 # 06 D72's arm B, stopped at $7
 
 `speedrun008/YC-II W27/` STEP-01 §3.9.
 
@@ -36,6 +38,7 @@ client, so a site that built its own would still fail the case rather than spend
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import sys
@@ -72,6 +75,92 @@ def model_for(site: str | None, model: str | None) -> str:
         from genios_engine.reason.llm_sites import tier_model
         return tier_model(tier_for(SITE_TIERS[site]))
     return DEFAULT_MODEL
+
+
+#: ⛔ `yc2_w27_s18` M50.C4.L-interface.V1.U09 (the 13 Oct audit's s5t-F12, `06` D72). The Sonnet pass of
+#: 12 Oct printed $0.35 for ≈ $10.4 spent: its card summed the cassette — only the answers kept — and a
+#: cut answer was raised, retried and never counted. A live pass now sums the recorder's `ledger`
+#: (every call), names its cut calls, and cannot start without a dollar cap it stops at.
+class SpendCapReached(RuntimeError):
+    """A live call was refused because its worst case would cross `--max-usd`. Raised before the call."""
+
+
+class SpendCap:
+    """The run's money: what has been spent (from each call's own tokens, a cut one included), and
+    whether a call was refused. A call is priced at its worst case — the prompt at four characters a
+    token, the output at its whole ceiling — before it is made."""
+
+    def __init__(self, max_usd: float, model: str) -> None:
+        self.max_usd = float(max_usd)
+        self.price_in, self.price_out = price_per_mtok(model)
+        self.spent_usd = 0.0
+        self.reached = False
+
+    def worst_usd(self, prompt: str, max_tokens: int) -> float:
+        return (-(-len(prompt) // 4) / 1e6 * self.price_in + int(max_tokens) / 1e6 * self.price_out)
+
+    def charge(self, result) -> None:
+        self.spent_usd += (int(getattr(result, "input_tokens", 0) or 0) / 1e6 * self.price_in
+                           + int(getattr(result, "output_tokens", 0) or 0) / 1e6 * self.price_out)
+
+
+class CappedModel:
+    """The live model behind the cap: a call whose worst case would cross it is never made."""
+
+    def __init__(self, inner, cap: SpendCap) -> None:
+        self._inner, self._cap = inner, cap
+        self.model = getattr(inner, "model", "")
+
+    @property
+    def supports_thinking(self) -> bool:
+        return bool(getattr(self._inner, "supports_thinking", False))
+
+    def content_hash(self, material: str) -> str:
+        return self._inner.content_hash(material)
+
+    def call(self, prompt: str, *, max_tokens: int = 4096, **kw):
+        if self._cap.spent_usd + self._cap.worst_usd(prompt, max_tokens) > self._cap.max_usd:
+            self._cap.reached = True
+            raise SpendCapReached(f"--max-usd {self._cap.max_usd:g}: ${self._cap.spent_usd:.4f} spent, "
+                                  "the next call's worst case would cross it")
+        result = self._inner.call(prompt, max_tokens=max_tokens, **kw)
+        self._cap.charge(result)
+        return result
+
+
+@contextlib.contextmanager
+def site_settings(r_site: str, *, thinking: str | None = None, ceiling: int | None = None,
+                  per_call_usd: str | None = None):
+    """One R-site's thinking mode, ceiling and per-call cap for the length of a run — `06` D72's arms —
+    and put back after, whatever the run does. The day's cap is never the run's to move."""
+    from genios_engine.reason.bundle import budget, sites as site_table
+    before = (site_table.SITE_THINKING[r_site], site_table.SITE_MAX_OUTPUT_TOKENS[r_site],
+              budget.OWN_BUDGETS.get(r_site))
+    try:
+        if thinking is not None:
+            site_table.SITE_THINKING[r_site] = thinking
+        if ceiling is not None:
+            site_table.SITE_MAX_OUTPUT_TOKENS[r_site] = int(ceiling)
+        if per_call_usd is not None:
+            budget.OWN_BUDGETS[r_site] = (budget.OWN_BUDGETS[r_site][0], str(per_call_usd))
+        yield
+    finally:
+        site_table.SITE_THINKING[r_site], site_table.SITE_MAX_OUTPUT_TOKENS[r_site] = before[:2]
+        if before[2] is not None:
+            budget.OWN_BUDGETS[r_site] = before[2]
+
+
+def spend(ledger: list[dict], site: str | None) -> dict:
+    """What a pass paid for: every call of the site (every call, without one) — a cut one included."""
+    calls = [row for row in ledger if site is None or row.get("site") == site]
+    return {"calls": len(calls), "truncated_calls": sum(bool(row.get("truncated")) for row in calls),
+            "tokens_in": sum(int(row.get("input_tokens") or 0) for row in calls),
+            "tokens_out": sum(int(row.get("output_tokens") or 0) for row in calls)}
+
+
+def scorecard_name(day: str, model: str, site: str | None, thinking: str | None) -> str:
+    """`<day>-<model>[-<site>][-<thinking>]` — an arm of `06` D72 never overwrites the other."""
+    return "-".join(part for part in (day, model, site, thinking) if part)
 
 
 def sites() -> tuple[str, ...]:
@@ -138,6 +227,10 @@ class SiteModel:
         self.site, self._live, self._rest = site, live, rest
         self.model = getattr(live, "model", "")
 
+    @property
+    def supports_thinking(self) -> bool:
+        return bool(getattr(self._live, "supports_thinking", False))
+
     @staticmethod
     def content_hash(material: str) -> str:
         from genios_engine.context.llm.client import LLMClient
@@ -145,11 +238,18 @@ class SiteModel:
 
     def call(self, prompt: str, **kw):
         from tests.replays.harness import identify_site
-        return (self._live if identify_site(prompt) == self.site else self._rest).call(prompt, **kw)
+        if identify_site(prompt) == self.site:
+            return self._live.call(prompt, **kw)
+        if not getattr(self._rest, "supports_thinking", False):
+            kw = {k: v for k, v in kw.items() if k not in ("thinking", "timeout_s")}
+        return self._rest.call(prompt, **kw)
 
 
 class LiveModel:
     """The real model, called through the transport the runner refuses to everyone else."""
+
+    #: `LLMClient.call` takes the site's thinking mode and timeout (`context/llm/client`).
+    supports_thinking = True
 
     def __init__(self, api_key: str, model: str) -> None:
         from genios_engine.context.llm.client import LLMClient
@@ -189,7 +289,8 @@ def _checked(engine, org: str) -> dict:
             "dropped": dict(sorted(dropped.items()))}
 
 
-def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int:
+def live(ids: list[str], model: str, keep: bool, site: str | None = None, *, max_usd: float,
+         thinking: str | None = None, ceiling: int | None = None, per_call_usd: str | None = None) -> int:
     from tests.replays import cassettes
     from tests.replays.engine_runner import pin_scratch_database, run_case
     from tests.replays.harness import CassetteRecorder
@@ -198,11 +299,13 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int
 
     pin_scratch_database()
     key = os.environ[LIVE_KEY_ENV]
-    rows, tokens_in, tokens_out = [], 0, 0
-    beside = SCORES / f"{date.today().isoformat()}-{model}-{site}" if site is not None else None
+    rows, tokens_in, tokens_out, calls, truncated = [], 0, 0, 0, 0
+    name = scorecard_name(date.today().isoformat(), model, site, thinking)
+    beside = SCORES / name if site is not None else None
+    cap, stopped = SpendCap(max_usd, model), None
     for case in _cases(ids):
-        inner = (SiteModel(site, LiveModel(key, model), IdealReader(case)) if site is not None
-                 else LiveModel(key, model))
+        inner = (SiteModel(site, CappedModel(LiveModel(key, model), cap), IdealReader(case))
+                 if site is not None else CappedModel(LiveModel(key, model), cap))
         recorder = CassetteRecorder(inner)
         run = run_case(case, recorder, keep=True)
         from genios_engine.api import routes
@@ -212,9 +315,11 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int
         finally:
             remove_tenant(routes._graph.engine, run.org_id)
         mark = judge(case, run)
-        spent = [a for a in recorder.cassette.values() if site is None or a.get("site") == site]
-        tokens_in += sum(int(a["input_tokens"] or 0) for a in spent)
-        tokens_out += sum(int(a["output_tokens"] or 0) for a in spent)
+        paid = spend(recorder.ledger, site)
+        tokens_in += paid["tokens_in"]
+        tokens_out += paid["tokens_out"]
+        calls += paid["calls"]
+        truncated += paid["truncated_calls"]
         if beside is not None:
             # BESIDE, never instead: the live answers and the verdict they reach, kept apart from the
             # authored cassettes, and the authored verdict replayed for the comparison.
@@ -229,9 +334,14 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int
                      "lost_at": mark.lost_at, "cards": len(run.cards),
                      "cards_about_the_subject": expected,
                      "forbidden": [list(h) for h in mark.forbidden_hits], "reason": mark.reason,
+                     "calls": paid["calls"], "truncated_calls": paid["truncated_calls"],
                      **checked,
                      **({"authored_verdict": recorded.verdict} if beside is not None else {})})
         print(f"{case.case_id} {mark.verdict:<15} {mark.reason[:100]}")
+        if cap.reached:
+            stopped = case.case_id
+            print(f"STOPPED at {case.case_id}: --max-usd {max_usd:g} reached (${cap.spent_usd:.4f} spent)")
+            break
     detect = [r for r in rows if r["kind"] == "must_detect" and r["verdict"] != "not_expressible"]
     cards = sum(r["cards"] for r in rows)
     price_in, price_out = price_per_mtok(model)
@@ -247,15 +357,35 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int
             **{key: dict(sorted(sum((Counter(r[key]) for r in rows), Counter()).items()))
                for key in ("reviews", "fates", "dropped")},
             "tokens_in": tokens_in, "tokens_out": tokens_out,
-            "cost_usd": round(tokens_in / 1e6 * price_in + tokens_out / 1e6 * price_out, 4)}
+            "cost_usd": round(tokens_in / 1e6 * price_in + tokens_out / 1e6 * price_out, 4),
+            # Every call the pass paid for, a cut one included, and the run's own settings and cap.
+            "calls": calls, "truncated_calls": truncated, "thinking": thinking, "ceiling": ceiling,
+            "per_call_usd": per_call_usd, "max_usd": max_usd, "stopped_at_cap": stopped,
+            "spent_usd": round(cap.spent_usd, 4)}
     if beside is not None:
         card["moved"] = [r["case"] for r in rows if r["verdict"] != r["authored_verdict"]]
     SCORES.mkdir(parents=True, exist_ok=True)
-    out = SCORES / f"{card['date']}-{model}{'-' + site if site is not None else ''}.json"
+    out = SCORES / f"{name}.json"
     out.write_text(json.dumps(card, indent=1) + "\n", encoding="utf-8")
     print(f"\nrecall {card['recall']} · precision {card['precision']} · forbidden "
-          f"{card['forbidden_outputs']} · ${card['cost_usd']} → {out}")
+          f"{card['forbidden_outputs']} · ${card['cost_usd']} · {calls} calls, {truncated} cut → {out}")
     return 0
+
+
+def _positive(value: str) -> float:
+    try:
+        number = float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not a number: {value!r}") from None
+    if not number > 0:
+        raise argparse.ArgumentTypeError(f"must be more than 0: {value!r}")
+    return number
+
+
+def _usd(value: str) -> str:
+    """A positive dollar amount, kept as typed — the budget table holds dollars as text."""
+    _positive(value)
+    return value
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -271,8 +401,22 @@ def main(argv: list[str] | None = None) -> int:
                     help="one model site only — a tests/replays/harness.SITE_MARKERS name")
     ap.add_argument("--spend-ok", action="store_true",
                     help="confirm that a live run may spend model money (D12c)")
+    ap.add_argument("--max-usd", type=_positive, default=None,
+                    help="--live only, and required: stop before a call whose worst case crosses it")
+    ap.add_argument("--thinking", choices=("off", "adaptive"), default=None,
+                    help="the site's thinking mode for this run (06 D72); default the site's own")
+    ap.add_argument("--ceiling", type=int, default=None,
+                    help="the site's output ceiling for this run (06 D72); default the site's own")
+    ap.add_argument("--per-call-usd", type=_usd, default=None,
+                    help="the site's per-call cap for this run, e.g. 0.15 (06 D72 arm B)")
     ap.add_argument("cases", nargs="*", help="case ids (default: every case)")
     args = ap.parse_args(argv)
+    run_settings = {"thinking": args.thinking, "ceiling": args.ceiling, "per_call_usd": args.per_call_usd}
+    if any(v is not None for v in run_settings.values()) and args.site not in SITE_TIERS:
+        ap.error("--thinking, --ceiling and --per-call-usd set one site's R-site for the run: name a "
+                 f"--site with a tier of its own ({', '.join(SITE_TIERS)})")
+    if args.ceiling is not None and args.ceiling <= 0:
+        ap.error("--ceiling is a positive number of tokens")
 
     if args.dry_run and (args.live or args.record):
         ap.error("--dry-run runs nothing; it cannot be combined with --live or --record")
@@ -290,7 +434,13 @@ def main(argv: list[str] | None = None) -> int:
                   "(06-DECISIONS D12c — the default is no spend). Run --dry-run for the "
                   "estimate.", file=sys.stderr)
             return 2
-        return live(args.cases, model, args.record, args.site)
+        if args.max_usd is None:
+            print("--live needs --max-usd: the pass stops before a call whose worst case would cross "
+                  "it (06 D65's money is finite)", file=sys.stderr)
+            return 2
+        r_site = SITE_TIERS.get(args.site or "")
+        with site_settings(r_site, **run_settings) if r_site else contextlib.nullcontext():
+            return live(args.cases, model, args.record, args.site, max_usd=args.max_usd, **run_settings)
     if args.record:
         from tests.replays.engine_runner import pin_scratch_database
         pin_scratch_database()

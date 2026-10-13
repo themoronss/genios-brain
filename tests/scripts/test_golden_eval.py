@@ -168,7 +168,8 @@ def test_a_sites_live_pass_keeps_its_answers_and_board_beside_the_authored(monke
     monkeypatch.setattr(module, "SCORES", tmp_path)
     monkeypatch.setenv(module.LIVE_KEY_ENV, "sk-not-a-real-key")
     before = cassettes.load(case)
-    assert module.main(["--live", "--site", "expert", "--spend-ok", "F13"]) == 0
+    # `--max-usd` is required since `yc2_w27_s18` M50.C4.L-interface.V1.U09; the ideal reader spends nothing.
+    assert module.main(["--live", "--site", "expert", "--spend-ok", "--max-usd", "1", "F13"]) == 0
     [card_file] = list(tmp_path.glob("*-claude-sonnet-5-expert.json"))
     card = json.loads(card_file.read_text())
     assert card["site"] == "expert" and card["moved"] == []
