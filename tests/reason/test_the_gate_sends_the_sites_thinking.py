@@ -137,3 +137,56 @@ def test_a_retry_is_asked_the_same_way():
     client = _JunkThenGood()
     assert _consult(client).attempts == 2
     assert client.sent[0] == client.sent[1]
+
+
+# =================================================================================================
+# ⛔ M50.C2.L-logic.V3.U04 (T5-5, s5t-F6) — a cut is a failure on the platform ledger
+# =================================================================================================
+def _ledgered(answer: LLMResult):
+    rows: list[dict] = []
+
+    class _Once(_Sends):
+        def call(self, prompt, *, max_tokens=400, **kw):
+            self.sent.append({"max_tokens": max_tokens, **kw})
+            return answer
+    gate = G.RSiteGate(org_id=ORG, engine=None, client=_Once(), store=None,
+                       activated=frozenset({"expert_review"}),
+                       budget=NarrativeBudget(org_id=ORG, daily_cap_micro_usd=10_000_000,
+                                              per_call_cap_micro_usd=10_000_000),
+                       cost_recorder=lambda **row: rows.append(row))
+    result = gate.consult(site=S.SITE_EXPERT, cache_key="k", build_prompt=lambda fb: "the dossier",
+                          validate=lambda p: (dict(p), (), {}), feature="expert_review")
+    return result, rows
+
+
+def test_a_cut_that_parsed_is_recorded_as_a_failure_with_its_truncation():
+    """It was `success=True, error=None`: invisible to every check that filters on `not success`."""
+    from genios_engine.context.llm.client import TRUNCATED
+    cut = LLMResult(parsed={"mode": "act"}, raw='{"mode": "act", "facts": [', ok=True, truncated=True,
+                    model="claude-sonnet-5", input_tokens=5600, output_tokens=6000,
+                    error=f"{TRUNCATED} (max_tokens=6000)")
+    result, rows = _ledgered(cut)
+    assert result.outcome == S.OUTCOME_TRUNCATED
+    assert [(r["success"], r["error"]) for r in rows] == [(False, f"{TRUNCATED} (max_tokens=6000)")]
+    assert rows[0]["output_tokens"] == 6000 and rows[0]["purpose"] == "l4_r7"
+
+
+def test_a_cut_from_a_client_that_names_nothing_is_named_by_the_gate():
+    from genios_engine.context.llm.client import TRUNCATED
+    cut = LLMResult(parsed={"mode": "act"}, raw="{", ok=True, truncated=True, model="claude-sonnet-5",
+                    input_tokens=5600, output_tokens=6000)
+    _result, rows = _ledgered(cut)
+    assert rows[0]["success"] is False
+    assert rows[0]["error"] == f"{TRUNCATED} (max_tokens=6000)"
+
+
+def test_a_cut_that_did_not_parse_keeps_its_own_error():
+    cut = LLMResult(parsed={}, raw="{", ok=False, truncated=True, model="claude-sonnet-5",
+                    input_tokens=5600, output_tokens=6000, error="truncated: the model hit max_tokens")
+    _result, rows = _ledgered(cut)
+    assert [(r["success"], r["error"]) for r in rows] == [(False, "truncated: the model hit max_tokens")]
+
+
+def test_a_whole_answer_is_still_a_success_with_no_error():
+    _result, rows = _ledgered(_good())
+    assert [(r["success"], r["error"]) for r in rows] == [(True, None)]

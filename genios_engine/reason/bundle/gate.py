@@ -45,7 +45,9 @@ the expert's review is never argued into passing.
 
 **A CUT ANSWER IS NOT AN ANSWER** (`03` F140). `LLMClient.call` says when the API stopped at the
 token ceiling (`truncated`); the consult then ends as `truncated` — not validated, not retried at the
-same ceiling, its cost charged and recorded — whether or not the cut JSON parsed.
+same ceiling, its cost charged and recorded — whether or not the cut JSON parsed — and on the platform
+ledger (`llm_costs`) it is a FAILURE carrying the truncation error (M50.C2.L-logic.V3.U04, s5t-F6): a cut
+the lenient parser closed was recorded `success=True`, so no check that filters on `not success` saw it.
 
 **WHAT THE SITE WAS SIZED FOR** (`yc2_w27_s18` M50.C2.L-logic.V2.U03). Claude 5 models think by default
 and spend their thinking from the same `max_tokens` as the answer. Each site says whether it may think
@@ -67,6 +69,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
+from genios_engine.context.llm.client import TRUNCATED
 from genios_engine.context.llm.client import output_ceiling
 from genios_engine.platform.l4_activation import FEATURE_BUNDLE
 from genios_engine.platform.logging import get_logger
@@ -339,13 +342,16 @@ class RSiteGate:
             charged = cost_micro_usd(tier=tier, input_tokens=call_in, output_tokens=call_out)
             spent += charged
             self._budget.charge(charged)
+            cut = bool(getattr(result, "truncated", False))
             self._record_platform_cost(model=getattr(result, "model", model) or "",
                                        purpose=purpose or f"l4_{site.lower().replace('-', '')}",
                                        input_tokens=call_in, output_tokens=call_out,
-                                       ok=bool(getattr(result, "ok", True)),
-                                       error=getattr(result, "error", None),
+                                       ok=bool(getattr(result, "ok", True)) and not cut,
+                                       error=(getattr(result, "error", None)
+                                              or (f"{TRUNCATED} (max_tokens={ceiling})" if cut
+                                                  else None)),
                                        subject_ref=subject_ref)
-            if getattr(result, "truncated", False):
+            if cut:
                 # `03` F140: cut at the ceiling. Not validated, not retried at the same ceiling.
                 trace.append({"attempt": attempt, "truncated": True})
                 return self._record(ConsultResult(
