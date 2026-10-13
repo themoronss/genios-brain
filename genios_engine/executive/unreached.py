@@ -187,21 +187,12 @@ UNREACHED: dict[str, tuple[str, str]] = {
     # STEP-15 builds bottom-up (tree `yc2_w27_s15`): the morning brief's parts land before the composer that calls
     # them. Each entry is deleted in the commit that wires its caller, and the pinned set in
     # `tests/test_the_executive_says_what_it_does_not_call.py` moves with it, said there.
-    "morning_template.template_brief": (
-        "STEP-15 M44.C3.L-logic.V1.U03, built bottom-up: the day in code's words — ordered, fitted to its six "
-        "hundred words, every line with its id and sources, the one line saying what needs you or that nothing "
-        "does. Its one caller is the composer, M44.C4.L-integration.V1.U02; until it lands no brief is written.",
-        "MOVES WHEN M44.C4.L-integration.V1.U02 (`executive/morning.compose`) lands: every brief is written there"),
-
-    "morning_day.read_day": (
-        "STEP-15 M44.C3.L-logic.V0.U02, built bottom-up: every item of one seat's day — each file's checked "
-        "judgment, the questions, your desk, the day's meetings, your promises — with its material and sources. "
-        "Its one caller is the composer, M44.C4.L-integration.V1.U02; until it lands no day is read.",
-        "MOVES WHEN M44.C4.L-integration.V1.U02 (`executive/morning.compose`) lands: every brief reads its day there"),
-
-    "morning_store.keep": (
-        "STEP-15 M44.C4.L-data.V0.U01, built bottom-up: the brief written once per seat per local day, a second composer handed the first's — the row is the claim. Its one caller is the composer, M44.C4.L-integration.V1.U02; until it lands no brief is kept.",
-        "MOVES WHEN M44.C4.L-integration.V1.U02 (`executive/morning.compose`) lands: every brief is kept there"),
+    "morning.compose_due": (
+        "STEP-15 M44.C4.L-integration.V1.U02, built bottom-up: every account owner's brief that is due — past "
+        "08:00 in the org's timezone, none kept for that local day — composed once, a failing seat counted and "
+        "never raised past. Its caller is the sweep's tail, M44.C4.L-integration.V2.U03; until it lands no tick "
+        "composes a brief.",
+        "MOVES WHEN M44.C4.L-integration.V2.U03 (`api/routes.run_sync_sweep`) lands: every sweep ends with it"),
 
     "morning_store.mark_line": (
         "STEP-15 M44.C4.L-data.V0.U01, built bottom-up: your mark on a line — useful, or not useful with your words — the latest standing, the line naming its brief. Its caller is the mark route, M45.C3.L-interface.V0.U02; until it lands no mark is taken.",
