@@ -61,32 +61,32 @@
       "expected_decision": "Produce three distinct BSOs and at most three contact-specific decisions — one per introduced relationship/request.",
       "prohibited": "Emitting a single Boardy person dump or one connector-centred card that pools all three introductions.",
       "pass_condition": "Target precision is 100% (every decision names exactly one introduced contact), and no commitment or evidence is shared across the three situations except via the explicit connector edge.",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "No counterparty role model — connector vs. introduced target cannot be typed, and L2 emits a single anchor per situation (situation_bso.py:69-166) rather than one BSO per relationship/open loop."
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "All three introduced contacts appear inside one forwarded/quoted thread instead of separate threads.",
       "expected_decision": "The parser preserves the quoted/forwarded spans, and Layer 2 either splits the situation by introduced identity/request or returns `split_required`.",
       "prohibited": "Treating the whole quoted body as one single ask.",
       "pass_condition": "Every membership assertion carries an exact evidence span and a reason; where identity is uncertain, the uncertainty blocks any action.",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "No thread-level state (extraction is one message at a time, no From/To visible to the LLM, observations carry no actor) and no `split_required` outcome in the abstention vocabulary — cards.level only carries prescriptive/predictive."
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "One of the three contacts has replied; the other two remain silent.",
       "expected_decision": "Suppress only the replied contact's now-resolved request, and evaluate the other two independently.",
       "prohibited": "Closing all three requests, or leaving the replied contact flagged as overdue.",
       "pass_condition": "Wrong-close rate is zero and each of the three carries a distinct lifecycle receipt.",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "No per-request lifecycle state and no suppress/observation state — abstention vocabulary is absent, so a resolved request cannot be expressed as suppressed while siblings stay live."
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "One introduced contact has a confirmed meeting; another has only proposed a time.",
       "expected_decision": "Keep the meeting states and the expertise inputs separate per contact.",
       "prohibited": "Copying one contact's meeting or status onto the other contacts.",
       "pass_condition": "No cross-contact calendar fact appears in any bounded context slice.",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "L2 reconstructs membership from person/high-degree context into a single anchor with hardcoded org visibility (situation_bso.py:69-166); there is no bounded per-relationship slice to keep calendar facts apart."
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "Boardy explicitly asks Rohit for a connector update (Boardy is now the one making a bounded ask).",
@@ -101,8 +101,8 @@
       "expected_decision": "Return Review source with the exact discriminating question.",
       "prohibited": "Guessing the address from company, domain or display name.",
       "pass_condition": "No BSO is promoted to expertise and no action button is rendered.",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "No Review source / observation abstention state exists; DEFER is mathematically unreachable because confidence_floor_bp defaults to 0 in every live manifest, so nothing can gate the action CTA."
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "The same display name maps to two separately anchored people.",
@@ -117,8 +117,8 @@
       "expected_decision": "Stop/suppress that opportunity while retaining the connector and relationship history.",
       "prohibited": "Emitting a \"last chance\" nudge or reopening the opportunity from old activity.",
       "pass_condition": "A closed opportunity cannot become actionable again without authoritative new state.",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "No suppress/stop level in cards.level and no per-opportunity closure state; closure cannot be distinguished from silence, so old activity can still drive a card."
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "The connector thread contains private facts about a different introduced contact.",
