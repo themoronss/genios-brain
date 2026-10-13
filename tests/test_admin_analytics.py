@@ -110,6 +110,9 @@ def test_dated_model_ids_still_price_by_family():
     ("claude-sonnet-5", (2.0, 10.0)),
     ("claude-sonnet-4-6", (3.0, 15.0)),
     ("claude-opus-5", (5.0, 25.0)),
+    # `yc2_w27_s18` M50.C4.L-data.V0.U16: Opus 5.5 at its own list price, never Opus 5's.
+    ("claude-opus-5-5", (4.0, 20.0)),
+    ("claude-opus-5-5-20261101", (4.0, 20.0)),
     ("claude-opus-4-8", (5.0, 25.0)),
     ("claude-fable-5-1", (10.0, 50.0)),
 ])
@@ -118,6 +121,13 @@ def test_models_price_at_the_current_list_rate(model, per_mtok):
     Sonnet 5 is cheaper than Sonnet 4.6, so the more specific key must match first."""
     price_in, price_out = M.llm_price(model)
     assert (round(price_in * 1e6, 6), round(price_out * 1e6, 6)) == per_mtok
+
+
+def test_the_sql_prices_opus_5_5_before_it_reaches_opus():
+    """The SQL CASE walks the table in order, as the lookup does: the specific key first."""
+    sql = M.cost_usd_sql("c")
+    assert sql.index("'%opus-5-5%'") < sql.index("'%opus%'")
+    assert list(M.LLM_PRICE).index("opus-5-5") < list(M.LLM_PRICE).index("opus")
 
 
 def test_mrr_counts_only_paying_active_accounts():
