@@ -172,11 +172,13 @@ class LiveModel:
 
 def _checked(engine, org: str) -> dict:
     """What the check made of the expert's reviews on one case (STEP-13 M35.C4.L-integration.V2.U04): each
-    review's status, each checked review's fate (shown, held, suppressed, refused), and every dropped line's
-    reason — so a live pass says how often a real model's claims are held, and why, not only the board."""
+    review's status, each checked review's fate (shown, held, suppressed, refused), every dropped line's
+    reason — and every NOTED one's (M35.C4.L-integration.V2.U05, the second crosscheck G10: the wording notes,
+    `speaks_of_you` above all, were counted nowhere, against STEP-13 §8.4.6) — so a live pass says how often a
+    real model's claims are held, and why, and how it speaks of you, not only the board."""
     from sqlalchemy import text
 
-    statuses, fates, dropped = Counter(), Counter(), Counter()
+    statuses, fates, dropped, noted = Counter(), Counter(), Counter(), Counter()
     with engine.connect() as c:
         for row in c.execute(text("select status, checked from expert_reviews where org_id = :o"), {"o": org}):
             statuses[row.status] += 1
@@ -185,8 +187,10 @@ def _checked(engine, org: str) -> dict:
                 fates[str(checked.get("fate"))] += 1
                 dropped.update(str(v.get("reason")) for v in checked.get("verdicts") or ()
                                if v.get("verdict") == "dropped")
+                noted.update(str(v.get("reason")) for v in checked.get("verdicts") or ()
+                             if v.get("verdict") == "noted")
     return {"reviews": dict(sorted(statuses.items())), "fates": dict(sorted(fates.items())),
-            "dropped": dict(sorted(dropped.items()))}
+            "dropped": dict(sorted(dropped.items())), "noted": dict(sorted(noted.items()))}
 
 
 def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int:
@@ -245,7 +249,7 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None) -> int
             "forbidden_outputs": sum(len(r["forbidden"]) for r in rows),
             # The check, summed over every case (M35.C4.L-integration.V2.U04).
             **{key: dict(sorted(sum((Counter(r[key]) for r in rows), Counter()).items()))
-               for key in ("reviews", "fates", "dropped")},
+               for key in ("reviews", "fates", "dropped", "noted")},
             "tokens_in": tokens_in, "tokens_out": tokens_out,
             "cost_usd": round(tokens_in / 1e6 * price_in + tokens_out / 1e6 * price_out, 4)}
     if beside is not None:

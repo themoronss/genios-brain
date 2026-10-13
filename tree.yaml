@@ -8156,6 +8156,21 @@ yc2_w27_s13:
                       artifact: "scripts/golden_eval.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/scripts/test_golden_eval.py"
                       depends_on: [M35.C4.L-integration.V0.U02, M35.C3.L-integration.V1.U01]
+                - level: 3
+                  units:
+                    - id: M35.C4.L-integration.V2.U05
+                      what: >
+                        The live pass's counts are tested on a held review, and its notes counted (added 13 Oct by
+                        the STEP-13 second crosscheck, F4 + G10; U04's verify amended with it): U04's only
+                        assertions on fates and drops were for the faithful case, so a counter calling every fate
+                        "shown" or counting no drop passed (both mutants survived), and the NOTED verdicts —
+                        `speaks_of_you` above all (§8.4.6) — were counted nowhere. `golden_eval._checked` counts
+                        every noted reason (`noted`, per case and on the scorecard), and the live pass runs end to
+                        end on F13 with ONE misquote and ONE "the founder": fates {held: 1}, dropped
+                        {misquoted: 1}, noted {speaks_of_you: 1}, case and card alike.
+                      artifact: "scripts/golden_eval.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/scripts/test_golden_eval.py"
+                      depends_on: [M35.C4.L-integration.V2.U04]
         - id: M35.C5
           name: A claim says what made it
           layers:
