@@ -12,7 +12,10 @@ chain with the expert on and the ideal reader answering from the case's cassette
   * every case whose authored review must find out first (F01, F07, F21, F22, F52, F54) asks: a question
     card is built for it — and stays within the cards its case allows (its own verdict is
     `test_founder_cases`');
-  * every must-abstain case holds.
+  * every must-abstain case holds;
+  * no question card asks an instruction behind "Can you tell us:" (M36.C2.L-logic.V2.U17, the second crosscheck
+    G8: F22 and F52 did) nor names you — the company, the founder by full or first name, an address or domain of
+    ours (M36.C2.L-logic.V2.U19, F3: F54 asked "…whether Arjun went to the event…").
 """
 from __future__ import annotations
 
@@ -70,9 +73,17 @@ def test_a_held_file_asks_once(case):
                 {"o": run.org_id, "b": QUESTION_CARD_BUILDER})}
             questions = {(r.file_id, r.question) for r in c.execute(text(
                 "select file_id, question from founder_questions where org_id = :o"), {"o": run.org_id})}
+            from genios_engine.platform.self_identity import identity_for, speaks_of_us
+            us = identity_for(c, run.org_id)
+            org = c.execute(text("select company, name, first_name, last_name from orgs where id = :o"),
+                            {"o": run.org_id}).first()
+            ours = tuple(n for n in (org.company, org.name,
+                                     " ".join(p for p in (org.first_name, org.last_name) if p)) if n)
         for card in asked.values():
             assert card.output_lane == "investigation", card
             assert (card.subject_node_id, card.headline) in questions, f"{case.case_id}: {card} asks no question"
+            assert "Can you tell us:" not in card.headline, f"{case.case_id}: an instruction asked: {card.headline}"
+            assert speaks_of_us(card.headline, us, ours) is None, f"{case.case_id}: it names you: {card.headline}"
         for sweep in range(len(case.sweeps)):
             open_now = [asked[v.card_id].subject_node_id for v in run.cards
                         if v.card_id in asked and sweep in v.sweeps]

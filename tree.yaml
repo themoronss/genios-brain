@@ -8118,7 +8118,14 @@ yc2_w27_s13:
                       what: >
                         Re-recorded once, under the new prompt and answers — the sweep, the citations, the
                         first-connect door, the resync — and the board restated in its five places
-                        (blocked_on, MOVED_AFTER, the Atlas specs, the controls, `03` §F.1).
+                        (blocked_on, MOVED_AFTER, the Atlas specs, the controls, `03` §F.1). Re-recorded
+                        again 13 Oct for the second fix wave (B1 prints "last asked", the held and find-out
+                        questions' words, the check's notes), in the house order on fresh pg2 databases: the
+                        sweep door (every cassette re-stamped; F24 drops two bundle-narrator answers no run asks
+                        any more), the citations (441 over 53 cases, unchanged), the door, the resync. The board
+                        did not move (must-detect 22/45, 12 not expressible; must-abstain 13/13; forbidden 0;
+                        Atlas 6/80), so no case is restated; the golden held-file test gains G8's and F3's
+                        assertions (no question card asks "Can you tell us:" or names you).
                       artifact: "tests/replays/specs/founder/cassettes"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
                       depends_on: [M35.C4.L-data.V0.U01]
