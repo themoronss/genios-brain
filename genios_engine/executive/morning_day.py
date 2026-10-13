@@ -8,8 +8,10 @@ with no model:
   * every FILE (`context/workstreams.files_for`) with its current judgment (`reason/expert/store.current_judgments`)
     — the newest review that stands, through its check. A shown act is a DECISION; a find-out, or a move the check
     held, is a QUESTION; a wait or a block is a WATCHED file; nothing, a suppressed or a refused review is no item.
-    A file decided on the shadow lane — its domain not switched on — is left out (s15-D2's default: `06` D2 governs
-    what reaches you, and a brief line is not built for it here);
+    A file decided on the shadow lane — its domain not switched on — is a line too, on s15-D2 = yes (`yc2_w27_s15`
+    M45.C4.L-logic.V0.U01): its headline or question carries "outside your switched-on work", and it never carries a
+    card — `06` D2 still governs what a CARD shows, never a line (F53: "Larkspur went quiet after four exchanges in
+    March — six months", restated here, in `stuck`);
   * every open QUESTION a file asks (`context/your_desk.open_questions`, STEP-13's questions), with the card that
     asks it when one is open (STEP-13's question card — where the brief's line leads, `06` D60);
   * the open DECISION cards, ranked by the book re-rank already on for the tenant (`reason/brief_ranking`), so the
@@ -64,6 +66,10 @@ DEFAULT_TZ = "UTC"
 NAMING_SECTIONS: tuple[str, ...] = ("in_motion", "watchlist", "connectors", "people")
 #: How many of the expert's appraisal reasons an item carries — the writer gives each of today's five one.
 REASONS_KEPT = 2
+#: s15-D2 (`yc2_w27_s15` M45.C4.L-logic.V0.U01) — how a shadow-lane file's line says what a card never does: its
+#: domain is not switched on, `06` D2 still governs the card, and the line says so rather than reading as any
+#: other file's.
+SHADOW_LABEL = "outside your switched-on work"
 
 _THE_FOUNDER = re.compile(r"\bthe founder\b", re.I)
 _EARNED = re.compile(r"\b(?:" + "|".join(sorted(EARNED)) + r")\b", re.I)
@@ -262,8 +268,7 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
         file_names[f.file_id] = name
         names = [name, *[said[p] for p in f.people if said.get(p)]]
         j = judgments.get(f.file_id)
-        if j is not None and j.lane == SHADOW_LANE:
-            continue                                          # s15-D2's default: the shadow lane reaches no brief
+        shadow = j is not None and j.lane == SHADOW_LANE
         shown[f.file_id] = name
         q = asked.get(f.file_id)
         base_sources = [B.Source(B.SOURCE_BRIEF, line.line_id)] if line is not None else []
@@ -273,16 +278,18 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
         by = review.next_move.by_when if review is not None and review.next_move is not None else None
         if q is not None:
             sources = [B.Source(B.SOURCE_QUESTION, q.question_id)]
-            card = q.card_id
+            card = None if shadow else q.card_id        # s15-D2: a shadow file's line never carries a card
             if card:
                 sources.append(B.Source(B.SOURCE_CARD, card))
             if review is not None:
                 sources.append(B.Source(B.SOURCE_REVIEW, f"{f.file_id}@{j.stored.fingerprint}"))
+            asked_wording = _asked_as_you(q.question, checked.words.headline if checked is not None else None,
+                                          founder)
+            if shadow and asked_wording:
+                asked_wording += f" — {SHADOW_LABEL}"
             items.append(B.Item(
                 item_id=B.item_id_for(B.QUESTION, f.file_id), kind=B.QUESTION, about=f.file_id, subject=name,
-                material=B.Material(words=(("name", name), ("question", _asked_as_you(
-                                        q.question, checked.words.headline if checked is not None else None,
-                                        founder))),
+                material=B.Material(words=(("name", name), ("question", asked_wording)),
                                     dates=(("asked", _local(q.asked_at, zone)), ("by", _local(by, zone))),
                                     names=names),
                 sources=tuple(sources + base_sources), mode=review.mode if review else None,
@@ -293,7 +300,10 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
             continue
         words = checked.words
         grounds = [words.headline, words.situation, words.done_when, checked.question, *names]
-        material_words = [("name", name), ("headline", words.headline), ("situation", words.situation),
+        headline = words.headline
+        if shadow and headline:
+            headline = f"{headline} — {SHADOW_LABEL}"
+        material_words = [("name", name), ("headline", headline), ("situation", words.situation),
                           ("done_when", words.done_when)]
         sources = [B.Source(B.SOURCE_REVIEW, f"{f.file_id}@{j.stored.fingerprint}")]
         numbers = [n for n in (quiet,) if n is not None]
@@ -303,6 +313,8 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
                       urgency=review.appraisal.urgency, quiet_days=f.days_quiet, lane=j.lane)
         if q is None and (checked.fate == HELD or (checked.fate == SHOWN and review.mode == "find_out")):
             wording = _asked_as_you(checked.question, words.headline, founder)
+            if shadow and wording:
+                wording += f" — {SHADOW_LABEL}"
             if wording and not _answered_since(conn, org_id, f.file_id, j.stored.reviewed_at):
                 items.append(B.Item(
                     item_id=B.item_id_for(B.QUESTION, f.file_id), kind=B.QUESTION,
@@ -313,7 +325,7 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
         if checked.fate != SHOWN:
             continue
         if review.mode == "act":
-            score, card = carded.get(f.file_id, (None, None))
+            score, card = (None, None) if shadow else carded.get(f.file_id, (None, None))
             if card:
                 sources.append(B.Source(B.SOURCE_CARD, card))
             if any(a.owed_by == "us" for a in f.open_asks):
@@ -579,5 +591,5 @@ def _why_gone(line: B.Line, questions: dict[str, str], cards: dict[str, str]) ->
     return "no longer open"
 
 
-__all__ = ["ASKED_ON_ITS_CARD", "DEFAULT_TZ", "Day", "FIRST_BRIEF_LOOKBACK", "NAMING_SECTIONS", "REASONS_KEPT", "read_changes", "read_day", "speaks_of_you", "spoken_names",
-           "zone_of"]
+__all__ = ["ASKED_ON_ITS_CARD", "DEFAULT_TZ", "Day", "FIRST_BRIEF_LOOKBACK", "NAMING_SECTIONS", "REASONS_KEPT",
+           "SHADOW_LABEL", "read_changes", "read_day", "speaks_of_you", "spoken_names", "zone_of"]

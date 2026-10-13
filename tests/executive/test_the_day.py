@@ -6,8 +6,8 @@
 leaves them after each case's last sweep — replayed from their cassettes, no spend — so the day is measured on what
 the engine holds, not on rows a test invented: F45's decision with your reply time (1.5 days, n=6), F14's watched
 file with the expert's wait rule, F22's question with its card, F54's two questions and its mixer nobody followed up,
-F55's desk (28 days, three waiting), F30's promise in its file — and, s15-D2's default, nothing of a file decided on
-the shadow lane (F30's, F55's Dev). Then the day's own rules, case by case.
+F55's desk (28 days, three waiting), F30's promise in its file — and, s15-D2 = yes, a labelled line for a file
+decided on the shadow lane (F30's own, F55's Dev), never a card. Then the day's own rules, case by case.
 """
 from __future__ import annotations
 
@@ -106,23 +106,32 @@ def test_f54_two_questions_and_the_mixer_nobody_followed_up(days):
     assert not _of(day, B.WATCHED) and not _of(day, B.DECISION)        # the organiser's mailbox needs nothing
 
 
-def test_f55_your_desk_and_no_line_for_a_file_decided_on_the_shadow_lane(days):
+def test_f55_your_desk_and_a_labelled_line_for_the_file_on_the_shadow_lane(days):
     day = days["F55"]
     (desk,) = _of(day, B.DESK)
     assert desk.material.number("since_your_last_mail").n == 28 and desk.material.number("waiting").n == 3
     assert set(desk.material.names) == {"Dev Malhotra", "Rhea Thomas", "Kabir Sethi"}
-    decisions = {d.subject for d in _of(day, B.DECISION)}
-    assert len(decisions) == 2 and all(d.lane == "live" for d in _of(day, B.DECISION))
-    assert not any("Dev" in (d.material.word("headline") or "") for d in _of(day, B.DECISION))
+    decisions = {d.subject: d for d in _of(day, B.DECISION)}
+    assert len(decisions) == 3                                 # s15-D2 = yes: the shadow file is a line too
+    live = [d for d in decisions.values() if d.lane == "live"]
+    assert len(live) == 2 and all(d.card_id for d in live)
+    shadow = next(d for d in decisions.values() if d.lane == "shadow")
+    assert "Dev" in (shadow.material.word("headline") or "")
+    assert shadow.material.word("headline").endswith(M.SHADOW_LABEL)
+    assert shadow.card_id is None and shadow.book_score_bp is None and B.SOURCE_CARD not in {
+        s.kind for s in shadow.sources}
 
 
-def test_f30_your_promise_in_its_file_and_nothing_of_the_shadow_decision(days):
+def test_f30_your_promise_in_its_file_and_a_labelled_line_for_the_shadow_decision(days):
     day = days["F30"]
     (p,) = _of(day, B.PROMISE)
     assert (p.material.word("promise"), p.material.word("to"), p.material.date("due")) == \
         ("send the pilot proposal", "Gaurav", "2026-09-25")
     assert p.material.word("file") == "Stackfield" and p.subject == "Gaurav"
-    assert not _of(day, B.DECISION) and not _of(day, B.QUESTION)
+    assert not _of(day, B.QUESTION)
+    (d,) = _of(day, B.DECISION)                                # s15-D2 = yes: a line, never a card
+    assert d.lane == "shadow" and d.card_id is None
+    assert d.material.word("headline").endswith(M.SHADOW_LABEL)
 
 
 def test_what_the_check_suppressed_is_no_decision_and_a_silence_no_mailbox_vouches_for_is_unsaid(days):

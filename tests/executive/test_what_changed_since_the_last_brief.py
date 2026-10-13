@@ -119,8 +119,11 @@ def test_a_first_brief_reads_one_day_back_and_no_review_not_yet_written(world):
     assert _changes(_day(world, "F21", shift=-timedelta(minutes=1))) == []     # the review is not yet written
 
 
-def test_a_file_on_the_shadow_lane_has_no_change_line(world):
-    assert _changes(_day(world, "F30")) == []                    # its review at the last sweep: decided in shadow
+def test_a_file_moved_to_the_shadow_lane_is_still_a_labelled_change(world):
+    """s15-D2 = yes: `morning_day.read_day` shows a shadow file now, so what changed about it is read the same
+    way any other file's is — `read_changes`'s own words, never the file's own headline alone."""
+    import genios_engine.executive.morning_day as M
+    assert _changes(_day(world, "F30")) == []                    # its review at the last sweep is not SINCE
     engine, cases, runs = world
     org = runs["F45"].org_id                                     # Meera wrote — on a file moved to the shadow lane
     with engine.begin() as c:
@@ -128,7 +131,11 @@ def test_a_file_on_the_shadow_lane_has_no_change_line(world):
                        "and subject_key like '%|expert.file_review'"), {"o": org})
     try:
         day = _day(world, "F45")
-        assert _changes(day) == [] and not [i for i in day.items if i.kind == B.DECISION]
+        (decision,) = [i for i in day.items if i.kind == B.DECISION]
+        assert decision.lane == "shadow" and decision.material.word("headline").endswith(M.SHADOW_LABEL)
+        assert decision.card_id is None
+        (change,) = _changes(day)
+        assert change.subject == "Bluepeak"
     finally:
         with engine.begin() as c:
             c.execute(text("update reasoning_fingerprints set outcome = 'emitted' where org_id = :o "
