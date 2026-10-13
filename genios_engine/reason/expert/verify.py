@@ -1040,7 +1040,7 @@ def _prose(review: ExpertReview) -> list[str]:
             *(t for h in review.hypotheses for t in (h.proposition, h.needs)),
             *(t for u in review.unknowns for t in (u.question, u.relevance)), *review.frames.rivals,
             eva.expected, eva.actual, sc.act, sc.best, sc.worst, *sc.signals_to_watch,
-            *review.appraisal.reasons, review.alternative, review.wait_or_stop]
+            *review.appraisal.reasons]
 
 
 def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
@@ -1079,6 +1079,11 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     # text like the situation — its names and numbers on the standing facts' lines, "you" noted.
     do_nothing = run.text("do_nothing", review.scenarios.do_nothing, standing_corpus,
                           figures=standing_figures)
+    # THE GOLD CARD'S OTHER LINES (STEP-14, `yc2_w27_s14` M43.C2.L-logic.V1.U01, s14-F8): the alternative and when to
+    # wait or stop are shown (0221), so they are card words — held to the standing facts' lines as the situation is,
+    # a line that fails WITHHELD, never the review — and no longer prose no founder is shown.
+    alternative = run.text("alternative", review.alternative, standing_corpus, figures=standing_figures)
+    wait_or_stop = run.text("wait_or_stop", review.wait_or_stop, standing_corpus, figures=standing_figures)
     kind = None
     if review.proposed_kind is not None:
         pk = review.proposed_kind
@@ -1228,7 +1233,7 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
             run.say("question", C.NOTED, C.SPEAKS_OF_YOU, hit)
     shown = fate == C.SHOWN
     grounds = [review.facts[n - 1] for n in sorted(rested & standing)]
-    words = C.CardWords(do_nothing=do_nothing, kind=kind,
+    words = C.CardWords(do_nothing=do_nothing, kind=kind, alternative=alternative, wait_or_stop=wait_or_stop,
                         headline=headline if shown else None, situation=situation, done_when=done_when,
                         draft=draft if shown else None, to=to if shown and draft else None,
                         evidence=tuple(e for f in grounds for e in f.evidence) if shown else (),

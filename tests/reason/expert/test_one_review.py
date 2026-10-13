@@ -133,7 +133,12 @@ def test_one_unsupported_fact_drops_and_the_review_stands(engine):
                  next_move=dict(GOOD["next_move"], rests_on=["fact:1"]))
     result = _review_with(engine, _Client(_answer(mixed)))
     assert result.status == R.VALID and result.checked.fate == "shown"
-    assert [(v.line, v.reason) for v in result.checked.dropped] == [("fact:2", "unknown_evidence")]
+    # ⛔ RESTATED by `yc2_w27_s14` M43.C2.L-logic.V1.U01: the stop rule is a card line the check holds now, and this
+    # review's ("if no slot by Friday, …") names a day its standing facts' lines do not — withheld, on its own line;
+    # the review stands.
+    assert [(v.line, v.reason) for v in result.checked.dropped] == [("fact:2", "unknown_evidence"),
+                                                                     ("wait_or_stop", "unsupported")]
+    assert result.checked.words.wait_or_stop is None and result.checked.words.situation
     assert _row(engine).checked == result.checked
 
 

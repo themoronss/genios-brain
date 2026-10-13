@@ -30,7 +30,10 @@ from typing import Any
 #: reviewed on, `06` D48). ⛔ check.v2 since 12 Oct (`yc2_w27_s13` M35.C3.L-integration.V1.U06): the check's behaviour
 #: changed in M35.C2.U09-U16 (quotes, numbers, names, recipients, answered asks), so a review v1 checked is checked
 #: again — and a file decided through v1 is decided again (`reason/expert/decide.decision_ref`).
-CHECK_VERSION = "check.v2"
+#: ⛔ check.v3 since 13 Oct (`yc2_w27_s14` M43.C2.L-logic.V1.U01): STEP-13's second fix wave changed it again (an ask
+#: asked again, a move resting on your answer, the held question's words) and the gold card's alternative and stop
+#: rule are card lines it holds — so a review v2 checked is checked again.
+CHECK_VERSION = "check.v3"
 
 # ── what happened to a line ────────────────────────────────────────────────────────────────────
 # One name to a line: `tests/test_no_missing_module_deps` reads what a module defines by its assignments,
