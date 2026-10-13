@@ -167,6 +167,28 @@ def morning_brief_of(day: date, ctx: AuthCtx = Depends(require_workspace_user)) 
         return _served(kept, state="kept", marks=morning_store.marks_for(c, ctx.org_id, seat, day))
 
 
+@router.post("/morning/lines/{line_id}/mark")
+def mark_morning_line(line_id: str, mark: str = Body(..., embed=True),
+                      words: str | None = Body(None, embed=True),
+                      ctx: AuthCtx = Depends(require_workspace_user)) -> dict:
+    """Useful, or not useful with your words. A later mark of yours replaces an earlier one; marks are per
+    person, so your mark never overwrites someone else's. Recorded only — STEP-16 turns marks into proposals
+    you accept, never this step (M45.C3.L-interface.V0.U02)."""
+    _require_db()
+    from genios_engine.executive import morning_store
+    seat = _brief_seat(ctx)
+    try:
+        with _graph.engine.begin() as c:
+            kept = morning_store.mark_line(c, org_id=ctx.org_id, line_id=line_id, marked_by=seat, mark=mark,
+                                           words=words, at=_now())
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    return {"line_id": kept.line_id, "marked_by": kept.marked_by, "mark": kept.mark, "words": kept.words,
+            "marked_at": kept.marked_at.isoformat()}
+
+
 # ---------------------------------------------------------------------------------------
 # Commitments — the executive engine's surface.
 

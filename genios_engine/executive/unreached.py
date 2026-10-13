@@ -184,12 +184,9 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "(`tests/executive/test_a_closed_set_with_two_spellings.py`), so it is no longer in the "
         "weaker of the two states; `blocking_action` was the other and is now wired."),
 
-    # STEP-15 builds bottom-up (tree `yc2_w27_s15`): the morning brief's parts land before the composer that calls
-    # them. Each entry is deleted in the commit that wires its caller, and the pinned set in
+    # STEP-15 builds bottom-up (tree `yc2_w27_s15`): the morning brief's writer lands before the composer that
+    # calls it. Each entry is deleted in the commit that wires its caller, and the pinned set in
     # `tests/test_the_executive_says_what_it_does_not_call.py` moves with it, said there.
-    "morning_store.mark_line": (
-        "STEP-15 M44.C4.L-data.V0.U01, built bottom-up: your mark on a line — useful, or not useful with your words — the latest standing, the line naming its brief. Its caller is the mark route, M45.C3.L-interface.V0.U02; until it lands no mark is taken.",
-        "MOVES WHEN M45.C3.L-interface.V0.U02 (`POST /v1/executive/morning/lines/{line_id}/mark`) lands"),
     "morning_prompt.build_prompt": (
         "STEP-15 M45.C2.L-logic.V0.U01, built bottom-up: the writer's prompt, from the day's items and "
         "nothing else. Its caller is the writer, M45.C2.L-logic.V1.U03, waiting on the sites it writes "
