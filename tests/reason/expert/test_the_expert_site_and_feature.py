@@ -47,7 +47,9 @@ def test_the_ceiling_holds_a_whole_review():
 def test_the_switch_is_a_named_feature_with_its_wave_and_effect():
     assert ACT.FEATURE_EXPERT_REVIEW == "expert_review"
     assert ACT.require_feature("expert_review") == "expert_review"
-    assert ACT.L4_FEATURES[-1] == ACT.FEATURE_EXPERT_REVIEW
+    # STEP-15 added `morning_brief` after it (tests/test_l4_pilot_activation.py pins the full,
+    # ordered tuple) — this file's own claim is only that the ninth is registered at all.
+    assert ACT.FEATURE_EXPERT_REVIEW in ACT.L4_FEATURES
     assert ACT.FEATURE_WAVES[ACT.FEATURE_EXPERT_REVIEW] == "STEP-12"
     assert ACT.PRECONDITIONS[ACT.FEATURE_EXPERT_REVIEW] == ()
     assert ACT.FEATURE_EXPERT_REVIEW not in ACT.CROSS_LAYER_PRECONDITIONS

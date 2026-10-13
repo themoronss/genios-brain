@@ -102,16 +102,24 @@ FEATURE_CALIBRATION_APPLY = "calibration_apply"
 #: never on. Off — the default, and armed per tenant only after the live golden pass on the D7
 #: model (`06` D50) — no file is reviewed and nothing is spent.
 FEATURE_EXPERT_REVIEW = "expert_review"
+#: ⛔ STEP-15 · the morning brief's WRITER (R-8, Haiku-class; R-8E, Sonnet-class — never Opus, s15-D1)
+#: writes the brief from the day's checked material, line by line checked against it. Off — the
+#: default, and armed per tenant only after the live look on the golden set's briefs (58, under $1
+#: `[MODELLED]`) — the brief is `executive/morning_template`'s own words and nothing is spent. The
+#: site lands separately (`reason/bundle/sites.py`, M45.C1.L-contract.V0.U01, waiting on the Claude 5
+#: thinking fix's merge, which gives every R-site its own thinking mode); this is the switch alone,
+#: and `require_feature` refuses the name until the site registers it too — the R-6 lesson again.
+FEATURE_MORNING_BRIEF = "morning_brief"
 
-#: The five features doc 07 names, in WAVE order rather than alphabetical order — the order is the
-#: only safe order to switch them on in, and a list that read `bundle, brief, critique, ranking_v2,
-#: roster_v2` would put the narrative first. A caller naming anything else is REFUSED by
+#: The features doc 07 and later steps name, in WAVE order rather than alphabetical order — the
+#: order is the only safe order to switch them on in, and a list that read `bundle, brief, critique,
+#: ranking_v2, roster_v2` would put the narrative first. A caller naming anything else is REFUSED by
 #: `require_feature` rather than silently writing a row nothing will ever read, which is the failure
 #: mode a free-text column invites and which looks exactly like an activated tenant right up until
 #: nothing happens.
 L4_FEATURES = (FEATURE_ROSTER_V2, FEATURE_RANKING_V2, FEATURE_BUNDLE, FEATURE_CRITIQUE,
                FEATURE_BRIEF, FEATURE_SITUATION_REASONER, FEATURE_CARDS_FROM_SITUATIONS,
-               FEATURE_CALIBRATION_APPLY, FEATURE_EXPERT_REVIEW)
+               FEATURE_CALIBRATION_APPLY, FEATURE_EXPERT_REVIEW, FEATURE_MORNING_BRIEF)
 
 #: Which wave builds each feature. Carried in code rather than in a doc because it is what makes
 #: `PRECONDITIONS` checkable by eye: a feature is safe to switch on when the features its wave
@@ -126,6 +134,7 @@ FEATURE_WAVES = {
     FEATURE_CARDS_FROM_SITUATIONS: "L2-7",
     FEATURE_CALIBRATION_APPLY: "B1",
     FEATURE_EXPERT_REVIEW: "STEP-12",
+    FEATURE_MORNING_BRIEF: "STEP-15",
 }
 
 #: ⛔ FEATURES THAT ARE RETIRED — named, kept in `L4_FEATURES` so a row written before reads as what
@@ -169,6 +178,9 @@ PRECONDITIONS = {
     # and in shadow (M32) nothing reads its review for a decision. A file whose playbook is not live
     # is reviewed with the playbook labelled, which is the dossier's business, not the switch's.
     FEATURE_EXPERT_REVIEW: (),
+    # ⛔ NONE. The writer reads the day `executive/morning_day.read_day` already assembled — code's
+    # own selection, order and numbers — and consults no Layer 4 formula; it only chooses the WORDS.
+    FEATURE_MORNING_BRIEF: (),
 }
 
 #: THE PRECONDITIONS THAT ARE NOT LAYER 4's. `PRECONDITIONS` above orders the five switches against
@@ -275,6 +287,12 @@ EFFECTS = {
         "packs' rules on them — no decider, no R-1. The file keeps ONE decision, and its card speaks "
         "the review's own words. Off, no file is reviewed, nothing is spent, and every situation "
         "and rule is decided as before"),
+    FEATURE_MORNING_BRIEF: (
+        "a model writes this tenant's morning brief from the day's CHECKED material instead of "
+        "`executive/morning_template`'s words: Haiku-class (R-8) first, checked line by line "
+        "against what its item holds, and Sonnet-class (R-8E) once only when the cheap draft fails "
+        "the check — never Opus. A line the check cannot hold is given its template words back, "
+        "said. Off, the brief is the template's own words throughout and nothing is spent"),
 }
 
 #: Every column the record carries, in one place, so the reads below cannot select different shapes
