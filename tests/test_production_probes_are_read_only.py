@@ -47,6 +47,14 @@ def test_the_alignment_blocks_are_there():
             "promises_framed_late"} <= set(blocks())
 
 
+def test_the_thinking_blocks_are_there():
+    """`yc2_w27_s18` M50.C5.L-data.V0.U17 (STEP-18 §9): Claude 5 thinks by default — every lane's calls at
+    their ceiling, parsed or not, the R-site receipts, the Sonnet 5 lanes by day, the models in use, and
+    the two reads for after the speedrun008 deploy."""
+    assert {"thinking_lanes", "thinking_r_sites", "thinking_sonnet_by_day", "thinking_models_in_use",
+            "thinking_expert_after_deploy", "thinking_brief_after_deploy"} <= set(blocks())
+
+
 @pytest.mark.parametrize("name", sorted(blocks()))
 def test_a_probe_is_one_read(name):
     statement = blocks()[name]
