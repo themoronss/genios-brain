@@ -1,0 +1,58 @@
+diff -ruN a/genios_engine/context/llm/client.py b/genios_engine/context/llm/client.py
+--- a/genios_engine/context/llm/client.py
++++ b/genios_engine/context/llm/client.py
+@@ -37,6 +37,21 @@
+     return not str(model).startswith(NO_SAMPLING_PREFIXES)
+ 
+ 
++#: ⛔ CLAUDE SONNET 5 THINKS BY DEFAULT, and its thinking counts toward `max_tokens` (13 Oct audit,
++#: s5t-F3). R-2 (`l4_bundle`, Sonnet 5, 2,400 tokens) was sized for a model that does not think, so
++#: its answer is cut and retried once at the same ceiling. HOTFIX for production: Sonnet 5 — its own
++#: id or a dated snapshot, never a longer id (Opus 5.5 and Fable cannot turn thinking off; `disabled`
++#: is a 400 there) — is asked with thinking off. The full table is speedrun008's `THINKING_FAMILIES`.
++_THINKING_OFF = {"claude-sonnet-5": {"thinking": {"type": "disabled"}}}
++
++
++def thinking_off(model: str) -> dict:
++    """The request field that turns thinking off for `model`, or nothing."""
++    name = str(model)
++    family = name[:-9] if len(name) > 9 and name[-9] == "-" and name[-8:].isdigit() else name
++    return dict(_THINKING_OFF.get(family, {}))
++
++
+ @dataclass
+ class LLMResult:
+     parsed: dict[str, Any]
+@@ -147,7 +162,7 @@
+             # Those models are deterministic enough without it; sending it costs the whole call.
+             sampling = {"temperature": 0} if accepts_sampling(self._model) else {}
+             resp = client.messages.create(
+-                model=self._model, max_tokens=max_tokens, **sampling,
++                model=self._model, max_tokens=max_tokens, **sampling, **thinking_off(self._model),
+                 messages=[{"role": "user", "content": content}])
+         except Exception as e:      # noqa: BLE001 — network/API errors surfaced, not raised
+             return LLMResult(parsed={}, raw="", ok=False, error=str(e)[:400], model=self._model)
+diff -ruN a/tests/context/test_sampling_is_omitted_where_it_is_refused.py b/tests/context/test_sampling_is_omitted_where_it_is_refused.py
+--- a/tests/context/test_sampling_is_omitted_where_it_is_refused.py
++++ b/tests/context/test_sampling_is_omitted_where_it_is_refused.py
+@@ -117,3 +117,20 @@
+     assert "temperature" not in request_kwargs("claude-sonnet-5")
+     assert request_kwargs("claude-sonnet-5") == {"thinking": {"type": "disabled"}}
+     assert request_kwargs("claude-haiku-4-5-20251001") == {"temperature": 0}
++
++
++# =================================================================================================
++# 4 · ⛔ Claude Sonnet 5 thinks by default — the hotfix (13 Oct, s5t-F3)
++# =================================================================================================
++def test_sonnet_5_is_asked_with_thinking_off():
++    """R-2 on Sonnet 5 at 2,400 tokens: thinking spent from the answer's ceiling cut it."""
++    assert _sent_kwargs("claude-sonnet-5")["thinking"] == {"type": "disabled"}
++    assert _sent_kwargs("claude-sonnet-5-20260601")["thinking"] == {"type": "disabled"}
++
++
++@pytest.mark.parametrize("model", ["claude-haiku-4-5-20251001", "claude-opus-5-5", "claude-sonnet-5-5",
++                                   "claude-fable-5-1", "claude-opus-5"])
++def test_no_other_model_is_sent_a_thinking_control(model):
++    """Haiku does not think; Opus 5.5 and Fable cannot turn it off (`disabled` is a 400); a longer id
++    is not Sonnet 5."""
++    assert "thinking" not in _sent_kwargs(model)
