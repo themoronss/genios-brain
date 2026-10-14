@@ -249,3 +249,30 @@ two open cards; must-abstain 13/13; forbidden outputs 0 over every version.
 - **STEP-13's question card is planned against, not read** — its door's key (the builder stamp) is the lead's
   description; M42.C3.U04 adapts to what lands.
 - **Two re-records** on a load-sensitive machine, each restating the board in its five places.
+
+### 8.8 · Built — 12 to 14 Oct, branch `yc2w27-s14` (worktree `s14-build`)
+
+All 45 units of `yc2_w27_s14` (M42, M43), one commit each with its evidence, every code unit mutation-tested (each
+mutant run against a baseline that exited 0, survivors closed with tests); s14-D1…D8 taken at their recommended
+answers and recorded in `06` (Rohit took them, D66). Merged the integration line twice (`360766a3`, `8c89fe3c` — STEP-13's
+second fix wave and STEP-18's Claude 5 thinking fix), each conflict resolved keeping both intents.
+
+**The board** (`03` §F.1, `073da2ad`; `scripts/golden_score.py --assert-recorded` exits 0): must-detect 22/45 → **36/50**,
+must-abstain 13/13 → **14/14**, forbidden outputs 0, Atlas passing 6/80 → **12/80**. F176's eight cases pass — one
+card each, versioned as its file moved; replay 02 has six founder cases (F59–F64). Lost: F15 (`06` D57, the outreach
+wave) and F56 (a vendor's notice at the gate).
+
+**What changed in what you see.** A file has one card; its next decision or question versions it, saying what changed
+and keeping the words before; a renewal or a rewording is quiet. Answering a question keeps the card (s14-D3). The
+card says who and what the file is, why now, what remains, the move whole, its alternative and when to stop, and its
+window with where it came from; its headline is the move cut at a clause. Neither card writer writes a card that names
+us, prints a field's name, claims money with none in its evidence, quotes words nobody said or a number nothing
+holds — and what it refused is kept (`card_refusals`, 0222) and said by the health check.
+
+**Defects found in our own build and fixed in it**: s14-F20 (the team writer refused every meeting follow-up), F21 (the
+contract refused the gold lines), F22 (the connector as a file's subject), F23 (a titled meeting lost its "no words"
+line); and the merge's own (`531e1ec3`: the contract pulled `capture` into `contracts/`).
+
+**Waits for others**: the push and the merge to the integration line (the lead); s14-F18 and F19 (the lead, Rohit);
+F24 (the statement census counting a bare SQL word, the lead); `08`'s deploy notes for 0220–0222 and the one-time
+churn at switch-on (§8.7, Harsh's list).

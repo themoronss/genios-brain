@@ -9598,7 +9598,7 @@ yc2_w27_s18:
                       depends_on: [M50.C5.L-interface.V1.U19, M50.C1.L-logic.V1.U10, M50.C3.L-logic.V2.U07, M50.C3.L-logic.V1.U12, M50.C3.L-logic.V1.U13, M50.C3.L-logic.V1.U14, M50.C3.L-logic.V1.U15, M50.C4.L-data.V0.U16, M50.C4.L-interface.V1.U09, M50.C4.L-interface.V1.U11]
 
 yc2_w27_s14:
-  status: building   # 2026-10-12: Rohit's "complete it all" — s14-D1…s14-D8 at their recommended answers (06), built in the worktree s14-build (branch yc2w27-s14)
+  status: built   # 2026-10-12→14 in the worktree s14-build (branch yc2w27-s14): 45 units + their fixes, every code unit mutation-tested; s14-D1…D8 at their recommended answers (06, D66); the golden board 36/50 · 14/14 · Atlas 12/80 (073da2ad); not pushed
   source: >
     speedrun008/YC-II W27/STEP-14 §1-§6, re-checked claim by claim against yc2w27-s14-plan @ fbd0aeaa (STEP-13
     built but for M36.C2 U05, U06, U08, M35.C4 U03 and M36.C3; its question card — `deliver/store.
