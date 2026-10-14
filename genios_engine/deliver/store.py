@@ -58,7 +58,9 @@ _VERSION_WORDS = (
     "relationship_role=:brole, unresolved_item=:bitem, why_now=:bwhy, capability_key=:ckey, "
     "capability_version=:cver, capability_review_state=:crev, outcome_window_days=:owin, success_signal=:osig, "
     "do_nothing_consequence=:odnc, confidence_vector=cast(:cvec as jsonb), surfaces=:surf, builder_version=:bver, "
-    "output_lane=:lane, lane_reason=:lreason "
+    "output_lane=:lane, lane_reason=:lreason, "
+    # STEP-14 (0221): the gold card's columns are a version's words too — its own, never the last version's.
+    "recommended=cast(:grec as jsonb), alternative=:galt, wait_or_stop=:gwait "
     " where org_id=:o and card_id=:id")
 
 #: STEP-14 (M42.C3.L-interface.V3.U04): the open cards a door is asked about (`CardStore.doors`) — a file's card, or
@@ -80,11 +82,13 @@ def _words_of(card: dict, copy: dict) -> VersionWords:
     """What a card shows, as a version names it: the words its builder handed (`_words`, with the move's ask,
     recipient, date and mode), or — a builder that names none — its copy and lane alone."""
     given = card.get("_words")
+    gold = {"alternative": card.get("alternative"), "wait_or_stop": card.get("wait_or_stop")}
     if given:
-        return VersionWords.from_mapping({**given, "headline": copy.get("headline"),
+        return VersionWords.from_mapping({**given, **gold, "headline": copy.get("headline"),
                                           "situation": copy.get("situation")})
     return VersionWords(headline=str(copy.get("headline") or ""), situation=str(copy.get("situation") or ""),
-                        draft=(copy.get("artifact") or {}).get("body") or None, lane=card.get("output_lane"))
+                        draft=(copy.get("artifact") or {}).get("body") or None, lane=card.get("output_lane"),
+                        **gold)
 
 
 def _words_params(card: dict, copy: dict) -> dict:
@@ -103,7 +107,15 @@ def _words_params(card: dict, copy: dict) -> dict:
             "osig": card.get("success_signal"), "odnc": card.get("do_nothing_consequence"),
             "cvec": json.dumps(card.get("confidence_vector") or {}, default=str),
             "surf": card.get("surfaces") or ["app", "agent", "ask", "api"], "bver": card.get("builder_version"),
-            "lane": card.get("output_lane") or "unrouted", "lreason": card.get("lane_reason")}
+            "lane": card.get("output_lane") or "unrouted", "lreason": card.get("lane_reason"),
+            **_gold_params(card)}
+
+
+def _gold_params(card: dict) -> dict:
+    """The gold card's columns (0221): the move whole, its alternative, when to stop — NULL on a card that names none."""
+    recommended = card.get("recommended")
+    return {"grec": json.dumps(recommended, default=str) if recommended else None,
+            "galt": card.get("alternative"), "gwait": card.get("wait_or_stop")}
 
 
 # CardStore — persistence + the queue state machine (§5.12). Every transition writes a timestamped
@@ -406,11 +418,14 @@ class CardStore:
                 "output_lane, lane_reason, "
                 # STEP-14 (0220): the file whose decisions and questions this card carries, or NULL.
                 "file_id, "
+                # STEP-14 (0221): the gold card's columns — the move whole, its alternative, when to stop.
+                "recommended, alternative, wait_or_stop, "
                 "state, expires_at) values (:id,:sig,:o,:asg,:dom,:lvl,:band,:head,:sit,:score,"
                 "cast(:sb as jsonb),cast(:act as jsonb),cast(:why as jsonb),:tags,"
                 "cast(:art as jsonb),:rm,:cs,:tv,:rjc,:rjd,:abst,"
                 ":bsub,:brole,:bitem,:bwhy,:ckey,:cver,:crev,:owin,:osig,:odnc,"
-                "cast(:cvec as jsonb),:surf,:bver,:lane,:lreason,:file,'queued',:exp) "
+                "cast(:cvec as jsonb),:surf,:bver,:lane,:lreason,:file,"
+                "cast(:grec as jsonb),:galt,:gwait,'queued',:exp) "
                 # PRESENTATION ONLY. `state`, `created_at`, `snooze_until`, `resolved_at` and
                 # `expires_at` are the user's side of the row and are never touched here: a
                 # refresh improves what the card SAYS, never where it sits or what was decided
@@ -442,6 +457,8 @@ class CardStore:
                 # move its card between lanes. Carrying the old lane forward would show a
                 # founder a conclusion the engine has since withdrawn.
                 "output_lane=excluded.output_lane, lane_reason=excluded.lane_reason, "
+                "recommended=excluded.recommended, alternative=excluded.alternative, "
+                "wait_or_stop=excluded.wait_or_stop, "
                 # ⛔ A QUESTION CARD IS REVIVED (STEP-13 M36.C2.L-integration.V2.U11, `03` X04) — its builder's
                 # and only its: re-proven above on its question's authority, so its question is still open and
                 # asked — re-bound to the run asking it now — and a card that lapsed under it comes back, the
@@ -496,6 +513,7 @@ class CardStore:
                  "refreshable": list(self.REFRESHABLE_STATES),
                  "question_builder": QUESTION_CARD_BUILDER,
                  "file": card.get("file_id"),
+                 **_gold_params(card),
                  "exp": card["expires_at"]}).first()
             if inserted is None:
                 # The DO UPDATE's WHERE refused: a card exists and is NOT stale — either the

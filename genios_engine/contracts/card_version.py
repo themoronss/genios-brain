@@ -66,6 +66,10 @@ class VersionWords:
     ask: str | None = None             # the ask the move answers, or the question asked
     recipient: str | None = None       # whom the draft goes to
     by_when: str | None = None         # the move's date, ISO
+    #: STEP-14 (0221, `yc2_w27_s14` M43.C3.L-data.V4.U02): the gold card's other lines, as the check held them — a
+    #: version that changes only these is reworded, never material.
+    alternative: str | None = None     # the move the review would make instead
+    wait_or_stop: str | None = None    # when to wait, and when to stop advising
 
     def __post_init__(self) -> None:
         for f in fields(self):

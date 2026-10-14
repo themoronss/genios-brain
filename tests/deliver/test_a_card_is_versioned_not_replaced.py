@@ -235,3 +235,60 @@ def test_a_question_versions_the_files_card_on_its_own_authority(world, cards, h
         assert cards.get_card(first.card_id)["headline"] == "Who at the fund decides?"
     else:
         assert got is None and cards.get_card(first.card_id)["signal_id"] == first.signal_id
+
+
+# ── STEP-14 · the gold columns, on the card and on every version (`yc2_w27_s14` M43.C3.L-data.V4.U02, 0221) ──
+
+GOLD = {"recommended": {"who": "You", "what": "Send Arjun the deck and the quarter's metrics before the partner meeting",
+                        "for_whom": "Arjun", "by_when": None, "to": "Arjun"},
+        "alternative": "Offer Arjun a short call to walk through them instead",
+        "wait_or_stop": "If no reply comes within a week, ask once, then stop"}
+
+
+def _gold_row(store, card_id):
+    with store.engine.connect() as c:
+        return c.execute(text("select recommended, alternative, wait_or_stop from cards where card_id = :c"),
+                         {"c": card_id}).one()
+
+
+def test_a_new_card_writes_its_gold_columns(world, cards):
+    """The pipeline's expert card (`deliver/card_builder`, the decision's `gold`) lands its move whole."""
+    store, _org, _anchor, row, _sig = _second(world)
+    recommended, _alternative, wait_or_stop = _gold_row(store, row["card_id"])
+    assert recommended and recommended["what"] and recommended["who"]
+    assert wait_or_stop, "the review's stop rule, as its check held it"
+
+
+def test_every_version_writes_its_gold_columns_and_its_event_carries_them(world, cards):
+    store, org, _anchor, row, sig = _second(world)
+    card, copy = _draft(row, sig, **GOLD)
+    assert _version(cards, org, card, copy) is not None
+    recommended, alternative, wait_or_stop = _gold_row(store, row["card_id"])
+    assert (recommended, alternative, wait_or_stop) == (GOLD["recommended"], GOLD["alternative"], GOLD["wait_or_stop"])
+    [versioned] = _events(store, row["card_id"], "card.versioned")
+    assert (versioned["words"]["alternative"], versioned["words"]["wait_or_stop"]) == (GOLD["alternative"],
+                                                                                       GOLD["wait_or_stop"])
+    assert "alternative" in versioned["changed"] and "wait_or_stop" in versioned["changed"]
+
+
+def test_a_version_with_no_gold_lines_clears_them_never_keeps_the_last_ones(world, cards):
+    """A version's columns are ITS words: a card no review wrote names none, so none are left from before."""
+    store, org, _anchor, row, sig = _second(world)
+    card, copy = _draft(row, sig)
+    _version(cards, org, card, copy)
+    assert tuple(_gold_row(store, row["card_id"])) == (None, None, None)
+
+
+def test_a_card_an_older_builder_wrote_is_rebuilt_in_place_with_its_gold_columns(world, cards):
+    """`BUILDER_VERSION` moved (v7): an untouched card from before is rebuilt in place — and gains its gold columns."""
+    from genios_engine.deliver import pipeline
+    store, org, registry, _ = world
+    _anchor, _events_, _first, card = _carded(store, org, registry)
+    with store.engine.begin() as c:
+        c.execute(text("update cards set builder_version = 'card-builder.v6-lane-and-eleven-reasons', "
+                       "recommended = null, alternative = null, wait_or_stop = null where card_id = :c"),
+                  {"c": card.card_id})
+    out = pipeline.build_cards_for_org(graph=store, card_store=cards, org_id=org, eval_time=NOW)
+    assert out["refreshed"] == 1, out
+    recommended, _alternative, wait_or_stop = _gold_row(store, card.card_id)
+    assert recommended and recommended["what"] and wait_or_stop
