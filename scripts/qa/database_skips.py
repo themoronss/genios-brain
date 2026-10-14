@@ -25,9 +25,21 @@ S17X-F1). pytest's collect-only line — `20689/20800 tests collected (111 desel
 as a finished run with no skips, so a `--co` from `$GITHUB_ENV` or from `addopts` made the database
 job green after running nothing. A collection, a run where no test ran, one where every test was
 deselected, and one narrowed below the floor (a path, `-k`, `--deselect`) are each exit 2.
+
+⛔ F-2 (`yc2_w27_s1718` M40.C4.L-contract.V0.U06, second crosscheck): `PASSED_FLOOR` was a bare
+literal (19,000) with no tie to what it is FOR — a run that is more than the hermetic suite, which
+runs no database test. The hermetic count grows with every unit built (18,013 at `7766a06a`, 18,674
+at `884f0ea4`: +661 since STEP-17 §2) and nothing made the floor rise with it, nor was there a guard
+that it still does what its own name says. `RECORDED_HERMETIC_PASSED` now names the latest measured
+count, with its commit; `test_the_floor_exceeds_the_recorded_hermetic_count` holds `PASSED_FLOOR >
+RECORDED_HERMETIC_PASSED` and `PASSED_FLOOR <= RECORDED_DATABASE_SUITE_PASSED` by reading both
+constants — no literal in the test itself. The scan also only ever reads a pytest SUMMARY LINE, so
+a `conftest.py` that narrowed collection upstream (`collect_ignore`, `pytest_collection_modifyitems`)
+would never show here; `narrowing_conftest_hooks` is the guard that none of the 9 today does.
 """
 from __future__ import annotations
 
+import ast
 import re
 import sys
 from collections import Counter
@@ -62,11 +74,19 @@ ALLOWED: tuple[tuple[str, str, str], ...] = (
      "by decision"),
 )
 
+#: The hermetic suite's own count — no database test runs. `pytest -q -m "not golden" -rfEs`, no
+#: `GENIOS_TEST_DATABASE_URL`: 18,013 at `7766a06a` (STEP-17 §2); 18,674 at `884f0ea4` (the lead's
+#: STEP-17/18 integration tip, 14 Oct — +661 as the suite grew). Raise it whenever it is
+#: re-measured; `PASSED_FLOOR` must stay above it (`test_the_floor_exceeds_the_recorded_hermetic_count`).
+RECORDED_HERMETIC_PASSED = 18_674
+#: The whole suite's own count — hermetic and database-gated together, on a real Postgres. Measured
+#: 20,868 at `ae24ee22` (STEP-17 §2, the lead's whole-suite QA). `PASSED_FLOOR` must stay at or under
+#: it too, or a real database run could itself fail to clear the floor.
+RECORDED_DATABASE_SUITE_PASSED = 20_868
 #: A database run that passed this many tests or fewer is not the database suite — it was narrowed,
-#: collected only, or ran none of its database tests. Measured: the hermetic suite, which runs no
-#: database test, passed 18,013 at `7766a06a`; the database suite passed 20,569 at `c97155cd`
-#: (STEP-17 §2) and the whole suite 20,868 at `ae24ee22`. The floor sits between the two. Raise it as
-#: the suite grows; lower it only with the measurement that says why, never to make a run pass.
+#: collected only, or ran none of its database tests. Tied to what it is FOR: more than the hermetic
+#: suite, no more than the whole one (both above, never a bare literal in what checks it). Raise it
+#: as the suite grows; lower it only with the measurement that says why, never to make a run pass.
 PASSED_FLOOR = 19_000
 
 _SKIPPED = re.compile(r"^SKIPPED \[(\d+)\] (\S+?): (.*)$")
@@ -113,6 +133,36 @@ def _allowed(path: str, reason: str) -> bool:
     """Whether ALLOWED holds this skip — its file and its whole reason, together."""
     return any(path == file and re.fullmatch(pattern, reason.strip())
                for file, pattern, _why in ALLOWED)
+
+
+#: Pytest hook names and module-level assignments that can narrow what a run collects — read from
+#: the AST, never imported (importing a `conftest.py` outside pytest can itself fail).
+NARROWING_HOOKS = frozenset({"pytest_collection_modifyitems", "pytest_ignore_collect",
+                             "pytest_pycollect_makemodule"})
+NARROWING_ASSIGNS = frozenset({"collect_ignore", "collect_ignore_glob"})
+
+
+def narrowing_conftest_hooks(root: Path) -> list[str]:
+    """F-2 (`M40.C4.L-contract.V0.U06`) — `scan` reads only a pytest SUMMARY LINE, so a
+    `conftest.py` that narrowed collection upstream of it would never be seen here; this is the
+    guard that reads the conftest files themselves. `"<path>: <name>"` for every `conftest.py`
+    under `root` that defines one of `NARROWING_HOOKS` or assigns one of `NARROWING_ASSIGNS` at
+    module level — empty when none does, as measured 14 Oct across all 9 in this repo."""
+    found = []
+    for path in sorted(root.rglob("conftest.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in tree.body:
+            if (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    and node.name in NARROWING_HOOKS):
+                found.append(f"{path}: {node.name}")
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id in NARROWING_ASSIGNS:
+                        found.append(f"{path}: {target.id}")
+            elif (isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)
+                  and node.target.id in NARROWING_ASSIGNS):
+                found.append(f"{path}: {node.target.id}")
+    return found
 
 
 def main(argv: list[str]) -> int:

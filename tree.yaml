@@ -8781,6 +8781,20 @@ yc2_w27_s17:
                       artifact: "scripts/qa/database_skips.py"
                       verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py tests/test_health_memory.py"
                       depends_on: [M40.C4.L-contract.V0.U05]
+                    - id: M40.C4.L-contract.V0.U06
+                      what: >
+                        F-2 (the STEP-17/18 second crosscheck) — `PASSED_FLOOR` (19,000) was a bare
+                        literal with no tie to what it is FOR: a run that is more than the hermetic
+                        suite, which grows with every unit built (18,013 at `7766a06a`, 18,674 at
+                        `884f0ea4`, +661) with nothing making the floor rise. `RECORDED_HERMETIC_PASSED`
+                        and `RECORDED_DATABASE_SUITE_PASSED` now name the latest measured counts,
+                        with their commits; the floor's own test reads both — no literal. The scan
+                        also only ever reads a pytest SUMMARY LINE, so a `conftest.py` that narrowed
+                        collection upstream would never show in it; `narrowing_conftest_hooks`
+                        guards that none of the repo's 9 does.
+                      artifact: "scripts/qa/database_skips.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py"
+                      depends_on: [M40.C4.L-contract.V0.U07]
             - layer: integration
               levels:
                 - level: 1
