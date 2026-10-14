@@ -489,15 +489,26 @@ def _contract_refusals(card: dict, copy: dict, *, us, our_names, identities, exp
     every other card's corpus is the narrator's own (`render._corpus`: its facts, slots, quotes and our names)."""
     quotes = card.get("_quotes") or []
     draft = (copy.get("artifact") or {}).get("body") or None
+    recommended = card.get("recommended") if isinstance(card.get("recommended"), dict) else {}
     text_ = card_contract.CardText(
         headline=str(copy.get("headline") or ""), situation=str(copy.get("situation") or ""),
         subject=card.get("business_subject"), recipient=card.get("_recipient"), draft=draft,
         why_now=card.get("why_now"),
-        what_remains=tuple(x for x in (card.get("unresolved_item"),) if x))
+        what_remains=tuple(x for x in (card.get("unresolved_item"),) if x),
+        # STEP-14 (0221): the gold card's lines are shown, so the contract reads them too.
+        recommended=recommended.get("what") or None, alternative=card.get("alternative"),
+        wait_or_stop=card.get("wait_or_stop"))
     corpus = [_corpus(card.get("_facts") or {}, card.get("_slots") or {}, identities, quotes)[0],
               card.get("success_signal") or "", card.get("do_nothing_consequence") or ""]
     if expert:
         corpus += [text_.headline, text_.situation, draft or "", *(card.get("_checked_quotes") or ())]
+        # ⛔ THE GOLD LINES ARE CODE'S AND THE CHECK'S (STEP-14 fix, found re-recording 14 Oct): why now and what
+        # remains were written by code from the dossier at review time (`reason/expert/card_lines`) — a meeting's
+        # title in quotes, its days away — and the move whole, the alternative and the stop rule are the review's
+        # words its check held (check.v3). Without them in the corpus the contract refused 19 golden expert cards
+        # for a day or a title the dossier printed. They are still read for us, a field's name and an empty slot.
+        corpus += [x for x in (text_.why_now, *text_.what_remains, text_.recommended, text_.alternative,
+                               text_.wait_or_stop) if x]
     return card_contract.check(text_, us=us or SelfIdentity(), our_names=our_names,
                                quotes=[str(q.get("quote") or "") for q in quotes if isinstance(q, dict)],
                                corpus=corpus, money_evidence=expert or _holds_money(card.get("_facts") or {},

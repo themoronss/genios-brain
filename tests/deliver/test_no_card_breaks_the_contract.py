@@ -179,3 +179,51 @@ def test_a_refusal_that_cannot_be_kept_still_refuses():
     assert pipeline._refused(out, "org_c", {"signal_id": "s1"}, (Refusal("money", "payment"),), engine=_Down())
     assert out == {"refused_contract:money": 1, "refusals_unkept": 1}
     assert pipeline._refused(out, "org_c", {"signal_id": "s1"}, ()) is False
+
+
+# ── STEP-14 (fix, found re-recording 14 Oct) · the gold lines are code's, and the contract reads them as such ──
+#
+# Re-recording after M43.C3 (the gold shape), the contract refused 19 expert cards on the golden set — F01, F02,
+# F48, F52, F63 among them: *"number: 12"* from the card's why now (*"Introly wrote on 12 Aug"*), *"quote: Ferngrove x
+# Nimbus Labs"* from a meeting's title (*"the meeting “Ferngrove x Nimbus Labs” in 2 days"*). Why now and what remains
+# are the lines CODE wrote from the dossier at review time (`reason/expert/card_lines`); the alternative, the stop rule
+# and the move whole are the expert's words its check held (check.v3). They are an expert card's corpus, as its other
+# checked words are — and they are shown, so the contract reads every one of them for us and a field's name.
+
+def _expert_card(**over):
+    card = {"business_subject": "Leela Krishnan", "_facts": {}, "_slots": {}, "_quotes": [], "_checked_quotes": [],
+            "why_now": "the meeting “Ferngrove x Nimbus Labs” in 2 days, on 13 Aug",
+            "unresolved_item": "Leela asked for the onboarding flow, since 9 Aug",
+            "recommended": {"who": "You", "what": "Accept Leela's invite for 13 Aug and read the brief", "to": None},
+            "alternative": "If 13 Aug no longer works, offer Leela two other times",
+            "wait_or_stop": "Wait for the call on 13 Aug; stop if Leela cancels",
+            "success_signal": "the call happened", "do_nothing_consequence": "the call runs cold"}
+    card.update(over)
+    copy = {"headline": "Accept Leela's invite for 13 Aug", "situation": "A call with Ferngrove is booked",
+            "artifact": {"body": ""}}
+    return card, copy
+
+
+def test_an_expert_cards_gold_lines_are_its_corpus():
+    card, copy = _expert_card()
+    assert pipeline._contract_refusals(card, copy, us=None, our_names=(), identities=(), expert=True) == ()
+
+
+@pytest.mark.parametrize("line, said, rule", [
+    ("alternative", "If party.role is wrong, ask Leela", "internal"),
+    ("wait_or_stop", "Wait for {stage}", "internal"),
+    ("recommended", {"who": "You", "what": "Confirm commitment.action with Leela", "to": None}, "internal"),
+    ("why_now", "Leela wrote about deal.stage on 9 Aug", "internal"),
+])
+def test_every_gold_line_is_read_for_what_no_card_may_say(line, said, rule):
+    card, copy = _expert_card(**{line: said})
+    assert [r.rule for r in pipeline._contract_refusals(card, copy, us=None, our_names=(), identities=(),
+                                                        expert=True)] == [rule]
+
+
+def test_a_card_no_review_wrote_keeps_its_own_corpus():
+    """The negative control: the narrator's card's why now is held to its facts, as before."""
+    card, copy = _expert_card(recommended=None, alternative=None, wait_or_stop=None,
+                              why_now="they wrote 12 days ago", unresolved_item=None)
+    assert [r.rule for r in pipeline._contract_refusals(card, copy, us=None, our_names=(), identities=(),
+                                                        expert=False)] == ["number"]
