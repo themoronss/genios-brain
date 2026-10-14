@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import bindparam, text
@@ -16,6 +17,7 @@ from .router import co_recipients_for, resolve_assignee
 from .slots import _fval, compute_slots
 from genios_engine.platform.self_identity import SelfIdentity, names_us
 from genios_engine.reason.expert.decide import is_expert
+from .render import HEADLINE_CAP
 
 # E0 · Card Builder (§5.10). Compose the card.v1 draft deterministically from a signal + play +
 # template — NO LLM here (that is E1). Attaches band (E2), owner (E3), the evidence chain (≥2,
@@ -35,7 +37,9 @@ from genios_engine.reason.expert.decide import is_expert
 #: production, and deciding that a change is user-visible is a judgment the author makes.
 # Seven stored campaign recipients now render as 7/7 and keep their verified quote outside
 # the prose budget. v4 cards otherwise block a build claim and retain the old copy forever.
-BUILDER_VERSION = "card-builder.v6-lane-and-eleven-reasons"
+#: v7 (STEP-14, `yc2_w27_s14` M43.C3.L-interface.V3.U01): an expert card in the gold shape — every untouched card is
+#: rebuilt in place (`deliver/store.claim_build`).
+BUILDER_VERSION = "card-builder.v7-the-gold-shape"
 
 #: ⛔ The eleven reasons, grouped by the QUESTION a founder is actually answering — not by our
 #: package names. "The facts are wrong" is a sentence a person can pick; "capture" is not.
@@ -852,6 +856,81 @@ def _sentence_sources(signal: dict) -> list[dict]:
             for part in CARD_SENTENCES if isinstance(sources.get(part), dict)]
 
 
+# ── STEP-14 · THE GOLD SHAPE (`yc2_w27_s14` M43.C3.L-interface.V3.U01, s14-F6–F9, s14-D8) ──────────────────────────
+#
+# The decision carries the gold lines on its render block (`reason/expert/decide._render`, `gold`): who and what the
+# file is, what remains, why now, the move WHOLE, its alternative and stop rule as the check held them, the file's
+# window. An expert card reads them; a card no review wrote — or an expert card from before 0221 — has none, and is
+# built as before. The headline is the move CUT AT A CLAUSE by code (s14-D8: no prompt change, the same on any
+# model), never on a bare function word; the whole move is under `recommended`.
+
+#: Words a headline never ends on: a cut there reads as a card that broke (*"…before the"*, *"…call on"*).
+FUNCTION_WORDS: frozenset[str] = frozenset({
+    "a", "an", "the", "to", "of", "on", "in", "at", "for", "by", "with", "and", "or", "but", "nor", "so", "then",
+    "before", "after", "from", "into", "onto", "about", "as", "than", "that", "this", "these", "those", "which",
+    "who", "whom", "whose", "whether", "if", "once", "when", "while", "until", "because", "via", "per", "your",
+    "our", "his", "her", "their", "its", "my", "is", "are", "was", "be", "been", "will", "would", "can", "not",
+    "plus"})
+#: Where a move's clause may end: a clause's punctuation, or before a word that opens the next clause or phrase.
+_GOLD_CUT = re.compile(r",\s+|;\s+|:\s+|\s+[—–]\s+|\s+(?=(?:and|then|so|before|after|by|while|with|to|for|if|once|"
+                       r"when|until|because|but|or|on|at|in|from|via|whether|that|which|who)\b)")
+
+
+def _tidy_head(text: str) -> str:
+    """A cut's head with no trailing punctuation and no bare function word at its end."""
+    words = text.strip().rstrip(",;:—– ").split()
+    while words and words[-1].lower().strip(",;:—–") in FUNCTION_WORDS:
+        words.pop()
+    return " ".join(words).rstrip(",;:—– ")
+
+
+def gold_headline(move: str, cap: int = HEADLINE_CAP) -> str:
+    """The move as a headline: whole when it fits; else the longest start of it that ends a clause and fits; else
+    the longest start that fits at a word — never ending on a bare function word."""
+    text = " ".join(str(move or "").split())
+    if len(text) <= cap:
+        return text
+    best = ""
+    for m in _GOLD_CUT.finditer(text):
+        head = _tidy_head(text[:m.start()])
+        if len(head) <= cap and len(head) > len(best):
+            best = head
+    if best:
+        return best
+    return _tidy_head(text[:cap + 1].rsplit(" ", 1)[0]) or text[:cap]
+
+
+def _gold(signal: dict) -> dict | None:
+    """The gold lines the decision carried — None on a card no review wrote, or one from before 0221."""
+    render = signal.get("capability_render")
+    gold = render.get("gold") if isinstance(render, dict) else None
+    return gold if isinstance(gold, dict) else None
+
+
+def _gold_template(template: dict, gold: dict | None) -> dict:
+    """The render template with its headline the move cut at a clause — a shown move only (a held file's
+    question keeps its own words, capped by the renderer as before)."""
+    if not gold or not gold.get("recommended"):
+        return template
+    fallback = dict(template.get("fallback") or {})
+    fallback["headline"] = gold_headline(fallback.get("headline") or "")
+    return {**template, "fallback": fallback}
+
+
+def _window_receipt(gold: dict | None) -> list[dict]:
+    """The file's window among the card's receipts — how long, and where it came from (`03` F179)."""
+    window = (gold or {}).get("window")
+    if not isinstance(window, dict) or not window.get("days"):
+        return []
+    return [{"window": window.get("said"), "days": int(window["days"]), "from": window.get("from"),
+             "source": "card_lines"}]
+
+
+#: The confidence axes an expert card does not show: its reader publishes no recency, so R is the authority's
+#: 5,000 bp fallback on every expert decision (s14-F9) — a default, never a measurement.
+UNMEASURED_ON_AN_EXPERT_CARD: frozenset[str] = frozenset({"R"})
+
+
 #: Why an expert card does not instruct (STEP-14 M42.C3.L-logic.V0.U01) — its check's own grade, not a quote gate.
 EXPERT_HELD = "the file asks you one question before any move — answer it on the file's card"
 EXPERT_UNCHECKED = "no check of the expert's review stands behind this move"
@@ -1060,6 +1139,8 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     template = (dict(capability_render) if isinstance(capability_render, dict)
                 and capability_render else
                 (effective.get("templates", {}) or {}).get(reason_code, {}))
+    gold = _gold(signal) if is_expert(signal.get("capability_id")) else None
+    template = _gold_template(template, gold)
     _play_id = (effective.get("plays", {}).get(signal.get("play") or "", {}) and signal.get("play"))
 
     actions = [
@@ -1239,8 +1320,9 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # Every one of these is populated from something the engine already computed. None is
         # inferred: a NULL means this card genuinely never carried that answer, which is the
         # measurement the scorecard needs.
-        "business_subject": name,                      # the counterparty, not the GeniOS seat
-        "relationship_role": _fval(facts, "party.role"),
+        # STEP-14: an expert card's subject is the file's PERSON when it has one (`03` F64), its role the brief's.
+        "business_subject": (gold or {}).get("subject") or name,   # the counterparty, not the GeniOS seat
+        "relationship_role": (gold or {}).get("role") or _fval(facts, "party.role"),
         # NEVER the slot, and never the objective. `compute_slots` fills an absent
         # `commitment.action` with the sentinel "the commitment", so this contract field — which
         # is supposed to say what is actually OPEN — reported the words "the commitment" on every
@@ -1248,8 +1330,13 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # what the thread is FOR, not what is outstanding in it, and putting it here would answer
         # a different question in the field's own name. A NULL is the measurement the intelligence
         # contract asks for.
-        "unresolved_item": _fval(facts, "commitment.action"),
-        "why_now": _why_now(reason_code, facts, slots, eval_time),
+        # STEP-14: an expert card's what remains is its file's open asks, ours and theirs; its why now the trigger's.
+        "unresolved_item": ("; ".join((gold or {}).get("what_remains") or ()) or _fval(facts, "commitment.action")),
+        "why_now": (gold or {}).get("why_now") or _why_now(reason_code, facts, slots, eval_time),
+        # STEP-14 (0221): the move whole, the alternative and when to stop — as the check held them.
+        "recommended": dict(gold["recommended"]) if gold and gold.get("recommended") else None,
+        "alternative": (gold or {}).get("alternative"),
+        "wait_or_stop": (gold or {}).get("wait_or_stop"),
         "capability_key": signal.get("capability_id"),
         "capability_version": signal.get("capability_version"),
         # Unreviewed expertise must not instruct — the same state the abstention gate reads.
@@ -1262,7 +1349,8 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # The DECISION's own values first; the pack template only fills a pre-0070 signal.
         # These came from ReasoningDecision at emit time — the pack fallback is a config author's
         # generic estimate, not this decision's judgment.
-        "outcome_window_days": (signal.get("decision_window")
+        "outcome_window_days": (((gold or {}).get("window") or {}).get("days")
+                                or signal.get("decision_window")
                                 or _play_window(effective, signal.get("play"))),
         "success_signal": _play_success(effective, signal),
         "do_nothing_consequence": signal.get("do_nothing_consequence"),
@@ -1278,9 +1366,11 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         "lane_label": _lane.label,
         # Decomposed, not a scalar: "unsure about the evidence" and "unsure about the timing"
         # call for different user actions and a single number cannot tell them apart.
-        "confidence_vector": {k: score_inputs.get(k) for k in ("C", "U", "I", "R")},
+        # STEP-14 (s14-F9): only the axes that were measured — an expert card's R is a default.
+        "confidence_vector": {k: score_inputs.get(k) for k in ("C", "U", "I", "R")
+                              if not (expert and k in UNMEASURED_ON_AN_EXPERT_CARD)},
         "actions": actions,
-        "why": _review_label(signal) + _sentence_sources(signal)
+        "why": _review_label(signal) + _sentence_sources(signal) + _window_receipt(gold)
         + _why(signal.get("evidence"), facts, signal.get("citations")),
         "surfaces": _surfaces(facts, signal, actions,
                               has_finding=has_finding and has_quote),
