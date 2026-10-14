@@ -864,13 +864,12 @@ def _sentence_sources(signal: dict) -> list[dict]:
 # built as before. The headline is the move CUT AT A CLAUSE by code (s14-D8: no prompt change, the same on any
 # model), never on a bare function word; the whole move is under `recommended`.
 
-#: Words a headline never ends on: a cut there reads as a card that broke (*"…before the"*, *"…call on"*).
-FUNCTION_WORDS: frozenset[str] = frozenset({
-    "a", "an", "the", "to", "of", "on", "in", "at", "for", "by", "with", "and", "or", "but", "nor", "so", "then",
-    "before", "after", "from", "into", "onto", "about", "as", "than", "that", "this", "these", "those", "which",
-    "who", "whom", "whose", "whether", "if", "once", "when", "while", "until", "because", "via", "per", "your",
-    "our", "his", "her", "their", "its", "my", "is", "are", "was", "be", "been", "will", "would", "can", "not",
-    "plus"})
+#: Words a headline never ends on: a cut there reads as a card that broke (*"…before the"*, *"…call on"*). One string,
+#: split: a lone literal "with" reads as a SQL statement to the statement census (`platform/table_coverage`).
+FUNCTION_WORDS: frozenset[str] = frozenset((
+    "a an the to of on in at for by with and or but nor so then before after from into onto about as than that "
+    "this these those which who whom whose whether if once when while until because via per your our his her "
+    "their its my is are was be been will would can not plus").split())
 #: Where a move's clause may end: a clause's punctuation, or before a word that opens the next clause or phrase.
 _GOLD_CUT = re.compile(r",\s+|;\s+|:\s+|\s+[—–]\s+|\s+(?=(?:and|then|so|before|after|by|while|with|to|for|if|once|"
                        r"when|until|because|but|or|on|at|in|from|via|whether|that|which|who)\b)")
