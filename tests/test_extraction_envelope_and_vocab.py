@@ -492,12 +492,23 @@ def test_business_subject_is_not_the_assignee():
     The counterparty the action is AIMED at is a different party, and conflating them is how a
     card came to target an introducer as though they were the investor.
     """
+    import ast
     import inspect
+    import textwrap
 
     from genios_engine.deliver import card_builder
 
-    src = inspect.getsource(card_builder.build_draft)
-    assert '"business_subject": name' in src, (
+    # ⛔ RESTATED by `yc2_w27_s14` M43.C3.L-interface.V3.U01 (STEP-14, the gold shape): read from the AST, never the
+    # text. An expert card's subject is now the file's PERSON when its review's card lines name one (`03` F64) —
+    # `(gold or {}).get("subject") or name` — still the counterparty; the rule this holds is that the subject's
+    # value is built from the counterparty (`name`) and never from the seat expected to act (`assignee`).
+    tree = ast.parse(textwrap.dedent(inspect.getsource(card_builder.build_draft)))
+    values = [v for node in ast.walk(tree) if isinstance(node, ast.Dict)
+              for k, v in zip(node.keys, node.values)
+              if isinstance(k, ast.Constant) and k.value == "business_subject"]
+    assert len(values) == 1, "build_draft names the card's business_subject once"
+    names = {n.id for n in ast.walk(values[0]) if isinstance(n, ast.Name)}
+    assert "name" in names and "assignee" not in names, (
         "business_subject must be the counterparty, never the seat expected to act")
 
 
