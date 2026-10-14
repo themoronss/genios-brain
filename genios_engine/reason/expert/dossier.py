@@ -270,7 +270,8 @@ def _timeline(p: DossierParts, cite: _Ids) -> Section:
         if t.words:
             lines.append(f"  “{t.words}”" + (f" … ({t.words_cut} characters cut)"
                                               if t.words_cut else ""))
-        elif not title:
+        else:
+            # A title is the calendar's, never the meeting's words: memory still holds none, and says so.
             lines.append("  (memory holds no words for it)")
     for t in listed:
         lines.append(f"- {cite(t.event_id)} {_when(t.at)} · {_DIRECTION.get(t.direction, t.direction)}"

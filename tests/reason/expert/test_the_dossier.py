@@ -541,7 +541,10 @@ def test_a_meeting_is_named_by_its_title_and_the_check_still_reads_it_as_a_meeti
                                                 "evt_next": "Partner meeting — Meridian"})
     timeline = _section(D.build_dossier(parts), "timeline")
     assert "  the calendar calls it “Fintech founders mixer - Bluebay”" in timeline
-    assert "(memory holds no words for it)" not in timeline, "a titled meeting is no meeting with nothing on record"
+    # ⛔ RESTATED by `yc2_w27_s14` M42.C2.L-interface.V3.U04 (fix, found by the golden lane 14 Oct): a title is the
+    # calendar's, never the meeting's words — memory still holds none, and the dossier still says so (F54's and the
+    # second fix wave's "a wordless meeting" read exactly that line).
+    assert "  the calendar calls it “Fintech founders mixer - Bluebay”\n  (memory holds no words for it)" in timeline
     assert D.meeting_events(parts.timeline) == ("evt_met", "evt_next"), "its meetings — held and booked — never a mail"
     assert (f"Booked: [evt_next] a meeting at {D._when(booked.at)}, the calendar calls it “Partner meeting — "
             f"Meridian”") in timeline
