@@ -34,10 +34,19 @@ from collections import Counter
 from pathlib import Path
 
 #: The skips the database job allows: `(test file, its reason as a full regex, why)`. Measured on a
-#: real database run — s13f4's whole suite on Postgres at `ae24ee22`, 20,868 passed and these four
-#: skipped, nothing else. A skip is allowed only by its file and its reason together; adding a fifth
-#: is a decision, measured the same way, its reason not a database, and
-#: `tests/scripts/test_no_test_skips_for_want_of_a_database.py` names the four on purpose.
+#: real database run — s13f4's whole suite on Postgres at `ae24ee22`, 20,868 passed and four
+#: skipped. A skip is allowed only by its file and its reason together; adding a fourth is a
+#: decision, measured the same way, its reason not a database, and
+#: `tests/scripts/test_no_test_skips_for_want_of_a_database.py` names the three on purpose.
+#:
+#: ⛔ F-4 (`yc2_w27_s1718` M40.C4.L-contract.V0.U07, second crosscheck): a fourth skip was ALLOWED
+#: here — `tests/test_health_memory.py`, "internal auth not wired in this harness (403)" — and its
+#: reason was false. The test set the internal token on the CACHED `Settings` instance and then
+#: called `cache_clear()`; `platform/auth` binds `get_settings` at its own import
+#: (`from platform.config import get_settings`), so patching `platform.config.get_settings`
+#: afterwards never reached `require_internal`, which read a FRESH, token-less `Settings`. Fixed
+#: at the test (it now patches where auth reads it) — the skip never fires on a real database run,
+#: and the entry comes off: a false reason is not a database reason either.
 ALLOWED: tuple[tuple[str, str, str], ...] = (
     ("tests/capture/transcripts/test_transcript_units.py",
      r"could not import 'docx': No module named 'docx'",
@@ -51,10 +60,6 @@ ALLOWED: tuple[tuple[str, str, str], ...] = (
      r"0080_l1_extraction_results\.sql is a declared exception — see DECLARED_EXCEPTIONS",
      "0080 is the declared rollback exception (DECLARED_EXCEPTIONS) — its check does not apply, "
      "by decision"),
-    ("tests/test_health_memory.py",
-     r"internal auth not wired in this harness \(403\)",
-     "the TestClient harness answers /health/memory 403 even with the token — internal auth, not a "
-     "database"),
 )
 
 #: A database run that passed this many tests or fewer is not the database suite — it was narrowed,

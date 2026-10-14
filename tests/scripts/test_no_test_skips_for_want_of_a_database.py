@@ -20,8 +20,13 @@ database by its wording (`GENIOS_TEST_DATABASE_URL`, "database", "Postgres"), an
 `pytest.skip` calls in 27 files use other words — "0043 not applied", "no org", "graph store not
 configured", "no scratch org seeded". Now the database job allows exactly the skips measured on a
 real database run for a reason that is not a database (`ALLOWED`: python-docx missing, an empty
-parameter set, the declared rollback exception 0080, the internal-auth 403), each by its file AND its
-reason; every other skip fails the job, named.
+parameter set, the declared rollback exception 0080), each by its file AND its reason; every other
+skip fails the job, named.
+
+`M40.C4.L-contract.V0.U07` (F-4, second crosscheck): a fourth entry, `tests/test_health_memory.py`'s
+"internal auth not wired in this harness (403)", came off ALLOWED — that 403 was the test's own
+bug (it patched `platform.config.get_settings`, not `platform.auth.get_settings`, which is where
+`require_internal` actually reads it), fixed at the test. A real database run no longer skips it.
 """
 from __future__ import annotations
 
@@ -49,15 +54,15 @@ FLOOR = _module().PASSED_FLOOR
 #: A number a finished database run clears.
 RUN = FLOOR + 1
 
-#: The four skips of a real database run, as pytest printed them — s13f4's whole suite on Postgres
-#: at `ae24ee22` (20,868 passed, 4 skipped), the only skips it had.
+#: The three skips of a real database run, as pytest printed them — s13f4's whole suite on
+#: Postgres at `ae24ee22` (20,868 passed, 4 skipped the day this was measured — the fourth,
+#: test_health_memory.py's 403, was its own bug (F-4): fixed, it no longer skips at all).
 MEASURED = (
     "SKIPPED [1] tests/capture/transcripts/test_transcript_units.py:68: could not import 'docx': "
     "No module named 'docx'\n"
     "SKIPPED [1] tests/contracts/test_l1_contracts.py:630: got empty parameter set for (lane)\n"
     "SKIPPED [1] tests/platform/test_the_code_can_always_be_rolled_back.py:72: "
-    "0080_l1_extraction_results.sql is a declared exception — see DECLARED_EXCEPTIONS\n"
-    "SKIPPED [1] tests/test_health_memory.py:97: internal auth not wired in this harness (403)\n")
+    "0080_l1_extraction_results.sql is a declared exception — see DECLARED_EXCEPTIONS\n")
 
 GREEN = f"........ [100%]\n{RUN} passed in 3.21s\n"
 DB_SKIPS = (".s.s [100%]\n"
@@ -67,7 +72,7 @@ DB_SKIPS = (".s.s [100%]\n"
             "SKIPPED [1] tests/capture/transcripts/test_transcript_units.py:68: could not import "
             "'docx': No module named 'docx'\n"
             f"{RUN} passed, 7 skipped in 2.00s\n")
-OTHER_SKIPS = (".s [100%]\n" + MEASURED + f"{RUN} passed, 4 skipped in 1.00s\n")
+OTHER_SKIPS = (".s [100%]\n" + MEASURED + f"{RUN} passed, 3 skipped in 1.00s\n")
 #: The crosscheck's own examples: database-gated skips in words the old scan did not know.
 IN_OTHER_WORDS = (".s [100%]\n"
                   "SKIPPED [1] tests/test_delivery_facts.py:53: 0043 not applied\n"
@@ -104,7 +109,7 @@ def test_the_skips_a_real_database_run_has_are_allowed(tmp_path):
     r = _scan(tmp_path, OTHER_SKIPS)
     assert r.returncode == 0, r.stdout + r.stderr
     assert "0 tests skipped for a reason the database job does not allow" in r.stdout
-    assert "4 allowed" in r.stdout, r.stdout
+    assert "3 allowed" in r.stdout, r.stdout
 
 
 def test_a_database_skip_in_other_words_fails_and_is_named(tmp_path):
@@ -121,7 +126,8 @@ def test_a_database_skip_in_other_words_fails_and_is_named(tmp_path):
     # an allowed reason, in a file the allow-list does not name
     "SKIPPED [1] tests/test_moments_pg.py:41: got empty parameter set for (lane)",
     "SKIPPED [1] tests/test_x.py:9: could not import 'docx': No module named 'docx'",
-    # an allowed file, for a reason it does not name
+    # F-4: ALLOWED until the second crosscheck, and for a reason it never named (500, not 403) —
+    # now not a file the list names at all; either way, still refused
     "SKIPPED [1] tests/test_health_memory.py:97: internal auth not wired in this harness (500)",
     "SKIPPED [1] tests/contracts/test_l1_contracts.py:40: GENIOS_TEST_DATABASE_URL not set",
     "SKIPPED [1] tests/contracts/test_l1_contracts.py:640: got empty parameter set for (field)",
@@ -136,16 +142,19 @@ def test_a_skip_is_allowed_only_by_its_file_and_its_reason_together(tmp_path, li
     assert line.split("] ", 1)[1].split(": ", 1)[0] in r.stdout
 
 
-def test_the_allow_list_is_the_four_measured_and_each_says_why():
-    """Adding a fifth is a decision — measured on a real database run, its reason not a database —
-    and made here on purpose. Each entry names a file that exists and says why it may skip."""
+def test_the_allow_list_is_the_three_measured_and_each_says_why():
+    """Adding a fourth is a decision — measured on a real database run, its reason not a database
+    — and made here on purpose. Each entry names a file that exists and says why it may skip.
+
+    F-4 (second crosscheck): `tests/test_health_memory.py` is NOT here any more — its 403 was the
+    test's own bug (it patched the wrong module's `get_settings`), fixed at the test, not declared
+    away."""
     allowed = _module().ALLOWED
     root = SCRIPT.parents[2]
     assert [entry[0] for entry in allowed] == [
         "tests/capture/transcripts/test_transcript_units.py",
         "tests/contracts/test_l1_contracts.py",
         "tests/platform/test_the_code_can_always_be_rolled_back.py",
-        "tests/test_health_memory.py",
     ]
     for path, _reason, why in allowed:
         assert (root / path).is_file(), path

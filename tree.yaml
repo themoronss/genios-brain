@@ -8752,6 +8752,21 @@ yc2_w27_s17:
                       artifact: "scripts/qa/database_skips.py"
                       verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py tests/test_ci_runs_the_database_suite.py"
                       depends_on: [M40.C4.L-contract.V0.U03]
+                    - id: M40.C4.L-contract.V0.U07
+                      what: >
+                        F-4 (the STEP-17/18 second crosscheck) — `ALLOWED`'s fourth entry named a
+                        false reason. tests/test_health_memory.py set the internal token on the
+                        cached `Settings` (`cache_clear()` right after), then patched
+                        `platform.config.get_settings` — but `platform.auth` binds `get_settings`
+                        at its OWN import (`from platform.config import get_settings`), so
+                        `require_internal` kept reading a fresh, token-less `Settings`: the test
+                        caused its own 403 and skipped on it. Patched where auth actually reads it
+                        (`platform.auth.get_settings`), the route answers 200 every time; the skip
+                        and its ALLOWED entry both come off, and the allow-list's own test now
+                        names three, not four.
+                      artifact: "scripts/qa/database_skips.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py tests/test_health_memory.py"
+                      depends_on: [M40.C4.L-contract.V0.U05]
             - layer: integration
               levels:
                 - level: 1
