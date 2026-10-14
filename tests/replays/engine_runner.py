@@ -603,6 +603,13 @@ _VERSIONS = (
     " order by card_id, coalesce((detail ->> 'version')::int, 1), occurred_at, id")
 
 
+#: A card's history, in order (STEP-14 M42.C4.L-integration.V4.U05): what made it, versioned it, pushed it, ended it.
+_HISTORY = (
+    "select card_id, kind, cause, detail from card_events where org_id = :o and card_id = any(:ids) "
+    "   and kind in ('card.created', 'card.versioned', 'card.surfaced', 'card.expired') "
+    " order by card_id, occurred_at, id")
+
+
 def _said(words: Any) -> str:
     """One version's words as the founder read them: headline, situation, the draft. Not the move whole — no card
     shows it yet (STEP-14 M43 puts it under *recommended*, and then it is read here)."""
@@ -621,7 +628,7 @@ def _cards(engine: Any, org: str, open_after: list[set[str]],
     with engine.connect() as conn:
         rows = conn.execute(text(
             "select card_id, state, level, headline, situation, why, actions, artifact, "
-            "business_subject, unresolved_item, why_now, output_lane from cards "
+            "business_subject, unresolved_item, why_now, output_lane, file_id from cards "
             "where org_id = :o and card_id = any(:ids) order by card_id"),
             {"o": org, "ids": sorted(seen)}).fetchall()
         versions: dict[str, list[str]] = {}
@@ -630,6 +637,11 @@ def _cards(engine: Any, org: str, open_after: list[set[str]],
             if not versions.get(v.card_id) and isinstance(detail.get("before"), dict):
                 versions.setdefault(v.card_id, []).append(_said(detail["before"]))   # its first, unrecorded
             versions.setdefault(v.card_id, []).append(_said(detail.get("words")))
+        history: dict[str, list[tuple]] = {}
+        for h in conn.execute(text(_HISTORY), {"o": org, "ids": sorted(seen)}):
+            detail = h.detail if isinstance(h.detail, dict) else json.loads(h.detail or "{}")
+            history.setdefault(h.card_id, []).append(
+                (h.kind, h.cause, detail.get("change"), detail.get("material"), isinstance(detail.get("before"), dict)))
     shown_after = shown_after or []
     out = []
     for r in rows:
@@ -650,7 +662,8 @@ def _cards(engine: Any, org: str, open_after: list[set[str]],
                             sweeps=tuple(i for i, ids in enumerate(open_after) if r.card_id in ids),
                             sources=sources,
                             app_sweeps=tuple(i for i, ids in enumerate(shown_after) if r.card_id in ids),
-                            versions=tuple(versions.get(r.card_id, ()))))
+                            versions=tuple(versions.get(r.card_id, ())),
+                            file_id=r.file_id, events=tuple(history.get(r.card_id, ()))))
     return tuple(out)
 
 

@@ -357,6 +357,11 @@ class CardView:
     #: …and every version's words, oldest first (s14-F14): a card rewritten in place — a refresh, a version of a
     #: file's card — is judged on each, never on its last alone. Empty for a card that kept none.
     versions: tuple[str, ...] = ()
+    #: STEP-14 (`yc2_w27_s14` M42.C4.L-integration.V4.U05): the file the card is (`cards.file_id`, 0220) — None on a card
+    #: that is no file's — and its history in order: each `card.created`, `card.versioned`, `card.surfaced` and
+    #: `card.expired` event as (kind, cause, change, material, kept the words before).
+    file_id: str | None = None
+    events: tuple[tuple[str, str | None, str | None, bool | None, bool], ...] = ()
 
 
 @dataclass(frozen=True)
