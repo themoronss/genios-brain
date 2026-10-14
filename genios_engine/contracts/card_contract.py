@@ -24,10 +24,12 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, fields
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from genios_engine.platform.grounding import corpus_of, digit_runs, fold
-from genios_engine.platform.self_identity import SelfIdentity, names_us
+
+if TYPE_CHECKING:          # only a type here: `platform/self_identity` reads capture's consumer domains since STEP-13
+    from genios_engine.platform.self_identity import SelfIdentity
 
 # ── the rules — closed, in the order a card is read. One name to a line. ──────────────────────────────────────
 US = "us"
@@ -103,6 +105,10 @@ class Refusal:
 
 
 def _about_us(card: CardText, us: SelfIdentity, our_names: Iterable[str]) -> str | None:
+    # ⛔ IMPORTED HERE, NEVER AT MODULE LEVEL (the merge of STEP-13's second fix wave, 13 Oct): `platform/self_identity`
+    # imports `capture/validate/canonical` (M36.C2.L-logic.V2.U19), and a contract may pull in platform and stdlib
+    # only (`tests/contracts/test_h0_gate.py`) — every layer that imports a contract would inherit capture.
+    from genios_engine.platform.self_identity import names_us
     names = tuple(n for n in our_names if n)
     if card.subject and names_us(card.subject, us, names):
         return f"subject: {card.subject}"
