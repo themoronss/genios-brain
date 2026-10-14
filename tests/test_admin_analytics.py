@@ -183,10 +183,14 @@ def test_admin_sql_runs_and_internal_accounts_are_excluded(admin_client):
     _seed(store, "adm_real", internal=False)
     _seed(store, "adm_us", internal=True)
 
-    listed = {a["org_id"] for a in client.get("/admin/accounts?limit=200").json()["accounts"]}
+    # ⛔ The pg fixture is session-scoped: in the whole suite the database holds every org earlier tests made,
+    # newest first, and on 14 Oct (884f0ea4) more than 200 of them were newer than this seed — the first page
+    # no longer held `adm_real` and the test failed for a reason that is not the route's. Ask for these two by
+    # name (`q` matches the name, which _seed sets to the id), so the claim is the same and the page is ours.
+    listed = {a["org_id"] for a in client.get("/admin/accounts?limit=200&q=adm_").json()["accounts"]}
     assert "adm_real" in listed and "adm_us" not in listed
     with_internal = {a["org_id"] for a in
-                     client.get("/admin/accounts?limit=200&include_internal=true")
+                     client.get("/admin/accounts?limit=200&q=adm_&include_internal=true")
                      .json()["accounts"]}
     assert {"adm_real", "adm_us"} <= with_internal
 
