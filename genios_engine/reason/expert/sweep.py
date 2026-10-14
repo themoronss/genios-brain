@@ -271,7 +271,7 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
             receipt["carried"] += len(due) - i
             break
         result = review_file(engine, org_id=org_id, dossier=build_dossier(parts), fingerprint=fp,
-                             inputs=inputs, triggers=found, gate=gate, at=now, people=people)
+                             inputs=inputs, triggers=found, gate=gate, at=now, people=people, parts=parts)
         receipt["reviewed"][result.status or "skipped"] += 1
         if result.status == reviews.VALID:
             receipt["checked"][result.checked.fate] += 1

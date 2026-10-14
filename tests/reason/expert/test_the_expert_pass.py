@@ -539,3 +539,13 @@ def test_a_kind_its_check_drops_is_never_proposed(world, monkeypatch):
     assert asked == [] and receipt["proposed_kinds"] == 0
     assert all("kind" in [v["line"] for v in c["verdicts"] if v["verdict"] == "dropped"]
                for c in _checks(store).values())
+
+
+def test_the_pass_keeps_each_valid_reviews_card_lines(world):
+    """STEP-14 (`yc2_w27_s14` M43.C2.L-integration.V2.U03): the sweep hands the review its dossier's parts, so each
+    valid row keeps the lines code wrote for its card (0221) — read back with no dossier."""
+    store, now = world
+    _pass(store, now)
+    with store.engine.connect() as c:
+        rows = [R.latest_valid(c, ORG, f) for f in sorted({r.file_id for r in _rows(store)})]
+    assert len(rows) == 2 and all(r.card_lines is not None and r.card_lines.subject for r in rows)

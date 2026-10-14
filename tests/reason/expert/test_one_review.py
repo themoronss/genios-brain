@@ -242,3 +242,48 @@ def test_a_standing_review_with_no_check_is_checked_again_without_a_consult(engi
     assert client.prompts == [] and again.written is False
     assert again.checked is not None and again.checked.fate == "shown"
     assert _row(engine).checked == again.checked
+
+
+# ── STEP-14 · the review run writes the card lines beside the check (`yc2_w27_s14` M43.C2.L-integration.V2.U03) ──
+#
+# The gold card's middle — why now, what remains, who and what the file is, its window — is CODE's
+# (`reason/expert/card_lines`), written at review time from the dossier the review was written against and kept
+# beside its check (`expert_reviews.card_lines`, 0221), so a decision and a replay read them with no dossier.
+
+def test_a_valid_review_keeps_the_card_lines_of_the_dossier_it_was_written_against(engine):
+    from genios_engine.reason.expert.card_lines import card_lines
+    result = RV.review_file(engine, org_id=ORG, dossier=DOSSIER, fingerprint=FP, inputs=INPUTS,
+                            triggers=TRIGGERS, gate=_gate(_Client(_answer(GOOD))), at=AT,
+                            people=D.people_of(PARTS, us=SelfIdentity(), our_names=()), parts=PARTS)
+    assert result.status == R.VALID
+    expected = card_lines(PARTS, result.review, TRIGGERS)
+    assert result.card_lines == expected and _row(engine).card_lines == expected
+    assert expected.subject and expected.window_days >= 1
+
+
+def test_a_refused_review_keeps_no_card_lines(engine):
+    bad = dict(GOOD, facts=[{"claim": "Kunal's partner wants a deck", "evidence": ["evt_999"]}],
+               next_move=dict(GOOD["next_move"], rests_on=["fact:1"]), inferences=[], patterns=[])
+    result = RV.review_file(engine, org_id=ORG, dossier=DOSSIER, fingerprint=FP, inputs=INPUTS,
+                            triggers=TRIGGERS, gate=_gate(_Client(_answer(bad))), at=AT, parts=PARTS)
+    assert result.status != R.VALID and result.card_lines is None and _row(engine).card_lines is None
+
+
+def test_a_review_written_with_no_parts_keeps_none_and_shows_its_own_words(engine):
+    """A review stored before 0221 — or by a caller that hands no parts — has no card lines: the card shows the
+    review's own words without them."""
+    result = _review_with(engine, _Client(_answer(GOOD)))
+    assert result.status == R.VALID and result.card_lines is None and _row(engine).card_lines is None
+    assert _row(engine).review == result.review
+
+
+def test_a_standing_review_answers_with_the_card_lines_it_kept(engine):
+    first = RV.review_file(engine, org_id=ORG, dossier=DOSSIER, fingerprint=FP, inputs=INPUTS,
+                           triggers=iter(TRIGGERS), gate=_gate(_Client(_answer(GOOD))), at=AT, parts=PARTS)
+    assert TRIGGERS and _row(engine).triggers == tuple((t.kind, t.says) for t in TRIGGERS), \
+        "the triggers, handed once as an iterator, are kept whole beside the card lines"
+    client = _Client(_answer(GOOD))
+    again = RV.review_file(engine, org_id=ORG, dossier=DOSSIER, fingerprint=FP, inputs=INPUTS,
+                           triggers=TRIGGERS, gate=_gate(client), at=AT, parts=PARTS)
+    assert client.prompts == [] and not again.written
+    assert again.card_lines == first.card_lines is not None

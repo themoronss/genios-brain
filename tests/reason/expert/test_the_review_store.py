@@ -69,13 +69,13 @@ def engine():
 
 
 def _write(c, fp: str, *, status=R.VALID, reason=None, review=REVIEW, at=AT, org=ORG, cost=26_100,
-           inputs=INPUTS, triggers=None, checked=None, dossier=None):
+           inputs=INPUTS, triggers=None, checked=None, dossier=None, card_lines=None):
     said = [{"kind": k, "says": s} for k, s in TRIGGERS] if triggers is None else list(triggers)
     return R.write_review(c, org_id=org, file_id=FILE, fingerprint=fp, model="claude-sonnet-5",
                           prompt_version="expert-review.v1", dossier_digest="sha256:d", status=status,
                           reason=reason, review=review, input_tokens=9000, output_tokens=900,
                           cost_micro_usd=cost, at=at, inputs=inputs, triggers=said, checked=checked,
-                          dossier=dossier)
+                          dossier=dossier, card_lines=card_lines)
 
 
 def test_a_valid_review_reads_back_as_the_review_that_was_written(engine):
@@ -330,3 +330,37 @@ def test_a_retried_review_that_succeeds_keeps_its_check(engine):
         assert _write(c, "ffp-1", checked=_checked()) is True
     with engine.connect() as c:
         assert R.read_review(c, ORG, FILE, "ffp-1").checked == _checked()
+
+
+# ── STEP-14 · the card lines ride on a valid row (0221, `yc2_w27_s14` M43.C2.L-integration.V2.U03) ──
+
+def test_card_lines_ride_on_a_valid_row_and_read_back(engine):
+    from genios_engine.reason.expert.card_lines import CardLines, DEFAULT
+    lines = CardLines(why_now="Kunal wrote on 3 Oct", what_remains=("Kunal asked for a call, since 3 Oct",),
+                      subject="Kunal Shah", company="kestrelcap.test", kind_of_work="investor", role="lead",
+                      window_days=7, window_from=DEFAULT)
+    with engine.begin() as c:
+        assert _write(c, "fp_lines", card_lines=lines)
+        assert _write(c, "fp_none")
+    with engine.connect() as c:
+        assert R.read_review(c, ORG, FILE, "fp_lines").card_lines == lines
+        assert R.read_review(c, ORG, FILE, "fp_none").card_lines is None, "a row before 0221 keeps none"
+
+
+def test_card_lines_never_ride_on_a_row_with_no_review(engine):
+    from genios_engine.reason.expert.card_lines import CardLines, DEFAULT
+    lines = CardLines(why_now=None, what_remains=(), subject="Kunal Shah", company=None, kind_of_work=None,
+                      role=None, window_days=7, window_from=DEFAULT)
+    with engine.begin() as c, pytest.raises(ValueError, match="no review"):
+        _write(c, "fp_refused", status=R.REFUSED, reason="nothing_stands: fact:1", review=None, card_lines=lines)
+
+
+def test_a_retried_review_that_succeeds_keeps_its_card_lines(engine):
+    from genios_engine.reason.expert.card_lines import CardLines, REPLY_TIME
+    lines = CardLines(why_now="Rahul wrote on 10 Oct", what_remains=(), subject="Rahul", company="kestrelcap.test",
+                      kind_of_work=None, role=None, window_days=3, window_from=REPLY_TIME)
+    with engine.begin() as c:
+        assert _write(c, "ffp-retry", status=R.FAILED, reason="model_call_raised", review=None)
+        assert _write(c, "ffp-retry", card_lines=lines), "the retry replaces the failed row"
+    with engine.connect() as c:
+        assert R.read_review(c, ORG, FILE, "ffp-retry").card_lines == lines
