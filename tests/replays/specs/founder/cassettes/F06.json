@@ -1,7 +1,7 @@
 {
  "case_id": "F06",
  "source": "ideal_reader",
- "recorded_at": "e4a2fa89",
+ "recorded_at": "b8b4804d",
  "answers": {
   "11c2e22ffda70a881234e907dd7ed0a62abd4bd3560086bcda55b8d0b1a351c5": {
    "site": "extraction",
@@ -82,115 +82,7 @@
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
-  "6f40e5aa279caf31bc90b88d55bb698298989d97e6bcfbb120f6df96adf2e673": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1050,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "77fa25d1976d492d4b11a75e8c81e505ef2bf88788fbfcce55aa86b3b5b09311": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "schedule",
-    "stance": "positive",
-    "topics": [
-     "intro call"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Nikhil Bose",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Nikhil Bose",
-        "start_offset": 13,
-        "end_offset": 24
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Quillstack",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Quillstack",
-        "start_offset": 26,
-        "end_offset": 36
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Is Arjun free on Thursday for a 30-minute call, or what times work next week?",
-      "asked_by": "Nikhil Bose",
-      "asked_of": "Arjun Rao",
-      "evidence": [
-       {
-        "quote": "Are you around on Thursday for a 30-minute call?",
-        "start_offset": 72,
-        "end_offset": 120
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "scheduling_proposals": [
-     {
-      "proposer": "Nikhil Bose",
-      "text": "a 30-minute call on Thursday",
-      "evidence_text": "Are you around on Thursday for a 30-minute call?"
-     }
-    ],
-    "business_facts": [
-     {
-      "field": "person.title",
-      "subject": "Nikhil Bose",
-      "value": "CTO",
-      "standing": "observed",
-      "evidence": [
-       {
-        "quote": "CTO, Quillstack",
-        "start_offset": 177,
-        "end_offset": 192
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "find a time to talk"
-    },
-    "implied_actions": [
-     "answer Nikhil with a time for the call"
-    ]
-   },
-   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"intro call\"], \"entity_mentions\": [{\"surface_form\": \"Nikhil Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Nikhil Bose\", \"start_offset\": 13, \"end_offset\": 24}], \"confidence_bp\": 9000}, {\"surface_form\": \"Quillstack\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Quillstack\", \"start_offset\": 26, \"end_offset\": 36}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Is Arjun free on Thursday for a 30-minute call, or what times work next week?\", \"asked_by\": \"Nikhil Bose\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Are you around on Thursday for a 30-minute call?\", \"start_offset\": 72, \"end_offset\": 120}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Nikhil Bose\", \"text\": \"a 30-minute call on Thursday\", \"evidence_text\": \"Are you around on Thursday for a 30-minute call?\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Nikhil Bose\", \"value\": \"CTO\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"CTO, Quillstack\", \"start_offset\": 177, \"end_offset\": 192}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"find a time to talk\"}, \"implied_actions\": [\"answer Nikhil with a time for the call\"]}",
-   "framed": true,
-   "input_tokens": 5525,
-   "output_tokens": 345,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a279c6946576d925a7a5c1d165c8fb6735885d29a1f857e0cdf56a124a793e79": {
+  "47298da1e08d2b3aec48b7d7e28913497901f28b7fe2122fe1b5d2b7c2129f21": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -337,15 +229,123 @@
      "to": "Nikhil",
      "answers": "loop:loop_#1"
     },
-    "alternative": "If the founder cannot commit a time today, send a short note saying Thursday is being checked and a time will follow by tomorrow.",
-    "wait_or_stop": "Do not wait: the move is ours. Once a time is set, wait for the call; if Nikhil does not answer the founder's note within a week, nudge once, then stop.",
+    "alternative": "If you cannot commit a time today, send a short note saying Thursday is being checked and a time will follow by tomorrow.",
+    "wait_or_stop": "Do not wait: the move is ours. Once a time is set, wait for the call; if Nikhil does not answer your note within a week, nudge once, then stop.",
     "done_when": "A thirty-minute call with Nikhil Bose is on both calendars.",
     "draft": "Hi Nikhil, thanks for reaching out, and good to meet you. Thursday works for a thirty-minute call. What time suits you? If Thursday fills up on your side, I can do early next week instead. Best, Arjun"
    },
-   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Nikhil Bose, the CTO of Quillstack, to the founder and left the two to take it from there.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder\"}, {\"claim\": \"Nikhil replied about three days later, thanking the founder for the introduction and asking whether he is around on Thursday for a thirty-minute call, or what times work for him next week.\", \"evidence\": [\"evt_#1\", \"num:usual_gap\"], \"quote\": \"call? If not, what times work for you next week? Nikhil\"}, {\"claim\": \"Nikhil signs as CTO of Quillstack.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Nikhil Bose CTO, Quillstack\"}, {\"claim\": \"His question is open in this file and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"Nikhil Bose is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:nikhil@quillstack.test\", \"num:your_reply_time:nikhil@quillstack.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"A CTO who comes back within days with a proposed time is engaged; a quick answer keeps him so.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"The answer must go before Thursday, or the founder offers times next week instead, as Nikhil invited.\", \"based_on\": [\"fact:2\", \"fact:4\"]}, {\"claim\": \"Why the connector paired the founder with Quillstack's CTO is not said: he could be a prospective user, a design partner or a technical peer.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Quillstack could become a design partner, which the brief is looking for.\", \"needs\": \"The call, and what Nikhil says his team needs.\"}], \"unknowns\": [{\"question\": \"Whether the founder is free on Thursday.\", \"relevance\": \"If so, the answer is a yes and a time; if not, it offers times next week, as Nikhil invited.\"}, {\"question\": \"What Nikhil wants from the call.\", \"relevance\": \"It shapes whether the founder brings a demo, questions, or both.\"}, {\"question\": \"Whether the founder has answered Nikhil since the mailbox was last read.\", \"relevance\": \"A reply sent after the last sync would not show here, and the move would already be made.\"}], \"frames\": {\"primary\": \"An introduced contact, Quillstack's CTO, has asked for a thirty-minute call on Thursday or a time next week; the answer is owed by you.\", \"rivals\": [\"A prospective design partner reaching out with intent.\", \"A courtesy call to honour the connector's introduction, with no need behind it.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Quillstack came to the founder through the connector's introduction of its CTO, and the work in this file is taking that introduction forward: Nikhil has asked for a call.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the file: an introduced contact who proposes a time gets a prompt yes, or another time, from the founder.\", \"actual\": \"Nikhil answered the introduction after about three days, asked whether the founder is around on Thursday for a thirty-minute call or what times work next week; the founder has not written in this file, and the question waits on us.\"}, \"scenarios\": {\"do_nothing\": \"Thursday passes unanswered, and a CTO who reached out reads the silence as a no.\", \"act\": \"An answer now confirming Thursday with a time, or offering two times next week, books the call.\", \"best\": \"The call is booked, and Quillstack becomes a design partner or an early user.\", \"worst\": \"No answer goes before Thursday and the introduction goes cold.\", \"signals_to_watch\": [\"Nikhil accepting a time or sending an invite\", \"A nudge from Nikhil\", \"Thursday drawing near with no time agreed\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"A direct question from an introduced contact waits on us.\", \"The time Nikhil proposed is the coming Thursday, so the answer must go before then.\", \"Landing design partners is a goal now, and a CTO asking for a call could become one.\", \"If Thursday slips, times next week can still recover the call.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Answer Nikhil Bose: confirm Thursday for a thirty-minute call and ask what time suits him, or offer two times next week if Thursday does not work\", \"for_whom\": \"Nikhil Bose at Quillstack\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"], \"to\": \"Nikhil\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If the founder cannot commit a time today, send a short note saying Thursday is being checked and a time will follow by tomorrow.\", \"wait_or_stop\": \"Do not wait: the move is ours. Once a time is set, wait for the call; if Nikhil does not answer the founder's note within a week, nudge once, then stop.\", \"done_when\": \"A thirty-minute call with Nikhil Bose is on both calendars.\", \"draft\": \"Hi Nikhil, thanks for reaching out, and good to meet you. Thursday works for a thirty-minute call. What time suits you? If Thursday fills up on your side, I can do early next week instead. Best, Arjun\"}",
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Nikhil Bose, the CTO of Quillstack, to the founder and left the two to take it from there.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder\"}, {\"claim\": \"Nikhil replied about three days later, thanking the founder for the introduction and asking whether he is around on Thursday for a thirty-minute call, or what times work for him next week.\", \"evidence\": [\"evt_#1\", \"num:usual_gap\"], \"quote\": \"call? If not, what times work for you next week? Nikhil\"}, {\"claim\": \"Nikhil signs as CTO of Quillstack.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Nikhil Bose CTO, Quillstack\"}, {\"claim\": \"His question is open in this file and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"Nikhil Bose is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:nikhil@quillstack.test\", \"num:your_reply_time:nikhil@quillstack.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"A CTO who comes back within days with a proposed time is engaged; a quick answer keeps him so.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"The answer must go before Thursday, or the founder offers times next week instead, as Nikhil invited.\", \"based_on\": [\"fact:2\", \"fact:4\"]}, {\"claim\": \"Why the connector paired the founder with Quillstack's CTO is not said: he could be a prospective user, a design partner or a technical peer.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Quillstack could become a design partner, which the brief is looking for.\", \"needs\": \"The call, and what Nikhil says his team needs.\"}], \"unknowns\": [{\"question\": \"Whether the founder is free on Thursday.\", \"relevance\": \"If so, the answer is a yes and a time; if not, it offers times next week, as Nikhil invited.\"}, {\"question\": \"What Nikhil wants from the call.\", \"relevance\": \"It shapes whether the founder brings a demo, questions, or both.\"}, {\"question\": \"Whether the founder has answered Nikhil since the mailbox was last read.\", \"relevance\": \"A reply sent after the last sync would not show here, and the move would already be made.\"}], \"frames\": {\"primary\": \"An introduced contact, Quillstack's CTO, has asked for a thirty-minute call on Thursday or a time next week; the answer is owed by you.\", \"rivals\": [\"A prospective design partner reaching out with intent.\", \"A courtesy call to honour the connector's introduction, with no need behind it.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Quillstack came to the founder through the connector's introduction of its CTO, and the work in this file is taking that introduction forward: Nikhil has asked for a call.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the file: an introduced contact who proposes a time gets a prompt yes, or another time, from the founder.\", \"actual\": \"Nikhil answered the introduction after about three days, asked whether the founder is around on Thursday for a thirty-minute call or what times work next week; the founder has not written in this file, and the question waits on us.\"}, \"scenarios\": {\"do_nothing\": \"Thursday passes unanswered, and a CTO who reached out reads the silence as a no.\", \"act\": \"An answer now confirming Thursday with a time, or offering two times next week, books the call.\", \"best\": \"The call is booked, and Quillstack becomes a design partner or an early user.\", \"worst\": \"No answer goes before Thursday and the introduction goes cold.\", \"signals_to_watch\": [\"Nikhil accepting a time or sending an invite\", \"A nudge from Nikhil\", \"Thursday drawing near with no time agreed\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"A direct question from an introduced contact waits on us.\", \"The time Nikhil proposed is the coming Thursday, so the answer must go before then.\", \"Landing design partners is a goal now, and a CTO asking for a call could become one.\", \"If Thursday slips, times next week can still recover the call.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Answer Nikhil Bose: confirm Thursday for a thirty-minute call and ask what time suits him, or offer two times next week if Thursday does not work\", \"for_whom\": \"Nikhil Bose at Quillstack\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"], \"to\": \"Nikhil\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If you cannot commit a time today, send a short note saying Thursday is being checked and a time will follow by tomorrow.\", \"wait_or_stop\": \"Do not wait: the move is ours. Once a time is set, wait for the call; if Nikhil does not answer your note within a week, nudge once, then stop.\", \"done_when\": \"A thirty-minute call with Nikhil Bose is on both calendars.\", \"draft\": \"Hi Nikhil, thanks for reaching out, and good to meet you. Thursday works for a thirty-minute call. What time suits you? If Thursday fills up on your side, I can do early next week instead. Best, Arjun\"}",
    "framed": true,
-   "input_tokens": 3505,
-   "output_tokens": 1348,
+   "input_tokens": 3502,
+   "output_tokens": 1344,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6f40e5aa279caf31bc90b88d55bb698298989d97e6bcfbb120f6df96adf2e673": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1050,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "77fa25d1976d492d4b11a75e8c81e505ef2bf88788fbfcce55aa86b3b5b09311": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "schedule",
+    "stance": "positive",
+    "topics": [
+     "intro call"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Nikhil Bose",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Nikhil Bose",
+        "start_offset": 13,
+        "end_offset": 24
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Quillstack",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Quillstack",
+        "start_offset": 26,
+        "end_offset": 36
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Is Arjun free on Thursday for a 30-minute call, or what times work next week?",
+      "asked_by": "Nikhil Bose",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Are you around on Thursday for a 30-minute call?",
+        "start_offset": 72,
+        "end_offset": 120
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Nikhil Bose",
+      "text": "a 30-minute call on Thursday",
+      "evidence_text": "Are you around on Thursday for a 30-minute call?"
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Nikhil Bose",
+      "value": "CTO",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "CTO, Quillstack",
+        "start_offset": 177,
+        "end_offset": 192
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "find a time to talk"
+    },
+    "implied_actions": [
+     "answer Nikhil with a time for the call"
+    ]
+   },
+   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"intro call\"], \"entity_mentions\": [{\"surface_form\": \"Nikhil Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Nikhil Bose\", \"start_offset\": 13, \"end_offset\": 24}], \"confidence_bp\": 9000}, {\"surface_form\": \"Quillstack\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Quillstack\", \"start_offset\": 26, \"end_offset\": 36}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Is Arjun free on Thursday for a 30-minute call, or what times work next week?\", \"asked_by\": \"Nikhil Bose\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Are you around on Thursday for a 30-minute call?\", \"start_offset\": 72, \"end_offset\": 120}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Nikhil Bose\", \"text\": \"a 30-minute call on Thursday\", \"evidence_text\": \"Are you around on Thursday for a 30-minute call?\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Nikhil Bose\", \"value\": \"CTO\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"CTO, Quillstack\", \"start_offset\": 177, \"end_offset\": 192}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"find a time to talk\"}, \"implied_actions\": [\"answer Nikhil with a time for the call\"]}",
+   "framed": true,
+   "input_tokens": 5525,
+   "output_tokens": 345,
    "model": "claude-haiku-4-5-20251001"
   },
   "b4657e78f0acde30c1ab26adcf345529ec870dd9c1fda5c996b38d9cdcd4fdaa": {

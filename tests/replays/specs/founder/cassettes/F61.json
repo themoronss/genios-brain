@@ -1,7 +1,7 @@
 {
  "case_id": "F61",
  "source": "ideal_reader",
- "recorded_at": "773ef7a3",
+ "recorded_at": "b8b4804d",
  "answers": {
   "07f4e258db231cdf2349008c92339d1efd248f2daa764906f511d00a110ac4e7": {
    "site": "expert",
@@ -289,148 +289,6 @@
    "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5efdfbcdfb996c7237cf7715e57f7e70d13f1d3c255243bd5671565cc1e345f0": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "Introly introduced Sana Qadri, who runs finance at Driftwood and asked to see how you keep investor updates on time, and left the two of you to take it from there.",
-      "evidence": [
-       "evt_#2"
-      ],
-      "quote": "who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time"
-     },
-     {
-      "claim": "Sana replied asking for a short call on Wednesday at 2 pm, to see how you handle the monthly investor update.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "Could we do a short call on Wednesday at 2 pm? I'd like to see how you handle the monthly investor update."
-     },
-     {
-      "claim": "She signs as Head of Finance at Driftwood.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "Sana Qadri Head of Finance, Driftwood"
-     },
-     {
-      "claim": "The ask is open in this file and waits on you.",
-      "evidence": [
-       "loop:loop_#1"
-      ]
-     },
-     {
-      "claim": "The file sits under a situation seen for the first time.",
-      "evidence": [
-       "sit:sit_#1",
-       "hist:derived.history.times_seen@fundraising"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "The move is yours: one reply answers Sana's ask.",
-      "based_on": [
-       "fact:2",
-       "fact:4"
-      ]
-     },
-     {
-      "claim": "Introly has done its part; the reply goes to Sana, never to the connector.",
-      "based_on": [
-       "fact:1"
-      ]
-     }
-    ],
-    "patterns": [
-     {
-      "kind": "pattern",
-      "claim": "In this file the other side moves within a day, and the silence since is yours.",
-      "based_on": [
-       "num:usual_gap",
-       "num:days_quiet"
-      ]
-     }
-    ],
-    "hypotheses": [
-     {
-      "proposition": "Driftwood may be a customer for the way you handle investor updates.",
-      "needs": "The call, and what Sana asks for."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "Whether Wednesday at 2 pm is free on your calendar.",
-      "relevance": "It decides whether you confirm or counter."
-     }
-    ],
-    "frames": {
-     "primary": "The introduced finance lead wrote back first and proposed Wednesday at 2 pm; the confirmation is yours.",
-     "rivals": [
-      "A prospective customer for the way you handle investor updates.",
-      "A peer comparing notes, where the call is goodwill only."
-     ]
-    },
-    "proposed_kind": {
-     "kind": "intro",
-     "why": "Sana Qadri came to you through the connector's introduction and asked for a call to see how you handle the monthly investor update.",
-     "evidence": [
-      "evt_#2",
-      "evt_#1"
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "Without a playbook, from the brief and the file: a contact who proposes a time gets a confirmation or a counter promptly.",
-     "actual": "Sana proposed Wednesday at 2 pm the day after the introduction; nothing from you is in the file."
-    },
-    "scenarios": {
-     "do_nothing": "Wednesday passes unconfirmed, and a contact who proposed a time reads the silence as no.",
-     "act": "A short confirmation now books the call she proposed.",
-     "best": "The call happens on Wednesday and Driftwood becomes a customer.",
-     "worst": "No confirmation goes before Wednesday, or one goes to the connector, and the call is lost.",
-     "signals_to_watch": [
-      "Sana accepting the invite",
-      "Wednesday drawing near with nothing confirmed"
-     ]
-    },
-    "appraisal": {
-     "stakes": "medium",
-     "urgency": "high",
-     "reversibility": "reversible",
-     "reasons": [
-      "Sana proposed a time and waits on your answer.",
-      "Her proposed day is this week.",
-      "A missed call can be offered again, so a wrong move is reversible."
-     ]
-    },
-    "mode": "act",
-    "next_move": {
-     "who": "You",
-     "what": "Confirm the call with Sana Qadri on Wednesday at 2 pm, to show her how you handle the monthly investor update",
-     "for_whom": "Sana Qadri at Driftwood",
-     "by_when": null,
-     "rests_on": [
-      "fact:1",
-      "fact:2",
-      "fact:3",
-      "fact:4"
-     ],
-     "to": "Sana Qadri",
-     "answers": "loop:loop_#1"
-    },
-    "alternative": "If Wednesday at 2 pm does not work, reply to Sana with two other times this week.",
-    "wait_or_stop": "Do not wait: the move is yours. Once you have answered, wait for Sana; if no answer comes within a week, nudge once, then stop.",
-    "done_when": "The call with Sana Qadri on Wednesday at 2 pm is on both calendars.",
-    "draft": "Hi Sana, lovely to meet you. Wednesday at 2 pm works for me. I'll send an invite and show you how we handle the monthly investor update. Best"
-   },
-   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Sana Qadri, who runs finance at Driftwood and asked to see how you keep investor updates on time, and left the two of you to take it from there.\", \"evidence\": [\"evt_#2\"], \"quote\": \"who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time\"}, {\"claim\": \"Sana replied asking for a short call on Wednesday at 2 pm, to see how you handle the monthly investor update.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Could we do a short call on Wednesday at 2 pm? I'd like to see how you handle the monthly investor update.\"}, {\"claim\": \"She signs as Head of Finance at Driftwood.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Sana Qadri Head of Finance, Driftwood\"}, {\"claim\": \"The ask is open in this file and waits on you.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@fundraising\"]}], \"inferences\": [{\"claim\": \"The move is yours: one reply answers Sana's ask.\", \"based_on\": [\"fact:2\", \"fact:4\"]}, {\"claim\": \"Introly has done its part; the reply goes to Sana, never to the connector.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"In this file the other side moves within a day, and the silence since is yours.\", \"based_on\": [\"num:usual_gap\", \"num:days_quiet\"]}], \"hypotheses\": [{\"proposition\": \"Driftwood may be a customer for the way you handle investor updates.\", \"needs\": \"The call, and what Sana asks for.\"}], \"unknowns\": [{\"question\": \"Whether Wednesday at 2 pm is free on your calendar.\", \"relevance\": \"It decides whether you confirm or counter.\"}], \"frames\": {\"primary\": \"The introduced finance lead wrote back first and proposed Wednesday at 2 pm; the confirmation is yours.\", \"rivals\": [\"A prospective customer for the way you handle investor updates.\", \"A peer comparing notes, where the call is goodwill only.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Sana Qadri came to you through the connector's introduction and asked for a call to see how you handle the monthly investor update.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: a contact who proposes a time gets a confirmation or a counter promptly.\", \"actual\": \"Sana proposed Wednesday at 2 pm the day after the introduction; nothing from you is in the file.\"}, \"scenarios\": {\"do_nothing\": \"Wednesday passes unconfirmed, and a contact who proposed a time reads the silence as no.\", \"act\": \"A short confirmation now books the call she proposed.\", \"best\": \"The call happens on Wednesday and Driftwood becomes a customer.\", \"worst\": \"No confirmation goes before Wednesday, or one goes to the connector, and the call is lost.\", \"signals_to_watch\": [\"Sana accepting the invite\", \"Wednesday drawing near with nothing confirmed\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Sana proposed a time and waits on your answer.\", \"Her proposed day is this week.\", \"A missed call can be offered again, so a wrong move is reversible.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"You\", \"what\": \"Confirm the call with Sana Qadri on Wednesday at 2 pm, to show her how you handle the monthly investor update\", \"for_whom\": \"Sana Qadri at Driftwood\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"], \"to\": \"Sana Qadri\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If Wednesday at 2 pm does not work, reply to Sana with two other times this week.\", \"wait_or_stop\": \"Do not wait: the move is yours. Once you have answered, wait for Sana; if no answer comes within a week, nudge once, then stop.\", \"done_when\": \"The call with Sana Qadri on Wednesday at 2 pm is on both calendars.\", \"draft\": \"Hi Sana, lovely to meet you. Wednesday at 2 pm works for me. I'll send an invite and show you how we handle the monthly investor update. Best\"}",
-   "framed": true,
-   "input_tokens": 3548,
-   "output_tokens": 1028,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "69dc1c88ebdc5be6dfc54ea0e5a3f83f2937e928c82fe82221dae76b06c6eb78": {
    "site": "expert",
    "parsed": {
@@ -577,6 +435,148 @@
    "framed": true,
    "input_tokens": 1560,
    "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a1394633a11c9b10c12d2d5fa1ae6f740ab6e441ec3d3f75f972d4053c3eaf93": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Sana Qadri, who runs finance at Driftwood and asked to see how you keep investor updates on time, and left the two of you to take it from there.",
+      "evidence": [
+       "evt_#2"
+      ],
+      "quote": "who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time"
+     },
+     {
+      "claim": "Sana replied asking for a short call on Wednesday at 2 pm, to see how you handle the monthly investor update.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Could we do a short call on Wednesday at 2 pm? I'd like to see how you handle the monthly investor update."
+     },
+     {
+      "claim": "She signs as Head of Finance at Driftwood.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Sana Qadri Head of Finance, Driftwood"
+     },
+     {
+      "claim": "The ask is open in this file and waits on you.",
+      "evidence": [
+       "loop:loop_#1"
+      ]
+     },
+     {
+      "claim": "The file sits under a situation seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@fundraising"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The move is yours: one reply answers Sana's ask.",
+      "based_on": [
+       "fact:2",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "Introly has done its part; the reply goes to Sana, never to the connector.",
+      "based_on": [
+       "fact:1"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "In this file the other side moves within a day, and the silence since is yours.",
+      "based_on": [
+       "num:usual_gap",
+       "num:days_quiet"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Driftwood may be a customer for the way you handle investor updates.",
+      "needs": "The call, and what Sana asks for."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether Wednesday at 2 pm is free on your calendar.",
+      "relevance": "It decides whether you confirm or counter."
+     }
+    ],
+    "frames": {
+     "primary": "The introduced finance lead wrote back first and proposed Wednesday at 2 pm; the confirmation is yours.",
+     "rivals": [
+      "A prospective customer for the way you handle investor updates.",
+      "A peer comparing notes, where the call is goodwill only."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "intro",
+     "why": "Sana Qadri came to you through the connector's introduction and asked for a call to see how you handle the monthly investor update.",
+     "evidence": [
+      "evt_#2",
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, from the brief and the file: a contact who proposes a time gets a confirmation or a counter promptly.",
+     "actual": "Sana proposed Wednesday at 2 pm the day after the introduction; nothing from you is in the file."
+    },
+    "scenarios": {
+     "do_nothing": "Wednesday passes unconfirmed, and a contact who proposed a time reads the silence as no.",
+     "act": "A short confirmation now books the call she proposed.",
+     "best": "The call happens on Wednesday and Driftwood becomes a customer.",
+     "worst": "No confirmation goes before Wednesday, or one goes to the connector, and the call is lost.",
+     "signals_to_watch": [
+      "Sana accepting the invite",
+      "Wednesday drawing near with nothing confirmed"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "reversible",
+     "reasons": [
+      "Sana proposed a time and waits on your answer.",
+      "Her proposed day is this week.",
+      "A missed call can be offered again, so a wrong move is reversible."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "You",
+     "what": "Confirm the call with Sana Qadri on Wednesday at 2 pm, to show her how you handle the monthly investor update",
+     "for_whom": "Sana Qadri at Driftwood",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "fact:4"
+     ],
+     "to": "Sana Qadri",
+     "answers": "loop:loop_#1"
+    },
+    "alternative": "If Wednesday at 2 pm does not work, reply to Sana with two other times this week.",
+    "wait_or_stop": "Do not wait: the move is yours. Once you have answered, wait for Sana; if no answer comes within a week, nudge once, then stop.",
+    "done_when": "The call with Sana Qadri on Wednesday at 2 pm is on both calendars.",
+    "draft": "Hi Sana, lovely to meet you. Wednesday at 2 pm works for me. I'll send an invite and show you how we handle the monthly investor update. Best"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Sana Qadri, who runs finance at Driftwood and asked to see how you keep investor updates on time, and left the two of you to take it from there.\", \"evidence\": [\"evt_#2\"], \"quote\": \"who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time\"}, {\"claim\": \"Sana replied asking for a short call on Wednesday at 2 pm, to see how you handle the monthly investor update.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Could we do a short call on Wednesday at 2 pm? I'd like to see how you handle the monthly investor update.\"}, {\"claim\": \"She signs as Head of Finance at Driftwood.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Sana Qadri Head of Finance, Driftwood\"}, {\"claim\": \"The ask is open in this file and waits on you.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@fundraising\"]}], \"inferences\": [{\"claim\": \"The move is yours: one reply answers Sana's ask.\", \"based_on\": [\"fact:2\", \"fact:4\"]}, {\"claim\": \"Introly has done its part; the reply goes to Sana, never to the connector.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"In this file the other side moves within a day, and the silence since is yours.\", \"based_on\": [\"num:usual_gap\", \"num:days_quiet\"]}], \"hypotheses\": [{\"proposition\": \"Driftwood may be a customer for the way you handle investor updates.\", \"needs\": \"The call, and what Sana asks for.\"}], \"unknowns\": [{\"question\": \"Whether Wednesday at 2 pm is free on your calendar.\", \"relevance\": \"It decides whether you confirm or counter.\"}], \"frames\": {\"primary\": \"The introduced finance lead wrote back first and proposed Wednesday at 2 pm; the confirmation is yours.\", \"rivals\": [\"A prospective customer for the way you handle investor updates.\", \"A peer comparing notes, where the call is goodwill only.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Sana Qadri came to you through the connector's introduction and asked for a call to see how you handle the monthly investor update.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: a contact who proposes a time gets a confirmation or a counter promptly.\", \"actual\": \"Sana proposed Wednesday at 2 pm the day after the introduction; nothing from you is in the file.\"}, \"scenarios\": {\"do_nothing\": \"Wednesday passes unconfirmed, and a contact who proposed a time reads the silence as no.\", \"act\": \"A short confirmation now books the call she proposed.\", \"best\": \"The call happens on Wednesday and Driftwood becomes a customer.\", \"worst\": \"No confirmation goes before Wednesday, or one goes to the connector, and the call is lost.\", \"signals_to_watch\": [\"Sana accepting the invite\", \"Wednesday drawing near with nothing confirmed\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Sana proposed a time and waits on your answer.\", \"Her proposed day is this week.\", \"A missed call can be offered again, so a wrong move is reversible.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"You\", \"what\": \"Confirm the call with Sana Qadri on Wednesday at 2 pm, to show her how you handle the monthly investor update\", \"for_whom\": \"Sana Qadri at Driftwood\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"], \"to\": \"Sana Qadri\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If Wednesday at 2 pm does not work, reply to Sana with two other times this week.\", \"wait_or_stop\": \"Do not wait: the move is yours. Once you have answered, wait for Sana; if no answer comes within a week, nudge once, then stop.\", \"done_when\": \"The call with Sana Qadri on Wednesday at 2 pm is on both calendars.\", \"draft\": \"Hi Sana, lovely to meet you. Wednesday at 2 pm works for me. I'll send an invite and show you how we handle the monthly investor update. Best\"}",
+   "framed": true,
+   "input_tokens": 3541,
+   "output_tokens": 1028,
    "model": "claude-haiku-4-5-20251001"
   },
   "a4c24a6f58953ae6133c43ea8ac30b01294b14127af56e5adcde7c7115d5149e": {

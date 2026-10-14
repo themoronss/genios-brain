@@ -382,17 +382,17 @@
  "F07": {
   "card:card_d88c89f38cb07752eb747cd8": [
    [
-    "- [#] a card “Needs a decision — Accept Leela's invite if it is not yet”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
+    "- [#] a card “Accept Leela's invite if it is not yet accepted”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
     0
    ],
    [
-    "- [#] a card “Needs a decision — Accept Leela's invite if it is not yet”, expired; what happened to it: card.created (rule3_admin_queue), card.surfaced (push), card.expired (rule_cleared)",
+    "- [#] a card “Can you tell us whether the call took place as booked?”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
     0
    ]
   ],
   "evt_64ef93e8cfdaf91361d9ff65": [
    [
-    "Booked: [#] a meeting at 2026-08-13 09:30 UTC",
+    "Booked: [#] a meeting at 2026-08-13 09:30 UTC, the calendar calls it “Ferngrove x Nimbus Labs”",
     0
    ],
    [
@@ -758,7 +758,7 @@
   ],
   "evt_6c481b4979f8f62bd38e86aa": [
    [
-    "Booked: [#] a meeting at 2026-10-08 09:00 UTC",
+    "Booked: [#] a meeting at 2026-10-08 09:00 UTC, the calendar calls it “Harbor Point x Nimbus Labs”",
     0
    ]
   ],
@@ -1662,7 +1662,7 @@
  "F27": {
   "evt_5cf10818ee5e3a851a602996": [
    [
-    "Booked: [#] a meeting at 2026-10-09 10:30 UTC",
+    "Booked: [#] a meeting at 2026-10-09 10:30 UTC, the calendar calls it “Cleanwave x Nimbus Labs”",
     0
    ]
   ],
@@ -1700,7 +1700,7 @@
  "F28": {
   "evt_0e547359e31864611d4d4363": [
    [
-    "Booked: [#] a meeting at 2026-10-08 08:30 UTC",
+    "Booked: [#] a meeting at 2026-10-08 08:30 UTC, the calendar calls it “Novacore x Nimbus Labs”",
     0
    ]
   ],
@@ -1738,7 +1738,7 @@
  "F29": {
   "card:card_57ae9a1e1a933d0d3565bd7a": [
    [
-    "- [#] a card “Send Aman our API pricing sheet before the pricing call on”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
+    "- [#] a card “Send Aman our API pricing sheet before the pricing call”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
     0
    ]
   ],
@@ -1750,7 +1750,7 @@
   ],
   "evt_b715c09c1dad67711567b551": [
    [
-    "Booked: [#] a meeting at 2026-10-05 10:30 UTC",
+    "Booked: [#] a meeting at 2026-10-05 10:30 UTC, the calendar calls it “Memloop x Nimbus - pricing”",
     0
    ],
    [
@@ -1760,7 +1760,7 @@
   ],
   "evt_f4f199251d9e3c63af1f3b55": [
    [
-    "Booked: [#] a meeting at 2026-10-05 05:30 UTC",
+    "Booked: [#] a meeting at 2026-10-05 05:30 UTC, the calendar calls it “Memloop x Nimbus - product”",
     0
    ],
    [
@@ -2068,7 +2068,7 @@
  "F40": {
   "evt_547adcf31568fedadb1f9552": [
    [
-    "Booked: [#] a meeting at 2026-08-13 10:00 UTC",
+    "Booked: [#] a meeting at 2026-08-13 10:00 UTC, the calendar calls it “Tallgrass x Nimbus Labs”",
     0
    ],
    [
@@ -2762,7 +2762,7 @@
  "F54": {
   "evt_ead5136fdca87480ed161644": [
    [
-    "Booked: [#] a meeting at 2026-08-20 12:30 UTC",
+    "Booked: [#] a meeting at 2026-08-20 12:30 UTC, the calendar calls it “Fintech founders mixer - Bluebay”",
     0
    ],
    [

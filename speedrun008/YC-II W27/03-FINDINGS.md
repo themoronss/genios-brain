@@ -435,8 +435,8 @@ ideal reader's recorded answers (cassettes recorded at `b47239c9`, `06-DECISIONS
 spend). `scripts/golden_score.py --assert-recorded` holds the two lines below to every later run.
 
 ```
-founder golden set   must-detect  22/45 (12 not expressible)   must-abstain  13/13 (0 not exercised)   forbidden outputs  0
-atlas replays 01–07  passing  6/80   blocked  1/80   not expressible  73
+founder golden set   must-detect  36/50 (12 not expressible)   must-abstain  14/14 (0 not exercised)   forbidden outputs  0
+atlas replays 01–07  passing  12/80   blocked  1/80   not expressible  67
 ```
 
 The two lines above are the board as it stands — every step that moves it re-records them here, and
@@ -633,17 +633,44 @@ numbers). The citation table is whole again (441 over 53 cases).
 | F07 | **pass → lost in reasoning**: two cards about the file — before the call the review's move (accept the invite, read the brief), after it the question it asks (did the call take place, and what was promised?). Each is right in its sweep; the founder should see ONE card change, which is `STEP-14`'s living card (F176) |
 | find-out files | F21, F22, F54 ask once each and their marks do not move (`tests/replays/test_a_held_file_asks_once.py`) |
 
+**Re-recorded 2026-10-14 by `STEP-14`** (`yc2_w27_s14 · M42.C4.L-integration.V3.U04`, M43; `06` s14-D1–D8), one
+file, one living card, in the gold shape. A file's next decision or question VERSIONS its one card (`migrations/0220`,
+`platform/card_lifecycle.version_card`) — never a second card beside it; the board counts a must-detect card only once
+the app's queue showed it, at each sweep's instant, and judges forbidden words over every version (s14-D4); the card
+contract refuses, at both writers, a card that names us, prints a field's name, claims money with none in its
+evidence, quotes words nobody said or a number nothing holds (s14-F10, F11); an expert card shows the gold lines —
+the file's person, role, why now and what remains (`reason/expert/card_lines`, kept with the review, 0221), the move
+whole under *recommended*, its alternative and stop rule as the check held them (check.v3), the file's window —
+and its headline is the move cut at a clause by code (s14-D8). The narrator writes as your chief of staff, with
+the golden set's invented names. Six cases are new (rows 59–64, s14-D5): the Atlas's replay 02 introductions. All
+64 cassettes, the first-connect door's and the re-sync's re-recorded from the ideal reader (no spend), in the house
+order; the citation table re-measured (493 over 59 cases). Fifty-three authored alternatives and stop rules were
+reworded where they named you or a word their facts do not hold (M43.C2.L-data.V2.U05, each named). A first
+re-record, before the card contract read the gold lines as code's (`dfb2e169`), lost F01, F02, F48, F52 and F63 to
+the contract — a day or a meeting's title the dossier printed — and was discarded.
+
+| moved by STEP-14 | from → to |
+|---|---|
+| F02, F05, F06, F24 | lost in reasoning → **pass**: one card about the file, versioned as the advice moved — the application's one card, the introduction's *"write to him directly"* then his reply's ask (F176 closed) |
+| F07 | lost in reasoning → **pass**: the move's card, then the question after the call, are ONE card — its versions |
+| F12, F50 | lost in reasoning → **pass**: the same advice in its last twelve hours is RENEWED, a quiet version, never re-decided as a new card (`reason/change_gate.FILE_RENEW_MARGIN`, s14-F5) |
+| F19 | lost in reasoning → **pass**: the move whole names the three people the file's asks belong to (`06` D58, s14-D7 — the case unedited) |
+| F25 | no stage to read → **pass**: one card — the board's approval asked in other words is a rewording of it, a quiet version |
+| F59–F63 | new → **pass**: three introductions in three threads or one forward, a card each naming its one contact; the replied one's card versions while the two silent ones stand; a booked call and a proposed time each in its own file; an introduction with no address asks you one question |
+| F64 | new → must-abstain **pass**: a declined introduction stays cleared, the connector's nudge reopens nothing |
+| atlas replays | passing 6 → **12**: replay 02 m00, m01, m02, m03, m05 and m07 on F59–F64 (s14-D5); m06, m08, m09 stay declared, each with what owns it |
+
 The table below is the board's state now.
 
 | | |
 |---|---|
-| must-detect that pass · 22 | F03, F04, F10, F13, F26, F28, F42, F44, F46 (as before STEP-12), F09, F11, F16, F17, F27, F29, F47, F48, F49, F51, F57 (STEP-12), F01, F52 (STEP-13 — the question card) |
+| must-detect that pass · 36 | F03, F04, F10, F13, F26, F28, F42, F44, F46 (as before STEP-12), F09, F11, F16, F17, F27, F29, F47, F48, F49, F51, F57 (STEP-12), F01, F52 (STEP-13 — the question card), F02, F05, F06, F07, F12, F19, F24, F25, F50 (STEP-14 — the living card), F59, F60, F61, F62, F63 (STEP-14 — replay 02) |
 | must-detect lost at the gate · 1 | F56 (a vendor's renewal notice — the junk filter's prompt drops plan notices; no vendor kind) |
 | must-detect lost before memory · 0 | — (ten before STEP-05) |
-| must-detect lost in reasoning · 8 | F02, F05, F06, F24 (the advice changed as the file moved: two cards — F176), F07 (the move's card, then the question's after the call — F176, STEP-13), F12 and F50 (the same advice re-decided after its week lapsed — F176), F19 (three people's asks in one cell's file; the case expects a card per person — `06` D58) |
-| must-detect with no stage to read · 2 | F15 (the outreach wave: each fund reviewed once, *wait*, never again — F169, `06` D57), F25 (two cards — F176) |
+| must-detect lost in reasoning · 0 | — (eight before STEP-14: F176's second cards, and F19) |
+| must-detect with no stage to read · 1 | F15 (the outreach wave: each fund reviewed once, *wait*, never again — F169, `06` D57) |
 | not expressible · 12 | F08, F14, F18, F20–F23, F45, F53, F54, F55 (`brief only` — `STEP-15`), F30 (the screen door) |
-| must-abstain that pass · 13 | F31 (the assignment), F32 (archived, and Lakshya's social read and not carded — STEP-07), F33, F34 (archived), F35, F36, F37 (the connector is never the person to reply to — since STEP-09 no reply situation about it arises at all), F38 (an answer elsewhere closes the ask), F39, F40 (a meeting nobody confirmed, not recapped — STEP-12), F41, F43 (the founder's own mail, in memory, not carded), F58 (the company domain that is also the platform's — still the founder) |
+| must-abstain that pass · 14 | F31 (the assignment), F32 (archived, and Lakshya's social read and not carded — STEP-07), F33, F34 (archived), F35, F36, F37 (the connector is never the person to reply to — since STEP-09 no reply situation about it arises at all), F38 (an answer elsewhere closes the ask), F39, F40 (a meeting nobody confirmed, not recapped — STEP-12), F41, F43 (the founder's own mail, in memory, not carded), F58 (the company domain that is also the platform's — still the founder), F64 (a declined introduction — STEP-14) |
 | must-abstain not exercised · 0 | — (four before STEP-05) |
 | must-abstain that fail · 0 | — (F40 before STEP-12) |
 | forbidden outputs · 0 | — (eight before STEP-12: *"happened"* ×4, *"could you resend"*, the organiser's mailbox ×3) |
