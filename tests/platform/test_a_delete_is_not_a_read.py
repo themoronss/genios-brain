@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_148, (
+    assert r["statements"] == 3_149, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -540,6 +540,10 @@ def test_the_statement_count_did_NOT_move():
     # `executive/morning._OWNERS` — each org's account owner's seat. A literal.
     # ⛔ MOVED 3,147 → 3,148 by yc2_w27_s15/M44.C4.L-interface.V2.U04 (STEP-15, GET /v1/executive/morning): one
     # SELECT, `api/executive_routes._brief_seat` — an owner-level key's brief is the account owner's seat. A literal.
+    # ⛔ MOVED 3,148 → 3,149 by yc2_w27_s15/M45.C3.L-integration.V0.U01 (STEP-15, compose writes through the
+    # writer): one SELECT, `executive/morning._FOUNDER_NAME` — the founder's own name (`orgs.name`), read once
+    # per compose so `write_brief` can hold "you" against it; a second query rather than a new field on `Day`,
+    # since `Day` is M44's own contract and this unit's artifact is `morning.py` alone. A literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

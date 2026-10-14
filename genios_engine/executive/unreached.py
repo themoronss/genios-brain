@@ -184,19 +184,12 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "(`tests/executive/test_a_closed_set_with_two_spellings.py`), so it is no longer in the "
         "weaker of the two states; `blocking_action` was the other and is now wired."),
 
-    # STEP-15 builds bottom-up (tree `yc2_w27_s15`): the morning brief's writer lands before the composer that
-    # calls it. Each entry is deleted in the commit that wires its caller, and the pinned set in
-    # `tests/test_the_executive_says_what_it_does_not_call.py` moves with it, said there.
-    #
-    # ⛔ `morning_prompt.build_prompt` and `morning_check.check_answer` WERE HERE and are not any more:
-    # M45.C2.L-logic.V1.U03 (the writer, `morning_writer.write_brief`) landed and calls both — measured,
-    # `qualified_call_counts` now reads 1 for each. The writer itself takes their place below, waiting on
-    # `morning.compose`.
-    "morning_writer.write_brief": (
-        "STEP-15 M45.C2.L-logic.V1.U03, built bottom-up: the writer — R-8's draft, checked, R-8E once if it "
-        "fails, the template if that fails too. Its caller is `morning.compose` (M45.C3.L-integration.V0.U01), "
-        "not yet built: today `compose` still calls `morning_template.template_brief` directly.",
-        "MOVES WHEN M45.C3.L-integration.V0.U01 lands and calls it instead of `template_brief`"),
+    # STEP-15 built the morning brief bottom-up (tree `yc2_w27_s15`): `morning_prompt.build_prompt`,
+    # `morning_check.check_answer` and `morning_writer.write_brief` each sat here in turn, waiting on
+    # the caller one level up, and each left when that caller landed — `morning.compose` now calls
+    # `write_brief` (M45.C3.L-integration.V0.U01), so the chain is fully wired and nothing of STEP-15's
+    # own build order remains declared here. `STEP_15_BUILDING` in
+    # `tests/test_the_executive_says_what_it_does_not_call.py` is empty for the same reason, said there.
 
 }
 

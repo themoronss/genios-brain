@@ -95,11 +95,12 @@ def test_every_declared_entry_is_still_unreached():
         "stale silence is worse than none, because somebody will act on it.")
 
 
-#: ⛔ STEP-15 (`yc2_w27_s15`) builds the morning brief bottom-up, so for a few commits a part lands before the
-#: composer that calls it. Each is declared in `executive/unreached.UNREACHED` and named here, and leaves both
-#: in the commit that wires its caller — the ten in `test_the_count_is_ten_and_they_are_the_measured_ten` are
-#: the layer's own and do not move.
-STEP_15_BUILDING = frozenset({"morning_writer.write_brief"})
+#: ⛔ STEP-15 (`yc2_w27_s15`) built the morning brief bottom-up, so for a run of commits a part landed before the
+#: composer that calls it. Each was declared in `executive/unreached.UNREACHED` and named here, and both entries
+#: left in the commit that wired the caller — the ten in `test_the_count_is_ten_and_they_are_the_measured_ten` are
+#: the layer's own and do not move. EMPTY NOW: `morning.compose` (M45.C3.L-integration.V0.U01) wired the last of
+#: the three (`morning_writer.write_brief`), so nothing of STEP-15's own build order is still declared here.
+STEP_15_BUILDING = frozenset()
 
 
 def test_the_count_is_ten_and_they_are_the_measured_ten():
@@ -151,10 +152,10 @@ def test_the_count_is_ten_and_they_are_the_measured_ten():
                                 "readiness.read"} | STEP_15_BUILDING
     # ⛔ STEP-15 (`yc2_w27_s15`) built the morning brief bottom-up: `morning_store.mark_line` landed before
     # its caller and was named here until M45.C3.L-interface.V0.U02 wired the mark route — the ten above
-    # are the layer's own and never moved. `morning_prompt.build_prompt` and `morning_check.check_answer`
-    # were the same shape and are gone from the table: M45.C2.L-logic.V1.U03 (the writer,
-    # `morning_writer.write_brief`) landed and calls both. `write_brief` itself now takes their place,
-    # waiting on `morning.compose` (M45.C3.L-integration.V0.U01).
+    # are the layer's own and never moved. `morning_prompt.build_prompt`, `morning_check.check_answer` and
+    # `morning_writer.write_brief` were the same shape, each in turn, and are all gone from the table now:
+    # M45.C3.L-integration.V0.U01 wired `morning.compose` to call `write_brief` instead of
+    # `morning_template.template_brief` directly, which was the last link in the chain.
     # ⛔ AND NONE OF THE FIVE IS NOW UNTESTED. Two were — `blocking_action` (wired in U3) and
     # `lifecycle.is_terminal`, which got its first tests in
     # `tests/executive/test_a_closed_set_with_two_spellings.py`. Measured there: the guard at

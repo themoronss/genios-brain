@@ -1,18 +1,29 @@
 """The morning brief, composed — once per seat per local day, at 08:00 in the org's timezone (STEP-15).
 
-`speedrun008/YC-II W27/` STEP-15 §8.4 items 5-6, tree `yc2_w27_s15` M44.C4.L-integration.V1.U02 (`06` D9: the engine
-composes at 08:00 in your org's timezone and serves the route). Nothing in the engine ran at a local hour (`03`
-s15-F12): the heavy tick runs every six hours from process start, the re-rank's day is UTC.
+`speedrun008/YC-II W27/` STEP-15 §8.4 items 5-6, tree `yc2_w27_s15` M44.C4.L-integration.V1.U02
+(`06` D9), ARMED since M45.C3.L-integration.V0.U01 (`06` D9: the engine composes at 08:00 in your org's
+timezone and serves the route). Nothing in the engine ran at a local hour (`03` s15-F12): the heavy
+tick runs every six hours from process start, the re-rank's day is UTC.
 
-  `compose`      the seat's day (`executive/morning_day.read_day`), ordered and in the template's words
-                 (`executive/morning_template.template_brief`), kept (`executive/morning_store.keep`) — or, when
-                 the seat's brief of that local day is already kept, that one, read back: the row is the claim, so
-                 two composers write one brief;
+  `compose`      the seat's day (`executive/morning_day.read_day`), ordered and WRITTEN
+                 (`executive/morning_writer.write_brief` — the Haiku-class draft where
+                 `morning_brief` is armed and holds its check, the template's own words otherwise,
+                 at no cost), kept (`executive/morning_store.keep`) — or, when the seat's brief of
+                 that local day is already kept, that one, read back: the row is the claim, so two
+                 composers write one brief;
   `is_due`       the local time in the org's timezone is past the brief's hour, and none is kept for that day;
   `compose_due`  for each org's account owner whose brief is due, compose it — once; a seat that fails is
                  counted and logged, never raised past: one tenant's brief is never the sweep.
 
-No model is asked here: the words are the template's (M45 writes them when a tenant arms `morning_brief`).
+⛔ TWO TRANSACTIONS IN `compose`, NOT ONE, SINCE M45. `write_brief` may ask a real model — gated by
+its own site's own daily cap, but not instant — and holding a connection (and `morning_briefs`'
+unique key's lock window) open across that call for every seat on every tick is not a cost this
+unit will pay. The read (is one already kept? what is the day?) happens in its own connection;
+`write_brief` runs with NONE held; `keep` opens a second, short one. The race this trades for is
+bounded and cheap, never unbounded: two composers beaten to the same seat's same few seconds could
+each spend one real consult before the loser's `keep` finds the winner's row already there and
+reads it back, discarding its own draft — never two kept briefs, and never a cost past what each
+site's own cap already allows for one call.
 """
 from __future__ import annotations
 
@@ -25,7 +36,7 @@ from sqlalchemy import text
 from genios_engine.contracts.morning_brief import Brief
 from genios_engine.executive import morning_store
 from genios_engine.executive.morning_day import read_day, zone_of
-from genios_engine.executive.morning_template import template_brief
+from genios_engine.executive.morning_writer import write_brief
 from genios_engine.platform.logging import get_logger
 
 _log = get_logger("genios.executive.morning")
@@ -39,6 +50,12 @@ _OWNERS = text(
     "  join org_seats s on s.org_id = o.id and s.active and lower(s.email) = lower(o.email) "
     " where (cast(:orgs as text[]) is null or o.id = any(:orgs)) order by o.id, s.seat_id")
 
+#: The founder's own name, read the same way `morning_day.read_day`'s `_SEAT` does (`orgs.name` —
+#: this is a solo-founder tool, so the org's own name field holds the person's). A tiny second
+#: query rather than a new field on `Day`: `Day` is M44's own contract and this unit's artifact is
+#: `morning.py` alone.
+_FOUNDER_NAME = text("select name from orgs where id = :o")
+
 
 def is_due(now: datetime, tz: str, *, kept: bool) -> bool:
     """Whether a seat's brief is due: the brief's hour has passed in `tz`, and none is kept for that local day."""
@@ -47,14 +64,19 @@ def is_due(now: datetime, tz: str, *, kept: bool) -> bool:
 
 def compose(engine, org_id: str, seat_id: str, *, now: datetime) -> tuple[Brief, bool]:
     """The seat's brief of its local day: composed and kept, or the one already kept (False)."""
-    with engine.begin() as conn:
+    with engine.connect() as conn:
         tz = zone_of(conn, org_id)
         local = now.astimezone(ZoneInfo(tz)).date()
         held = morning_store.read(conn, org_id, seat_id, local)
         if held is not None:
             return held, False
         day = read_day(conn, org_id, seat_id, now=now)
-        brief = template_brief(org_id=org_id, seat_id=seat_id, items=day.items, now=now, tz=day.tz)
+        founder = conn.execute(_FOUNDER_NAME, {"o": org_id}).scalar()
+
+    brief = write_brief(engine, org_id=org_id, seat_id=seat_id, items=day.items, now=now, tz=day.tz,
+                        founder=(founder,) if founder else ())
+
+    with engine.begin() as conn:
         return morning_store.keep(conn, brief)
 
 
