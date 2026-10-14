@@ -2,6 +2,7 @@
 
     python scripts/golden_eval.py --dry-run                      # what a live run would cost; no DB
     python scripts/golden_eval.py --dry-run --site expert        # …the expert's calls alone (06 D50)
+    python scripts/golden_eval.py --dry-run --site brief         # …the morning brief's R-8/R-8E (s15-D1)
     GENIOS_TEST_DATABASE_URL=… python scripts/golden_eval.py --record [F03 F07 …]
     GENIOS_TEST_DATABASE_URL=… GENIOS_GOLDEN_LIVE_KEY=sk-… python scripts/golden_eval.py \\
         --live --model claude-haiku-4-5-20251001 --spend-ok [--record] [F03 …]
@@ -9,6 +10,8 @@
         --live --site expert --spend-ok [F03 …]                  # the expert on its own model
         --live --site expert --spend-ok --max-usd 7 --thinking adaptive --ceiling 12000 --per-call-usd 0.15
                                                                  # 06 D72's arm B, stopped at $7
+    GENIOS_TEST_DATABASE_URL=… GENIOS_GOLDEN_LIVE_KEY=sk-… python scripts/golden_eval.py \\
+        --live --site brief --spend-ok --max-usd 1 [F03 …]       # the brief's writer, both tiers
 
 `speedrun008/YC-II W27/` STEP-01 §3.9.
 
@@ -30,6 +33,17 @@
               (`06` D50): the expert's judgment on the real model, its answers and its board kept
               BESIDE the authored ones (`scores/<date>-<model>-<site>/`) and compared case by case —
               never instead of them, so `--record` is refused with `--site`.
+
+  --site brief  STEP-15 (s15-D1): the morning brief's writer, OUTSIDE the normal chain — it runs
+              AFTER a case's last sweep, never inside it, so it does not fit `identify_site`'s
+              marker dispatch the way every site above does. There is also no cassette to read a
+              dry-run estimate from (R-8/R-8E have never been recorded): the dry run composes each
+              case's real day on the scratch database instead — no model asked, but not "no
+              database" either, a documented exception to the rule above for this one site. The
+              live pass always asks BOTH tiers (never one `--model`): R-8's Haiku-class draft,
+              checked, and R-8E's Sonnet-class escalation once if it fails — each case's brief set
+              beside its own `morning_template.template_brief`, which a `given_back` verdict on a
+              line already is. `--record` is refused here too: there is no cassette shape for it.
 
 The live model is handed to the chain through the same doors the recorded one is
 (`tests/replays/model_sites.DOORS`); the runner's transport refusal still applies to every other
@@ -56,6 +70,9 @@ LIVE_KEY_ENV = "GENIOS_GOLDEN_LIVE_KEY"
 DEFAULT_MODEL = "claude-haiku-4-5-20251001"
 #: A cassette site whose production model is its tier's, not the default: the expert's (R-7, T2).
 SITE_TIERS = {"expert": "R-7"}
+#: STEP-15 (s15-D1): the morning brief, OUTSIDE `identify_site`'s normal dispatch — see the module
+#: docstring's `--site brief` section. Not in `SITE_TIERS`: it asks BOTH R-8 and R-8E, never one tier.
+BRIEF_SITE = "brief"
 
 
 def price_per_mtok(model: str) -> tuple[float, float]:
@@ -372,6 +389,131 @@ def live(ids: list[str], model: str, keep: bool, site: str | None = None, *, max
     return 0
 
 
+# =================================================================================================
+# `--site brief` (s15-D1) · outside the normal chain, so outside `identify_site`'s dispatch too.
+# Every function above assumes a site's prompts turn up DURING `run_case`'s sweeps; the brief's
+# writer runs AFTER the last one, through `executive/morning_writer.write_brief` directly — so
+# this is a second, smaller pair of functions rather than a third branch threaded through `live`
+# and `dry_run`, which would otherwise gain a site that cannot use either's own machinery.
+# =================================================================================================
+
+def _brief_day(case):
+    """One case's day, composed on the scratch database with NO model (the ideal reader's own
+    cassette answers the rest of the chain) — the input `write_brief` would be handed, and what a
+    dry run prices without ever asking a real one."""
+    from tests.replays import cassettes
+    from tests.replays.engine_runner import remove_tenant, run_case
+    from tests.replays.harness import RecordedLLM
+
+    run = run_case(case, RecordedLLM(cassettes.load(case)), keep=True, brief=False)
+    from genios_engine.api import routes
+    from genios_engine.executive.morning_day import read_day
+    from genios_engine.platform.seats import OWNER_SEAT_ID
+    engine = routes._graph.engine
+    try:
+        with engine.connect() as conn:
+            day = read_day(conn, run.org_id, OWNER_SEAT_ID, now=case.sweeps[-1])
+    except Exception:
+        remove_tenant(engine, run.org_id)
+        raise
+    return engine, run.org_id, day
+
+
+def dry_run_brief(ids: list[str]) -> int:
+    """What a live `--site brief` pass would cost, priced at each tier's own ceiling
+    (`reason/bundle/sites.max_output_tokens`, `reason/bundle/budget.cost_micro_usd`) — never a
+    cassette: R-8 and R-8E have no recorded calls to read one from. Touches the scratch database
+    to compose each case's real day; asks no model."""
+    from genios_engine.executive.morning_prompt import build_prompt
+    from genios_engine.platform.seats import OWNER_SEAT_ID
+    from genios_engine.reason.bundle.budget import cost_micro_usd
+    from genios_engine.reason.bundle.sites import SITE_BRIEF, SITE_BRIEF_ESCALATE, TIER_T1, TIER_T2, max_output_tokens
+    from tests.replays.engine_runner import pin_scratch_database, remove_tenant
+
+    pin_scratch_database()
+    cases = _cases(ids)
+    t1_total = t2_total = 0.0
+    print(f"{'case':<5} {'chars':>7} {'~tok in':>8} {'$ R-8':>9} {'$ R-8E':>9}  title")
+    for case in cases:
+        engine, org_id, day = _brief_day(case)
+        try:
+            prompt = build_prompt(items=day.items, now=case.sweeps[-1], tz=day.tz)
+        finally:
+            remove_tenant(engine, org_id)
+        tokens_in = -(-len(prompt) // 4)
+        t1 = cost_micro_usd(tier=TIER_T1, input_tokens=tokens_in,
+                            output_tokens=max_output_tokens(SITE_BRIEF)) / 1e6
+        t2 = cost_micro_usd(tier=TIER_T2, input_tokens=tokens_in,
+                            output_tokens=max_output_tokens(SITE_BRIEF_ESCALATE)) / 1e6
+        t1_total, t2_total = t1_total + t1, t2_total + t2
+        print(f"{case.case_id:<5} {len(prompt):>7} {tokens_in:>8} ${t1:>8.4f} ${t2:>8.4f}  "
+              f"{case.title[:50]}")
+    print(f"\n{len(cases)} cases · if every R-8 draft holds: ${t1_total:.2f} · if every case also "
+          f"escalates once to R-8E: ${t1_total + t2_total:.2f} (the upper bound, never both at "
+          "once in a real pass) at list price, each tier's own ceiling. Composed from the scratch "
+          "database (no cassette exists for these two sites yet); no model was asked.")
+    return 0
+
+
+def live_brief(ids: list[str], *, max_usd: float, key: str) -> int:
+    """R-8's draft on each case's real day, checked; R-8E once if it fails; the template if that
+    fails too — set beside its template (a `given_back` verdict already is that comparison, line
+    by line). Two spend caps, one per tier, each stopping before a call whose worst case would
+    cross `max_usd` — so the worst a run can spend is `2 * max_usd`, documented rather than shared
+    arbitrarily between tiers that price differently."""
+    from genios_engine.contracts import morning_brief as B
+    from genios_engine.executive.morning_template import template_brief
+    from genios_engine.executive.morning_writer import write_brief
+    from genios_engine.platform.l4_activation import FEATURE_MORNING_BRIEF
+    from genios_engine.platform.seats import OWNER_SEAT_ID
+    from genios_engine.reason.bundle.sites import TIER_T1, TIER_T2
+    from genios_engine.reason.llm_sites import tier_model
+    from tests.replays.engine_runner import pin_scratch_database, remove_tenant
+
+    pin_scratch_database()
+    t1_model, t2_model = tier_model(TIER_T1), tier_model(TIER_T2)
+    cap1, cap2 = SpendCap(max_usd, t1_model), SpendCap(max_usd, t2_model)
+    rows, stopped = [], None
+    for case in _cases(ids):
+        engine, org_id, day = _brief_day(case)
+        try:
+            template = template_brief(org_id=org_id, seat_id=OWNER_SEAT_ID, items=day.items,
+                                      now=case.sweeps[-1], tz=day.tz)
+            try:
+                brief = write_brief(
+                    engine, org_id=org_id, seat_id=OWNER_SEAT_ID, items=day.items,
+                    now=case.sweeps[-1], tz=day.tz, founder=(case.founder.name,),
+                    client_t1=CappedModel(LiveModel(key, t1_model), cap1),
+                    client_t2=CappedModel(LiveModel(key, t2_model), cap2),
+                    activated=frozenset({FEATURE_MORNING_BRIEF}))
+            except SpendCapReached as exc:
+                stopped = case.case_id
+                print(f"STOPPED at {case.case_id}: {exc}")
+                break
+        finally:
+            remove_tenant(engine, org_id)
+        kept = sum(1 for l in brief.lines if l.verdict == B.KEPT)
+        given_back = sum(1 for l in brief.lines if l.verdict == B.GIVEN_BACK)
+        rows.append({"case": case.case_id, "written_by": brief.written_by, "model": brief.model,
+                     "tier": brief.tier, "cost_micro_usd": brief.cost_micro_usd,
+                     "lines": len(brief.lines), "kept": kept, "given_back": given_back,
+                     "template_lines": len(template.lines), "why": brief.why})
+        print(f"{case.case_id} {brief.written_by:<10} kept={kept} given_back={given_back} "
+              f"cost=${brief.cost_micro_usd / 1e6:.4f}")
+    card = {"date": date.today().isoformat(), "t1_model": t1_model, "t2_model": t2_model,
+            "max_usd": max_usd, "stopped_at": stopped, "cases": rows,
+            "spent_usd": round(cap1.spent_usd + cap2.spent_usd, 4),
+            "written": sum(r["written_by"] == B.WRITTEN for r in rows),
+            "escalated": sum(r["written_by"] == B.ESCALATED for r in rows),
+            "template": sum(r["written_by"] == B.TEMPLATE_BRIEF for r in rows)}
+    SCORES.mkdir(parents=True, exist_ok=True)
+    out = SCORES / f"{scorecard_name(date.today().isoformat(), 'brief', None, None)}.json"
+    out.write_text(json.dumps(card, indent=1) + "\n", encoding="utf-8")
+    print(f"\nwritten {card['written']} · escalated {card['escalated']} · template "
+          f"{card['template']} · ${card['spent_usd']} spent → {out}")
+    return 0
+
+
 def _positive(value: str) -> float:
     try:
         number = float(value)
@@ -420,11 +562,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.dry_run and (args.live or args.record):
         ap.error("--dry-run runs nothing; it cannot be combined with --live or --record")
-    if args.site is not None and args.site not in sites():
-        ap.error(f"no such site: {args.site!r} — one of {', '.join(sites())}")
+    if args.site is not None and args.site != BRIEF_SITE and args.site not in sites():
+        ap.error(f"no such site: {args.site!r} — one of {', '.join((*sites(), BRIEF_SITE))}")
     if args.site is not None and args.record:
-        ap.error("--site's live pass is kept BESIDE the authored cassettes, never instead (06 D50): "
-                 "drop --record")
+        ap.error("--site's live pass is kept BESIDE the authored cassettes, never instead (06 D50) "
+                 f"— {BRIEF_SITE!r} has no cassette shape at all: drop --record")
+    if args.site == BRIEF_SITE and args.model:
+        ap.error(f"--site {BRIEF_SITE} always asks both R-8 (Haiku-class) and R-8E (Sonnet-class) "
+                 "on their own tiers (s15-D1): --model does not apply")
+    if args.dry_run and args.site == BRIEF_SITE:
+        return dry_run_brief(args.cases)
     model = model_for(args.site, args.model)
     if args.dry_run:
         return dry_run(args.cases, model, args.site)
@@ -438,6 +585,8 @@ def main(argv: list[str] | None = None) -> int:
             print("--live needs --max-usd: the pass stops before a call whose worst case would cross "
                   "it (06 D65's money is finite)", file=sys.stderr)
             return 2
+        if args.site == BRIEF_SITE:
+            return live_brief(args.cases, max_usd=args.max_usd, key=os.environ[LIVE_KEY_ENV])
         r_site = SITE_TIERS.get(args.site or "")
         with site_settings(r_site, **run_settings) if r_site else contextlib.nullcontext():
             return live(args.cases, model, args.record, args.site, max_usd=args.max_usd, **run_settings)
