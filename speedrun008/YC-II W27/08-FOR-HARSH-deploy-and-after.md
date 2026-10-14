@@ -96,7 +96,7 @@ here when the step lands. Nothing in this table switches anything on by itself.
 |---|---|---|---|---|
 | STEP-13, check every claim | first part **pushed** (`7766a06a`); the check's and the question's fixes from its crosscheck are merged and being re-recorded; next push | `0200_expert_review_checks` (one nullable column on `expert_reviews`: the check), `0201_founder_questions` (one table; `/reset` wipes it) | §1.14, §3.12, §4.10 — nothing runs until the expert is on (§3.11); wire the needs queue's fetchers when you can (§3.12) | the **question card** and its **Answer** box; each card sentence's **source**; the workstream page reads `says` and `check` (§1.14) |
 | STEP-17, real tests | **built**, merged on the integration branch | none | CI gains a `database` job (Postgres 17) and every job runs Python **3.11**, the Dockerfile's; after each deploy keep the health gate's output (`scripts/pipeline_health.py … --json <release record>/health.json`) and run it again the next day with `--require-data` — STEP-17's follow-up adds the exact step to §2/§3 | — |
-| STEP-18, the known bugs | **built**, merged on the integration branch | `0210_every_wrong_reason_is_kept`, `0211_a_followup_names_its_observation` | **before the deploy:** set `GENIOS_JWT_SECRET` in production (a non-dev boot with the default secret refuses to start, exit 3). If you also set `GENIOS_ENV` to a non-dev value: a rotated secret signs every user and paired desktop app out (they sign in again), and unsigned Composio webhooks get 403 unless `GENIOS_COMPOSIO_WEBHOOK_SECRET` is set — read `GET /config` first — and since `06` D62 an UNSET `GENIOS_ENV` counts as not dev too, so the image refuses to boot on a public secret until both are set (§3.14). **After:** the s18-F9 and s18-F3 probes and the backfill of review objects stuck at `governed`, dry run first (§4.11) | — |
+| STEP-18, the known bugs | **built**, merged on the integration branch | `0210_every_wrong_reason_is_kept`, `0211_a_followup_names_its_observation` | **before the deploy:** set `GENIOS_JWT_SECRET` in production (a non-dev boot with the default secret refuses to start, exit 3). If you also set `GENIOS_ENV` to a non-dev value: a rotated secret signs every user and paired desktop app out (they sign in again), and unsigned Composio webhooks get 403 unless `GENIOS_COMPOSIO_WEBHOOK_SECRET` is set — read `GET /config` first — and since `06` D62 an UNSET `GENIOS_ENV` counts as not dev too, so the image refuses to boot on a public secret unless a REAL secret is set — `GENIOS_ENV` decides the webhook behaviour above, not the boot itself (second crosscheck I1; §3.14). **After:** the s18-F9 and s18-F3 probes and the backfill of review objects stuck at `governed`, dry run first (§4.11) | — |
 | STEP-14, the card | **being built** | `0220_the_living_card`, `0221_the_gold_card` (planned) | read the board as the app showed it (s14-D4) | one **living card per file**: a card has versions, and its history shows them; a question card stays open after your answer (*"your answer is in; the file is read again"*, s14-D3); the headline is cut by code, the move whole under *recommended* |
 | STEP-15, the morning brief | **being built** | `0230_morning_briefs` (planned) | at deploy, **set `orgs.timezone` for Rohit's org** (otherwise it is inferred from his send hours); a Slack tenant gets the brief as its digest | the **Today view** (Atlas A.10 has the wireframe) reads the brief's route at 08:00 in the org's timezone; e-mail and WhatsApp come later |
 | STEP-16, learning from you | **being built** | `0241_founder_corrections`, `0242_company_brief_corrections` (planned; `0240` is not needed — STEP-18's `0210` already keeps every reason) | do **not** arm calibration (D13 stays shadow) | the card's *wrong* shows four groups and a words box; a question card can be called *wrong* (*"don't ask me this"*); your corrections show on the file |
@@ -393,7 +393,7 @@ files; the deploy is not done until the boot log names each.
 ⛔ **STEP-13 (12 Oct) adds `0200_expert_review_checks.sql`** (one nullable column on `expert_reviews`, written by
 the review store) **and `0201_founder_questions.sql`** (one table; `/reset` fails until it is applied) — the boot
 log names eleven files from `0191`.
-⛔ **STEP-18 (12 Oct) adds `0210_every_wrong_reason_is_kept.sql` and `0211_a_followup_names_its_observation.sql`** (both additive), and BEFORE the deploy needs `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` in the deployment's environment, or the new image refuses to boot — §3.14.
+⛔ **STEP-18 (12 Oct) adds `0210_every_wrong_reason_is_kept.sql` and `0211_a_followup_names_its_observation.sql`** (both additive), and BEFORE the deploy needs a real `GENIOS_JWT_SECRET` in the deployment's environment — the new image refuses to boot on an unset or default secret unless `GENIOS_ENV` already names `dev`/`development`/`test`/`local` (second crosscheck I1: a real secret alone is enough; `GENIOS_ENV` is a separate decision, with its own webhook consequence) — §3.14.
 No new environment variable. One value we need from the
 deploy's environment:
 **`GENIOS_L4_LLM_DECISION_MAKER`** — on or off? The golden set runs the LLM decider on, as
@@ -741,9 +741,13 @@ does.
    ```
 2. In the deployment's environment (DigitalOcean), read — do not print — whether `GENIOS_ENV`,
    `GENIOS_JWT_SECRET` and `GENIOS_COMPOSIO_WEBHOOK_SECRET` are set.
-3. **If production does not set `GENIOS_ENV`, or sets it outside dev, the new image will not boot
-   until `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` are set.** Set them together, in one change,
-   before the deploy, knowing what each does:
+3. **If production carries the default (or no) `GENIOS_JWT_SECRET`, the new image will not boot
+   until a real one is set — whatever `GENIOS_ENV` says.** (Second crosscheck I1: a real secret
+   alone boots in every `GENIOS_ENV` state, including unset; only an unset-or-non-dev `GENIOS_ENV`
+   WITH a default/empty secret refuses — the rule the intro above states correctly.) If production
+   already carries a secret of its own, the boot needs nothing new here; still decide `GENIOS_ENV`
+   below for its own reason, the webhook one. Set whichever of the two actually need to change, in
+   one change, before the deploy, knowing what each does:
    * **A new `GENIOS_JWT_SECRET` signs every user and every paired desktop app out.** Every session
      and device token is signed and checked with it (`platform/sessions.py`, `platform/auth.py`,
      `platform/devices.py`), and the dashboard, the desktop app and the extension do not call

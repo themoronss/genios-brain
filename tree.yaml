@@ -9424,6 +9424,23 @@ yc2_w27_s18:
                       artifact: "speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md"
                       verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py && grep -c 'GENIOS_JWT_SECRET\\|0210_every_wrong_reason_is_kept\\|s18-F9\\|rest_stuck_reviews' 'speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md'"
                       depends_on: [M49.C3.L-integration.V1.U08, M49.C3.L-contract.V1.U10, M48.C1.L-data.V1.U14]
+                    - id: M49.C3.L-interface.V2.U11
+                      what: >
+                        I1 + G-1 (the STEP-17/18 second crosscheck). I1 — 08 §2 and §3.14 step 3
+                        said the image needs `GENIOS_ENV` AND a real `GENIOS_JWT_SECRET` together
+                        or it refuses to boot; a real secret alone boots in every `GENIOS_ENV`
+                        state, including unset (`insecure_boot` returns None on any non-empty,
+                        non-default secret, whatever the env). Reworded to the code's rule in both
+                        places and in `06` D62's own clause; the intro paragraph already had it
+                        right. G-1 — `03`'s six STEP-18 rows (F65, F97, F117, F120, F128, F135)
+                        read "open — STEP-18" though STEP-18 built them: each now carries its
+                        commit (F117 and F128 partly, their open halves said so), and s18-F1–F14
+                        are numbered F271–F283 (F254 for s18-F11, already numbered), each with its
+                        owner where still open. F261, which named this exact gap, closes with it.
+                        Docs only.
+                      artifact: "speedrun008/YC-II W27/03-FINDINGS.md"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py tests/platform/test_the_dev_secret_never_boots_outside_dev.py"
+                      depends_on: [M49.C3.L-interface.V2.U09]
     - id: M50
       name: Claude 5 thinks by default — every model call asks for what its ceiling was sized for, and every cut is counted (13 Oct audit, s5t-F1…F13; 06 D71)
       ships: >
