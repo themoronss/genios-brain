@@ -114,10 +114,22 @@ def _names(parts) -> dict[str, str]:
     return {p.node_id: p.name for p in people if p.name}
 
 
+def _the_connector(parts, who: str | None) -> bool:
+    """Whether `who` is the connector that introduced this file — never its person (STEP-14, found re-recording F03:
+    the connector's nudges sit on the introduced person's file). A connector's own file is the connector's."""
+    f = parts.file
+    key = str(getattr(f, "introduced_by", None) or "").casefold()
+    if not key or getattr(f, "kind", None) == "connector" or not who:
+        return False
+    who = str(who).casefold()
+    return who == key or ("@" not in key and who.rsplit("@", 1)[-1] == key)
+
+
 def _person(parts) -> str | None:
-    """The file's counterparty PERSON: the last of its people to write to us, else one its numbers name."""
+    """The file's counterparty PERSON: the last of its people to write to us — never the connector that introduced
+    them — else one its numbers name."""
     for t in reversed(parts.timeline.touches):
-        if t.direction == "in" and t.who_name:
+        if t.direction == "in" and t.who_name and not _the_connector(parts, t.who):
             return t.who_name
     names = _names(parts)
     return names[sorted(names)[0]] if names else None

@@ -215,3 +215,21 @@ def test_a_window_from_nowhere_is_refused():
         L.CardLines.from_mapping({**lines.as_mapping(), "window": {"days": 3, "from": "a guess"}})
     with pytest.raises(ValueError):
         L.CardLines.from_mapping({**lines.as_mapping(), "window": {"days": 0, "from": "default"}})
+
+
+def test_the_connector_is_never_the_subject_of_the_file_it_introduced():
+    """STEP-14 (found re-recording, 14 Oct, F03): the connector's nudges sit on the introduced person's file, and the
+    last of the file's people to write to us was the connector — so the card's subject read "Introly". On a file the
+    connector introduced, its touches name nobody; on the connector's own file, it is the subject."""
+    parts = _parts()
+    nudge = dataclasses.replace(parts.timeline.touches[1], event_id="evt_nudge", who="hello@introly.test",
+                                who_name="Introly", at=parts.timeline.touches[-1].at + timedelta(hours=1))
+    nudged = dataclasses.replace(parts, timeline=dataclasses.replace(
+        parts.timeline, touches=(*parts.timeline.touches, nudge)))
+    assert _lines(nudged).subject == "Introly", "a file nobody introduced: the last to write is its person"
+    introduced = dataclasses.replace(nudged, file=dataclasses.replace(nudged.file, introduced_by="hello@introly.test"))
+    assert _lines(introduced).subject == "Kunal Shah"
+    by_domain = dataclasses.replace(nudged, file=dataclasses.replace(nudged.file, introduced_by="introly.test"))
+    assert _lines(by_domain).subject == "Kunal Shah", "a connector known by its domain"
+    own = dataclasses.replace(introduced, file=dataclasses.replace(introduced.file, kind="connector"))
+    assert _lines(own).subject == "Introly", "the connector's own file is the connector's"
