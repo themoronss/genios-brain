@@ -265,6 +265,21 @@ select outcome like 'model:truncated%' as truncated, outcome, count(*) as weeks,
  group by 1, 2
  order by count(*) desc;
 
+-- @b13_duplicate_screen_observations
+-- G-2 (yc2_w27_s1718 M48.C2.L-data.V2.U21, second crosscheck). Pre-0211 writes minted one active
+-- observation per version with no retiring id; a follow-up with more than one still-active
+-- observation is one `scripts/retire_duplicate_screen_observations.py`'s dry run (08 §4.11) should
+-- name, then move past zero with --apply.
+select count(*) as followups_with_more_than_one_active_observation from (
+  select r.evidence->>'followup_id' as followup_id
+    from graph_observations o
+    join graph_source_refs r on r.observation_id = o.observation_id and r.org_id = o.org_id
+   where o.org_id = 'org_e97e86f858ad48b2bbf64b8a' and r.source = 'screen_insight'
+     and o.status = 'active'
+   group by 1
+  having count(*) > 1
+) d;
+
 -- @latest_migration
 select filename, applied_at
 from schema_migrations

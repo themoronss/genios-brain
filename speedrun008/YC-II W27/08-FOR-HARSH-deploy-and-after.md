@@ -1005,6 +1005,34 @@ It moves exactly the rows whose state is `governed` and whose latest transition 
 `human_review`, in one transaction, and writes no transition (the ledger already holds that edge).
 Run the probe again after: the `governed` / `human_review` row reads 0.
 
+**3 · B13's pre-0211 duplicate screen observations** (the second crosscheck's G-2;
+`scripts/retire_duplicate_screen_observations.py`, `yc2_w27_s1718` M48.C2.L-data.V2.U21). A
+follow-up rewritten more than once before `0211` landed can still hold several `active` graph
+observations — nothing retires the earlier ones retroactively. The probe (read-only, run on a
+scratch database or via `production_state.sql`'s `@b13_duplicate_screen_observations`):
+
+```
+select count(*) from (
+  select r.evidence->>'followup_id' as followup_id
+    from graph_observations o
+    join graph_source_refs r on r.observation_id = o.observation_id and r.org_id = o.org_id
+   where o.org_id = :org and r.source = 'screen_insight' and o.status = 'active'
+   group by 1 having count(*) > 1
+) d;
+```
+
+Dry run first; send its output (org, follow-up id, how many active) to Rohit; `--apply` after he reads it:
+
+```
+GENIOS_ALLOW_PROD_WRITE=1 PGOPTIONS='-c default_transaction_read_only=on' \
+    python scripts/retire_duplicate_screen_observations.py --database-url "$URL"          # dry run
+GENIOS_ALLOW_PROD_WRITE=1 python scripts/retire_duplicate_screen_observations.py --database-url "$URL" --apply
+```
+
+It keeps the LATEST active observation per follow-up, supersedes the rest (never deletes), and
+writes the survivor's id into `screen_followups.observation_id` so an ordinary rewrite retires it
+from here on. Run the probe again after: it reads 0.
+
 ## 5 · Do not
 
 - switch **`calibration_apply`** on for any tenant. It is Rohit's decision (`06` D13), and not

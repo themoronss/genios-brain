@@ -9194,6 +9194,23 @@ yc2_w27_s18:
                       artifact: "genios_engine/context/situations.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/capture/coverage/test_a_failed_coverage_read_loses_itself_alone.py tests/context/test_a_card_names_the_source_it_is_missing.py"
                       depends_on: [M48.C2.L-data.V1.U08]
+                    - id: M48.C2.L-data.V2.U21
+                      what: >
+                        G-2 (the STEP-17/18 second crosscheck) — B13's pre-0211 duplicate
+                        observations. `screen_memory._retire` (M48.C2.L-data.V0.U06) retires a
+                        follow-up's PREVIOUS observation only when the row already names one
+                        (`observation_id`, 0211); a follow-up rewritten more than once before 0211
+                        landed stayed as many `active` observations as it had versions, with
+                        nothing to retire the earlier ones retroactively.
+                        `scripts/retire_duplicate_screen_observations.py`: a read-only probe
+                        (`followup_id`s with more than one active screen-insight observation; also
+                        `production_state.sql`'s `@b13_duplicate_screen_observations`), dry run by
+                        default, `--apply` keeps the LATEST and supersedes the rest — never
+                        deletes — and writes the survivor's id back so an ordinary rewrite retires
+                        it from here on. `08` §4.11 gains the probe and the one-off (item 3).
+                      artifact: "scripts/retire_duplicate_screen_observations.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/scripts/test_retire_duplicate_screen_observations.py tests/test_production_probes_are_read_only.py"
+                      depends_on: [M48.C2.L-data.V0.U06]
             - layer: integration
               levels:
                 - level: 1
