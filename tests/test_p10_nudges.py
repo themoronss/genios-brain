@@ -472,7 +472,9 @@ def test_graph_views_hide_another_seats_private_screen_data(client):  # noqa: F8
     from genios_engine.context.graph_store import GraphStore
     from genios_engine.platform.auth import AuthCtx
     ws = _workspace(client, capture=False)
-    n = _seed(ws)
+    # S17X-F1 (yc2_w27_s1718 M41.C1.L-integration.V1.U05): this module has no `_clock` of its
+    # own, so `test_moments_pg.NOW` is `None` when this file runs alone — pass our own instant.
+    n = _seed(ws, now=datetime.now(timezone.utc))
     org = ws["org"]
     o_mail, m_mail = ws["owner"]["email"].lower(), ws["member"]["email"].lower()
     # an edge learned from the owner's private screen: Priya ↔ Ravi

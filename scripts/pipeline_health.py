@@ -903,14 +903,21 @@ def check_the_expert_says_why_and_stays_in_budget(conn, org: str) -> Check:
     schema changed under it — or while today's spend is over the cap, which is a gate that let a call
     through — or while MORE THAN HALF of the day's reviews were cut at the ceiling (`yc2_w27_s18`
     M50.C4.L-interface.V1.U11): the Sonnet live pass of 12 Oct had 203 of 203 cut and this check would
-    have passed it. No review in the window is nothing to judge, and passes saying so.
+    have passed it. No review in the window is nothing to judge, and passes saying so — UNLESS the
+    day is over its cap with no review to show for it (I2a, `yc2_w27_s1718` M40.C3.L-logic.V0.U07,
+    second crosscheck): the spend is read FIRST, so a day over cap is never reported as NO DATA just
+    because `expert_reviews` happens to be empty.
     """
     name = "the expert says why, and stays in its budget"
+    spent = _scalar(conn, "select coalesce(sum(cost_micro_usd), 0) from l4_r_site_calls "
+                          "where org_id = :o and site = 'R-7' "
+                          "and created_at >= date_trunc('day', now())", o=org)
+    over = spent > EXPERT_DAILY_CAP_MICRO_USD
     rows = conn.execute(sql(
         "select status, count(*) as n from expert_reviews "
         " where org_id = :o and reviewed_at > now() - interval '24 hours' "
         " group by status order by status"), {"o": org}).fetchall()
-    if not rows:
+    if not rows and not over:
         return Check(name=name, ok=True, no_data=True,
                      measured="no expert review in the last 24 hours",
                      expected="skipped — nothing to judge", fix="")
@@ -918,9 +925,6 @@ def check_the_expert_says_why_and_stays_in_budget(conn, org: str) -> Check:
     silent = _scalar(conn, "select count(*) from expert_reviews where org_id = :o "
                            "and reviewed_at > now() - interval '24 hours' and status <> 'valid' "
                            "and coalesce(btrim(reason), '') = ''", o=org)
-    spent = _scalar(conn, "select coalesce(sum(cost_micro_usd), 0) from l4_r_site_calls "
-                          "where org_id = :o and site = 'R-7' "
-                          "and created_at >= date_trunc('day', now())", o=org)
     reasons = conn.execute(sql(
         "select status, reason, count(*) as n from expert_reviews "
         " where org_id = :o and reviewed_at > now() - interval '24 hours' and status <> 'valid' "
@@ -928,13 +932,12 @@ def check_the_expert_says_why_and_stays_in_budget(conn, org: str) -> Check:
         {"o": org}).fetchall()
     # `reason/expert/store.TRUNCATED`: a review cut at R-7's token ceiling.
     cut = sum(int(r.n) for r in rows if r.status == "truncated")
-    measured = (f"{total} reviews in 24 h — "
-                + ", ".join(f"{r.status} {int(r.n)}" for r in rows)
-                + f"; spent today ${spent / 1_000_000:.2f} of ${EXPERT_DAILY_CAP_MICRO_USD / 1_000_000:.2f}"
+    measured = ((f"{total} reviews in 24 h — " + ", ".join(f"{r.status} {int(r.n)}" for r in rows))
+                if rows else "no expert review in the last 24 hours")
+    measured += (f"; spent today ${spent / 1_000_000:.2f} of ${EXPERT_DAILY_CAP_MICRO_USD / 1_000_000:.2f}"
                 + (f"; {silent} not valid with no reason" if silent else "")
                 + (f"; {cut} of {total} truncated" if cut else ""))
-    over = spent > EXPERT_DAILY_CAP_MICRO_USD
-    mostly_cut = cut * 2 > total
+    mostly_cut = cut * 2 > total   # total == 0 implies cut == 0 (cut only counts rows): 0 > 0 is False
     return Check(
         name=name, ok=not silent and not over and not mostly_cut, measured=measured,
         expected="every refused, truncated, carried or failed review says why, the day's spend "

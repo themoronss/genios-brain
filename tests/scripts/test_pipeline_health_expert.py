@@ -107,6 +107,20 @@ def test_spend_over_the_cap_fails(conn):
     assert "budget" in check.fix
 
 
+def test_spend_over_the_cap_with_no_review_still_fails(conn):
+    """I2a (`yc2_w27_s1718` M40.C3.L-logic.V0.U07, second crosscheck): the spend is read BEFORE
+    `expert_reviews`, so a day over its cap is a FAIL even when nothing was reviewed — the probe's
+    own shape, a spend row with no review alongside it (`review_file` is the only R-7 caller and
+    every spending outcome writes a review row, so this state is a probe's doing, not a live one —
+    but the ordering fix means it is never read as NO DATA either way)."""
+    for _ in range(3):
+        _spent(conn, 700_000)
+    check = _check(conn)
+    assert not check.ok and not check.no_data
+    assert check.measured == "no expert review in the last 24 hours; spent today $2.10 of $2.00"
+    assert "budget" in check.fix
+
+
 def test_it_is_one_of_the_checks_the_script_runs_and_reads_the_gates_own_cap():
     from genios_engine.reason.bundle.sites import SITE_EXPERT
     assert _module().check_the_expert_says_why_and_stays_in_budget in _module().CHECKS

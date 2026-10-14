@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_125, (
+    assert r["statements"] == 3_129, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -512,6 +512,10 @@ def test_the_statement_count_did_NOT_move():
     # of whose question card a press is on (one SELECT), so the press takes the file's lock before any row.
     # ⛔ MERGED 13 Oct: STEP-13's second fix wave (its 3,108 → 3,110, G11's two advisory-lock literals) into
     # the integration line (3,123), re-measured on the merge (`table_coverage.resolution()`): 3,125.
+    # ⛔ MOVED 3,125 → 3,129 by yc2_w27_s1718/M48.C2.L-data.V2.U21 (G-2, second crosscheck): the
+    # one-off `scripts/retire_duplicate_screen_observations.py` — `DUPLICATES` (one SELECT),
+    # `ACTIVE_FOR_FOLLOWUP` (one SELECT), `SUPERSEDE` (one UPDATE) and `NAME_SURVIVOR` (one UPDATE).
+    # Four literals, each a constant at its own call site.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

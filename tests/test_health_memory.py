@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import builtins
 
-import pytest
 from fastapi.testclient import TestClient
 
 import genios_engine.platform.memory as mem
@@ -86,14 +85,20 @@ def test_endpoint_needs_the_internal_token():
 
 
 def test_endpoint_returns_the_four_things_with_the_token(monkeypatch):
+    """F-4 (`yc2_w27_s1718` M40.C4.L-contract.V0.U07, second crosscheck): the 403 this used to
+    skip on was the test's OWN doing, not an unwired harness. `platform.auth` binds `get_settings`
+    at its own import (`from platform.config import get_settings`), so patching
+    `platform.config.get_settings` — a different module's attribute — never reached
+    `require_internal`, which still read a fresh, token-less `Settings`. Patch where auth reads
+    it, and the route answers 200 every time; the skip, and the false reason it carried in
+    `scripts/qa/database_skips.ALLOWED`, both come off."""
     from genios_engine.platform.config import get_settings
     s = get_settings()
     monkeypatch.setattr(s, "internal_token", "tok-for-test", raising=False)
     get_settings.cache_clear() if hasattr(get_settings, "cache_clear") else None
-    monkeypatch.setattr("genios_engine.platform.config.get_settings", lambda: s)
+    monkeypatch.setattr("genios_engine.platform.auth.get_settings", lambda: s)
     c = TestClient(app)
     r = c.get("/health/memory", headers={"X-Internal-Token": "tok-for-test"})
-    if r.status_code != 200:
-        pytest.skip(f"internal auth not wired in this harness ({r.status_code})")
+    assert r.status_code == 200, r.text
     body = r.json()
     assert {"rss_mb", "container", "concurrency"} <= set(body)
