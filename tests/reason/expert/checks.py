@@ -25,7 +25,9 @@ def as_written(review: ExpertReview) -> C.CheckedReview:
                           evidence=cited_ids(review),
                           quotes=tuple(f.quote for f in review.facts if f.quote),
                           do_nothing=review.scenarios.do_nothing,
-                          kind=review.proposed_kind.why if review.proposed_kind is not None else None))
+                          kind=review.proposed_kind.why if review.proposed_kind is not None else None,
+                          # STEP-14 (check.v3): the alternative and the stop rule are card lines the check holds.
+                          alternative=review.alternative or None, wait_or_stop=review.wait_or_stop or None))
 
 
 __all__ = ["as_written"]

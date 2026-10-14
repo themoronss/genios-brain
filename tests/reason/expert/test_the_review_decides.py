@@ -397,3 +397,90 @@ def test_a_held_decision_replays_from_its_snapshot_as_it_was():
     _replayed, comparison = replay_execution(first, D.orchestrator())
     assert comparison.matches, comparison.differences
 
+
+
+# ── STEP-14 · the decision carries the gold lines (`yc2_w27_s14` M43.C2.L-integration.V3.U04, s14-F6–F9, `03` F179) ──
+from genios_engine.reason.expert.card_lines import CardLines, MOVE_DATE, REPLY_TIME, WINDOW_SAID  # noqa: E402
+
+LINES = CardLines(why_now="Neel wrote on 27 Sep", what_remains=("Neel asked for a first call, since 27 Sep",),
+                  subject="Neel Rao", company="Kestrel Capital", kind_of_work="investor", role="lead",
+                  window_days=4, window_from=REPLY_TIME)
+
+
+def _with_lines(row, lines=LINES):
+    return replace(row, card_lines=lines)
+
+
+def _thaw(value):
+    """A manifest's metadata, frozen (mappings read-only, lists tuples), as plain JSON-shaped values."""
+    from collections.abc import Mapping
+    if isinstance(value, Mapping):
+        return {k: _thaw(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_thaw(v) for v in value]
+    return value
+
+
+def _gold(request):
+    return _thaw(request.capability.metadata["render"]["gold"])
+
+
+def test_the_decision_is_version_1_2_0():
+    assert D.DECIDE_VERSION == "1.2.0"
+
+
+def test_the_render_block_carries_the_gold_lines():
+    request, _ = _decide(_with_lines(_row()))
+    gold = _gold(request)
+    assert gold == {
+        "subject": "Neel Rao", "company": "Kestrel Capital", "kind_of_work": "investor", "role": "lead",
+        "why_now": "Neel wrote on 27 Sep", "what_remains": ["Neel asked for a first call, since 27 Sep"],
+        "recommended": {"who": "the founder", "what": "Send Neel a one-page pre-read", "for_whom": "Neel",
+                        "by_when": "2026-10-08", "to": None},
+        "alternative": "send it after the call", "wait_or_stop": "if no reply by the call, raise it on the call",
+        "window": {"days": 3, "from": MOVE_DATE, "said": WINDOW_SAID[MOVE_DATE]}}
+
+
+def test_a_move_with_no_date_takes_the_files_window():
+    move = dict(_raw()["next_move"], by_when=None)
+    request, execution = _decide(_with_lines(_row(next_move=move)))
+    assert execution.decision.outcome_window_days == 4, "the file's measured reply time, never a default week"
+    assert _gold(request)["window"] == {
+        "days": 4, "from": REPLY_TIME, "said": WINDOW_SAID[REPLY_TIME]}
+    watch, _ = _decide(_with_lines(_row(mode="wait", next_move=None)))
+    assert [p.window_days for p in watch.capability.plays] == [4], "a watch keeps the file's window too"
+
+
+def test_a_review_before_0221_keeps_its_own_words_and_a_default_window():
+    move = dict(_raw()["next_move"], by_when=None)
+    request, execution = _decide(_row(next_move=move))
+    gold = _gold(request)
+    assert gold["subject"] is None and gold["what_remains"] == [] and gold["why_now"] is None
+    assert gold["recommended"]["what"] == "Send Neel a one-page pre-read"
+    assert gold["window"] == {"days": D.DEFAULT_WINDOW_DAYS, "from": "default", "said": WINDOW_SAID["default"]}
+    assert execution.decision.outcome_window_days == D.DEFAULT_WINDOW_DAYS
+
+
+def test_the_gold_lines_are_the_checked_words_never_the_unchecked():
+    from genios_engine.contracts import claim_check as C
+    withheld = _checked(C.SHOWN, words=C.CardWords(headline="Send Neel a one-page pre-read", situation=None,
+                                                   done_when=None, draft=None, to=None, alternative=None,
+                                                   wait_or_stop=None))
+    request, execution = _decide(_with_lines(_row(checked=withheld)))
+    gold = request.capability.metadata["render"]["gold"]
+    assert (gold["alternative"], gold["wait_or_stop"]) == (None, None)
+    meta = execution.selected_candidate.parameters["metadata"]
+    assert (meta["alternative"], meta["wait_or_stop"]) == (None, None), "the play carries what the check held"
+
+
+def test_a_held_file_recommends_no_move():
+    from genios_engine.contracts import claim_check as C
+    request, _ = _decide(_with_lines(_row(checked=_checked(C.HELD))))
+    gold = request.capability.metadata["render"]["gold"]
+    assert gold["recommended"] is None and gold["subject"] == "Neel Rao"
+
+
+def test_the_card_lines_are_part_of_the_capabilitys_address():
+    one = _decide(_with_lines(_row()))[0].capability.version
+    other = _decide(_with_lines(_row(), replace(LINES, why_now="Neel wrote again on 1 Oct")))[0].capability.version
+    assert one != other, "a decision on other lines is another decision"
