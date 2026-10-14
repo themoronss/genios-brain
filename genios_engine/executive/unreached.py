@@ -187,17 +187,16 @@ UNREACHED: dict[str, tuple[str, str]] = {
     # STEP-15 builds bottom-up (tree `yc2_w27_s15`): the morning brief's writer lands before the composer that
     # calls it. Each entry is deleted in the commit that wires its caller, and the pinned set in
     # `tests/test_the_executive_says_what_it_does_not_call.py` moves with it, said there.
-    "morning_prompt.build_prompt": (
-        "STEP-15 M45.C2.L-logic.V0.U01, built bottom-up: the writer's prompt, from the day's items and "
-        "nothing else. Its caller is the writer, M45.C2.L-logic.V1.U03, waiting on the sites it writes "
-        "through (`reason/bundle/sites.py`, M45.C1.L-contract.V0.U01) — themselves waiting on the Claude 5 "
-        "thinking fix's merge; until then no prompt is built for a real pass.",
-        "MOVES WHEN M45.C2.L-logic.V1.U03 (the writer) lands and calls it"),
-    "morning_check.check_answer": (
-        "STEP-15 M45.C2.L-logic.V0.U02, built bottom-up: the whole answer's check — one line per item, in "
-        "order, each held to its own item's material. Its caller is the same writer as `build_prompt` above, "
-        "and waits on the same thing.",
-        "MOVES WHEN M45.C2.L-logic.V1.U03 (the writer) lands and calls it"),
+    #
+    # ⛔ `morning_prompt.build_prompt` and `morning_check.check_answer` WERE HERE and are not any more:
+    # M45.C2.L-logic.V1.U03 (the writer, `morning_writer.write_brief`) landed and calls both — measured,
+    # `qualified_call_counts` now reads 1 for each. The writer itself takes their place below, waiting on
+    # `morning.compose`.
+    "morning_writer.write_brief": (
+        "STEP-15 M45.C2.L-logic.V1.U03, built bottom-up: the writer — R-8's draft, checked, R-8E once if it "
+        "fails, the template if that fails too. Its caller is `morning.compose` (M45.C3.L-integration.V0.U01), "
+        "not yet built: today `compose` still calls `morning_template.template_brief` directly.",
+        "MOVES WHEN M45.C3.L-integration.V0.U01 lands and calls it instead of `template_brief`"),
 
 }
 

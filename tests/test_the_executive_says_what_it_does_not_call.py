@@ -99,7 +99,7 @@ def test_every_declared_entry_is_still_unreached():
 #: composer that calls it. Each is declared in `executive/unreached.UNREACHED` and named here, and leaves both
 #: in the commit that wires its caller — the ten in `test_the_count_is_ten_and_they_are_the_measured_ten` are
 #: the layer's own and do not move.
-STEP_15_BUILDING = frozenset({"morning_prompt.build_prompt", "morning_check.check_answer"})
+STEP_15_BUILDING = frozenset({"morning_writer.write_brief"})
 
 
 def test_the_count_is_ten_and_they_are_the_measured_ten():
@@ -152,8 +152,9 @@ def test_the_count_is_ten_and_they_are_the_measured_ten():
     # ⛔ STEP-15 (`yc2_w27_s15`) built the morning brief bottom-up: `morning_store.mark_line` landed before
     # its caller and was named here until M45.C3.L-interface.V0.U02 wired the mark route — the ten above
     # are the layer's own and never moved. `morning_prompt.build_prompt` and `morning_check.check_answer`
-    # are the same shape now, waiting on the writer (M45.C2.L-logic.V1.U03), itself waiting on
-    # `reason/bundle/sites.py` (M45.C1.L-contract.V0.U01) and the Claude 5 thinking fix's merge.
+    # were the same shape and are gone from the table: M45.C2.L-logic.V1.U03 (the writer,
+    # `morning_writer.write_brief`) landed and calls both. `write_brief` itself now takes their place,
+    # waiting on `morning.compose` (M45.C3.L-integration.V0.U01).
     # ⛔ AND NONE OF THE FIVE IS NOW UNTESTED. Two were — `blocking_action` (wired in U3) and
     # `lifecycle.is_terminal`, which got its first tests in
     # `tests/executive/test_a_closed_set_with_two_spellings.py`. Measured there: the guard at
