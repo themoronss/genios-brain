@@ -9056,6 +9056,26 @@ yc2_w27_s18:
                       artifact: "genios_engine/context/model_audit.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/context/lifecycle/test_a_decimal_answer_is_audited.py"
                       depends_on: [M48.C2.L-logic.V0.U03]
+                - level: 2
+                  units:
+                    - id: M48.C2.L-logic.V2.U20
+                      what: >
+                        F-3 (the STEP-17/18 second crosscheck) — U15 mended the ROW; the VALUE still
+                        ended the pass. `int(float("inf"))` raises OverflowError, not ValueError:
+                        Infinity, -Infinity and `1e999` (which `float()` reads as inf with no error)
+                        in a resolution answer's offsets or confidence reached
+                        `context/lifecycle/prompt.parse_description`'s bare `except (TypeError,
+                        ValueError)` uncaught, out of `detect_resolutions` (no try around the call,
+                        `resolution.py:239-252`) and ended the rest of the org's resolution sweep —
+                        bounded only by `MAX_ATTEMPTS_PER_MESSAGE` (3). Both excepts now also catch
+                        `OverflowError`: a non-finite offset is the same shape failure as any other
+                        unusable one (`None`, the call still paid and still audited); a non-finite
+                        confidence alone is dropped and the rest of the answer still judged, as NaN
+                        already was. Tested through `detect_resolutions` and at `parse_description`
+                        directly.
+                      artifact: "genios_engine/context/lifecycle/prompt.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/context/lifecycle/test_a_decimal_answer_is_audited.py"
+                      depends_on: [M48.C2.L-logic.V1.U15]
             - layer: data
               levels:
                 - level: 0
