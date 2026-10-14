@@ -628,7 +628,9 @@ def _cards(engine: Any, org: str, open_after: list[set[str]],
     with engine.connect() as conn:
         rows = conn.execute(text(
             "select card_id, state, level, headline, situation, why, actions, artifact, "
-            "business_subject, unresolved_item, why_now, output_lane, file_id from cards "
+            "business_subject, unresolved_item, why_now, output_lane, file_id, relationship_role, recommended, "
+            "alternative, wait_or_stop, outcome_window_days, capability_key, builder_version, confidence_vector "
+            "from cards "
             "where org_id = :o and card_id = any(:ids) order by card_id"),
             {"o": org, "ids": sorted(seen)}).fetchall()
         versions: dict[str, list[str]] = {}
@@ -663,7 +665,15 @@ def _cards(engine: Any, org: str, open_after: list[set[str]],
                             sources=sources,
                             app_sweeps=tuple(i for i, ids in enumerate(shown_after) if r.card_id in ids),
                             versions=tuple(versions.get(r.card_id, ())),
-                            file_id=r.file_id, events=tuple(history.get(r.card_id, ()))))
+                            file_id=r.file_id, events=tuple(history.get(r.card_id, ())),
+                            gold={"headline": r.headline, "subject": r.business_subject, "role": r.relationship_role,
+                                  "why_now": r.why_now, "what_remains": r.unresolved_item,
+                                  "recommended": r.recommended, "alternative": r.alternative,
+                                  "wait_or_stop": r.wait_or_stop, "window_days": r.outcome_window_days,
+                                  "window": next((w for w in why if isinstance(w, dict)
+                                                  and w.get("source") == "card_lines"), None),
+                                  "capability_key": r.capability_key, "builder_version": r.builder_version,
+                                  "confidence": r.confidence_vector}))
     return tuple(out)
 
 

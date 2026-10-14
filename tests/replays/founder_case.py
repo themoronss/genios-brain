@@ -362,6 +362,10 @@ class CardView:
     #: `card.expired` event as (kind, cause, change, material, kept the words before).
     file_id: str | None = None
     events: tuple[tuple[str, str | None, str | None, bool | None, bool], ...] = ()
+    #: STEP-14 (`yc2_w27_s14` M43.C6.L-integration.V4.U10): the gold card's columns as the card holds them — headline,
+    #: business_subject, relationship_role, why_now, unresolved_item, recommended, alternative, wait_or_stop,
+    #: outcome_window_days, the window receipt (`why`, source card_lines), capability_key, builder_version.
+    gold: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
