@@ -273,6 +273,9 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
         asking = fingerprint_of(row.get("asking_review"))
         review = reviews.read_review(c, org_id, node, str(asking or row["fingerprint"]))
     checked = review.checked if review is not None else None
+    # STEP-14 (`yc2_w27_s14` M43.C3.L-interface.V3.U03): the gold shape too — the file's person, role, why now and what
+    # remains, from the lines its review kept (0221); none on a review stored before, and the card is as built.
+    lines = getattr(review, "card_lines", None) if review is not None else None
     reading = checked.words.situation if checked is not None and checked.words.situation else None
     because = row["why"] if row["why"] in WHYS else WHY_FIND_OUT
     why = [{"sentence": "headline", "question": row["question"], "because": because,
@@ -292,7 +295,10 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
         "level": "review", "abstained_because": because,
         "urgency_band": band(score, None), "assignee": assignee, "resolved_rule": rule, "co_recipients": [],
         "score": score, "score_block": {"S": score},
-        "business_subject": name, "unresolved_item": row["question"],
+        "business_subject": (lines.subject if lines else None) or name,
+        "relationship_role": lines.role if lines else None,
+        "why_now": lines.why_now if lines else None,
+        "unresolved_item": ("; ".join(lines.what_remains) if lines else "") or row["question"],
         "capability_key": row.get("capability_id"), "capability_version": row.get("capability_version"),
         "capability_review_state": str(row.get("capability_review_state") or "unreviewed"),
         "output_lane": lane.lane, "lane_reason": lane.reason,
