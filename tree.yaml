@@ -8686,6 +8686,20 @@ yc2_w27_s17:
                       artifact: "scripts/pipeline_health.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_a_silent_lane_is_no_data_pg.py"
                       depends_on: [M40.C3.L-contract.V0.U01]
+                    - id: M40.C3.L-logic.V0.U07
+                      what: >
+                        I2a (the STEP-17/18 second crosscheck) —
+                        `check_the_expert_says_why_and_stays_in_budget` read `expert_reviews`
+                        FIRST and returned NO DATA whenever it was empty, before it ever read
+                        today's R-7 spend; a probe that inserted a spend row directly (no review
+                        alongside it — `review_file` is the only live R-7 caller and every spending
+                        outcome writes a review row, so this exact state is a probe's doing, not a
+                        live one) got NO DATA at $3.00 against the $2 cap. The spend is read FIRST
+                        now: empty reviews AND under cap is still NO DATA; empty reviews and OVER
+                        cap is a FAIL, named by its spend alone.
+                      artifact: "scripts/pipeline_health.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_expert.py tests/scripts/test_the_gate_that_runs_on_real_data.py"
+                      depends_on: [M40.C3.L-contract.V0.U01]
             - layer: interface
               levels:
                 - level: 0
