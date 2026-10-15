@@ -34,6 +34,7 @@ reaches a run THROUGH its signal, so anything it can still see is referenced and
 
 from __future__ import annotations
 
+import os
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
@@ -45,7 +46,24 @@ logger = get_logger(__name__)
 #: How long an unreferenced run is kept before it is purged. See WHY A GRACE PERIOD in the module
 #: docstring — this is a race window, not a retention promise, and the reference check is what
 #: actually protects anything worth keeping.
-KEEP_DAYS = 7
+#:
+#: WAS 7, AND AT 7 IT WAS DOING NOTHING. MEASURED on prod 15 Oct 2026, with the database at
+#: 1,324 MB against a 500 MB tier and sign-in already failing on an exhausted pooler:
+#:
+#:     KEEP_DAYS=7  →    311 runs purgeable (~58 MB)
+#:     KEEP_DAYS=3  →  4,530 runs purgeable (~849 MB)
+#:     KEEP_DAYS=2  →  5,175 runs purgeable (~970 MB)
+#:
+#: 5,740 runs existed and only 311 had aged past seven days, because the lane writes ~800 runs a
+#: day on ONE org with no real users. A window longer than the backlog cannot clear a backlog.
+#:
+#: Two is still vastly longer than the race it exists for — a run is written seconds before its
+#: signal — and `feedback/calibrate`'s 28-day window is untouched, because calibration reaches a
+#: run THROUGH its signal and anything it can still see is referenced and therefore exempt.
+#:
+#: This buys time; it is not the fix. 192 KB per run is the fix, and until that lands the rate
+#: refills whatever this clears in about a week.
+KEEP_DAYS = int(os.environ.get("GENIOS_REASONING_KEEP_DAYS") or 2)
 
 #: One aged, unreferenced run at a time, in batches, so a first pass over a year of backlog cannot
 #: hold a lock long enough to matter to the sweep running beside it. A cascade of one run touches
