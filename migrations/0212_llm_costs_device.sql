@@ -1,5 +1,13 @@
 -- WHICH LAPTOP DID THIS SPEND COME FROM.
 --
+-- NUMBERED 0212, NOT 0191, AND THE REASON IS A MERGE. `speedrun008` — the YC-II W27 programme —
+-- is 636 commits ahead of `harsh/mvp` and already carries 0191…0211, starting with
+-- `0191_reasoning_fingerprints.sql`. Writing this as 0191 on `harsh/mvp` would have put two
+-- different migrations under one number in two branches that are meant to merge, and a
+-- migration's number is its identity: `schema_migrations` keys on the filename and a checksum,
+-- so the second 0191 to arrive is either skipped as "already applied" or refused. Taking the next
+-- number past speedrun008's highest keeps the merge a fast-forward on this file.
+--
 -- `llm_costs` has carried `seat_id` since 0175, and that answered "which PERSON". It is not
 -- enough for screen intelligence, measured on the design-partner org 12 Oct 2026: three devices
 -- are registered and ALL THREE sit on one seat (`seat_owner`), because two people sign the

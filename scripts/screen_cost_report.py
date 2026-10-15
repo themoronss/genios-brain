@@ -8,10 +8,10 @@ because both people sign the desktop app in with the same account. So `seat_id` 
 on `llm_costs` since 0175 — names a seat that is really two laptops, and a lane whose entire job
 is to read ONE person's screen had no way to say whose.
 
-Migration 0191 adds `llm_costs.device_id` and `moment_routes` fills it from the device token the
+Migration 0212 adds `llm_costs.device_id` and `moment_routes` fills it from the device token the
 request already arrives on. This reads it back.
 
-ROWS WRITTEN BEFORE 0191 HAVE device_id NULL. They are reported as "(before 0191)" rather than
+ROWS WRITTEN BEFORE 0212 HAVE device_id NULL. They are reported as "(before 0212)" rather than
 folded into one laptop or quietly dropped — a backfill would have to invent the answer, and the
 honest shape of this table is that attribution starts the day it was deployed.
 
@@ -94,8 +94,8 @@ def main() -> int:
         print(f"No screen spend in the last {a.days} days.")
         return 0
     if not has_device:
-        print("!! llm_costs.device_id does not exist here — migration 0191 is not applied yet.")
-        print("   Per-laptop numbers will all read '(before 0191)'.\n")
+        print("!! llm_costs.device_id does not exist here — migration 0212 is not applied yet.")
+        print("   Per-laptop numbers will all read '(before 0212)'.\n")
 
     by_org: dict[str, list] = defaultdict(list)
     for r in rows:
@@ -121,7 +121,7 @@ def main() -> int:
         print(f"\n  {'PER LAPTOP (device)':<44} {'calls':>7} {'USD':>9} {'INR':>9}")
         per_dev: dict[str, list] = defaultdict(list)
         for r in rs:
-            per_dev[r.device_id or "(before 0191 — not recorded)"].append(r)
+            per_dev[r.device_id or "(before 0212 — not recorded)"].append(r)
         for dev, drs in sorted(per_dev.items(), key=lambda kv: -sum(price(x.model, x.tin, x.tout) for x in kv[1])):
             u = sum(price(x.model, x.tin, x.tout) for x in drs)
             nice = names.get(dev)

@@ -1186,7 +1186,7 @@ class GraphStore:
         # mailbox, an authenticated query — all know the answer at the call site. NULL keeps its
         # honest meaning: background work that serves no single seat.
         #
-        # `device_id` (0191) is the same argument one level down AGAIN, and screen intelligence
+        # `device_id` (0212) is the same argument one level down AGAIN, and screen intelligence
         # is why. MEASURED on the design-partner org 12 Oct 2026: three devices, all three on one
         # seat, because two people share a sign-in. For a lane whose entire job is to read ONE
         # person's screen, `seat_id` then names a seat that is really two laptops. NULL keeps the

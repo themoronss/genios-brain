@@ -464,7 +464,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                      # The request arrived on a DEVICE token, so this is the one place that knows
                      # which laptop the screen belongs to. Two people share `seat_owner` on the
                      # design-partner org, so without this the spend cannot be told apart at all
-                     # (migration 0191).
+                     # (migration 0212).
                      device_id=p.device_id, now_local=SI.local_label(now, tz),
                      dates=body.features.dates, not_useful=notes,
                      useful=kept, said=RU.said(fresh, me), me=me,

@@ -1230,7 +1230,7 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
         GraphStore(engine=engine).record_cost(
             org_id=org_id, model=model, purpose=CAPABILITY_ID, seat_id=seat_id,
             # WHICH LAPTOP. Two people share this seat on the design-partner org, so `seat_id`
-            # alone cannot say whose screen was read (migration 0191).
+            # alone cannot say whose screen was read (migration 0212).
             device_id=device_id,
             input_tokens=res.input_tokens, output_tokens=res.output_tokens,
             success=res.ok, error=res.error,
