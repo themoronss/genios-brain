@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_187, (
+    assert r["statements"] == 3_188, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -551,6 +551,11 @@ def test_the_statement_count_did_NOT_move():
     # 3,183 — the same two literals; nothing else moved. The run-time ratchet stays 272.
     # ⛔ MERGED 16 Oct: STEP-14 (its own moves above, to 3,183 over 3,125) into the integration line (3,129, with
     # STEP-17/18's follow-ups), re-measured on the merge (`table_coverage.resolution()`): 3,187 = 3,183 + 4.
+    # ⛔ MOVED 3,187 → 3,188 by yc2_w27_s14/M42.C3.L-interface.V4.U06 (the STEP-14 crosscheck's finding 2, your
+    # answered card stays where you see it): `scripts/pipeline_health.check_every_file_card_passes_one_door` reads the
+    # database's clock (`select now()`, one literal) — the doors' own statements moved from `CardStore.doors` into
+    # `deliver/store.FILE_CARD_DOORS` unchanged. Committed without this move (b580112c); found measuring the next
+    # unit, and moved here. The run-time ratchet did not move (272).
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
