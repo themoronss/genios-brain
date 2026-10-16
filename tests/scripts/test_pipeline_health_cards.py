@@ -138,3 +138,26 @@ def test_expert_cards_with_no_app_surface(conn):
     _card(conn, "c_legacy_hidden", surfaces=("ask", "api"))                          # not an expert card
     got = _check(conn, "check_every_expert_card_reaches_the_app")
     assert (got.verdict, got.measured) == ("FAIL", "1 of 3 live expert card(s) carry no app surface")
+
+
+def test_a_file_card_closed_by_design_is_no_replacement_and_an_old_one_is_history(conn):
+    """⛔ STEP-14 fix (the crosscheck's finding 13, `yc2_w27_s14` M43.C4.L-integration.V2.U08): a question settled, a file
+    that left coverage — each closes its card with its own cause, and the check counts only REPLACED (the version
+    path's failure), over the last 7 days: one from before is history, not a red gate for ever."""
+    from genios_engine.platform import card_lifecycle as cl
+    assert {cl.QUESTION_SETTLED, cl.LEFT_COVERAGE} <= cl.CAUSES
+    _card(conn, "c1", file_id="node_f", state="expired")
+    for n, cause in enumerate((cl.QUESTION_SETTLED, cl.LEFT_COVERAGE)):
+        conn.execute(text("insert into card_events (id, card_id, org_id, kind, cause) values "
+                          "(:i, 'c1', :o, 'card.expired', :c)"), {"i": f"cev_d{n}", "o": ORG, "c": cause})
+    assert _check(conn, "check_no_file_card_is_replaced").verdict == "PASS"
+    # 0220 a month old (this connection is rolled back): the window, not the deploy, is what leaves the old one out.
+    conn.execute(text("update schema_migrations set applied_at = now() - interval '30 days' "
+                      "where filename = '0220_the_living_card.sql'"))
+    conn.execute(text("insert into card_events (id, card_id, org_id, kind, cause, occurred_at) values "
+                      "('cev_old', 'c1', :o, 'card.expired', 'replaced', now() - interval '8 days')"), {"o": ORG})
+    got = _check(conn, "check_no_file_card_is_replaced")
+    assert got.verdict == "PASS", got.measured
+    conn.execute(text("insert into card_events (id, card_id, org_id, kind, cause) values "
+                      "('cev_new', 'c1', :o, 'card.expired', 'replaced')"), {"o": ORG})
+    assert _check(conn, "check_no_file_card_is_replaced").measured == "1 file card(s) expired replaced in 7 days"

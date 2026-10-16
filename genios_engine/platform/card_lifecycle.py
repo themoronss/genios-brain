@@ -58,8 +58,12 @@ RULE_MUTED = "rule_muted"          # calibration muted the rule (only on a tenan
 LAPSED = "expired"                 # its window passed with nobody acting — the sweep's cause, kept
 EXTENSION = "extension"            # dismissed from the browser extension
 SUBJECT_IS_US = "subject_is_us"    # STEP-04's repair: the card's subject was one of us
+# STEP-14 fix (the crosscheck's finding 13): a file's question card closed by design said REPLACED, and nothing
+# replaced it — so the health check that counts a file card REPLACED (the version path's failure) went red for good.
+QUESTION_SETTLED = "question_settled"  # the file's question is answered, or no longer asked, and no move follows it
+LEFT_COVERAGE = "left_coverage"        # the file is no longer the expert's to decide; its situations decide alone
 CAUSES: frozenset[str] = frozenset({REPLACED, RULE_CLEARED, BUDGET_HELD, NOT_AUTHORIZED, PLAN_GONE,
-                                    RULE_MUTED, LAPSED, EXTENSION, SUBJECT_IS_US})
+                                    RULE_MUTED, LAPSED, EXTENSION, SUBJECT_IS_US, QUESTION_SETTLED, LEFT_COVERAGE})
 
 # ── what the event is called ─────────────────────────────────────────────────────────────────────
 EXPIRED = "card.expired"

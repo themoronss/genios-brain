@@ -1015,7 +1015,8 @@ _SINCE_0220 = ("(select coalesce(min(applied_at), now()) from schema_migrations 
 _REPLACED_FILE_CARDS = (
     "select k.file_id, k.card_id from cards k join card_events e on e.org_id = k.org_id and e.card_id = k.card_id "
     " where k.org_id = :o and k.file_id is not null and e.kind = 'card.expired' and e.cause = :replaced "
-    "   and e.occurred_at >= " + _SINCE_0220 + " order by e.occurred_at desc, k.card_id")
+    "   and e.occurred_at >= " + _SINCE_0220 + " and e.occurred_at > now() - interval '7 days' "
+    " order by e.occurred_at desc, k.card_id")
 
 
 def _expert_params(org: str) -> dict:
@@ -1046,18 +1047,21 @@ def check_one_file_one_card(conn, org: str) -> Check:
 
 def check_no_file_card_is_replaced(conn, org: str) -> Check:
     """⛔ STEP-14 (s14-F3, F5): a file's card expired REPLACED is a file whose next decision did not version it —
-    the shape the living card exists to end. Counted since 0220 was applied, over the cards that name a file."""
+    the shape the living card exists to end. Counted since 0220 was applied and over the last 7 days (the crosscheck's
+    finding 13: a window with no end kept the gate red for good), over the cards that name a file."""
     name = "no file card is replaced"
     if not _scalar(conn, "select count(*) from cards where org_id = :o and file_id is not null", o=org):
         return Check(name=name, ok=True, no_data=True, measured="no card names a file",
                      expected="skipped — nothing to judge", fix="")
     rows = conn.execute(sql(_REPLACED_FILE_CARDS), {"o": org, "replaced": REPLACED}).fetchall()
     return Check(
-        name=name, ok=not rows, measured=f"{len(rows)} file card(s) expired replaced since 0220",
-        expected="0 — a file's card is versioned, renewed or reopened, never replaced",
+        name=name, ok=not rows, measured=f"{len(rows)} file card(s) expired replaced in 7 days",
+        expected="0 — a file's card is versioned, renewed or reopened, never replaced (a question settled, a file "
+                 "that left coverage or a cleared rule say so with their own cause)",
         fix="pipeline._close_the_files_pass expires the file cards whose signal closed with no version "
             "(counter file_cards_replaced): find the writer that retired the file's signal without handing the "
-            "file on (reason/domain_shadow, reason/expert/asks)",
+            "file on (reason/domain_shadow, reason/expert/asks) — a refused version keeps its card "
+            "(file_cards_kept_on_refusal) and is said by 'what the card contract refused'",
         detail=[f"{r.file_id} {r.card_id}" for r in rows[:20]])
 
 

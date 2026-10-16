@@ -220,7 +220,8 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
         if asked.state == questions.ANSWERED:
             expired = conn.execute(text(_EXPIRE_QUESTION_SIGNALS), {"o": org_id, "n": file_id}).fetchall()
             if expired:
-                card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
+                # Nothing replaces it: the question is settled (STEP-14 fix, the crosscheck's finding 13).
+                card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.QUESTION_SETTLED,
                                             signal_ids=[item.signal_id for item in expired])
             return ANSWERED_ALREADY
         standing = conn.execute(text(_OPEN_QUESTION_SIGNAL), {"o": org_id, "n": file_id}).first()
@@ -276,6 +277,9 @@ def retire_question(store, *, org_id: str, file_id: str, eval_time, why: str | N
                                    at=eval_time)
         expired = conn.execute(text(_EXPIRE_QUESTION_SIGNALS), {"o": org_id, "n": file_id}).fetchall()
         if expired and not hand_on:
-            card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
+            # Its own cause, never REPLACED — nothing replaces it (STEP-14 fix, the crosscheck's finding 13).
+            cause = (card_lifecycle.LEFT_COVERAGE if why == questions.LEFT_COVERAGE
+                     else card_lifecycle.QUESTION_SETTLED)
+            card_lifecycle.expire_cards(conn, org_id=org_id, cause=cause,
                                         signal_ids=[item.signal_id for item in expired])
     return bool(retired or expired)

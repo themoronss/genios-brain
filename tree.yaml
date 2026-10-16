@@ -10300,6 +10300,18 @@ yc2_w27_s14:
                       artifact: "scripts/pipeline_health.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_cards.py tests/scripts/test_pipeline_health_reach.py"
                       depends_on: [M43.C4.L-integration.V1.U02]
+                    - id: M43.C4.L-integration.V2.U08
+                      what: >
+                        The health gate goes red only on the version path's failure (added 16 Oct by the STEP-14
+                        crosscheck, finding 13): `check_no_file_card_is_replaced` failed on any REPLACED since 0220,
+                        for ever, and the code closes file cards REPLACED by design — a question answered already or
+                        no longer asked with no move after it, a file that left coverage (`reason/expert/asks`). Those
+                        say why: `card_lifecycle.QUESTION_SETTLED`, `LEFT_COVERAGE` (the closed vocabulary +2); the
+                        refused version keeps its card (M43.C4.L-integration.V1.U06); the check counts REPLACED over the
+                        last 7 days (and since 0220), and its fix line names the version path and the refusals.
+                      artifact: "scripts/pipeline_health.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_cards.py tests/reason/expert/test_a_file_hands_its_card_on.py tests/platform/test_card_lifecycle.py"
+                      depends_on: [M43.C4.L-integration.V2.U05, M43.C4.L-integration.V1.U06]
         - id: M43.C5
           name: Clean copy for the cards the expert does not write
           layers:

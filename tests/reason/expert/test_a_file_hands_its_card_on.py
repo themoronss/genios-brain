@@ -163,7 +163,9 @@ def test_a_question_no_move_follows_still_closes_its_card(world, expiries):
     _write(store, org, anchor, "ffp-fund-wait-review-00000", events, mode="wait", next_move=None)
     _compile(store, org, registry, covered={anchor: "ffp-fund-wait-review-00000"}, at=NOW + timedelta(hours=1))
     assert _open_signals(store, org, anchor) == [] and [c.state for c in _cards(store, org)] == ["expired"]
-    assert expiries == [("replaced", (question.signal_id,))]
+    # ⛔ RESTATED by `yc2_w27_s14` M43.C4.L-integration.V2.U08 (the STEP-14 crosscheck, finding 13): it closed REPLACED,
+    # and nothing replaced it — the health check failed on a path the code takes by design. It says why: settled.
+    assert expiries == [("question_settled", (question.signal_id,))]
 
 
 def test_a_question_whose_file_left_coverage_still_closes_its_card(world, expiries):
@@ -176,4 +178,5 @@ def test_a_question_whose_file_left_coverage_still_closes_its_card(world, expiri
     _write(store, org, other, "ffp-programme-review-0000", other_events)
     _compile(store, org, registry, covered={other: "ffp-programme-review-0000"}, at=NOW + timedelta(hours=1))
     assert [c.state for c in _cards(store, org)] == ["expired"]
-    assert ("replaced", (question.signal_id,)) in expiries
+    # ⛔ RESTATED by M43.C4.L-integration.V2.U08 (finding 13): REPLACED said nothing replaced it — its own cause.
+    assert ("left_coverage", (question.signal_id,)) in expiries
