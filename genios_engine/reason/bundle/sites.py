@@ -90,7 +90,9 @@ SITE_TIERS = {
 #: (`contracts/model_ladder`). The ladder is CONFIGURATION — its order and length per tenant — and the prompt names
 #: no model. The default is Haiku-class then Sonnet-class; a tenant may start at Sonnet (`("T2",)`, s13b-D2).
 EXPERT_LADDER = (TIER_T1, TIER_T2)
-_RUNG_ORDER = (TIER_T1, TIER_T2, TIER_T3)
+#: Every rung there can be, cheapest first — `expert_ladder` picks among them.
+EXPERT_RUNGS = (TIER_T1, TIER_T2, TIER_T3)
+_RUNG_ORDER = EXPERT_RUNGS
 
 
 def expert_ladder(rungs=None, *, allow_opus: bool = False) -> tuple[str, ...]:
@@ -268,6 +270,6 @@ __all__ = ["FALLBACK_OUTCOMES", "OUTCOMES", "OUTCOME_CACHED", "OUTCOME_FAILED_GE
            "R_SITES", "SITE_ALTERNATIVES", "SITE_BRIEF", "SITE_BRIEF_ESCALATE", "SITE_CONSULT",
            "SITE_EFFECT", "SITE_EXPERT", "SITE_INTERPRET", "SITE_SITUATION",
            "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_THINKING", "SITE_TIERS", "SITE_TIMEOUT_S",
-           "EXPERT_LADDER", "TIER_T1", "TIER_T2", "TIER_T3", "expert_ladder",
+           "EXPERT_LADDER", "EXPERT_RUNGS", "TIER_T1", "TIER_T2", "TIER_T3", "expert_ladder",
            "max_output_tokens", "require_outcome", "require_site", "thinking_mode", "tier_for",
            "timeout_s"]
