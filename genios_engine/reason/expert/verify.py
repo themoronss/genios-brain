@@ -117,6 +117,14 @@ ONE PASS, IN ONE ORDER.
       line, several, or a line with several ids drops `unknown_evidence` as before. The line named is checked as if
       cited by id.
 
+  9 · THE ADVICE'S OWN TIMING (STEP-13b M37.C4.L-logic.V10.U05). A duration in the move's, the draft's or doing-nothing's
+      own words ("within 24 hours", "in 2 days", "after a week" with a digit) that the lines they are held to do not hold
+      is the ADVICE, not a claim about the file: it stands when it agrees with the move's `by_when` — the distance in
+      days from the dossier's own instant, rounded — and is read as "by <by_when>" (`by_when`, a correction) when it
+      does not. With no `by_when` it drops `wrong_number` as before; a count about the file ("2 decks"), a figure the
+      lines hold, and every other card text are held to their lines as ever (RULE 08). A calculator's correction of a
+      figure of the file is made first.
+
 WHAT `validate` STILL REFUSES WHOLE — the structure (`STRUCTURAL`): a moving mode with no move, a move
 resting on no fact the review has, a stage the playbook does not name. A slip of one optional move field
 drops its own line (M35.C1.L-contract.V0.U04): a `rests_on` ref beside the facts it names that is no fact
@@ -134,7 +142,7 @@ import unicodedata
 from collections.abc import Iterable
 import dataclasses
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 
 from genios_engine.contracts import claim_check as C
 from genios_engine.contracts.claim_check import NOTHING_TO_ASK
@@ -846,6 +854,9 @@ class _Run:
     #: Each fact's quote, by number, once it is MATCHED in a worded line its fact cites — the only quotes
     #: that ground anything (M35.C2.L-logic.V1.U09): an unmatched one grounds no line and reaches no card.
     quotes: dict[int, str] = field(default_factory=dict)
+    #: The move's `by_when` and the instant the dossier was written at — what the advice's own timing is read by.
+    by_when: date | None = None
+    as_of: date | None = None
 
     @property
     def names(self) -> str:
@@ -931,6 +942,31 @@ class _Run:
         return next((f"{v.reason}: {v.detail}" if v.detail else str(v.reason)
                      for v in self.verdicts if v.line == line and v.verdict == C.DROPPED), "dropped")
 
+    def _timed(self, text: str, figures: str) -> tuple[str, str, bool]:
+        """A duration in the ADVICE'S OWN words ("within 24 hours", "in 2 days") is the advice, not a claim about the file
+        (STEP-13b, RULE 08 kept): where the lines hold no such figure it stands when it agrees with the move's `by_when`
+        — the distance from the dossier's instant, in days — and is read as "by <by_when>" when it does not. Without a
+        `by_when` nothing changes and it drops as before. Returns the text, the figures it is held to, and whether it was
+        corrected."""
+        if self.by_when is None or self.as_of is None:
+            return text, figures, False
+        distance = (self.by_when - self.as_of).days
+        held, corrected = [], False
+
+        def read(m: re.Match[str]) -> str:
+            nonlocal corrected
+            if not unheld(figures_in(m.group(0)), figures_in(figures)):
+                return m.group(0)                                    # a figure the lines hold: the file's, not the advice's
+            days = float(m.group("n")) * _UNIT_DAYS[m.group("unit").lower().rstrip("s")]
+            if round(days) == distance:
+                held.append(m.group(0))
+                return m.group(0)
+            corrected = True
+            return f"by {self.by_when.isoformat()}"
+
+        out = _DURATION.sub(read, text)
+        return out, "\n".join([figures, *held, *([self.by_when.isoformat()] if corrected else [])]), corrected
+
     def stands(self, text: str, corpus: str, *, head: bool = True,
                figures: str | None = None) -> tuple[str | None, str]:
         """`text` with its corrected numbers swapped in, when every figure of it is on `figures` (`corpus`
@@ -947,15 +983,24 @@ class _Run:
         return (swapped, "") if (why := _invented(swapped, names, self.people)) is None else (None, why)
 
     def text(self, line: str, text: str | None, corpus: str, *, speaks: bool = True,
-             head: bool = True, figures: str | None = None) -> str | None:
-        """Check one of the card's texts; record its verdict (and, when it speaks of you, the note)."""
+             head: bool = True, figures: str | None = None, advice: bool = False) -> str | None:
+        """Check one of the card's texts; record its verdict (and, when it speaks of you, the note). `advice`: the text
+        is the move's, the draft's or doing-nothing's — a duration in its own words is the advice (`_timed`)."""
         if not text:
             return None
-        checked, why = self.stands(text, corpus, head=head, figures=figures)
+        original, work, timed = text, text, False
+        if advice:
+            # A calculator's correction of a figure of the FILE comes first (it is `stands`'s own swap): what stays
+            # unheld after it, and is the advice's own duration, is read against `by_when`.
+            work, figures, timed = self._timed(_swap(text, self.corrections),
+                                               corpus if figures is None else figures)
+        checked, why = self.stands(work, corpus, head=head, figures=figures)
         if checked is None:
             self.say(line, C.DROPPED, C.WRONG_NUMBER if why.startswith("number:") else C.UNSUPPORTED, why)
-        elif checked != text:
-            self.say(line, C.CORRECTED, C.BY_CALCULATOR, f"{text} -> {checked}")
+        elif timed:
+            self.say(line, C.CORRECTED, C.BY_WHEN, f"{original} -> {checked}")
+        elif checked != original:
+            self.say(line, C.CORRECTED, C.BY_CALCULATOR, f"{original} -> {checked}")
         else:
             self.say(line, C.KEPT)
         if speaks:
@@ -1029,6 +1074,12 @@ def _facts_of(review: ExpertReview, inference: int) -> set[int]:
     return {n for r in review.inferences[inference - 1].based_on if (n := fact_ref(r, len(review.facts))) is not None}
 
 
+#: A duration the ADVICE gives itself: "within 24 hours", "in 2 days", "after a week" (a digit one).
+_DURATION = re.compile(r"\b(?:within|in|after|inside)\s+(?:the\s+next\s+)?(?P<n>\d+(?:\.\d+)?)\s*"
+                       r"(?P<unit>hours?|hrs?|days?|weeks?)\b", re.I)
+_UNIT_DAYS = {"hour": 1 / 24, "hr": 1 / 24, "day": 1.0, "week": 7.0}
+#: The instant a dossier was written at, from its first line (`dossier.Dossier.text`).
+_AS_OF = re.compile(r"\bas of (\d{4})-(\d{2})-(\d{2}) \d{2}:\d{2} UTC")
 _BRACKETED = re.compile(r"\[[^\[\]\s]+\]")
 
 
@@ -1277,6 +1328,8 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     lines = lines_by_id(dossier_text, evidence_ids)
     review, read = _by_line(review, dossier_text, set(lines))
     run = _Run(review=review, lines=lines, people=people)
+    if (stamp := _AS_OF.search(dossier_text)) is not None and review.next_move is not None:
+        run.by_when, run.as_of = review.next_move.by_when, date(*(int(g) for g in stamp.groups()))
     for line, found in read.items():
         run.say(line, C.NOTED, C.BY_LINE, "; ".join(found))
     rested = _rested_on(review)
@@ -1303,13 +1356,13 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     move = review.next_move
     said = move.what if move is not None else review.frames.primary
     headline = run.text("move", said, move_corpus if move is not None else standing_corpus,
-                        figures=move_figures if move is not None else standing_figures)
+                        figures=move_figures if move is not None else standing_figures, advice=move is not None)
     situation = run.text("situation", review.frames.primary, standing_corpus, figures=standing_figures)
     done_when = run.text("done_when", review.done_when, standing_corpus, figures=standing_figures)
     # WHAT DOING NOTHING COSTS reaches every shown card as its "cost of ignoring" (crosscheck X03): a card
     # text like the situation — its names and numbers on the standing facts' lines, "you" noted.
     do_nothing = run.text("do_nothing", review.scenarios.do_nothing, standing_corpus,
-                          figures=standing_figures)
+                          figures=standing_figures, advice=True)
     # THE GOLD CARD'S OTHER LINES (STEP-14, `yc2_w27_s14` M43.C2.L-logic.V1.U01, s14-F8): the alternative and when to
     # wait or stop are shown (0221), so they are card words — held to the standing facts' lines as the situation is,
     # a line that fails WITHHELD, never the review — and no longer prose no founder is shown.
@@ -1337,7 +1390,7 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     if review.draft:
         ours = about_us(dossier_text)
         draft = run.text("draft", review.draft, "\n".join([move_corpus, ours]), speaks=False,
-                         figures="\n".join([move_figures, ours]))
+                         figures="\n".join([move_figures, ours]), advice=True)
     if move is not None and (review.draft or target):
         if target and _is_us(target, people):
             to = target

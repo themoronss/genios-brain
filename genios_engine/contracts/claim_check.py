@@ -88,7 +88,8 @@ REASONS: tuple[str, ...] = (UNCITED, UNKNOWN_EVIDENCE, UNQUOTED, MISQUOTED, UNSU
 #: How a line is corrected — closed, as a reason is.
 BY_CALCULATOR = "by_calculator"              # a number replaced by the one its calculator line holds
 BY_ALTERNATIVE = "by_alternative"            # a move to a connector replaced by the review's alternative
-CORRECTIONS: tuple[str, ...] = (BY_CALCULATOR, BY_ALTERNATIVE)
+BY_WHEN = "by_when"                          # STEP-13b: a duration in the advice's own words replaced by "by <by_when>"
+CORRECTIONS: tuple[str, ...] = (BY_CALCULATOR, BY_ALTERNATIVE, BY_WHEN)
 #: Kept, and written down — for the live pass to count (`06` D50), never a reason to drop.
 SPEAKS_OF_YOU = "speaks_of_you"              # a card text calling the founder "the founder", or naming us
 UNHELD_NUMBER = "unheld_number"              # a number in prose no founder is shown, not in the dossier
@@ -363,7 +364,7 @@ class CheckedReview:
                    engine=tuple(EngineCited.from_mapping(c) for c in raw.get("engine") or ()))
 
 
-__all__ = ["BY_LINE", "DATA", "ENGINE", "ENGINE_IS_NO_FACT", "EngineCited", "MIXED", "OWN", "OWN_DISAGREES",
+__all__ = ["BY_LINE", "BY_WHEN", "DATA", "ENGINE", "ENGINE_IS_NO_FACT", "EngineCited", "MIXED", "OWN", "OWN_DISAGREES",
            "OWN_NAMES_THE_FILE", "OWN_STATES_A_NUMBER", "SOURCES", "source_of", "ANSWERED", "BY_ALTERNATIVE", "BY_CALCULATOR", "CALLED_WRONG", "CARD_LINES", "CHECK_VERSION",
            "CORRECTED", "CORRECTION_UNHEEDED", "UNCITED_CORRECTION", "called_wrong_question", "correction_question",
            "HELD_BECAUSE", "HELD_MOVE",

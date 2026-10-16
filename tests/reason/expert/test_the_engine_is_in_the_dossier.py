@@ -2,7 +2,7 @@
 
     .venv/bin/python -m pytest -q tests/reason/expert/test_the_engine_is_in_the_dossier.py
 
-Tree `yc2_w27_s13b` M37.C3.L-interface.V5.U02. Two optional sections: WHAT THE GENIOS ENGINE KNOWS ABOUT ITS SITUATIONS
+Tree `yc2_w27_s13b` M37.C3.L-interface.V5.U02. Two optional sections: WHAT THE ENGINE KNOWS ABOUT ITS SITUATIONS
 (after the playbook) and WHAT THE REASONING UNITS MEASURED (after the numbers). Printed only when there is something to
 say — a file the engine read nothing for reads byte for byte as before. Every printed id is in the catalogue.
 """
@@ -44,7 +44,7 @@ def test_a_file_the_engine_read_nothing_for_reads_as_before():
 def test_the_engine_section_follows_the_playbook_and_prints_every_line_with_its_id_and_source():
     d = _with(engine=E.EngineRead(lines=(CAP, RULE)))
     titles = _titles(d)
-    assert titles.index("WHAT THE GENIOS ENGINE KNOWS ABOUT ITS SITUATIONS") == titles.index(
+    assert titles.index("WHAT THE ENGINE KNOWS ABOUT ITS SITUATIONS") == titles.index(
         "WHAT A PROFESSIONAL KNOWS ABOUT THIS WORK") + 1
     assert "- [cap:a.b.c#q] Who holds the next move? — a.b.c, not yet reviewed" in d.text
     assert "- [rule:r1] Follow up within a week. — fundraising.rules\n" in d.text

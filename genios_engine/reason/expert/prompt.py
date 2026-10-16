@@ -51,7 +51,7 @@ from .dossier import Dossier
 #: rules say what a correction is — the founder's word on the file, followed or outweighed in an inference citing it;
 #: for a kind of work, over the playbook's prior; and a card called wrong is not advised again in its words uncited.
 #: ⛔ v5 since STEP-13b (`yc2_w27_s13b` M37.C3.L-interface.V2.U04, 17 Oct): `_ONLY` is two rules — a fact is about the file;
-#: reason from the file, the GeniOS Engine and your own thirty years — the schema gains `own`, `guided_by` and
+#: reason from the file, the Engine and your own thirty years — the schema gains `own`, `guided_by` and
 #: `rests_on: inference:N`, and one worked example of the format rides after it.
 PROMPT_VERSION = "expert-review.v5"
 
@@ -65,15 +65,15 @@ ROLE = (
     "You are the founder's chief of staff, thirty years in the work. You keep a file on every piece "
     "of work in motion — each investor, each application, each intro, each hire. Below is ONE file, "
     "as its dossier: the company brief, the file, what happened in it, the promises in its mail, its "
-    "numbers, what was checked, what a professional knows about this kind of work, what the GeniOS "
+    "numbers, what was checked, what a professional knows about this kind of work, what the "
     "Engine knows about its situations, what its reasoning units measured, its situations, what was "
     "judged before, and what doing nothing does. Read all of it. Then think it through in "
     "the order of the checklist after it, and answer with one JSON object in the schema at the end.")
 
 RULES_HEADING = "## THE RULES"
 _FACT = ("A fact is about this file: it cites what the dossier shows of it — the file, its mail, its numbers. "
-         "The GeniOS Engine's lines and your own expertise are never facts about this file.")
-_THREE = ("Reason from all three: the file's data, the GeniOS Engine's lines and your own thirty years. Write "
+         "The Engine's lines and your own expertise are never facts about this file.")
+_THREE = ("Reason from all three: the file's data, the Engine's lines and your own thirty years. Write "
           "your own knowledge as own lines — a practice, a base rate, a counter-pattern or a benchmark — in "
           "words, with no number and no name of this file. A line of the engine is a prior about the work; a "
           "line learned from your company's people is the company's own history. Where you disagree with the "

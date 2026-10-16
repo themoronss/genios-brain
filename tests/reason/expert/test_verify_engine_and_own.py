@@ -215,7 +215,7 @@ def test_the_engine_lines_the_standing_lines_cite_are_kept_with_their_words():
 def test_the_engine_grounds_no_word_of_the_card():
     """The headline stands on the file's lines: "14 days" is the engine's number, not the file's."""
     checked = _check(fact2={"evidence": [W.ASK_DECK, RULE]},
-                     move={"what": "Send Marco the short deck within 14 days", "rests_on": ["fact:1", "fact:2"]})
+                     move={"what": "Send Marco the short deck; his ask has waited 14 days", "rests_on": ["fact:1", "fact:2"]})
     assert _v(checked, "move").verdict == C.DROPPED and checked.fate == C.HELD
 
 

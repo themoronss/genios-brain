@@ -220,7 +220,7 @@ def test_a_fact_is_about_the_file_and_the_expert_reasons_from_three_sources():
     prompt = P.build_prompt(_dossier())
     assert "Use only the dossier" not in prompt, "the one rule is two now"
     for words in ("A fact is about this file", "never facts about this file",
-                  "Reason from all three: the file's data, the GeniOS Engine's lines and your own thirty years",
+                  "Reason from all three: the file's data, the Engine's lines and your own thirty years",
                   "Write your own knowledge as own lines", "with no number and no name of this file",
                   "A line of the engine is a prior about the work", "the company's own history",
                   "Where you disagree with the engine, say so in an inference that cites both"):

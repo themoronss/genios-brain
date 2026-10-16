@@ -81,7 +81,7 @@ TITLES: Mapping[str, str] = {
     "answers": "WHAT YOU TOLD US", "company": "WHAT YOU SAID OF YOURSELF ELSEWHERE", "corrections": "WHAT YOU CORRECTED",
     "promises": "PROMISES IN ITS MAIL", "numbers": "ITS NUMBERS", "coverage": "WHAT WAS CHECKED",
     "playbook": "WHAT A PROFESSIONAL KNOWS ABOUT THIS WORK", "situations": "ITS SITUATIONS",
-    "engine": "WHAT THE GENIOS ENGINE KNOWS ABOUT ITS SITUATIONS", "units": "WHAT THE REASONING UNITS MEASURED",
+    "engine": "WHAT THE ENGINE KNOWS ABOUT ITS SITUATIONS", "units": "WHAT THE REASONING UNITS MEASURED",
     "judged_before": "WHAT WAS JUDGED BEFORE", "what_if": "IF NOTHING HAPPENS"}
 
 TOUCHES_WHOLE = 8          # the newest touches, shown with their words
@@ -463,7 +463,7 @@ def _has_engine(read: Any) -> bool:
 
 
 def _engine(p: DossierParts, cite: _Ids) -> Section:
-    """WHAT THE GENIOS ENGINE KNOWS ABOUT ITS SITUATIONS (STEP-13b): the Domain Expertise of the file's situations and
+    """WHAT THE ENGINE KNOWS ABOUT ITS SITUATIONS (STEP-13b): the Domain Expertise of the file's situations and
     kind, authored and learned, each line its id and source — a PRIOR about the work, never a fact about this file. The
     corpus situations whose condition the file's facts could not answer are NAMED as ones that may apply; the file's
     situations that were not read are named and why; every family's cut is counted."""
