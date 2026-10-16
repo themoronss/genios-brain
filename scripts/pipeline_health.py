@@ -1102,6 +1102,32 @@ def check_every_expert_card_reaches_the_app(conn, org: str) -> Check:
         fix="deliver/card_builder._surfaces: an expert card held by its check (EXPERT_HELD) carries the app")
 
 
+def check_every_file_card_passes_one_door(conn, org: str, *, now=None) -> Check:
+    """⛔ STEP-14 (the crosscheck's finding 2): an answered question card passed no door — on no route, its one
+    offered action refused — and `CardStore.doors`, the guard that says so, had no production caller. Every open file
+    card passes exactly one door (`deliver/store.file_card_doors`): none and it vanishes, two and it shows twice.
+    `now` is for a replay that pins the clock; the deploy gate reads the database's."""
+    from genios_engine.deliver.store import FILE_CARD_DOORS, file_card_doors
+
+    name = "every open file card passes one door"
+    # The store's own statements — one reader of the doors — with this tenant's filter said here too.
+    scoped = {part: statement + " and k.org_id = :o" for part, statement in FILE_CARD_DOORS.items()}
+    doors = file_card_doors(conn, org, eval_time=now or conn.execute(sql("select now()")).scalar(),
+                            statements=scoped)
+    if not doors:
+        return Check(name=name, ok=True, no_data=True, measured="no open file card",
+                     expected="skipped — nothing to judge", fix="")
+    bad = sorted((card, passed) for card, passed in doors.items() if len(passed) != 1)
+    return Check(
+        name=name, ok=not bad, measured=f"{len(bad)} of {len(doors)} open file card(s) pass no door or two",
+        expected="0 — the queue, the card's detail and its actions read a file's card through the door of what "
+                 "it carries now: the decision's, or the question's (its answered version too)",
+        fix="deliver/store.QUESTION_CARD_SQL / AUTHORITATIVE_SIGNAL_PREDICATE: a version wrote a builder stamp or a "
+            "lane its door does not read (CardStore.version_card, deliver/actions._version_answered), or a card's "
+            "authority no longer holds and the end of the pass did not close it (pipeline._close_the_files_pass)",
+        detail=[f"{card} passes " + (" and ".join(passed) if passed else "no door") for card, passed in bad[:20]])
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -1125,6 +1151,7 @@ CHECKS = (
     check_no_file_card_is_replaced,
     check_what_the_card_contract_refused,
     check_every_expert_card_reaches_the_app,
+    check_every_file_card_passes_one_door,
 )
 
 

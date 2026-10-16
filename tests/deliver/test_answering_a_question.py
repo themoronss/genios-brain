@@ -73,7 +73,9 @@ def test_your_answer_answers_the_files_question_and_keeps_its_card(world, cards)
     assert (row.state, row.resolved_at, row.status) == ("queued", None, "open"), "s14-D3: kept, versioned"
     assert pressed.detail == {"question_id": asked.question_id, "surface": "web"}
     assert logged.cause == "answer" and WORDS not in str(logged.detail) and WORDS not in str(pressed.detail)
-    assert _queued(cards, org, AT) == [], "answered, no door shows it until the file's next version"
+    # ⛔ RESTATED by `yc2_w27_s14` M42.C3.L-interface.V4.U06 (the STEP-14 crosscheck, finding 2): this pinned the
+    # answered card on no route until the file's next version, against s14-D3. It stays on the queue.
+    assert _queued(cards, org, AT) == [card.card_id], "answered, the card stays where you see it"
 
 
 def test_the_files_next_dossier_shows_your_answer(world, cards):

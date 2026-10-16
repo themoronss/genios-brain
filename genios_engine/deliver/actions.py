@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import text
 
 from genios_engine.contracts.execution import ExecutionState
+from genios_engine.deliver.store import ANSWERED_LANE  # the lane an answered card waits in (see ANSWERED_OFFERS)
 from genios_engine.executive.execution_store import (
     apply_transition as _apply_execution_transition,
 )
@@ -42,12 +43,17 @@ QUESTION_OFFERS = frozenset({"answer", "snooze", "requeue"})
 # card is no longer resolved nor its signal acted: it is VERSIONED — answered, "your answer is in; the file is read
 # again", the question you answered as its situation, the Monitor lane, nothing to press but later — and the file's
 # next review versions it again (a decision, or another question): one card from question to move. Its signal
-# stays open, so nothing closes the card in between; its question answered, no door shows it until then.
+# stays open, so nothing closes the card in between.
+# ⛔ AND IT STAYS WHERE YOU SEE IT (STEP-14 fix, the crosscheck's finding 2, M42.C3.L-interface.V4.U06): the question's
+# door admits the answered version (`deliver/store.QUESTION_CARD_SQL`) — the queue, the card's detail and this press
+# read it — and it offers what it shows: later, never another answer, never an instruction (`ANSWERED_OFFERS`).
 ANSWERED_HEADLINE = "Your answer is in; the file is read again"
 #: What an answered card offers: later, and nothing else — there is nothing left to press until the file moves.
 ANSWERED_ACTIONS = [{"type": "snooze", "options": ["4h", "tomorrow_09", "3d", "custom"]}]
-#: The lane an answered card waits in (`reason/output_lane`): the file is watched, not decided.
-ANSWERED_LANE = "monitor"
+#: The presses an answered card takes: what it offers, and requeue (a deferral's return, never a button).
+ANSWERED_OFFERS = frozenset({"snooze", "requeue"})
+#: The lane an answered card waits in (`reason/output_lane`): the file is watched, not decided — and the lane the
+#: question's door reads an answered card by — `ANSWERED_LANE`, imported from `deliver/store` above (one spelling).
 ANSWERED_LANE_REASON = "your answer is in; the file's next review decides it"
 #: A founder's answer is a sentence or a paragraph, not a document.
 MAX_ANSWER_CHARS = 4000
@@ -149,7 +155,7 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             from genios_engine.deliver.store import QUESTION_CARD_BUILDER, QUESTION_CARD_SQL
             question_door = text(
                 "select k.card_id, k.signal_id, k.org_id, k.assignee, k.state, k.expires_at, "
-                "question_asked.question_id "
+                "question_asked.question_id, question_asked.state as question_state "
                 "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
                 + QUESTION_SIGNAL_JOINS +
                 " where k.card_id=:card and k.org_id=:o and s.status='open' "
@@ -170,7 +176,11 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
                 question_id = card["question_id"]
         if card is None:
             return {"ok": False, "error": "stale_or_unauthorized_card", "code": "V-09"}
-        if question_id is not None and action not in QUESTION_OFFERS:
+        if question_id is not None and card["question_state"] != "open":
+            # The answered version (s14-D3): your answer is in — later is all it offers.
+            if action not in ANSWERED_OFFERS:
+                return {"ok": False, "error": "not_offered", "offered": sorted(ANSWERED_OFFERS)}
+        elif question_id is not None and action not in QUESTION_OFFERS:
             return {"ok": False, "error": "not_offered", "offered": sorted(QUESTION_OFFERS)}
         if question_id is None and action == "answer":
             return {"ok": False, "error": "not_a_question"}

@@ -62,7 +62,9 @@ def test_your_answer_versions_the_files_card_and_closes_nothing(world, cards):
         assert c.execute(text("select occurred_at from card_events where card_id = :c and kind = 'card.versioned'"),
                          {"c": card.card_id}).scalar() == AT, "dated by your press"
     assert WORDS not in str(detail), "your words are kept on the question, never in the card's history"
-    assert _queued(cards, org, AT) == [], "its question answered, no door shows it until the file's next version"
+    # ⛔ RESTATED by `yc2_w27_s14` M42.C3.L-interface.V4.U06 (the STEP-14 crosscheck, finding 2): this pinned that no
+    # door showed the answered card until the file's next version — the card on no route, against s14-D3. It stays.
+    assert _queued(cards, org, AT) == [card.card_id], "your answer is in: the card stays where you see it"
 
 
 def test_the_decision_your_answer_leads_to_is_the_same_cards_next_version(world, cards):

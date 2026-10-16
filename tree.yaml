@@ -9934,6 +9934,24 @@ yc2_w27_s14:
                       artifact: "genios_engine/deliver/actions.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_an_answer_keeps_the_files_card.py tests/deliver/test_answering_a_question.py"
                       depends_on: [M42.C3.L-interface.V3.U04, yc2_w27_s13/M36.C2.L-interface.V4.U06]
+                    - id: M42.C3.L-interface.V4.U06
+                      what: >
+                        Your answered card stays where you see it (added 16 Oct by the STEP-14 crosscheck, finding 2,
+                        BLOCKING — a regression against the pushed line, where the answered card was resolved and in
+                        History): the answer versioned the card, but STEP-13's question door read only an OPEN
+                        question, so the answered card was on no route — GET /cards omitted it, GET /cards/{id} was
+                        a 404, History skipped it (still `queued`), `doors()` said `()`, and snooze was refused
+                        V-09 — until the file's next review. The question door (`deliver/store.QUESTION_CARD_SQL`,
+                        over `reason/authority.QUESTION_SIGNAL_LIVE`) admits the ANSWERED VERSION: its question
+                        answered, the card in the lane only the answer's version writes (`store.ANSWERED_LANE`, the
+                        one spelling `actions` reads); a question answered with no version written is still stale.
+                        It takes what it offers — snooze and requeue (`actions.ANSWERED_OFFERS`), never another
+                        answer or an instruction. `CardStore.doors` is `store.file_card_doors` over a connection,
+                        and the health check asks it (`check_every_file_card_passes_one_door`): every open file
+                        card passes exactly one door. Two tests that pinned the vanish are restated with the reason.
+                      artifact: "genios_engine/deliver/store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> .venv/bin/python -m pytest -q tests/deliver/test_an_answered_card_stays_on_its_routes.py tests/deliver/test_an_answer_keeps_the_files_card.py tests/deliver/test_answering_a_question.py tests/deliver/test_a_file_card_passes_one_door.py tests/scripts/test_pipeline_health_says_no_data.py"
+                      depends_on: [M42.C3.L-interface.V4.U05, M42.C3.L-interface.V3.U04]
             - layer: integration
               levels:
                 - level: 2

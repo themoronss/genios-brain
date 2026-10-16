@@ -14,6 +14,7 @@ from genios_engine.reason.authority import (
     AUTHORITATIVE_SIGNAL_JOINS,
     AUTHORITATIVE_SIGNAL_PREDICATE,
     QUESTION_SIGNAL_JOINS,
+    QUESTION_SIGNAL_LIVE,
     QUESTION_SIGNAL_PREDICATE,
     authority_time,
 )
@@ -37,7 +38,18 @@ SITUATION_CARD_SQL = (
 # through this door, joined with `QUESTION_SIGNAL_JOINS`, and only a card its builder wrote passes: never a
 # decision through it, never a question through the decision's.
 QUESTION_CARD_BUILDER = "founder_question.v1"
-QUESTION_CARD_SQL = "k.builder_version = :question_builder and " + QUESTION_SIGNAL_PREDICATE
+# ⛔ AND ITS ANSWER (STEP-14 fix, the crosscheck's finding 2, `yc2_w27_s14` M42.C3.L-interface.V4.U06; s14-D3). Your
+# answer versions the file's card — "your answer is in; the file is read again" — on the question's signal, which
+# stays open; but it closes the QUESTION, and this door read only an open one: the answered card was on no route
+# (the queue, its detail, its one offered action) until the file's next review. The door admits the ANSWERED
+# VERSION too: its question answered, the card waiting in the lane only the answer's version puts it in. Nothing
+# else — a question answered with no version written (a card that names no file is never versioned) is stale.
+#: The lane an answered card waits in (`deliver/actions.ANSWERED_LANE` reads it from here).
+ANSWERED_LANE = "monitor"
+QUESTION_CARD_SQL = (
+    "k.builder_version = :question_builder and " + QUESTION_SIGNAL_LIVE +
+    "and (question_asked.state='open' "
+    "     or (question_asked.state='answered' and k.output_lane='" + ANSWERED_LANE + "')) ")
 
 # ── STEP-14 · A FILE'S CARD IS VERSIONED (`yc2_w27_s14` M42.C3.L-data.V1.U02; `migrations/0220`) ─────────────────────
 #
@@ -69,6 +81,32 @@ _VERSION_WORDS = (
 _FILE_CARDS = (" k.org_id=:o and k.state = any(:open) and s.status='open' and k.expires_at > :authority_time "
                "and (k.file_id is not null or k.capability_key = 'expert.file_review' "
                "     or k.builder_version = :question_builder) ")
+
+
+#: What `file_card_doors` reads: every open file card, and those each door passes.
+FILE_CARD_DOORS: dict[str, str] = {
+    "every": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
+              "where" + _FILE_CARDS),
+    "decision": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id "
+                 "and s.org_id=k.org_id " + AUTHORITATIVE_SIGNAL_JOINS + " where" + _FILE_CARDS +
+                 "and " + AUTHORITATIVE_SIGNAL_PREDICATE),
+    "question": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id "
+                 "and s.org_id=k.org_id " + QUESTION_SIGNAL_JOINS + " where" + _FILE_CARDS +
+                 "and " + QUESTION_CARD_SQL),
+}
+
+
+def file_card_doors(conn, org_id: str, *, eval_time=None,
+                    statements: dict[str, str] = FILE_CARD_DOORS) -> dict[str, tuple[str, ...]]:
+    """`CardStore.doors` over a connection the caller holds — read-only, so the health check asks it too
+    (`scripts/pipeline_health.check_every_file_card_passes_one_door`, the STEP-14 crosscheck's finding 2), handing
+    `FILE_CARD_DOORS` with its own tenant filter said beside them."""
+    params = {"o": org_id, "open": list(card_lifecycle.OPEN_STATES), "authority_time": authority_time(eval_time),
+              "question_builder": QUESTION_CARD_BUILDER}
+    every = [r.card_id for r in conn.execute(text(statements["every"]), params)]
+    passed = {door: {r.card_id for r in conn.execute(text(statements[door]), params)}
+              for door in ("decision", "question")}
+    return {card: tuple(door for door in ("decision", "question") if card in passed[door]) for card in every}
 
 #: The card's own last words: its latest `card.created`, `card.rebuilt` or `card.versioned` event that kept them —
 #: by VERSION first (a version is dated by its decision, a creation by the database's clock), then by when.
@@ -697,23 +735,8 @@ class CardStore:
         decision's authority) or `question` (STEP-13's third door, keyed on the question builder's stamp a version
         writes) — the doors the queue, the card detail and the actions read for a file's card (a P4 card, the
         second door's, is no file's). Exactly one each: none and the card vanishes, two and it shows twice."""
-        params = {"o": org_id, "open": list(card_lifecycle.OPEN_STATES), "authority_time": authority_time(eval_time),
-                  "question_builder": QUESTION_CARD_BUILDER}
-        found = {
-            "decision": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id "
-                         "and s.org_id=k.org_id " + AUTHORITATIVE_SIGNAL_JOINS + " where" + _FILE_CARDS +
-                         "and " + AUTHORITATIVE_SIGNAL_PREDICATE),
-            "question": ("select k.card_id from cards k join signals s on s.signal_id=k.signal_id "
-                         "and s.org_id=k.org_id " + QUESTION_SIGNAL_JOINS + " where" + _FILE_CARDS +
-                         "and " + QUESTION_CARD_SQL),
-        }
         with self._engine.connect() as c:
-            every = [r.card_id for r in c.execute(text(
-                "select k.card_id from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
-                "where" + _FILE_CARDS), params)]
-            passed = {door: {r.card_id for r in c.execute(text(sql), params)} for door, sql in found.items()}
-        return {card: tuple(door for door in ("decision", "question") if card in passed[door])
-                for card in every}
+            return file_card_doors(c, org_id, eval_time=eval_time)
 
     def queue(self, org_id: str, *, assignee: str | None = None, admin: bool = False,
               states=("queued", "surfaced", "snoozed", "claimed"),

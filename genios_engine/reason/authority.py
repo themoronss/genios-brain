@@ -356,7 +356,8 @@ QUESTION_SIGNAL_JOINS = (
     "and question_asked.run_id=s.reasoning_run_id and question_asked.file_id=s.subject_node_id "
 )
 
-QUESTION_SIGNAL_PREDICATE = (
+#: The question's authority but for its STATE: the run that asked it, the signal bound to that run, unexpired.
+QUESTION_SIGNAL_LIVE = (
     "s.reasoning_run_id is not null "
     "and s.authority_binding_version=0 and s.reasoning_candidate_id is null "
     "and s.output_lane='investigation' "
@@ -366,8 +367,8 @@ QUESTION_SIGNAL_PREDICATE = (
     "and question_ro.outcome_kind='insufficient_context' "
     "and question_ro.decision_hash=s.reasoning_decision_hash "
     "and s.authority_expires_at > :authority_time "
-    "and question_asked.state='open'"
 )
+QUESTION_SIGNAL_PREDICATE = QUESTION_SIGNAL_LIVE + "and question_asked.state='open'"
 
 
 def authority_time(value: datetime | None = None) -> datetime:
@@ -396,6 +397,7 @@ __all__ = [
     "AUTHORITATIVE_SCORE_INPUTS_SQL",
     "AUDITED_CARD_JUDGMENTS_CTES",
     "QUESTION_SIGNAL_JOINS",
+    "QUESTION_SIGNAL_LIVE",
     "QUESTION_SIGNAL_PREDICATE",
     "authority_time",
     "projected_score",
