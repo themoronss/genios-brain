@@ -3002,15 +3002,15 @@
   ]
  },
  "F57": {
-  "evt_896d238855ecfb2a99b39e33": [
-   [
-    "- [#] 2026-09-03 06:00 UTC · we wrote · Arjun Rao",
-    0
-   ]
-  ],
   "evt_cb865447ff1df267aeb7634c": [
    [
     "- [#] 2026-09-01 05:00 UTC · they wrote · Zoya Hameed",
+    0
+   ]
+  ],
+  "evt_e3a4811ede5260e0b163bef2": [
+   [
+    "- [#] 2026-09-03 06:00 UTC · we wrote · Arjun Rao",
     0
    ]
   ],
@@ -3027,6 +3027,16 @@
    ],
    [
     "- [#] an ask (question) closed — only replied to by [#], 2026-09-03 06:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_ac83e8a67fa4487320c26bb5": [
+   [
+    "- [#] information_requested, they wait on us, open since 2026-09-01 05:00 UTC",
+    0
+   ],
+   [
+    "- [#] an ask (information_requested) closed answered by [#], 2026-09-03 06:00 UTC",
     0
    ]
   ],
@@ -3088,7 +3098,7 @@
     0
    ]
   ],
-  "sit:sit_66365f9b06bf1d479a7ce8b3": [
+  "sit:sit_047f8a2b53f810d6339c9efb": [
    [
     "- [#] account_admin (admin) · active · seen 2026-09-01 05:00 UTC → 2026-09-01 05:00 UTC (0 days) · quiet 1.3 days of a 45-day window (the engine's default)",
     0
