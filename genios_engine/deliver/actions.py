@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import text
 
 from genios_engine.contracts.execution import ExecutionState
+from genios_engine.deliver import verdicts
 from genios_engine.executive.execution_store import (
     apply_transition as _apply_execution_transition,
 )
@@ -179,6 +180,15 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             return {"ok": False, "error": "assigned_to_different_seat"}
         if card["state"] not in allowed[action]:
             return {"ok": False, "error": "card_not_actionable"}
+        # ⛔ YOUR VERDICT REACHES EVERY READER (STEP-16, `yc2_w27_s16` M46.C2.L-integration.V2.U03, `s16-F1`). This door
+        # wrote `card_events` only, and eight of the nine verdict readers read the ledger the extension writes — the
+        # expert's dossier and its fingerprint, the change gate, the learning batch, the adaptive lease (weekly), a
+        # file's history facts, the counterfactual ledger, the receipt. A verdict (`run_play`, `do_it_myself`, `wrong`
+        # with its reason) is recorded through the one writer, bound to the card's own authority — read here, while
+        # its signal is still open — at the press's instant, in this transaction. A card no authority binds (a team
+        # or verify situation card) keeps its press and writes none.
+        binding = (verdicts.binding_of(c, org_id=org_id, card_id=card_id, at=eval_time)
+                   if action in verdicts.VERDICT_CAUSES else None)
 
         state = "acted" if action in {"run_play", "do_it_myself", "wrong"} \
             else ("snoozed" if action == "snooze" else (card["state"] if action == "answer" else "queued"))
@@ -225,6 +235,10 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             {"id": new_id("cev"), "card": card_id, "o": org_id,
              "kind": "ui.requeued" if action == "requeue" else "human.card_action",
              "cause": action, "actor": actor, "detail": json.dumps(detail, default=str)})
+        if binding is not None:
+            verdicts.record(c, org_id=org_id, card_id=card_id, binding=binding, cause=action,
+                            reason=reason if action == "wrong" else None, detail=detail, actor=actor,
+                            as_of=eval_time)
 
         # The card surface and the execution subsystem used to be two disconnected state
         # machines: this function never touched `executions`, so a card the founder marked
