@@ -119,6 +119,12 @@ def test_the_board_holds_a_quiet_version_somewhere():
                       if e[0] == "card.versioned")
     assert sum(changes.values()) >= 8, changes
     assert changes["renewed"] + changes["reworded"] >= 1, changes
+    # ⛔ STEP-14 fix (the crosscheck's finding 7, M42.C3.L-integration.V2.U07): a REWORDING is on the board — F25, the
+    # board's approval asked in other words — where every version used to be `updated` or `renewed` and none quiet by
+    # its words.
+    assert changes["reworded"] >= 1, changes
+    f25 = [e for card in cassettes.replayed(BY_ID["F25"]).cards for e in card.events if e[0] == "card.versioned"]
+    assert [(e[2], e[3]) for e in f25] == [("reworded", False)], f25
 
 
 @pytest.mark.pg

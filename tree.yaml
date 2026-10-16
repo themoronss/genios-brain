@@ -10455,6 +10455,20 @@ yc2_w27_s14:
                       artifact: "tests/replays/marking.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_the_board_reads_every_line_shown.py tests/reason/test_the_team_writer_keeps_the_contract.py"
                       depends_on: [M43.C6.L-integration.V3.U09, M42.C4.L-logic.V2.U03]
+                    - id: M43.C6.L-integration.V3.U13
+                      what: >
+                        Re-recorded once for the STEP-14 crosscheck's fix wave (added 16 Oct): a rewording is one ask
+                        (M42.C3.L-integration.V2.U07 — F25's version is `reworded`, and its next review's dossier says
+                        so) and a question card closed by design says why (M43.C4.L-integration.V2.U08). All 64
+                        cassettes, the door's and the re-sync's from the ideal reader in the house order (sweep →
+                        citations → door → resync); only F25's answers moved. M42's acceptance requires a rewording
+                        on the board (F25). The board restated in its five places: F63's `blocked_on`, replay 02 m05
+                        blocked, `03` §F.1's lines (35/50 · 14/14 · 0 forbidden · Atlas 11/80, blocked 2), a dated
+                        paragraph and its table, and the state table; nothing in MOVED_AFTER (F01–F40) or the
+                        other-lane controls moved.
+                      artifact: "tests/replays/specs/founder/cassettes"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays tests/test_golden_labels_sheet.py && .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M42.C3.L-integration.V2.U07, M43.C4.L-integration.V2.U08, M43.C6.L-integration.V2.U12, M43.C6.L-integration.V3.U09]
                 - level: 4
                   units:
                     - id: M43.C6.L-integration.V4.U10
