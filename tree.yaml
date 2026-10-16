@@ -9890,6 +9890,19 @@ yc2_w27_s14:
                       artifact: "genios_engine/reason/expert/asks.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/reason/expert/test_a_file_hands_its_card_on.py"
                       depends_on: [M42.C1.L-data.V1.U03, yc2_w27_s13/M36.C2.L-integration.V2.U03]
+                    - id: M42.C2.L-integration.V2.U07
+                      what: >
+                        A renewal is never stopped by the day's cap (added 16 Oct by the STEP-14 crosscheck, finding
+                        11): the same advice re-decided inside `FILE_RENEW_MARGIN` was a decision with a move, held
+                        to the cap — on a spent day `budget_exhausted`, nothing renewed, the card lapsed at its window.
+                        `domain_shadow._renews_its_decision` (an open decision of the file still in its authority
+                        window whose review advised the same — the file branch's own test): not held to the cap, and
+                        spending none of the pass's allowance. New advice, and the same advice after its window, are
+                        still held. The bound, declared: the renewal's signal is still a signal written today, so
+                        `runner._budget_used` counts it for the passes after (one renewal per file per window).
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_renewal_is_never_capped.py tests/reason/expert/test_a_file_hands_its_card_on.py"
+                      depends_on: [M42.C2.L-logic.V0.U01, M42.C2.L-integration.V2.U02]
         - id: M42.C3
           name: Delivery versions the file's card
           layers:

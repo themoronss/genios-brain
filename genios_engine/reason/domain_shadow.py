@@ -614,6 +614,18 @@ def _same_advice(conn, org_id: str, file_id: str, ref: str | None, row) -> bool:
     return prior is not None and prior.review is not None and _advice(prior) == _advice(row)
 
 
+def _renews_its_decision(conn, org_id: str, file_id: str, rule_id: str, review, eval_time) -> bool:
+    """Is this review's decision the RENEWAL of the file's standing one — the file holds an open decision still in its
+    authority window whose review advised what this one advises (the file branch's own test: the same decision, or
+    `_same_advice`)? Then it publishes nothing new (STEP-14 fix, finding 11)."""
+    from genios_engine.reason.expert import decide as expert
+
+    ref = expert.decision_ref(review.fingerprint, review.checked.version) if review.checked is not None else None
+    return any(row.authority_expires_at is not None and row.authority_expires_at > eval_time
+               and (row.trigger_ref == ref or _same_advice(conn, org_id, file_id, row.trigger_ref, review))
+               for row in conn.execute(text(_FILE_DECISIONS), {"o": org_id, "r": rule_id, "n": file_id}))
+
+
 def _clear_file_decision(store, org_id: str, file_id: str, rule_id: str, *, cards: bool = True) -> int:
     """The file's new review names no move now: every open decision of the file — an earlier review's, or this
     same review's through an older check (STEP-13 X12) — is cleared, its cards RULE_CLEARED (STEP-06), the rule
@@ -759,7 +771,11 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             if remaining[0] is None:
                 remaining[0] = _daily_allowance(store, org_id, eval_time, pack)
                 counts["budget_allowance"] = remaining[0]
-            if remaining[0] <= 0 and execution.decision.outcome not in _NO_MOVE:
+            # ⛔ NOR A RENEWAL (STEP-14 fix, the crosscheck's finding 11, `yc2_w27_s14` M42.C2.L-integration.V2.U07): the
+            # same advice re-emitted inside its renewal margin publishes nothing new — a quiet version (s14-D1) — and a
+            # spent cap stopped it, so the card lapsed at its window, the lapse the margin exists to prevent.
+            renewal = _renews_its_decision(conn, org_id, file_id, rule_id, review, eval_time)
+            if remaining[0] <= 0 and execution.decision.outcome not in _NO_MOVE and not renewal:
                 counts["budget_exhausted"] += 1
                 gate.record(key, fingerprint, "indeterminate", run_id)
                 continue
@@ -799,7 +815,7 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             gate.record(key, fingerprint, fs.STANDING if asked in asks.ASKING else
                         fs.INDETERMINATE if asked == asks.ANSWERED_ALREADY else
                         _gate_outcome(execution, outcome), run_id)
-            if outcome == "emitted":
+            if outcome == "emitted" and not renewal:
                 remaining[0] -= 1
             counts["covered_signals_replaced"] += _retire_stood_down(
                 store, org_id, stood_down.get(file_id), rule_id)
