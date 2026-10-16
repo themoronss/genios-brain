@@ -7,6 +7,7 @@ from sqlalchemy import text
 
 from genios_engine.packs.wiring import ensure_default, make_registry
 from genios_engine.contracts import card_contract
+from genios_engine.contracts.card_version import MOVE_ASK
 from genios_engine.platform.self_identity import SelfIdentity, identity_for
 from .lane_display import TALLY_KEYS, tally_lane
 from .lane_recall import recall_verdict
@@ -395,7 +396,7 @@ def _decision_words(sig: dict, draft: dict) -> dict:
     mode = next((str(u)[len(_MODE_MARK):] for u in (sig.get("uncertainty") or ())
                  if str(u).startswith(_MODE_MARK)), None)
     what = " ".join(str(move.get("what") or "").lower().split())
-    ask = move.get("answers") or (f"move:{what}" if what else None)
+    ask = move.get("answers") or (f"{MOVE_ASK}{what}" if what else None)     # `card_version.one_ask` reads it
     return {"headline": ".", "situation": ".", "move": move.get("what"), "lane": draft.get("output_lane"),
             "mode": mode, "ask": ask, "recipient": move.get("to"), "by_when": move.get("by_when")}
 

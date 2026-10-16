@@ -19,8 +19,9 @@ it back and holds it to the rule — a stored version that says it is quiet whil
 """
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, replace
 from typing import Any
 
 # ── the change — closed. One name to a line (`tests/test_no_missing_module_deps` reads assignments). ──────────
@@ -97,6 +98,35 @@ def is_material(changed: tuple[str, ...]) -> bool:
     return any(name in MATERIAL for name in changed)
 
 
+# ── one ask in other words (STEP-14 fix, the crosscheck's finding 7, `yc2_w27_s14` M42.C3.L-integration.V2.U07) ──────
+#: The ask of a move that names none (`deliver/pipeline._decision_words`): the move's own words.
+MOVE_ASK = "move:"
+#: How much of the shorter move's content words (`_stems`) the other must hold for the two to be ONE ask.
+ONE_ASK_SHARE = 0.8
+#: Words that carry no content of a move — articles, pronouns, joiners, the commonest verbs of asking.
+_NOT_CONTENT = frozenset(
+    "a an the and or to of for in on at by with from as is it its it's be this that their them they you your we our "
+    "us his her he she if when what whatever whoever who before after now then so than still have has had do does did "
+    "ask get send write".split())
+
+
+def _stems(ask: str) -> set[str]:
+    """A move's content words, each cut to its first five letters (approve, approval → appro)."""
+    return {w[:5] for w in re.findall(r"[a-z]+", ask[len(MOVE_ASK):].lower()) if w not in _NOT_CONTENT and len(w) > 2}
+
+
+def one_ask(before: VersionWords, after: VersionWords) -> bool:
+    """Whether two moves that name no ask are ONE ask in other words: both asks their own words (`MOVE_ASK`), the same
+    recipient, date, lane and mode, and at least `ONE_ASK_SHARE` of the shorter's content words in the other's. A move
+    that names the ask it answers is told by that ask, never by its words."""
+    if not (str(before.ask or "").startswith(MOVE_ASK) and str(after.ask or "").startswith(MOVE_ASK)):
+        return False
+    if any(getattr(before, f) != getattr(after, f) for f in (RECIPIENT, DATE, LANE, MODE)):
+        return False
+    a, b = _stems(before.ask), _stems(after.ask)
+    return bool(a and b) and len(a & b) / min(len(a), len(b)) >= ONE_ASK_SHARE
+
+
 def _change(before: VersionWords | None, after: VersionWords, changed: tuple[str, ...], *, reopened: bool,
             answered: bool) -> str:
     if before is None:
@@ -165,6 +195,9 @@ def version_of(before: VersionWords | None, after: VersionWords, *, version: int
     or a clearing (s14-D2); `answered`: the version your answer makes (s14-D3)."""
     if before is None and answered:
         raise ValueError("an answer versions a card that asked")
+    if before is not None and one_ask(before, after):
+        # The same move in other words answers the ask it answered before: a rewording, quiet (s14-D1, F25).
+        after = replace(after, ask=before.ask)
     changed = () if before is None else changed_fields(before, after)
     return CardVersion(version=version, signal_id=signal_id,
                        change=_change(before, after, changed, reopened=reopened, answered=answered),
@@ -173,5 +206,5 @@ def version_of(before: VersionWords | None, after: VersionWords, *, version: int
 
 
 __all__ = ["ANSWERED", "ANSWERED_MODE", "ASK", "ASKED", "CHANGES", "CREATED", "CardVersion", "DATE", "LANE",
-           "MATERIAL", "MODE", "QUESTION_MODE", "RECIPIENT", "REOPENED", "RENEWED", "REWORDED", "UPDATED",
-           "VersionWords", "WORDS", "changed_fields", "is_material", "version_of"]
+           "MATERIAL", "MODE", "MOVE_ASK", "ONE_ASK_SHARE", "QUESTION_MODE", "RECIPIENT", "REOPENED", "RENEWED",
+           "REWORDED", "UPDATED", "VersionWords", "WORDS", "changed_fields", "is_material", "one_ask", "version_of"]

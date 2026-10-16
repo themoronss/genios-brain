@@ -9981,6 +9981,21 @@ yc2_w27_s14:
                       artifact: "genios_engine/deliver/pipeline.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_one_file_one_card.py tests/deliver/test_a_question_card.py tests/deliver/test_the_recall_guard_runs_on_a_pass.py"
                       depends_on: [M42.C3.L-data.V1.U02, M42.C3.L-logic.V0.U01, M42.C2.L-integration.V2.U02, M42.C2.L-integration.V2.U05, yc2_w27_s13/M36.C2.L-interface.V3.U05]
+                    - id: M42.C3.L-integration.V2.U07
+                      what: >
+                        A rewording is quiet (added 16 Oct by the STEP-14 crosscheck, finding 7; s14-D1, golden F25):
+                        a review naming no `answers` gave its move the ask "move:<its words>", so any rewording was
+                        another ask — material, pushed (F25 `updated`, pushed twice; 0 `reworded` over 64 cases; a
+                        live model rewords every review). `contracts/card_version.one_ask`: two moves that name no ask
+                        are ONE ask when they go to the same recipient, by the same date, in the same lane and mode,
+                        and at least `ONE_ASK_SHARE` (0.8) of the shorter's content-word stems are the other's — the
+                        version keeps the ask it answered and is `reworded`. The bound, declared with its
+                        measurement over the authored pairs: F25 0.89, F21 0.88 one ask; F24's two moves 0.73,
+                        another ask; a rewrite past the share is pushed. F25's version changes the dossier its next
+                        review reads, so the golden set is re-recorded once after (the re-record unit).
+                      artifact: "genios_engine/contracts/card_version.py"
+                      verify: ".venv/bin/python -m pytest -q tests/contracts/test_a_rewording_of_a_move_is_quiet.py tests/contracts/test_a_card_version_says_what_changed.py"
+                      depends_on: [M42.C3.L-integration.V2.U03, M42.C1.L-contract.V0.U02]
         - id: M42.C4
           name: The board counts what you see
           layers:
