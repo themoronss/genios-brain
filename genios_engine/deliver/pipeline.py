@@ -222,7 +222,15 @@ _QUESTIONS_WITHOUT_CARDS = (
 
 #: What a question card offers: your answer, or later. A question is not an instruction, so there is
 #: nothing to run and nothing to do yourself; `wrong` waits for STEP-16, which learns from it.
-QUESTION_ACTIONS = ("answer", "snooze")
+QUESTION_ACTIONS = ("answer", "snooze", "wrong")
+#: ⛔ STEP-16 · *DON'T ASK ME THIS* (`yc2_w27_s16` M46.C3.L-interface.V5.U07; S16-D4, S16-D10). Left for this step by
+#: STEP-13: beside answer and later, the question card may be called wrong — the eleven reasons under the FOUR groups
+#: the decision card already carries (`deliver/card_builder._WRONG_REASON_GROUPS`), and your words, optional: with
+#: them, a correction of the file (`deliver/actions.ingest_action`). The question is then retired and never asked
+#: again in its words.
+QUESTION_WRONG_LABEL = "Don't ask me this"
+#: What the words of a question card's `wrong` are.
+QUESTION_WRONG_WORDS = "optional — your words are a correction of this file"
 #: What answering does, and what waiting on the question costs (STEP-11's founder-card clause: every founder
 #: card says both). OURS, CLOSED (STEP-13 M36.C2.L-logic.V2.U10): a question carries no playbook outcome and
 #: no model prose may stand in for one — and no play window either, so its `outcome_window_days` stays None.
@@ -255,7 +263,7 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
     from genios_engine.reason.expert.decide import SITUATION_IS, fingerprint_of
 
     from .bands import band
-    from .card_builder import EXPIRY_DAYS, _group_memberships, load_node
+    from .card_builder import _WRONG_REASON_GROUPS, _WRONG_REASONS, EXPIRY_DAYS, _group_memberships, load_node
     from .lane_display import describe
     from .router import resolve_assignee
 
@@ -305,7 +313,11 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
         "success_signal": QUESTION_SUCCESS_SIGNAL, "do_nothing_consequence": QUESTION_DO_NOTHING,
         "outcome_window_days": None,
         "actions": [{"type": "answer", "label": "Answer", "question_id": row["question_id"]},
-                    {"type": "snooze", "options": ["4h", "tomorrow_09", "3d", "custom"]}],
+                    {"type": "snooze", "options": ["4h", "tomorrow_09", "3d", "custom"]},
+                    {"type": "wrong", "label": QUESTION_WRONG_LABEL, "question_id": row["question_id"],
+                     "reasons": list(_WRONG_REASONS),
+                     "reason_groups": {group: list(reasons) for group, reasons in _WRONG_REASON_GROUPS.items()},
+                     "words": QUESTION_WRONG_WORDS}],
         "why": why,
         # The app and the API; never an agent's to answer for you.
         "surfaces": ["app", "api"], "context_tags": [],

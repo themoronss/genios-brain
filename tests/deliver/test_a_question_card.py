@@ -369,3 +369,30 @@ def test_a_rebound_question_card_reads_the_review_asking_it_now(world, cards):
     _build(store, cards, org, at=later)
     [card] = _cards(store, org)
     assert (card.headline, card.situation) == (FIND_OUT, later_reading)
+
+
+def test_a_question_card_offers_dont_ask_me_this(world, cards):
+    """STEP-16 (`yc2_w27_s16` M46.C3.L-interface.V5.U07; S16-D4, S16-D10): beside answer and later, *don't ask me
+    this* — the eleven reasons under the decision card's four groups, and your words, optional — and pressing it
+    retires the question the card asks."""
+    from genios_engine.contracts.learning_attribution import ALL_REASONS
+    from genios_engine.context import founder_questions as Q
+    from genios_engine.deliver import actions
+    from genios_engine.deliver.card_builder import _WRONG_REASON_GROUPS
+    store, org, _registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    [question] = _questions(store, org, anchor)
+    [wrong] = [a for a in card.actions if a["type"] == "wrong"]
+    assert wrong == {"type": "wrong", "label": "Don't ask me this", "question_id": question.question_id,
+                     "reasons": list(ALL_REASONS), "reason_groups": _WRONG_REASON_GROUPS,
+                     "words": pipeline.QUESTION_WRONG_WORDS}
+    assert len(wrong["reason_groups"]) == 4 and sorted(r for rs in wrong["reason_groups"].values() for r in rs) \
+        == sorted(ALL_REASONS)
+    reason = wrong["reason_groups"]["the conclusion is wrong"][0]
+    out = actions.ingest_action(card_store=cards, graph=store, org_id=org, card_id=card.card_id,
+                                actor="founder@meridian.test", action="wrong", reason=reason,
+                                eval_time=NOW + timedelta(minutes=5), allow_any_assignee=True)
+    assert out["ok"] is True, out
+    [retired] = _questions(store, org, anchor)
+    assert (retired.state, retired.retired_why) == (Q.RETIRED, Q.CALLED_WRONG)
