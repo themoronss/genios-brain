@@ -194,3 +194,57 @@ def test_the_drafter_is_registered_as_a_metered_site_and_off_in_the_golden_chain
 
     assert _SITES["reason/brief_drafter.py"] == {"records": True, "purpose": ("company_brief_draft",)}
     assert CHAIN_SITES["reason/brief_drafter.py"][0] == "off"
+
+
+# ── ⛔ yc2_w27_s18 M50.C3.L-logic.V1.U06 (T5-7, s5t-F5): thinking off, 4,000, a timeout, a cut is no draft ──
+
+class _Takes(_Model):
+    """A client that takes the thinking mode, as `LLMClient` does."""
+
+    supports_thinking = True
+
+    def call(self, prompt, *, max_tokens=4096, **kw):
+        self.prompts.append((prompt, max_tokens))
+        self.kw = kw
+        return self.result
+
+
+def test_the_draft_is_asked_without_thinking_at_4000_with_a_timeout(seams):
+    """Thirty lines run ~1,370–2,410 tokens: 2,400 was 57–100% full before Sonnet 5 thought at all."""
+    model = _Takes(_ok(GOOD))
+    D.draft_company_brief(_Engine(), "org_1", model, now=NOW)
+    assert model.prompts[0][1] == D.MAX_TOKENS == 4000
+    assert model.kw == {"thinking": "off", "timeout_s": D.TIMEOUT_S}
+    assert D.TIMEOUT_S >= 1.5 * 45.3, "4,000 tokens took up to ~45 s on 12 Oct"
+
+
+def test_a_client_that_does_not_take_the_mode_is_called_as_before(seams):
+    model = _Model(_ok(GOOD))
+    D.draft_company_brief(_Engine(), "org_1", model, now=NOW)
+    assert model.prompts[0][1] == 4000
+
+
+def _cut(error=None):
+    return LLMResult(parsed={"lines": GOOD}, raw="", model="claude-sonnet-5", input_tokens=900,
+                     output_tokens=4000, ok=True, truncated=True, error=error)
+
+
+def test_a_cut_answer_that_parsed_proposes_nothing_and_is_billed_as_failed(seams):
+    """The lenient parser closed a cut list: a shortened brief, never proposed as whole."""
+    from genios_engine.context.llm.client import TRUNCATED
+    proposed, _ = seams
+    costs = []
+    out = D.draft_company_brief(_Engine(), "org_1", _Model(_cut(f"{TRUNCATED} (max_tokens=4000)")),
+                                now=NOW, cost_sink=lambda **row: costs.append(row))
+    assert proposed == [] and out.proposed == 0 and out.lines == ()
+    assert out.skipped.startswith("model:truncated:")
+    assert [(c["success"], c["error"]) for c in costs] == [(False, f"{TRUNCATED} (max_tokens=4000)")]
+
+
+def test_a_cut_from_a_client_that_names_nothing_is_named(seams):
+    from genios_engine.context.llm.client import TRUNCATED
+    costs = []
+    out = D.draft_company_brief(_Engine(), "org_1", _Model(_cut()), now=NOW,
+                                cost_sink=lambda **row: costs.append(row))
+    assert out.skipped == f"model:{TRUNCATED} (max_tokens=4000)"[:200]
+    assert costs[0]["success"] is False and costs[0]["error"] == f"{TRUNCATED} (max_tokens=4000)"

@@ -101,7 +101,7 @@ SITE_MARKERS: tuple[tuple[str, str, str], ...] = (
      "You are the chief of staff of a busy founder."),
     ("r1", "reason/llm_interpretation.py",
      "You are R1, the reader inside GeniOS's reasoning layer."),
-    ("narrator", "deliver/render.py", "You are GeniOS, writing ONE decision card"),
+    ("narrator", "deliver/render.py", "You are the founder's chief of staff, writing ONE card"),
     ("bundle_narrator", "reason/bundle/prompt.py",
      "You are the reasoning narrator for GeniOS."),
     # STEP-12 · R-7, the expert's review of one file (`reason/expert/prompt.ROLE`'s own opening).
@@ -250,8 +250,15 @@ class RecordedLLM:
 class CassetteRecorder:
     """Wraps a model (the ideal reader, or the live one) and writes down every answer it gives.
 
-    It refuses a failed answer: a cassette holds what the model SAID, and a failure recorded as an
-    answer would replay the failure as the model's verdict.
+    A cassette holds only whole answers: what the model SAID, never a failure replayed as its verdict.
+
+    ⛔ `yc2_w27_s18` M50.C4.L-integration.V0.U08 (s5t-F12). It used to RAISE on any answer with
+    `ok=False`, so a cut answer reached the R-7 gate as an exception — `model_call_raised`, uncharged and
+    retried — where production's client returns it and the gate ends the consult `truncated`, never
+    retried (`03` F140). Now a cut or unparseable answer comes back exactly as `LLMClient` returns it,
+    and only a transport failure (no answer, no tokens) raises. Every call, whatever came back, is kept
+    in `ledger` — append-only, in order, with its tokens — which is what a live pass's spend is summed
+    from (`scripts/golden_eval.py`), not the cassette.
     """
 
     def __init__(self, inner: Any) -> None:
@@ -262,6 +269,14 @@ class CassetteRecorder:
         #: The same report a `RecordedLLM` keeps, so a recording run and its replay compare.
         self.calls: list[tuple[str, str]] = []
         self.misses: list[tuple[str, str]] = []
+        #: Every call the wrapped model was asked to make, in order — a cut, a refusal and a transport
+        #: failure included. Appended to, never rewritten.
+        self.ledger: list[dict[str, Any]] = []
+
+    @property
+    def supports_thinking(self) -> bool:
+        """`call` passes `thinking=` / `timeout_s=` through when the wrapped model takes them."""
+        return bool(getattr(self._inner, "supports_thinking", False))
 
     @staticmethod
     def content_hash(material: str) -> str:
@@ -270,8 +285,21 @@ class CassetteRecorder:
 
     def call(self, prompt: str, *, max_tokens: int = 4096, **kw: Any):
         result = self._inner.call(prompt, max_tokens=max_tokens, **kw)
-        if not getattr(result, "ok", True):
+        ok = bool(getattr(result, "ok", True))
+        cut = bool(getattr(result, "truncated", False))
+        raw = str(getattr(result, "raw", "") or "")
+        tokens_out = int(getattr(result, "output_tokens", 0) or 0)
+        transport = not ok and not cut and not raw and not tokens_out
+        with self._lock:
+            self.ledger.append({"site": identify_site(prompt), "key": cassette_key(prompt),
+                                "model": getattr(result, "model", "") or self.model,
+                                "input_tokens": int(getattr(result, "input_tokens", 0) or 0),
+                                "output_tokens": tokens_out, "ok": ok, "truncated": cut,
+                                "transport_failed": transport, "visible_chars": len(raw)})
+        if transport:
             raise RuntimeError(f"not recorded — the model call failed: {result.error}")
+        if not ok or cut:
+            return result               # as production's client returns it; never a cassette
         entry = {"site": identify_site(prompt), "parsed": to_key_frame(result.parsed, prompt),
                  "raw": to_key_frame(result.raw, prompt), "framed": True,
                  "input_tokens": result.input_tokens, "output_tokens": result.output_tokens,

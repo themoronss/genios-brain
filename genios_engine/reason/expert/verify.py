@@ -19,10 +19,20 @@ ONE PASS, IN ONE ORDER.
       that carry anything (else `unquoted`, `misquoted`). A quote grounds nothing until it is MATCHED
       (M35.C2.L-logic.V1.U09): one the cited words do not hold — or given on an item whose words are not
       shown, an ask, a calculator, a situation, an older touch — drops on its own line (`quote:<n>`,
-      `misquoted`) and reaches no line and no card. A fact the move rests on that cites only mails whose
+      `misquoted`) and reaches no line and no card. ⛔ THE BOUND, DECLARED (M35.C2.L-logic.V1.U09 fix, the
+      second crosscheck G5): a matched quote is never compared with its claim's MEANING — "Marco refuses to set
+      up a call" stands on the quote "set up a call". Measured, 13 Oct: a lexical polarity rule (a negation or
+      a verb of refusal in the claim and not the quote, or the reverse) would drop 13 of the golden set's 130
+      authored quoted facts, all 13 decisive and every one faithful ("asks nothing of Nimbus Labs" on "Dear
+      Founder", "memory holds no words for either"): polarity cannot be read without reading meaning. What
+      holds it: the quote must be the mail's own words, two that carry anything, and the card shows it beside
+      the move — the founder reads what it rests on. A fact the move rests on that cites only mails whose
       words are not shown — or a meeting with none, to report what was said there — needs a quote it
-      cannot have (`unquoted`, M35.C2.L-logic.V1.U16); a claim about the meeting itself stands on its
-      line. Every name it writes is on its lines, by the card
+      cannot have (`unquoted`, M35.C2.L-logic.V1.U16) — and to report what was decided or meant there
+      (U16 fix, G4); a claim about the meeting itself stands on its line. ⛔ THE BOUND, MEASURED: holding every
+      word of such a claim to the meeting's own line would drop all 7 of the golden set's authored decisive
+      facts on a wordless meeting ("on the calendar", "booked", "listed as a past touch") — the verbs are read,
+      not the meaning. Every name it writes is on its lines, by the card
       validator's own rule (`platform/grounding.invention_ok`, else `unsupported`) — as a WHOLE word, or
       as how a domain on them begins ("Larkspur", `larkspurvc.test`; never "Avi" in `altavia`) — its own
       lines being its items, its matched quote and our names; beside them only the file's counterparty, a
@@ -61,9 +71,17 @@ ONE PASS, IN ONE ORDER.
       whose headline failed, or whose recipient is us or a connector with no alternative: HELD — the file
       goes to Investigation and asks ONE question. Otherwise SHOWN — a find-out review asking its own move.
       Whether the ask a move answers is already ANSWERED is read here (`answered_by`, M35.C2.L-logic.V1.U15):
-      the ask it names, or the one owed ask its ground cites; answered by our reply in its thread after it,
-      or — a meeting ask — by a meeting with the asker booked after it. The move is then moot: SUPPRESSED,
+      the ask it names, or the one owed ask its ground cites; answered by our reply in its thread after it
+      was LAST asked (M35.C2.L-logic.V1.U17: an ask asked again after our reply is not answered by that
+      reply), or — a meeting ask — by a meeting with the asker booked after it. The move is then moot: SUPPRESSED,
       or — another ask still waiting on us — HELD, asking the next move on that one: never the whole file.
+      A move whose standing ground is only what YOU told us — your answer, a question card; no mail, no
+      meeting (M36.C2.L-logic.V2.U12, second crosscheck B2) — is confirmed with you first: HELD, asking "You
+      said: “…”. Should we go ahead with “<the move>”?"; your yes to that (`confirms`: a closed yes, no
+      negation, no "but") lets it stand, noted `confirmed_by_you`; any other answer SUPPRESSES it
+      (`declined_by_you`). Whether a claim says what you SAID is not read (your "No" grounded the claim you
+      denied): that is the bound, and the confirmation is what holds it. A question card's headline is our
+      own question, never a ground (`_ours_blanked`).
 
 WHAT `validate` STILL REFUSES WHOLE — the structure (`STRUCTURAL`): a moving mode with no move, a move
 resting on no fact the review has, a stage the playbook does not name. A slip of one optional move field
@@ -84,13 +102,14 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from genios_engine.contracts import claim_check as C
+from genios_engine.contracts.claim_check import NOTHING_TO_ASK
 from genios_engine.contracts.expert_review import (
     ASK_PREFIX, MOVING, NO_NEXT_MOVE, NUMBER_PATTERN, UNGROUNDED_MOVE, UNKNOWN_STAGE, ExpertReview, fact_ref,
     number_tokens)
 from genios_engine.platform.grounding import corpus_of, digit_runs, fold, haystack, invention_ok, proper_nouns
-from genios_engine.platform.self_identity import names_us
+from genios_engine.platform.self_identity import names_us, speaks_of_us, to_you
 from genios_engine.reason.expert.decide import is_event
-from genios_engine.reason.expert.dossier import DossierLine, FilePeople, Person, lines_by_id
+from genios_engine.reason.expert.dossier import DossierLine, FilePeople, Person, label_of, lines_by_id
 
 #: What `validate` still refuses whole — the review's STRUCTURE, never its grounding.
 STRUCTURAL: frozenset[str] = frozenset({NO_NEXT_MOVE, UNGROUNDED_MOVE, UNKNOWN_STAGE})
@@ -125,7 +144,8 @@ _MONTH = re.compile(r"\b(?:January|February|March|April|May|June|July|August|Sep
 MEETING_ASKS: frozenset[str] = frozenset({"meeting_request", "demo_requested"})
 #: How the dossier prints an open ask, and a meeting — held, or booked ahead (`reason/expert/dossier`).
 _ASKED = re.compile(r"^- \[(?P<ask>loop:[^\[\]\s]+)\] (?P<kind>[\w-]+), .*open since "
-                    r"(?P<at>\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC")
+                    r"(?P<at>\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC"
+                    r"(?:, last asked (?P<last>\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC)?")
 _MET = re.compile(r"\[(?P<evt>[^\[\]\s:]+)\] (?:(?P<held>\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC · a meeting\b"
                   r"|a meeting at (?P<booked>\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC)")
 #: How a calculator prints its sample size, never its value (`contracts/measured.Measured.says`).
@@ -136,13 +156,46 @@ _PRINTED_ID = re.compile(r"\[[^\[\]\s]+\]")
 _THE_FOUNDER = re.compile(r"\bthe founder\b", re.I)
 #: How the dossier prints a meeting — held (`· a meeting ·`) or booked ahead (`a meeting at`).
 _A_MEETING = re.compile(r"(?:· a meeting\b|\ba meeting at\b)")
-#: A claim that reports what was SAID or agreed — a verb of saying, with no negation before it ("nothing on
-#: file says what was agreed" says that nothing was shown, not what was said).
+#: A claim that reports what was SAID, agreed or DECIDED — a verb of saying, deciding or intending, with no
+#: negation before it in its own clause ("nothing on file says what was agreed" says that nothing was shown, not
+#: what was said; "did not hesitate and said" says what was said). ⛔ DECIDING AND INTENDING TOO (M35.C2.L-logic.
+#: V1.U16 fix, the second crosscheck G4): "At the meeting Marco decided to lead the round" and "In the meeting
+#: Marco will lead the round" report what a wordless meeting cannot show, as "Marco said…" does.
 _SAYING = re.compile(r"\b(?:said|says|say|told|tells|asked|asks|agreed|agrees|promised|promises|committed|"
                      r"commits|offered|offers|confirmed|confirms|mentioned|mentions|suggested|suggests|"
                      r"proposed|proposes|replied|replies|explained|explains|stated|states|wrote|writes|"
-                     r"declined|declines|refused|refuses|accepted|accepts)\b", re.I)
+                     r"declined|declines|refused|refuses|accepted|accepts|decided|decides|decide|will|would|"
+                     r"plans|planned|intends|intended|wants|wanted|chose|chooses)\b", re.I)
+#: What ends a negation's reach before a verb: a conjunction or a clause mark between them.
+_CLAUSE = re.compile(r"[,;:—–]|\b(?:and|but|or|so|then|yet|while)\b", re.I)
 _NEGATION = re.compile(r"\b(?:no|not|nothing|never|none|nobody|neither|nor)\b", re.I)
+#: How the dossier prints a card of the file — its headline in quotes, then its state (`dossier._judged_before`);
+#: greedy, so a headline holding quotes of its own is blanked whole (and, at worst, more with it).
+_CARD_HEADLINE = re.compile(r"(\ba card )“.*”(, [a-z_]+(?:;|$))")
+#: How the dossier prints your answer (`dossier._answers`): its id, then your words.
+_YOUR_WORDS = re.compile(r"^- \[(?P<ref>answer:[^\[\]\s]+)\] “(?P<words>.*)”$")
+#: The prefix of your answer's id (`dossier._answers`).
+ANSWER_PREFIX = "answer:"
+#: A confirmation you gave: your words OPEN with a yes — a closed class — and hold no negation, no "but" (STEP-13
+#: M36.C2.L-logic.V2.U12). Anything else does not confirm: the move is not made on it.
+_YES = re.compile(r"^\W*(?:yes|yeah|yep|yup|sure|ok|okay|correct|right|confirmed|agreed|absolutely|definitely|"
+                  r"exactly|go ahead|please do|do it)\b", re.I)
+_BUT = re.compile(r"\bbut\b", re.I)
+#: Your own words as a question quotes them ("You said: “…”", "You answered: “…”") — yours to say, never us
+#: naming you.
+_YOUR_QUOTED = re.compile(r"\bYou (?:said|answered): “[^”]*”")
+
+
+def _to_you_beside_yours(question: str, people: FilePeople) -> str | None:
+    """A held question said to you — every name of ours outside your own quoted words as "you"
+    (`platform/self_identity.to_you`), your words left as you wrote them — or None (M36.C2.L-logic.V2.U19)."""
+    kept: list[str] = []
+
+    def hide(m: re.Match[str]) -> str:
+        kept.append(m.group(0))
+        return f"\x00{len(kept) - 1}\x00"
+    said = to_you(_YOUR_QUOTED.sub(hide, question), people.us, people.our_names)
+    return None if said is None else re.sub(r"\x00(\d+)\x00", lambda m: kept[int(m.group(1))], said)
 
 
 # ── words ─────────────────────────────────────────────────────────────────────────────────────────
@@ -473,30 +526,38 @@ def _swap(text: str, corrections: Iterable[Correction]) -> str:
 
 def answered_by(dossier_text: str, ask: str, people: FilePeople | None = None) -> str | None:
     """What answers this open ask, as an event id — or None (M35.C2.L-logic.V1.U15, crosscheck X14, X21):
-      * our reply in the ask's thread, after it was asked — any ask;
-      * a MEETING ask: a meeting on the file after it was asked (held or booked ahead, as the dossier
-        prints both), first BOOKED after the ask, and WITH THE ASKER — set up by them, or by us on the
-        asker's own file (the counterparty's). A meeting booked before the ask, or with somebody else,
-        answers nothing; a meeting never answers a question (replay 04).
+      * our reply in the ask's thread, after it was LAST asked — any ask;
+      * a MEETING ask: a meeting on the file after it was last asked (held or booked ahead, as the dossier
+        prints both), first BOOKED after the ask was first made, and WITH THE ASKER — set up by them, or
+        by us on the asker's own file (the counterparty's). A meeting booked before the ask, or with
+        somebody else, answers nothing; a meeting never answers a question (replay 04).
+    ⛔ AFTER ITS LATEST ASKING (M35.C2.L-logic.V1.U17, second crosscheck B1). The ledger reopens an ask
+    asked again after our reply and keeps its `opened_at` (`context/open_loops.record_ask`): their asking
+    again is direct evidence our reply did not resolve it, so a reply — or a meeting held — before the
+    latest asking answers nothing. The latest asking is the ledger's `last_seen_at`, as the dossier prints
+    it (`last asked`) and the file's people carry it (`AskSeen.last_asked_at`); an ask asked once is
+    answered after it was opened, as before (a stale loop never asked again keeps its answer, golden F45).
     What a meeting's booking, its organiser, the ask's thread and asker are, the file's people say
     (`dossier.people_of`); without them nothing can be said to answer an ask. A closed ask needs no
     reading: the dossier shows open asks only, so a move cannot name one (`validate`)."""
     seen = next((a for a in (people.asks if people is not None else ()) if a.ref == ask), None)
-    opened = kind = None
+    opened = latest = kind = None
     for line in dossier_text.splitlines():
         if (m := _ASKED.match(line.strip())) is not None and m.group("ask") == ask:
             kind, opened = m.group("kind"), m.group("at")
+            latest = max(opened, m.group("last") or opened)              # the dossier's own clock, as text
             break
     if seen is None or opened is None or seen.opened_at is None:
         return None
+    asked = max(seen.opened_at, seen.last_asked_at or seen.opened_at)
     if seen.thread:
-        reply = next((r for r in people.replies if r.thread == seen.thread and r.at > seen.opened_at), None)
+        reply = next((r for r in people.replies if r.thread == seen.thread and r.at > asked), None)
         if reply is not None:
             return reply.event_id
     if kind not in MEETING_ASKS:
         return None
     met = {m.group("evt") for line in dossier_text.splitlines() for m in _MET.finditer(line)
-           if (m.group("held") or m.group("booked")) > opened}         # the dossier's own clock, as text
+           if (m.group("held") or m.group("booked")) > latest}
     for meeting in people.meetings:
         if meeting.event_id in met and meeting.booked_at is not None and meeting.booked_at > seen.opened_at \
                 and _with_the_asker(meeting, seen, people):
@@ -565,6 +626,20 @@ def matches(to: str | None, person: Person | None) -> bool:
     return all(w in said for w in name) or (len(said) == 1 and said[0] == name[0])
 
 
+def the_connector(to: str | None, people: FilePeople) -> bool:
+    """Does `to` name the connector that introduced the file's counterparty — as the PERSON (`matches`:
+    "Pankaj Mehta", "Pankaj", pankaj@saka.vc) or by their FIRM: the first label of their address's host, never a
+    public mail host's (`dossier.label_of`: "Saka" for pankaj@saka.vc) — M35.C2.L-logic.V0.U13 (fix), second
+    crosscheck G1. Named as the person only, `to='Saka'` went out to the very firm that made the introduction."""
+    connector = people.connector
+    if connector is None or not to:
+        return False
+    if matches(to, connector):
+        return True
+    firm = label_of(connector.key)
+    return bool(firm) and firm in re.findall(r"[a-z0-9]+", str(to).casefold())
+
+
 def _invented(text: str, corpus: str, people: FilePeople) -> str | None:
     """The first NAME `text` writes that `corpus` and our own names do not hold — the card validator's own
     rule (`platform/grounding.invention_ok`), its numbers left to `figures_in` — or None. Each name as a
@@ -625,32 +700,36 @@ def _person(person: Person) -> str:
     return " ".join([person.name or "", person.key or ""])
 
 
-def _first_names(people: FilePeople) -> list[str]:
-    """Our names' first words — the founder's first name among them (crosscheck X35: a card that says
-    "Arjun" speaks of you, as one that says "the founder" does)."""
-    return [n.split()[0] for n in people.our_names if len(n.split()) >= 2]
-
-
 #: An address, as a text writes one.
 _AN_ADDRESS = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 
 
 def _target(text: str | None, people: FilePeople) -> str | None:
-    """The first person `text` names, as written — one of our names or an address, the connector, a person
-    of the file — or None: whom a move with no `to` goes to (M35.C2.L-logic.V1.U14, X20). A name is a
-    capitalised whole word: "Send Introly the deck to pass on to Marco" goes to Introly."""
+    """The first person `text` names, as written — the connector, a person of the file, an address not ours —
+    or, when it names none of them, the first of our names or addresses; else None: whom a move with no `to`
+    goes to (M35.C2.L-logic.V1.U14, X20). A name is a capitalised whole word: "Send Introly the deck to pass on
+    to Marco" goes to Introly. ⛔ NEVER TO US BESIDE THEM (second crosscheck F1): "Send the Nimbus Labs short
+    deck to Marco", "Have Arjun Rao send Marco the short deck" name us FIRST and go to Marco — we are the
+    recipient only of a move that names nobody else."""
     text = str(text or "")
-    found: list[tuple[int, str]] = []
+    ours: list[tuple[int, str]] = []
+    theirs: list[tuple[int, str]] = []
     for name in people.our_names:
         if (m := re.search(rf"(?<!\w){re.escape(name)}(?!\w)", text, re.I)) is not None:
-            found.append((m.start(), m.group(0)))
-    found += [(m.start(), m.group(0)) for m in _AN_ADDRESS.finditer(text)]
+            ours.append((m.start(), m.group(0)))
+    for m in _AN_ADDRESS.finditer(text):
+        (ours if people.us.is_us(m.group(0)) else theirs).append((m.start(), m.group(0)))
+    firm = label_of(people.connector.key) if people.connector is not None else None
     for person in (people.connector, *people.people):
-        for word in (_name_of(person)[:1] if person is not None else ()):
+        words = _name_of(person)[:1] if person is not None else []
+        if person is not None and person is people.connector and firm and firm not in words:
+            words = [*words, firm]                    # the connector's firm names it too (G1)
+        for word in words:
             for m in re.finditer(rf"(?<!\w){re.escape(word)}(?!\w)", text, re.I):
                 if m.group(0)[0].isupper():
-                    found.append((m.start(), m.group(0)))
+                    theirs.append((m.start(), m.group(0)))
                     break
+    found = theirs or ours
     return min(found)[1] if found else None
 
 
@@ -679,6 +758,22 @@ def _quoted(headline: str | None, *, capital: bool = False) -> str:
     if headline:
         return f"“{headline.rstrip('.')}”"
     return "The move" if capital else "the move"
+
+
+#: Why a move whose OWN words failed is held, as its question says it — per reason (G2).
+_MOVE_FELL: dict[str, str] = {
+    C.UNSUPPORTED: "the move names someone the facts it rests on do not",
+    C.WRONG_NUMBER: "the move has a number the facts it rests on do not hold",
+}
+
+
+def _held_question(people: FilePeople, why: str) -> str:
+    """What a held file asks you when what its move rests on — or the move itself — failed (M36.C2.L-logic.V2.U10,
+    second crosscheck G2, `03` X10): what the next step is, and truly why the one found is held, worded per the
+    reason it fell. ⛔ NEVER THE WORDS THAT FAILED: not the fell fact's claim, not the move as written — the
+    name it misattributed, the number it got wrong — only the file's own counterparty and closed words of ours."""
+    them = people.counterparty.name or people.counterparty.key or "them"
+    return f"What is the next step with {them}? We held the one we found: {why}."
 
 
 def _is_us(to: str, people: FilePeople) -> bool:
@@ -734,8 +829,16 @@ class _Run:
         for i in ids:
             places = self.lines.get(i, ())
             own = [dl for dl in places if dl.line.startswith(f"- [{i}]")]
-            out += [dl.item for dl in (own or places)]
+            out += [self._ours_blanked(i, dl.item) for dl in (own or places)]
         return "\n".join(dict.fromkeys(out))
+
+    def _ours_blanked(self, ref: str, item: str) -> str:
+        """A QUESTION card's item with its headline blanked (M36.C2.L-logic.V2.U12, second crosscheck B2): the
+        headline is our own question — for a held review the very claim its check dropped — never a ground
+        for the claim it asked about. What it shows is that it was asked, and what became of it."""
+        if ref not in self.people.question_cards:
+            return item
+        return _CARD_HEADLINE.sub(lambda m: f"{m.group(1)}“…”{m.group(2)}", item, count=1)
 
     def figures(self, ids: Iterable[str]) -> str:
         """The lines `ids` hold NUMBERS on: each id's items (`items`) — but a calculator only its own
@@ -744,7 +847,11 @@ class _Run:
         out: list[str] = []
         for i in ids:
             if i.startswith("num:"):
-                out += [f"{c}[{i}]" for dl in self.lines.get(i, ()) if (c := _clause(dl.line, i)) is not None]
+                # ⛔ NEVER ITS SAMPLE SIZE (M35.C2.L-logic.V1.U10 fix, the second crosscheck G6): "2 times,
+                # median 3.48 days" grounded "Marco has 2 open asks" — the count a median was taken over is no
+                # value the calculator says, as `value_of` already read it.
+                out += [f"{_SAMPLE.sub(' ', c)}[{i}]" for dl in self.lines.get(i, ())
+                        if (c := _clause(dl.line, i)) is not None]
             else:
                 out.append(self.items([i]))
         return "\n".join(dict.fromkeys(out))
@@ -788,19 +895,41 @@ class _Run:
         else:
             self.say(line, C.KEPT)
         if speaks:
+            # ⛔ PROSE, NOT A SUBJECT (M36.C2.L-logic.V2.U19, second crosscheck F3): a card text names us by the
+            # company's name at any length, a first or full name, an address or domain of ours
+            # (`platform/self_identity.speaks_of_us`) — "the founder" as before.
             found = _THE_FOUNDER.search(text)
-            first = next((f for f in _first_names(self.people)
-                          if re.search(rf"(?<!\w){re.escape(f)}(?!\w)", text)), None)
-            us = names_us(text, self.people.us, self.people.our_names)
-            if found or us or first:
-                self.say(line, C.NOTED, C.SPEAKS_OF_YOU, found.group(0) if found else "us" if us else first)
+            us = speaks_of_us(text, self.people.us, self.people.our_names)
+            if found or us:
+                self.say(line, C.NOTED, C.SPEAKS_OF_YOU, found.group(0) if found else us)
         return checked
 
 
+def _your_words(run: "_Run", told: list[str]) -> str | None:
+    """Your words, as the dossier prints them, of the first answer among `told` — or None."""
+    for ref in told:
+        for dl in run.lines.get(ref, ()):
+            if (m := _YOUR_WORDS.match(dl.line)) is not None:
+                return m.group("words")
+    return None
+
+
+def _go_ahead(headline: str) -> str:
+    """How a confirmation asks: whether to go ahead with the move, in its checked words."""
+    return f"Should we go ahead with {_quoted(headline)}?"
+
+
+def confirms(words: str | None) -> bool:
+    """Do your words confirm — a yes, opening them, with no negation and no "but"?"""
+    said = str(words or "")
+    return _YES.search(said) is not None and _NEGATION.search(said) is None and _BUT.search(said) is None
+
+
 def _reports_speech(claim: str) -> bool:
-    """Does the claim say what someone SAID — a verb of saying, no negation before it?"""
+    """Does the claim say what someone SAID, agreed or decided — such a verb, and no negation before it IN ITS
+    OWN CLAUSE (`_CLAUSE`: "did not hesitate and said" says what was said)?"""
     found = _SAYING.search(claim)
-    return found is not None and _NEGATION.search(claim[:found.start()]) is None
+    return found is not None and _NEGATION.search(_CLAUSE.split(claim[:found.start()])[-1]) is None
 
 
 def _unshown(run: "_Run", fact) -> str | None:
@@ -911,7 +1040,7 @@ def _prose(review: ExpertReview) -> list[str]:
             *(t for h in review.hypotheses for t in (h.proposition, h.needs)),
             *(t for u in review.unknowns for t in (u.question, u.relevance)), *review.frames.rivals,
             eva.expected, eva.actual, sc.act, sc.best, sc.worst, *sc.signals_to_watch,
-            *review.appraisal.reasons, review.alternative, review.wait_or_stop]
+            *review.appraisal.reasons]
 
 
 def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
@@ -950,6 +1079,11 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     # text like the situation — its names and numbers on the standing facts' lines, "you" noted.
     do_nothing = run.text("do_nothing", review.scenarios.do_nothing, standing_corpus,
                           figures=standing_figures)
+    # THE GOLD CARD'S OTHER LINES (STEP-14, `yc2_w27_s14` M43.C2.L-logic.V1.U01, s14-F8): the alternative and when to
+    # wait or stop are shown (0221), so they are card words — held to the standing facts' lines as the situation is,
+    # a line that fails WITHHELD, never the review — and no longer prose no founder is shown.
+    alternative = run.text("alternative", review.alternative, standing_corpus, figures=standing_figures)
+    wait_or_stop = run.text("wait_or_stop", review.wait_or_stop, standing_corpus, figures=standing_figures)
     kind = None
     if review.proposed_kind is not None:
         pk = review.proposed_kind
@@ -979,14 +1113,13 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
             run.say("to", C.DROPPED, C.RECIPIENT_IS_US, to)
             held = C.HELD_BECAUSE[C.RECIPIENT_IS_US]
             question = f"Whom should {_quoted(headline)} go to? It is addressed to you."
-        elif target and people.connector is not None and matches(target, people.connector) \
-                and not matches(target, people.counterparty):
+        elif target and the_connector(target, people) and not matches(target, people.counterparty):
             to = target
             run.say("to", C.DROPPED, C.RECIPIENT_IS_CONNECTOR, to)
             other, _ = run.stands(review.alternative, move_corpus, figures=move_figures) \
                 if review.alternative else (None, "")
             them = people.counterparty.name or people.counterparty.key
-            if other is not None and not matches(other, people.connector):
+            if other is not None and not the_connector(other, people):
                 run.verdicts = [v for v in run.verdicts if v.line != "move" or v.verdict == C.NOTED]
                 run.say("move", C.CORRECTED, C.BY_ALTERNATIVE, f"{said} -> {other}")
                 headline, to = other, them
@@ -1032,16 +1165,41 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         else:
             run.say("answers", C.KEPT)
 
+    # A MOVE RESTING ONLY ON WHAT YOU TOLD US (M36.C2.L-logic.V2.U12, second crosscheck B2): the standing facts
+    # it rests on cite your answer — or a question card — and no mail or meeting of the file. Its names and
+    # numbers are on your words, but whether it says what you SAID is not read (your "No" grounded the claim
+    # you denied): it is confirmed with you before it is shown — "You said: “…”. Should we go ahead with
+    # “<the move>”?". You answered that: a yes (`confirms`) and it stands, noted; anything else and it is
+    # not made — suppressed, the file's decision clearing. A move resting on a mail beside your answer is
+    # grounded on the mail, and is not asked (the bound, declared: a claim's polarity is not read).
+    yours = declined = None
+    if move is not None and review.mode == "act" and headline:
+        ground = [e for n in sorted(rested & standing) for e in review.facts[n - 1].evidence]
+        told = [e for e in ground if e.startswith(ANSWER_PREFIX) or e in people.question_cards]
+        if told and not any(is_event(e) for e in ground):
+            yours = told
     fate = C.SHOWN
     if review.mode in MOVING and move is not None:
         fell = sorted(rested - standing)
         if fell:
             held = C.HELD_BECAUSE.get(run.reason(f"fact:{fell[0]}"), C.HELD_BECAUSE[C.HELD_MOVE])
-            claim = review.facts[fell[0] - 1].claim.rstrip(".")
-            question = f"Is it so: “{claim}”? It is not in what it cites."
+            question = _held_question(people, held)
         elif headline is None:
             held = C.HELD_BECAUSE[C.HELD_MOVE]
-            question = f"Is it so: “{said.rstrip('.')}”? It is not in what it rests on."
+            question = _held_question(people, _MOVE_FELL.get(run.reason("move"), held))
+        elif yours is not None and held is None:
+            tail = _go_ahead(headline)
+            answered = next((a for a in people.answered if a.question.endswith(tail)), None)
+            if answered is not None and confirms(answered.words):
+                run.say("move", C.NOTED, C.CONFIRMED_BY_YOU, answered.ref)
+            elif answered is not None:
+                declined = answered.ref
+                run.say("rests_on", C.DROPPED, C.DECLINED_BY_YOU, answered.ref)
+            else:
+                run.say("rests_on", C.DROPPED, C.ON_YOUR_ANSWER, ", ".join(yours))
+                held = C.HELD_BECAUSE[C.ON_YOUR_ANSWER]
+                words = _your_words(run, yours)
+                question = f"You said: “{words}”. {tail}" if words else tail
         if met is not None:
             # Already done (§3.4): whatever else the move lacked, it is moot — the ask it answers is
             # answered. One ask, and only it (replay 04): the move drops, never the file — another ask
@@ -1054,13 +1212,28 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
                 question = (f"{_quoted(headline, capital=True)} is already answered. What is the next move "
                             f"on the {_ASK_WORDS.get(ask_kind, ask_kind.replace('_', ' '))} still waiting "
                             f"on you since {when.day} {when.strftime('%b')}?")
+        elif declined is not None:
+            fate, held, question = C.SUPPRESSED, f"{C.DECLINED_BY_YOU}:{declined}", None
         elif held:
             fate = C.HELD
         elif review.mode == "find_out":
             question = headline
+    # A QUESTION TO YOU NEVER NAMES YOU (M36.C2.L-logic.V2.U19, second crosscheck F3): a held question that names
+    # us — outside your own quoted words — is noted and asked as our closed question; a find-out file's
+    # candidates (its first unknown, its move) are noted here, and asked in the second person, or passed over,
+    # where it asks (`reason/expert/asks`).
+    if question and (fate == C.HELD) and (hit := speaks_of_us(_YOUR_QUOTED.sub(" ", question), people.us,
+                                                               people.our_names)):
+        run.say("question", C.NOTED, C.SPEAKS_OF_YOU, hit)
+        question = _to_you_beside_yours(question, people) or NOTHING_TO_ASK
+    elif review.mode == "find_out" and fate == C.SHOWN:
+        asked = [review.unknowns[0].question] if review.unknowns else []
+        if (hit := next((h for t in (*asked, question) if t
+                         and (h := speaks_of_us(t, people.us, people.our_names))), None)):
+            run.say("question", C.NOTED, C.SPEAKS_OF_YOU, hit)
     shown = fate == C.SHOWN
     grounds = [review.facts[n - 1] for n in sorted(rested & standing)]
-    words = C.CardWords(do_nothing=do_nothing, kind=kind,
+    words = C.CardWords(do_nothing=do_nothing, kind=kind, alternative=alternative, wait_or_stop=wait_or_stop,
                         headline=headline if shown else None, situation=situation, done_when=done_when,
                         draft=draft if shown else None, to=to if shown and draft else None,
                         evidence=tuple(e for f in grounds for e in f.evidence) if shown else (),
@@ -1073,7 +1246,7 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         because=held if fate in (C.HELD, C.SUPPRESSED) else None)
 
 
-__all__ = ["CURRENCIES", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
+__all__ = ["ANSWER_PREFIX", "CURRENCIES", "confirms", "the_connector", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
            "Correction", "RESTATES_WORDS", "Stray", "UNITS", "about_us", "answered_by", "check_review",
            "correction_of",
            "figures_in", "matches", "unheld",

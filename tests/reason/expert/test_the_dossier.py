@@ -497,3 +497,92 @@ def test_the_promises_in_a_files_own_mail_are_read_and_a_soon_is_no_deadline(pg_
         assert "not this file's" not in section.text and f"promise:{node}" in d.catalogue.evidence_ids
     finally:
         reset(pg_store, org)
+
+
+# ── STEP-14 · a file card's versions, and a meeting by its title (`yc2_w27_s14` M42.C2.L-interface.V3.U04) ──────
+
+def _versioned_judgments() -> FileJudgments:
+    from genios_engine.context.file_judgments import PriorVersion
+    at = NOW - timedelta(days=20)
+    j = _judgments()
+    card = dataclasses.replace(j.cards[0], headline="Send Kunal the deck by Friday", state="queued", versions=(
+        PriorVersion(version=1, headline="Reply to Kunal", change="created", material=True, changed=(), at=at),
+        PriorVersion(version=2, headline="Send Kunal the deck by Friday", change="updated", material=True,
+                     changed=("headline", "by_when"), at=at + timedelta(days=2))))
+    return dataclasses.replace(j, cards=(card,))
+
+
+def test_a_files_card_is_printed_with_its_versions():
+    """The expert still sees the advice it gave before — one card, each version under it, what changed and when."""
+    parts = dataclasses.replace(_parts(), judgments=_versioned_judgments())
+    judged = _section(D.build_dossier(parts), "judged_before")
+    assert "- [card:card_1] a card “Send Kunal the deck by Friday”, queued" in judged
+    assert "  version 1: “Reply to Kunal”" in judged
+    assert "  version 2, updated (headline, by_when): “Send Kunal the deck by Friday”" in judged
+    assert "UTC" not in judged.split("[card:card_1]")[1].split("\n- ")[0], "no instant: a dossier replays exactly"
+    assert judged.index("version 1") < judged.index("version 2")
+
+
+def test_a_card_never_versioned_prints_as_before():
+    assert "version 1" not in _section(D.build_dossier(_parts()), "judged_before")
+
+
+def test_a_meeting_is_named_by_its_title_and_the_check_still_reads_it_as_a_meeting():
+    """`03` F164: "a meeting at …" named no meeting — F54's "Fintech founders mixer - Bluebay" read as any meeting.
+    The calendar's title is printed beside it; the check's own reading of a meeting (`verify._MET`) is unchanged."""
+    from genios_engine.reason.expert.verify import _MET
+    held = Touch(at=NOW - timedelta(days=3), kind="meeting", direction="meeting", who=KUNAL, who_name="Kunal Shah",
+                 event_id="evt_met", thread=None, outcome="emitted", words=None)
+    booked = Touch(at=NOW + timedelta(days=2), kind="meeting", direction="meeting", who=KUNAL, who_name="Kunal Shah",
+                   event_id="evt_next", thread=None, outcome="emitted", words=None)
+    parts = _parts(touches=(_touch(0, direction="out", words="Shall we meet?"), held))
+    parts = dataclasses.replace(parts, timeline=dataclasses.replace(parts.timeline, upcoming=(booked,)),
+                                meeting_titles={"evt_met": "Fintech founders mixer - Bluebay",
+                                                "evt_next": "Partner meeting — Meridian"})
+    timeline = _section(D.build_dossier(parts), "timeline")
+    assert "  the calendar calls it “Fintech founders mixer - Bluebay”" in timeline
+    # ⛔ RESTATED by `yc2_w27_s14` M42.C2.L-interface.V3.U04 (fix, found by the golden lane 14 Oct): a title is the
+    # calendar's, never the meeting's words — memory still holds none, and the dossier still says so (F54's and the
+    # second fix wave's "a wordless meeting" read exactly that line).
+    assert "  the calendar calls it “Fintech founders mixer - Bluebay”\n  (memory holds no words for it)" in timeline
+    assert D.meeting_events(parts.timeline) == ("evt_met", "evt_next"), "its meetings — held and booked — never a mail"
+    assert (f"Booked: [evt_next] a meeting at {D._when(booked.at)}, the calendar calls it “Partner meeting — "
+            f"Meridian”") in timeline
+    assert {m.group("evt") for line in timeline.splitlines() for m in _MET.finditer(line)} == {"evt_met", "evt_next"}
+    untitled = _section(D.build_dossier(dataclasses.replace(parts, meeting_titles={})), "timeline")
+    assert "the calendar calls it" not in untitled and "(memory holds no words for it)" in untitled
+
+
+@pytest.mark.pg
+def test_a_meetings_title_is_read_from_its_meeting_node(pg_store):
+    import json
+    from sqlalchemy import text
+    org = "org_s14_meeting_title"
+    with pg_store.engine.begin() as c:
+        for table in ("graph_facts", "graph_nodes", "source_events"):
+            c.execute(text(f"delete from {table} where org_id = :o"), {"o": org})
+        c.execute(text("delete from orgs where id = :o"), {"o": org})
+        c.execute(text("insert into orgs (id, name, email) values (:o, :o, 'mt@example.test')"), {"o": org})
+        for event, meeting in (("evt_title_1", "m1"), ("evt_title_2", "m2"), ("evt_title_3", "m3")):
+            c.execute(text(
+                "insert into source_events (event_id, org_id, connection_id, source, object_type, source_object_id, "
+                " dedup_key, actor, occurred_at, outcome) values (:e, :o, 'con_cal', 'gcal', 'calendar_event', :m, "
+                " :k, cast(:a as jsonb), :at, 'emitted')"),
+                {"e": event, "o": org, "m": meeting, "k": f"gcal:calendar_event:{event}",
+                 "a": json.dumps({"type": "external_contact", "email": KUNAL}), "at": NOW})
+        for node, key in (("node_m1", "gcal:m1"), ("node_m2", "gcal:m2")):
+            c.execute(text("insert into graph_nodes (node_id, org_id, node_type, canonical_key) "
+                           "values (:n, :o, 'meeting', :k)"), {"n": node, "o": org, "k": key})
+        for fid, node, title, scope, valid_to in (
+                ("f1", "node_m1", "Fintech  founders\nmixer - Bluebay", "org", None),
+                ("f1old", "node_m1", "An older title", "org", NOW),
+                ("f2", "node_m2", "A private calendar's title", "private", None)):
+            c.execute(text(
+                "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, field, value, "
+                " visibility_scope, valid_to) values (:v, :f, :o, :n, 'meeting.title', cast(:t as jsonb), :s, :to)"),
+                {"v": f"fv_{fid}", "f": fid, "o": org, "n": node, "t": json.dumps(title), "s": scope, "to": valid_to})
+        titles = D.read_meeting_titles(c, org, ["evt_title_1", "evt_title_2", "evt_title_3", "evt_none"])
+        for table in ("graph_facts", "graph_nodes", "source_events"):
+            c.execute(text(f"delete from {table} where org_id = :o"), {"o": org})
+        c.execute(text("delete from orgs where id = :o"), {"o": org})
+    assert titles == {"evt_title_1": "Fintech founders mixer - Bluebay"}

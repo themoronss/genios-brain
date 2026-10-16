@@ -464,7 +464,7 @@
       ],
       "to": "Rahul"
      },
-     "alternative": "If the founder wants to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.",
+     "alternative": "If you want to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.",
      "wait_or_stop": "Do not wait: the move is ours. After the note, wait for Rahul's answer; if none comes in about a week, follow up once, then stop.",
      "done_when": "Rahul has your note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.",
      "draft": "Hi Rahul, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and we're raising our seed round. Given your focus on early-stage AI infrastructure, I'd value your view on whether we fit what Kestrel backs. Would a short call next week suit you? Happy to work around your calendar. Best, Arjun"

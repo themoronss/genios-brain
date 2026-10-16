@@ -37,7 +37,11 @@ from dataclasses import dataclass, field
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 
+from genios_engine.contracts.card_contract import RULES as CARD_RULES  # noqa: E402
+from genios_engine.deliver.store import QUESTION_CARD_BUILDER          # noqa: E402
+from genios_engine.platform.card_lifecycle import OPEN_STATES, REPLACED  # noqa: E402
 from genios_engine.platform.self_identity import identity_for, names_us  # noqa: E402
+from genios_engine.reason.expert.decide import CAPABILITY_ID as EXPERT_CAPABILITY  # noqa: E402
 from genios_engine.reason.bundle.budget import OWN_BUDGETS, usd_to_micro  # noqa: E402
 from genios_engine.reason.bundle.sites import SITE_EXPERT                # noqa: E402
 from scripts._db import add_database_argument, resolve_database_url   # noqa: E402
@@ -161,11 +165,17 @@ def check_no_silent_truncation(conn, org: str, *, hours: int) -> Check:
 
     A lane whose failures cluster on one output size is not writing bad JSON; it is running out
     of budget, and `LLMResult.truncated` now says so. This asserts the shape stays visible.
+
+    ⛔ WHETHER OR NOT IT PARSED (`yc2_w27_s18` M50.C4.L-interface.V1.U11, s5t-F6). A cut the lenient
+    parser closed was a SUCCESS with no error — on every R-site, in the drafter, in `l5_render` — so a
+    lane whose every call was cut could pass here. A cut call now names itself in `error`
+    (`truncated: …`, `context/llm/client.TRUNCATED`), and it is counted whatever `success` says.
     """
     rows = conn.execute(sql(
         "select purpose, min(output_tokens) lo, max(output_tokens) hi, count(*) n "
         "  from llm_costs "
-        " where org_id = :o and not success and created_at > now() - make_interval(hours => :h) "
+        " where org_id = :o and (not success or error like 'truncated:%') "
+        "   and created_at > now() - make_interval(hours => :h) "
         " group by 1 having count(*) >= 3"), {"o": org, "h": hours}).fetchall()
     pinned = [(r.purpose, r.lo, r.n) for r in rows if r.lo == r.hi and r.lo > 0]
     calls = _scalar(conn, "select count(*) from llm_costs where org_id = :o "
@@ -895,14 +905,23 @@ def check_the_expert_says_why_and_stays_in_budget(conn, org: str) -> Check:
 
     It FAILS while a row that is not valid has no reason — the schema refuses one, so that is the
     schema changed under it — or while today's spend is over the cap, which is a gate that let a call
-    through. No review in the window is nothing to judge, and passes saying so.
+    through — or while MORE THAN HALF of the day's reviews were cut at the ceiling (`yc2_w27_s18`
+    M50.C4.L-interface.V1.U11): the Sonnet live pass of 12 Oct had 203 of 203 cut and this check would
+    have passed it. No review in the window is nothing to judge, and passes saying so — UNLESS the
+    day is over its cap with no review to show for it (I2a, `yc2_w27_s1718` M40.C3.L-logic.V0.U07,
+    second crosscheck): the spend is read FIRST, so a day over cap is never reported as NO DATA just
+    because `expert_reviews` happens to be empty.
     """
     name = "the expert says why, and stays in its budget"
+    spent = _scalar(conn, "select coalesce(sum(cost_micro_usd), 0) from l4_r_site_calls "
+                          "where org_id = :o and site = 'R-7' "
+                          "and created_at >= date_trunc('day', now())", o=org)
+    over = spent > EXPERT_DAILY_CAP_MICRO_USD
     rows = conn.execute(sql(
         "select status, count(*) as n from expert_reviews "
         " where org_id = :o and reviewed_at > now() - interval '24 hours' "
         " group by status order by status"), {"o": org}).fetchall()
-    if not rows:
+    if not rows and not over:
         return Check(name=name, ok=True, no_data=True,
                      measured="no expert review in the last 24 hours",
                      expected="skipped — nothing to judge", fix="")
@@ -910,26 +929,30 @@ def check_the_expert_says_why_and_stays_in_budget(conn, org: str) -> Check:
     silent = _scalar(conn, "select count(*) from expert_reviews where org_id = :o "
                            "and reviewed_at > now() - interval '24 hours' and status <> 'valid' "
                            "and coalesce(btrim(reason), '') = ''", o=org)
-    spent = _scalar(conn, "select coalesce(sum(cost_micro_usd), 0) from l4_r_site_calls "
-                          "where org_id = :o and site = 'R-7' "
-                          "and created_at >= date_trunc('day', now())", o=org)
     reasons = conn.execute(sql(
         "select status, reason, count(*) as n from expert_reviews "
         " where org_id = :o and reviewed_at > now() - interval '24 hours' and status <> 'valid' "
         " group by status, reason order by count(*) desc, status, reason limit 10"),
         {"o": org}).fetchall()
-    measured = (f"{total} reviews in 24 h — "
-                + ", ".join(f"{r.status} {int(r.n)}" for r in rows)
-                + f"; spent today ${spent / 1_000_000:.2f} of ${EXPERT_DAILY_CAP_MICRO_USD / 1_000_000:.2f}"
-                + (f"; {silent} not valid with no reason" if silent else ""))
-    over = spent > EXPERT_DAILY_CAP_MICRO_USD
+    # `reason/expert/store.TRUNCATED`: a review cut at R-7's token ceiling.
+    cut = sum(int(r.n) for r in rows if r.status == "truncated")
+    measured = ((f"{total} reviews in 24 h — " + ", ".join(f"{r.status} {int(r.n)}" for r in rows))
+                if rows else "no expert review in the last 24 hours")
+    measured += (f"; spent today ${spent / 1_000_000:.2f} of ${EXPERT_DAILY_CAP_MICRO_USD / 1_000_000:.2f}"
+                + (f"; {silent} not valid with no reason" if silent else "")
+                + (f"; {cut} of {total} truncated" if cut else ""))
+    mostly_cut = cut * 2 > total   # total == 0 implies cut == 0 (cut only counts rows): 0 > 0 is False
     return Check(
-        name=name, ok=not silent and not over, measured=measured,
-        expected="every refused, truncated, carried or failed review says why, and the day's spend "
-                 "stays within the expert's own $2",
+        name=name, ok=not silent and not over and not mostly_cut, measured=measured,
+        expected="every refused, truncated, carried or failed review says why, the day's spend "
+                 "stays within the expert's own $2, and no more than half of the reviews are cut",
         fix=("a row that is not valid has no reason: the expert_reviews_reason_check constraint "
              "(migration 0197) was dropped or bypassed — restore it, and find the writer that is not "
              "reason/expert/store.write_review" if silent else
+             "more than half of the day's reviews were cut at R-7's token ceiling: the model's answer — "
+             "its thinking included, which counts toward max_tokens — does not fit. Read R-7's "
+             "SITE_MAX_OUTPUT_TOKENS and SITE_THINKING in reason/bundle/sites.py (06 D71, D72)"
+             if mostly_cut and not over else
              "the day's R-7 spend is over its budget: a consult ran that RSiteGate's budget should have "
              "refused — check reason/expert/sweep builds its gate with NarrativeBudget.for_site and "
              "the BundleStore ledger"),
@@ -973,6 +996,112 @@ def check_every_new_signal_has_a_lane(conn, org: str) -> Check:
         detail=[f"{r.pack} {r.rule_id} × {int(r.n)}" for r in rows])
 
 
+# ── STEP-14 · WHAT THE FOUNDER SEES (`yc2_w27_s14` M43.C4.L-integration.V2.U05) ──────────────────────────────────
+#
+# "Cards reach the app" passes while ONE card of the tenant does. Four checks over the cards themselves: one file, one
+# card (0220); a file's card versioned, never replaced; what the card contract refused, per rule (0222 — a refused
+# card is never written, so it is counted where it can be read); and every expert card on the app.
+
+#: An expert's card: one naming its file (0220), or — from before 0220 — the expert's or a question's card.
+_EXPERT_CARD = ("(k.file_id is not null or k.capability_key = :expert or k.builder_version = :question_builder)")
+_FILES_WITH_TWO_OPEN = (
+    "select coalesce(k.file_id, s.subject_node_id) as file, count(*) as n from cards k "
+    "  join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+    " where k.org_id = :o and k.state = any(:open) and " + _EXPERT_CARD +
+    " group by 1 having count(*) > 1 order by count(*) desc, 1 limit 20")
+#: The living card's deploy, as the schema records it: a file card replaced before it is history, not a fault.
+_SINCE_0220 = ("(select coalesce(min(applied_at), now()) from schema_migrations "
+               " where filename = '0220_the_living_card.sql')")
+_REPLACED_FILE_CARDS = (
+    "select k.file_id, k.card_id from cards k join card_events e on e.org_id = k.org_id and e.card_id = k.card_id "
+    " where k.org_id = :o and k.file_id is not null and e.kind = 'card.expired' and e.cause = :replaced "
+    "   and e.occurred_at >= " + _SINCE_0220 + " order by e.occurred_at desc, k.card_id")
+
+
+def _expert_params(org: str) -> dict:
+    return {"o": org, "open": list(OPEN_STATES), "expert": EXPERT_CAPABILITY,
+            "question_builder": QUESTION_CARD_BUILDER}
+
+
+def check_one_file_one_card(conn, org: str) -> Check:
+    """⛔ STEP-14 (s14-F3, `03` F176): the file branch replaced a file's card with a new one ten times over nine
+    golden cases. One file, one open card — a card from before 0220 counted by its signal's subject."""
+    name = "one file, one open card"
+    params = _expert_params(org)
+    files = _scalar(conn, "select count(distinct coalesce(k.file_id, s.subject_node_id)) from cards k "
+                          "  join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+                          " where k.org_id = :o and k.state = any(:open) and " + _EXPERT_CARD, **params)
+    if not files:
+        return Check(name=name, ok=True, no_data=True, measured="no open file card",
+                     expected="skipped — nothing to judge", fix="")
+    rows = conn.execute(sql(_FILES_WITH_TWO_OPEN), params).fetchall()
+    return Check(
+        name=name, ok=not rows, measured=f"{len(rows)} file(s) with two open cards",
+        expected="0 — a file's next decision versions its card (platform/card_lifecycle.version_card)",
+        fix="deliver/pipeline._version_file_card versions a file's card; a second open card is a builder that "
+            "did not ask the store for the file's card (deliver/store.file_card), or a card from before 0220 "
+            "the first expert sweep did not close (pipeline._close_the_files_pass)",
+        detail=[f"{r.file} × {int(r.n)}" for r in rows])
+
+
+def check_no_file_card_is_replaced(conn, org: str) -> Check:
+    """⛔ STEP-14 (s14-F3, F5): a file's card expired REPLACED is a file whose next decision did not version it —
+    the shape the living card exists to end. Counted since 0220 was applied, over the cards that name a file."""
+    name = "no file card is replaced"
+    if not _scalar(conn, "select count(*) from cards where org_id = :o and file_id is not null", o=org):
+        return Check(name=name, ok=True, no_data=True, measured="no card names a file",
+                     expected="skipped — nothing to judge", fix="")
+    rows = conn.execute(sql(_REPLACED_FILE_CARDS), {"o": org, "replaced": REPLACED}).fetchall()
+    return Check(
+        name=name, ok=not rows, measured=f"{len(rows)} file card(s) expired replaced since 0220",
+        expected="0 — a file's card is versioned, renewed or reopened, never replaced",
+        fix="pipeline._close_the_files_pass expires the file cards whose signal closed with no version "
+            "(counter file_cards_replaced): find the writer that retired the file's signal without handing the "
+            "file on (reason/domain_shadow, reason/expert/asks)",
+        detail=[f"{r.file_id} {r.card_id}" for r in rows[:20]])
+
+
+def check_what_the_card_contract_refused(conn, org: str) -> Check:
+    """⛔ STEP-14 (s14-F10, F11): production showed *"nsrcel — a dated payment obligation is open"* and *"Which is
+    right? Maria Exconde: party.role"*. The card contract now refuses a card that names us, shows a field's name,
+    claims money with none in its evidence, quotes words nobody said or a number nothing holds — and a refused card
+    is never written, so it is said here, per rule (`card_refusals`, 0222). Refused is the contract working: said,
+    never a failure."""
+    name = "what the card contract refused"
+    rows = conn.execute(sql(
+        "select writer, ref, rule, found from card_refusals where org_id = :o "
+        "   and refused_at > now() - interval '7 days' order by writer, ref, rule, found"), {"o": org}).fetchall()
+    if not rows:
+        return Check(name=name, ok=True, no_data=True, measured="no card refused in 7 days",
+                     expected="said — nothing was refused", fix="")
+    per_rule = {rule: sum(1 for r in rows if r.rule == rule) for rule in CARD_RULES}
+    said = ", ".join(f"{rule} {n}" for rule, n in per_rule.items() if n)
+    return Check(
+        name=name, ok=True, measured=f"{len(rows)} refusal(s) in 7 days: {said}",
+        expected="said — each refusal names its writer, its card and what it found",
+        fix="a refusal is a card the founder would have read wrong: read what it found, and fix the template or "
+            "the fact that made it (deliver/render, reason/team/emit)",
+        detail=[f"{r.writer} {r.ref} {r.rule}: {r.found}" for r in rows[:20]])
+
+
+def check_every_expert_card_reaches_the_app(conn, org: str) -> Check:
+    """⛔ STEP-14 (s14-F2): an expert card held to its dossier by its check is graded by that check, never by a
+    quote gate — one with no app surface is a checked card the founder cannot see."""
+    name = "every expert card reaches the app"
+    params = _expert_params(org)
+    live = _scalar(conn, "select count(*) from cards k where k.org_id = :o and k.state in ('queued','surfaced') "
+                         "   and " + _EXPERT_CARD, **params)
+    if not live:
+        return Check(name=name, ok=True, no_data=True, measured="no live expert card",
+                     expected="skipped — nothing to judge", fix="")
+    hidden = _scalar(conn, "select count(*) from cards k where k.org_id = :o and k.state in ('queued','surfaced') "
+                           "   and not ('app' = any(k.surfaces)) and " + _EXPERT_CARD, **params)
+    return Check(
+        name=name, ok=hidden == 0, measured=f"{hidden} of {live} live expert card(s) carry no app surface",
+        expected="0 — an expert card's surfaces come from its check (deliver/card_builder._expert_grade)",
+        fix="deliver/card_builder._surfaces: an expert card held by its check (EXPERT_HELD) carries the app")
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -992,6 +1121,10 @@ CHECKS = (
     check_every_normal_says_its_n,
     check_the_expert_says_why_and_stays_in_budget,
     check_every_new_signal_has_a_lane,
+    check_one_file_one_card,
+    check_no_file_card_is_replaced,
+    check_what_the_card_contract_refused,
+    check_every_expert_card_reaches_the_app,
 )
 
 

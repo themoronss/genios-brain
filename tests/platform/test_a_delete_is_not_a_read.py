@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_140, (
+    assert r["statements"] == 3_204, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -472,6 +472,36 @@ def test_the_statement_count_did_NOT_move():
     # a column list that began with `select` and had no FROM): the constant is now the columns alone and
     # each reader writes `"select " + ROAD_COLUMNS + …`, so this counter renders the drain's and the
     # rebuild's two statements again (STEP-18 B12 had left them Name-led, rendered by nothing): +7.
+    # ⛔ MOVED 3,120 → 3,130 by yc2_w27_s14/M42.C1.L-data.V1.U03 (STEP-14, the one writer of a card's signal):
+    # `platform/card_lifecycle` reads which card a file's next version goes to (`_FILE_CARD`) and versions it
+    # (`_VERSION`) — two statements, each assembled from the shared `_HELD` and `_UNDECIDED` predicates, so the
+    # template walk records each prefix of each `+` chain: 3 → 13 in that module, measured per file against
+    # 6650b1c4 (nothing else moved). STEP-15 and STEP-16 move this on their own branches; the merge re-measures.
+    # ⛔ MOVED 3,130 → 3,131 by yc2_w27_s14/M42.C2.L-interface.V3.U04 (`03` F164): a meeting's title, read from its
+    # meeting node (`reason/expert/dossier._MEETING_TITLES`) — one literal. Committed without this move; found
+    # measuring the next unit, and moved here.
+    # ⛔ MOVED 3,131 → 3,147 by yc2_w27_s14/M42.C3.L-data.V1.U02 (`CardStore.version_card`): its lease, the card
+    # row it versions, its last words (`_LAST_WORDS`), the words written in place (`_VERSION_WORDS`) and the
+    # authority re-proven as an insert proves it (`_proves_authority`, the question's and the decision's, each
+    # assembled from the authority joins) — 69 → 85 in `deliver/store.py`, measured per file against the
+    # branch's head (nothing else moved).
+    # ⛔ MOVED 3,147 → 3,149 by yc2_w27_s14/M42.C3.L-integration.V2.U03 (one file, one card): the end of the
+    # pipeline's pass reads the file cards no version reached (`_ORPHANED_FILE_CARDS`) and measures the files with
+    # two open cards (`_FILES_WITH_TWO_OPEN_CARDS`) — two literals, `deliver/pipeline.py` 20 → 22.
+    # ⛔ MOVED 3,149 → 3,156 by yc2_w27_s14/M42.C3.L-interface.V3.U04 (the doors agree): `CardStore.doors` reads
+    # the open file cards and each of the two doors a file card may pass — three statements assembled from the
+    # doors' own predicates, so the template walk records their prefixes: +7 in `deliver/store.py`.
+    # ⛔ MOVED 3,159 → 3,166 by yc2_w27_s14 (the doors' fix, 13 Oct): `CardStore._FILE_CARDS` became the module
+    # constant `deliver/store._FILE_CARDS`, so `platform/statement_plans` resolves the three door statements (the
+    # run-time ratchet back at 272) — and the template walk now renders the constant's own `+` chain as well:
+    # 92 → 99 in `deliver/store.py`, measured per file against the merge 360766a3. No SQL added.
+    # ⛔ MOVED 3,166 → 3,181 by yc2_w27_s14/M43.C4.L-integration.V2.U05 (the health check says what the founder
+    # sees), measured per file against the branch's head: +1 `platform/card_refusals.py` (the one INSERT of
+    # `card_refusals`, 0222) and +14 `scripts/pipeline_health.py` 42 → 56 — seven real statements: two literals
+    # (the cards that name a file, the refusals of 7 days) and five assembled from `_EXPERT_CARD` or `_SINCE_0220`
+    # (the open file cards, the files with two, the file cards replaced since 0220, the live expert cards and those
+    # of them with no app surface), whose prefixes the template walk records as well. The run-time ratchet did
+    # not move (272).
     # ⛔ MOVED 3,079 → 3,080 by yc2_w27_s18/M48.C1.L-data.V0.U02 (STEP-18 B4, a review object waits for
     # review): one UPDATE, `feedback/publisher._rest_for_review` — the weekly road's review object rests at
     # `human_review`. A literal at its own call.
@@ -528,6 +558,23 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MERGED 13 Oct: STEP-13's 3,106 → 3,108 above, on top of the integration's 3,121, re-measured on
     # the merge: 3,123 (`table_coverage.resolution()`), the same two SELECTs.
     # ⛔ MERGED 13 Oct: the integration line (3,123) into STEP-16's line (3,137), re-measured on the merge (`table_coverage.resolution()`): 3,140.
+    # ⛔ MOVED 3,108 → 3,110, deliberately, by two literals at their own call sites: STEP-13
+    # M36.C2.L-interface.V4.U07 (the second crosscheck G11, one lock order) — `context/founder_questions.lock_file`'s
+    # advisory lock on the file's question (one SELECT), and `deliver/actions.ingest_action`'s read, with no lock,
+    # of whose question card a press is on (one SELECT), so the press takes the file's lock before any row.
+    # ⛔ MERGED 13 Oct: STEP-13's second fix wave (its 3,108 → 3,110, G11's two advisory-lock literals) into
+    # the integration line (3,123), re-measured on the merge (`table_coverage.resolution()`): 3,125.
+    # ⛔ MOVED 3,125 → 3,129 by yc2_w27_s1718/M48.C2.L-data.V2.U21 (G-2, second crosscheck): the
+    # one-off `scripts/retire_duplicate_screen_observations.py` — `DUPLICATES` (one SELECT),
+    # `ACTIVE_FOR_FOLLOWUP` (one SELECT), `SUPERSEDE` (one UPDATE) and `NAME_SURVIVOR` (one UPDATE).
+    # Four literals, each a constant at its own call site.
+    # ⛔ MERGED 13 Oct: the integration line at 884f0ea4 (3,125 — the fix wave's two G11 literals on 3,123) into
+    # yc2w27-s14 (3,181 — STEP-14's moves above, on 3,123), re-measured on the merge (`table_coverage.resolution()`):
+    # 3,183 — the same two literals; nothing else moved. The run-time ratchet stays 272.
+    # ⛔ MERGED 16 Oct: STEP-14 (its own moves above, to 3,183 over 3,125) into the integration line (3,129, with
+    # STEP-17/18's follow-ups), re-measured on the merge (`table_coverage.resolution()`): 3,187 = 3,183 + 4.
+    # ⛔ MERGED 16 Oct: STEP-14's line at 9d469efb (3,187) into STEP-16's line (3,140), re-measured on the merge (`table_coverage.resolution()`): 3,204 = 3,187 + STEP-16's 17
+    # (3,140 − 3,123); nothing else moved. The run-time ratchet stays 272.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

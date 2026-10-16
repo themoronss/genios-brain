@@ -119,7 +119,9 @@ def test_the_run_is_audited_like_any_other(persisted):
         run = c.execute(text("select capability_id, input_manifest->>'original_trigger_kind', trigger_ref, "
                              "       mode from reasoning_runs where org_id = :o and run_id = :r"),
                         {"o": ORG, "r": run_id}).one()
-    assert tuple(run) == (D.CAPABILITY_ID, D.TRIGGER_KIND, FINGERPRINT, "live")
+    # ⛔ RESTATED by yc2_w27_s13/M35.C3.L-integration.V1.U06 (X12): the run is keyed on the review and its check.
+    assert tuple(run[:2]) + (D.fingerprint_of(run[2]), run[3]) == (D.CAPABILITY_ID, D.TRIGGER_KIND, FINGERPRINT, "live")
+    assert D.check_version_of(run[2]) is not None
 
 
 def test_a_fresh_process_replays_it_from_the_stored_review_asking_no_model(persisted):

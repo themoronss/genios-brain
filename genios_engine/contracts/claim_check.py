@@ -26,8 +26,14 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-#: The check's own version — a review checked under an older one is checked again on read.
-CHECK_VERSION = "check.v1"
+#: The check's own version — a review checked under an older one is checked again on read (on the dossier it was
+#: reviewed on, `06` D48). ⛔ check.v2 since 12 Oct (`yc2_w27_s13` M35.C3.L-integration.V1.U06): the check's behaviour
+#: changed in M35.C2.U09-U16 (quotes, numbers, names, recipients, answered asks), so a review v1 checked is checked
+#: again — and a file decided through v1 is decided again (`reason/expert/decide.decision_ref`).
+#: ⛔ check.v3 since 13 Oct (`yc2_w27_s14` M43.C2.L-logic.V1.U01): STEP-13's second fix wave changed it again (an ask
+#: asked again, a move resting on your answer, the held question's words) and the gold card's alternative and stop
+#: rule are card lines it holds — so a review v2 checked is checked again.
+CHECK_VERSION = "check.v3"
 
 # ── what happened to a line ────────────────────────────────────────────────────────────────────
 # One name to a line: `tests/test_no_missing_module_deps` reads what a module defines by its assignments,
@@ -53,9 +59,12 @@ RECIPIENT_IS_CONNECTOR = "recipient_is_connector"
 NOT_OURS_TO_ANSWER = "not_ours_to_answer"    # answering an ask that waits on THEM
 ANSWERED = "answered"                        # the ask it answers is answered already
 NOTHING_STANDS = "nothing_stands"            # no fact of the review stands
+ON_YOUR_ANSWER = "on_your_answer"            # a move resting only on what you told us: confirmed with you first
+DECLINED_BY_YOU = "declined_by_you"          # …and you did not confirm it
 REASONS: tuple[str, ...] = (UNCITED, UNKNOWN_EVIDENCE, UNQUOTED, MISQUOTED, UNSUPPORTED, WRONG_NUMBER,
                             UNGROUNDED, NO_RECIPIENT, RECIPIENT_NOT_ON_FILE, RECIPIENT_IS_US,
-                            RECIPIENT_IS_CONNECTOR, NOT_OURS_TO_ANSWER, ANSWERED, NOTHING_STANDS)
+                            RECIPIENT_IS_CONNECTOR, NOT_OURS_TO_ANSWER, ANSWERED, NOTHING_STANDS,
+                            ON_YOUR_ANSWER, DECLINED_BY_YOU)
 #: How a line is corrected — closed, as a reason is.
 BY_CALCULATOR = "by_calculator"              # a number replaced by the one its calculator line holds
 BY_ALTERNATIVE = "by_alternative"            # a move to a connector replaced by the review's alternative
@@ -63,7 +72,8 @@ CORRECTIONS: tuple[str, ...] = (BY_CALCULATOR, BY_ALTERNATIVE)
 #: Kept, and written down — for the live pass to count (`06` D50), never a reason to drop.
 SPEAKS_OF_YOU = "speaks_of_you"              # a card text calling the founder "the founder", or naming us
 UNHELD_NUMBER = "unheld_number"              # a number in prose no founder is shown, not in the dossier
-NOTES: tuple[str, ...] = (SPEAKS_OF_YOU, UNHELD_NUMBER)
+CONFIRMED_BY_YOU = "confirmed_by_you"        # a move resting only on what you told us, that you confirmed
+NOTES: tuple[str, ...] = (SPEAKS_OF_YOU, UNHELD_NUMBER, CONFIRMED_BY_YOU)
 
 # ── what happens to the move ───────────────────────────────────────────────────────────────────
 SHOWN = "shown"
@@ -79,7 +89,13 @@ FATES: tuple[str, ...] = (SHOWN, HELD, SUPPRESSED, REFUSED)
 #: (`rests_on`: a ref that names no fact of the review drops there, M35.C1.L-contract.V0.U04).
 LINE_KINDS: tuple[str, ...] = ("fact", "inference", "pattern", "quote")
 CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", "answers", "kind", "prose",
-                               "rests_on", "do_nothing")
+                               "rests_on", "do_nothing", "question",
+                               # STEP-14 (`yc2_w27_s14` M43.C1.L-contract.V0.U02): the gold card shows them (0221), so
+                               # they are card words the check holds — no longer prose no founder is shown.
+                               "alternative", "wait_or_stop")
+#: What a file asks when nothing checked can be asked — ours, closed (`reason/expert/asks`, and a held question
+#: that would name you, M36.C2.L-logic.V2.U19).
+NOTHING_TO_ASK = "Can you tell us where this file stands?"
 
 #: Why a move is HELD, as the founder reads it on the question card — closed, one phrase per cause
 #: (M35.C3.L-integration.V2.U05, crosscheck X10): the check's own detail ("misquoted: <the model's
@@ -90,13 +106,16 @@ HELD_BECAUSE: dict[str, str] = {
     UNCITED: "a fact your move rests on cites nothing on the file",
     UNKNOWN_EVIDENCE: "a fact your move rests on cites something the file does not show",
     UNQUOTED: "a fact your move rests on quotes nothing from the mail it cites",
-    MISQUOTED: "a fact your move rests on is not in the words it cites",
+    # ⛔ TRUE OF WHAT FAILED (M36.C2.L-logic.V2.U10, second crosscheck G2): the QUOTE is not in the mail — the
+    # claim may well be (a paraphrase); "is not in the words it cites" was said of words the mail holds.
+    MISQUOTED: "the words a fact your move rests on quotes are not in the mail it cites",
     UNSUPPORTED: "a fact your move rests on names someone its lines do not",
     WRONG_NUMBER: "a fact your move rests on has a number its lines do not hold",
     HELD_MOVE: "the move says something the facts it rests on do not hold",
     RECIPIENT_IS_US: "the move is addressed to you",
     RECIPIENT_IS_CONNECTOR: "the move goes to whoever made the introduction",
     ANSWERED: "the ask the move answers is already answered",
+    ON_YOUR_ANSWER: "the move rests only on what you told us",
 }
 
 
@@ -146,7 +165,9 @@ class CardWords:
     `quotes` are where the headline came from: the ids the facts it rests on cite, and those facts'
     quotes — what the card shows beside it (STEP-13 §5: every sentence carries its source). `do_nothing`
     is what doing nothing costs, as checked — the card's "cost of ignoring" — and `kind` the proposed kind's
-    reason, as checked: what the brief's pending line is written from (M35.C3.L-integration.V2.U05)."""
+    reason, as checked: what the brief's pending line is written from (M35.C3.L-integration.V2.U05). And — STEP-14
+    (`yc2_w27_s14` M43.C1.L-contract.V0.U02, s14-F8) — the review's `alternative` and when to wait or stop
+    (`wait_or_stop`), as checked: the gold card shows both (0221). None withheld, or checked before they were."""
     headline: str | None
     situation: str | None
     done_when: str | None
@@ -156,6 +177,8 @@ class CardWords:
     quotes: tuple[str, ...] = ()
     do_nothing: str | None = None
     kind: str | None = None
+    alternative: str | None = None
+    wait_or_stop: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence", tuple(dict.fromkeys(str(e) for e in self.evidence)))
@@ -164,12 +187,14 @@ class CardWords:
     def as_mapping(self) -> dict[str, Any]:
         return {"headline": self.headline, "situation": self.situation, "done_when": self.done_when,
                 "draft": self.draft, "to": self.to, "evidence": list(self.evidence),
-                "quotes": list(self.quotes), "do_nothing": self.do_nothing, "kind": self.kind}
+                "quotes": list(self.quotes), "do_nothing": self.do_nothing, "kind": self.kind,
+                "alternative": self.alternative, "wait_or_stop": self.wait_or_stop}
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "CardWords":
         return cls(**{k: (str(raw[k]) if raw.get(k) else None)
-                      for k in ("headline", "situation", "done_when", "draft", "to", "do_nothing", "kind")},
+                      for k in ("headline", "situation", "done_when", "draft", "to", "do_nothing", "kind",
+                                "alternative", "wait_or_stop")},
                    evidence=tuple(raw.get("evidence") or ()), quotes=tuple(raw.get("quotes") or ()))
 
 

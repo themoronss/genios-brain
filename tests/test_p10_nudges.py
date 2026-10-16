@@ -403,7 +403,11 @@ def test_the_weekly_profile_reads_only_the_seats_own_data(client, monkeypatch): 
                 "insert into screen_followups (id, org_id, seat_id, kind, text, who, topic_key, "
                 "created_at) values (:i, :o, :s, :k, 'n', :w, :t, :cr)"),
                 {"i": f"fu_p{i}{org[-6:]}", "o": org, "s": s, "k": kind, "w": who,
-                 "t": f"tp{i}", "cr": _ist(2026, 9, 14, 11) if s == seat and i == 0
+                 # ⛔ Was `_ist(2026, 9, 14, 11)` — the day this test was written. `seat_profile.WINDOW` is 30
+                 # days back from `now`, so on 14 Oct 2026 at 11:00 IST that seed left the window and Priya
+                 # counted 1: a time bomb, not a defect of the profile. Now inside the window by construction,
+                 # still a different instant from the others.
+                 "t": f"tp{i}", "cr": now - timedelta(days=3) if s == seat and i == 0
                  else now - timedelta(hours=2)})
         for s, t, w in [(seat, "site:naukri.com", False), (seat, "slack:ravi", True),
                         (other, "site:secret.example", False)]:
@@ -472,7 +476,9 @@ def test_graph_views_hide_another_seats_private_screen_data(client):  # noqa: F8
     from genios_engine.context.graph_store import GraphStore
     from genios_engine.platform.auth import AuthCtx
     ws = _workspace(client, capture=False)
-    n = _seed(ws)
+    # S17X-F1 (yc2_w27_s1718 M41.C1.L-integration.V1.U05): this module has no `_clock` of its
+    # own, so `test_moments_pg.NOW` is `None` when this file runs alone — pass our own instant.
+    n = _seed(ws, now=datetime.now(timezone.utc))
     org = ws["org"]
     o_mail, m_mail = ws["owner"]["email"].lower(), ws["member"]["email"].lower()
     # an edge learned from the owner's private screen: Priya ↔ Ravi

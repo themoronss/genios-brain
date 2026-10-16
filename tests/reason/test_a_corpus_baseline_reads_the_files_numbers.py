@@ -78,6 +78,14 @@ def test_nothing_handed_leaves_the_slice_as_it_was():
     assert E.with_file_baselines(context, {"write_interval": _measured(3.0, 1)}) is context
 
 
+class _StoppedAtTheWeld(Exception):
+    """Raised where the weld would run: the test needs only what was built before it."""
+
+
+def _stop_at_the_weld(*_args, **_kwargs):
+    raise _StoppedAtTheWeld()
+
+
 def test_the_manifest_hands_them_to_the_adapter_it_binds_with(monkeypatch):
     """`expertise_capability_manifest(…, baselines=…)` is the seam the compiled lane calls; the adapter
     the weld binds with is built over the slice the file's numbers were handed to."""
@@ -89,8 +97,12 @@ def test_the_manifest_hands_them_to_the_adapter_it_binds_with(monkeypatch):
             super().__init__(situation, context)
     monkeypatch.setattr(E, "ContextAdapter", _Adapter)
     monkeypatch.setattr(E, "_plays", lambda package: ((), {}, {}))
-    monkeypatch.setattr(E, "weld_package", lambda *a, **k: (_ for _ in ()).throw(StopIteration()))
-    with pytest.raises(StopIteration):
+    # ⛔ Was a generator `.throw(StopIteration())`: on Python 3.11 — CI's and production's (`Dockerfile`) — a
+    # StopIteration thrown into a generator surfaces as `RuntimeError: generator raised StopIteration` (PEP 479),
+    # on 3.13 (the local venv) as itself, so the test passed here and failed in CI (run 38514247292). A plain
+    # exception of the test's own says the same thing on every version.
+    monkeypatch.setattr(E, "weld_package", _stop_at_the_weld)
+    with pytest.raises(_StoppedAtTheWeld):
         E.expertise_capability_manifest(
             SimpleNamespace(metadata={}), root_entity_type="account",
             situation=build_situation(), context=build_slice(facts=QUIET_TEN_DAYS),

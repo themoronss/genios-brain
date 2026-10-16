@@ -203,7 +203,7 @@
      },
      "mode": "wait",
      "next_move": null,
-     "alternative": "If both offered times pass with no word from Rohan, the founder offers fresh times once.",
+     "alternative": "If both offered times pass with no word from Rohan, offer fresh times once.",
      "wait_or_stop": "Wait for Rohan to choose. Once both offered times have passed without a word, offer new times once; if that draws nothing, stop.",
      "done_when": "A call with Rohan is on the calendar, at one of the offered times or a new one.",
      "draft": null

@@ -32,6 +32,7 @@ import pytest
 from sqlalchemy import text
 
 from genios_engine.context import model_audit as MA
+from genios_engine.context.lifecycle.prompt import parse_description
 from genios_engine.context.lifecycle.resolution import detect_resolutions
 from genios_engine.platform import company_brief as CB
 from genios_engine.platform.canonical import semantic_hash
@@ -189,3 +190,63 @@ def test_a_resolution_answer_with_nan_is_audited_and_the_pass_goes_on(world):
             "select success, parsed_output->>'confidence' as confidence from l2_model_runs "
             "where org_id = :o and site = 'resolution' order by success"), {"o": ORG}).all()
     assert [(r.success, r.confidence) for r in runs] == [(False, None), (True, "nan")]
+
+
+# ── F-3 (`yc2_w27_s1718` M48.C2.L-logic.V2.U20, second crosscheck) ────────────────────────────
+# `int(float("inf"))` raises OverflowError, not ValueError — NaN above is caught by the existing
+# `except (TypeError, ValueError)`; Infinity, -Infinity and 1e999 (which `float()` reads as inf
+# with no error) were not, and the exception reached `detect_resolutions` uncaught and ended the
+# rest of the org's resolution pass. `parse_description` now treats a non-finite offset or
+# confidence the same as any other unusable shape: `None`, never a raise.
+
+def test_parse_description_rejects_a_non_finite_offset_as_a_shape_failure():
+    base = {"verdict": "RESOLVED", "certainty": "EXPLICIT_COMPLETION", "scope": ["c1"],
+            "quote": "we signed yesterday", "start_offset": 3, "end_offset": 24}
+    for bad in (float("inf"), float("-inf"), float(1e999)):
+        assert parse_description({**base, "end_offset": bad}) is None
+        assert parse_description({**base, "start_offset": bad}) is None
+
+
+def test_parse_description_drops_a_non_finite_confidence_but_keeps_the_rest():
+    base = {"verdict": "RESOLVED", "certainty": "EXPLICIT_COMPLETION", "scope": ["c1"],
+            "quote": "we signed yesterday", "start_offset": 3, "end_offset": 24}
+    for bad in (float("inf"), float("-inf"), float(1e999)):
+        described = parse_description({**base, "confidence_bp": bad})
+        assert described is not None and described.raw_confidence_bp is None
+
+
+def test_a_resolution_answer_with_infinity_confidence_is_audited_and_the_pass_goes_on(world):
+    """Infinity in `confidence` alone: `parse_description` drops just that field (as NaN does
+    above) — audited, judged, the pass goes on."""
+    answer = answer_for(RESOLUTION_TEXT, verdict="RESOLVED", certainty="EXPLICIT_COMPLETION",
+                        scope=[_ids(ORG)["commitment"]], quote="we signed yesterday")
+    answer["confidence"] = float("inf")
+    model = ScriptedModel(answers={_ids(ORG)["reply"]: answer})
+    out = detect_resolutions(world, ORG, llm=model, eval_time=AT)
+    assert model.calls == 2
+    assert out.claims_written == 1, "the answer was judged after it was audited"
+    with world.engine.connect() as c:
+        runs = c.execute(text(
+            "select success, parsed_output->>'confidence' as confidence from l2_model_runs "
+            "where org_id = :o and site = 'resolution' order by success"), {"o": ORG}).all()
+    assert [(r.success, r.confidence) for r in runs] == [(False, None), (True, "inf")]
+
+
+def test_a_resolution_answer_with_infinity_end_offset_is_audited_and_the_pass_goes_on(world):
+    """F-3's own shape: Infinity in `end_offset` makes the WHOLE description unusable — the audit
+    row still writes (paid, kept), the message is logged `unusable answer` and skipped, and —
+    unlike before the fix, which raised OverflowError out of `detect_resolutions` — every other
+    message of the org's pass is still read (`model.calls == 2`, not 1 or an exception)."""
+    answer = answer_for(RESOLUTION_TEXT, verdict="RESOLVED", certainty="EXPLICIT_COMPLETION",
+                        scope=[_ids(ORG)["commitment"]], quote="we signed yesterday")
+    answer["end_offset"] = float("inf")
+    model = ScriptedModel(answers={_ids(ORG)["reply"]: answer})
+    out = detect_resolutions(world, ORG, llm=model, eval_time=AT)
+    assert model.calls == 2, "the pass was not aborted by the non-finite offset"
+    assert out.claims_written == 0, "an unusable description is never judged"
+    with world.engine.connect() as c:
+        runs = c.execute(text(
+            "select success, parsed_output->>'end_offset' as end_offset from l2_model_runs "
+            "where org_id = :o and site = 'resolution' order by success"), {"o": ORG}).all()
+    assert [(r.success, r.end_offset) for r in runs] == [(False, None), (True, "inf")], (
+        "the call is still paid and still audited even though the answer could not be used")

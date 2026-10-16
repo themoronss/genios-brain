@@ -117,6 +117,18 @@ def test_a_truncated_call_that_still_parses_is_flagged():
         "data loss, and it is the half of this bug that never shows up in the error counts")
 
 
+def test_a_truncated_call_that_still_parses_names_the_truncation():
+    """⛔ `yc2_w27_s18` M50.C1.L-contract.V0.U01 (s5t-F6). The flag reached the caller and nothing else:
+    every ledger row is written from `ok` and `error`, so a cut that parsed was a success with no error
+    and no health check could count it. The error names the cut — and its ceiling — while `ok` stays
+    true, so a writer that records `error` records the truncation."""
+    result = _client('{"observations": [{"kind": "commitment_made"}]', "max_tokens").call(
+        "p", max_tokens=2400)
+    assert result.ok is True and result.truncated is True
+    assert result.error and result.error.startswith(TRUNCATED.split(":")[0] + ":")
+    assert "2400" in result.error
+
+
 def test_a_clean_call_is_not_flagged():
     """The common path must stay untouched: this flag sits on every LLM call in the engine."""
     result = _client('{"observations": []}', "end_turn").call("p")

@@ -151,30 +151,37 @@ def test_the_same_question_asked_again_keeps_its_card(world, cards):
     assert _queued(cards, org, later) == [card.card_id], "re-bound, still read through its door"
 
 
-def test_a_new_question_replaces_the_old_card(world, cards):
+# ⛔ RESTATED by yc2_w27_s14/M42.C2.L-integration.V2.U05 (`03` F176, s14-F13, s14-D3): a new question and a decision
+# after a question are VERSIONS of the file's one card — the old card is no longer expired REPLACED and a second one
+# built. Green since delivery versions it (M42.C3.L-integration.V2.U03 removed the markers).
+def test_a_new_question_is_the_cards_next_version(world, cards):
     store, org, registry, anchor, events = _asked(world)
     _build(store, cards, org)
+    [first] = _cards(store, org)
     _find_out(store, org, anchor, "ffp-fund-findout-review-001", events, question="Who at the fund decides?")
     later = NOW + timedelta(hours=1)
     _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
-    assert _build(store, cards, org, at=later)["question_cards"] == 1
-    old, new = _cards(store, org)
-    assert old.state == "expired" and (new.state, new.headline) == ("queued", "Who at the fund decides?")
-    assert _queued(cards, org, later) == [new.card_id]
+    _build(store, cards, org, at=later)
+    built = _cards(store, org)
+    assert len(built) == 1, "one file, one card"
+    card = built[0]
+    assert (card.card_id, card.state, card.headline) == (first.card_id, "queued", "Who at the fund decides?")
+    assert _queued(cards, org, later) == [card.card_id]
 
 
-def test_a_decision_retires_the_question_card(world, cards):
+def test_a_decision_after_the_question_is_the_cards_next_version(world, cards):
     from tests.reason.expert.test_a_covered_file_decides_once import _write as _write_act
     store, org, registry, anchor, events = _asked(world)
     _build(store, cards, org)
+    [first] = _cards(store, org)
     _write_act(store, org, anchor, "ffp-fund-act-review-000000", events)
     later = NOW + timedelta(hours=1)
     _compile(store, org, registry, covered={anchor: "ffp-fund-act-review-000000"}, at=later)
     counts = _build(store, cards, org, at=later)
     assert counts["question_cards"] == 0
-    question_card, *rest = _cards(store, org)
-    assert (question_card.builder_version, question_card.state) == (QUESTION_CARD_BUILDER, "expired")
-    assert all(c.builder_version != QUESTION_CARD_BUILDER for c in rest)
+    built = _cards(store, org)
+    assert len(built) == 1, "one file, one card"
+    assert built[0].card_id == first.card_id and built[0].builder_version != QUESTION_CARD_BUILDER
 
 
 def test_a_question_goes_where_the_files_decision_would(world, cards, monkeypatch):

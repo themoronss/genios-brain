@@ -157,6 +157,129 @@ where x.org_id = 'org_e97e86f858ad48b2bbf64b8a' and x.profile_id is not null
 group by 1
 order by 1;
 
+-- @thinking_lanes
+-- STEP-18 §9 (13 Oct), Claude 5 thinks by default: per lane and model over 30 days, every call that
+-- stopped at its lane's ceiling — failed (`failures_at_ceiling`) OR closed by the lenient parser and
+-- recorded a success (`parsed_but_cut`), which a `not success` filter cannot see. The ceilings, per
+-- lane: l4_bundle 2400 (1400 before 4 Oct), l4_r1 400, l4_r3 600, l4_r4 400, l4_r7 4000 (6000 after
+-- the speedrun008 deploy), intelligence_analyze and _query 700, intelligence_draft 500,
+-- company_brief_draft 2400 (4000 after), l4_llm_decision 900, l4_llm_r1 700, l5_render 600,
+-- moment.screen_insight 400. On harsh/mvp R-2 is l4_bundle on claude-sonnet-5: at least 10% of its
+-- calls at 2400 confirms the defect (s5t-F3).
+with ceiling(purpose, model_like, max_tokens) as (values
+    ('l4_bundle', 'claude-sonnet-5%', 2400), ('l4_bundle', 'claude-sonnet-5%', 1400),
+    ('l4_r1', '%', 400), ('l4_r3', '%', 600), ('l4_r4', '%', 400),
+    ('l4_r7', '%', 4000), ('l4_r7', '%', 6000),
+    ('intelligence_analyze', '%', 700), ('intelligence_query', '%', 700),
+    ('intelligence_draft', '%', 500),
+    ('company_brief_draft', '%', 2400), ('company_brief_draft', '%', 4000),
+    ('l4_llm_decision', '%', 900), ('l4_llm_r1', '%', 700), ('l5_render', '%', 600),
+    ('moment.screen_insight', '%', 400)),
+calls as (
+    select c.purpose, c.model, c.success, c.error, c.output_tokens, c.input_tokens,
+           exists (select 1 from ceiling k
+                    where k.purpose = c.purpose and c.model like k.model_like
+                      and c.output_tokens = k.max_tokens) as at_ceiling
+      from llm_costs c
+     where c.org_id = 'org_e97e86f858ad48b2bbf64b8a'
+       and c.created_at > now() - interval '30 days')
+select purpose, model,
+       count(*) as calls,
+       count(*) filter (where not success) as failures,
+       count(*) filter (where not success and at_ceiling) as failures_at_ceiling,
+       count(*) filter (where success and at_ceiling) as parsed_but_cut,
+       count(*) filter (where error like 'truncated:%') as error_says_truncated,
+       round(100.0 * count(*) filter (where at_ceiling) / count(*), 1) as pct_at_ceiling,
+       percentile_disc(0.5) within group (order by output_tokens) as out_p50,
+       percentile_disc(0.9) within group (order by output_tokens) as out_p90,
+       max(output_tokens) as out_max,
+       round(avg(input_tokens)) as in_avg
+  from calls
+ group by purpose, model
+ order by count(*) filter (where at_ceiling) desc, count(*) desc;
+
+-- @thinking_r_sites
+-- The R-site receipts (l4_r_site_calls). Tokens and cost are SUMMED over a consult's attempts, so a
+-- consult cut on every attempt shows output = attempts x the site's ceiling. On harsh/mvp the gate has
+-- no `truncated` outcome: an R-2 cut is `failed_generation`, retried once at the same ceiling
+-- (attempts 2, output 4800) — two charged calls, then the template.
+select site, model, outcome,
+       count(*) as consults,
+       sum(attempts) as model_calls,
+       count(*) filter (where attempts > 0 and output_tokens = attempts * case site
+                 when 'R-1' then 400 when 'R-2' then 2400 when 'R-3' then 600
+                 when 'R-4' then 400 when 'R-7' then 4000 end) as every_attempt_at_ceiling,
+       round(avg(output_tokens)) as out_avg,
+       round(sum(cost_micro_usd) / 1e6, 2) as usd,
+       jsonb_agg(distinct reason_codes) as reason_codes
+  from l4_r_site_calls
+ where org_id = 'org_e97e86f858ad48b2bbf64b8a'
+   and created_at > now() - interval '30 days'
+ group by site, model, outcome
+ order by site, count(*) desc;
+
+-- @thinking_sonnet_by_day
+-- The Sonnet 5 lanes per UTC day, to see whether R-2's raise of 4 Oct (1400 to 2400) changed anything.
+select (created_at at time zone 'utc')::date as day, purpose, model,
+       count(*) as calls,
+       count(*) filter (where not success) as failures,
+       count(*) filter (where output_tokens in (700, 1400, 2400, 4000)) as at_a_ceiling,
+       max(output_tokens) as out_max
+  from llm_costs
+ where org_id = 'org_e97e86f858ad48b2bbf64b8a'
+   and created_at > now() - interval '30 days'
+   and model like 'claude-sonnet-5%'
+ group by 1, 2, 3
+ order by 1, 2;
+
+-- @thinking_models_in_use
+-- Which models production called in 30 days, and for what: is GENIOS_ANTHROPIC_MODEL still Haiku,
+-- read without reading the environment. A T1 lane on any model but Haiku is the override hazard.
+select model, count(*) as calls, count(distinct purpose) as purposes,
+       string_agg(distinct purpose, ', ' order by purpose) as which
+  from llm_costs
+ where org_id = 'org_e97e86f858ad48b2bbf64b8a'
+   and created_at > now() - interval '30 days'
+ group by model
+ order by count(*) desc;
+
+-- @thinking_expert_after_deploy
+-- AFTER the speedrun008 deploy only (expert_reviews is 0197; production is at 0190 — this errors
+-- before it). R-7 by status: whether the cut reviews still sit at a ceiling (4000 before M50, 6000 after).
+select model, status, reason, count(*) as reviews,
+       count(*) filter (where output_tokens in (4000, 6000)) as at_a_ceiling,
+       round(sum(cost_micro_usd) / 1e6, 2) as usd
+  from expert_reviews
+ where org_id = 'org_e97e86f858ad48b2bbf64b8a'
+   and reviewed_at > now() - interval '30 days'
+ group by 1, 2, 3
+ order by count(*) desc;
+
+-- @thinking_brief_after_deploy
+-- AFTER the speedrun008 deploy only (company_brief_reviews is 0195). The weekly brief review's
+-- outcomes: a model failure is outcome text (`model:truncated…` for a cut draft).
+select outcome like 'model:truncated%' as truncated, outcome, count(*) as weeks, sum(proposed) as proposed
+  from company_brief_reviews
+ where org_id = 'org_e97e86f858ad48b2bbf64b8a'
+   and started_at > now() - interval '30 days'
+ group by 1, 2
+ order by count(*) desc;
+
+-- @b13_duplicate_screen_observations
+-- G-2 (yc2_w27_s1718 M48.C2.L-data.V2.U21, second crosscheck). Pre-0211 writes minted one active
+-- observation per version with no retiring id; a follow-up with more than one still-active
+-- observation is one `scripts/retire_duplicate_screen_observations.py`'s dry run (08 §4.11) should
+-- name, then move past zero with --apply.
+select count(*) as followups_with_more_than_one_active_observation from (
+  select r.evidence->>'followup_id' as followup_id
+    from graph_observations o
+    join graph_source_refs r on r.observation_id = o.observation_id and r.org_id = o.org_id
+   where o.org_id = 'org_e97e86f858ad48b2bbf64b8a' and r.source = 'screen_insight'
+     and o.status = 'active'
+   group by 1
+  having count(*) > 1
+) d;
+
 -- @latest_migration
 select filename, applied_at
 from schema_migrations

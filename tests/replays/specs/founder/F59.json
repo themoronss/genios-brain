@@ -1,0 +1,1151 @@
+{
+ "case_id": "F59",
+ "title": "Three introductions in three threads: three files, a card each",
+ "kind": "must_detect",
+ "label_row": 59,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-06T18:00:00Z",
+  "2026-08-07T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro-tara",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-06T06:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "tara@quillstone.test"
+   ],
+   "subject": "Arjun <> Tara Sethi (Quillstone Ventures)",
+   "body": "Arjun, meet Tara Sethi, a partner at Quillstone Ventures who backs early AI tools. Tara, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-tara",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Tara Sethi",
+       "entity_type": "person",
+       "quote": "Tara Sethi"
+      },
+      {
+       "surface_form": "Quillstone Ventures",
+       "entity_type": "organization",
+       "quote": "Quillstone Ventures"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Tara Sethi",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Tara Sethi"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "intro-dev",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-06T06:20:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "dev@ferncrest.test"
+   ],
+   "subject": "Arjun <> Dev Malhotra (Ferncrest)",
+   "body": "Arjun, meet Dev Malhotra, the COO of Ferncrest, a services firm whose ops team runs on follow-ups. Dev, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-dev",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Dev Malhotra",
+       "entity_type": "person",
+       "quote": "Dev Malhotra"
+      },
+      {
+       "surface_form": "Ferncrest",
+       "entity_type": "organization",
+       "quote": "Ferncrest"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Dev Malhotra",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Dev Malhotra"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "intro-anaya",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-06T06:40:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "anaya@harborline.test"
+   ],
+   "subject": "Arjun <> Anaya Kulkarni (Harborline)",
+   "body": "Arjun, meet Anaya Kulkarni, who leads partnerships at Harborline. Anaya, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-anaya",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Anaya Kulkarni",
+       "entity_type": "person",
+       "quote": "Anaya Kulkarni"
+      },
+      {
+       "surface_form": "Harborline",
+       "entity_type": "organization",
+       "quote": "Harborline"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Anaya Kulkarni",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Anaya Kulkarni"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "tara",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-06T10:05:00Z",
+   "from": "Tara Sethi <tara@quillstone.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Tara Sethi (Quillstone Ventures)",
+   "body": "Hi Arjun,\n\nThanks for the introduction. Before we find time, could you send me your deck? I'd like to read it ahead of a call.\n\nBest,\nTara Sethi\nPartner, Quillstone Ventures",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-tara",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising",
+      "pitch deck"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Tara Sethi",
+       "entity_type": "person",
+       "quote": "Tara Sethi"
+      },
+      {
+       "surface_form": "Quillstone Ventures",
+       "entity_type": "organization",
+       "quote": "Quillstone Ventures"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Tara Sethi",
+       "value": "Partner",
+       "standing": "observed",
+       "quote": "Partner, Quillstone Ventures"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "read the deck before a call"
+     },
+     "questions": [
+      {
+       "text": "Can Arjun send Tara his deck before a call?",
+       "asked_by": "Tara Sethi",
+       "asked_of": "Arjun Rao",
+       "quote": "could you send me your deck?"
+      }
+     ],
+     "implied_actions": [
+      "send Tara the deck"
+     ]
+    }
+   }
+  },
+  {
+   "id": "dev",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-08-07T08:30:00Z",
+   "from": "Dev Malhotra <dev@ferncrest.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Dev Malhotra (Ferncrest)",
+   "body": "Hi Arjun,\n\nGood to meet you. Our ops team is drowning in follow-ups. Could you show them the product in a 30-minute demo this Thursday or Friday?\n\nCheers,\nDev Malhotra\nCOO, Ferncrest",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-dev",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "product demo"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Dev Malhotra",
+       "entity_type": "person",
+       "quote": "Dev Malhotra"
+      },
+      {
+       "surface_form": "Ferncrest",
+       "entity_type": "organization",
+       "quote": "Ferncrest"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Dev Malhotra",
+       "value": "COO",
+       "standing": "observed",
+       "quote": "COO, Ferncrest"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "a demo for the ops team"
+     },
+     "questions": [
+      {
+       "text": "Can Arjun give Ferncrest's ops team a 30-minute demo on Thursday or Friday?",
+       "asked_by": "Dev Malhotra",
+       "asked_of": "Arjun Rao",
+       "quote": "Could you show them the product in a 30-minute demo this Thursday or Friday?"
+      }
+     ],
+     "scheduling_proposals": [
+      {
+       "proposer": "Dev Malhotra",
+       "text": "Thursday or Friday this week",
+       "evidence_text": "this Thursday or Friday?"
+      }
+     ],
+     "implied_actions": [
+      "offer Dev a 30-minute demo slot"
+     ]
+    }
+   }
+  },
+  {
+   "id": "anaya",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-08-07T11:15:00Z",
+   "from": "Anaya Kulkarni <anaya@harborline.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Anaya Kulkarni (Harborline)",
+   "body": "Hi Arjun,\n\nLovely to meet you. We host a founder roundtable on 20 August and would love you to speak for ten minutes on AI chiefs of staff. Could you let me know by Monday?\n\nWarmly,\nAnaya Kulkarni\nPartnerships, Harborline",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-anaya",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "speaking invitation",
+      "founder roundtable"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Anaya Kulkarni",
+       "entity_type": "person",
+       "quote": "Anaya Kulkarni"
+      },
+      {
+       "surface_form": "Harborline",
+       "entity_type": "organization",
+       "quote": "Harborline"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Anaya Kulkarni",
+       "value": "Partnerships",
+       "standing": "observed",
+       "quote": "Partnerships, Harborline"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "a speaker for the roundtable"
+     },
+     "questions": [
+      {
+       "text": "Will Arjun speak for ten minutes at Harborline's founder roundtable on 20 August?",
+       "asked_by": "Anaya Kulkarni",
+       "asked_of": "Arjun Rao",
+       "quote": "would love you to speak for ten minutes on AI chiefs of staff"
+      }
+     ],
+     "implied_actions": [
+      "answer Anaya about the roundtable by Monday"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "tara": "emitted",
+   "dev": "emitted",
+   "anaya": "emitted"
+  },
+  "memory": {
+   "tara": true,
+   "dev": true,
+   "anaya": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Tara",
+     "Quillstone"
+    ],
+    "min": 1,
+    "max": 1
+   },
+   {
+    "about": [
+     "Malhotra",
+     "Ferncrest"
+    ],
+    "min": 1,
+    "max": 1
+   },
+   {
+    "about": [
+     "Anaya",
+     "Harborline"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Reply to Introly",
+   "reply to Introly",
+   "write to Introly",
+   "Write to Introly"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {},
+ "notes": "Replay 02 m00: the connector introduces three contacts in three separate threads and each replies with an ask of its own; three files, a card each naming its one contact, none about the connector.",
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<quillstone.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly introduced Tara Sethi, a partner at Quillstone Ventures who backs early AI tools, and left the two of you to take it from there.",
+       "evidence": [
+        "evt_c1c73e835fd1ae9d75dfdb0e"
+       ],
+       "quote": "a partner at Quillstone Ventures who backs early AI tools"
+      },
+      {
+       "claim": "Tara replied the same day asking for your deck, to read it ahead of a call.",
+       "evidence": [
+        "evt_a3710106d738482888f79a36"
+       ],
+       "quote": "could you send me your deck? I'd like to read it ahead of a call"
+      },
+      {
+       "claim": "She signs as a partner at Quillstone Ventures.",
+       "evidence": [
+        "evt_a3710106d738482888f79a36"
+       ],
+       "quote": "Tara Sethi Partner, Quillstone Ventures"
+      },
+      {
+       "claim": "The ask is open in this file and waits on you.",
+       "evidence": [
+        "loop:loop_02cfb85910f36726cc823b99"
+       ]
+      },
+      {
+       "claim": "The file sits under a situation seen for the first time.",
+       "evidence": [
+        "sit:sit_fdda05a8047951588d5a6176",
+        "hist:derived.history.times_seen@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The move is yours: one reply answers Tara's ask.",
+       "based_on": [
+        "fact:2",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Introly has done its part; the reply goes to Tara, never to the connector.",
+       "based_on": [
+        "fact:1"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+       "based_on": [
+        "hist:derived.history.times_seen@fundraising"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Quillstone Ventures may join your round.",
+       "needs": "The call, and what Tara says after reading the deck."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Which version of the deck you want an investor to read.",
+       "relevance": "It decides what Tara sees first."
+      },
+      {
+       "question": "Whether you have written to Tara since the mailbox was last read.",
+       "relevance": "A reply sent after the last sync would not show here, and the move would be made."
+      }
+     ],
+     "frames": {
+      "primary": "An investor your connector introduced has asked for your deck before a call; the reply is yours.",
+      "rivals": [
+       "A partner gathering decks broadly, where the call may not follow.",
+       "A courtesy reply to the connector's introduction, with no interest behind it yet."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "Tara Sethi is a partner at Quillstone Ventures and asked for your deck ahead of a call.",
+      "evidence": [
+       "evt_c1c73e835fd1ae9d75dfdb0e",
+       "evt_a3710106d738482888f79a36"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: an introduced investor who asks for the deck gets it promptly, with times for the call.",
+      "actual": "Tara asked for your deck the day of the introduction; nothing from you is in the file."
+     },
+     "scenarios": {
+      "do_nothing": "Tara's ask waits; an investor who answered within hours reads the silence as a pass, and the call does not happen.",
+      "act": "Sending the deck now, with times for the call, keeps the introduction warm.",
+      "best": "Tara reads the deck and books the call.",
+      "worst": "No deck goes, or it goes to the connector, and Quillstone Ventures moves on.",
+      "signals_to_watch": [
+       "Tara confirming she has the deck",
+       "A time agreed for the call",
+       "A nudge from Tara or the connector"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "high",
+      "reversibility": "reversible",
+      "reasons": [
+       "A direct ask from an introduced investor waits on you.",
+       "The file has been quiet longer than any gap it closed before.",
+       "A deck sent late can still be read, so a wrong move is easily put right."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "You",
+      "what": "Send Tara Sethi your deck to read ahead of a call, and offer her two times for the call",
+      "for_whom": "Tara Sethi at Quillstone Ventures",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ],
+      "to": "Tara Sethi",
+      "answers": "loop:loop_02cfb85910f36726cc823b99"
+     },
+     "alternative": "If the deck is not ready to share, reply to Tara with a short summary and offer the call first.",
+     "wait_or_stop": "Do not wait: the move is yours. Once you have answered, wait for Tara; if no answer comes within a week, nudge once, then stop.",
+     "done_when": "Tara Sethi has your deck and a call with her is on both calendars.",
+     "draft": "Hi Tara, thank you, and lovely to meet you. Here is our deck to read ahead of a call. Would early next week suit you for the call? Send me two times that work and I will send an invite. Best"
+    }
+   },
+   {
+    "when": [
+     "<ferncrest.test>",
+     "30-minute demo"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly introduced Dev Malhotra, the COO of Ferncrest, a services firm whose ops team runs on follow-ups, and left the two of you to take it from there.",
+       "evidence": [
+        "evt_0a90f786e5fc800af03025d2"
+       ],
+       "quote": "Dev Malhotra, the COO of Ferncrest, a services firm whose ops team runs on follow-ups"
+      },
+      {
+       "claim": "Dev replied asking you to show his ops team the product in a 30-minute demo this Thursday or Friday.",
+       "evidence": [
+        "evt_c9a3eea3020f626daa53af26"
+       ],
+       "quote": "Could you show them the product in a 30-minute demo this Thursday or Friday?"
+      },
+      {
+       "claim": "He signs as COO of Ferncrest.",
+       "evidence": [
+        "evt_c9a3eea3020f626daa53af26"
+       ],
+       "quote": "Dev Malhotra COO, Ferncrest"
+      },
+      {
+       "claim": "The ask is open in this file and waits on you.",
+       "evidence": [
+        "loop:loop_6a582d301e59a75ac73e5581"
+       ]
+      },
+      {
+       "claim": "The file sits under a situation seen for the first time.",
+       "evidence": [
+        "sit:sit_60711e4b8c9ab22bef71f4b7",
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The move is yours: one reply answers Dev's ask.",
+       "based_on": [
+        "fact:2",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Introly has done its part; the reply goes to Dev, never to the connector.",
+       "based_on": [
+        "fact:1"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "In this file the other side moves within a day, and the silence since is yours.",
+       "based_on": [
+        "num:usual_gap",
+        "num:days_quiet"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Ferncrest may be a fit as an early customer.",
+       "needs": "The demo, and what Dev's ops team needs from it."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Which times on Thursday or Friday you can give.",
+       "relevance": "A reply that names a time closes the ask in one message."
+      }
+     ],
+     "frames": {
+      "primary": "An introduced prospect has asked for a short demo for his ops team this week; the reply is yours.",
+      "rivals": [
+       "A customer in the making, whose ops team is the user the product is for.",
+       "A curious contact, where the demo is goodwill only."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "intro",
+      "why": "Dev Malhotra came to you through the connector's introduction and asked for a demo for his ops team.",
+      "evidence": [
+       "evt_0a90f786e5fc800af03025d2",
+       "evt_c9a3eea3020f626daa53af26"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: an introduced contact who replies with a concrete ask gets a prompt answer with a time.",
+      "actual": "Dev asked for a demo this Thursday or Friday; nothing from you is in the file."
+     },
+     "scenarios": {
+      "do_nothing": "Dev's Thursday and Friday pass unanswered, and a prospect who asked within a day reads the silence as no.",
+      "act": "A reply now with a time on Thursday or Friday books the demo while the introduction is warm.",
+      "best": "The demo is booked this week and Ferncrest's ops team becomes a customer or a design partner.",
+      "worst": "No reply goes before the days pass, or one goes to the connector, and the prospect is lost.",
+      "signals_to_watch": [
+       "Dev accepting a time or sending an invite",
+       "Thursday and Friday drawing near with no time agreed"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "high",
+      "reversibility": "reversible",
+      "reasons": [
+       "A direct ask from an introduced contact waits on you.",
+       "The days Dev offered are this week.",
+       "A missed demo can be offered again, so a wrong move is reversible."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "You",
+      "what": "Offer Dev Malhotra a 30-minute demo for his ops team this Thursday or Friday",
+      "for_whom": "Dev Malhotra at Ferncrest",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ],
+      "to": "Dev Malhotra",
+      "answers": "loop:loop_6a582d301e59a75ac73e5581"
+     },
+     "alternative": "If neither day works, reply to Dev anyway with two other times next week.",
+     "wait_or_stop": "Do not wait: the move is yours. Once you have answered, wait for Dev; if no answer comes within a week, nudge once, then stop.",
+     "done_when": "A 30-minute demo with Dev Malhotra's ops team is on both calendars.",
+     "draft": "Hi Dev, good to meet you too. I'd be glad to show your ops team the product in a 30-minute demo. Would Thursday or Friday afternoon suit you? Send me a time and I'll send an invite. Best"
+    }
+   },
+   {
+    "when": [
+     "<ferncrest.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly's mail introduced you and Dev Malhotra, the COO of Ferncrest, a services firm whose ops team runs on follow-ups, to each other and left the two of you to take it from there.",
+       "evidence": [
+        "evt_0a90f786e5fc800af03025d2"
+       ],
+       "quote": "Dev Malhotra, the COO of Ferncrest, a services firm whose ops team runs on follow-ups"
+      },
+      {
+       "claim": "The introduction asks nothing specific of you and sets no date.",
+       "evidence": [
+        "evt_0a90f786e5fc800af03025d2"
+       ]
+      },
+      {
+       "claim": "The introduction is the file's only touch: the file holds nothing from Dev and nothing from you after it.",
+       "evidence": [
+        "evt_0a90f786e5fc800af03025d2",
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The engine holds a situation open on this file, seen for the first time.",
+       "evidence": [
+        "sit:sit_60711e4b8c9ab22bef71f4b7",
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Nothing here is owed by a date: the introduction is an open door, not a deadline.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "Introly has done its part; anything further belongs between you and Dev, never with the connector.",
+       "based_on": [
+        "fact:1"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+       "based_on": [
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Dev will write to you on their own, since the introduction addressed you both.",
+       "needs": "A mail from Dev in the file."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether you asked for this introduction, and what you want from Ferncrest.",
+       "relevance": "If you sought it, the first move is yours; if not, waiting costs nothing."
+      }
+     ],
+     "frames": {
+      "primary": "An introduction from your connector to Dev Malhotra of Ferncrest that neither side has taken up yet: a line to watch, not a task.",
+      "rivals": [
+       "An introduction you asked for, where the next move is yours.",
+       "A match the connector made on its own that neither side needs."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "intro",
+      "why": "Introly introduced you to Dev Malhotra of Ferncrest; this file is that introduction and what comes of it.",
+      "evidence": [
+       "evt_0a90f786e5fc800af03025d2"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: after an introduction one side writes to the other within days, and the connector steps out.",
+      "actual": "The connector stepped out at once; the file holds no word from Dev or from you since."
+     },
+     "scenarios": {
+      "do_nothing": "The introduction stays an open line until Dev writes or it goes cold.",
+      "act": "A short note from you straight to Dev would start the conversation.",
+      "best": "Dev writes, and a first conversation is set.",
+      "worst": "You wanted this introduction, nobody moves, and it lapses unnoticed.",
+      "signals_to_watch": [
+       "A mail from Dev Malhotra in the file",
+       "You saying you want the conversation with Dev"
+      ]
+     },
+     "appraisal": {
+      "stakes": "low",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "Nothing in the file asks you for anything by a date.",
+       "A note can be sent later as easily as now."
+      ]
+     },
+     "mode": "wait",
+     "next_move": null,
+     "alternative": "If you want the conversation, a short note from you straight to Dev, with the connector left out of it.",
+     "wait_or_stop": "Wait for a word from Dev, or a sign from you that you want the conversation; the connector is never the one to write to.",
+     "done_when": "The file holds a first exchange between you and Dev.",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<harborline.test>",
+     "founder roundtable"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly introduced Anaya Kulkarni, who leads partnerships at Harborline, and left the two of you to take it from there.",
+       "evidence": [
+        "evt_8a99f9bc28a608ff23965a00"
+       ],
+       "quote": "Anaya Kulkarni, who leads partnerships at Harborline"
+      },
+      {
+       "claim": "Anaya asked you to speak for ten minutes on AI chiefs of staff at Harborline's founder roundtable on 20 August, and to let her know by Monday.",
+       "evidence": [
+        "evt_81d483dded42426ed100d6f7"
+       ],
+       "quote": "We host a founder roundtable on 20 August and would love you to speak for ten minutes on AI chiefs of staff. Could you let me know by Monday?"
+      },
+      {
+       "claim": "She signs for partnerships at Harborline.",
+       "evidence": [
+        "evt_81d483dded42426ed100d6f7"
+       ],
+       "quote": "Anaya Kulkarni Partnerships, Harborline"
+      },
+      {
+       "claim": "The ask is open in this file and waits on you.",
+       "evidence": [
+        "loop:loop_205830d97ab5b3e74215fd62"
+       ]
+      },
+      {
+       "claim": "The file sits under a situation seen for the first time.",
+       "evidence": [
+        "sit:sit_ddb38e02755aa6e0f86cadd7",
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The move is yours: one reply answers Anaya's ask.",
+       "based_on": [
+        "fact:2",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Introly has done its part; the reply goes to Anaya, never to the connector.",
+       "based_on": [
+        "fact:1"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "In this file the other side moves within a day, and the silence since is yours.",
+       "based_on": [
+        "num:usual_gap",
+        "num:days_quiet"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The roundtable could bring you founders who want an AI chief of staff.",
+       "needs": "Who attends, which the file does not say."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether you are free on 20 August.",
+       "relevance": "It decides whether the answer is yes."
+      },
+      {
+       "question": "Who attends Harborline's founder roundtable.",
+       "relevance": "It decides what the talk is worth to you."
+      }
+     ],
+     "frames": {
+      "primary": "A partnerships lead your connector introduced has invited you to speak at her founder roundtable and asked for an answer by Monday.",
+      "rivals": [
+       "A first step towards a partnership with Harborline, worth more than the talk.",
+       "A speaking slot among many, where the value is the room, not the host."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "partner",
+      "why": "Anaya Kulkarni leads partnerships at Harborline and invited you to speak at its founder roundtable.",
+      "evidence": [
+       "evt_8a99f9bc28a608ff23965a00",
+       "evt_81d483dded42426ed100d6f7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: an invitation with a date to answer by gets its answer by then.",
+      "actual": "Anaya asked for an answer by Monday; nothing from you is in the file."
+     },
+     "scenarios": {
+      "do_nothing": "Monday passes without an answer, and Anaya fills the slot with someone else.",
+      "act": "An answer before Monday keeps the slot and the relationship.",
+      "best": "You speak at the roundtable on 20 August and Harborline becomes a partner.",
+      "worst": "No answer goes by Monday, or it goes to the connector, and the invitation lapses.",
+      "signals_to_watch": [
+       "Anaya confirming the slot and sending details",
+       "Monday drawing near with no answer sent"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "high",
+      "reversibility": "reversible",
+      "reasons": [
+       "Anaya asked for an answer by Monday.",
+       "Her invitation waits on you.",
+       "A yes can be withdrawn politely later, so a wrong move is reversible."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "You",
+      "what": "Answer Anaya Kulkarni by Monday on speaking for ten minutes at Harborline's founder roundtable on 20 August",
+      "for_whom": "Anaya Kulkarni at Harborline",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ],
+      "to": "Anaya Kulkarni",
+      "answers": "loop:loop_205830d97ab5b3e74215fd62"
+     },
+     "alternative": "If you cannot make 20 August, tell Anaya by Monday, warmly, and offer to stay in touch.",
+     "wait_or_stop": "Do not wait: the move is yours. Once you have answered, wait for Anaya; if no answer comes within a week, nudge once, then stop.",
+     "done_when": "Anaya Kulkarni has your answer on the roundtable, before Monday.",
+     "draft": "Hi Anaya, lovely to meet you, and thank you for the invitation. I'd be glad to speak for ten minutes on AI chiefs of staff at the founder roundtable on 20 August. Could you send me the details? Best"
+    }
+   },
+   {
+    "when": [
+     "<harborline.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly's mail introduced you and Anaya Kulkarni, who leads partnerships at Harborline, to each other and left the two of you to take it from there.",
+       "evidence": [
+        "evt_8a99f9bc28a608ff23965a00"
+       ],
+       "quote": "Anaya Kulkarni, who leads partnerships at Harborline"
+      },
+      {
+       "claim": "The introduction asks nothing specific of you and sets no date.",
+       "evidence": [
+        "evt_8a99f9bc28a608ff23965a00"
+       ]
+      },
+      {
+       "claim": "The introduction is the file's only touch: the file holds nothing from Anaya and nothing from you after it.",
+       "evidence": [
+        "evt_8a99f9bc28a608ff23965a00",
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The engine holds a situation open on this file, seen for the first time.",
+       "evidence": [
+        "sit:sit_ddb38e02755aa6e0f86cadd7",
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Nothing here is owed by a date: the introduction is an open door, not a deadline.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "Introly has done its part; anything further belongs between you and Anaya, never with the connector.",
+       "based_on": [
+        "fact:1"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+       "based_on": [
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Anaya will write to you on their own, since the introduction addressed you both.",
+       "needs": "A mail from Anaya in the file."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether you asked for this introduction, and what you want from Harborline.",
+       "relevance": "If you sought it, the first move is yours; if not, waiting costs nothing."
+      }
+     ],
+     "frames": {
+      "primary": "An introduction from your connector to Anaya Kulkarni of Harborline that neither side has taken up yet: a line to watch, not a task.",
+      "rivals": [
+       "An introduction you asked for, where the next move is yours.",
+       "A match the connector made on its own that neither side needs."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "intro",
+      "why": "Introly introduced you to Anaya Kulkarni of Harborline; this file is that introduction and what comes of it.",
+      "evidence": [
+       "evt_8a99f9bc28a608ff23965a00"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: after an introduction one side writes to the other within days, and the connector steps out.",
+      "actual": "The connector stepped out at once; the file holds no word from Anaya or from you since."
+     },
+     "scenarios": {
+      "do_nothing": "The introduction stays an open line until Anaya writes or it goes cold.",
+      "act": "A short note from you straight to Anaya would start the conversation.",
+      "best": "Anaya writes, and a first conversation is set.",
+      "worst": "You wanted this introduction, nobody moves, and it lapses unnoticed.",
+      "signals_to_watch": [
+       "A mail from Anaya Kulkarni in the file",
+       "You saying you want the conversation with Anaya"
+      ]
+     },
+     "appraisal": {
+      "stakes": "low",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "Nothing in the file asks you for anything by a date.",
+       "A note can be sent later as easily as now."
+      ]
+     },
+     "mode": "wait",
+     "next_move": null,
+     "alternative": "If you want the conversation, a short note from you straight to Anaya, with the connector left out of it.",
+     "wait_or_stop": "Wait for a word from Anaya, or a sign from you that you want the conversation; the connector is never the one to write to.",
+     "done_when": "The file holds a first exchange between you and Anaya.",
+     "draft": null
+    }
+   }
+  ]
+ }
+}

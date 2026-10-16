@@ -110,6 +110,9 @@ def test_dated_model_ids_still_price_by_family():
     ("claude-sonnet-5", (2.0, 10.0)),
     ("claude-sonnet-4-6", (3.0, 15.0)),
     ("claude-opus-5", (5.0, 25.0)),
+    # `yc2_w27_s18` M50.C4.L-data.V0.U16: Opus 5.5 at its own list price, never Opus 5's.
+    ("claude-opus-5-5", (4.0, 20.0)),
+    ("claude-opus-5-5-20261101", (4.0, 20.0)),
     ("claude-opus-4-8", (5.0, 25.0)),
     ("claude-fable-5-1", (10.0, 50.0)),
 ])
@@ -118,6 +121,13 @@ def test_models_price_at_the_current_list_rate(model, per_mtok):
     Sonnet 5 is cheaper than Sonnet 4.6, so the more specific key must match first."""
     price_in, price_out = M.llm_price(model)
     assert (round(price_in * 1e6, 6), round(price_out * 1e6, 6)) == per_mtok
+
+
+def test_the_sql_prices_opus_5_5_before_it_reaches_opus():
+    """The SQL CASE walks the table in order, as the lookup does: the specific key first."""
+    sql = M.cost_usd_sql("c")
+    assert sql.index("'%opus-5-5%'") < sql.index("'%opus%'")
+    assert list(M.LLM_PRICE).index("opus-5-5") < list(M.LLM_PRICE).index("opus")
 
 
 def test_mrr_counts_only_paying_active_accounts():
@@ -173,10 +183,14 @@ def test_admin_sql_runs_and_internal_accounts_are_excluded(admin_client):
     _seed(store, "adm_real", internal=False)
     _seed(store, "adm_us", internal=True)
 
-    listed = {a["org_id"] for a in client.get("/admin/accounts?limit=200").json()["accounts"]}
+    # ⛔ The pg fixture is session-scoped: in the whole suite the database holds every org earlier tests made,
+    # newest first, and on 14 Oct (884f0ea4) more than 200 of them were newer than this seed — the first page
+    # no longer held `adm_real` and the test failed for a reason that is not the route's. Ask for these two by
+    # name (`q` matches the name, which _seed sets to the id), so the claim is the same and the page is ours.
+    listed = {a["org_id"] for a in client.get("/admin/accounts?limit=200&q=adm_").json()["accounts"]}
     assert "adm_real" in listed and "adm_us" not in listed
     with_internal = {a["org_id"] for a in
-                     client.get("/admin/accounts?limit=200&include_internal=true")
+                     client.get("/admin/accounts?limit=200&q=adm_&include_internal=true")
                      .json()["accounts"]}
     assert {"adm_real", "adm_us"} <= with_internal
 

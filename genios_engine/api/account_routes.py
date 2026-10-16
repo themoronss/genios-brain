@@ -641,6 +641,8 @@ RETAINED_AFTER_ERASURE: frozenset[str] = frozenset({
 })
 
 _ORG_SCOPED_TABLES = [
+    # STEP-14 (0222): what the card contract refused — the tenant's card words, as refused.
+    "card_refusals",
     # migrations 0147-0149 (P3 hot lane): moments name the tenant's counterparties; feedback
     # before moments (FK). The slice versions go too, so every device re-pulls in full.
     "moment_feedback", "moment_cache", "moments", "realtime_events", "seat_slice_versions",

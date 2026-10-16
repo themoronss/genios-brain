@@ -163,6 +163,25 @@ def test_the_open_asks_say_who_owes_the_answer(store):
     assert files["kitepath.test"].open_asks == ()
 
 
+def test_an_open_ask_says_when_it_was_last_asked(store):
+    """STEP-13 M35.C2.L-logic.V1.U17 (second crosscheck B1): the ledger's own verbs — Priya asks, we reply in
+    her thread (the loop closes), she asks again (it REOPENS, `opened_at` unmoved) — and the file's ask
+    carries both instants: when it was opened, and when it was last asked."""
+    from genios_engine.context.open_loops import close_loops_for_reply, record_ask
+
+    b = _world(store)
+    priya = node(store, ORG, PRIYA).node_id
+    with store.engine.begin() as c:
+        record_ask(c, org_id=ORG, subject_node_id=priya, kind="question", thread_id="t_priya",
+                   event_id="evt_priya", at=later(6))
+        assert close_loops_for_reply(c, org_id=ORG, subject_node_id=priya, thread_id="t_priya",
+                                     event_id="evt_mine", at=later(7)) == 1
+        record_ask(c, org_id=ORG, subject_node_id=priya, kind="question", thread_id="t_priya",
+                   event_id="evt_priya", at=later(8))
+    [ask] = _files(store, b)["northwind.test"].open_asks
+    assert (ask.opened_at, ask.last_seen_at, ask.owed_by) == (later(6), later(8), "us")
+
+
 def test_one_counterparty_in_two_domains_is_one_file(store):
     b = _world(store)
     ledger(store, ORG, event_id="evt_sales", sender=PRIYA, thread=None, at=later(8))

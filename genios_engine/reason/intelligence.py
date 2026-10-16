@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import text
 
+from genios_engine.context.llm.client import THINKING_OFF
 from genios_engine.reason.authority import (
     AUTHORITATIVE_REASON_CODE_SQL,
     AUTHORITATIVE_SCORE_SQL,
@@ -390,8 +391,12 @@ def run_query(*, org_id: str, module_id: str, question: str, extra_facts: dict,
     conf = ground
     foresight = _foresight(store, org_id, signals, focus)
 
+    # ⛔ THINKING OFF (`yc2_w27_s18` M50.C3.L-logic.V1.U05, `06` D71). One explanation sentence is
+    # 30-130 tokens under a 700 ceiling; deep analyze asks `claude-sonnet-5`, which thinks by default
+    # and spends its thinking from the same 700 — a cut answer is cached as `llm_unavailable`.
+    sized = {"thinking": THINKING_OFF} if getattr(llm, "supports_thinking", False) else {}
     res = llm.call(_prompt(question, module_id, signals, facts, rec, extra_facts, focus),
-                   max_tokens=700) if llm is not None else None
+                   max_tokens=700, **sized) if llm is not None else None
     unc = []
     explanation = None
     if res is None or not res.ok or not res.parsed:

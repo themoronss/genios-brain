@@ -195,7 +195,7 @@
       ]
      },
      "mode": "wait",
-     "alternative": "If the integration matters and Ravi stays quiet for a couple of weeks, one short check-in from Arjun on whether the doc covered what he needed.",
+     "alternative": "If the integration matters and Ravi stays quiet for a couple of weeks, one short check-in from you on whether the doc covered what he needed.",
      "wait_or_stop": "Wait for Ravi's reply; stop waiting, with a single check-in, only if a long quiet sets in and the integration still matters.",
      "done_when": "Ravi confirms the doc covers what he needed, or names the next step."
     }

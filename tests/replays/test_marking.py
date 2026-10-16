@@ -53,9 +53,13 @@ def _abstain() -> fc.FounderCase:
     return fc.parse_case(raw, source="t.json")
 
 
-def _card(card_id: str, text: str, sweeps=(0, 1), subject: str | None = None) -> fc.CardView:
+def _card(card_id: str, text: str, sweeps=(0, 1), subject: str | None = None, *, shown=None,
+          versions=()) -> fc.CardView:
+    """⛔ RESTATED by yc2_w27_s14/M42.C4.L-logic.V2.U03 (s14-D4): a card here is SHOWN by the app at every sweep it
+    existed unless `shown` says otherwise — must-detect counts only what the app showed."""
     return fc.CardView(card_id=card_id, state="queued", level="prescriptive", text=text,
-                       output_lane=None, sweeps=tuple(sweeps), subject=subject)
+                       output_lane=None, sweeps=tuple(sweeps), subject=subject,
+                       app_sweeps=tuple(sweeps if shown is None else shown), versions=tuple(versions))
 
 
 def _run(*, cards=(), outcome="emitted", reason=None, facts=3, situations=(), chain_ok=(True, True),
@@ -241,3 +245,73 @@ def test_a_card_still_open_after_the_work_was_done_fails():
                                                sweeps=(0, 1))]))
     assert mark.verdict == FAIL
     assert "still open after sweep 1" in mark.reason, mark.reason
+
+
+
+# =================================================================================================
+# STEP-14 · the board counts what you see (`yc2_w27_s14` M42.C4.L-logic.V2.U03, s14-D4)
+# =================================================================================================
+def test_a_must_detect_card_the_app_never_showed_does_not_count():
+    """6 of the board's 21 must-detect passes were cards the app never showed (s14-F2): a card in `cards` the
+    founder could not see is no card they were shown. The case says so beside its verdict."""
+    hidden = _card("c1", "Reply to Kavya Menon: send the deck", shown=())
+    mark = judge(_case(), _run(cards=[hidden]))
+    assert mark.verdict == FAIL and "0 cards about Kavya/Lotus" in mark.reason, mark
+    [unshown] = [c for c in mark.checks if c.name == "unshown"]
+    assert unshown.reason == "the app never showed c1"
+
+
+def test_a_card_shown_after_one_sweep_counts():
+    shown_once = _card("c1", "Reply to Kavya Menon: send the deck", shown=(1,))
+    assert judge(_case(), _run(cards=[shown_once])).verdict == PASS
+
+
+def test_an_unshown_second_card_does_not_break_the_count_of_one():
+    one = _card("c1", "Reply to Kavya Menon: send the deck")
+    twin = _card("c2", "Kavya Menon wrote about the deck", shown=())
+    mark = judge(_case(), _run(cards=[one, twin]))
+    assert mark.verdict == PASS and [c.reason for c in mark.checks if c.name == "unshown"] == [
+        "the app never showed c2"]
+
+
+def test_a_forbidden_term_said_by_any_version_on_any_surface_fails():
+    """Forbidden names and phrases read every card — shown or not — and every version's words (s14-F14)."""
+    said_once = _card("c1", "Reply to Kavya Menon: send the deck",
+                      versions=("Reply to Kavya Menon — last chance", "Reply to Kavya Menon: send the deck"))
+    assert judge(_case(), _run(cards=[said_once])).forbidden_hits == (("c1", "last chance"),)
+    hidden = _card("c2", "Kavya asked — last chance", shown=())
+    assert ("c2", "last chance") in judge(_case(), _run(cards=[_card("c1", "Kavya: the deck"), hidden])).forbidden_hits
+
+
+def test_a_must_abstain_case_reads_every_card_and_every_version():
+    """Silence is judged over everything the engine wrote: a card about Kavya the app never showed, or one that
+    said it in an earlier version, breaks it."""
+    hidden = _card("c1", "Kavya Menon: the deck", shown=())
+    assert judge(_abstain(), _run(cards=[hidden])).verdict == FAIL
+    earlier = _card("c2", "A note on the round", versions=("Kavya Menon asked for the deck", "A note on the round"))
+    assert judge(_abstain(), _run(cards=[earlier])).verdict == FAIL
+    assert judge(_abstain(), _run(cards=[_card("c3", "A note on the round")])).verdict == PASS
+
+
+def test_a_witness_at_the_card_stage_is_any_card_the_engine_wrote():
+    """A must-abstain witness `card` asks whether the chain reached a card at all — shown or not, any version."""
+    raw = copy.deepcopy(BASE)
+    raw.update(kind="must_abstain", witness={"stage": "card", "about": ["Lotus"]}, not_expressible={})
+    raw["expected"] = {"cards": [{"about": ["Kavya"], "min": 0, "max": 0}]}
+    case = fc.parse_case(raw, source="t.json")
+    hidden = _card("c1", "Lotus Ventures: nothing to do", shown=())
+    assert judge(case, _run(cards=[hidden])).verdict == PASS
+    assert judge(case, _run(cards=[])).verdict == NOT_EXERCISED
+
+
+
+def test_a_living_card_is_about_every_version_the_app_showed():
+    """F24: one file's card was about the unit economics sheet, then about the review deck — a card about each."""
+    raw = copy.deepcopy(BASE)
+    raw["expected"] = {"cards": [{"about": ["unit economics"], "min": 1, "max": 1},
+                                 {"about": ["review deck"], "min": 1, "max": 1, "mentions": ["Phase-1"]}]}
+    case = fc.parse_case(raw, source="t.json")
+    living = _card("c1", "Upload the Phase-1 review deck", versions=(
+        "Finish the unit economics sheet", "Upload the Phase-1 review deck"))
+    assert judge(case, _run(cards=[living])).verdict == PASS
+    assert judge(case, _run(cards=[_card("c1", "Upload the Phase-1 review deck")])).verdict == FAIL

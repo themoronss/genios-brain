@@ -388,7 +388,7 @@
       "to": "Tom",
       "answers": "loop:loop_1531307971fd8eba4224d4e7"
      },
-     "alternative": "If Arjun wants the call to wait until more of the round is in motion, reply now with a yes and the week he can talk, rather than leaving the question open.",
+     "alternative": "If you want the call to wait until more of the round is in motion, reply now with a yes and the week you can talk, rather than leaving the question open.",
      "wait_or_stop": "Do not wait to answer. After the reply, wait for Tom to pick a time; if he goes quiet, treat it as a first contact that did not take, and send no chase.",
      "done_when": "A first call with Tom is on the calendar.",
      "draft": "Hi Tom, thanks for reaching out. Yes — Nimbus Labs is raising its seed round now; we're building an AI chief of staff for founders. I'd be glad to talk. Would [two or three times] work for a short call? Arjun"

@@ -7,6 +7,8 @@ from datetime import datetime
 
 from .slots import SENTINELS, grounded_slots
 
+from genios_engine.context.llm.client import TRUNCATED
+
 # THE INVENTION RULE IS THE ENGINE'S, NOT THE CARD'S (STEP-13, `yc2_w27_s13` M35.C2.L-logic.V0.U08). It
 # moved, byte for byte, to `platform/grounding`, so reasoning can hold the expert's claims to the card
 # validator's own rule without importing upward. Re-exported here under the names every caller has
@@ -497,8 +499,8 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
         "what is missing and who must look — this card declines to instruct, so do NOT write a "
         "command" if absence else
         "A DIRECT ORDER, AND IT MUST NAME THE THING. Verb + who + WHAT. "
-        "'Send Titan Capital your traction metrics', 'Answer Divyanshu's pricing question', "
-        "'Get Leslie's calendar availability'. "
+        "'Send Kestrel Capital the data-room link', 'Answer Meera Shah's question on the pilot fee', "
+        "'Get Divya Raman's free slots for Thursday'. "
         "A bare 'Reply to X today' is REJECTED — it names who and not what, which the reader's "
         "own inbox already tells them. The specific is in the quotes and the draft below; if you "
         "can write the draft you can name the thing in the headline. "
@@ -517,8 +519,13 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
     unknown = sorted(k for k in slots if k not in known)
     unknown_line = (f"NOT KNOWN — never state or imply these: {', '.join(unknown)}\n"
                     if unknown else "")
+    # STEP-14 (`yc2_w27_s14` M43.C5.L-interface.V0.U01, s14-F17): only a card no review wrote is narrated, and its
+    # reader is the founder — written to as "you", by their chief of staff. It said "for a salesperson", and its
+    # headline examples above were the founder's real investors and contacts, sent in every tenant's prompt; they are
+    # the golden set's invented names (`tests/replays/founder_case.REAL_NAMES` is the deny-list).
     return (
-        "You are GeniOS, writing ONE decision card for a salesperson. Use ONLY the facts and "
+        "You are the founder's chief of staff, writing ONE card for them to act on. Write to the founder "
+        "as \"you\". Use ONLY the facts and "
         "quotes below — never invent a name, number, company or date that is not present.\n\n"
         f"Situation type: {reason_code}\n"
         f"Facts (typed, from the graph):\n{json.dumps({k: (v.get('value') if isinstance(v, dict) else v) for k, v in facts.items()}, default=str, indent=0, sort_keys=True)}\n"
@@ -562,11 +569,18 @@ def render_copy(*, reason_code: str, template: dict, facts: dict, slots: dict,
     prompt = _prompt(reason_code, template, facts, slots, quotes)
     res = llm.call(prompt, max_tokens=600)
     if cost_sink is not None and (res.input_tokens or res.output_tokens):
+        # ⛔ HOW THE CALL ENDED (`yc2_w27_s18` M50.C3.L-logic.V1.U15, s5t-F6): the sink was handed the
+        # tokens alone and `record_cost` defaults to success, so every `l5_render` call was one — a
+        # 400, an unparseable answer and a cut one included. A cut answer is a failure, parsed or not.
+        cut = bool(getattr(res, "truncated", False))
         try:
             # Attributed to the signal this render served — the difference between a monthly
             # bill and a computable cost-per-decision.
             cost_sink(org_id=org_id, model=res.model, purpose="l5_render",
                       input_tokens=res.input_tokens, output_tokens=res.output_tokens,
+                      success=bool(getattr(res, "ok", False)) and not cut,
+                      error=(getattr(res, "error", None)
+                             or (f"{TRUNCATED} (max_tokens=600)" if cut else None)),
                       subject_ref=subject_ref)
         except Exception:       # noqa: BLE001 — cost logging never blocks delivery
             pass

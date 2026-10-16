@@ -1,0 +1,234 @@
+{
+ "case_id": "F63",
+ "source": "ideal_reader",
+ "recorded_at": "b8b4804d",
+ "answers": {
+  "11c1fbc6afcb221824a56eaa88b9d87658091b15cd4de7c51678d23e0a59222f": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "introduction"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ishaan Mehra",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ishaan Mehra",
+        "start_offset": 12,
+        "end_offset": 24
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Corvane",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Corvane",
+        "start_offset": 26,
+        "end_offset": 33
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "relationships": [
+     {
+      "party": "Ishaan Mehra",
+      "nature": "introduced contact",
+      "direction": "inbound",
+      "evidence_text": "Arjun, meet Ishaan Mehra"
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "medium",
+     "motive": "introduce a contact"
+    },
+    "questions": [
+     {
+      "text": "Will Arjun write to Ishaan Mehra about a pilot at Corvane?",
+      "asked_by": "Ishaan Mehra",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "wants to pilot an AI chief of staff with his team this quarter",
+        "start_offset": 92,
+        "end_offset": 154
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ]
+   },
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Ishaan Mehra\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ishaan Mehra\", \"start_offset\": 12, \"end_offset\": 24}], \"confidence_bp\": 9000}, {\"surface_form\": \"Corvane\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Corvane\", \"start_offset\": 26, \"end_offset\": 33}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Ishaan Mehra\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Ishaan Mehra\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}, \"questions\": [{\"text\": \"Will Arjun write to Ishaan Mehra about a pilot at Corvane?\", \"asked_by\": \"Ishaan Mehra\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"wants to pilot an AI chief of staff with his team this quarter\", \"start_offset\": 92, \"end_offset\": 154}], \"confidence_bp\": 9000}]}",
+   "framed": true,
+   "input_tokens": 5533,
+   "output_tokens": 270,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5093b969ab60b812f502727e040a7f7917c469ac220f0b1369bf46376360677a": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Ishaan Mehra, who runs sales at Corvane and wants to pilot an AI chief of staff with his team this quarter.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Ishaan Mehra, who runs sales at Corvane and wants to pilot an AI chief of staff with his team this quarter"
+     },
+     {
+      "claim": "The introduction asks you to write to Ishaan.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "He asked me to put you two in touch, so write to him when you can"
+     },
+     {
+      "claim": "The mail carries no address for Ishaan.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "The introduction's ask is open in this file and waits on you.",
+      "evidence": [
+       "loop:loop_#1"
+      ]
+     },
+     {
+      "claim": "The file sits under a situation seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "You cannot write to Ishaan until you have his address, and a guessed one is never sent.",
+      "based_on": [
+       "fact:2",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "The note goes to Ishaan, never back to the connector.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+      "based_on": [
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Corvane may pilot the product with its sales team.",
+      "needs": "A first conversation with Ishaan."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Ishaan Mehra's email address.",
+      "relevance": "Without it nobody can write to him, and a guess may reach the wrong person."
+     },
+     {
+      "question": "Whether Ishaan will write first.",
+      "relevance": "His own mail would carry his address."
+     }
+    ],
+    "frames": {
+     "primary": "Your connector introduced a sales lead who wants a pilot, but gave no address to reach him by: one thing to find out before anyone writes.",
+     "rivals": [
+      "An introduction where Ishaan writes first, and the address arrives with his mail.",
+      "An introduction the connector will complete with a second mail."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, from the brief and the file: an introduction gives both sides a way to reach each other.",
+     "actual": "The introduction names Ishaan and Corvane and asks you to write, but carries no address for him."
+    },
+    "scenarios": {
+     "do_nothing": "Ishaan's interest in a pilot goes cold while nobody can write to him.",
+     "act": "Finding his address now lets you write while the introduction is warm.",
+     "best": "You have his address, write, and Corvane pilots the product.",
+     "worst": "A guessed address reaches the wrong person, or nobody writes and the pilot is lost.",
+     "signals_to_watch": [
+      "A mail from Ishaan in the file",
+      "A second mail from the connector with his address"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "medium",
+     "reversibility": "reversible",
+     "reasons": [
+      "A sales lead who wants a pilot waits to hear from you.",
+      "Nobody can write to him until his address is known.",
+      "Asking costs nothing and a guess can reach the wrong person."
+     ]
+    },
+    "mode": "find_out",
+    "next_move": {
+     "who": "You",
+     "what": "Ishaan Mehra's address at Corvane, so you can write to him as the introduction asks: it gives none",
+     "for_whom": "Ishaan Mehra at Corvane",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "to": null,
+     "answers": null
+    },
+    "alternative": "If Ishaan writes first, answer him at the address his mail comes from.",
+    "wait_or_stop": "Ask once; until his address is known nothing is sent, and never to a guessed address.",
+    "done_when": "You have Ishaan Mehra's address and have written to him.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Ishaan Mehra, who runs sales at Corvane and wants to pilot an AI chief of staff with his team this quarter.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Ishaan Mehra, who runs sales at Corvane and wants to pilot an AI chief of staff with his team this quarter\"}, {\"claim\": \"The introduction asks you to write to Ishaan.\", \"evidence\": [\"evt_#1\"], \"quote\": \"He asked me to put you two in touch, so write to him when you can\"}, {\"claim\": \"The mail carries no address for Ishaan.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The introduction's ask is open in this file and waits on you.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"You cannot write to Ishaan until you have his address, and a guessed one is never sent.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"The note goes to Ishaan, never back to the connector.\", \"based_on\": [\"fact:1\", \"fact:2\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.\", \"based_on\": [\"hist:derived.history.times_seen@admin\"]}], \"hypotheses\": [{\"proposition\": \"Corvane may pilot the product with its sales team.\", \"needs\": \"A first conversation with Ishaan.\"}], \"unknowns\": [{\"question\": \"Ishaan Mehra's email address.\", \"relevance\": \"Without it nobody can write to him, and a guess may reach the wrong person.\"}, {\"question\": \"Whether Ishaan will write first.\", \"relevance\": \"His own mail would carry his address.\"}], \"frames\": {\"primary\": \"Your connector introduced a sales lead who wants a pilot, but gave no address to reach him by: one thing to find out before anyone writes.\", \"rivals\": [\"An introduction where Ishaan writes first, and the address arrives with his mail.\", \"An introduction the connector will complete with a second mail.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: an introduction gives both sides a way to reach each other.\", \"actual\": \"The introduction names Ishaan and Corvane and asks you to write, but carries no address for him.\"}, \"scenarios\": {\"do_nothing\": \"Ishaan's interest in a pilot goes cold while nobody can write to him.\", \"act\": \"Finding his address now lets you write while the introduction is warm.\", \"best\": \"You have his address, write, and Corvane pilots the product.\", \"worst\": \"A guessed address reaches the wrong person, or nobody writes and the pilot is lost.\", \"signals_to_watch\": [\"A mail from Ishaan in the file\", \"A second mail from the connector with his address\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"A sales lead who wants a pilot waits to hear from you.\", \"Nobody can write to him until his address is known.\", \"Asking costs nothing and a guess can reach the wrong person.\"]}, \"mode\": \"find_out\", \"next_move\": {\"who\": \"You\", \"what\": \"Ishaan Mehra's address at Corvane, so you can write to him as the introduction asks: it gives none\", \"for_whom\": \"Ishaan Mehra at Corvane\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": null, \"answers\": null}, \"alternative\": \"If Ishaan writes first, answer him at the address his mail comes from.\", \"wait_or_stop\": \"Ask once; until his address is known nothing is sent, and never to a guessed address.\", \"done_when\": \"You have Ishaan Mehra's address and have written to him.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 3383,
+   "output_tokens": 918,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "58425cee0584a7556e86dd6a9731ac82f03ed493a6fde62ecfe2a26a0b6c0673": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Arjun, meet Ishaan Mehra (Corvane)",
+    "start_offset": 0,
+    "end_offset": 34,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Arjun, meet Ishaan Mehra (Corvane)\", \"start_offset\": 0, \"end_offset\": 34, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1538,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

@@ -58,6 +58,20 @@ class Question:
     retired_why: str | None = None
 
 
+#: ⛔ ONE LOCK ORDER (M36.C2.L-interface.V4.U07, the second crosscheck G11; 886e16c5 "NOT FIXED, NOTICED"): the
+#: Answer press locked card → signal → question in one statement, the sweep question → signal → card — two
+#: orders, a deadlock when they meet. Both take the FILE'S QUESTION LOCK first — a transaction-scoped advisory
+#: lock on (tenant, file) — and only then any row: the press before its door (`deliver/actions.ingest_action`),
+#: the sweep before it asks or retires (`reason/expert/asks.ask_the_founder`, `retire_question`).
+_FILE_LOCK = "select pg_advisory_xact_lock(hashtextextended(:k, 0))"
+
+
+def lock_file(conn, org_id: str, file_id: str) -> None:
+    """Take the file's question lock, held to the end of the transaction — before any row of its question, its
+    signal or its card (see above)."""
+    conn.execute(text(_FILE_LOCK), {"k": f"founder_question\x1f{org_id}\x1f{file_id}"})
+
+
 def question_id_for(org_id: str, file_id: str, fingerprint: str, question: str) -> str:
     """The question's id, from what it is."""
     digest = hashlib.sha256("\x1f".join((org_id, file_id, fingerprint, question)).encode()).hexdigest()
@@ -180,5 +194,5 @@ def answer(conn, *, org_id: str, question_id: str, words: str, by: str, at: date
 
 
 __all__ = ["ANSWERED", "CALLED_WRONG", "LEFT_COVERAGE", "NO_LONGER_ASKED", "OPEN", "Question", "REPLACED",
-           "RETIRED", "RETIRED_WHYS", "answer", "answers_for", "ask", "by_id", "called_wrong_for",
+           "RETIRED", "RETIRED_WHYS", "answer", "answers_for", "ask", "by_id", "called_wrong_for", "lock_file",
            "open_question", "question_id_for", "retire"]

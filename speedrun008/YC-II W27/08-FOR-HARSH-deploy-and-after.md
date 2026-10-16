@@ -96,10 +96,67 @@ here when the step lands. Nothing in this table switches anything on by itself.
 |---|---|---|---|---|
 | STEP-13, check every claim | first part **pushed** (`7766a06a`); the check's and the question's fixes from its crosscheck are merged and being re-recorded; next push | `0200_expert_review_checks` (one nullable column on `expert_reviews`: the check), `0201_founder_questions` (one table; `/reset` wipes it) | §1.14, §3.12, §4.10 — nothing runs until the expert is on (§3.11); wire the needs queue's fetchers when you can (§3.12) | the **question card** and its **Answer** box; each card sentence's **source**; the workstream page reads `says` and `check` (§1.14) |
 | STEP-17, real tests | **built**, merged on the integration branch | none | CI gains a `database` job (Postgres 17) and every job runs Python **3.11**, the Dockerfile's; after each deploy keep the health gate's output (`scripts/pipeline_health.py … --json <release record>/health.json`) and run it again the next day with `--require-data` — STEP-17's follow-up adds the exact step to §2/§3 | — |
-| STEP-18, the known bugs | **built**, merged on the integration branch | `0210_every_wrong_reason_is_kept`, `0211_a_followup_names_its_observation` | **before the deploy:** set `GENIOS_JWT_SECRET` in production (a non-dev boot with the default secret refuses to start, exit 3). If you also set `GENIOS_ENV` to a non-dev value: a rotated secret signs every user and paired desktop app out (they sign in again), and unsigned Composio webhooks get 403 unless `GENIOS_COMPOSIO_WEBHOOK_SECRET` is set — read `GET /config` first — and since `06` D62 an UNSET `GENIOS_ENV` counts as not dev too, so the image refuses to boot on a public secret until both are set (§3.14). **After:** the s18-F9 and s18-F3 probes and the backfill of review objects stuck at `governed`, dry run first (§4.11) | — |
+| STEP-18, the known bugs | **built**, merged on the integration branch | `0210_every_wrong_reason_is_kept`, `0211_a_followup_names_its_observation` | **before the deploy:** set `GENIOS_JWT_SECRET` in production (a non-dev boot with the default secret refuses to start, exit 3). If you also set `GENIOS_ENV` to a non-dev value: a rotated secret signs every user and paired desktop app out (they sign in again), and unsigned Composio webhooks get 403 unless `GENIOS_COMPOSIO_WEBHOOK_SECRET` is set — read `GET /config` first — and since `06` D62 an UNSET `GENIOS_ENV` counts as not dev too, so the image refuses to boot on a public secret unless a REAL secret is set — `GENIOS_ENV` decides the webhook behaviour above, not the boot itself (second crosscheck I1; §3.14). **After:** the s18-F9 and s18-F3 probes and the backfill of review objects stuck at `governed`, dry run first (§4.11) | — |
 | STEP-14, the card | **being built** | `0220_the_living_card`, `0221_the_gold_card` (planned) | read the board as the app showed it (s14-D4) | one **living card per file**: a card has versions, and its history shows them; a question card stays open after your answer (*"your answer is in; the file is read again"*, s14-D3); the headline is cut by code, the move whole under *recommended* |
 | STEP-15, the morning brief | **being built** | `0230_morning_briefs` (planned) | at deploy, **set `orgs.timezone` for Rohit's org** (otherwise it is inferred from his send hours); a Slack tenant gets the brief as its digest | the **Today view** (Atlas A.10 has the wireframe) reads the brief's route at 08:00 in the org's timezone; e-mail and WhatsApp come later |
 | STEP-16, learning from you | **being built** | `0241_founder_corrections`, `0242_company_brief_corrections` (planned; `0240` is not needed — STEP-18's `0210` already keeps every reason) | do **not** arm calibration (D13 stays shadow) | the card's *wrong* shows four groups and a words box; a question card can be called *wrong* (*"don't ask me this"*); your corrections show on the file |
+
+## 0d · ⛔ Claude 5 thinks by default — R-2 is probably cut in production today (13 Oct)
+
+**The defect** (STEP-18 §9; `06` D71). Claude Sonnet 5 thinks unless the request turns it off, and the
+tokens it spends thinking count toward `max_tokens` with the answer. Every model site here was sized for a
+model that does not think, and `context/llm/client.LLMClient` — the one client R-1, R-2 and deep analyze
+use — sends no thinking control. On `harsh/mvp` the R-2 narrator (`l4_bundle`) runs `claude-sonnet-5` at a
+2,400-token ceiling: its answer is ~450 tokens, and a call whose thinking fills the rest is cut, retried
+once at the same ceiling, and ends as the template — two charged calls for no narrative. Measured on the
+golden set on 12 Oct: the R-7 expert on Sonnet 5 at 4,000 was cut on **203 of 203** calls (R-7 is not
+on `harsh/mvp`).
+
+**1 · Rohit runs this first** — read-only, the four `@thinking_*` blocks of the probe file (§4):
+
+```
+PGOPTIONS='-c default_transaction_read_only=on' psql "$URL" -f "speedrun008/YC-II W27/baseline/production_state.sql"
+```
+
+| Block | Confirms the defect | Refutes it |
+|---|---|---|
+| `@thinking_lanes` | `l4_bundle` × `claude-sonnet-5`: ≥ 10% of calls at 2,400 (`failures_at_ceiling` + `parsed_but_cut`) | every call since 4 Oct under 2,400 — the patch then only saves ~40% of R-2's output spend |
+| `@thinking_r_sites` | R-2 `failed_generation` with `every_attempt_at_ceiling` (2 attempts, 4,800 tokens) | none |
+| `@thinking_sonnet_by_day` | the Sonnet 5 lanes still at a ceiling after 4 Oct | — |
+| `@thinking_models_in_use` | a T1 lane on a model other than Haiku (an override: the shared client would then think there too) | Haiku plus the two Sonnet 5 lanes only |
+
+The blocks read Rohit's org only (the probe file's rule); `@thinking_expert_after_deploy` and
+`@thinking_brief_after_deploy` read tables that come with the speedrun008 deploy (`0195`, `0197`) and
+error before it — run them after.
+
+**2 · The hotfix for `harsh/mvp`** — one file and its test, nothing else:
+`speedrun008/YC-II W27/baseline/thinking/harsh-mvp-r2-thinking-off.diff`. It sends
+`thinking: {"type": "disabled"}` to `claude-sonnet-5` — its own id or a dated snapshot, never a longer id
+(Opus 5.5 and Fable cannot turn thinking off; `disabled` is a 400 there) — from `context/llm/client.py`,
+and adds two tests to `tests/context/test_sampling_is_omitted_where_it_is_refused.py`. Haiku's requests do
+not change by a byte.
+
+```
+git switch harsh/mvp && git pull --ff-only
+git apply --check "speedrun008/YC-II W27/baseline/thinking/harsh-mvp-r2-thinking-off.diff"   # from a speedrun008 checkout, or copy the file
+git apply "speedrun008/YC-II W27/baseline/thinking/harsh-mvp-r2-thinking-off.diff"
+.venv/bin/python -m pytest -q tests/context/test_sampling_is_omitted_where_it_is_refused.py tests/context/test_a_truncated_call_is_not_bad_json.py
+git commit -am "R-2: Sonnet 5 asked with thinking off (STEP-18 §9 hotfix)" && git push   # then deploy as you do
+```
+
+Proved on an extract of `origin/harsh/mvp` @ `84f00a40` (never a checkout):
+`bash 'speedrun008/YC-II W27/baseline/thinking/check-harsh-mvp-hotfix.sh'` — it applies, harsh/mvp's two
+client test files pass (25), and so do its `tests/context` and the R-site gauntlet and doctrine tests.
+A day after, `@thinking_lanes` should show `l4_bundle` with no call at 2,400.
+
+**3 · The speedrun008 deploy carries the whole fix** (`yc2_w27_s18` M50): a thinking control per model
+family in the shared client, OFF by default; every R-site asks with thinking off (R-7 at 6,000 with a 120 s
+timeout); deep analyze, the brief drafter (4,000) and the four moment lanes the same; a cut answer is a
+failure on every ledger; `scripts/pipeline_health.py` sees a cut that parsed and fails an expert day more
+than half cut. No migration. ⛔ Once the hotfix is committed on `harsh/mvp`, `harsh/mvp` is one commit
+ahead of `speedrun008` and §2's `--ff-only` refuses: the lead merges that commit back into `speedrun008`
+first, taking `speedrun008`'s side in `context/llm/client.py` and the test file (its table already sends
+Sonnet 5 `disabled`), so the deploy fast-forwards again.
 
 ## 1 · What the deploy changes in production
 
@@ -336,7 +393,7 @@ files; the deploy is not done until the boot log names each.
 ⛔ **STEP-13 (12 Oct) adds `0200_expert_review_checks.sql`** (one nullable column on `expert_reviews`, written by
 the review store) **and `0201_founder_questions.sql`** (one table; `/reset` fails until it is applied) — the boot
 log names eleven files from `0191`.
-⛔ **STEP-18 (12 Oct) adds `0210_every_wrong_reason_is_kept.sql` and `0211_a_followup_names_its_observation.sql`** (both additive), and BEFORE the deploy needs `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` in the deployment's environment, or the new image refuses to boot — §3.14.
+⛔ **STEP-18 (12 Oct) adds `0210_every_wrong_reason_is_kept.sql` and `0211_a_followup_names_its_observation.sql`** (both additive), and BEFORE the deploy needs a real `GENIOS_JWT_SECRET` in the deployment's environment — the new image refuses to boot on an unset or default secret unless `GENIOS_ENV` already names `dev`/`development`/`test`/`local` (second crosscheck I1: a real secret alone is enough; `GENIOS_ENV` is a separate decision, with its own webhook consequence) — §3.14.
 No new environment variable. One value we need from the
 deploy's environment:
 **`GENIOS_L4_LLM_DECISION_MAKER`** — on or off? The golden set runs the LLM decider on, as
@@ -684,9 +741,13 @@ does.
    ```
 2. In the deployment's environment (DigitalOcean), read — do not print — whether `GENIOS_ENV`,
    `GENIOS_JWT_SECRET` and `GENIOS_COMPOSIO_WEBHOOK_SECRET` are set.
-3. **If production does not set `GENIOS_ENV`, or sets it outside dev, the new image will not boot
-   until `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` are set.** Set them together, in one change,
-   before the deploy, knowing what each does:
+3. **If production carries the default (or no) `GENIOS_JWT_SECRET`, the new image will not boot
+   until a real one is set — whatever `GENIOS_ENV` says.** (Second crosscheck I1: a real secret
+   alone boots in every `GENIOS_ENV` state, including unset; only an unset-or-non-dev `GENIOS_ENV`
+   WITH a default/empty secret refuses — the rule the intro above states correctly.) If production
+   already carries a secret of its own, the boot needs nothing new here; still decide `GENIOS_ENV`
+   below for its own reason, the webhook one. Set whichever of the two actually need to change, in
+   one change, before the deploy, knowing what each does:
    * **A new `GENIOS_JWT_SECRET` signs every user and every paired desktop app out.** Every session
      and device token is signed and checked with it (`platform/sessions.py`, `platform/auth.py`,
      `platform/devices.py`), and the dashboard, the desktop app and the extension do not call
@@ -947,6 +1008,34 @@ GENIOS_ALLOW_PROD_WRITE=1 python scripts/rest_stuck_reviews.py --database-url "$
 It moves exactly the rows whose state is `governed` and whose latest transition goes to
 `human_review`, in one transaction, and writes no transition (the ledger already holds that edge).
 Run the probe again after: the `governed` / `human_review` row reads 0.
+
+**3 · B13's pre-0211 duplicate screen observations** (the second crosscheck's G-2;
+`scripts/retire_duplicate_screen_observations.py`, `yc2_w27_s1718` M48.C2.L-data.V2.U21). A
+follow-up rewritten more than once before `0211` landed can still hold several `active` graph
+observations — nothing retires the earlier ones retroactively. The probe (read-only, run on a
+scratch database or via `production_state.sql`'s `@b13_duplicate_screen_observations`):
+
+```
+select count(*) from (
+  select r.evidence->>'followup_id' as followup_id
+    from graph_observations o
+    join graph_source_refs r on r.observation_id = o.observation_id and r.org_id = o.org_id
+   where o.org_id = :org and r.source = 'screen_insight' and o.status = 'active'
+   group by 1 having count(*) > 1
+) d;
+```
+
+Dry run first; send its output (org, follow-up id, how many active) to Rohit; `--apply` after he reads it:
+
+```
+GENIOS_ALLOW_PROD_WRITE=1 PGOPTIONS='-c default_transaction_read_only=on' \
+    python scripts/retire_duplicate_screen_observations.py --database-url "$URL"          # dry run
+GENIOS_ALLOW_PROD_WRITE=1 python scripts/retire_duplicate_screen_observations.py --database-url "$URL" --apply
+```
+
+It keeps the LATEST active observation per follow-up, supersedes the rest (never deletes), and
+writes the survivor's id into `screen_followups.observation_id` so an ordinary rewrite retires it
+from here on. Run the probe again after: it reads 0.
 
 ## 5 · Do not
 

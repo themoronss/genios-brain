@@ -140,6 +140,13 @@ session's guard on report files written by a worker; the table is here.)
 | s14-F15 | **`06` D34's premise has moved**: every replayed card is the expert's; a pack rule on a covered file stands down (STEP-12) | `reason/runner.py:900-993` | D34 answered for covered files |
 | s14-F16 | **D8 is STEP-15's**: screen items are one seat's and never reach a file's card | `reason/moments/guards.py:86-87`; `reason/moments/followups.py` | STEP-15 (s14-D6) |
 | s14-F17 | **The narrator still writes for a salesperson with real names** — now only on cards no review wrote | `deliver/render.py:496-521` | M43.C5 |
+| s14-F18 | **The compiled lane's replacement expiry has no behavioural test**: when a compiled decision past its window is replaced, `_emit_capability_signal` expires the old signal's cards REPLACED — and a mutant that skips it survives tests/reason/expert, tests/reason/adapters, `tests/test_admin_support_packs.py` and the situation-card test (found by M42.C2.L-integration.V2.U02's mutation run, 12 Oct; the branch was only moved, not changed) | `reason/domain_shadow.py` (`replace_unless_from is None` branch) | the lead (a guard unit) |
+| s14-F19 | **No card ever reaches the agent surface**: `card_builder._surfaces` grants `agent` when an action's `action` is `run_play`, but `build_draft` writes its actions as `{"type": "run_play"}` — and its one test (`tests/test_open_loops.py:455`) feeds `{"action": "run_play"}`, the shape no card has. Found reading the expert grade (M42.C3.L-logic.V0.U01, 12 Oct); not changed — granting it would start agent pushes (`deliver/outbox.enqueue_agent_push`) on every Run Play card | `deliver/card_builder.py` `_surfaces`; `tests/test_open_loops.py:441-455` | the lead / Rohit (a behaviour to switch on deliberately) |
+| s14-F20 | **The team writer's card contract refused every meeting follow-up** (our own regression, M43.C4.L-integration.V1.U03 at `a3be2ec2`): a follow-up's evidence names its facts (node, field) and holds none of their values, and *"— 1 for you"* is a count code computed — so the number rule refused *"Follow-ups from ISO audit — 1 for you"* and *"(due 20 Sep)"*. A readiness card's *"1 away"* was held only when the milestone's id happened to carry the digit. Found by the root guard (`tests/test_meetings_pg.py`), 13 Oct; fixed the same day: the writer hands the contract what its words were composed from (`emit_situation(corpus=…)`; `meetings/passes.compose_followup` returns the facts' values and the count, never its words), and the readiness evidence carries its away count | `reason/team/emit.py` `refusals`; `reason/meetings/passes.py` `compose_followup`; `reason/team/readiness.py` | M43.C4.L-integration.V1.U03 (fix) |
+| s14-F21 | **The card contract refused 19 golden expert cards for their gold lines** (our regression, found re-recording 14 Oct): why now and what remains are code's lines from the dossier (a meeting's title in quotes, its days away), the move whole, the alternative and the stop rule the check's — none were in an expert card's corpus, so *"number: 12"*, *"quote: Ferngrove x Nimbus Labs"*. F01, F02, F48, F52, F63 lost their card; that re-record was discarded | `deliver/pipeline._contract_refusals` | M43.C4.L-integration.V1.U02 (fix, `dfb2e169`) |
+| s14-F22 | **The connector became the subject of the file it introduced**: its nudges sit on the person's file, and the card lines took the last of the file's people to write — Introly — as its person (F03) | `reason/expert/card_lines._person` | M43.C2.L-logic.V0.U02 (fix, `836f17f1`) |
+| s14-F23 | **A titled meeting lost "(memory holds no words for it)"**: the dossier printed the title in its place, so F54's find-out reviews (authored on that line) were never served and the held file asked nothing; the second fix wave's unworded-meeting mutation stopped reaching a card | `reason/expert/dossier._timeline` | M42.C2.L-interface.V3.U04 (fix, `b8b4804d`) |
+| s14-F24 | **The statement census counts a bare string literal that opens on a SQL word**: `FUNCTION_WORDS`' "with" moved the pin 3,183 → 3,184 with no SQL added (the instrument's over-count, `03` F100's kind) | `platform/table_coverage._statements`; `deliver/card_builder.FUNCTION_WORDS` | left — the literal is one string now (`fc9ab5d5`); the census rule is the lead's |
 
 ### 8.4 · What changes in the design
 
@@ -242,3 +249,30 @@ two open cards; must-abstain 13/13; forbidden outputs 0 over every version.
 - **STEP-13's question card is planned against, not read** — its door's key (the builder stamp) is the lead's
   description; M42.C3.U04 adapts to what lands.
 - **Two re-records** on a load-sensitive machine, each restating the board in its five places.
+
+### 8.8 · Built — 12 to 14 Oct, branch `yc2w27-s14` (worktree `s14-build`)
+
+All 45 units of `yc2_w27_s14` (M42, M43), one commit each with its evidence, every code unit mutation-tested (each
+mutant run against a baseline that exited 0, survivors closed with tests); s14-D1…D8 taken at their recommended
+answers and recorded in `06` (Rohit took them, D66). Merged the integration line twice (`360766a3`, `8c89fe3c` — STEP-13's
+second fix wave and STEP-18's Claude 5 thinking fix), each conflict resolved keeping both intents.
+
+**The board** (`03` §F.1, `073da2ad`; `scripts/golden_score.py --assert-recorded` exits 0): must-detect 22/45 → **36/50**,
+must-abstain 13/13 → **14/14**, forbidden outputs 0, Atlas passing 6/80 → **12/80**. F176's eight cases pass — one
+card each, versioned as its file moved; replay 02 has six founder cases (F59–F64). Lost: F15 (`06` D57, the outreach
+wave) and F56 (a vendor's notice at the gate).
+
+**What changed in what you see.** A file has one card; its next decision or question versions it, saying what changed
+and keeping the words before; a renewal or a rewording is quiet. Answering a question keeps the card (s14-D3). The
+card says who and what the file is, why now, what remains, the move whole, its alternative and when to stop, and its
+window with where it came from; its headline is the move cut at a clause. Neither card writer writes a card that names
+us, prints a field's name, claims money with none in its evidence, quotes words nobody said or a number nothing
+holds — and what it refused is kept (`card_refusals`, 0222) and said by the health check.
+
+**Defects found in our own build and fixed in it**: s14-F20 (the team writer refused every meeting follow-up), F21 (the
+contract refused the gold lines), F22 (the connector as a file's subject), F23 (a titled meeting lost its "no words"
+line); and the merge's own (`531e1ec3`: the contract pulled `capture` into `contracts/`).
+
+**Waits for others**: the push and the merge to the integration line (the lead); s14-F18 and F19 (the lead, Rohit);
+F24 (the statement census counting a bare SQL word, the lead); `08`'s deploy notes for 0220–0222 and the one-time
+churn at switch-on (§8.7, Harsh's list).

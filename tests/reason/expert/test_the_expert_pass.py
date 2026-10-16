@@ -446,14 +446,20 @@ def test_a_standing_review_with_no_check_is_checked_before_it_covers(world):
     assert again["covered"] == first["covered"] and again["checked"] == {"shown": 2}
 
 
-def test_an_untouched_files_review_with_no_current_check_covers_nothing(world):
-    """Its dossier is not this one, so the pass cannot check it again faithfully: counted, never trusted."""
+def test_an_untouched_files_review_with_no_current_check_is_reviewed_again_when_the_file_moved(world):
+    """⛔ RESTATED by yc2_w27_s13/M35.C3.L-integration.V1.U06 (`06` D48, crosscheck X11). It was "covers nothing":
+    counted `unchecked`, the file decided per situation again and its file card never cleared. Since D48 a review
+    with no current check is checked again on the dossier it was reviewed on when the file is the one it saw, and
+    the file is reviewed again — inside the day's budget — when it moved: eleven quiet days moved it. A review with
+    no check at all covers nothing meanwhile (`unchecked`), so here the new reviews are what cover."""
     store, now = world
-    _pass(store, now)
+    first, _ = _pass(store, now)
     with store.engine.begin() as c:
         c.execute(text("update expert_reviews set checked = null where org_id = :o"), {"o": ORG})
-    quiet, _ = _pass(store, now + timedelta(days=11))
-    assert quiet["untouched"] == 2 and quiet["unchecked"] == 2 and quiet["covered"] == {}
+    quiet, expert = _pass(store, now + timedelta(days=11))
+    assert quiet["untouched"] == 2 and quiet["unchecked"] == 2 and quiet["version_moved"] == 2
+    assert len(expert.prompts) == 2 and quiet["reviewed"] == {R.VALID: 2}
+    assert len(quiet["covered"]) == 2 and set(quiet["covered"].values()).isdisjoint(first["covered"].values())
 
 
 def test_a_review_whose_one_fact_falls_is_refused_and_names_it(world):
@@ -533,3 +539,13 @@ def test_a_kind_its_check_drops_is_never_proposed(world, monkeypatch):
     assert asked == [] and receipt["proposed_kinds"] == 0
     assert all("kind" in [v["line"] for v in c["verdicts"] if v["verdict"] == "dropped"]
                for c in _checks(store).values())
+
+
+def test_the_pass_keeps_each_valid_reviews_card_lines(world):
+    """STEP-14 (`yc2_w27_s14` M43.C2.L-integration.V2.U03): the sweep hands the review its dossier's parts, so each
+    valid row keeps the lines code wrote for its card (0221) — read back with no dossier."""
+    store, now = world
+    _pass(store, now)
+    with store.engine.connect() as c:
+        rows = [R.latest_valid(c, ORG, f) for f in sorted({r.file_id for r in _rows(store)})]
+    assert len(rows) == 2 and all(r.card_lines is not None and r.card_lines.subject for r in rows)
