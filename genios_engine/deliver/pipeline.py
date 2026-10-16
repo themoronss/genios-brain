@@ -348,7 +348,7 @@ def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: 
             card, copy = question_card(graph, org_id, row, eval_time)
             # STEP-14 · the card contract first (M43.C4.L-integration.V1.U02): a question is the expert's checked words.
             if _refused(out, org_id, card, _contract_refusals(card, copy, us=us, our_names=our_names,
-                                                              identities=identities, expert=True),
+                                                              identities=identities, expert=True, question=True),
                         engine=getattr(graph, "engine", None)):
                 if refused_files is not None and card.get("file_id"):
                     refused_files.add(str(card["file_id"]))      # its card stays as it was (`_close_the_files_pass`)
@@ -499,10 +499,38 @@ def _holds_money(facts: dict, quotes) -> bool:
     return any(c in said or c in values for c in _CURRENCY)
 
 
-def _contract_refusals(card: dict, copy: dict, *, us, our_names, identities, expert: bool):
-    """What the card contract refuses in this card (see above). An expert's card — a decision or a question — was
-    held to its dossier by its check (`reason/expert/verify`), so its own checked words are its corpus and its quotes;
-    every other card's corpus is the narrator's own (`render._corpus`: its facts, slots, quotes and our names)."""
+def _cited_texts(graph, org_id: str, sources) -> list[str]:
+    """The words of the mails and meetings an expert card's move rests on (`decide.sources_of`: the headline's and
+    the draft's evidence ids) — the retained text of each (`prepared_content`), as the quote loader verifies a quote.
+    ⛔ An enrichment of the contract's evidence, never a hard failure: unreadable, nothing is added."""
+    ids = sorted({str(e) for part in (sources or {}).values() if isinstance(part, dict)
+                  for e in (part.get("evidence") or ())})          # a reading's id (`loop:`, `num:`) holds no mail
+    engine = getattr(graph, "engine", None)
+    if not ids or engine is None:
+        return []
+    from .card_builder import _quote_source_texts
+    try:
+        with engine.connect() as c:
+            return [t for _id, t in sorted(_quote_source_texts(c, org_id, ids).items()) if t]
+    except Exception:      # noqa: BLE001 — see the docstring
+        return []
+
+
+def _contract_refusals(card: dict, copy: dict, *, us, our_names, identities, expert: bool,
+                       question: bool = False):
+    """What the card contract refuses in this card (see above). Every card's corpus is what it was made from: the
+    facts, slots, quotes and our names (`render._corpus`); a narrated card's outcome lines are its template's.
+
+    ⛔ AN EXPERT DECISION'S CARD IS HELD TO THE EVIDENCE ITS MOVE RESTS ON (STEP-14 fix, the crosscheck's finding 4,
+    `yc2_w27_s14` M43.C4.L-integration.V1.U07). Its own words — the headline, the reading, the draft, the move whole,
+    the alternative, the stop rule, what done looks like and what doing nothing costs — were its corpus, so money, a
+    quote and a number were held by themselves and only `us` and `internal` could ever fire on it; the check holds
+    figures and names, never a money word nor a quoted span. Its evidence is the quotes its check matched
+    (`_checked_quotes`), the mails and meetings those are from (`_cited_texts`), the file's facts and quotes — and the
+    lines CODE wrote from the dossier at review time (why now, what remains: `reason/expert/card_lines`, no model
+    writes them; without them 19 golden cards were refused for a day or a title the dossier printed, s14-F21). Money is
+    allowed only where that evidence holds money. A QUESTION card's words are ours — the check's own question, or our
+    closed phrases — and stay its corpus, as before."""
     quotes = card.get("_quotes") or []
     draft = (copy.get("artifact") or {}).get("body") or None
     recommended = card.get("recommended") if isinstance(card.get("recommended"), dict) else {}
@@ -511,24 +539,27 @@ def _contract_refusals(card: dict, copy: dict, *, us, our_names, identities, exp
         subject=card.get("business_subject"), recipient=card.get("_recipient"), draft=draft,
         why_now=card.get("why_now"),
         what_remains=tuple(x for x in (card.get("unresolved_item"),) if x),
-        # STEP-14 (0221): the gold card's lines are shown, so the contract reads them too.
+        # STEP-14 (0221): the gold card's lines are shown, so the contract reads them too — and what done looks like
+        # and what doing nothing costs, which GET /cards/{id} serves (the crosscheck's finding 4).
         recommended=recommended.get("what") or None, alternative=card.get("alternative"),
-        wait_or_stop=card.get("wait_or_stop"))
-    corpus = [_corpus(card.get("_facts") or {}, card.get("_slots") or {}, identities, quotes)[0],
-              card.get("success_signal") or "", card.get("do_nothing_consequence") or ""]
-    if expert:
-        corpus += [text_.headline, text_.situation, draft or "", *(card.get("_checked_quotes") or ())]
-        # ⛔ THE GOLD LINES ARE CODE'S AND THE CHECK'S (STEP-14 fix, found re-recording 14 Oct): why now and what
-        # remains were written by code from the dossier at review time (`reason/expert/card_lines`) — a meeting's
-        # title in quotes, its days away — and the move whole, the alternative and the stop rule are the review's
-        # words its check held (check.v3). Without them in the corpus the contract refused 19 golden expert cards
-        # for a day or a title the dossier printed. They are still read for us, a field's name and an empty slot.
-        corpus += [x for x in (text_.why_now, *text_.what_remains, text_.recommended, text_.alternative,
-                               text_.wait_or_stop) if x]
+        wait_or_stop=card.get("wait_or_stop"), success=card.get("success_signal"),
+        do_nothing=card.get("do_nothing_consequence"))
+    corpus = [_corpus(card.get("_facts") or {}, card.get("_slots") or {}, identities, quotes)[0]]
+    evidence = [*(card.get("_checked_quotes") or ()), *(card.get("_cited_texts") or ())]
+    if not expert:
+        corpus += [card.get("success_signal") or "", card.get("do_nothing_consequence") or ""]
+        money = _holds_money(card.get("_facts") or {}, quotes)
+    elif question:
+        corpus += [text_.headline, text_.situation, draft or "", text_.success or "", text_.do_nothing or "",
+                   *evidence, *(x for x in (text_.why_now, *text_.what_remains) if x)]
+        money = True
+    else:
+        corpus += [*evidence, *(x for x in (text_.why_now, *text_.what_remains) if x)]
+        money = _holds_money(card.get("_facts") or {}, quotes) or card_contract.holds_money(evidence)
     return card_contract.check(text_, us=us or SelfIdentity(), our_names=our_names,
-                               quotes=[str(q.get("quote") or "") for q in quotes if isinstance(q, dict)],
-                               corpus=corpus, money_evidence=expert or _holds_money(card.get("_facts") or {},
-                                                                                    quotes))
+                               quotes=[*(str(q.get("quote") or "") for q in quotes if isinstance(q, dict)),
+                                       *evidence],
+                               corpus=corpus, money_evidence=money)
 
 
 def _refused(out: dict, org_id: str, card: dict, refusals, *, engine=None) -> bool:
@@ -927,6 +958,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 draft["_checked_quotes"] = [q for part in ((sig.get("capability_render") or {}).get("sources")
                                                            or {}).values() if isinstance(part, dict)
                                             for q in (part.get("quotes") or ())]
+                draft["_cited_texts"] = _cited_texts(graph, org_id,
+                                                     (sig.get("capability_render") or {}).get("sources"))
             if _refused(out, org_id, draft, _contract_refusals(draft, copy, us=us, our_names=our_names,
                                                                identities=identities, expert=from_review),
                         engine=getattr(graph, "engine", None)):

@@ -18,8 +18,11 @@ question card:
 THE CONTRACT, PLANTED (`contracts/card_contract`, both writers): on F04 — Sofia's demo, one shown expert card — the
 served card is made to say what no card may: a field's name in its situation (internal), our own company as its
 subject (us). Each is refused at the pipeline's writer and no card shows it; with the contract switched off, each
-planted card reaches the app's queue (the negative control). An expert card's words were held to its dossier by its
-check, so money, a quote and a number cannot reach its writer; and no golden case raises a P4 team or verify card —
+planted card reaches the app's queue (the negative control). ⛔ RESTATED by M43.C4.L-integration.V1.U07 (the STEP-14
+crosscheck, finding 4): this said an expert card's words were held to its dossier by its check, so money, a quote and a
+number could not reach its writer — the check holds figures and names, never a money word nor a quoted span, and the
+card's own words were its corpus. Its words are held to the evidence its move rests on, and money (a fee), a quote
+and a number (a date), each planted in its reading, are refused too. No golden case raises a P4 team or verify card —
 those rules, and the team writer, are held by `tests/deliver/test_no_card_breaks_the_contract.py` and
 `tests/reason/test_the_team_writer_keeps_the_contract.py`.
 """
@@ -107,6 +110,11 @@ PLANTS = {
     "internal": ("situation", " Check party.role with Sofia first.", "party.role"),
     # our own company as the card's subject (`platform/self_identity`)
     "us": ("subject", "Nimbus Labs", "Nimbus Labs"),
+    # ⛔ ADDED by `yc2_w27_s14` M43.C4.L-integration.V1.U07 (the STEP-14 crosscheck, finding 4): money, a quote and a
+    # number reach an expert card's writer too — its own words are not its evidence (F04's mail holds none of these)
+    "money": ("situation", " The late fee falls due on Friday.", "late fee"),
+    "quote": ("situation", " Sofia said “we sign this week”.", "we sign this week"),
+    "number": ("situation", " The demo moved to 17 Nov.", "17 Nov"),
 }
 
 

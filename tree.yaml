@@ -10230,6 +10230,23 @@ yc2_w27_s14:
                       artifact: "genios_engine/deliver/pipeline.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> .venv/bin/python -m pytest -q tests/deliver/test_a_refused_version_leaves_the_card_where_it_was.py tests/deliver/test_no_card_breaks_the_contract.py tests/scripts/test_pipeline_health_cards.py tests/platform/test_a_delete_is_not_a_read.py"
                       depends_on: [M43.C4.L-integration.V1.U02, M42.C3.L-integration.V2.U03, M43.C4.L-integration.V2.U05]
+                    - id: M43.C4.L-integration.V1.U07
+                      what: >
+                        The contract's money, quote and number rules reach an expert card (added 16 Oct by the
+                        STEP-14 crosscheck, finding 4): an expert decision's card had its OWN words as its corpus
+                        and `money_evidence=True`, so only `us` and `internal` could ever fire — and the check holds
+                        figures and names, never a money word or a quoted span. Its words are held to the evidence
+                        its move rests on: the quotes its check matched, the whole retained text of the mails those
+                        are from (`pipeline._cited_texts`, `prepared_content`), the file's facts and quotes, and the
+                        lines code wrote from the dossier (why now, what remains); money only where that evidence
+                        holds money (`card_contract.holds_money`). What done looks like and what doing nothing costs
+                        are read too (`CardText.success`, `do_nothing`). A question card's words are ours and stay
+                        its corpus. The golden set refuses 0 cards (the board unchanged); M43's acceptance plants
+                        money, a quote and a number on F04's expert card, each refused, each shown with the contract
+                        off.
+                      artifact: "genios_engine/deliver/pipeline.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/deliver/test_no_card_breaks_the_contract.py tests/contracts tests/replays/test_every_card_is_in_the_gold_shape.py"
+                      depends_on: [M43.C4.L-integration.V1.U02, M43.C4.L-contract.V0.U01, M43.C6.L-integration.V4.U10]
                 - level: 2
                   units:
                     - id: M43.C4.L-integration.V2.U05

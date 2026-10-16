@@ -27,7 +27,7 @@ from tests.reason.expert.test_a_covered_file_decides_once import admitted, world
 EVAL = datetime(2026, 10, 5, 9, tzinfo=timezone.utc)
 
 
-def _pass(monkeypatch, signals, *, templates, facts=None, quotes=(), subject="Kestrel Capital"):
+def _pass(monkeypatch, signals, *, templates, facts=None, quotes=(), subject="Kestrel Capital", extra=None):
     built: list = []
     monkeypatch.setattr(pipeline, "ensure_default", lambda *_a: None)
     monkeypatch.setattr(pipeline, "_open_signals_without_cards", lambda *_a: signals)
@@ -45,7 +45,7 @@ def _pass(monkeypatch, signals, *, templates, facts=None, quotes=(), subject="Ke
                 "_template": templates[sig["capability_id"]], "_facts": dict(facts or {}),
                 "_slots": {"entity": subject}, "_quotes": list(quotes), "level": "prescriptive",
                 "actions": [], "assignee": None, "output_lane": "decision", "business_subject": subject,
-                "file_id": None}
+                "file_id": None, **(extra or {})}
     monkeypatch.setattr(pipeline, "build_draft", _draft)
     store = SimpleNamespace(claim_build=lambda *_a, **_k: "tok", release_build=lambda *_a: None,
                             insert_card=lambda draft, copy, **_k: built.append(copy) or (f"c{len(built)}", True, False),
@@ -99,14 +99,42 @@ def test_a_card_whose_subject_is_us_or_that_names_a_field_is_never_written(monke
     assert expert["refused_contract:internal"] == 1 and expert["built"] == 0, expert
 
 
-def test_an_expert_cards_checked_words_are_its_corpus(monkeypatch):
-    """The expert's numbers and quotes were held to its dossier by its check: written, nothing refused."""
-    checked = {**EXPERT_TEMPLATE, "fallback": {"headline": "Send Arjun the deck by 14 Oct",
-                                               "situation": "Kavya asked “could you send the deck?” on 2 Oct, "
-                                                            "before the ₹2 Cr round's invoice"}}
-    built, out = _pass(monkeypatch, [_signal("s2", "expert.file_review", "file_review")],
-                       templates={"expert.file_review": checked})
+#: An expert card's words that hold a date, a quote and money (s14 crosscheck, finding 4).
+CHECKED = {**EXPERT_TEMPLATE, "fallback": {"headline": "Send Arjun the deck by 14 Oct",
+                                           "situation": "Kavya asked “could you send the deck?” on 2 Oct, "
+                                                        "before the ₹2 Cr round's invoice"}}
+#: The evidence those words rest on: the quotes the check matched in the lines its move cites.
+RESTS_ON = {"sources": {"headline": {"evidence": ["evt_k1"], "quotes": [
+    "Hi Arjun, could you send the deck? Before 14 Oct if you can — we close the ₹2 Cr round's invoice then. Kavya"]}}}
+
+
+def test_an_expert_card_is_held_to_the_evidence_it_rests_on(monkeypatch):
+    """⛔ RESTATED by `yc2_w27_s14` M43.C4.L-integration.V1.U07 (the STEP-14 crosscheck, finding 4): this pinned that an
+    expert card's OWN words were its corpus — so its date, its quote and its money were held by themselves, and only
+    the us and internal rules could ever fire on an expert card. The check holds figures and names, not money words
+    nor quoted spans. Its words are held to the evidence its move rests on (the quotes its check matched, the mail
+    they are from, the file's facts) — with that evidence, written, nothing refused."""
+    sig = {**_signal("s2", "expert.file_review", "file_review"), "capability_render": RESTS_ON}
+    built, out = _pass(monkeypatch, [sig], templates={"expert.file_review": CHECKED})
     assert out["built"] == 1 and not any(k.startswith("refused_contract") and v for k, v in out.items()), out
+
+
+def test_an_expert_cards_own_words_are_not_its_evidence(monkeypatch):
+    """The same card with nothing under it: its money, its quote and its date are each refused."""
+    _built, out = _pass(monkeypatch, [_signal("s2", "expert.file_review", "file_review")],
+                        templates={"expert.file_review": CHECKED})
+    assert out["built"] == 0, out
+    assert (out["refused_contract:money"], out["refused_contract:quote"], out["refused_contract:number"]) == (1, 1, 1)
+
+
+def test_what_doing_nothing_costs_is_read_too(monkeypatch):
+    """`success_signal` and `do_nothing_consequence` are shown (GET /cards/{id}); the contract reads them."""
+    plain = {**EXPERT_TEMPLATE, "fallback": {"headline": "Send Arjun the deck", "situation": "a fund"}}
+    sig = {**_signal("s2", "expert.file_review", "file_review"), "capability_render": {"sources": {"headline": {
+        "evidence": ["evt_k1"], "quotes": ["Hi Arjun, could you send the deck? Kavya"]}}}}
+    built, out = _pass(monkeypatch, [sig], templates={"expert.file_review": plain},
+                       extra={"do_nothing_consequence": "The party.role stays open and the late fee is charged."})
+    assert out["built"] == 0 and out["refused_contract:internal"] == 1 and out["refused_contract:money"] == 1, out
 
 
 def test_every_rule_is_counted_from_zero(monkeypatch):
@@ -191,7 +219,10 @@ def test_a_refusal_that_cannot_be_kept_still_refuses():
 # checked words are — and they are shown, so the contract reads every one of them for us and a field's name.
 
 def _expert_card(**over):
-    card = {"business_subject": "Leela Krishnan", "_facts": {}, "_slots": {}, "_quotes": [], "_checked_quotes": [],
+    # ⛔ RESTATED by `yc2_w27_s14` M43.C4.L-integration.V1.U07 (the crosscheck's finding 4): an expert card's own words
+    # are no longer its corpus — its "13 Aug" is held by the evidence its move rests on, a quote its check matched.
+    card = {"business_subject": "Leela Krishnan", "_facts": {}, "_slots": {}, "_quotes": [],
+            "_checked_quotes": ["Leela: I sent you an invite for 13 Aug, 3 pm"],
             "why_now": "the meeting “Ferngrove x Nimbus Labs” in 2 days, on 13 Aug",
             "unresolved_item": "Leela asked for the onboarding flow, since 9 Aug",
             "recommended": {"who": "You", "what": "Accept Leela's invite for 13 Aug and read the brief", "to": None},
@@ -227,3 +258,23 @@ def test_a_card_no_review_wrote_keeps_its_own_corpus():
                               why_now="they wrote 12 days ago", unresolved_item=None)
     assert [r.rule for r in pipeline._contract_refusals(card, copy, us=None, our_names=(), identities=(),
                                                         expert=False)] == ["number"]
+
+
+@pytest.mark.pg
+def test_the_evidence_is_the_mail_the_move_rests_on_not_a_fragment_of_it(world):
+    """`_cited_texts` reads the retained words of each mail the card's move cites (`prepared_content`) — the whole
+    mail, so a date the check's quote was cut before is still held — and nothing for an id that is no mail."""
+    from tests.reason.expert.test_a_covered_file_decides_once import _fund
+    pg_store, org, _registry, _ = world
+    _anchor, _situations, events = _fund(pg_store, org)
+    ev = sorted(events)[0]
+    whole = "Hi Arjun, could you send the deck? We meet on Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am. Kavya"
+    with pg_store.engine.begin() as c:
+        c.execute(text("insert into prepared_content (event_id, org_id, prepared_content_id, clean_text) "
+                       "values (:e, :o, :p, :t) on conflict (event_id) do update set clean_text = excluded.clean_text"),
+                  {"e": ev, "o": org, "p": f"pc_{ev}", "t": whole})
+    got = pipeline._cited_texts(pg_store, org, {"headline": {"evidence": [ev, "loop:l1", "num:n1"]},
+                                                "situation": {"inference": "x"}})
+    assert got == [whole]
+    assert pipeline._cited_texts(pg_store, org, {"headline": {"evidence": ["loop:l1"]}}) == []
+    assert pipeline._cited_texts(SimpleNamespace(engine=None), org, {"headline": {"evidence": [ev]}}) == []

@@ -136,6 +136,11 @@ def _money(texts: tuple[str, ...], money_evidence: bool) -> str | None:
     return None
 
 
+def holds_money(texts: Iterable[str]) -> bool:
+    """Whether evidence holds money, by the rule's own words: a currency, or a word that names money."""
+    return any(_MONEY.search(str(t)) for t in texts if t)
+
+
 def _quote(texts: tuple[str, ...], held: str) -> str | None:
     for t in texts:
         for m in _QUOTED.finditer(t):
@@ -167,4 +172,4 @@ def check(card: CardText, *, us: SelfIdentity, our_names: Iterable[str] = (), qu
     return tuple(Refusal(rule, found[rule]) for rule in RULES if found[rule])
 
 
-__all__ = ["CardText", "INTERNAL", "MONEY", "NUMBER", "QUOTE", "RULES", "Refusal", "US", "check"]
+__all__ = ["CardText", "INTERNAL", "MONEY", "NUMBER", "QUOTE", "RULES", "Refusal", "US", "check", "holds_money"]
