@@ -188,3 +188,61 @@ def test_a_check_stored_before_reads_as_stored():
                                                                    "reason": None, "detail": ""}]}
     again = C.CheckedReview.from_mapping(stored)
     assert again.as_mapping()["verdicts"] == stored["verdicts"] and again.version == "check.v3"
+
+
+# =================================================================================================
+# STEP-13b · three sources — what the check says of the engine and of the expert's own
+# =================================================================================================
+def test_the_check_has_words_for_an_engine_cited_as_a_fact_and_for_an_own_line_that_overreaches():
+    assert (C.ENGINE_IS_NO_FACT, C.OWN_STATES_A_NUMBER, C.OWN_NAMES_THE_FILE) == (
+        "engine_is_no_fact", "own_states_a_number", "own_names_the_file")
+    assert {C.ENGINE_IS_NO_FACT, C.OWN_STATES_A_NUMBER, C.OWN_NAMES_THE_FILE} <= set(C.REASONS)
+    assert C.OWN_DISAGREES == "own_disagrees" and C.OWN_DISAGREES in C.NOTES and C.OWN_DISAGREES not in C.REASONS
+    assert C.HELD_BECAUSE[C.ENGINE_IS_NO_FACT], "a move resting on such a fact is held in founder words"
+    assert "own" in C.LINE_KINDS and C.LineVerdict("own:2", C.DROPPED, C.OWN_STATES_A_NUMBER, "number:9").line == "own:2"
+    with pytest.raises(ValueError):
+        C.LineVerdict("own:0", C.KEPT)
+
+
+@pytest.mark.parametrize("refs, source", [
+    (("evt_1", "fact:1", "num:reply_days", "loop:l1"), C.DATA),
+    (("pb:founder_office.pb.x", "cap:a.b.c#q", "rule:r", "cons:r", "sig:s", "frame:f", "org:o", "pat:p",
+      "pref:q", "ru:core.risk"), C.ENGINE),
+    (("own:1", "own:3"), C.OWN),
+    (("evt_1", "pb:founder_office.pb.x"), C.MIXED),
+    (("own:1", "pb:founder_office.pb.x"), C.MIXED),
+    (("evt_1", "own:1"), C.MIXED),
+    ((), C.DATA),
+    (("owned_event_1", "ownership:1"), C.DATA),     # a mail whose id merely begins with "own"
+])
+def test_a_lines_source_is_derived_from_what_it_cites_never_asserted(refs, source):
+    assert C.source_of(refs) == source
+    assert C.SOURCES == ("data", "engine", "own", "mixed")
+
+
+def test_a_verdict_may_carry_its_derived_source_and_reads_back():
+    v = C.LineVerdict("pattern:1", C.KEPT, source=C.ENGINE)
+    assert C.LineVerdict.from_mapping(v.as_mapping()) == v and v.as_mapping()["source"] == "engine"
+    assert "source" not in C.LineVerdict("fact:1", C.KEPT).as_mapping(), "a verdict stored before reads as stored"
+    with pytest.raises(ValueError):
+        C.LineVerdict("fact:1", C.KEPT, source="guess")
+
+
+def test_a_checked_review_keeps_the_engine_lines_its_standing_lines_cite():
+    cite = C.EngineCited("pb:founder_office.pb.x", "Run an investor conversation: ask once", "founder_office.pb.x",
+                         reviewed=False)
+    checked = _checked(engine=(cite, C.EngineCited("cap:a.b.c#q", "Is it done?", "a.b.c", reviewed=True)))
+    assert [c.ref for c in checked.engine] == ["cap:a.b.c#q", "pb:founder_office.pb.x"], "sorted, once each"
+    again = C.CheckedReview.from_mapping(checked.as_mapping())
+    assert again == checked and again.engine[1].words == cite.words and again.engine[1].reviewed is False
+    with pytest.raises(ValueError, match="engine"):
+        C.EngineCited("evt_1", "a mail is no engine line", "x", reviewed=False)
+
+
+def test_a_check_stored_before_has_no_engine_and_reads_as_stored():
+    stored = _checked().as_mapping()
+    assert "engine" not in stored and C.CheckedReview.from_mapping(stored).engine == ()
+
+
+def test_the_check_version_moved_for_the_three_sources():
+    assert C.CHECK_VERSION == "check.v5"

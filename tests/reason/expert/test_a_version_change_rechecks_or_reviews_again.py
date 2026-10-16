@@ -55,8 +55,8 @@ def test_the_check_is_check_v3():
     """The check's behaviour changed in M35.C2.U09-U16 — so a review checked by check.v1 is checked again.
     ⛔ RESTATED by `yc2_w27_s14` M43.C2.L-logic.V1.U01: check.v3 — STEP-13's second fix wave and the gold card's
     alternative and stop rule changed it again; `OLD` (check.v1) is still an older version.
-    ⛔ RESTATED by `yc2_w27_s16` M46.C4.L-logic.V3.U06: check.v4 — never silently; `OLD` is older still."""
-    assert CHECK_VERSION == "check.v4"
+    ⛔ RESTATED by `yc2_w27_s13b` M37.C1.L-contract.V1.U03: check.v5 (three sources) — was check.v4, `yc2_w27_s16` M46.C4.L-logic.V3.U06 — never silently; `OLD` is older still."""
+    assert CHECK_VERSION == "check.v5"
 
 
 def test_a_review_keeps_the_dossier_it_was_written_against_and_when_it_was_checked(world):

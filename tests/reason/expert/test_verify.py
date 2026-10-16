@@ -174,6 +174,6 @@ def test_a_review_that_offers_no_alternative_carries_none():
 def test_the_check_is_check_v4():
     """The check's behaviour changed again — STEP-13's second fix wave (B1, B2, G2, F2/F3) and these card lines —
     so a review an older check checked is checked again on read (`06` D48).
-    ⛔ RESTATED by `yc2_w27_s16` M46.C4.L-logic.V3.U06: check.v4 — never silently (your corrections, the cards you
+    ⛔ RESTATED by `yc2_w27_s13b` M37.C1.L-contract.V1.U03: check.v5 (three sources) — was check.v4, `yc2_w27_s16` M46.C4.L-logic.V3.U06 — never silently (your corrections, the cards you
     called wrong)."""
-    assert C.CHECK_VERSION == "check.v4"
+    assert C.CHECK_VERSION == "check.v5"
