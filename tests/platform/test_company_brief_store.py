@@ -192,3 +192,41 @@ def test_every_write_drops_the_cached_brief(engine, monkeypatch):
         store.add(c, org_id=ORG, section="goals", words="land three design partners",
                   decided_by="founder", at=AT)
     assert dropped == [ORG, ORG, ORG, ORG]
+
+
+# =================================================================================================
+# STEP-16 · 0242 — the brief keeps what you corrected (`yc2_w27_s16` M46.C5.L-contract.V0.U01; `03` F126, F157)
+# =================================================================================================
+from pathlib import Path  # noqa: E402
+
+MIGRATION_0242 = Path(__file__).resolve().parents[2] / "migrations" / "0242_company_brief_corrections.sql"
+
+
+def test_0242_adds_two_nullable_columns_and_nothing_else():
+    sql = " ".join(line.split("--", 1)[0] for line in MIGRATION_0242.read_text(encoding="utf-8").splitlines())
+    sql = " ".join(sql.lower().split())
+    statements = [s.strip() for s in sql.split(";") if s.strip() and not s.strip().startswith("comment on")]
+    assert statements == [
+        "alter table company_brief_lines add column if not exists proposed_kind text",
+        "alter table company_brief_lines add column if not exists replaces text"], statements
+
+
+def test_the_columns_are_nullable_text_with_no_default(engine):
+    with engine.connect() as c:
+        cols = {r.column_name: r for r in c.execute(text(
+            "select column_name, data_type, is_nullable, column_default from information_schema.columns "
+            "where table_name = 'company_brief_lines' and column_name in ('proposed_kind', 'replaces')"))}
+    assert set(cols) == {"proposed_kind", "replaces"}
+    assert all((r.data_type, r.is_nullable, r.column_default) == ("text", "YES", None) for r in cols.values())
+
+
+def test_a_line_written_as_the_previous_image_writes_it_keeps_neither(engine):
+    """The previous image never names either column: its insert still runs, and leaves both null."""
+    with engine.begin() as c:
+        c.execute(text(
+            "insert into company_brief_lines (org_id, line_id, section, text, address, domain, kind, status, "
+            "proposed_by, evidence, proposed_at) values (:o, 'cbl_prev', 'goals', 'raise the round', null, null, "
+            "null, 'proposed', 'drafter', '[]'::jsonb, :at)"), {"o": ORG, "at": AT})
+        row = c.execute(text("select proposed_kind, replaces from company_brief_lines where org_id = :o "
+                             "and line_id = 'cbl_prev'"), {"o": ORG}).one()
+    assert tuple(row) == (None, None)

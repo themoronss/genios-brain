@@ -74,6 +74,9 @@ any case: nothing dropped, every archive the same. (F18, F45, F53, F54 and F55 a
 blocked at the gate — `06` D29 — and F45/F54/F55 are `ADDED_AFTER`, outside this file's board; F53 stayed
 blocked on s15-D2 then, and passes since 16 Oct — s15-F22, also `ADDED_AFTER`, so no row here moves for it.
 `tests/replays/test_the_morning_brief_is_judged.py` is where the brief is judged whole.)
+
+RESTATED BY STEP-16 (`yc2_w27_s16` M47.C4.L-data.V1.U04–U06). Three cases are new (`ADDED_AFTER`: F65–F67, your
+corrections); the gate keeps and reads every one of their mails. Nothing else moved.
 """
 from __future__ import annotations
 
@@ -148,7 +151,9 @@ ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-
                                "F58": "yc2_w27_align",
                                # STEP-14 (`yc2_w27_s14` M43.C6, s14-D5): the Atlas's replay 02 introductions.
                                "F59": "STEP-14", "F60": "STEP-14", "F61": "STEP-14", "F62": "STEP-14",
-                               "F63": "STEP-14", "F64": "STEP-14"}
+                               "F63": "STEP-14", "F64": "STEP-14",
+                               # STEP-16 (`yc2_w27_s16` M47.C4.L-data.V1.U04–U06): your corrections, new cases.
+                               "F65": "STEP-16", "F66": "STEP-16", "F67": "STEP-16"}
 
 #: A case added after STEP-03 whose mail today's gate ARCHIVES — held to that code, as the dropped mail
 #: of the cases before it is. F56: a vendor's renewal notice, which the junk filter's own prompt drops

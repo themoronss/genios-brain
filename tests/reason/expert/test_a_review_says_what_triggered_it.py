@@ -268,4 +268,5 @@ def test_the_founder_asking_is_a_trigger_of_its_own():
 
 
 def test_every_kind_is_named_once():
-    assert len(T.KINDS) == len(set(T.KINDS)) == 6
+    # ⛔ RESTATED by `yc2_w27_s16` M46.C4.L-logic.V4.U05: seven — `founder_corrected`, your correction's door.
+    assert len(T.KINDS) == len(set(T.KINDS)) == 7

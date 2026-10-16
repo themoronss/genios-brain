@@ -1,0 +1,474 @@
+{
+ "case_id": "F67",
+ "title": "One click is never a pattern — a bare wrong on one programme's card changes only that file",
+ "kind": "must_detect",
+ "label_row": 67,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-21T12:00:00Z",
+  "2026-09-22T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "techbridge",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-21T04:30:00Z",
+   "from": "Nadia Qureshi <nadia@techbridge.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Founder showcase — would you present?",
+   "body": "Hi Arjun,\n\nWe are putting together a founder showcase for our community next month. Would you like to present Nimbus Labs? Let me know if you are interested.\n\nNadia Qureshi\nProgramme Lead, TechBridge Foundation",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-techbridge",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "programme"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Nadia Qureshi",
+       "entity_type": "person",
+       "quote": "Nadia Qureshi"
+      },
+      {
+       "surface_form": "TechBridge Foundation",
+       "entity_type": "organization",
+       "quote": "TechBridge Foundation"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Nadia Qureshi",
+       "value": "Programme Lead",
+       "standing": "observed",
+       "quote": "Programme Lead, TechBridge Foundation"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "medium"
+     }
+    }
+   }
+  },
+  {
+   "id": "awadh",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-21T05:30:00Z",
+   "from": "Vikram Sole <vikram@awadhec.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Your application — interview slot",
+   "body": "Hi Arjun,\n\nYour application has moved to the interview round. Please pick an interview slot on the calendar link by Friday.\n\nVikram Sole\nCoordinator, Awadh Enterprise Centre",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-awadh",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "programme"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Vikram Sole",
+       "entity_type": "person",
+       "quote": "Vikram Sole"
+      },
+      {
+       "surface_form": "Awadh Enterprise Centre",
+       "entity_type": "organization",
+       "quote": "Awadh Enterprise Centre"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Vikram Sole",
+       "value": "Coordinator",
+       "standing": "observed",
+       "quote": "Coordinator, Awadh Enterprise Centre"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "medium"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "techbridge": "emitted",
+   "awadh": "emitted"
+  },
+  "memory": {
+   "techbridge": true,
+   "awadh": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Nadia",
+     "TechBridge"
+    ],
+    "min": 1,
+    "max": 1,
+    "ended": "called_wrong"
+   },
+   {
+    "about": [
+     "Vikram",
+     "Awadh"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "checking in",
+   "just checking"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {},
+ "acts": [
+  {
+   "after_sweep": 0,
+   "on": [
+    "Nadia",
+    "TechBridge"
+   ],
+   "wrong": "not_relevant"
+  }
+ ],
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<techbridge.test>",
+     "the founder's verdict: wrong"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Nadia Qureshi, programme lead at TechBridge Foundation, wrote that they are putting together a founder showcase for their community next month.",
+       "evidence": [
+        "evt_5ca213f75866964f0ebcd801"
+       ],
+       "quote": "We are putting together a founder showcase for our community next month"
+      },
+      {
+       "claim": "She asked whether Arjun would like to present Nimbus Labs there.",
+       "evidence": [
+        "evt_5ca213f75866964f0ebcd801"
+       ],
+       "quote": "Would you like to present Nimbus Labs?"
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "You called the card about the showcase wrong: not relevant. The showcase is not where your time goes now.",
+       "based_on": [
+        "fact:2",
+        "hist:derived.history.prior_card_verdict@fundraising"
+       ]
+      }
+     ],
+     "patterns": [],
+     "frames": {
+      "primary": "a programme's invitation you said is not relevant",
+      "rivals": [
+       "an invitation worth a short no"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": "applied",
+      "expected": "our answer to the invitation",
+      "actual": "you called the card about it not relevant"
+     },
+     "unknowns": [
+      {
+       "question": "whether a short no is owed",
+       "relevance": "it decides whether to write at all"
+      }
+     ],
+     "scenarios": {
+      "do_nothing": "the invitation lapses, as you chose",
+      "act": "a no nobody asked for",
+      "best": "nothing is lost",
+      "worst": "Nadia asks again",
+      "signals_to_watch": [
+       "a second note from Nadia"
+      ]
+     },
+     "appraisal": {
+      "stakes": "low",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "you called it not relevant"
+      ]
+     },
+     "mode": "nothing",
+     "next_move": null,
+     "alternative": null,
+     "wait_or_stop": "leave it unless Nadia writes again",
+     "done_when": "nothing is owed on the showcase",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<techbridge.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Nadia Qureshi, programme lead at TechBridge Foundation, wrote that they are putting together a founder showcase for their community next month.",
+       "evidence": [
+        "evt_5ca213f75866964f0ebcd801"
+       ],
+       "quote": "We are putting together a founder showcase for our community next month"
+      },
+      {
+       "claim": "She asked whether Arjun would like to present Nimbus Labs there.",
+       "evidence": [
+        "evt_5ca213f75866964f0ebcd801"
+       ],
+       "quote": "Would you like to present Nimbus Labs?"
+      },
+      {
+       "claim": "Our reply time to Nadia is not measured: the file holds no mail from Arjun to them.",
+       "evidence": [
+        "num:your_reply_time:nadia@techbridge.test"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "TechBridge Foundation is waiting on our answer.",
+       "based_on": [
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "A community showcase puts Nimbus Labs in front of founders and, through them, the people they know.",
+       "based_on": [
+        "fact:1",
+        "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "A programme keeps its own record; the founder's answer is what moves it.",
+       "based_on": [
+        "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      }
+     ],
+     "frames": {
+      "primary": "a programme waiting on our answer",
+      "rivals": [
+       "a mass mail to many founders"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": "applied",
+      "expected": "our answer to the programme",
+      "actual": "their ask, unanswered"
+     },
+     "unknowns": [
+      {
+       "question": "whether the founder wants this",
+       "relevance": "it decides whether to answer yes"
+      }
+     ],
+     "scenarios": {
+      "do_nothing": "the programme moves on without us",
+      "act": "TechBridge Foundation has our answer",
+      "best": "a yes that helps the raise",
+      "worst": "time spent on something that does not help",
+      "signals_to_watch": [
+       "a reply from Nadia"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "TechBridge Foundation is in the brief",
+       "their ask waits on us"
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Reply to Nadia that you would like to present at the community showcase",
+      "for_whom": "Nadia at TechBridge Foundation",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Nadia",
+      "answers": null
+     },
+     "alternative": "decline politely",
+     "wait_or_stop": "answer once; do not chase",
+     "done_when": "Nadia has our answer",
+     "draft": "Hi Nadia, thank you for thinking of us. I would be glad to present Nimbus Labs at the founder showcase. Arjun"
+    }
+   },
+   {
+    "when": [
+     "<awadhec.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Vikram Sole, coordinator at Awadh Enterprise Centre, wrote that the application has moved to the interview round.",
+       "evidence": [
+        "evt_2dafa529fdc05317083745b4"
+       ],
+       "quote": "Your application has moved to the interview round"
+      },
+      {
+       "claim": "He asked Arjun to pick an interview slot on the calendar link by Friday.",
+       "evidence": [
+        "evt_2dafa529fdc05317083745b4"
+       ],
+       "quote": "Please pick an interview slot on the calendar link by Friday"
+      },
+      {
+       "claim": "Our reply time to Vikram is not measured: the file holds no mail from Arjun to them.",
+       "evidence": [
+        "num:your_reply_time:vikram@awadhec.test"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Awadh Enterprise Centre is waiting on our answer.",
+       "based_on": [
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "An interview slot not picked by the deadline is a place lost; the deadline is the fixed point.",
+       "based_on": [
+        "fact:1",
+        "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "A programme keeps its own record; the founder's answer is what moves it.",
+       "based_on": [
+        "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      }
+     ],
+     "frames": {
+      "primary": "a programme waiting on our answer",
+      "rivals": [
+       "a mass mail to many founders"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": "interview",
+      "expected": "our answer to the programme",
+      "actual": "their ask, unanswered"
+     },
+     "unknowns": [
+      {
+       "question": "whether the founder wants this",
+       "relevance": "it decides whether to answer yes"
+      }
+     ],
+     "scenarios": {
+      "do_nothing": "the programme moves on without us",
+      "act": "Awadh Enterprise Centre has our answer",
+      "best": "a yes that helps the raise",
+      "worst": "time spent on something that does not help",
+      "signals_to_watch": [
+       "a reply from Vikram"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "Awadh Enterprise Centre is in the brief",
+       "their ask waits on us"
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Pick an interview slot on Awadh Enterprise Centre's calendar link before Friday",
+      "for_whom": "Vikram at Awadh Enterprise Centre",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Vikram",
+      "answers": null
+     },
+     "alternative": "decline politely",
+     "wait_or_stop": "answer once; do not chase",
+     "done_when": "Vikram has our answer",
+     "draft": "Hi Vikram, thank you, I have picked an interview slot on the calendar link. Arjun"
+    }
+   }
+  ]
+ },
+ "notes": "STEP-16 (yc2_w27_s16 M47.C4.L-data.V1.U06). A bare wrong — no words — is a verdict on that card, never a pattern: the next sweep reviews TechBridge's file again (S16-D2) and nothing else; Awadh's file keeps its card, and no correction is written."
+}

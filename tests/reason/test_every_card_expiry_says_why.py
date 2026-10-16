@@ -48,7 +48,10 @@ SITES: dict[tuple[str, str], list[tuple[str, str | None, str | None]]] = {
         ("expire_cards", "REPLACED", None)],
     # STEP-12 M33.C1.L-integration.V2.U12: a file's new review that names no move now clears what an
     # earlier review decided — its cards RULE_CLEARED, by the one writer (added deliberately).
+    # ⛔ RESTATED by STEP-16 (`yc2_w27_s16` M47.C1.L-integration.V1.U02, deliberately): a card whose ask closed
+    # ANSWERED is resolved VERIFIED, one closed only replied is cleared with its closing event, the rest as before.
     ("genios_engine/reason/domain_shadow.py", "_clear_file_decision"): [
+        ("resolve_cards", "VERIFIED", None), ("expire_cards", "RULE_CLEARED", None),
         ("expire_cards", "RULE_CLEARED", None)],
     ("genios_engine/feedback/calibrate.py", "run_calibration"): [
         ("expire_cards", "RULE_MUTED", None)],
@@ -111,8 +114,10 @@ def test_no_other_function_in_these_files_calls_the_writer():
 def test_every_cause_a_site_names_is_in_the_closed_vocabulary():
     from genios_engine.platform import card_lifecycle as cl
     for calls in SITES.values():
-        for _helper, cause, kind in calls:
-            assert cause is None or getattr(cl, cause) in cl.CAUSES
+        for helper, cause, kind in calls:
+            # STEP-16: a resolution's cause is in the resolution's own closed list (`card_lifecycle.RESOLVE_CAUSES`).
+            closed = cl.RESOLVE_CAUSES if helper == "resolve_cards" else cl.CAUSES
+            assert cause is None or getattr(cl, cause) in closed
             assert kind is None or getattr(cl, kind) in cl.KINDS
 
 

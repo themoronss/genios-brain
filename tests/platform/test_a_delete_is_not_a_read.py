@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_219, (
+    assert r["statements"] == 3_250, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -544,6 +544,27 @@ def test_the_statement_count_did_NOT_move():
     # marks of a brief (a SELECT). Six literals.
     # ⛔ MOVED 3,136 → 3,139 by yc2_w27_s15/M44.C3.L-logic.V0.U02 (STEP-15, the day): three SELECTs in
     # `executive/morning_day` — the seat and its org, the files' people, the org's timezone. Three literals.
+    # ⛔ MOVED 3,120 → 3,128 by yc2_w27_s16/M46.C2.L-data.V1.U02 (STEP-16, the one writer of a verdict),
+    # measured per file: `api/intelligence_routes.py` 62 → 58 — its four ledger statements (the verdict's
+    # INSERT, UPDATE and SELECT, the revision's INSERT) moved byte for byte into `deliver/verdicts.py`,
+    # which holds 12: those four, and the two authority reads a verdict is bound by (a decision's, a
+    # question's), each counted four times — the template walk records every prefix of its
+    # `"…" + JOINS + "…" + PREDICATE` concatenation, as it counts the route's own authority SELECT. Two
+    # real statements; the loop hop expanded nothing.
+    # ⛔ MOVED 3,128 → 3,129 by yc2_w27_s16/M46.C3.L-data.V0.U05 (a question you call wrong is not asked
+    # again): one SELECT, `context/founder_questions.called_wrong_for` — the file's questions retired
+    # `CALLED_WRONG`. A literal at its own call.
+    # ⛔ MOVED 3,129 → 3,133 by yc2_w27_s16/M46.C3.L-data.V1.U02 (your corrections, kept): four statements,
+    # `context/founder_corrections` — `by_id`, `correct`'s insert, `withdraw`'s update and `standing_for`'s
+    # read. Each a literal at its own call.
+    # ⛔ MOVED 3,133 → 3,134 by yc2_w27_s16/M46.C3.L-interface.V2.U03 (your door on a file): one SELECT,
+    # `api/workstream_routes._CARD_OF_THE_FILE` — the card a seat corrects a file through. A literal.
+    # ⛔ MOVED 3,134 → 3,136 by yc2_w27_s16/M46.C5.L-data.V1.U02 (the brief keeps what you corrected):
+    # `platform/company_brief_store` — `propose`'s read of the line a proposal replaces, and `accept`'s
+    # removal of it. Two literals; `pending`'s read gained a self-join, not a statement.
+    # ⛔ MOVED 3,136 → 3,137 by yc2_w27_s16/M46.C5.L-logic.V2.U03 (the expert may propose correcting an
+    # accepted kind): one SELECT, `reason/expert/kind_proposal._PEOPLE_KEYS` — the file's people's keys, which
+    # the line giving the file its kind may name. A module constant.
     # ⛔ MOVED 3,120 → 3,119 by yc2_w27_s18/M48.C2.L-integration.V2.U16 (crosscheck S18-X06): one SELECT
     # removed, `scripts/rebuild_graph.main`'s `count(distinct event_id) from l1_extraction_results` —
     # the cache count behind the "may cost LLM" estimate; no road calls a model, so the estimate, the
@@ -560,6 +581,7 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ Both commits left this pin red: neither ran tests/platform before it was committed.
     # ⛔ MERGED 13 Oct: STEP-13's 3,106 → 3,108 above, on top of the integration's 3,121, re-measured on
     # the merge: 3,123 (`table_coverage.resolution()`), the same two SELECTs.
+    # ⛔ MERGED 13 Oct: the integration line (3,123) into STEP-16's line (3,137), re-measured on the merge (`table_coverage.resolution()`): 3,140.
     # ⛔ MOVED 3,108 → 3,110, deliberately, by two literals at their own call sites: STEP-13
     # M36.C2.L-interface.V4.U07 (the second crosscheck G11, one lock order) — `context/founder_questions.lock_file`'s
     # advisory lock on the file's question (one SELECT), and `deliver/actions.ingest_action`'s read, with no lock,
@@ -612,6 +634,36 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MERGED 16 Oct (the integration line `yc2w27-int16`): STEP-14 with its crosscheck fix wave (3,193) and STEP-15's
     # line (3,213, which already held STEP-14's 3,187), re-measured on the merge (`table_coverage.resolution()`): 3,219 =
     # 3,193 + 26 — STEP-15's own moves, nothing else. The run-time ratchet stays 272.
+    # ⛔ MERGED 16 Oct: STEP-14's line at 9d469efb (3,187) into STEP-16's line (3,140), re-measured on the merge (`table_coverage.resolution()`): 3,204 = 3,187 + STEP-16's 17
+    # (3,140 − 3,123); nothing else moved. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,204 → 3,205 by yc2_w27_s16/M46.C3.L-integration.V3.U04 (the card's wrong with your words): one SELECT,
+    # `context/founder_corrections._FILE_OF_CARD` — the file a card is about. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,205 → 3,206 by yc2_w27_s16/M46.C4.L-logic.V4.U07 (what your correction changed): one SELECT,
+    # `reason/expert/correction_delta._REVIEWS` — every valid review of the files a correction reached. The run-time
+    # ratchet stays 272.
+    # ⛔ MOVED 3,206 → 3,205 by yc2_w27_s16/M47.C1.L-data.V0.U01 (one way to resolve a card): +1 UPDATE,
+    # `platform/card_lifecycle._RESOLVE`, and −2, the team lane's two literal `update cards set state='resolved'`
+    # statements, which now go through it (`reason/team/emit`). The run-time ratchet stays 272.
+    # ⛔ MOVED 3,205 → 3,206 by yc2_w27_s16/M47.C1.L-integration.V1.U02 (an answered ask resolves its card): one
+    # SELECT, `reason/domain_shadow._CLEARED_CARDS` — each cleared decision's card, the ask its last version names,
+    # how that ask closed. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,206 → 3,210 by yc2_w27_s16/M47.C1.L-data.V2.U03 (how each decision of a file ended): four SELECTs in
+    # `context/file_outcomes` — `_CARDS`, `_ENDINGS`, `_PRESSED`, `_VERDICTS`. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,210 → 3,211 by yc2_w27_s16/M47.C2.L-logic.V3.U01 (your numbers for a kind of work): one SELECT,
+    # `context/kind_numbers._STAGES` — each valid review's stage. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,211 → 3,212 by yc2_w27_s16/M47.C2.L-logic.V4.U02 (the dossier says what came of it): one SELECT,
+    # `reason/expert/dossier._ASKS_CLOSED` — the file's asks closed since its last review. The run-time ratchet stays
+    # 272.
+    # ⛔ MOVED 3,212 → 3,216 by yc2_w27_s16/M47.C3.L-logic.V5.U01 (the week, measured), measured per file:
+    # `feedback/scorecard` 0 → 2 (`_CHECKED`, `_QUESTIONS`) and `context/founder_corrections` 5 → 7
+    # (`made_between`'s one f-string SELECT, counted twice by the template walk, as `{_COLUMNS}` prefixes are).
+    # The run-time ratchet stays 272.
+    # ⛔ MOVED 3,216 → 3,218 by yc2_w27_s16/M47.C3.L-integration.V2.U03 (every verified card names what closed it): the
+    # receipt's SELECT and its witness, both written as whole literals (the lifecycle's words inlined, never formatted
+    # in, so the run-time ratchet stays 272).
+    # ⛔ MERGED 16 Oct (the integration line `yc2w27-int16`): STEP-16's line (3,218, on STEP-14's 3,187) into STEP-14's fix
+    # wave and STEP-15 (3,219), re-measured on the merge (`table_coverage.resolution()`): 3,250 = 3,219 + STEP-16's 31
+    # (3,218 − 3,187); nothing else moved. The run-time ratchet stays 272.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

@@ -143,3 +143,48 @@ def test_the_alternative_and_the_stop_rule_are_card_words_kept_as_checked():
         assert C.LineVerdict(line, C.DROPPED, C.UNSUPPORTED, "name:Kunal").line == line
     old = {k: v for k, v in WORDS.as_mapping().items() if k not in ("alternative", "wait_or_stop")}
     assert C.CardWords.from_mapping(old).alternative is None, "a check stored before them reads back withheld"
+
+
+# =================================================================================================
+# STEP-16 · never silently — the check's words for a correction (`yc2_w27_s16` M46.C4.L-contract.V0.U01)
+# =================================================================================================
+def test_the_check_has_words_for_an_unheeded_correction_and_a_card_you_called_wrong():
+    assert (C.CORRECTION_UNHEEDED, C.CALLED_WRONG) == ("correction_unheeded", "called_wrong")
+    assert {C.CORRECTION_UNHEEDED, C.CALLED_WRONG} <= set(C.REASONS)
+    assert C.UNCITED_CORRECTION in C.NOTES and C.UNCITED_CORRECTION not in C.REASONS
+    for why in (C.CORRECTION_UNHEEDED, C.CALLED_WRONG):
+        assert C.HELD_BECAUSE[why], "a held move says why in founder words"
+
+
+def test_a_move_held_over_your_correction_is_one_question_naming_it():
+    assert C.correction_question("  she asked for news only on   real milestones ", "12 Oct") == (
+        "You said “she asked for news only on real milestones” on 12 Oct; does it still hold?")
+    assert C.called_wrong_question("Send Theresa the August update") == (
+        "You called “Send Theresa the August update” wrong; should we advise it again?")
+    for bad in ("", "   ", None):
+        with pytest.raises(ValueError):
+            C.correction_question(bad, "12 Oct")
+        with pytest.raises(ValueError):
+            C.called_wrong_question(bad)
+
+
+def test_a_held_move_over_a_correction_is_a_verdict_the_contract_keeps():
+    held = C.CheckedReview(
+        verdicts=(C.LineVerdict("fact:1", C.KEPT),
+                  C.LineVerdict("move", C.DROPPED, C.CORRECTION_UNHEEDED, "corr:fc_0123456789abcdef01234567")),
+        fate=C.HELD, words=C.CardWords(None, None, None, None, None), cited=("evt_1",),
+        question=C.correction_question("news only on milestones", "12 Oct"),
+        because=C.HELD_BECAUSE[C.CORRECTION_UNHEEDED])
+    assert C.CheckedReview.from_mapping(held.as_mapping()) == held
+    assert held.reasons == (C.CORRECTION_UNHEEDED,) and not held.stands("move")
+    noted = C.LineVerdict("move", C.NOTED, C.UNCITED_CORRECTION, "corr:fc_0123456789abcdef01234567")
+    assert C.LineVerdict.from_mapping(noted.as_mapping()) == noted
+
+
+def test_a_check_stored_before_reads_as_stored():
+    """Additive vocabularies: a check written before STEP-16 reads back exactly as it was."""
+    stored = {"version": "check.v3", "fate": "shown", "question": None, "because": None, "cited": ["evt_1"],
+              "words": {"headline": "Send the deck"}, "verdicts": [{"line": "fact:1", "verdict": "kept",
+                                                                   "reason": None, "detail": ""}]}
+    again = C.CheckedReview.from_mapping(stored)
+    assert again.as_mapping()["verdicts"] == stored["verdicts"] and again.version == "check.v3"

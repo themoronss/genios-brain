@@ -5,8 +5,10 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
+from genios_engine.context import founder_corrections as _corrections
 from genios_engine.contracts.execution import ExecutionState
 from genios_engine.deliver.store import ANSWERED_LANE  # the lane an answered card waits in (see ANSWERED_OFFERS)
+from genios_engine.deliver import verdicts
 from genios_engine.executive.execution_store import (
     apply_transition as _apply_execution_transition,
 )
@@ -38,7 +40,12 @@ BUTTONS = {"run_play", "do_it_myself", "snooze", "wrong", "requeue", "answer"}
 # the file (`context/founder_questions.answer`), the card resolved, its signal acted. The file's dossier
 # shows the answer, its fingerprint moves, and the next sweep reviews the file with your answer in front of
 # the expert. A question card offers `answer` and the deferrals, nothing else; no other card is a question.
-QUESTION_OFFERS = frozenset({"answer", "snooze", "requeue"})
+QUESTION_OFFERS = frozenset({"answer", "snooze", "requeue", "wrong"})
+# ⛔ STEP-16 · *DON'T ASK ME THIS* (`yc2_w27_s16` M46.C3.L-integration.V4.U06; S16-D10). A question card may be called
+# `wrong`: a verdict on its file, through the one writer, bound to the question's own authority (rule
+# `founder_question`, no pack revision — calibration, which scores pack rules on revision-bound cards, never reads it);
+# the file's question retired `CALLED_WRONG` (`context/founder_questions`) — never asked again in its words — and its
+# signal acted; your words, if any, a correction of the file. One transaction.
 # ⛔ STEP-14 · YOUR ANSWER KEEPS THE FILE'S CARD (`yc2_w27_s14` M42.C3.L-interface.V4.U05, s14-D3 — amends the above). The
 # card is no longer resolved nor its signal acted: it is VERSIONED — answered, "your answer is in; the file is read
 # again", the question you answered as its situation, the Monitor lane, nothing to press but later — and the file's
@@ -86,7 +93,7 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
                   reason: str | None = None, snooze_option: str | None = None,
                   custom_until=None, eval_time: datetime | None = None,
                   allow_any_assignee: bool = False, surface: str | None = None,
-                  words: str | None = None) -> dict:
+                  words: str | None = None, scope: str | None = None) -> dict:
     """Land a button press. Returns the resulting card state. Orphan actions (no card) are a
     counted no-op (V-09), never an exception loop."""
     eval_time = eval_time or datetime.now(timezone.utc)
@@ -101,6 +108,17 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             return {"ok": False, "error": "answer_says_nothing"}
         if len(words) > MAX_ANSWER_CHARS:
             return {"ok": False, "error": "answer_too_long", "max_chars": MAX_ANSWER_CHARS}
+    # ⛔ YOUR WRONG, IN YOUR WORDS (STEP-16, `yc2_w27_s16` M46.C3.L-integration.V3.U04, S16-D1, S16-D4). `wrong` with
+    # words is a correction of the card's file as well as a verdict — kept on the file in the verdict's transaction
+    # (`context/founder_corrections`), with its scope: this file, every file of its kind of work, or how your company
+    # works. Without words it stays a verdict: one click generalises nothing (§3.2). Refused before anything is
+    # written: words that are no correction, a scope outside the closed list.
+    correction_words = str(words or "").strip() if action == "wrong" else ""
+    scope = scope or _corrections.FILE
+    if correction_words:
+        why_not = _corrections.refused(correction_words, scope)
+        if why_not is not None:
+            return {"ok": False, "error": "invalid_correction", "why": why_not}
     del card_store  # production actions commit through the graph/database transaction below
     allowed = {
         "run_play": ("queued", "surfaced", "snoozed", "delivered"),
@@ -189,6 +207,27 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             return {"ok": False, "error": "assigned_to_different_seat"}
         if card["state"] not in allowed[action]:
             return {"ok": False, "error": "card_not_actionable"}
+        # ⛔ YOUR VERDICT REACHES EVERY READER (STEP-16, `yc2_w27_s16` M46.C2.L-integration.V2.U03, `s16-F1`). This door
+        # wrote `card_events` only, and eight of the nine verdict readers read the ledger the extension writes — the
+        # expert's dossier and its fingerprint, the change gate, the learning batch, the adaptive lease (weekly), a
+        # file's history facts, the counterfactual ledger, the receipt. A verdict (`run_play`, `do_it_myself`, `wrong`
+        # with its reason) is recorded through the one writer, bound to the card's own authority — read here, while
+        # its signal is still open — at the press's instant, in this transaction. A card no authority binds (a team
+        # or verify situation card) keeps its press and writes none.
+        binding = (verdicts.binding_of(c, org_id=org_id, card_id=card_id, at=eval_time)
+                   if action in verdicts.VERDICT_CAUSES else None)
+        corrected_file, corrected_kind = None, None
+        if correction_words:
+            # The card's file — an expert card's is its own; any other card's, the file its subject belongs to — and,
+            # for a correction of the whole kind of work, that file's kind (`context/workstreams`).
+            corrected_file = _corrections.file_of_card(c, org_id=org_id, card_id=card_id)
+            if scope == _corrections.KIND:
+                from genios_engine.context.workstreams import file_for
+                work = file_for(c, org_id, corrected_file, now=eval_time) if corrected_file else None
+                corrected_kind = work.work_kind if work is not None else None
+                if not corrected_kind:
+                    return {"ok": False, "error": "no_kind_of_work",
+                            "why": "the brief names no kind of work for this card's file"}
 
         state = "acted" if action in {"run_play", "do_it_myself", "wrong"} \
             else ("snoozed" if action == "snooze" else (card["state"] if action == "answer" else "queued"))
@@ -215,6 +254,9 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             c.execute(text(
                 "update signals set status='acted' where signal_id=:signal and org_id=:o"),
                 {"signal": card["signal_id"], "o": org_id})
+        if question_id is not None and action == "wrong":
+            from genios_engine.context import founder_questions as _questions
+            _questions.retire(c, org_id=org_id, file_id=asking, why=_questions.CALLED_WRONG, at=eval_time)
         if action == "answer":
             from genios_engine.context import founder_questions
 
@@ -235,6 +277,17 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             {"id": new_id("cev"), "card": card_id, "o": org_id,
              "kind": "ui.requeued" if action == "requeue" else "human.card_action",
              "cause": action, "actor": actor, "detail": json.dumps(detail, default=str)})
+        recorded = None
+        if binding is not None:
+            recorded = verdicts.record(c, org_id=org_id, card_id=card_id, binding=binding, cause=action,
+                                       reason=reason if action == "wrong" else None, detail=detail, actor=actor,
+                                       as_of=eval_time)
+        correction = None
+        if corrected_file is not None:
+            correction = _corrections.correct(
+                c, org_id=org_id, file_id=corrected_file, words=correction_words, scope=scope, by=actor,
+                at=eval_time, card_id=card_id, feedback_id=recorded.feedback_id if recorded is not None else None,
+                reason=reason, kind=corrected_kind)
 
         # The card surface and the execution subsystem used to be two disconnected state
         # machines: this function never touched `executions`, so a card the founder marked
@@ -271,7 +324,9 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
         return {"ok": True, "state": state, "snooze_until": snooze_at.isoformat()}
     return {"ok": True, "state": state, "action": action,
             **({"reason": reason} if action == "wrong" else {}),
-            **({"question_id": question_id, "version": answered_version} if action == "answer" else {})}
+            **({"correction_id": correction.correction_id} if correction is not None else {}),
+            **({"question_id": question_id, "version": answered_version} if action == "answer" else {}),
+            **({"question_id": question_id} if action == "wrong" and question_id is not None else {})}
 
 
 def _version_answered(c, *, org_id: str, card, question_id: str, actor: str, at) -> int | None:

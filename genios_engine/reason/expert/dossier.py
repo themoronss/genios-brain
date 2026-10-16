@@ -66,12 +66,13 @@ DOSSIER_VERSION = "dossier.v1"
 #: The sections, in the one order a dossier is ever written in.
 SECTIONS: tuple[str, ...] = ("brief", "file", "timeline", "promises", "numbers", "coverage",
                              "playbook", "situations", "judged_before", "what_if")
-#: A section printed only when it has something to say — and the section it follows. A file with none of
-#: them is printed byte for byte as before (STEP-13: the founder's answers, M36.C2.L-data.V2.U07).
-OPTIONAL: Mapping[str, str] = {"answers": "timeline"}
+#: A section printed only when it has something to say — and the section it follows (or, when that one is not
+#: printed either, the one before it). A file with none of them is printed byte for byte as before (STEP-13: the
+#: founder's answers, M36.C2.L-data.V2.U07; STEP-16: your corrections, M46.C4.L-logic.V2.U03).
+OPTIONAL: Mapping[str, str] = {"answers": "timeline", "corrections": "answers"}
 TITLES: Mapping[str, str] = {
     "brief": "THE COMPANY BRIEF", "file": "THE FILE", "timeline": "WHAT HAPPENED",
-    "answers": "WHAT YOU TOLD US",
+    "answers": "WHAT YOU TOLD US", "corrections": "WHAT YOU CORRECTED",
     "promises": "PROMISES IN ITS MAIL", "numbers": "ITS NUMBERS", "coverage": "WHAT WAS CHECKED",
     "playbook": "WHAT A PROFESSIONAL KNOWS ABOUT THIS WORK", "situations": "ITS SITUATIONS",
     "judged_before": "WHAT WAS JUDGED BEFORE", "what_if": "IF NOTHING HAPPENS"}
@@ -145,6 +146,16 @@ class DossierParts:
     answers: tuple = ()
     #: Each meeting's title as its calendar gives it (`read_meeting_titles`), by its event (STEP-14, `03` F164).
     meeting_titles: Mapping[str, str] = field(default_factory=dict)
+    #: STEP-16 (`yc2_w27_s16` M46.C4.L-logic.V2.U03): your standing corrections of this file and of its kind of work
+    #: (`context/founder_corrections.standing_for`), newest first, bounded — and how many more stand.
+    corrections: tuple = ()
+    corrections_cut: int = 0
+    #: STEP-16 (`yc2_w27_s16` M47.C2.L-logic.V4.U02): how each card the dossier shows ended (`context/file_outcomes`), the
+    #: asks of the file closed since its last review (answered, or only replied to — by which event), and your own
+    #: numbers for its kind of work (`context/kind_numbers`) — outputs, never fingerprint inputs.
+    outcomes: tuple = ()
+    asks_closed: tuple = ()
+    kind_numbers: Any = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -312,6 +323,88 @@ def _answers(p: DossierParts, cite: _Ids) -> Section:
     return Section("answers", "\n".join(lines))
 
 
+#: How a card's end is said under it (`context/file_outcomes.ENDS`) — an open card, or an end with no cause written,
+#: says nothing new.
+_ENDED_SAYS: Mapping[str, str] = {
+    "verified": "verified — its ask closed answered",
+    "replied": "cleared — its ask was only replied to",
+    "taken": "you took it", "called_wrong": "you called it wrong", "lapsed": "its window passed with nobody acting",
+    "dismissed": "you dismissed it", "replaced": "a newer decision replaced it",
+    "cleared": "the decision behind it stopped holding"}
+#: How an ask's closure is said (`open_loops.closed_basis`).
+_CLOSED_SAYS: Mapping[str, str] = {"answered": "closed answered", "replied": "closed — only replied to"}
+#: The most asks closed since the last review the dossier lists — newest first; the rest counted.
+ASKS_CLOSED_LIMIT = 5
+
+
+@dataclass(frozen=True, slots=True)
+class ClosedAsk:
+    """An ask of the file closed since its last review: which, its kind, how it closed, by what, when."""
+    loop_id: str
+    kind: str
+    basis: str | None
+    by_event: str | None
+    closed_at: datetime
+
+
+def _ended_line(e: Any, cite: _Ids) -> str | None:
+    said = _ENDED_SAYS.get(e.ended)
+    if said is None:
+        return None
+    if e.ended in ("verified", "replied") and e.by:
+        said += f", by {cite(e.by)}"
+    if e.ended == "called_wrong" and e.reason:
+        said += f" — {e.reason}"
+    return f"  how it ended: {said}"
+
+
+def _asks_closed(p: DossierParts, cite: _Ids) -> list[str]:
+    if not p.asks_closed:
+        return []
+    shown = p.asks_closed[:ASKS_CLOSED_LIMIT]
+    lines = ["Asks of the file closed since its last review:"]
+    lines.extend(f"- {cite('loop:' + a.loop_id)} an ask ({a.kind}) {_CLOSED_SAYS.get(a.basis, 'closed')}"
+                 + (f" by {cite(a.by_event)}" if a.by_event else "") + f", {_when(a.closed_at)}" for a in shown)
+    if len(p.asks_closed) > len(shown):
+        lines.append(f"… and {len(p.asks_closed) - len(shown)} more ask(s) closed, not shown.")
+    return lines
+
+
+def _corrected_head(p: DossierParts, c: Any) -> str:
+    """The line a correction is headed by: when you said it, what it reaches, the card it was about and the reason
+    you gave — on a line of its own, which no id prints on and no fact can cite (as an answer's date)."""
+    reach = (f"every file of this kind of work ({c.kind})" if c.scope == "kind" else "this file")
+    card = next((k.headline for k in getattr(p.judgments, "cards", ()) or () if k.card_id == c.card_id), None)
+    about = (f", on the card “{card}”" if card else ", on a card of it" if c.card_id else "")
+    why = f" — you called it wrong: {c.reason}" if c.reason else ""
+    return f"You corrected {reach} on {_when(c.corrected_at)}{about}{why}:"
+
+
+def _corrections(p: DossierParts, cite: _Ids) -> Section:
+    """WHAT YOU CORRECTED (STEP-16, `yc2_w27_s16` M46.C4.L-logic.V2.U03; S16-D1). Your word on this file, or on every
+    file of its kind of work, as you wrote it: the head line says when, what it reaches, the card and the reason; the
+    next carries its id (the expert may cite it — and must, to follow it or to say why the file now outweighs it,
+    `reason/expert/verify`) and your words, verbatim, nothing else. A correction of how your company works is the
+    brief's own line, printed there."""
+    lines: list[str] = []
+    for c in p.corrections:
+        lines.append(_corrected_head(p, c))
+        lines.append(f"- {cite(f'corr:{c.correction_id}')} “{' '.join(str(c.words).split())}”")
+    if p.corrections_cut:
+        lines.append(f"… and {p.corrections_cut} older correction(s), not shown.")
+    return Section("corrections", "\n".join(lines), p.corrections_cut)
+
+
+def _kind_corrections(p: DossierParts, cite: _Ids) -> list[str]:
+    """THE CORRECTED PLAYBOOK PRIOR (STEP-16 §8.4 item 4): a correction for this file's kind of work prints beside
+    the profession's prior, as yours — the shared corpus is never edited."""
+    kind = [c for c in p.corrections if c.scope == "kind"]
+    if not kind:
+        return []
+    return ["Yours, for this kind of work — beside the profession's prior, which it outweighs for your company:",
+            *(f"- {cite(f'corr:{c.correction_id}')} “{' '.join(str(c.words).split())}”" for c in kind)]
+
+
 def _promises(p: DossierParts, cite: _Ids) -> Section:
     if not p.promises:
         return Section("promises", "No promise was found in its mail.", p.promises_cut)
@@ -404,15 +497,25 @@ def _playbook(p: DossierParts, cite: _Ids) -> tuple[Section, tuple[str, ...]]:
     pb = getattr(answer, "playbook", None)
     if pb is None:
         reason = getattr(answer, "reason", None)
-        return Section("playbook", "No playbook for this file: "
-                       f"{_NO_PLAYBOOK.get(reason, reason or 'none')}."), ()
+        return Section("playbook", "\n".join([
+            "No playbook for this file: " f"{_NO_PLAYBOOK.get(reason, reason or 'none')}.",
+            *_kind_corrections(p, cite)])), ()
     lines = [f"{pb.name} {cite('pb:' + pb.playbook_id)}, version {pb.version} — "
              + ("reviewed by a named human" if pb.reviewed else (pb.review_label or "not reviewed"))]
     lines.append("Stages — the file's current stage is named from these only:")
+    yours = p.kind_numbers
     for s in pb.stages:
+        # STEP-16 (M47.C2.L-logic.V4.U02, Atlas V.3): beside the prior, YOUR number for the stage — told apart,
+        # never merged.
+        mine = getattr(yours, "days_in", {}).get(s.name) if yours is not None else None
         lines.append(f"- {s.name} ({s.label}): typically {_says(s.typical)}, {s.cited}"
+                     + (f"; yours: {_says(mine)}" if mine is not None else "")
                      + (f"; quiet means: {s.quiet_means}" if s.quiet_means else "")
                      + (f"; it ends when: {s.leaves_when}" if s.leaves_when else ""))
+    verified = getattr(yours, "verified", None) if yours is not None else None
+    if verified is not None and verified.n:
+        lines.append(f"Yours for this kind of work: {_says(verified)} decisions on your files of it ended verified "
+                     f"(measured here, not a prior)")
     if pb.do_nothing_consequence:
         lines.append(f"What doing nothing costs (a prior): {pb.do_nothing_consequence}")
     if pb.success_signal:
@@ -439,6 +542,7 @@ def _playbook(p: DossierParts, cite: _Ids) -> tuple[Section, tuple[str, ...]]:
     cut = len(pb.moves) - len(moves) + len(pb.claims) - len(claims)
     if cut:
         lines.append(f"… and {cut} more move(s) or claim(s), not shown.")
+    lines.extend(_kind_corrections(p, cite))
     return Section("playbook", "\n".join(lines), cut), tuple(s.name for s in pb.stages)
 
 
@@ -482,6 +586,10 @@ def _judged_before(p: DossierParts, cite: _Ids) -> Section:
             # ⛔ NO INSTANT (STEP-14 fix): a card's first version is dated by the database's clock, not the
             # decision's — printed, it would make a dossier differ from run to run of the same file.
             lines.append(f"  version {v.version}{changed}: “{v.headline}”")
+        # STEP-16 (M47.C2.L-logic.V4.U02): how it ended, and what proved it — its evidence citable.
+        ended = next((e for e in p.outcomes if e.card_id == c.card_id), None)
+        if ended is not None and (said := _ended_line(ended, cite)):
+            lines.append(said)
     for s in j.situations:
         # An outcome on a situation still open is a DECISION, not an ending (`03` F161).
         why = f" — {s.reason}" if s.reason else ""
@@ -494,6 +602,7 @@ def _judged_before(p: DossierParts, cite: _Ids) -> Section:
         lines.append(f"- {cite('sit:' + s.situation_id)} {s.situation_type} {said}")
     for h in j.history:
         lines.append(f"- {cite('hist:' + h.field)} {h.field} = {h.value}")
+    lines.extend(_asks_closed(p, cite))
     cut = sum(j.cut.values())
     if not lines:
         lines.append("Nothing was judged about this file before.")
@@ -524,6 +633,11 @@ def build_dossier(parts: DossierParts) -> Dossier:
         # ⛔ ONLY WHEN THERE IS ONE: a file with no answer is printed byte for byte as before (STEP-13).
         by_name["answers"] = _answers(parts, cite)
         names.insert(names.index(OPTIONAL["answers"]) + 1, "answers")
+    if parts.corrections:
+        # ⛔ ONLY WHEN THERE IS ONE (STEP-16): after WHAT YOU TOLD US — or, with no answer, where it would be.
+        by_name["corrections"] = _corrections(parts, cite)
+        follows = OPTIONAL["corrections"] if OPTIONAL["corrections"] in names else OPTIONAL["answers"]
+        names.insert(names.index(follows) + 1, "corrections")
     sections = tuple(by_name[name] for name in names)
     draft = Dossier(org_id=parts.org_id, file_id=parts.file_id, as_of=parts.as_of,
                     sections=sections, catalogue=DossierCatalogue(frozenset(), frozenset()),
@@ -620,9 +734,37 @@ def read_meeting_titles(conn, org_id: str, event_ids: Iterable[str]) -> dict[str
         _MEETING_TITLES, {"o": org_id, "events": events}) if r.title and str(r.title).strip()}
 
 
-def read_parts(conn, org_id: str, file_id: str, *, now: datetime) -> DossierParts | None:
-    """Every part of one file's dossier, read on one connection — None for a file it does not hold."""
+#: The asks of the file's people closed since its last review — newest first (STEP-16).
+_ASKS_CLOSED = text(
+    "select l.loop_id, l.kind, l.closed_basis, l.closed_by_event, l.closed_at from open_loops l "
+    "  left join source_events se on se.org_id = l.org_id and se.event_id = l.opened_by_event "
+    " where l.org_id = :o and l.status = 'closed' and l.closed_at is not null "
+    "   and (l.subject_node_id = any(:ids) or l.awaited_from_node_id = any(:ids)) "
+    "   and l.closed_at > :since "
+    "   and se.visibility_scope is distinct from 'private' "
+    " order by l.closed_at desc, l.loop_id")
+
+
+def read_asks_closed(conn, org_id: str, people: Iterable[str], *, since: datetime) -> tuple[ClosedAsk, ...]:
+    """The asks of the file's `people` closed since `since` (the file's last review) — answered or only replied to,
+    by which event — newest first."""
+    ids = sorted({str(p) for p in people})
+    if not ids:
+        return ()
+    return tuple(ClosedAsk(loop_id=r.loop_id, kind=r.kind, basis=r.closed_basis, by_event=r.closed_by_event,
+                           closed_at=r.closed_at)
+                 for r in conn.execute(_ASKS_CLOSED, {"o": org_id, "ids": ids, "since": since}))
+
+
+def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
+               kind_numbers: Mapping[str, Any] | None = None) -> DossierParts | None:
+    """Every part of one file's dossier, read on one connection — None for a file it does not hold.
+    `kind_numbers`: your numbers by kind of work (`context/kind_numbers`), when the caller measured them once for
+    every file of a pass (the sweep) — a kind it did not measure is measured here."""
     from genios_engine.context.file_judgments import judgments_for
+    from genios_engine.context.file_outcomes import ended_for_cards
+    from genios_engine.context.founder_corrections import standing_for
+    from genios_engine.context.kind_numbers import numbers_for_kind
     from genios_engine.context.founder_questions import answers_for
     from genios_engine.context.workstream_numbers import numbers_for
     from genios_engine.context.workstream_timeline import timeline_for
@@ -643,10 +785,12 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime) -> DossierPart
     stop = pb.stop if pb is not None else None
     promises, promises_cut = read_promises(conn, org_id, (t.event_id for t in timeline.touches),
                                            us=identity_for(conn, org_id))
+    standing = standing_for(conn, org_id, str(file_id), people=work.people, kind=work.work_kind)
+    judgments = judgments_for(conn, org_id, file_id, people=work.people)
     return DossierParts(
         org_id=org_id, file_id=str(file_id), as_of=now, brief=brief, file=work, timeline=timeline,
         numbers=numbers_for(conn, org_id, work, timeline, now=now), playbook=playbook,
-        judgments=judgments_for(conn, org_id, file_id, people=work.people), lifecycle=lifecycle,
+        judgments=judgments, lifecycle=lifecycle,
         what_if=what_if_nothing(
             now=now, quiet_days=timeline.days_quiet,
             stop_after_days=(int(stop.dormant_after.value)
@@ -656,7 +800,14 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime) -> DossierPart
             lifecycle=lifecycle,
             next_date=timeline.upcoming[0].at if timeline.upcoming else None),
         promises=promises, promises_cut=promises_cut, answers=answers_for(conn, org_id, str(file_id)),
-        meeting_titles=read_meeting_titles(conn, org_id, meeting_events(timeline)))
+        meeting_titles=read_meeting_titles(conn, org_id, meeting_events(timeline)),
+        corrections=standing.corrections, corrections_cut=standing.cut,
+        outcomes=ended_for_cards(conn, org_id, (c.card_id for c in judgments.cards)),
+        # Closed SINCE the last review — a file never reviewed has no "since": nothing is listed.
+        asks_closed=(read_asks_closed(conn, org_id, work.people or (str(file_id),),
+                                      since=judgments.reviews[0].reviewed_at) if judgments.reviews else ()),
+        kind_numbers=(((kind_numbers or {}).get(work.work_kind)
+                       or numbers_for_kind(conn, org_id, work.work_kind, now=now)) if work.work_kind else None))
 
 
 # ── reading it back (STEP-13) ──────────────────────────────────────────────────────────────────
@@ -768,6 +919,23 @@ def asked_you(card: Any) -> bool:
 
 
 @dataclass(frozen=True, slots=True)
+class CorrectionSeen:
+    """A correction the dossier showed, as the check reads it (STEP-16): its id as printed, your words, the day you
+    said them as you would read it ("12 Oct"), and what it reaches."""
+    ref: str
+    words: str
+    said_on: str
+    scope: str
+
+
+@dataclass(frozen=True, slots=True)
+class CalledWrong:
+    """A card of the file you called wrong, as the dossier printed it (STEP-16): its id and its headline."""
+    ref: str
+    headline: str
+
+
+@dataclass(frozen=True, slots=True)
 class FilePeople:
     """Whom a draft of this file may go to: who its mail shows, who is us, and the connector that
     introduced its counterparty (None on the connector's own file, and on a file nobody introduced) —
@@ -789,6 +957,10 @@ class FilePeople:
     #: …and of each, which lines asked (STEP-14 fix, finding 1): (`card:` id, its own line asks now, the versions that
     #: asked). The check blanks those lines and no other.
     asked_lines: tuple[tuple[str, bool, tuple[int, ...]], ...] = ()
+    #: STEP-16 (`yc2_w27_s16` M46.C4.L-logic.V3.U06): your standing corrections the dossier showed, newest first, and
+    #: the cards of the file you called wrong — what "never silently" holds a review to (`reason/expert/verify`).
+    corrections: tuple[CorrectionSeen, ...] = ()
+    called_wrong: tuple[CalledWrong, ...] = ()
 
 
 def label_of(key: str | None) -> str | None:
@@ -855,7 +1027,15 @@ def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str]
                                         for c in cards if asked_you(c)),
                       answered=tuple(Answered(ref=f"answer:{a.question_id}", question=str(a.question),
                                               words=" ".join(str(a.answer).split()))
-                                     for a in (parts.answers or ()) if a.answer))
+                                     for a in (parts.answers or ()) if a.answer),
+                      # STEP-16: your corrections as the dossier printed them, and the cards you called wrong.
+                      corrections=tuple(CorrectionSeen(
+                          ref=f"corr:{c.correction_id}", words=" ".join(str(c.words).split()),
+                          said_on=f"{c.corrected_at.day} {c.corrected_at.strftime('%b')}", scope=c.scope)
+                          for c in (parts.corrections or ())),
+                      called_wrong=tuple(CalledWrong(ref=f"card:{c.card_id}", headline=str(c.headline))
+                                         for c in cards if any(v.cause == "wrong" for v in c.verdicts)
+                                         and c.headline))
 
 
 def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | None:
@@ -864,10 +1044,12 @@ def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | 
     return build_dossier(parts) if parts is not None else None
 
 
-__all__ = ["ASKING_MODES", "Answered", "AskSeen", "QUESTION_CARD_RULE", "asked_you", "asking_versions", "asks_now", "CLAIMS_LIMIT", "meeting_events", "read_meeting_titles",
+__all__ = ["ASKING_MODES", "ASKS_CLOSED_LIMIT", "Answered", "AskSeen", "CalledWrong", "ClosedAsk", "CorrectionSeen",
+           "QUESTION_CARD_RULE", "asked_you", "asking_versions", "asks_now", "CLAIMS_LIMIT", "meeting_events",
+           "read_meeting_titles",
            "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine",
            "DossierParts", "Seen",
            "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",
            "OPTIONAL", "RELATIVE_WORDS", "SECTIONS", "Section", "TITLES", "TOUCHES_LISTED", "TOUCHES_WHOLE",
            "WAVES_LIMIT", "build_dossier", "connector_of", "dossier_for", "label_of", "lines_by_id", "people_of",
-           "read_parts", "read_promises"]
+           "read_asks_closed", "read_parts", "read_promises"]

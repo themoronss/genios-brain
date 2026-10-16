@@ -128,15 +128,79 @@ def test_it_is_proposed_once_and_never_nags_after_a_rejection(engine):
     assert len(_pending(engine)) == 0
 
 
-def test_an_accepted_kind_is_not_re_proposed_as_another_f132_stays_open(engine):
-    """F132: the programme is filed `program`; the expert reads it as the fund — the founder's edit."""
+# ⛔ RESTATED by STEP-16 (`yc2_w27_s16` M46.C5.L-logic.V2.U03, `03` F157): this asserted that an accepted kind
+# is never re-proposed as another — "F132 stays open". That was the defect F157 names, and it closes here: the
+# review's kind is proposed as a line that REPLACES the accepted one, for the founder to accept.
+def _filed_program(engine):
     with engine.begin() as c:
-        BS.add(c, org_id=ORG, section="in_motion", words="Program · Surge — the cohort",
-               decided_by="founder", at=AT, domain="larkspurvc.test", kind="program")
-    filed = dataclasses.replace(UNKINDED, work_kind="program")
-    proposal = _propose(engine, file=filed)
-    assert proposal.line_id is None and "already holds a line" in proposal.says
+        return BS.add(c, org_id=ORG, section="in_motion", words="Program · Surge — the cohort",
+                      decided_by="founder", at=AT, domain="larkspurvc.test", kind="program")
+
+
+FILED = dataclasses.replace(UNKINDED, work_kind="program")
+
+
+def test_an_accepted_kind_is_proposed_as_another_by_a_line_that_replaces_it_f157(engine):
+    """F132: the programme is filed `program`; the expert reads it as the fund behind it — a proposal that
+    replaces the accepted line, labelled, and nothing applied until the founder accepts it."""
+    old = _filed_program(engine)
+    proposal = _propose(engine, file=FILED)
+    assert proposal.line_id and "replacing program" in proposal.says
+    [line] = _pending(engine)
+    assert (line["kind"], line["domain"], line["replaces"]["line_id"], line["replaces"]["kind"]) == (
+        "investor", "larkspurvc.test", old, "program")
+    assert line["text"].startswith("Investor · Larkspur Ventures — proposed by the expert, replacing program: ")
+    assert len(line["text"]) <= MAX_LINE_CHARS
+    with engine.connect() as c:
+        assert [(ln.line_id, ln.kind) for ln in BS.accepted(c, ORG) if ln.section == "in_motion"] == [
+            (old, "program")], "never applied"
+    with engine.begin() as c:
+        BS.accept(c, org_id=ORG, line_id=proposal.line_id, decided_by="founder", at=AT + timedelta(hours=1))
+        now = [(ln.line_id, ln.kind) for ln in BS.accepted(c, ORG) if ln.section == "in_motion"]
+    assert now == [(proposal.line_id, "investor")], "accepted in one act: the old line is gone"
+
+
+def test_a_replacing_proposal_is_made_once_and_never_nags_after_a_rejection(engine):
+    _filed_program(engine)
+    first = _propose(engine, file=FILED)
+    again = _propose(engine, file=FILED, at=AT + timedelta(days=1))
+    assert first.line_id and again.line_id is None and "already holds a line" in again.says
+    with engine.begin() as c:
+        BS.reject(c, org_id=ORG, line_id=first.line_id, decided_by="founder", at=AT + timedelta(days=2))
+    assert _propose(engine, file=FILED, at=AT + timedelta(days=30)).line_id is None
     assert _pending(engine) == []
+
+
+def test_a_person_files_kind_is_corrected_on_the_line_that_names_them(engine):
+    """The replacing line keeps the replaced line's counterparty — here the partner's address, not the anchor's."""
+    with engine.begin() as c:
+        old = BS.add(c, org_id=ORG, section="in_motion", words="Program · Ira at Surge", decided_by="founder",
+                     at=AT, address="ira@larkspurvc.test", kind="program")
+    person = dataclasses.replace(FILED, counterparty="Ira Sen", counterparty_key="ira@larkspurvc.test",
+                                 counterparty_type="person")
+    assert _propose(engine, file=person).line_id
+    [line] = _pending(engine)
+    assert (line["address"], line["domain"], line["replaces"]["line_id"]) == ("ira@larkspurvc.test", None, old)
+
+
+def test_a_kind_no_accepted_line_gives_is_not_proposed_and_it_says_so(engine):
+    proposal = _propose(engine, file=FILED)
+    assert proposal.line_id is None and "no accepted line in force gives the file program" in proposal.says
+    assert _pending(engine) == []
+
+
+def test_the_line_giving_the_kind_is_the_first_accepted_that_names_the_file(engine):
+    """`context/workstreams._work_kind`'s rule, read back as a line: the parent domain names the file, and the
+    first line the founder accepted wins."""
+    with engine.begin() as c:
+        first = BS.add(c, org_id=ORG, section="in_motion", words="Program · Surge — the cohort",
+                       decided_by="founder", at=AT, domain="larkspurvc.test", kind="program")
+        BS.add(c, org_id=ORG, section="in_motion", words="Investor · Larkspur partners", decided_by="founder",
+               at=AT + timedelta(hours=1), address="ira@larkspurvc.test", kind="investor")
+        sub = dataclasses.replace(FILED, counterparty_key="surge.larkspurvc.test")
+        assert K.line_giving_the_kind(c, org_id=ORG, file=sub).line_id == first
+        assert K.line_giving_the_kind(c, org_id=ORG, file=dataclasses.replace(sub, work_kind=None)) is None
+        assert K.line_giving_the_kind(c, org_id=ORG, file=dataclasses.replace(sub, work_kind="investor")) is None
 
 
 @pytest.mark.parametrize("review, file, says", [
@@ -163,3 +227,41 @@ def test_the_line_is_written_from_the_checked_reason_and_none_without_one(engine
     [line] = _pending(engine)
     assert corrected.line_id and "after 6 days" in line["text"]
     assert _propose(engine, file=UNKINDED, why=None).line_id is None
+
+
+def test_a_company_files_kind_given_by_a_partners_address_is_corrected_on_that_line(engine):
+    """The file is the fund (its anchor a domain); the line that gives it its kind names the partner — one of
+    the file's people — by address. The replacing proposal is on that line's counterparty."""
+    with engine.begin() as c:
+        c.execute(text("insert into graph_nodes (node_id, org_id, node_type, display_name, canonical_key) "
+                       "values ('node_ira_s16', :o, 'person', 'Ira Sen', 'ira@larkspurvc.test')"), {"o": ORG})
+        old = BS.add(c, org_id=ORG, section="in_motion", words="Program · Ira's cohort", decided_by="founder",
+                     at=AT, address="ira@larkspurvc.test", kind="program")
+    company = dataclasses.replace(FILED, people=("node_ira_s16",))
+    with engine.connect() as c:
+        assert K.line_giving_the_kind(c, org_id=ORG, file=company).line_id == old
+    assert _propose(engine, file=company).line_id
+    [line] = _pending(engine)
+    assert (line["address"], line["domain"], line["replaces"]["line_id"]) == ("ira@larkspurvc.test", None, old)
+
+
+def test_a_file_named_by_its_parent_domain_is_corrected_on_the_parents_line(engine):
+    with engine.begin() as c:
+        old = BS.add(c, org_id=ORG, section="in_motion", words="Program · Larkspur's programmes",
+                     decided_by="founder", at=AT, domain="larkspurvc.test", kind="program")
+    sub = dataclasses.replace(FILED, counterparty_key="surge.larkspurvc.test")
+    assert _propose(engine, file=sub).line_id
+    [line] = _pending(engine)
+    assert (line["domain"], line["replaces"]["line_id"]) == ("larkspurvc.test", old)
+
+
+def test_a_line_naming_no_kind_is_passed_over_as_the_file_reads_it(engine):
+    """`_work_kind` reads only lines that name a kind: an earlier in-motion line naming the counterparty with no
+    kind gives the file none, and the kind comes from the next."""
+    with engine.begin() as c:
+        BS.add(c, org_id=ORG, section="in_motion", words="Larkspur — talking", decided_by="founder", at=AT,
+               domain="larkspurvc.test")
+        kinded = BS.add(c, org_id=ORG, section="in_motion", words="Program · Ira's cohort", decided_by="founder",
+                        at=AT + timedelta(hours=1), address="ira@larkspurvc.test", kind="program")
+        person = dataclasses.replace(FILED, counterparty_key="ira@larkspurvc.test")
+        assert K.line_giving_the_kind(c, org_id=ORG, file=person).line_id == kinded

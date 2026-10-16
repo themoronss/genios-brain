@@ -43,6 +43,7 @@ from typing import Iterable
 from sqlalchemy import text
 
 from genios_engine.contracts import card_contract
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform import card_refusals
 from genios_engine.platform import realtime
 from genios_engine.platform.ids import new_id
@@ -219,12 +220,11 @@ def close_stale(engine, org_id: str, *, kind: str, prefixes: tuple[str, ...],
                            "where org_id = :o and kind = :k and key = :key"),
                       {"o": org_id, "k": kind, "key": r.key, "now": now})
             closed += 1
-            if r.card_id and c.execute(text(
-                    "update cards set state = 'resolved', resolved_at = :now where card_id = :c "
-                    "and org_id = :o and state in ('built', 'queued', 'surfaced', 'snoozed') "
-                    "returning 1"), {"c": r.card_id, "o": org_id, "now": now}).first():
-                _log_card_event(c, r.card_id, org_id, "card.resolved", "situation_cleared",
-                                {"situation_key": r.key})
+            if r.card_id:
+                # STEP-16 (`yc2_w27_s16` M47.C1.L-data.V0.U01): through the one writer of `resolved`.
+                card_lifecycle.resolve_cards(c, org_id=org_id, cause=card_lifecycle.SITUATION_CLEARED,
+                                             card_ids=[r.card_id], evidence={"situation_key": r.key}, at=now,
+                                             states=("built", "queued", "surfaced", "snoozed"))
     return closed
 
 
@@ -273,12 +273,8 @@ def _write_card(c, *, org_id, kind, key, seat_id, subjects, headline, body, acti
             return held_card_id
         # The user SNOOZED the previous card: its words stay as answered, but it must not wake
         # later beside the new generation saying something no longer true — resolve it.
-        if c.execute(text(
-                "update cards set state = 'resolved', resolved_at = :now where card_id = :id "
-                "and org_id = :o and state = 'snoozed' returning 1"),
-                {"id": held_card_id, "o": org_id, "now": now}).first():
-            _log_card_event(c, held_card_id, org_id, "card.resolved", "superseded",
-                            {"digest": digest})
+        card_lifecycle.resolve_cards(c, org_id=org_id, cause=card_lifecycle.SUPERSEDED, card_ids=[held_card_id],
+                                     evidence={"digest": digest}, at=now, states=("snoozed",))
     # First emission, or the user already decided the previous card: a new generation.
     signal_id = "sig_team_" + _h(org_id, kind, key, digest)[:28]
     c.execute(text(

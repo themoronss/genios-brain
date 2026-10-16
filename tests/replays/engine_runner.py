@@ -56,7 +56,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from tests.replays.founder_case import (FOUNDER_DIR, BriefLineView, CardView, CaseObject, CaseRun,
+from tests.replays.founder_case import (FOUNDER_DIR, ActPlayed, BriefLineView, CardView, CaseObject, CaseRun,
                                         FounderCase, Landed, SituationView)
 
 SCRATCH_ENV = "GENIOS_TEST_DATABASE_URL"
@@ -335,6 +335,7 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
     open_after: list[set[str]] = []
     shown_after: list[set[str]] = []
     events_after: list[set[str]] = []
+    played: list[ActPlayed] = []
     finished = False
     try:
         with production_switches(llm, platform_domains=case.platform_domains), \
@@ -362,14 +363,18 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
                 open_after.append(_open_cards(engine, org))
                 shown_after.append(_shown_cards(routes._card_store, org, at))
                 events_after.append(_event_ids(engine, org))
+                # STEP-16 (`yc2_w27_s16` M47.C4.L-integration.V4.U02): your acts after this sweep, through the real
+                # doors, at its instant — what the next sweep's expert then reads.
+                played += play_acts(engine, routes._graph, case, org, sweep, at)
             lines = compose_brief(engine, org, at=case.sweeps[-1]) if brief else None
         calls = tuple(getattr(llm, "calls", ()) or ())
         misses = tuple(getattr(llm, "misses", ()) or ())
         report = CaseRun(case_id=case.case_id, org_id=org, landed=tuple(landed),
                          memory=_memory(engine, org, case, landed),
                          situations=_situations(engine, org),
-                         cards=_cards(engine, org, open_after, shown_after, events_after), funnel=tuple(funnel),
-                         chain_ok=tuple(chain_ok), model_calls=calls, misses=misses, brief=lines)
+                         cards=_cards(engine, org, open_after, shown_after, events_after, landed=landed),
+                         funnel=tuple(funnel), chain_ok=tuple(chain_ok), model_calls=calls, misses=misses,
+                         brief=lines, acts=tuple(played))
         finished = True
     finally:
         # On EVERY exit — a cassette miss included — or the tenant stays switched on. `keep` is for
@@ -683,11 +688,65 @@ def _gold_lines(row: Any) -> tuple[str, ...]:
                                   row.relationship_role) if v)
 
 
+def play_acts(engine: Any, graph: Any, case: FounderCase, org: str, sweep: int, at: datetime) -> list[ActPlayed]:
+    """STEP-16 (`yc2_w27_s16` M47.C4.L-integration.V4.U02) · the case's acts after `sweep`, played through the real
+    doors at the sweep's instant: on the newest open card about the act's subject, `wrong` through
+    `deliver/actions.ingest_action` (the dashboard's door — with your words and scope, a correction of the card's
+    file), or `correct` through `context/founder_corrections.correct` on the card's file. An act with no open card
+    to play on, or one the door refuses, is reported as not played — the marking fails the case on it."""
+    from tests.replays.marking import every_word, says
+    out: list[ActPlayed] = []
+    for index, act in enumerate(case.acts):
+        if act.after_sweep != sweep:
+            continue
+        cards = [c for c in _cards(engine, org, [_open_cards(engine, org)])
+                 if any(says(every_word(c), t) for t in act.on)]
+        if not cards:
+            out.append(ActPlayed(index, sweep, None, False, f"no open card about {'/'.join(act.on)}"))
+            continue
+        card = max(cards, key=lambda c: c.card_id)
+        if act.wrong is not None:
+            from genios_engine.deliver.actions import ingest_action
+            result = ingest_action(card_store=None, graph=graph, org_id=org, card_id=card.card_id,
+                                   actor=case.founder.email, action="wrong", reason=act.wrong, words=act.words,
+                                   scope=act.scope, eval_time=at, allow_any_assignee=True)
+            out.append(ActPlayed(index, sweep, card.card_id, bool(result.get("ok")),
+                                 str(result.get("error") or result.get("state"))))
+            continue
+        from genios_engine.context import founder_corrections as fc
+        from genios_engine.context.workstreams import file_for
+        scope = act.scope or fc.FILE
+        try:
+            with engine.begin() as conn:
+                file_id = fc.file_of_card(conn, org_id=org, card_id=card.card_id)
+                kind = None
+                if scope == fc.KIND:
+                    work = file_for(conn, org, file_id, now=at) if file_id else None
+                    kind = work.work_kind if work is not None else None
+                kept = fc.correct(conn, org_id=org, file_id=file_id, words=act.correct, scope=scope,
+                                  by=case.founder.email, at=at, card_id=card.card_id, kind=kind)
+            out.append(ActPlayed(index, sweep, card.card_id, True, kept.correction_id))
+        except ValueError as exc:
+            out.append(ActPlayed(index, sweep, card.card_id, False, str(exc)))
+    return out
+
+
+def _ends(engine: Any, org: str, ids: list[str], landed: list[Landed] | None) -> dict[str, tuple[str, str | None]]:
+    """STEP-16 · how each card ended (`context/file_outcomes`), the proving event mapped back to the case's object."""
+    from genios_engine.context.file_outcomes import OPEN, UNRECORDED, ended_for_cards
+    objects = {item.event_id: item.object_id for item in (landed or ()) if item.event_id}
+    with engine.connect() as conn:
+        ends = ended_for_cards(conn, org, ids)
+    return {e.card_id: (e.ended, objects.get(e.by) if e.by else None) for e in ends
+            if e.ended not in (OPEN, UNRECORDED)}
+
+
 def _cards(engine: Any, org: str, open_after: list[set[str]],
            shown_after: list[set[str]] | None = None,
-           events_after: list[set[str]] | None = None) -> tuple[CardView, ...]:
+           events_after: list[set[str]] | None = None,
+           landed: list[Landed] | None = None) -> tuple[CardView, ...]:
     """Every card the founder could see after at least one sweep, with what it says — the sweeps the APP showed it
-    (`app_sweeps`, STEP-14: never asked, none) and every version's words."""
+    (`app_sweeps`, STEP-14: never asked, none), every version's words, and (STEP-16) how it ended."""
     from sqlalchemy import text
     seen = set().union(*open_after) if open_after else set()
     if not seen:
@@ -716,6 +775,7 @@ def _cards(engine: Any, org: str, open_after: list[set[str]],
             history.setdefault(h.card_id, []).append(
                 (h.kind, h.cause, detail.get("change"), detail.get("material"), isinstance(detail.get("before"), dict)))
     shown_after = shown_after or []
+    ends = _ends(engine, org, sorted(seen), landed)
     out = []
     for r in rows:
         # One line per thing the founder reads — each WHY item and each action on its own, so a
@@ -738,6 +798,7 @@ def _cards(engine: Any, org: str, open_after: list[set[str]],
                             versions=tuple(versions.get(r.card_id, ())),
                             file_id=r.file_id, events=tuple(history.get(r.card_id, ())),
                             shown_lines=tuple(dict.fromkeys((*_gold_lines(r), *beyond.get(r.card_id, ())))),
+                            ended=ends.get(r.card_id, (None, None))[0], ended_by=ends.get(r.card_id, (None, None))[1],
                             gold={"headline": r.headline, "subject": r.business_subject, "role": r.relationship_role,
                                   "why_now": r.why_now, "what_remains": r.unresolved_item,
                                   "recommended": r.recommended, "alternative": r.alternative,

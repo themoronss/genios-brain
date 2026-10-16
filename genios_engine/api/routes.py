@@ -5512,7 +5512,9 @@ class CardAction(BaseModel):
     snooze_option: str | None = None        # 4h | tomorrow_09 | 3d | custom
     custom_until: str | None = None
     surface: str | None = None              # web | desktop | extension | mobile — where it was pressed
-    words: str | None = None                # STEP-13: your answer, for 'answer' on a question card
+    words: str | None = None                # STEP-13: your answer, for 'answer' on a question card; STEP-16:
+                                            # your words with a 'wrong' — a correction of the card's file
+    scope: str | None = None                # STEP-16: file | kind | company — what the correction reaches
 
 
 @router.post("/cards/{card_id}/action")
@@ -5525,6 +5527,13 @@ def card_action(card_id: str, body: CardAction,
     actor_id = ctx.actor_id or ctx.agent_id or "authenticated_principal"
     if ctx.is_member and not _member_reaches(ctx, card_id):
         raise HTTPException(403, {"ok": False, "error": "assigned_to_different_seat"})
+    # STEP-16 (`yc2_w27_s16` M46.C3.L-integration.V3.U04, `06` D27's rule): a correction for every file of a kind of
+    # work, or for how the company works, steers every judgment it reaches — the account OWNER's alone (an owner-level
+    # credential that is no admin seat; `tests/test_open_loops.py` keeps the old scopes check out of this route).
+    if body.action == "wrong" and (body.words or "").strip() and body.scope in ("kind", "company") \
+            and (not ctx.is_org_admin or ctx.role == "admin"):
+        raise HTTPException(403, {"ok": False, "error": "owner_only",
+                                  "why": "a correction of a kind of work, or of the company, is the owner's"})
     from genios_engine.deliver.actions import ingest_action
     out = ingest_action(card_store=_card_store, graph=_graph, org_id=org_id,
                         card_id=card_id, actor=actor_id, action=body.action,
@@ -5533,7 +5542,7 @@ def card_action(card_id: str, body: CardAction,
                         # a member's reach was proved above; the actor stays their address
                         allow_any_assignee=ctx.sees_org_queue or ctx.is_member,
                         surface=body.surface if body.surface in _CARD_SURFACES else None,
-                        words=body.words)
+                        words=body.words, scope=body.scope)
     if not out.get("ok"):
         status = 403 if out.get("error") == "assigned_to_different_seat" else 422
         raise HTTPException(status, out)

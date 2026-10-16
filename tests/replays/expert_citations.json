@@ -3002,15 +3002,15 @@
   ]
  },
  "F57": {
-  "evt_896d238855ecfb2a99b39e33": [
-   [
-    "- [#] 2026-09-03 06:00 UTC · we wrote · Arjun Rao",
-    0
-   ]
-  ],
   "evt_cb865447ff1df267aeb7634c": [
    [
     "- [#] 2026-09-01 05:00 UTC · they wrote · Zoya Hameed",
+    0
+   ]
+  ],
+  "evt_e3a4811ede5260e0b163bef2": [
+   [
+    "- [#] 2026-09-03 06:00 UTC · we wrote · Arjun Rao",
     0
    ]
   ],
@@ -3023,6 +3023,20 @@
   "loop:loop_12328b0430c548e3efb3eaa8": [
    [
     "- [#] question, they wait on us, open since 2026-09-01 05:00 UTC",
+    0
+   ],
+   [
+    "- [#] an ask (question) closed — only replied to by [#], 2026-09-03 06:00 UTC",
+    0
+   ]
+  ],
+  "loop:loop_ac83e8a67fa4487320c26bb5": [
+   [
+    "- [#] information_requested, they wait on us, open since 2026-09-01 05:00 UTC",
+    0
+   ],
+   [
+    "- [#] an ask (information_requested) closed answered by [#], 2026-09-03 06:00 UTC",
     0
    ]
   ],
@@ -3084,7 +3098,7 @@
     0
    ]
   ],
-  "sit:sit_66365f9b06bf1d479a7ce8b3": [
+  "sit:sit_047f8a2b53f810d6339c9efb": [
    [
     "- [#] account_admin (admin) · active · seen 2026-09-01 05:00 UTC → 2026-09-01 05:00 UTC (0 days) · quiet 1.3 days of a 45-day window (the engine's default)",
     0
@@ -3523,6 +3537,120 @@
    ],
    [
     "- [#] account_admin (admin) · active · seen 2026-08-05 06:00 UTC → 2026-08-12 06:00 UTC (7 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F65": {
+  "corr:fc_7639bcbe2099667febc2db8a": [
+   [
+    "- [#] “Leah asked on our call for news only on real milestones — a signed pilot or the round opening. Don't push me to write before one.”",
+    0
+   ]
+  ],
+  "evt_01ac642ee942ecde3a9c03d1": [
+   [
+    "- [#] 2026-09-21 05:00 UTC · they wrote · Leah Varma",
+    0
+   ]
+  ],
+  "num:your_reply_time:leah@lumenvc.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.silence_reads_by_stage": [
+   [
+    "- [#] Investor silence means different things at different stages. Before a first meeting it is the default; after a first call that named no next step it is usually a soft no; more than a week after a partners' meeting it is usually a no; in diligence it is the work; after a term sheet it is paperwork, until the timetable slips. Read silence by the stage, never by its length alone. — why: Each stage has a different decider and a different clock. A firm in diligence is calling references and writing its memo (Gompers et al. measured ten reference calls on average); a partnership decides in a weekly meeting, and its rejection \"will rarely come in the form of an actual 'no'\" (Dixon); and investors at every stage prefer an open option to a closed door — \"Some of the worse ones never actually do say no; they just stop replying to your emails\" (Graham). The same twelve days of quiet is therefore nothing in diligence and an answer after a partners' meeting. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.run_an_investor_conversation": [
+   [
+    "Run an investor conversation to a decision [#], version pb-d3f940d86e88 — playbook not yet reviewed",
+    0
+   ]
+  ]
+ },
+ "F66": {
+  "corr:fc_60e17aed2aa4e402ebae7ef6": [
+   [
+    "- [#] “Investors who asked for news only on a milestone get nothing from us before that milestone lands.”",
+    0
+   ]
+  ],
+  "evt_5da10a353635341e37a86723": [
+   [
+    "- [#] 2026-09-21 04:00 UTC · they wrote · Ines Duarte",
+    0
+   ]
+  ],
+  "evt_a9f46486b3ada1219699201b": [
+   [
+    "- [#] 2026-09-21 06:00 UTC · they wrote · Marcus Bell",
+    0
+   ]
+  ],
+  "num:your_reply_time:ines@northfieldvc.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "num:your_reply_time:marcus@harborpoint.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.silence_reads_by_stage": [
+   [
+    "- [#] Investor silence means different things at different stages. Before a first meeting it is the default; after a first call that named no next step it is usually a soft no; more than a week after a partners' meeting it is usually a no; in diligence it is the work; after a term sheet it is paperwork, until the timetable slips. Read silence by the stage, never by its length alone. — why: Each stage has a different decider and a different clock. A firm in diligence is calling references and writing its memo (Gompers et al. measured ten reference calls on average); a partnership decides in a weekly meeting, and its rejection \"will rarely come in the form of an actual 'no'\" (Dixon); and investors at every stage prefer an open option to a closed door — \"Some of the worse ones never actually do say no; they just stop replying to your emails\" (Graham). The same twelve days of quiet is therefore nothing in diligence and an answer after a partners' meeting. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.run_an_investor_conversation": [
+   [
+    "Run an investor conversation to a decision [#], version pb-d3f940d86e88 — playbook not yet reviewed",
+    0
+   ]
+  ]
+ },
+ "F67": {
+  "evt_2dafa529fdc05317083745b4": [
+   [
+    "- [#] 2026-09-21 05:30 UTC · they wrote · Vikram Sole",
+    0
+   ]
+  ],
+  "evt_5ca213f75866964f0ebcd801": [
+   [
+    "- [#] 2026-09-21 04:30 UTC · they wrote · Nadia Qureshi",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_card_verdict@fundraising": [
+   [
+    "- [#] derived.history.prior_card_verdict@fundraising = first_time",
+    0
+   ]
+  ],
+  "num:your_reply_time:nadia@techbridge.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "num:your_reply_time:vikram@awadhec.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.follow_an_application": [
+   [
+    "Follow an application from the deadline to the first day [#], version pb-8f465e5ab424 — playbook not yet reviewed",
     0
    ]
   ]

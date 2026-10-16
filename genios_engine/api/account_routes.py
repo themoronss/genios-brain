@@ -667,6 +667,9 @@ _ORG_SCOPED_TABLES = [
     # tenant's counterparties, in the expert's checked words, and marks in the founder's own words. Marks
     # first: each belongs to its brief.
     "morning_brief_marks", "morning_briefs",
+    # migration 0241: your corrections of a file, in your own words (STEP-16). Words ABOUT the tenant's
+    # counterparties; a `company` correction's line of the brief is the brief's, which the reset keeps.
+    "founder_corrections",
     # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
     # config; context references capability. Payloads are explicit as defense in depth even though
     # the context FK also cascades them.

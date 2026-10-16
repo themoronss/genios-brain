@@ -308,3 +308,65 @@ and stays yours.
   no branch at `fbd0aeaa` (STEP-13's question card, M36.C2.L-interface.V3.U05, was not yet committed);
   M46.C3.U05–U07 follow whatever STEP-13 lands. And a question called wrong leaves its move held with no
   card — never silent, because the scorecard and the file say so, but a file can go quiet that way.
+
+### 8.8 · Found while building (12 Oct, provisional ids)
+
+- **s16-F14 · A write-only declaration names its writer by a file that only has to exist.**
+  `platform/table_coverage.UNREAD_WRITES` gives each write-only table its writer, and
+  `tests/platform/test_a_table_nothing_reads_is_declared.py` checks only that the named file exists — not
+  that it writes the table. When M46.C2.L-data.V1.U02 moved `card_feedback_revisions`' INSERT from
+  `api/intelligence_routes.py` to `deliver/verdicts.py`, the declaration kept naming the route and stayed
+  green; it was corrected in the same commit by hand. A stale writer reads as a measurement. Not built
+  here (a new guard, not this unit's): each declared writer ∈ `writers_of(table)`.
+- **s16-F15 · The caller of `ask` does not yet know a question you called wrong.** Since
+  M46.C3.L-data.V0.U05, `context/founder_questions.ask` returns the retired `CALLED_WRONG` question when a
+  review asks words you called wrong. `reason/expert/asks.ask_the_founder` handles only `ANSWERED` that way;
+  given the retired question it would expire the open question signal and file a new one bound to a retired
+  question — a signal no card can pass (`QUESTION_SIGNAL_PREDICATE` needs the question open). Dormant: no
+  question is retired `CALLED_WRONG` until M46.C3.L-integration.V4.U06 (the question card's *wrong*, in
+  `deliver/actions`). `asks.py` is STEP-14's until it merges; the caller's half — treat it as
+  `ANSWERED_ALREADY`, file no signal, count the file *held — its question called wrong* — rides with U06.
+- **s16-F16 · Two steps name the same golden cases.** STEP-14's tree (`M43.C6.L-data.V1.U02`–`U07`) authors
+  F59–F64 (the Boardy introductions); this block's `M47.C4.L-data.V1.U04`–`U06` author F59–F61 (a
+  correction on one file, one for a kind of work, one click is never a pattern). Whichever merges second
+  renumbers; these three are not written yet (they wait for `tests/replays/`).
+- **s16-F17 · The prompt waits for the dossier.** `M46.C4.L-interface.V0.U02` (`expert-review.v4`, the
+  checklist's words for a correction) is buildable now, but it moves every expert cassette key: the golden
+  lane is red from it until the ONE re-record (`M47.C4.L-integration.V5.U07`), which waits on STEP-14's
+  files and `tests/replays/` — and its words name dossier sections (`WHAT YOU CORRECTED`, `[corr:…]`) the
+  dossier will not print until `M46.C4.L-logic.V2.U03`. Built with the dossier, just before the re-record.
+
+**Found 16 Oct, building the units that waited on STEP-14** (provisional ids):
+
+- **s16-F18 · The team lane resolved cards with nothing saying why.** `reason/team/emit` set
+  `cards.state = 'resolved'` by two raw UPDATEs, with no event: a resolved card could not say what ended it.
+  Both now go through the one writer, `platform/card_lifecycle.resolve_cards` (`situation_cleared`,
+  `superseded`), which writes a `card.resolved` event per card; `context/file_outcomes` reads them as
+  cleared and replaced. ✅ M47.C1.L-data.V0.U01 (`296cbb45`).
+- **s16-F19 · A receipt word formatted in is a statement assembled at run time.** The verified-card
+  receipt first built its SQL with `f"… '{RESOLVED}' …"` from an import inside its builder: the statement
+  census could not read it whole and the run-time ratchet moved 272 → 273. Caught by the unit's own pin
+  run, before its commit; the words are inlined as literals, and the test holds them equal to the
+  lifecycle's. ✅ M47.C3.L-integration.V2.U03 (`d6659787`).
+- **s16-F20 · Your numbers per dossier would read every file per file.** `kind_numbers.numbers_for_kind`
+  with no files reads `files_for` — the tenant's whole file list — and the sweep reads every file's
+  dossier: O(n²). The sweep now measures each kind ONCE a pass over the files it already read (all are read
+  before any is reviewed, so every dossier of a kind reads the same numbers), and the endings of a kind's
+  files are one read (`ended_for_files`). ✅ M47.C2.L-logic.V4.U02 (`846718e2`).
+- **s16-F21 · A commit message named one declaration too many.** `e507b68a` (the scorecard) says
+  `scorecard.compose` and `scorecard_for` were declared unreached until the route; only `scorecard_for`
+  was — `compose` is called by it. The code and its guard were right; recorded here, as the log is
+  append-only.
+- **s16-F22 · An owner check in `card_action` read the old scopes rule.** U04's owner-only test for a kind
+  or company correction wrote `ctx.scopes is None`, which `tests/test_open_loops.py` keeps out of the card
+  routes (seeing and acting use one rule). Found by the group guard; it reads `ctx.is_org_admin` and the
+  admin seat now. ✅ `cdf58447`.
+- **s16-F23 · Two vocabularies of what an ask is.** `context/observations/kinds.yaml` calls `information_requested`,
+  `approval_requested` and `intro_requested` asks (`is_ask: true`), and its `discharges` table closes each ANSWERED
+  (`document_sent`, `approval_granted`/`approval_blocked`, `intro_made`); `contracts/open_loop.ASK_KINDS`, which decides
+  what opens a loop, listed none of them — so a requested document, approval or introduction opened no loop, the
+  discharge never applied, and the plain question beside it could only ever close `replied`. Found running F57's
+  verified close (it ended cleared, by the right mail, proving nothing). ✅ for `information_requested` (`a49f0938`,
+  the guard `tests/contracts/test_a_requested_document_is_an_ask.py`); `approval_requested` (one of L1's fifteen signal
+  types — admitting it opens a loop on every approval mail) and `intro_requested` stay declared gaps there, each a
+  decision of its own.

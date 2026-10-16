@@ -94,7 +94,7 @@ says what it corrects.
 | F73 | The two meeting nodes production held before STEP-05 filed their facts at the meeting's START; STEP-05 files them at the calendar's own edit time (C3.U04). Until such a meeting passes, an edit made before its start lands as history against them | `[CODE]` `graph_store.fact_write_action` (an older `occurred_at` is filed as history); `[PROD]` 2 of 34 meetings in memory (STEP-05 §1) | by design — self-clearing; `08-FOR-HARSH` says how to re-date them if a reschedule must land sooner |
 | F74 | The re-read ladder (STEP-05) limits before it filters: `capture/landing/unread._FIND_PARKED` returns the newest 200 pending extraction parks, and `find_parked_extractions` only then drops what is not yet due — so 200 newer rows waiting out their backoff hide every older row that is due | `[CODE]` `capture/landing/unread.py:146-165`, `:201-215`; found in the STEP-06 check | ✅ fixed — `STEP-06` `yc2_w27_s06/M24.C5.L-data.V1.U02` |
 | F75 | History shows a card's last reason only for the kinds in `CardStore._OUTCOME_KINDS`; `card.resolved` (the team lane's) and `card.retired` (STEP-04's repair) are written and never shown | `[CODE]` `deliver/store.py:566`; `reason/team/emit.py:164`; `scripts/repair_self_identity.py:170` | ✅ fixed — `STEP-06` `yc2_w27_s06/M24.C1.L-interface.V2.U02` |
-| F76 | The acted rate counts a card replaced by a newer one as a card nobody acted on: acted ÷ (acted + dismissed + expired), and an expiry carries no cause | `[CODE]` `api/benchmarks_routes.py:72` | `STEP-16`, once STEP-06 records why each card expired |
+| F76 | The acted rate counts a card replaced by a newer one as a card nobody acted on: acted ÷ (acted + dismissed + expired), and an expiry carries no cause | `[CODE]` `api/benchmarks_routes.py:72` | ✅ closed 13 Oct by `STEP-16` (`yc2_w27_s16` M47.C3.L-logic.V0.U04): taken is a card `acted` on `run_play`/`do_it_myself` or `resolved`, never `delivered`; called wrong is its own count; a card the engine replaced or cleared (STEP-06's causes) is in no denominator; `dismissed` is read from the extension's cause, not a card state (`s16-F8`) |
 | F77 | 126 of the golden set's 227 active situations — every shadow (`sales`, `support`) and unroutable (`fundraising`) one that was never reasoned — have no record anywhere of how they ended. Their end is a fact of activation that nothing names | `[TEST]` `baseline/yc2w27-s06-check/summary.txt` | ✅ fixed — `STEP-06` `yc2_w27_s06/M24.C2.L-logic.V2.U02` (`reason/situation_end`); on the golden set 126 → 0 |
 | F78 | The AI filter's single-email prompt prepends the RAW subject: `content = f"Subject: {subject}\n{body}"` with `subject = ctx.raw.get("subject")`, while `body` is the prepared text, which already begins with the MASKED subject — so a subject line's PII reaches the model unmasked, the leak `capture/pipeline.py:1567-1568` warns against. The batch path sends the masked text only | `[CODE]` `capture/gate/relevance.py:239-241`; runs when a page's batch verdict is missing — an agent sender (the batch skips it, `:187`) or a failed batch. Found by the STEP-07 check's gate trace | ✅ `STEP-07` (`ba05508f`): the single prompt sends the masked text — `prepared.clean_text`, or the subject and snippet masked by the same preprocess |
 | F79 | The junk filter's batch is primed on EVERY object of a page — duplicates, known senders, and mail the noise rules then archive — so its verdicts are bought for mail nothing reads: a re-listing of an already-synced window pays the batch again for every message in it | `[CODE]` `capture/acquire/sync_runner.py:720-727`; `[TEST]` the F01 and F03 cassettes hold batch answers for mail archived at N-06 and N-02 | ✅ brief half `STEP-07` (`ba05508f`): the batch is not primed on a sender the brief names; known senders and duplicates still are → `STEP-18` |
@@ -852,9 +852,27 @@ stamp. And the board reads what a card ASKS: `headline_says` (finding 10) — F6
 | atlas replays | passing 12 → **11**, blocked 1 → **2**: replay 02 m05 (the same card) |
 | F25 | **pass**, unchanged — its version is now `reworded` (quiet), where it was `updated` and pushed |
 
-**16 Oct, the integration line `yc2w27-int16`:** STEP-15's board above (47/50 · 14/14 · Atlas 12/80, measured on
-STEP-14 before its fix wave) and STEP-14's fix wave (35/50 · 14/14 · Atlas 11/80) meet here, with STEP-16's. The two
-lines at the top of this section and the table below are restated after the one re-record on the merged tree.
+**Re-recorded 2026-10-16 by `STEP-16`** (`yc2_w27_s16 · M47.C4.L-integration.V5.U07`; `06` S16-D1–D10), learning from
+you. ONE re-record for the step (`676d853e`): every cassette, the first-connect door's and the re-sync's, for
+`expert-review.v4`, check.v4 and the dossier's new parts — the board did not move. Then STEP-16's own cases, recorded
+alone in the house order (the sweep door, the citations re-measured — 512 over 62 cases, the others byte for byte —
+the first-connect door; no re-sync scenario reads them): a case may now carry your acts between its sweeps, played
+through the real doors (`tests/replays/engine_runner.play_acts`), and say how its card ends and by what (`outcome` left
+`NOT_EXPRESSIBLE_TODAY`). F57's ask for the signed NDA is now a requested document — an ask that opens a loop (s16-F23:
+`contracts/open_loop.ASK_KINDS` had left out what `kinds.yaml` always called one), so the signed copy closes it
+ANSWERED and its card ends `verified` by that mail; F57 still passes, now judged on its proof.
+
+| moved by STEP-16 | from → to |
+|---|---|
+| F57 | pass → **pass, judged on its end**: the card ends `verified` by the signed NDA's mail (`not_expressible.outcome` taken off) |
+| F65 | new → **pass**: you call the investor's card wrong with your words; the next sweep reviews the file again (`founder_corrected`), its review cites your correction and waits — no second card |
+| F66 | new → **pass**: one correction for every investor file; both files reviewed again, both cite it, both wait — their cards cleared |
+| F67 | new → **pass**: a bare wrong on one programme's card brings back that file only and writes no correction; the other programme keeps its card |
+
+**16 Oct, the integration line `yc2w27-int16`:** three boards meet here — STEP-15's above (47/50 · 14/14 · Atlas 12/80,
+measured on STEP-14 before its fix wave), STEP-14's fix wave (35/50 · 14/14 · Atlas 11/80) and STEP-16's (39/53 · 14/14 ·
+Atlas 12/80, on STEP-14 before its fix wave). The two lines at the top of this section and the table below are restated
+after the one re-record on the merged tree.
 
 The table below is the board's state now.
 

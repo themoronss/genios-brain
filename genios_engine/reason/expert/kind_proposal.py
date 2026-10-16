@@ -12,10 +12,17 @@ evidence names the review and what it cites. NEVER A KIND THE ENGINE APPLIES: no
 founder accepts the line.
 
 Not proposed: a review that proposes nothing, or the kind the brief already gives the file; and —
-the brief store's own rule — a counterparty the brief already holds a pending or accepted line for, or
-one the founder rejected within `REJECTED_QUIET_DAYS`, so the expert cannot nag. ⛔ That rule also means
-a kind the founder ACCEPTED is never re-proposed as another kind: correcting an accepted kind (F132's
-programme already filed `program`) is the founder's own edit, and stays open (`03` F157).
+the brief store's own rule — a counterparty the brief already holds a pending line for, or one the
+founder rejected within `REJECTED_QUIET_DAYS`, so the expert cannot nag.
+
+⛔ CORRECTING AN ACCEPTED KIND (STEP-16, `yc2_w27_s16` M46.C5.L-logic.V2.U03; `03` F157, F132). Until now
+an accepted kind could never be proposed as another: the store read the accepted line as "already said",
+so F132's programme filed `program` that behaves like the fund behind it stayed `program`. Now a review
+whose proposed kind differs from the one an accepted line gives the file writes a proposal that REPLACES
+that line (`company_brief_store.propose(replaces=…)`) — the same counterparty, the new kind, labelled
+"replacing <kind>" — for you to accept; accepting it removes the old line in the same act. NEVER APPLIED:
+nothing changes until you accept. And *"this is not an investor"*, written as your correction of the file,
+reaches the kind this way: the expert reads it, its review proposes the kind, and you accept the line.
 """
 from __future__ import annotations
 
@@ -38,10 +45,12 @@ class KindProposal:
     says: str                    # what happened, in words
 
 
-def words_for(kind: str, counterparty: str, why: str) -> str:
-    """The proposal's line: the kind, the counterparty, and that the expert proposes it, with why — cut
-    at a word to the brief's line length, never inside one."""
-    head = f"{kind.capitalize()} · {counterparty} — proposed by the expert: "
+def words_for(kind: str, counterparty: str, why: str, *, replacing: str | None = None) -> str:
+    """The proposal's line: the kind, the counterparty, and that the expert proposes it — replacing the
+    kind the brief gives the file, when it does — with why; cut at a word to the brief's line length,
+    never inside one."""
+    by = f"proposed by the expert, replacing {replacing}" if replacing else "proposed by the expert"
+    head = f"{kind.capitalize()} · {counterparty} — {by}: "
     room = MAX_LINE_CHARS - len(head)
     why = " ".join(why.split())
     if len(why) > room:
@@ -57,6 +66,40 @@ def line_id_for(org_id: str, file: Any, kind: str, fingerprint: str) -> str:
     from genios_engine.platform.canonical import stable_id
     return stable_id("cbl", {"org": org_id, "counterparty": str(file.counterparty_key or ""),
                              "kind": kind, "review": fingerprint})
+
+
+#: The file's people's keys — what an in-motion line names them by (`context/workstreams._work_kind`).
+_PEOPLE_KEYS = (
+    "select canonical_key from graph_nodes where org_id = :o and node_id = any(:ids) and valid_to is null")
+
+
+def _anchor_domain(key: str) -> str | None:
+    key = str(key or "").strip().lower()
+    return (key.rsplit("@", 1)[1] if "@" in key else key) or None
+
+
+def line_giving_the_kind(conn, *, org_id: str, file: Any):
+    """The accepted in-motion line that gives the file its kind of work — `context/workstreams._work_kind`'s
+    own rule: the FIRST accepted line naming one of the file's people by address, or its anchor's domain or
+    a parent of it. None when the file has no kind, or that line is not the one in force."""
+    from sqlalchemy import text
+
+    from genios_engine.platform import company_brief_store as store
+
+    addresses = {str(r.canonical_key).strip().lower() for r in conn.execute(
+        text(_PEOPLE_KEYS), {"o": org_id, "ids": list(file.people)}) if r.canonical_key}
+    key = str(file.counterparty_key or "").strip().lower()
+    if "@" in key:
+        addresses.add(key)
+    domain = _anchor_domain(key)
+    for line in store.accepted(conn, org_id):
+        if not line.kind or not (line.address or line.domain):
+            continue                     # only an in-motion line carries a kind (`_stored_kind`)
+        named = ((line.address and line.address in addresses)
+                 or (line.domain and domain and (domain == line.domain or domain.endswith("." + line.domain))))
+        if named:
+            return line if line.kind == file.work_kind else None
+    return None
 
 
 def propose_kind(conn, *, org_id: str, review: ExpertReview, file: Any, fingerprint: str,
@@ -76,19 +119,33 @@ def propose_kind(conn, *, org_id: str, review: ExpertReview, file: Any, fingerpr
         return KindProposal(file.file_id, pk.kind, None, "not proposed: its reason did not stand the check")
     key = str(file.counterparty_key or "")
     address, domain = (key, None) if "@" in key else (None, key or None)
+    replaced = None
+    if file.work_kind:
+        # STEP-16 (F157): a correction of the kind an accepted line gives the file — that line's
+        # counterparty, the new kind, replacing it when you accept.
+        replaced = line_giving_the_kind(conn, org_id=org_id, file=file)
+        if replaced is None:
+            return KindProposal(file.file_id, pk.kind, None,
+                                f"not proposed: no accepted line in force gives the file {file.work_kind}")
+        address, domain = replaced.address, replaced.domain
     try:
         line_id = store.propose(
-            conn, org_id=org_id, section="in_motion", words=words_for(pk.kind, file.counterparty, why),
+            conn, org_id=org_id, section="in_motion",
+            words=words_for(pk.kind, file.counterparty, why, replacing=file.work_kind),
             proposed_by=PROPOSED_BY, at=at, address=address, domain=domain, kind=pk.kind,
             evidence=[{"review": fingerprint, "file": file.file_id, "cites": list(pk.evidence)}],
-            line_id=line_id_for(org_id, file, pk.kind, fingerprint))
+            line_id=line_id_for(org_id, file, pk.kind, fingerprint),
+            replaces=replaced.line_id if replaced is not None else None)
     except ValueError as exc:
         return KindProposal(file.file_id, pk.kind, None, f"not proposed: {exc}")
     if line_id is None:
         return KindProposal(file.file_id, pk.kind, None,
                             "not proposed: the brief already holds a line for this counterparty, or "
                             "the founder rejected one lately")
+    if replaced is not None:
+        return KindProposal(file.file_id, pk.kind, line_id,
+                            f"proposed {pk.kind}, replacing {file.work_kind}, for the founder to accept")
     return KindProposal(file.file_id, pk.kind, line_id, f"proposed {pk.kind} for the founder to accept")
 
 
-__all__ = ["KindProposal", "PROPOSED_BY", "line_id_for", "propose_kind", "words_for"]
+__all__ = ["KindProposal", "PROPOSED_BY", "line_giving_the_kind", "line_id_for", "propose_kind", "words_for"]

@@ -122,6 +122,14 @@ WITNESS_EXCEPTIONS: dict[str, tuple[str | None, str]] = {
         "SCHEMA's foreign keys, not about any tenant's rows, and the schema always has rows. A "
         "witness here would be noise that always passed, which is the thing this table exists to "
         "stop"),
+    "every verified card names what closed it": (
+        # `platform/card_lifecycle.RESOLVED` and `VERIFIED`, as words: this table is read at import, before the
+        # lifecycle may be (`tests/platform/test_a_verified_card_names_what_closed_it.py` holds the two equal).
+        "select count(*) from card_events where kind = 'card.resolved' and cause = 'verified'",
+        "⛔ THE POPULATION IS THE VERIFIED RESOLUTIONS, NOT EVERY CARD EVENT. The derived witness would count every "
+        "`card_events` row of the tenant — a tenant with a thousand expiries and no verified end would read as "
+        "exercised. Witnessed by the verified resolutions in scope: none, and the claim judged nothing "
+        "(STEP-16 `yc2_w27_s16` M47.C3.L-integration.V2.U03)"),
     "the counterfactual ledger joins end to end": (
         None,
         "⛔⛔ ITS OUTER NAME IS A VIEW, NOT A TABLE — `create or replace view counterfactual_ledger` "
@@ -1071,6 +1079,18 @@ def _EXPIRED_WITHOUT_A_REASON_SQL() -> str:
             f"                and e.card_id = c.card_id and e.kind in ({kinds}))")
 
 
+def _VERIFIED_WITHOUT_WHAT_CLOSED_IT_SQL() -> str:
+    """Cards resolved `verified` whose resolution names no event that closed the ask (STEP-16 `yc2_w27_s16`
+    M47.C3.L-integration.V2.U03). `platform/card_lifecycle.resolve_cards` refuses a verified resolution with no
+    `event_id`, so every row here was written past it. The event kind and cause are `card_lifecycle.RESOLVED` and
+    `VERIFIED`, written as words: `evaluate()` binds one parameter, and a word formatted in at run time is a statement
+    the census cannot read whole (the run-time ratchet, 272). `tests/platform/test_a_verified_card_names_what_closed_it.py`
+    holds the words equal to the lifecycle's."""
+    return ("select count(*) from card_events e "
+            "where e.kind = 'card.resolved' and e.cause = 'verified' "
+            "and coalesce(btrim(e.detail ->> 'event_id'), '') = ''")
+
+
 def _ADMITTED_WITHOUT_AN_END_SQL() -> str:
     """Active situations whose latest admission, a day old and made since STEP-06, is `admit` — and
     nothing recorded what came of it (`situation_outcomes`, 0194). Admission is recorded on the live
@@ -1316,6 +1336,12 @@ def receipts(org: str | None) -> list[Receipt]:
                 "a card created since STEP-06 left the queue `expired` with no event saying why: "
                 "something set the state without `platform/card_lifecycle` "
                 "(`tests/platform/test_one_way_to_expire_a_card.py` should have refused it)"),
+        Receipt("L5", "every verified card names what closed it",
+                _VERIFIED_WITHOUT_WHAT_CLOSED_IT_SQL() + _org_filter(org, "e"),
+                lambda n: n == 0,
+                "STEP-16: a card resolved `verified` says which event closed the ask its move answered "
+                "(`card.resolved`'s `event_id`) — a verified end with nothing named is a claim nobody can check. "
+                "`platform/card_lifecycle.resolve_cards` refuses one; a row here was written past it"),
 
         # ── L3 domain expertise ───────────────────────────────────────────────────────
         Receipt("L3", "compiled expertise packages exist",
@@ -1796,7 +1822,9 @@ def receipts(org: str | None) -> list[Receipt]:
         Receipt("L7", "a human verdict has reached the loop",
                 f"select count(*) from card_feedback_verdicts where 1=1{o}",
                 lambda n: n > 0,
-                "no verdicts ⇒ nothing to learn from, whatever the engine is capable of"),
+                "no verdicts ⇒ nothing to learn from, whatever the engine is capable of. ⛔ STEP-16: the ONE "
+                "ledger both doors write — the dashboard's (`deliver/actions` → `deliver/verdicts.record`) and "
+                "the extension's (`api/intelligence_routes`) — so a verdict pressed on either is counted here"),
     ]
 
 

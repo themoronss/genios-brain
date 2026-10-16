@@ -54,8 +54,9 @@ def _age_the_checks(store, version=OLD):
 def test_the_check_is_check_v3():
     """The check's behaviour changed in M35.C2.U09-U16 — so a review checked by check.v1 is checked again.
     ⛔ RESTATED by `yc2_w27_s14` M43.C2.L-logic.V1.U01: check.v3 — STEP-13's second fix wave and the gold card's
-    alternative and stop rule changed it again; `OLD` (check.v1) is still an older version."""
-    assert CHECK_VERSION == "check.v3"
+    alternative and stop rule changed it again; `OLD` (check.v1) is still an older version.
+    ⛔ RESTATED by `yc2_w27_s16` M46.C4.L-logic.V3.U06: check.v4 — never silently; `OLD` is older still."""
+    assert CHECK_VERSION == "check.v4"
 
 
 def test_a_review_keeps_the_dossier_it_was_written_against_and_when_it_was_checked(world):
@@ -166,7 +167,8 @@ def test_a_prompt_version_change_on_a_moved_file_reviews_it_again(world, monkeyp
     quiet, expert = _pass(store, now + timedelta(days=11))
     assert len(expert.prompts) == 2 and quiet["version_moved"] == 2 and quiet["reviewed"] == {R.VALID: 2}
     newest = [r for r in _rows(store).values() if r.fingerprint in quiet["covered"].values()]
-    assert {r.triggers[0]["says"] for r in newest} == {"the prompt moved: expert-review.v3 → expert-review.v99"}
+    # ⛔ RESTATED v3 → v4 on 16 Oct by STEP-16 M46.C4.L-interface.V0.U02: the prompt it moved FROM is the current one.
+    assert {r.triggers[0]["says"] for r in newest} == {"the prompt moved: expert-review.v4 → expert-review.v99"}
 
 
 def test_a_recheck_that_now_refuses_covers_nothing(world, monkeypatch):

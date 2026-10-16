@@ -1,0 +1,350 @@
+{
+ "case_id": "F65",
+ "source": "ideal_reader",
+ "recorded_at": "unknown",
+ "answers": {
+  "41636f59db6cfc8b857918dfc679e294855c3e8bfe2646b177cab1bbce94c9a0": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Thursday's call",
+    "start_offset": 0,
+    "end_offset": 15,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Thursday's call\", \"start_offset\": 0, \"end_offset\": 15, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1535,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7a7aacdcd58eedc4692c5bcb4c08066274194934241316c20dc0b07d5ff1246d": {
+   "site": "expert",
+   "parsed": {
+    "frames": {
+     "primary": "an investor after a first call, warm, with no next step named",
+     "rivals": [
+      "a polite close of the conversation"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": "first_call",
+     "expected": "a next step named after the call",
+     "actual": "thanks and an offer to stay in touch, with no next step"
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "medium",
+     "reversibility": "reversible",
+     "reasons": [
+      "a partner of a fund the brief calls engaged",
+      "the call is fresh and no next step was named"
+     ]
+    },
+    "facts": [
+     {
+      "claim": "Leah Varma, a partner at Lumen Ventures, thanked Arjun for the time on Thursday's call and asked to stay in touch.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Thanks for the time on Thursday's call"
+     },
+     {
+      "claim": "She wrote that she enjoyed hearing how the pilot teams use Nimbus Labs, and that the calendar sync sounds close.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "I enjoyed hearing how the pilot teams use Nimbus Labs, and the calendar sync sounds close"
+     },
+     {
+      "claim": "Her note names no next step: no meeting, no material asked for, no date.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "Our reply time to Leah is not measured: the file holds no mail from Arjun to her.",
+      "evidence": [
+       "num:your_reply_time:leah@lumenvc.test"
+      ]
+     },
+     {
+      "claim": "The investor playbook, not yet reviewed, says that after a first call that named no next step, silence is usually a soft no.",
+      "evidence": [
+       "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The first call has been held and ended without a named next step.",
+      "based_on": [
+       "fact:1",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "Leah liked what she heard about the pilot teams, so a short note while the call is fresh is the move that keeps the conversation from decaying.",
+      "based_on": [
+       "fact:2",
+       "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "After a first call that named no next step, an investor's silence is usually a soft no.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+      ]
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "what Leah said on the call about when she wants to hear from us",
+      "relevance": "it decides whether a note now helps or pushes"
+     }
+    ],
+    "scenarios": {
+     "do_nothing": "the conversation decays into a no nobody sends",
+     "act": "Leah hears where the pilot stands while the call is fresh",
+     "best": "she asks for a second meeting",
+     "worst": "she reads the note as pressure",
+     "signals_to_watch": [
+      "a reply from Leah",
+      "a meeting request"
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Send Leah a short note on the pilot teams and the calendar sync",
+     "for_whom": "Leah Varma at Lumen Ventures",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "to": "Leah",
+     "answers": null
+    },
+    "alternative": "wait for the calendar sync to ship and write to Leah then",
+    "wait_or_stop": "if Leah does not reply, write next only with real news",
+    "done_when": "Leah has a short note on where the pilot stands",
+    "draft": "Hi Leah, thank you for the time on Thursday. A short note on where we are: the pilot teams keep using Nimbus Labs, and the calendar sync is close. I will write when it ships. Arjun"
+   },
+   "raw": "{\"frames\": {\"primary\": \"an investor after a first call, warm, with no next step named\", \"rivals\": [\"a polite close of the conversation\"]}, \"expected_vs_actual\": {\"stage\": \"first_call\", \"expected\": \"a next step named after the call\", \"actual\": \"thanks and an offer to stay in touch, with no next step\"}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"a partner of a fund the brief calls engaged\", \"the call is fresh and no next step was named\"]}, \"facts\": [{\"claim\": \"Leah Varma, a partner at Lumen Ventures, thanked Arjun for the time on Thursday's call and asked to stay in touch.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Thanks for the time on Thursday's call\"}, {\"claim\": \"She wrote that she enjoyed hearing how the pilot teams use Nimbus Labs, and that the calendar sync sounds close.\", \"evidence\": [\"evt_#1\"], \"quote\": \"I enjoyed hearing how the pilot teams use Nimbus Labs, and the calendar sync sounds close\"}, {\"claim\": \"Her note names no next step: no meeting, no material asked for, no date.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Our reply time to Leah is not measured: the file holds no mail from Arjun to her.\", \"evidence\": [\"num:your_reply_time:leah@lumenvc.test\"]}, {\"claim\": \"The investor playbook, not yet reviewed, says that after a first call that named no next step, silence is usually a soft no.\", \"evidence\": [\"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"]}], \"inferences\": [{\"claim\": \"The first call has been held and ended without a named next step.\", \"based_on\": [\"fact:1\", \"fact:3\"]}, {\"claim\": \"Leah liked what she heard about the pilot teams, so a short note while the call is fresh is the move that keeps the conversation from decaying.\", \"based_on\": [\"fact:2\", \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"After a first call that named no next step, an investor's silence is usually a soft no.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"]}], \"unknowns\": [{\"question\": \"what Leah said on the call about when she wants to hear from us\", \"relevance\": \"it decides whether a note now helps or pushes\"}], \"scenarios\": {\"do_nothing\": \"the conversation decays into a no nobody sends\", \"act\": \"Leah hears where the pilot stands while the call is fresh\", \"best\": \"she asks for a second meeting\", \"worst\": \"she reads the note as pressure\", \"signals_to_watch\": [\"a reply from Leah\", \"a meeting request\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Leah a short note on the pilot teams and the calendar sync\", \"for_whom\": \"Leah Varma at Lumen Ventures\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Leah\", \"answers\": null}, \"alternative\": \"wait for the calendar sync to ship and write to Leah then\", \"wait_or_stop\": \"if Leah does not reply, write next only with real news\", \"done_when\": \"Leah has a short note on where the pilot stands\", \"draft\": \"Hi Leah, thank you for the time on Thursday. A short note on where we are: the pilot teams keep using Nimbus Labs, and the calendar sync is close. I will write when it ships. Arjun\"}",
+   "framed": true,
+   "input_tokens": 8312,
+   "output_tokens": 804,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8f93e3fb09ce8e13d8e65765df2a8284dd0070a52e96e0c0ea1155b6b329014e": {
+   "site": "expert",
+   "parsed": {
+    "frames": {
+     "primary": "an investor after a first call, warm, with no next step named",
+     "rivals": [
+      "a polite close of the conversation"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": "first_call",
+     "expected": "a next step named after the call",
+     "actual": "thanks and an offer to stay in touch, with no next step"
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "you said she wants news only on real milestones",
+      "no milestone has happened"
+     ]
+    },
+    "facts": [
+     {
+      "claim": "Leah Varma, a partner at Lumen Ventures, thanked Arjun for the time on Thursday's call and asked to stay in touch.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Thanks for the time on Thursday's call"
+     },
+     {
+      "claim": "She wrote that she enjoyed hearing how the pilot teams use Nimbus Labs, and that the calendar sync sounds close.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "I enjoyed hearing how the pilot teams use Nimbus Labs, and the calendar sync sounds close"
+     },
+     {
+      "claim": "Her note names no next step: no meeting, no material asked for, no date.",
+      "evidence": [
+       "evt_#1"
+      ]
+     },
+     {
+      "claim": "Our reply time to Leah is not measured: the file holds no mail from Arjun to her.",
+      "evidence": [
+       "num:your_reply_time:leah@lumenvc.test"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "You told us Leah asked on the call for news only on real milestones, a signed pilot or the round opening, and none has happened yet.",
+      "based_on": [
+       "corr:fc_#1",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "A note now would be the push she asked not to get; the file waits for a real milestone.",
+      "based_on": [
+       "corr:fc_#1",
+       "fact:2"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "A conversation an investor asked to be quiet until a milestone is kept warm by the milestone, not by a note.",
+      "based_on": [
+       "corr:fc_#1"
+      ]
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "when the first pilot signs",
+      "relevance": "that is the news Leah asked for"
+     }
+    ],
+    "scenarios": {
+     "do_nothing": "Leah hears nothing until there is real news, as she asked",
+     "act": "a note now pushes her, against what she asked",
+     "best": "the next note is a signed pilot",
+     "worst": "the milestone never comes and the conversation stays quiet",
+     "signals_to_watch": [
+      "a signed pilot",
+      "the round opening",
+      "a note from Leah"
+     ]
+    },
+    "mode": "wait",
+    "next_move": null,
+    "alternative": null,
+    "wait_or_stop": "wait for a real milestone, a signed pilot or the round opening, then write to Leah with it",
+    "done_when": "Leah hears from us with a real milestone",
+    "draft": null
+   },
+   "raw": "{\"frames\": {\"primary\": \"an investor after a first call, warm, with no next step named\", \"rivals\": [\"a polite close of the conversation\"]}, \"expected_vs_actual\": {\"stage\": \"first_call\", \"expected\": \"a next step named after the call\", \"actual\": \"thanks and an offer to stay in touch, with no next step\"}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"you said she wants news only on real milestones\", \"no milestone has happened\"]}, \"facts\": [{\"claim\": \"Leah Varma, a partner at Lumen Ventures, thanked Arjun for the time on Thursday's call and asked to stay in touch.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Thanks for the time on Thursday's call\"}, {\"claim\": \"She wrote that she enjoyed hearing how the pilot teams use Nimbus Labs, and that the calendar sync sounds close.\", \"evidence\": [\"evt_#1\"], \"quote\": \"I enjoyed hearing how the pilot teams use Nimbus Labs, and the calendar sync sounds close\"}, {\"claim\": \"Her note names no next step: no meeting, no material asked for, no date.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Our reply time to Leah is not measured: the file holds no mail from Arjun to her.\", \"evidence\": [\"num:your_reply_time:leah@lumenvc.test\"]}], \"inferences\": [{\"claim\": \"You told us Leah asked on the call for news only on real milestones, a signed pilot or the round opening, and none has happened yet.\", \"based_on\": [\"corr:fc_#1\", \"fact:3\"]}, {\"claim\": \"A note now would be the push she asked not to get; the file waits for a real milestone.\", \"based_on\": [\"corr:fc_#1\", \"fact:2\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"A conversation an investor asked to be quiet until a milestone is kept warm by the milestone, not by a note.\", \"based_on\": [\"corr:fc_#1\"]}], \"unknowns\": [{\"question\": \"when the first pilot signs\", \"relevance\": \"that is the news Leah asked for\"}], \"scenarios\": {\"do_nothing\": \"Leah hears nothing until there is real news, as she asked\", \"act\": \"a note now pushes her, against what she asked\", \"best\": \"the next note is a signed pilot\", \"worst\": \"the milestone never comes and the conversation stays quiet\", \"signals_to_watch\": [\"a signed pilot\", \"the round opening\", \"a note from Leah\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": null, \"wait_or_stop\": \"wait for a real milestone, a signed pilot or the round opening, then write to Leah with it\", \"done_when\": \"Leah hears from us with a real milestone\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 8517,
+   "output_tokens": 637,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "92f2edfa95275fea09c8ad70b9568adcd082d0022f31e313d7fa9a6f4ed14d72": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1690,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dbca787cb68ca1073ae426afe52392eb9d020608529170df42f64b57540706fc": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1508,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ed41e8671dd74a66638980e506b227711f4ef8a9884151d5ab9ccee5734dfae2": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Leah Varma",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Leah Varma",
+        "start_offset": 183,
+        "end_offset": 193
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Lumen Ventures",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Lumen Ventures",
+        "start_offset": 203,
+        "end_offset": 217
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Leah Varma",
+      "value": "Partner",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Partner, Lumen Ventures",
+        "start_offset": 194,
+        "end_offset": 217
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Leah Varma\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Leah Varma\", \"start_offset\": 183, \"end_offset\": 193}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lumen Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lumen Ventures\", \"start_offset\": 203, \"end_offset\": 217}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Leah Varma\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Partner, Lumen Ventures\", \"start_offset\": 194, \"end_offset\": 217}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
+   "input_tokens": 5524,
+   "output_tokens": 211,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

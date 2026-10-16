@@ -60,14 +60,14 @@ def test_the_tree_parses():
     assert yaml.safe_load(_TREE.read_text()) is not None
 
 
-def test_the_twenty_two_programme_blocks_are_present():
+def test_the_twenty_three_programme_blocks_are_present():
     assert set(_blocks()) == {"<root>", "persona_brain_and_layer_repair",
                              "l1_signal_quality_seam", "atlas_v2_alignment", "yc2_w27",
                              "yc2_w27_s02", "yc2_w27_s03", "yc2_w27_s04", "yc2_w27_s05",
                              "yc2_w27_s06", "yc2_w27_s07", "yc2_w27_s08",
                              "yc2_w27_s09", "yc2_w27_s10", "yc2_w27_s11",
                              "yc2_w27_s12", "yc2_w27_align", "yc2_w27_s13",
-                             "yc2_w27_s17", "yc2_w27_s18", "yc2_w27_s14", "yc2_w27_s15"}
+                             "yc2_w27_s17", "yc2_w27_s18", "yc2_w27_s14", "yc2_w27_s15", "yc2_w27_s16"}
 
 
 def test_the_ycw27_block_is_the_one_this_programme_builds():
@@ -147,8 +147,10 @@ def test_no_tenth_block_has_appeared_without_updating_this_guard():
     `yc2_w27_s17` (STEP-17, real tests) and `yc2_w27_s18` (STEP-18, the known bugs) — each built on its
     own branch and merged 2026-10-12 — M40, M41 and M48, M49. The twenty-first, `yc2_w27_s14` (STEP-14,
     the card, built 2026-10-12 on its own branch), M42 and M43; the twenty-second, `yc2_w27_s15` (STEP-15,
-    the morning brief, built 2026-10-12 on its own branch), M44 and M45 — each past every other block."""
-    assert len(_blocks()) == 22, (
+    the morning brief, built 2026-10-12 on its own branch), M44 and M45; the twenty-third, `yc2_w27_s16`
+    (STEP-16, learning from you, built 2026-10-12→16 on its own branch, merged on the integration line
+    `yc2w27-int16`), M46 and M47 — each past every other block."""
+    assert len(_blocks()) == 23, (
         "a programme block was added or removed — update the header note in tree.yaml and this test, "
         "deliberately")
 
@@ -158,7 +160,7 @@ def test_no_tenth_block_has_appeared_without_updating_this_guard():
                                    "yc2_w27_s08", "yc2_w27_s09", "yc2_w27_s10",
                                    "yc2_w27_s11", "yc2_w27_s12",
                                    "yc2_w27_align", "yc2_w27_s13", "yc2_w27_s17",
-                                   "yc2_w27_s18", "yc2_w27_s14", "yc2_w27_s15"])
+                                   "yc2_w27_s18", "yc2_w27_s14", "yc2_w27_s15", "yc2_w27_s16"])
 def test_the_newest_blocks_widen_no_collision(block):
     """⛔ The reason `yc2_w27` and `yc2_w27_s02` could be added: their milestone ids appear in no other
     block. If a later edit gives one an id another block already uses, this fails before the

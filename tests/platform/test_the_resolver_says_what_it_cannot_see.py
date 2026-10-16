@@ -481,5 +481,13 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # ⛔ MERGED 16 Oct: STEP-14 (194 → 195, 196 → 197 above) and STEP-15 (194 → 196, 196 → 198 above) each on the
     # integration line's 194 and 196, re-measured on the merge (`table_coverage`): 197 and 199 — the three tables
     # the two steps add between them (`card_refusals`, `morning_briefs`, `morning_brief_marks`), none shared.
-    assert len(TC.table_usage()) == 197
-    assert len(TC._known_tables()) == 199
+    # ⛔ RE-PINNED 195 → 196 and 197 → 198 on 2026-10-16 by migration `0241_founder_corrections`, at the merge of
+    # STEP-16's branch with STEP-14's line (measured on the merge),
+    # (YC-II W27 STEP-16, `yc2_w27_s16/M46.C3.L-contract.V0.U01`): one new table, whose first reference is
+    # the tenant reset's `delete` list. An engine change, not a resolver change; its store
+    # (`context/founder_corrections.py`, M46.C3.L-data.V1.U02) is the next unit.
+    # ⛔ MERGED 16 Oct (the integration line `yc2w27-int16`): STEP-14 + STEP-15 (197 / 199 above) and STEP-16 (196 / 198
+    # above, on STEP-14's 195 / 197), re-measured on the merge (`table_coverage`): 198 and 200 — `founder_corrections`
+    # is the one table STEP-16 adds; none is shared with STEP-15's two.
+    assert len(TC.table_usage()) == 198
+    assert len(TC._known_tables()) == 200
