@@ -16,6 +16,8 @@ off the dossier's parts (`reason/expert/dossier.DossierParts`):
     past due is a rung of its own. Read off the promises the dossier shows (`PROMISES_LIMIT`);
   * the BRIEF's version (STEP-07) and the PLAYBOOK's (`KindPlaybook.version`), or why it has none;
   * the founder's VERDICTS on the cards about its people — what they did with what was said;
+  * the founder's CORRECTIONS the dossier shows — the file's own and its kind of work's (STEP-16): your words
+    move the file;
   * WHO DECIDES: the model, the prompt version (`06` D48) and the dossier's version.
 
 NEVER AN INSTANT, AND NEVER ITS OWN OUTPUT. A clock is read as a rung, so the same file read later is
@@ -95,6 +97,11 @@ def fingerprint_inputs(parts: DossierParts, *, model: str, prompt_version: str) 
         # STEP-13 (M36.C2.L-data.V2.U07): the founder's answers to its questions, by the id the dossier
         # prints — named only when there is one, so a file with none is fingerprinted as before.
         out["answers"] = sorted(f"answer:{a.question_id}" for a in parts.answers)
+    if parts.corrections:
+        # STEP-16 (`yc2_w27_s16` M46.C4.L-logic.V3.U04): your standing corrections the dossier shows — the file's own
+        # and its kind of work's — by the id it prints; a correction moves the file. Named only when there is one,
+        # so a file with none is fingerprinted as before.
+        out["corrections"] = sorted(f"corr:{c.correction_id}" for c in parts.corrections)
     return out
 
 
