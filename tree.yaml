@@ -10011,6 +10011,20 @@ yc2_w27_s14:
                       artifact: "genios_engine/contracts/card_version.py"
                       verify: ".venv/bin/python -m pytest -q tests/contracts/test_a_rewording_of_a_move_is_quiet.py tests/contracts/test_a_card_version_says_what_changed.py"
                       depends_on: [M42.C3.L-integration.V2.U03, M42.C1.L-contract.V0.U02]
+                    - id: M42.C3.L-integration.V2.U08
+                      what: >
+                        A material version pushed today spends the day's push budget (added 16 Oct by the STEP-14
+                        crosscheck, finding 12): `router.budget_full` counted the cards CREATED today, and a file's card
+                        is created once and versioned after, so its material versions were pushed for free. A card
+                        versioned materially today counts beside the cards created today, each card once; a quiet
+                        version counts nothing. The bound, declared: a push CHANNEL never carries a version — the
+                        outbox deduplicates on (card, channel, recipient), a version landing before its row is sent
+                        cancels it at the drain's recheck, and the impression is recorded once per card. Latent
+                        (production registers the in-app surface only); keying deliveries by version needs the
+                        outbox's key changed (a migration) — owner STEP-15, with the channels.
+                      artifact: "genios_engine/deliver/router.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> .venv/bin/python -m pytest -q tests/deliver/test_a_version_push_spends_the_budget.py tests/test_delivery_gate.py"
+                      depends_on: [M42.C3.L-integration.V2.U03]
         - id: M42.C4
           name: The board counts what you see
           layers:
