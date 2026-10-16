@@ -66,12 +66,13 @@ DOSSIER_VERSION = "dossier.v1"
 #: The sections, in the one order a dossier is ever written in.
 SECTIONS: tuple[str, ...] = ("brief", "file", "timeline", "promises", "numbers", "coverage",
                              "playbook", "situations", "judged_before", "what_if")
-#: A section printed only when it has something to say — and the section it follows. A file with none of
-#: them is printed byte for byte as before (STEP-13: the founder's answers, M36.C2.L-data.V2.U07).
-OPTIONAL: Mapping[str, str] = {"answers": "timeline"}
+#: A section printed only when it has something to say — and the section it follows (or, when that one is not
+#: printed either, the one before it). A file with none of them is printed byte for byte as before (STEP-13: the
+#: founder's answers, M36.C2.L-data.V2.U07; STEP-16: your corrections, M46.C4.L-logic.V2.U03).
+OPTIONAL: Mapping[str, str] = {"answers": "timeline", "corrections": "answers"}
 TITLES: Mapping[str, str] = {
     "brief": "THE COMPANY BRIEF", "file": "THE FILE", "timeline": "WHAT HAPPENED",
-    "answers": "WHAT YOU TOLD US",
+    "answers": "WHAT YOU TOLD US", "corrections": "WHAT YOU CORRECTED",
     "promises": "PROMISES IN ITS MAIL", "numbers": "ITS NUMBERS", "coverage": "WHAT WAS CHECKED",
     "playbook": "WHAT A PROFESSIONAL KNOWS ABOUT THIS WORK", "situations": "ITS SITUATIONS",
     "judged_before": "WHAT WAS JUDGED BEFORE", "what_if": "IF NOTHING HAPPENS"}
@@ -145,6 +146,10 @@ class DossierParts:
     answers: tuple = ()
     #: Each meeting's title as its calendar gives it (`read_meeting_titles`), by its event (STEP-14, `03` F164).
     meeting_titles: Mapping[str, str] = field(default_factory=dict)
+    #: STEP-16 (`yc2_w27_s16` M46.C4.L-logic.V2.U03): your standing corrections of this file and of its kind of work
+    #: (`context/founder_corrections.standing_for`), newest first, bounded — and how many more stand.
+    corrections: tuple = ()
+    corrections_cut: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -312,6 +317,41 @@ def _answers(p: DossierParts, cite: _Ids) -> Section:
     return Section("answers", "\n".join(lines))
 
 
+def _corrected_head(p: DossierParts, c: Any) -> str:
+    """The line a correction is headed by: when you said it, what it reaches, the card it was about and the reason
+    you gave — on a line of its own, which no id prints on and no fact can cite (as an answer's date)."""
+    reach = (f"every file of this kind of work ({c.kind})" if c.scope == "kind" else "this file")
+    card = next((k.headline for k in getattr(p.judgments, "cards", ()) or () if k.card_id == c.card_id), None)
+    about = (f", on the card “{card}”" if card else ", on a card of it" if c.card_id else "")
+    why = f" — you called it wrong: {c.reason}" if c.reason else ""
+    return f"You corrected {reach} on {_when(c.corrected_at)}{about}{why}:"
+
+
+def _corrections(p: DossierParts, cite: _Ids) -> Section:
+    """WHAT YOU CORRECTED (STEP-16, `yc2_w27_s16` M46.C4.L-logic.V2.U03; S16-D1). Your word on this file, or on every
+    file of its kind of work, as you wrote it: the head line says when, what it reaches, the card and the reason; the
+    next carries its id (the expert may cite it — and must, to follow it or to say why the file now outweighs it,
+    `reason/expert/verify`) and your words, verbatim, nothing else. A correction of how your company works is the
+    brief's own line, printed there."""
+    lines: list[str] = []
+    for c in p.corrections:
+        lines.append(_corrected_head(p, c))
+        lines.append(f"- {cite(f'corr:{c.correction_id}')} “{' '.join(str(c.words).split())}”")
+    if p.corrections_cut:
+        lines.append(f"… and {p.corrections_cut} older correction(s), not shown.")
+    return Section("corrections", "\n".join(lines), p.corrections_cut)
+
+
+def _kind_corrections(p: DossierParts, cite: _Ids) -> list[str]:
+    """THE CORRECTED PLAYBOOK PRIOR (STEP-16 §8.4 item 4): a correction for this file's kind of work prints beside
+    the profession's prior, as yours — the shared corpus is never edited."""
+    kind = [c for c in p.corrections if c.scope == "kind"]
+    if not kind:
+        return []
+    return ["Yours, for this kind of work — beside the profession's prior, which it outweighs for your company:",
+            *(f"- {cite(f'corr:{c.correction_id}')} “{' '.join(str(c.words).split())}”" for c in kind)]
+
+
 def _promises(p: DossierParts, cite: _Ids) -> Section:
     if not p.promises:
         return Section("promises", "No promise was found in its mail.", p.promises_cut)
@@ -404,8 +444,9 @@ def _playbook(p: DossierParts, cite: _Ids) -> tuple[Section, tuple[str, ...]]:
     pb = getattr(answer, "playbook", None)
     if pb is None:
         reason = getattr(answer, "reason", None)
-        return Section("playbook", "No playbook for this file: "
-                       f"{_NO_PLAYBOOK.get(reason, reason or 'none')}."), ()
+        return Section("playbook", "\n".join([
+            "No playbook for this file: " f"{_NO_PLAYBOOK.get(reason, reason or 'none')}.",
+            *_kind_corrections(p, cite)])), ()
     lines = [f"{pb.name} {cite('pb:' + pb.playbook_id)}, version {pb.version} — "
              + ("reviewed by a named human" if pb.reviewed else (pb.review_label or "not reviewed"))]
     lines.append("Stages — the file's current stage is named from these only:")
@@ -439,6 +480,7 @@ def _playbook(p: DossierParts, cite: _Ids) -> tuple[Section, tuple[str, ...]]:
     cut = len(pb.moves) - len(moves) + len(pb.claims) - len(claims)
     if cut:
         lines.append(f"… and {cut} more move(s) or claim(s), not shown.")
+    lines.extend(_kind_corrections(p, cite))
     return Section("playbook", "\n".join(lines), cut), tuple(s.name for s in pb.stages)
 
 
@@ -524,6 +566,11 @@ def build_dossier(parts: DossierParts) -> Dossier:
         # ⛔ ONLY WHEN THERE IS ONE: a file with no answer is printed byte for byte as before (STEP-13).
         by_name["answers"] = _answers(parts, cite)
         names.insert(names.index(OPTIONAL["answers"]) + 1, "answers")
+    if parts.corrections:
+        # ⛔ ONLY WHEN THERE IS ONE (STEP-16): after WHAT YOU TOLD US — or, with no answer, where it would be.
+        by_name["corrections"] = _corrections(parts, cite)
+        follows = OPTIONAL["corrections"] if OPTIONAL["corrections"] in names else OPTIONAL["answers"]
+        names.insert(names.index(follows) + 1, "corrections")
     sections = tuple(by_name[name] for name in names)
     draft = Dossier(org_id=parts.org_id, file_id=parts.file_id, as_of=parts.as_of,
                     sections=sections, catalogue=DossierCatalogue(frozenset(), frozenset()),
@@ -623,6 +670,7 @@ def read_meeting_titles(conn, org_id: str, event_ids: Iterable[str]) -> dict[str
 def read_parts(conn, org_id: str, file_id: str, *, now: datetime) -> DossierParts | None:
     """Every part of one file's dossier, read on one connection — None for a file it does not hold."""
     from genios_engine.context.file_judgments import judgments_for
+    from genios_engine.context.founder_corrections import standing_for
     from genios_engine.context.founder_questions import answers_for
     from genios_engine.context.workstream_numbers import numbers_for
     from genios_engine.context.workstream_timeline import timeline_for
@@ -643,6 +691,7 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime) -> DossierPart
     stop = pb.stop if pb is not None else None
     promises, promises_cut = read_promises(conn, org_id, (t.event_id for t in timeline.touches),
                                            us=identity_for(conn, org_id))
+    standing = standing_for(conn, org_id, str(file_id), people=work.people, kind=work.work_kind)
     return DossierParts(
         org_id=org_id, file_id=str(file_id), as_of=now, brief=brief, file=work, timeline=timeline,
         numbers=numbers_for(conn, org_id, work, timeline, now=now), playbook=playbook,
@@ -656,7 +705,8 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime) -> DossierPart
             lifecycle=lifecycle,
             next_date=timeline.upcoming[0].at if timeline.upcoming else None),
         promises=promises, promises_cut=promises_cut, answers=answers_for(conn, org_id, str(file_id)),
-        meeting_titles=read_meeting_titles(conn, org_id, meeting_events(timeline)))
+        meeting_titles=read_meeting_titles(conn, org_id, meeting_events(timeline)),
+        corrections=standing.corrections, corrections_cut=standing.cut)
 
 
 # ── reading it back (STEP-13) ──────────────────────────────────────────────────────────────────
