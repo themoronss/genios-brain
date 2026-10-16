@@ -10857,6 +10857,7 @@ yc2_w27_s16:
                 - level: 0
                   units:
                     - id: M47.C4.L-contract.V0.U01
+                      status: built   # 16 Oct, 06f8e242
                       what: >
                         A case may carry your acts and say how a card ends (`tests/replays/founder_case.py`):
                         `acts` — after a sweep, on the card about X, `wrong` with a reason and, optionally,
@@ -10872,6 +10873,7 @@ yc2_w27_s16:
                 - level: 1
                   units:
                     - id: M47.C4.L-data.V1.U03
+                      status: built   # 16 Oct, 7d866c22 (s16-F23 fix a49f0938)
                       what: >
                         F57's verified close is an expectation: its card ends `verified` by the signed NDA's
                         mail from the second sweep, and its `not_expressible.outcome` comes off (`09` G6).
@@ -10879,6 +10881,7 @@ yc2_w27_s16:
                       verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_case_forbids_something.py"
                       depends_on: [M47.C4.L-contract.V0.U01]
                     - id: M47.C4.L-data.V1.U04
+                      status: built   # 16 Oct, 49fdb2a9
                       what: >
                         F65 — an investor who asked, on a call, for news only on real milestones (no mail says
                         so): the expert's first review advises an update; you call its card wrong — "not
@@ -10890,6 +10893,7 @@ yc2_w27_s16:
                       verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_changed_file_has_an_expert_answer.py"
                       depends_on: [M47.C4.L-contract.V0.U01]
                     - id: M47.C4.L-data.V1.U05
+                      status: built   # 16 Oct, 6d44c804
                       what: >
                         F66 — a correction for a whole kind of work: two investor files, both advised a
                         follow-up; on the first you write "investors who asked for news only on milestones get
@@ -10899,6 +10903,7 @@ yc2_w27_s16:
                       verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_changed_file_has_an_expert_answer.py"
                       depends_on: [M47.C4.L-contract.V0.U01]
                     - id: M47.C4.L-data.V1.U06
+                      status: built   # 16 Oct, fb20e7ce
                       what: >
                         F67 — one click is never a pattern (must-abstain on generalising): a bare "wrong: not
                         relevant" on one programme's card changes that file's next review only; a second
@@ -10912,6 +10917,7 @@ yc2_w27_s16:
                 - level: 4
                   units:
                     - id: M47.C4.L-integration.V4.U02
+                      status: built   # 16 Oct, b069162c
                       what: >
                         The runner plays your acts and reads each card's end (`tests/replays/engine_runner.py`):
                         after the named sweep, through the real doors — `deliver/actions.ingest_action` and the
@@ -10923,8 +10929,7 @@ yc2_w27_s16:
                 - level: 5
                   units:
                     - id: M47.C4.L-integration.V5.U07
-                      # 16 Oct, 676d853e: re-recorded once for v4, check.v4 and the dossier's new parts (the board did not move);
-                      # the three cases F65–F67 and the runner's acts wait — recording them adds three cassettes
+                      status: built   # 16 Oct, 676d853e (the one re-record) and b0810aad (F57, F65–F67 recorded; board 39/53)
                       what: >
                         Re-recorded ONCE for the whole step, under `expert-review.v4`, the dossier's new
                         sections and the cases F65–F67 — the sweep, the citations, the first-connect door, the
@@ -10936,6 +10941,7 @@ yc2_w27_s16:
                 - level: 6
                   units:
                     - id: M47.C4.L-integration.V6.U08
+                      status: built   # 16 Oct, afaf4ca0
                       what: >
                         STEP-16's acceptance on the golden set: F57 ends `verified` by its mail; F65 and F66
                         change their next judgment and cite the correction; F67 changes only its file; every

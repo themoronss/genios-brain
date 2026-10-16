@@ -361,3 +361,12 @@ and stays yours.
   or company correction wrote `ctx.scopes is None`, which `tests/test_open_loops.py` keeps out of the card
   routes (seeing and acting use one rule). Found by the group guard; it reads `ctx.is_org_admin` and the
   admin seat now. ✅ `cdf58447`.
+- **s16-F23 · Two vocabularies of what an ask is.** `context/observations/kinds.yaml` calls `information_requested`,
+  `approval_requested` and `intro_requested` asks (`is_ask: true`), and its `discharges` table closes each ANSWERED
+  (`document_sent`, `approval_granted`/`approval_blocked`, `intro_made`); `contracts/open_loop.ASK_KINDS`, which decides
+  what opens a loop, listed none of them — so a requested document, approval or introduction opened no loop, the
+  discharge never applied, and the plain question beside it could only ever close `replied`. Found running F57's
+  verified close (it ended cleared, by the right mail, proving nothing). ✅ for `information_requested` (`a49f0938`,
+  the guard `tests/contracts/test_a_requested_document_is_an_ask.py`); `approval_requested` (one of L1's fifteen signal
+  types — admitting it opens a loop on every approval mail) and `intro_requested` stay declared gaps there, each a
+  decision of its own.
