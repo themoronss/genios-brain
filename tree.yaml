@@ -10300,7 +10300,7 @@ yc2_w27_s14:
                       depends_on: [M43.C6.L-integration.V3.U09, M43.C4.L-integration.V1.U03, M43.C4.L-logic.V0.U04, M43.C4.L-integration.V2.U05, M43.C5.L-integration.V1.U02]
 
 yc2_w27_s15:
-  status: building   # 2026-10-12 in the worktree s15-build (branch yc2w27-s15), from the plan checked at fbd0aeaa (STEP-15 §8); Rohit: "complete it all" — s15-D1..D4, `06` D8 and D9 taken at their recommended answers
+  status: built   # 2026-10-12→16 in the worktree s15-build (branch yc2w27-s15, merged with yc2w27-int14): 34 units + their fixes, every code unit mutation-tested; s15-D1..D4, `06` D8 and D9 at their recommended answers; the golden board 47/50 · 14/14 · Atlas 12/80; not pushed
   source: >
     speedrun008/YC-II W27/STEP-15 §1-§6, re-checked claim by claim against fbd0aeaa (STEP-13 at 24 of 29
     units) and measured on a fresh scratch database: the twelve brief-only golden cases and ten must-abstain
