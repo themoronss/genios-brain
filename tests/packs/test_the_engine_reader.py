@@ -402,3 +402,10 @@ def test_the_reader_is_pure():
     calls = {node.func.attr for node in ast.walk(tree)
              if node not in excluded and isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)}
     assert not calls & {"now", "utcnow", "today", "execute", "messages", "create"}, calls
+
+
+def test_every_family_the_reader_can_print_is_bounded():
+    """STEP-13b: what the brains learned is bounded as the authored families are — a dossier cannot outgrow its cap."""
+    for family in (E.CAPABILITY, E.SIGNALS, E.PLAYBOOK, E.RULE, E.CONSTRAINT, E.FRAME,
+                   E.ORGANIZATION, E.BEHAVIOUR, E.ADAPTIVE):
+        assert R.LIMITS[family] > 0, family

@@ -73,12 +73,15 @@ SECTIONS: tuple[str, ...] = ("brief", "file", "timeline", "promises", "numbers",
 #: A section printed only when it has something to say — and the section it follows (or, when that one is not
 #: printed either, the one before it). A file with none of them is printed byte for byte as before (STEP-13: the
 #: founder's answers, M36.C2.L-data.V2.U07; STEP-16: your corrections, M46.C4.L-logic.V2.U03).
-OPTIONAL: Mapping[str, str] = {"answers": "timeline", "corrections": "answers"}
+#: STEP-13b: the engine after the playbook, the units' readings after the numbers — each only when it has something to say.
+OPTIONAL: Mapping[str, str] = {"answers": "timeline", "corrections": "answers", "engine": "playbook",
+                               "units": "numbers"}
 TITLES: Mapping[str, str] = {
     "brief": "THE COMPANY BRIEF", "file": "THE FILE", "timeline": "WHAT HAPPENED",
     "answers": "WHAT YOU TOLD US", "corrections": "WHAT YOU CORRECTED",
     "promises": "PROMISES IN ITS MAIL", "numbers": "ITS NUMBERS", "coverage": "WHAT WAS CHECKED",
     "playbook": "WHAT A PROFESSIONAL KNOWS ABOUT THIS WORK", "situations": "ITS SITUATIONS",
+    "engine": "WHAT THE GENIOS ENGINE KNOWS ABOUT ITS SITUATIONS", "units": "WHAT THE REASONING UNITS MEASURED",
     "judged_before": "WHAT WAS JUDGED BEFORE", "what_if": "IF NOTHING HAPPENS"}
 
 TOUCHES_WHOLE = 8          # the newest touches, shown with their words
@@ -438,6 +441,60 @@ def _kind_corrections(p: DossierParts, cite: _Ids) -> list[str]:
             *(f"- {cite(f'corr:{c.correction_id}')} “{' '.join(str(c.words).split())}”" for c in kind)]
 
 
+#: How the engine's reads say why a situation of the file was not read (`contracts/engine_read.NOT_READ_REASONS`).
+_NOT_READ = {"switched_off": "its corpus is switched off for your company",
+             "no_route": "no corpus routes this kind of situation",
+             "unknown_domain": "no corpus is written for its domain"}
+_ENGINE_FAMILIES = {"capability": "its capability", "signals": "its signals", "playbook": "its playbooks",
+                    "rule": "its rules", "constraint": "its constraints", "frame": "its frames",
+                    "organization": "your organization's rules", "behaviour": "patterns measured on your people",
+                    "adaptive": "preferences learned from you", "unit": "readings"}
+
+
+def _engine_line(line: Any, cite: _Ids) -> str:
+    """One line of the engine: its id, its words, where it is read from — and, where true, that no named human
+    reviewed it (D3, s13b-D6). A learned line is the company's own history; it carries no such label."""
+    label = ", not yet reviewed" if line.label else ""
+    return f"- {cite(line.ref)} {line.words} — {line.source}{label}"
+
+
+def _has_engine(read: Any) -> bool:
+    return read is not None and bool(read.lines or read.may_apply or read.not_read)
+
+
+def _engine(p: DossierParts, cite: _Ids) -> Section:
+    """WHAT THE GENIOS ENGINE KNOWS ABOUT ITS SITUATIONS (STEP-13b): the Domain Expertise of the file's situations and
+    kind, authored and learned, each line its id and source — a PRIOR about the work, never a fact about this file. The
+    corpus situations whose condition the file's facts could not answer are NAMED as ones that may apply; the file's
+    situations that were not read are named and why; every family's cut is counted."""
+    read = p.engine
+    lines = ["A prior about the work, not a fact about this file. Cite a line by its id only to say what a "
+             "professional knows; it is not evidence."]
+    lines.extend(_engine_line(line, cite) for line in read.lines)
+    for m in read.may_apply:
+        lines.append(f"May apply, not shown — {m.situation}" + (f" ({m.capability})" if m.capability else "")
+                     + (f": the file's facts could not say whether its condition holds — not read: "
+                        f"{', '.join(m.missing)}" if m.missing else ""))
+    for n in read.not_read:
+        lines.append(f"Not read — a {n.situation_type} situation ({n.domain}): {_NOT_READ[n.reason]}"
+                     + (f" ({', '.join(n.corpora)})" if n.corpora else ""))
+    cut = 0
+    for family in read.cut:
+        if read.cut[family]:
+            cut += read.cut[family]
+            lines.append(f"… and {read.cut[family]} more of {_ENGINE_FAMILIES[family]}, not shown.")
+    return Section("engine", "\n".join(lines), cut)
+
+
+def _units(p: DossierParts, cite: _Ids) -> Section:
+    """WHAT THE REASONING UNITS MEASURED (STEP-13b): each situation-level unit's reading of this file's facts, as a
+    LEVEL (never a score), with its reason codes — or why it has none. Code's reading, run in shadow: nothing was decided
+    by it and no named human reviewed it."""
+    lines = ["Code's reading of this file's facts, as levels. Nothing was decided by it."]
+    lines.extend(f"- {cite(line.ref)} {line.words}" for line in p.units.lines)
+    return Section("units", "\n".join(lines))
+
+
 def _promises(p: DossierParts, cite: _Ids) -> Section:
     if not p.promises:
         return Section("promises", f"No promise was found in its mail. {cite('none:promises')}", p.promises_cut)
@@ -672,6 +729,13 @@ def build_dossier(parts: DossierParts) -> Dossier:
         by_name["corrections"] = _corrections(parts, cite)
         follows = OPTIONAL["corrections"] if OPTIONAL["corrections"] in names else OPTIONAL["answers"]
         names.insert(names.index(follows) + 1, "corrections")
+    if _has_engine(parts.engine):
+        # ⛔ ONLY WHEN THERE IS SOMETHING TO SAY (STEP-13b): a file the engine read nothing for is printed as before.
+        by_name["engine"] = _engine(parts, cite)
+        names.insert(names.index(OPTIONAL["engine"]) + 1, "engine")
+    if parts.units is not None and parts.units.lines:
+        by_name["units"] = _units(parts, cite)
+        names.insert(names.index(OPTIONAL["units"]) + 1, "units")
     sections = tuple(by_name[name] for name in names)
     draft = Dossier(org_id=parts.org_id, file_id=parts.file_id, as_of=parts.as_of,
                     sections=sections, catalogue=DossierCatalogue(frozenset(), frozenset()),

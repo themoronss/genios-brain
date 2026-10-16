@@ -60,7 +60,9 @@ from .runtime_brains import _entry_from_l6_row, _entry_from_lease_row
 
 #: The most lines a family shows for one file; the rest are counted in `EngineRead.cut`.
 LIMITS: Mapping[str, int] = MappingProxyType({
-    E.CAPABILITY: 28, E.SIGNALS: 6, E.PLAYBOOK: 16, E.RULE: 8, E.CONSTRAINT: 8, E.FRAME: 8})
+    E.CAPABILITY: 28, E.SIGNALS: 6, E.PLAYBOOK: 16, E.RULE: 8, E.CONSTRAINT: 8, E.FRAME: 8,
+    # What the brains learned (`learned_for`) is bounded too — a dossier cannot outgrow `DOSSIER_CHARS` (STEP-13b).
+    E.ORGANIZATION: 8, E.BEHAVIOUR: 8, E.ADAPTIVE: 8})
 #: The most characters one line carries, cut on a word.
 LINE_CHARS = 360
 #: The route key of a file whose routes reach nothing.
