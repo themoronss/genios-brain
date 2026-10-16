@@ -11012,7 +11012,7 @@ yc2_w27_s15:
                       depends_on: [M45.C3.L-integration.V0.U01, M45.C5.L-integration.V0.U01, M44.C5.L-integration.V2.U05]
 
 yc2_w27_s16:
-  status: approved_in_progress   # 2026-10-12: Rohit's "complete it all"; S16-D1..D10 at their recommended answers until he says otherwise (06)
+  status: built   # 2026-10-12→16: every unit built — the last, M46.C6.L-interface.V2.U01, on the integration line yc2w27-int16; S16-D1..D10 at their recommended answers until Rohit says otherwise (06)
   source: >
     speedrun008/YC-II W27/STEP-16 §1-§6, re-checked claim by claim against yc2w27-s13 @ fbd0aeaa (STEP-13
     nearly built) — STEP-16 §8 — by reading the code and running it on fresh scratch databases (production
@@ -11387,13 +11387,14 @@ yc2_w27_s16:
                 - level: 2
                   units:
                     - id: M46.C6.L-interface.V2.U01
+                      status: built   # 16 Oct, on the integration line yc2w27-int16 (STEP-15's `executive/morning.py` is on it); the day and the template it follows: morning_day.you_said_on, morning_template.words_for
                       what: >
                         The morning brief carries the same door (STEP-15 §3.5): each line's "not useful because
                         ___" is a correction of the line's file, and a Watching line whose review cites a
                         correction says so — "waiting for a real milestone (you said so on 12 Oct)". After
                         STEP-15 builds `executive/morning.py`; if it builds elsewhere, this unit follows it.
                       artifact: "genios_engine/executive/morning.py"
-                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_morning_brief.py -k correction"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_a_brief_line_is_a_correction_of_its_file.py"
                       depends_on: [M46.C3.L-data.V1.U02]
             - layer: integration
               levels:

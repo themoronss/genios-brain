@@ -12,8 +12,8 @@ the hour, or on read — so two composers can meet. The row is the claim:
                  mark replacing an earlier one and never the other way round; the line names its brief;
   `marks_for`    the marks on one brief, by line.
 
-Recorded only: STEP-16 turns marks into proposals you accept. Pure SQL over one connection; the caller owns the
-transaction.
+Recorded only, here: a not-useful mark's words become a correction of the line's file in `executive/morning.mark`
+(STEP-16, M46.C6.L-interface.V2.U01). Pure SQL over one connection; the caller owns the transaction.
 """
 from __future__ import annotations
 

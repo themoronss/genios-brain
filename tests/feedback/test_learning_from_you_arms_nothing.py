@@ -89,10 +89,17 @@ NEW_MODULES: tuple[str, ...] = (
     "genios_engine/feedback/scorecard.py",
 )
 
-#: ⛔ The one file outside the block's artifacts that a unit of it edits: the extension's door, whose
-#: two statements `M46.C2.L-data.V1.U02` moves into `deliver/verdicts`. Held like an artifact.
+#: ⛔ The files outside the block's artifacts that a unit of it edits, each held like an artifact: the extension's
+#: door, whose two statements `M46.C2.L-data.V1.U02` moves into `deliver/verdicts`; and the morning brief's door
+#: (`M46.C6.L-interface.V2.U01`, artifact `executive/morning.py`) — the day that reads what a review cites of your
+#: corrections, the template that says so, and the store's note. NOT its route, `api/executive_routes.py`: its one
+#: edit calls `executive/morning.mark` (held here as the artifact), and the file is the commitments surface, whose
+#: `update executions` is the executive engine's own — measured, it would read as a write this block does not make.
 EDITED_BESIDE_AN_ARTIFACT: tuple[str, ...] = (
     "genios_engine/api/intelligence_routes.py",
+    "genios_engine/executive/morning_day.py",
+    "genios_engine/executive/morning_store.py",
+    "genios_engine/executive/morning_template.py",
 )
 
 #: ⛔ The tenant wipe (`/reset`, `api/account_routes._ORG_SCOPED_TABLES`) deletes every org table,

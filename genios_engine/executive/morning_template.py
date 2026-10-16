@@ -70,6 +70,10 @@ def words_for(item: B.Item, section: str, *, local_date: date | None = None) -> 
         out = f"{name}: {_sentence(m.word('headline'))}"
         if m.word("wait_rule"):
             out += f" {_sentence(m.word('wait_rule'))}"
+        if m.date("you_said"):
+            # STEP-16 (M46.C6.L-interface.V2.U01): the review waits on what you said — the day you said it, inside
+            # the sentence it qualifies (the wait rule's, or the headline's when there is none).
+            out = f"{out[:-1]} (you said so on {_day(m.date('you_said'))}){out[-1]}"
         quiet = m.number("quiet")
         return out + (f" Quiet for {quiet.says}." if quiet is not None else "")
     if item.kind == B.PROMISE:

@@ -34,6 +34,10 @@ the engine's invention rule against those checked words and the file's names, an
 name; each number with the calculator that made it and its n; the dates, as local dates in the org's timezone; the
 names, said as names (`platform/self_identity.spoken_name`), never an address. And its SOURCES.
 
+A WATCHED file whose review cites a correction of yours that still stands (STEP-16, `yc2_w27_s16`
+M46.C6.L-interface.V2.U01) carries the day you said it (`you_said`, the newest such correction's, a local date) —
+its Watching line says so: *"waiting for a real milestone (you said so on 12 Oct)"* (`executive/morning_template`).
+
 Read only; nothing written, no model.
 """
 from __future__ import annotations
@@ -48,6 +52,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import text
 
+from genios_engine.context import founder_corrections as corrections
 from genios_engine.context.meeting_days import meetings_of_day
 from genios_engine.context.promises_due import promises_due
 from genios_engine.context.workstreams import files_for
@@ -61,7 +66,7 @@ from genios_engine.platform.grounding import corpus_of, invention_ok
 from genios_engine.platform.identity import person_name_key
 from genios_engine.platform.self_identity import identity_for, spoken_name
 from genios_engine.reason.expert.store import SHADOW_LANE, current_judgments
-from genios_engine.reason.expert.verify import EARNED
+from genios_engine.reason.expert.verify import EARNED, cited_anywhere
 
 #: The timezone a brief is read in when the org names none — UTC, as the engine's other readers fall back
 #: (`platform/wiring._org_timezone`); STEP-15 §8.7: set it at deploy, never leave it inferred.
@@ -167,6 +172,15 @@ def _answered_since(conn, org_id: str, file_id: str, reviewed_at: datetime) -> b
     from genios_engine.context.founder_questions import answers_for
     return any(a.answered_at is not None and a.answered_at >= reviewed_at
                for a in answers_for(conn, org_id, file_id))
+
+
+def you_said_on(conn, org_id: str, review, zone: ZoneInfo) -> str | None:
+    """The day you said the newest correction this review cites that still stands — a local date in `zone` — or
+    None: it cites none, or you took each back (`context/founder_corrections`, STEP-16)."""
+    said = [c for c in (corrections.by_id(conn, org_id, ref.removeprefix("corr:"))
+                        for ref in sorted(cited_anywhere(review)) if ref.startswith("corr:"))
+            if c is not None and c.state == corrections.STANDING]
+    return _local(max(c.corrected_at for c in said), zone) if said else None
 
 
 def zone_of(conn, org_id: str) -> str:
@@ -363,7 +377,8 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
             items.append(B.Item(
                 item_id=B.item_id_for(B.WATCHED, f.file_id), kind=B.WATCHED,
                 material=B.Material(words=(*material_words, ("wait_rule", rule)), numbers=tuple(numbers),
-                                    dates=(("last_touch", _local(f.last_touch, zone)),), names=names),
+                                    dates=(("last_touch", _local(f.last_touch, zone)),
+                                           ("you_said", you_said_on(conn, org_id, review, zone))), names=names),
                 sources=tuple(sources + base_sources), our_move=False, **common))
 
     resolved = _resolved_nothing(judgments)
@@ -631,4 +646,4 @@ def _why_gone(line: B.Line, questions: dict[str, str], cards: dict[str, str]) ->
 
 
 __all__ = ["ASKED_ON_ITS_CARD", "DEFAULT_TZ", "Day", "FIRST_BRIEF_LOOKBACK", "NAMING_SECTIONS", "REASONS_KEPT",
-           "SHADOW_LABEL", "read_changes", "read_day", "speaks_of_you", "spoken_names", "zone_of"]
+           "SHADOW_LABEL", "read_changes", "read_day", "speaks_of_you", "spoken_names", "you_said_on", "zone_of"]

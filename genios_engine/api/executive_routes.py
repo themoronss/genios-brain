@@ -172,21 +172,26 @@ def mark_morning_line(line_id: str, mark: str = Body(..., embed=True),
                       words: str | None = Body(None, embed=True),
                       ctx: AuthCtx = Depends(require_workspace_user)) -> dict:
     """Useful, or not useful with your words. A later mark of yours replaces an earlier one; marks are per
-    person, so your mark never overwrites someone else's. Recorded only — STEP-16 turns marks into proposals
-    you accept, never this step (M45.C3.L-interface.V0.U02)."""
+    person, so your mark never overwrites someone else's (M45.C3.L-interface.V0.U02). STEP-16's door on the brief
+    (M46.C6.L-interface.V2.U01): *not useful because ___* on a line about a file is a correction of that file, in
+    your words — `correction_id` and `file_id` say which (both None when the mark made none); words that cannot
+    be a correction are a 422, the mark with them."""
     _require_db()
-    from genios_engine.executive import morning_store
+    from genios_engine.executive import morning
     seat = _brief_seat(ctx)
     try:
         with _graph.engine.begin() as c:
-            kept = morning_store.mark_line(c, org_id=ctx.org_id, line_id=line_id, marked_by=seat, mark=mark,
-                                           words=words, at=_now())
+            marked = morning.mark(c, org_id=ctx.org_id, line_id=line_id, marked_by=seat, mark=mark, words=words,
+                                  at=_now())
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     except LookupError as exc:
         raise HTTPException(404, str(exc)) from exc
+    kept, correction = marked.mark, marked.correction
     return {"line_id": kept.line_id, "marked_by": kept.marked_by, "mark": kept.mark, "words": kept.words,
-            "marked_at": kept.marked_at.isoformat()}
+            "marked_at": kept.marked_at.isoformat(),
+            "correction_id": correction.correction_id if correction is not None else None,
+            "file_id": correction.file_id if correction is not None else None}
 
 
 # ---------------------------------------------------------------------------------------

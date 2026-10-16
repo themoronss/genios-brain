@@ -16,6 +16,12 @@ tick runs every six hours from process start, the re-rank's day is UTC.
   `is_due`       the local time in the org's timezone is past the brief's hour, and none is kept for that day;
   `compose_due`  for each org's account owner whose brief is due, compose it — once; a seat that fails is
                  counted and logged, never raised past: one tenant's brief is never the sweep.
+  `mark`         your mark on a line (`executive/morning_store.mark_line`) — and, STEP-16's door on the brief
+                 (`yc2_w27_s16` M46.C6.L-interface.V2.U01, STEP-15 §3.5): a line's *not useful because ___* is
+                 a correction of the line's file (`context/founder_corrections.correct`, scope `file`, the card the
+                 line showed), in the same transaction — the road the card's *wrong* with your words takes, so the
+                 file's next review reads it. A line about no file (`file_of_line`), a useful mark, or a mark older
+                 than the one kept corrects nothing; words that cannot be a correction refuse the mark with them.
 
 ⛔ TWO TRANSACTIONS IN `compose`, NOT ONE, SINCE M45. `write_brief` may ask a real model — gated by
 its own site's own daily cap, but not instant — and holding a connection (and `morning_briefs`'
@@ -30,11 +36,14 @@ site's own cap already allows for one call.
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import dataclass
 from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import text
 
+from genios_engine.context import founder_corrections as corrections
+from genios_engine.contracts import morning_brief as B
 from genios_engine.contracts.morning_brief import Brief
 from genios_engine.executive import morning_store
 from genios_engine.executive.morning_day import read_day, zone_of
@@ -120,4 +129,49 @@ def compose_due(engine, *, now: datetime, orgs: Iterable[str] | None = None) -> 
     return counts
 
 
-__all__ = ["BRIEF_HOUR", "compose", "compose_due", "is_due", "kept_brief"]
+#: The kinds of item that are a file's (`executive/morning_day.read_day`: `about` is the file's anchor).
+FILE_KINDS: tuple[str, ...] = (B.DECISION, B.QUESTION, B.WATCHED)
+
+
+@dataclass(frozen=True, slots=True)
+class Marked:
+    """Your mark as kept, and the correction of the line's file it made — None when it made none."""
+    mark: morning_store.Mark
+    correction: corrections.Correction | None
+
+
+def file_of_line(brief: Brief, line_id: str) -> tuple[str | None, str | None]:
+    """The file a line of `brief` is about, and the card the line showed — (None, None) for a line about no file: a
+    meeting, your desk, a promise, a gone line no review made. A change line is its file's when the review it says
+    is that file's own (`<file>@<fingerprint>`)."""
+    line = next((l for l in brief.lines if l.line_id == line_id), None)
+    item = brief.item(line.item_id) if line is not None else None
+    if item is None or not item.about:
+        return None, None
+    if item.kind in FILE_KINDS:
+        return item.about, item.card_id
+    if item.kind == B.CHANGE and any(s.kind == B.SOURCE_REVIEW and s.ref.startswith(f"{item.about}@")
+                                     for s in item.sources):
+        return item.about, None
+    return None, None
+
+
+def mark(conn, *, org_id: str, line_id: str, marked_by: str, mark: str, words: str | None, at: datetime) -> Marked:
+    """Keep `marked_by`'s mark on a line, and a NOT USEFUL one's words as a correction of the line's file (see the
+    module docstring). ValueError and LookupError as `morning_store.mark_line`, and ValueError for words that
+    cannot be a correction (`context/founder_corrections.correct`) — raised inside the caller's transaction, so the
+    mark is refused with them. The caller owns the transaction."""
+    kept = morning_store.mark_line(conn, org_id=org_id, line_id=line_id, marked_by=marked_by, mark=mark,
+                                   words=words, at=at)
+    if kept.mark != morning_store.NOT_USEFUL or kept.marked_at != at:
+        return Marked(kept, None)                   # useful, or an older mark that changed nothing
+    brief = morning_store.read(conn, org_id, kept.seat_id, kept.local_date)
+    file_id, card_id = file_of_line(brief, line_id) if brief is not None else (None, None)
+    if file_id is None:
+        return Marked(kept, None)
+    return Marked(kept, corrections.correct(conn, org_id=org_id, file_id=file_id, words=kept.words,
+                                            scope=corrections.FILE, by=marked_by, at=at, card_id=card_id))
+
+
+__all__ = ["BRIEF_HOUR", "FILE_KINDS", "Marked", "compose", "compose_due", "file_of_line", "is_due", "kept_brief",
+           "mark"]
