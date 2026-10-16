@@ -5501,9 +5501,10 @@ def card_action(card_id: str, body: CardAction,
     if ctx.is_member and not _member_reaches(ctx, card_id):
         raise HTTPException(403, {"ok": False, "error": "assigned_to_different_seat"})
     # STEP-16 (`yc2_w27_s16` M46.C3.L-integration.V3.U04, `06` D27's rule): a correction for every file of a kind of
-    # work, or for how the company works, steers every judgment it reaches — the account OWNER's alone.
+    # work, or for how the company works, steers every judgment it reaches — the account OWNER's alone (an owner-level
+    # credential that is no admin seat; `tests/test_open_loops.py` keeps the old scopes check out of this route).
     if body.action == "wrong" and (body.words or "").strip() and body.scope in ("kind", "company") \
-            and not (ctx.scopes is None and ctx.role in (None, "owner")):
+            and (not ctx.is_org_admin or ctx.role == "admin"):
         raise HTTPException(403, {"ok": False, "error": "owner_only",
                                   "why": "a correction of a kind of work, or of the company, is the owner's"})
     from genios_engine.deliver.actions import ingest_action

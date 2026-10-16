@@ -4,7 +4,7 @@
 
 Tree `yc2_w27_s14` M43.C3.L-interface.V3.U03 (`deliver/pipeline.question_card`; STEP-14 §8.4 item 5). STEP-13's
 question card keeps what it is — the question as its headline, why it is asked as its situation, its actions
-(answer, snooze) and surfaces (app, api) — and beside them, from its review's card lines (0221,
+(answer, snooze, and since STEP-16 wrong) and surfaces (app, api) — and beside them, from its review's card lines (0221,
 `reason/expert/card_lines`): the file's PERSON as its subject (never a bare domain, `03` F64), the brief's role, why
 now, and what remains on the file. A review stored before 0221 keeps none: the card is built as before.
 """
@@ -59,7 +59,8 @@ def test_the_question_card_names_the_files_person_role_why_now_and_what_remains(
     assert card["relationship_role"] == "intro" and card["why_now"] == "Introly wrote on 12 Aug"
     assert card["unresolved_item"] == "Introly asked you to write to Ishaan, since 12 Aug"
     assert (copy["headline"], copy["situation"]) == (QUESTION, "An introduction with no address"), "as built"
-    assert [a["type"] for a in card["actions"]] == ["answer", "snooze"] and card["surfaces"] == ["app", "api"]
+    # ⛔ RESTATED by `yc2_w27_s16` M46.C3.L-interface.V5.U07 (S16-D10): the question card offers "don't ask me this".
+    assert [a["type"] for a in card["actions"]] == ["answer", "snooze", "wrong"] and card["surfaces"] == ["app", "api"]
 
 
 def test_a_question_whose_review_kept_no_lines_is_built_as_before(monkeypatch):
