@@ -84,8 +84,8 @@ from dataclasses import replace
 from datetime import date, datetime, timedelta
 from typing import Any
 
-from genios_engine.contracts.claim_check import HELD, REFUSED, SHOWN, SUPPRESSED, CheckedReview
-from genios_engine.contracts.expert_review import MODES, ExpertReview
+from genios_engine.contracts.claim_check import HELD, KEPT, REFUSED, SHOWN, SUPPRESSED, CheckedReview
+from genios_engine.contracts.expert_review import MODES, ExpertReview, own_ref
 from genios_engine.contracts.reasoning import (
     RANKING_WEIGHTS_V2,
     RANKING_WEIGHTS_V2_VERSION,
@@ -330,7 +330,7 @@ def _render(review: ExpertReview, checked: CheckedReview, *, eval_time: datetime
             "window": {"days": days, "from": source, "said": WINDOW_SAID[source]}}
     return {"artifact_kind": "draft_message" if words.draft else "none",
             "fallback": {"headline": _braces(headline), "situation": _braces(words.situation or "")},
-            "draft": words.draft, "sources": sources_of(checked), "gold": gold}
+            "draft": words.draft, "sources": sources_of(checked, review), "gold": gold}
 
 
 #: What a card says its situation is: the expert's reading of the file — an inference, said so.
@@ -343,7 +343,27 @@ DO_NOTHING_IS = "what doing nothing costs, as the expert judges it — an infere
 DO_NOTHING_WITHHELD = "Not stated: what the expert said doing nothing costs did not stand against the file."
 
 
-def sources_of(checked: CheckedReview) -> dict[str, Any]:
+def _guides(checked: CheckedReview, review: ExpertReview | None) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    """What the move is GUIDED BY, as the check let it stand (STEP-13b): the engine lines — with the capability's or
+    playbook's name, "not yet reviewed" where true — and the expert's own experience, "from experience". Nothing a
+    review checked before this version, or whose `guided_by` fell, can claim: the check's own KEPT verdict is read."""
+    move = review.next_move if review is not None else None
+    if move is None or not move.guided_by or not any(
+            v.line == "guided_by" and v.verdict == KEPT for v in checked.verdicts):
+        return [], []
+    engine, own = [], []
+    kept = {v.line for v in checked.verdicts if v.verdict == KEPT}
+    cited = {c.ref: c for c in checked.engine}
+    for ref in move.guided_by:
+        if (line := cited.get(ref)) is not None:
+            engine.append({"ref": ref, "said": f"the engine: {line.source}" + ("" if line.reviewed else ", not yet reviewed"),
+                           "words": line.words})
+        elif (n := own_ref(ref, len(review.own))) is not None and f"own:{n}" in kept:
+            own.append({"said": "from experience", "claim": review.own[n - 1].claim})
+    return engine, own
+
+
+def sources_of(checked: CheckedReview, review: ExpertReview | None = None) -> dict[str, Any]:
     """Where each of the card's sentences came from (STEP-13 §5, M35.C3.L-interface.V3.U03): the headline
     the ids its move rests on and their quotes — or, a held file, the question and why it is asked; the
     situation, what done looks like and what doing nothing costs labelled the expert's judgement (an
@@ -355,10 +375,21 @@ def sources_of(checked: CheckedReview) -> dict[str, Any]:
         out["headline"] = {"question": checked.question, "because": checked.because}
     elif words.headline:
         out["headline"] = {"evidence": list(words.evidence), "quotes": list(words.quotes)}
+    engine, own = _guides(checked, review)
     if words.situation:
         out["situation"] = {"inference": SITUATION_IS}
     if words.draft:
         out["draft"] = {"to": words.to, "evidence": list(words.evidence), "quotes": list(words.quotes)}
+    # WHERE THE MOVE CAME FROM (STEP-13b): beside the file's evidence, the engine's lines and the expert's own
+    # experience it was guided by — on the headline and the draft, which stand on the move's ground. A held file's
+    # headline is its question: it names no source.
+    if engine or own:
+        origin = {"from": ["file" if words.evidence else None, "engine" if engine else None, "own" if own else None],
+                  **({"engine": engine} if engine else {}), **({"own": own} if own else {})}
+        origin["from"] = [w for w in origin["from"] if w]
+        for part in ("headline", "draft"):
+            if isinstance(out.get(part), dict) and checked.fate != HELD:
+                out[part].update(origin)
     if words.done_when:
         out["done_when"] = {"inference": DONE_WHEN_IS}
     out["do_nothing"] = {"inference": DO_NOTHING_IS} if words.do_nothing else \
