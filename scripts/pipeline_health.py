@@ -1076,12 +1076,27 @@ def check_what_the_card_contract_refused(conn, org: str) -> Check:
                      expected="said — nothing was refused", fix="")
     per_rule = {rule: sum(1 for r in rows if r.rule == rule) for rule in CARD_RULES}
     said = ", ".join(f"{rule} {n}" for rule, n in per_rule.items() if n)
+    # ⛔ AND WHICH FILE CARDS WAIT BEHIND ONE (STEP-14 fix, the crosscheck's finding 3): a file's next version the
+    # contract refused leaves its card as it was, on its last words, with no door — the contract named as the cause.
+    waiting = conn.execute(sql(
+        "select distinct k.card_id, k.file_id, r.rule from cards k "
+        "  join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+        "  join signals n on n.org_id = k.org_id and n.subject_node_id = k.file_id and n.status = 'open' "
+        "  join card_refusals r on r.org_id = k.org_id and r.writer = 'pipeline' and r.ref = n.signal_id "
+        " where k.org_id = :o and k.file_id is not null and k.state = any(:open) and s.status <> 'open' "
+        " order by k.card_id, r.rule"), {"o": org, "open": list(OPEN_STATES)}).fetchall()
+    behind = sorted({r.card_id for r in waiting})
+    measured = f"{len(rows)} refusal(s) in 7 days: {said}" + (
+        f"; {len(behind)} file card(s) wait on their last words behind a refused version" if behind else "")
     return Check(
-        name=name, ok=True, measured=f"{len(rows)} refusal(s) in 7 days: {said}",
+        name=name, ok=True, measured=measured,
         expected="said — each refusal names its writer, its card and what it found",
         fix="a refusal is a card the founder would have read wrong: read what it found, and fix the template or "
-            "the fact that made it (deliver/render, reason/team/emit)",
-        detail=[f"{r.writer} {r.ref} {r.rule}: {r.found}" for r in rows[:20]])
+            "the fact that made it (deliver/render, reason/team/emit); a file card waiting behind one is shown "
+            "again when the file's next version passes the card contract (contracts/card_contract)",
+        detail=[f"{r.writer} {r.ref} {r.rule}: {r.found}" for r in rows[:20]]
+               + [f"file card {r.card_id} ({r.file_id}) waits: its next version refused, {r.rule}"
+                  for r in waiting[:20]])
 
 
 def check_every_expert_card_reaches_the_app(conn, org: str) -> Check:

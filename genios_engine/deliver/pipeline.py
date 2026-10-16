@@ -325,7 +325,8 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
 
 
 def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: datetime, out: dict, *,
-                          us=None, our_names: tuple[str, ...] = (), identities: tuple[str, ...] = ()) -> None:
+                          us=None, our_names: tuple[str, ...] = (), identities: tuple[str, ...] = (),
+                          refused_files: set[str] | None = None) -> None:
     """Each open question with no live card gets one — counted where it is written, its lane tallied as
     every card's is. ⛔ A pass that could not read its questions says so (`questions_unread`) and keeps
     the decisions' cards: a read refused here must never cost a card the founder was owed elsewhere."""
@@ -349,6 +350,8 @@ def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: 
             if _refused(out, org_id, card, _contract_refusals(card, copy, us=us, our_names=our_names,
                                                               identities=identities, expert=True),
                         engine=getattr(graph, "engine", None)):
+                if refused_files is not None and card.get("file_id"):
+                    refused_files.add(str(card["file_id"]))      # its card stays as it was (`_close_the_files_pass`)
                 continue
             # STEP-14: the file's card, asking — a VERSION of the file's one card when it has one.
             versioned = _version_file_card(card_store, card, copy, token, out)
@@ -424,7 +427,7 @@ def _version_file_card(card_store, card: dict, copy: dict, token: str, out: dict
 #: The file cards whose signal closed and that no version reached: open, not held by an agent — a file's card, or
 #: an expert or question card from before 0220 that names no file.
 _ORPHANED_FILE_CARDS = (
-    "select k.card_id from cards k join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+    "select k.card_id, k.file_id from cards k join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
     " where k.org_id = :o and k.state = any(:open) and k.state <> 'claimed' and s.status <> 'open' "
     "   and (k.file_id is not null or k.capability_key = :expert or k.builder_version = :question_builder) "
     "   and not exists (select 1 from agent_claims ac where ac.org_id = k.org_id and ac.card_id = k.card_id "
@@ -440,9 +443,16 @@ _FILES_WITH_TWO_OPEN_CARDS = (
     " group by 1 having count(*) > 1) twice")
 
 
-def _close_the_files_pass(graph, org_id: str, out: dict) -> None:
+def _close_the_files_pass(graph, org_id: str, out: dict, refused_files=frozenset()) -> None:
     """End of pass: the orphaned file cards expired REPLACED, counted, and the files with two open cards measured.
-    ⛔ A measurement may never kill what it measures: unreadable, it says so (`file_cards_unmeasured`)."""
+    ⛔ A measurement may never kill what it measures: unreadable, it says so (`file_cards_unmeasured`).
+
+    ⛔ NEVER A FILE WHOSE NEXT VERSION THE CONTRACT REFUSED THIS PASS (STEP-14 fix, the crosscheck's finding 3,
+    `yc2_w27_s14` M43.C4.L-integration.V1.U06). The reason side retired the file's old signal and handed the file on;
+    the refused version wrote nothing — and this sweep then expired the card REPLACED, with nothing in its place and
+    History saying "replaced". Its card is left as it was — its words, state and history — counted
+    `file_cards_kept_on_refusal`, said by the health check that names the contract, and lapsing by its own window as
+    any card does; the file's next version that passes the contract versions it."""
     from genios_engine.platform import card_lifecycle
     from genios_engine.reason.expert.decide import CAPABILITY_ID
 
@@ -450,7 +460,13 @@ def _close_the_files_pass(graph, org_id: str, out: dict) -> None:
               "question_builder": QUESTION_CARD_BUILDER}
     try:
         with graph.engine.begin() as c:
-            orphans = [r.card_id for r in c.execute(text(_ORPHANED_FILE_CARDS), params)]
+            orphans, kept = [], 0
+            for r in c.execute(text(_ORPHANED_FILE_CARDS), params):
+                if r.file_id is not None and str(r.file_id) in refused_files:
+                    kept += 1
+                else:
+                    orphans.append(r.card_id)
+            out["file_cards_kept_on_refusal"] += kept
             if orphans:
                 out["file_cards_replaced"] += len(card_lifecycle.expire_cards(
                     c, org_id=org_id, cause=card_lifecycle.REPLACED, card_ids=orphans))
@@ -715,6 +731,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
            # next version waiting on an agent or refused, the file cards no version reached, and the measurement.
            "versioned": 0, "renewed": 0, "reworded": 0, "quiet_version_not_pushed": 0, "version_waits": 0,
            "version_refused": 0, "file_cards_replaced": 0, "files_with_two_open_cards": 0,
+           # STEP-14 fix (the crosscheck's finding 3): a file's card left as it was, its next version refused.
+           "file_cards_kept_on_refusal": 0,
            # STEP-14 · the card contract — each rule counted from zero (M43.C4.L-integration.V1.U02).
            **{f"refused_contract:{rule}": 0 for rule in card_contract.RULES},
            # ⛔ THE LANE MIX. Zeroed for the same reason as the three above — "a key that appears
@@ -736,6 +754,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
     except Exception:      # noqa: BLE001 — unreadable: nothing is refused, as before STEP-04
         us = None
     our_names = tuple(i for i in identities if "@" not in i)
+    # The files whose next version the card contract refused this pass: their cards stay as they were.
+    refused_files: set[str] = set()
     signals = _open_signals_without_cards(graph, org_id, eval_time)
 
     # ⛔ L2-7 · THE COLLAPSE RATIO, READ ON EVERY SWEEP. One extra grouped SELECT, no writes, and
@@ -910,6 +930,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             if _refused(out, org_id, draft, _contract_refusals(draft, copy, us=us, our_names=our_names,
                                                                identities=identities, expert=from_review),
                         engine=getattr(graph, "engine", None)):
+                if draft.get("file_id"):
+                    refused_files.add(str(draft["file_id"]))      # its card stays as it was (`_close_the_files_pass`)
                 continue
             # STEP-14: an expert card is its FILE's — the file's next decision VERSIONS it, never a second card.
             if draft.get("file_id"):
@@ -1033,9 +1055,9 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
     # STEP-13 · the questions held files ask, each on its own card (M36.C2.L-interface.V3.U05) — after the
     # decisions, inside the recall guard below: a question card is a card, its lane tallied.
     _build_question_cards(graph, card_store, org_id, eval_time, out, us=us, our_names=our_names,
-                          identities=identities)
+                          identities=identities, refused_files=refused_files)
     # STEP-14 · the file cards no version reached, and the files with two open cards (see `_close_the_files_pass`).
-    _close_the_files_pass(graph, org_id, out)
+    _close_the_files_pass(graph, org_id, out, refused_files)
 
     # ⛔ THE RECALL GUARD, RUN — and until 2026-10-01 it was written, tested and never invoked.
     #

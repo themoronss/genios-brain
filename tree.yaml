@@ -10213,6 +10213,23 @@ yc2_w27_s14:
                       artifact: "genios_engine/reason/team/emit.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/test_team_unit.py tests/reason/test_the_team_writer_keeps_the_contract.py"
                       depends_on: [M43.C4.L-contract.V0.U01]
+                    - id: M43.C4.L-integration.V1.U06
+                      what: >
+                        A refused version leaves the file's card where it was (added 16 Oct by the STEP-14
+                        crosscheck, finding 3): the reason side had retired the old signal, the refused version hit
+                        `continue`, and the end of the pass expired the card REPLACED — nothing in its place, History
+                        "replaced", the health check blaming the reason writers, and the refused signal kept again on
+                        every pass. A file whose next version the contract refused this pass (decision or question)
+                        keeps its card as it was — words, state, history; counted `file_cards_kept_on_refusal`;
+                        lapsing by its own window as any card — and the next version that passes versions it. A
+                        refusal is kept ONCE per writer, card and rule (`platform/card_refusals.record`, an
+                        insert-select; it returns the rows that were new). `check_what_the_card_contract_refused`
+                        says which file cards wait on their last words behind a refused version, the contract named.
+                        The bound, declared: such a card is on no door while it waits (its signal closed) — the
+                        reason side's retirement is not undone by delivery.
+                      artifact: "genios_engine/deliver/pipeline.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> .venv/bin/python -m pytest -q tests/deliver/test_a_refused_version_leaves_the_card_where_it_was.py tests/deliver/test_no_card_breaks_the_contract.py tests/scripts/test_pipeline_health_cards.py tests/platform/test_a_delete_is_not_a_read.py"
+                      depends_on: [M43.C4.L-integration.V1.U02, M42.C3.L-integration.V2.U03, M43.C4.L-integration.V2.U05]
                 - level: 2
                   units:
                     - id: M43.C4.L-integration.V2.U05

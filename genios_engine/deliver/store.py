@@ -108,6 +108,7 @@ def file_card_doors(conn, org_id: str, *, eval_time=None,
               for door in ("decision", "question")}
     return {card: tuple(door for door in ("decision", "question") if card in passed[door]) for card in every}
 
+
 #: The card's own last words: its latest `card.created`, `card.rebuilt` or `card.versioned` event that kept them —
 #: by VERSION first (a version is dated by its decision, a creation by the database's clock), then by when.
 _LAST_WORDS = (

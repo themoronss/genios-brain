@@ -21,20 +21,25 @@ PIPELINE = "pipeline"
 TEAM = "team"
 WRITERS: tuple[str, ...] = (PIPELINE, TEAM)
 
+#: ⛔ ONCE PER WRITER, CARD AND RULE (STEP-14 fix, the crosscheck's findings 3 and 14): a refused signal stays open and
+#: is refused again on every pass — a row a pass made the health check count passes, not cards. The first refusal is
+#: kept, with what it found and when; the same refusal again adds nothing.
 _INSERT = text(
     "insert into card_refusals (org_id, refusal_id, writer, ref, rule, found, refused_at) "
-    "values (:o, :id, :w, :ref, :rule, :found, coalesce(cast(:at as timestamptz), now()))")
+    "select :o, :id, :w, :ref, :rule, :found, coalesce(cast(:at as timestamptz), now()) "
+    " where not exists (select 1 from card_refusals where org_id = :o and writer = :w and ref = :ref "
+    "                   and rule = :rule)")
 
 
 def record(conn, *, org_id: str, writer: str, ref: str, refusals: Iterable, at=None) -> int:
-    """Keep one row per refusal (`contracts/card_contract.Refusal`); returns how many."""
+    """Keep one row per refusal (`contracts/card_contract.Refusal`) — once per writer, card and rule; returns how
+    many were new."""
     if writer not in WRITERS:
         raise ValueError(f"a refusal's writer is one of {WRITERS}, not {writer!r}")
     n = 0
     for r in refusals:
-        conn.execute(_INSERT, {"o": org_id, "id": new_id("cref"), "w": writer, "ref": str(ref), "rule": r.rule,
-                               "found": str(r.found)[:500], "at": at})
-        n += 1
+        n += conn.execute(_INSERT, {"o": org_id, "id": new_id("cref"), "w": writer, "ref": str(ref),
+                                    "rule": r.rule, "found": str(r.found)[:500], "at": at}).rowcount or 0
     return n
 
 
