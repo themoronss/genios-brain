@@ -745,12 +745,26 @@ QUESTION_CARD_RULE = "founder_question"
 ASKING_MODES: tuple[str, ...] = ("question", "answered")
 
 
-def asked_you(card: Any) -> bool:
-    """Whether a card of the file is ours to blank (STEP-14 fix, the crosscheck's finding 1; STEP-13's B2): it is a
-    question card now, or ANY of its versions asked you — a living card that asked, was answered and then decided
-    still prints the question's words on its version line, and its signal's rule is the decision's."""
+def asks_now(card: Any) -> bool:
+    """Whether the card's own line — its current headline — is our question: a question card, or a card whose newest
+    version asked you (`ASKING_MODES`)."""
+    versions = getattr(card, "versions", None) or ()
     return (getattr(card, "rule_id", None) == QUESTION_CARD_RULE
-            or any(getattr(v, "mode", None) in ASKING_MODES for v in (getattr(card, "versions", None) or ())))
+            or bool(versions) and getattr(versions[-1], "mode", None) in ASKING_MODES)
+
+
+def asking_versions(card: Any) -> tuple[int, ...]:
+    """The numbers of the card's versions that asked you — their lines print our question, or your answer's."""
+    return tuple(v.version for v in (getattr(card, "versions", None) or ())
+                 if getattr(v, "mode", None) in ASKING_MODES)
+
+
+def asked_you(card: Any) -> bool:
+    """Whether a card of the file is ours to blank (STEP-14 fix, the crosscheck's finding 1; STEP-13's B2): it asks
+    now, or ANY of its versions asked you — a living card that asked, was answered and then decided still prints the
+    question's words on its version line, and its signal's rule is the decision's. What is blanked is only what
+    asked (`FilePeople.asked_lines`): the decision's own words still ground what they say."""
+    return asks_now(card) or bool(asking_versions(card))
 
 
 @dataclass(frozen=True, slots=True)
@@ -772,6 +786,9 @@ class FilePeople:
     #: headline is our question, never a ground for the claim it asked about — and the questions you answered.
     question_cards: tuple[str, ...] = ()
     answered: tuple[Answered, ...] = ()
+    #: …and of each, which lines asked (STEP-14 fix, finding 1): (`card:` id, its own line asks now, the versions that
+    #: asked). The check blanks those lines and no other.
+    asked_lines: tuple[tuple[str, bool, tuple[int, ...]], ...] = ()
 
 
 def label_of(key: str | None) -> str | None:
@@ -834,6 +851,8 @@ def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str]
                       our_names=tuple(n for n in our_names if n), connector=connector,
                       head=_file(parts, _Ids()).text, asks=asks, replies=replies, meetings=meetings,
                       question_cards=tuple(f"card:{c.card_id}" for c in cards if asked_you(c)),
+                      asked_lines=tuple((f"card:{c.card_id}", asks_now(c), asking_versions(c))
+                                        for c in cards if asked_you(c)),
                       answered=tuple(Answered(ref=f"answer:{a.question_id}", question=str(a.question),
                                               words=" ".join(str(a.answer).split()))
                                      for a in (parts.answers or ()) if a.answer))
@@ -845,7 +864,7 @@ def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | 
     return build_dossier(parts) if parts is not None else None
 
 
-__all__ = ["ASKING_MODES", "Answered", "AskSeen", "QUESTION_CARD_RULE", "asked_you", "CLAIMS_LIMIT", "meeting_events", "read_meeting_titles",
+__all__ = ["ASKING_MODES", "Answered", "AskSeen", "QUESTION_CARD_RULE", "asked_you", "asking_versions", "asks_now", "CLAIMS_LIMIT", "meeting_events", "read_meeting_titles",
            "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine",
            "DossierParts", "Seen",
            "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",

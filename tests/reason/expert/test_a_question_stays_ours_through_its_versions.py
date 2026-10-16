@@ -17,8 +17,9 @@ grounds nothing. STEP-14 made the card live, and two things reopened it:
     `probes/test_xc14_b2_versions_pg.py`).
 
 Now a card is ours to blank when ANY of its versions asked you (its words' mode, `question` or `answered`) — and every
-headline of its item is blanked, the card's line and each version's. A card that never asked is printed and read as
-before (golden F07, F29 cite a decision card for what it asked the founder).
+line of its item that ASKED is blanked: each version that asked, and the card's own line while it asks. A decision
+version's words still ground what they say (golden F07, F29 cite a decision card for what it asked the founder — and
+F07's card asks after its call; amended after the golden lane, which caught the first rule blanking F07's decision).
 """
 from __future__ import annotations
 
@@ -83,15 +84,39 @@ def test_b2_a_question_on_any_version_grounds_nothing(name, cites):
     assert checked.fate != C.SHOWN and checked.words.headline is None, checked.verdicts
 
 
-def test_every_headline_of_a_card_that_asked_is_blanked():
-    judged = FileJudgments(file_id=T.NEEL_FILE, cards=(ASKING["this question, answered, now a decision"],))
+def _item(card):
+    judged = FileJudgments(file_id=T.NEEL_FILE, cards=(card,))
     dossier, people = T._neel(YOUR_NO, judgments=judged)
     from genios_engine.reason.expert.verify import _Run  # the check's reader of the dossier
     run = _Run(review=_review(T.DENIED, DENIED_MOVE, cites=("card:card_q1",), draft=None),
                lines=D.lines_by_id(dossier.text), people=people)
+    return run.items(["card:card_q1"])
+
+
+def test_every_line_that_asked_is_blanked_and_no_other():
+    """The question's words and its answer's are ours — blanked on every version line that ASKED; the decision's own
+    words still ground what they say (golden F07: a fact citing the card's decision version for Leela's name)."""
+    item = _item(ASKING["this question, answered, now a decision"])
+    assert T.DENIED not in item and ANSWER_IN not in item, item
+    assert item.count("“…”") == 2 and item.count(DECISION) == 2, item    # its line and version 3 keep the decision
+
+
+def test_a_question_card_named_without_its_lines_is_blanked_whole():
+    """A `FilePeople` that names a question card but not which of its lines asked (a caller's own) blanks it whole —
+    never less than STEP-13's B2 did."""
+    judged = FileJudgments(file_id=T.NEEL_FILE, cards=(ASKING["this question, answered, now a decision"],))
+    dossier, people = T._neel(YOUR_NO, judgments=judged)
+    from genios_engine.reason.expert.verify import _Run
+    run = _Run(review=_review(T.DENIED, DENIED_MOVE, cites=("card:card_q1",), draft=None),
+               lines=D.lines_by_id(dossier.text), people=dataclasses.replace(people, asked_lines=()))
     item = run.items(["card:card_q1"])
-    assert "“…”" in item and T.DENIED not in item and DECISION not in item and ANSWER_IN not in item, item
-    assert item.count("“…”") == 4, item          # the card's line and its three versions
+    assert item.count("“…”") == 4 and DECISION not in item, item
+
+
+def test_a_card_that_asks_now_has_its_own_line_blanked():
+    item = _item(ASKING["a decision card that became this question"])
+    assert T.DENIED not in item and DECISION in item, item              # the card's line and version 2 asked
+    assert item.count("“…”") == 2, item
 
 
 def test_a_card_whose_question_was_cut_from_view_still_asked_you():

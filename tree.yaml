@@ -9862,9 +9862,11 @@ yc2_w27_s14:
                         was SHOWN. A version carries the mode its words were shown in
                         (`context/file_judgments.PriorVersion.mode`); a card is ours to blank when it is a question
                         card or ANY of its versions asked you (`dossier.asked_you`: `question` or `answered`); and
-                        the check blanks every headline of its item — the card's line and each version line
-                        (`verify._VERSION_HEADLINE`). A card that never asked is read as before (F07, F29). The
-                        dossier's text is byte for byte unchanged (no cassette moves); the board unchanged.
+                        the check blanks every line of its item that ASKED — each version that asked
+                        (`verify._VERSION_HEADLINE`) and the card's own line while it asks (`FilePeople.asked_lines`).
+                        A decision version's words still ground what they say (F07, F29 — amended 16 Oct after the
+                        golden lane: blanking every headline dropped F07's authored fact on Leela). The dossier's
+                        text is byte for byte unchanged (no cassette moves); the board unchanged.
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_question_stays_ours_through_its_versions.py tests/reason/expert/test_a_move_on_your_answer_is_confirmed.py tests/context/test_what_was_judged_before_reads_versions.py"
                       depends_on: [M42.C2.L-interface.V3.U04, M42.C2.L-data.V2.U03, yc2_w27_s13/M36.C2.L-data.V2.U12]

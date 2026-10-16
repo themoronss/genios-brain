@@ -174,7 +174,7 @@ _NEGATION = re.compile(r"\b(?:no|not|nothing|never|none|nobody|neither|nor)\b", 
 _CARD_HEADLINE = re.compile(r"(\ba card )“.*”(, [a-z_]+(?:;|$))", re.M)   # one line of a multi-line item
 #: How the dossier prints each VERSION of a card under its line (`dossier._judged_before`, STEP-14): its number,
 #: what changed, then its headline in quotes — the whole line.
-_VERSION_HEADLINE = re.compile(r"^(\s*version \d+[^“\n]*: )“.*”$", re.M)
+_VERSION_HEADLINE = re.compile(r"^(\s*version (\d+)[^“\n]*: )“.*”$", re.M)
 #: How the dossier prints your answer (`dossier._answers`): its id, then your words.
 _YOUR_WORDS = re.compile(r"^- \[(?P<ref>answer:[^\[\]\s]+)\] “(?P<words>.*)”$")
 #: The prefix of your answer's id (`dossier._answers`).
@@ -841,11 +841,17 @@ class _Run:
         for the claim it asked about. What it shows is that it was asked, and what became of it."""
         if ref not in self.people.question_cards:
             return item
-        # ⛔ EVERY HEADLINE (STEP-14 fix, the crosscheck's finding 1): a living card prints each version's headline
-        # under its line, and the question's words live on there after the card moved on — the card's own line
-        # and each version line are blanked, never only the first.
-        item = _CARD_HEADLINE.sub(lambda m: f"{m.group(1)}“…”{m.group(2)}", item, count=1)   # its one line
-        return _VERSION_HEADLINE.sub(lambda m: f"{m.group(1)}“…”", item)
+        # ⛔ EVERY LINE THAT ASKED (STEP-14 fix, the crosscheck's finding 1): a living card prints each version's
+        # headline under its line, and the question's words live on there after the card moved on — each version that
+        # asked is blanked, and the card's own line while it asks; a decision's words still ground what they say
+        # (golden F07). A card the file's people name as a question card with no lines said (a caller's own
+        # FilePeople) is blanked whole, as before.
+        asked = {r: (now, set(vs)) for r, now, vs in getattr(self.people, "asked_lines", ())}
+        now, versions = asked.get(ref, (True, None))
+        if now:
+            item = _CARD_HEADLINE.sub(lambda m: f"{m.group(1)}“…”{m.group(2)}", item, count=1)   # its one line
+        return _VERSION_HEADLINE.sub(
+            lambda m: f"{m.group(1)}“…”" if versions is None or int(m.group(2)) in versions else m.group(0), item)
 
     def figures(self, ids: Iterable[str]) -> str:
         """The lines `ids` hold NUMBERS on: each id's items (`items`) — but a calculator only its own
