@@ -517,7 +517,7 @@ ideal reader's recorded answers (cassettes recorded at `b47239c9`, `06-DECISIONS
 spend). `scripts/golden_score.py --assert-recorded` holds the two lines below to every later run.
 
 ```
-founder golden set   must-detect  36/50 (12 not expressible)   must-abstain  14/14 (0 not exercised)   forbidden outputs  0
+founder golden set   must-detect  39/53 (12 not expressible)   must-abstain  14/14 (0 not exercised)   forbidden outputs  0
 atlas replays 01–07  passing  12/80   blocked  1/80   not expressible  67
 ```
 
@@ -742,11 +742,28 @@ the contract — a day or a meeting's title the dossier printed — and was disc
 | F64 | new → must-abstain **pass**: a declined introduction stays cleared, the connector's nudge reopens nothing |
 | atlas replays | passing 6 → **12**: replay 02 m00, m01, m02, m03, m05 and m07 on F59–F64 (s14-D5); m06, m08, m09 stay declared, each with what owns it |
 
+**Re-recorded 2026-10-16 by `STEP-16`** (`yc2_w27_s16 · M47.C4.L-integration.V5.U07`; `06` S16-D1–D10), learning from
+you. ONE re-record for the step (`676d853e`): every cassette, the first-connect door's and the re-sync's, for
+`expert-review.v4`, check.v4 and the dossier's new parts — the board did not move. Then STEP-16's own cases, recorded
+alone in the house order (the sweep door, the citations re-measured — 512 over 62 cases, the others byte for byte —
+the first-connect door; no re-sync scenario reads them): a case may now carry your acts between its sweeps, played
+through the real doors (`tests/replays/engine_runner.play_acts`), and say how its card ends and by what (`outcome` left
+`NOT_EXPRESSIBLE_TODAY`). F57's ask for the signed NDA is now a requested document — an ask that opens a loop (s16-F23:
+`contracts/open_loop.ASK_KINDS` had left out what `kinds.yaml` always called one), so the signed copy closes it
+ANSWERED and its card ends `verified` by that mail; F57 still passes, now judged on its proof.
+
+| moved by STEP-16 | from → to |
+|---|---|
+| F57 | pass → **pass, judged on its end**: the card ends `verified` by the signed NDA's mail (`not_expressible.outcome` taken off) |
+| F65 | new → **pass**: you call the investor's card wrong with your words; the next sweep reviews the file again (`founder_corrected`), its review cites your correction and waits — no second card |
+| F66 | new → **pass**: one correction for every investor file; both files reviewed again, both cite it, both wait — their cards cleared |
+| F67 | new → **pass**: a bare wrong on one programme's card brings back that file only and writes no correction; the other programme keeps its card |
+
 The table below is the board's state now.
 
 | | |
 |---|---|
-| must-detect that pass · 36 | F03, F04, F10, F13, F26, F28, F42, F44, F46 (as before STEP-12), F09, F11, F16, F17, F27, F29, F47, F48, F49, F51, F57 (STEP-12), F01, F52 (STEP-13 — the question card), F02, F05, F06, F07, F12, F19, F24, F25, F50 (STEP-14 — the living card), F59, F60, F61, F62, F63 (STEP-14 — replay 02) |
+| must-detect that pass · 39 | F03, F04, F10, F13, F26, F28, F42, F44, F46 (as before STEP-12), F09, F11, F16, F17, F27, F29, F47, F48, F49, F51, F57 (STEP-12; judged on its `verified` end since STEP-16), F01, F52 (STEP-13 — the question card), F02, F05, F06, F07, F12, F19, F24, F25, F50 (STEP-14 — the living card), F59, F60, F61, F62, F63 (STEP-14 — replay 02), F65, F66, F67 (STEP-16 — your corrections) |
 | must-detect lost at the gate · 1 | F56 (a vendor's renewal notice — the junk filter's prompt drops plan notices; no vendor kind) |
 | must-detect lost before memory · 0 | — (ten before STEP-05) |
 | must-detect lost in reasoning · 0 | — (eight before STEP-14: F176's second cards, and F19) |
