@@ -47,7 +47,8 @@ SITE_SITUATION = "R-6"
 #: ⛔ R-7 · the expert (STEP-12). One strong judgment of a FILE — the whole piece of work — each time
 #: its fingerprint moves, never one per situation per sweep: the dossier in, an `ExpertReview`
 #: (`contracts/expert_review`) out, validated against what the dossier holds. T2, and only T2:
-#: `06` D7 (answered 10 Oct) is Sonnet-class only — no Opus tier exists, and none is added.
+#: `06` D7 (answered 10 Oct) is Sonnet-class only: the SITE is T2. STEP-13b's ladder (`EXPERT_LADDER`) climbs to it
+#: from T1, and may reach an Opus-class third rung (`TIER_T3`, `06` D74) only where a tenant allows it — off for all.
 SITE_EXPERT = "R-7"
 #: R-8 · the morning brief's writer (STEP-15). The day's checked material in, one line per item
 #: out — written once a day, never per event and never per situation. Haiku-class: the same
@@ -68,6 +69,10 @@ R_SITES = (SITE_INTERPRET, SITE_NARRATE, SITE_ALTERNATIVES, SITE_EFFECT, SITE_CO
 #: because a second tier vocabulary is a second place a price can be wrong.
 TIER_T1 = "T1"
 TIER_T2 = "T2"
+#: ⛔ STEP-13b · the Opus-class tier (`06` D74, s13b-D1): the THIRD RUNG of the expert's ladder only — no site's
+#: tier is T3 — built SWITCHED OFF for every tenant: `expert_ladder` refuses it unless the tenant allows it,
+#: and switching it on waits for the lead's Opus pass on the residual cases. `llm_sites.tier_model` names it.
+TIER_T3 = "T3"
 SITE_TIERS = {
     SITE_INTERPRET: TIER_T2,
     SITE_NARRATE: TIER_T2,
@@ -79,6 +84,31 @@ SITE_TIERS = {
     SITE_BRIEF: TIER_T1,
     SITE_BRIEF_ESCALATE: TIER_T2,
 }
+
+#: ⛔ THE EXPERT'S RUNGS (`yc2_w27_s13b` M38.C1.L-contract.V0.U02; `speedrun008/YC-II W27/` STEP-13b §8.4 item 5): a
+#: file's review is asked on the cheapest rung first and climbs only when the check shows a writer's own fault
+#: (`contracts/model_ladder`). The ladder is CONFIGURATION — its order and length per tenant — and the prompt names
+#: no model. The default is Haiku-class then Sonnet-class; a tenant may start at Sonnet (`("T2",)`, s13b-D2).
+EXPERT_LADDER = (TIER_T1, TIER_T2)
+_RUNG_ORDER = (TIER_T1, TIER_T2, TIER_T3)
+
+
+def expert_ladder(rungs=None, *, allow_opus: bool = False) -> tuple[str, ...]:
+    """The rungs a tenant's expert climbs, cheapest first. `None` is the default (`EXPERT_LADDER`). A ladder
+    climbs one way — each rung once, in `T1 < T2 < T3` order — and T3 (Opus-class) is on it only when the tenant
+    allows it (s13b-D1, off for every tenant): naming it without the allowance is refused loudly, never dropped
+    silently, so a configuration that expects an Opus rung does not run without one."""
+    ladder = tuple(EXPERT_LADDER if rungs is None else rungs)
+    if not ladder:
+        raise ValueError("a ladder has at least one rung")
+    if any(r not in _RUNG_ORDER for r in ladder):
+        raise ValueError(f"a rung is one of {_RUNG_ORDER}, not {ladder}")
+    if len(set(ladder)) != len(ladder) or list(ladder) != sorted(ladder, key=_RUNG_ORDER.index):
+        raise ValueError(f"a ladder climbs one way, each rung once, cheapest first, not {ladder}")
+    if TIER_T3 in ladder and not allow_opus:
+        raise ValueError("an Opus rung is off for every tenant until the tenant allows it (s13b-D1)")
+    return ladder
+
 
 #: The output ceiling per site, in tokens. A cap rather than a hope: doc 11 sizes R-2 at ~450
 #: output tokens, and a model that decides to write an essay is a cost incident and a V-7 failure
@@ -238,6 +268,6 @@ __all__ = ["FALLBACK_OUTCOMES", "OUTCOMES", "OUTCOME_CACHED", "OUTCOME_FAILED_GE
            "R_SITES", "SITE_ALTERNATIVES", "SITE_BRIEF", "SITE_BRIEF_ESCALATE", "SITE_CONSULT",
            "SITE_EFFECT", "SITE_EXPERT", "SITE_INTERPRET", "SITE_SITUATION",
            "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_THINKING", "SITE_TIERS", "SITE_TIMEOUT_S",
-           "TIER_T1", "TIER_T2",
+           "EXPERT_LADDER", "TIER_T1", "TIER_T2", "TIER_T3", "expert_ladder",
            "max_output_tokens", "require_outcome", "require_site", "thinking_mode", "tier_for",
            "timeout_s"]

@@ -293,6 +293,9 @@ def tier_model(tier: str) -> str:
     what "the stronger model" is instead of drifting apart in two files."""
     if tier == "T2":
         return "claude-sonnet-5"
+    if tier == "T3":
+        # STEP-13b (s13b-D1): the Opus-class third rung of the expert's ladder — never a site's tier.
+        return "claude-opus-5-5"
     try:
         from genios_engine.platform.config import get_settings
         return str(get_settings().anthropic_model or "claude-haiku-4-5")
