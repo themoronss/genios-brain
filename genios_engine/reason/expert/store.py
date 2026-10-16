@@ -67,10 +67,10 @@ RETRYABLE: tuple[str, ...] = (OVER_BUDGET, FAILED)
 _WRITE = text(
     "insert into expert_reviews (org_id, file_id, fingerprint, model, prompt_version, dossier_digest, "
     "       status, reason, review, input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, "
-    "       triggers, checked, checked_at, dossier, card_lines) "
+    "       triggers, checked, checked_at, dossier, card_lines, rung) "
     "values (:o, :f, :fp, :model, :pv, :digest, :status, :reason, cast(:review as jsonb), :tin, :tout, "
     "        :cost, :at, cast(:inputs as jsonb), cast(:triggers as jsonb), cast(:checked as jsonb), "
-    "        :checked_at, cast(:dossier as jsonb), cast(:card_lines as jsonb)) "
+    "        :checked_at, cast(:dossier as jsonb), cast(:card_lines as jsonb), :rung) "
     "on conflict (org_id, file_id, fingerprint) do update set "
     "       model = excluded.model, prompt_version = excluded.prompt_version, "
     "       dossier_digest = excluded.dossier_digest, status = excluded.status, "
@@ -78,20 +78,21 @@ _WRITE = text(
     "       input_tokens = excluded.input_tokens, output_tokens = excluded.output_tokens, "
     "       cost_micro_usd = excluded.cost_micro_usd, reviewed_at = excluded.reviewed_at, "
     "       inputs = excluded.inputs, triggers = excluded.triggers, checked = excluded.checked, "
-    "       checked_at = excluded.checked_at, dossier = excluded.dossier, card_lines = excluded.card_lines "
+    "       checked_at = excluded.checked_at, dossier = excluded.dossier, card_lines = excluded.card_lines, "
+    "       rung = excluded.rung "
     " where expert_reviews.status in ('over_budget', 'failed')")
 
 _READ = text(
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
     "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers, checked, "
-    "       checked_at, dossier, card_lines "
+    "       checked_at, dossier, card_lines, rung "
     "  from expert_reviews "
     " where org_id = :o and file_id = :f and fingerprint = :fp")
 
 _LATEST_VALID = text(
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
     "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers, checked, "
-    "       checked_at, dossier, card_lines "
+    "       checked_at, dossier, card_lines, rung "
     "  from expert_reviews "
     " where org_id = :o and file_id = :f and status = 'valid' "
     " order by reviewed_at desc, fingerprint desc "
@@ -101,7 +102,7 @@ _LATEST_VALID = text(
 _LATEST_STANDING = text(
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
     "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers, checked, "
-    "       checked_at, dossier, card_lines "
+    "       checked_at, dossier, card_lines, rung "
     "  from expert_reviews "
     " where org_id = :o and file_id = :f and status in ('valid', 'refused', 'truncated') "
     " order by reviewed_at desc, fingerprint desc "
@@ -114,7 +115,7 @@ _LATEST_STANDING = text(
 _CURRENT = text(
     "select distinct on (r.file_id) r.file_id, r.fingerprint, r.model, r.prompt_version, r.dossier_digest, "
     "       r.status, r.reason, r.review, r.input_tokens, r.output_tokens, r.cost_micro_usd, r.reviewed_at, "
-    "       r.inputs, r.triggers, r.checked, r.checked_at, r.dossier, r.card_lines, g.outcome as gate_outcome "
+    "       r.inputs, r.triggers, r.checked, r.checked_at, r.dossier, r.card_lines, r.rung, g.outcome as gate_outcome "
     "  from expert_reviews r "
     "  left join reasoning_fingerprints g on g.org_id = r.org_id "
     "       and g.subject_key = r.file_id || :decision and g.decided_at <= :now "
@@ -150,6 +151,8 @@ class StoredReview:
     #: The lines code wrote for the card from that dossier (0221, `reason/expert/card_lines`) — None before 0221,
     #: and on a row with no review: the card then shows the review's own words without them.
     card_lines: CardLines | None = None
+    #: The rung of the model ladder whose review this is (0250, STEP-13b) — one on a row written before it.
+    rung: int = 1
 
 
 #: A standing valid row's check, written onto it alone — a check of a newer version, or the first.
@@ -196,13 +199,15 @@ def write_review(conn, *, org_id: str, file_id: str, fingerprint: str, model: st
                  review: ExpertReview | Mapping[str, Any] | None, input_tokens: int, output_tokens: int,
                  cost_micro_usd: int, at: datetime, inputs: Mapping[str, Any],
                  triggers: Iterable[Any], checked: CheckedReview | None = None,
-                 dossier: Mapping[str, Any] | None = None, card_lines: CardLines | None = None) -> bool:
+                 dossier: Mapping[str, Any] | None = None, card_lines: CardLines | None = None,
+                 rung: int | None = None) -> bool:
     """Store the expert's answer for this fingerprint, with what the file was (`inputs`) and what
     triggered the review. True when it was written; False when a standing row already answers it
     (nothing changes). ValueError for a status nobody named, a non-valid row without its reason, a
     valid row without its review, inputs that are not a mapping, or a trigger without its words. A
     check rides only on a valid row: the review it checked is the row's own, and it is dated `at`.
-    `dossier` — the dossier it was written against (0202): its text and the ids it printed. `card_lines` — the
+    `rung` (STEP-13b, 0250) — the rung of the model ladder whose review stands; none (a pass without a ladder) is
+    stored null, which reads as rung one. `dossier` — the dossier it was written against (0202): its text and the ids it printed. `card_lines` — the
     lines code wrote for the card from it (0221) — ride, like a check, only on a valid row."""
     if status not in STATUSES:
         raise ValueError(f"unknown status {status!r}: one of {', '.join(STATUSES)}")
@@ -216,6 +221,8 @@ def write_review(conn, *, org_id: str, file_id: str, fingerprint: str, model: st
         raise ValueError(f"a {status} row has no review to check")
     if card_lines is not None and status != VALID:
         raise ValueError(f"a {status} row has no review to write card lines for")
+    if rung is not None and (isinstance(rung, bool) or not isinstance(rung, int) or rung < 1):
+        raise ValueError(f"a rung is one or more, not {rung!r}")
     written = conn.execute(_WRITE, {
         "o": org_id, "f": file_id, "fp": fingerprint, "model": model, "pv": prompt_version,
         "digest": dossier_digest, "status": status, "reason": reason,
@@ -224,7 +231,8 @@ def write_review(conn, *, org_id: str, file_id: str, fingerprint: str, model: st
         "inputs": json.dumps(dict(inputs), sort_keys=True), "triggers": json.dumps(said),
         "checked": None if checked is None else json.dumps(checked.as_mapping(), sort_keys=True),
         "checked_at": None if checked is None else at, "dossier": _dossier(dossier),
-        "card_lines": None if card_lines is None else json.dumps(card_lines.as_mapping(), sort_keys=True)})
+        "card_lines": None if card_lines is None else json.dumps(card_lines.as_mapping(), sort_keys=True),
+        "rung": rung})
     return written.rowcount == 1
 
 
@@ -234,6 +242,76 @@ def write_check(conn, *, org_id: str, file_id: str, fingerprint: str, checked: C
     a valid row took it; False when there is none (a refusal has no review to check)."""
     return conn.execute(_CHECK, {"o": org_id, "f": file_id, "fp": fingerprint, "at": at,
                                  "checked": json.dumps(checked.as_mapping(), sort_keys=True)}).rowcount == 1
+
+
+#: STEP-13b · every rung's consult of a file on a fingerprint, numbered in the order asked (0250). The number is taken
+#: in the statement itself: one pass reviews a file at a time, and the primary key refuses a collision.
+_ATTEMPT_WRITE = text(
+    "insert into expert_review_attempts (org_id, file_id, fingerprint, attempt_no, rung, model, consult, status, "
+    "       fate, climbed_because, input_tokens, output_tokens, cost_micro_usd, attempted_at) "
+    "select :o, :f, :fp, coalesce(max(attempt_no), 0) + 1, :rung, :model, :consult, :status, :fate, :climbed, "
+    "       :tin, :tout, :cost, :at "
+    "  from expert_review_attempts where org_id = :o and file_id = :f and fingerprint = :fp "
+    "returning attempt_no")
+
+_ATTEMPTS_READ = text(
+    "select attempt_no, rung, model, consult, status, fate, climbed_because, input_tokens, output_tokens, "
+    "       cost_micro_usd, attempted_at "
+    "  from expert_review_attempts "
+    " where org_id = :o and file_id = :f and fingerprint = :fp "
+    " order by attempt_no")
+
+CONSULTS: tuple[str, ...] = ("first", "repair")
+
+
+@dataclass(frozen=True)
+class Attempt:
+    """One consult of a file on a fingerprint: the rung, the model, the first ask or the repair, how it ended, the
+    check's fate, the closed reason it climbed (None: it did not), and what it cost."""
+    attempt_no: int
+    rung: int
+    model: str
+    consult: str
+    status: str
+    fate: str | None
+    climbed_because: str | None
+    input_tokens: int
+    output_tokens: int
+    cost_micro_usd: int
+    attempted_at: datetime
+
+
+def write_attempt(conn, *, org_id: str, file_id: str, fingerprint: str, rung: int, model: str, consult: str,
+                  status: str, fate: str | None, climbed_because: str | None, input_tokens: int,
+                  output_tokens: int, cost_micro_usd: int, at: datetime) -> int:
+    """Keep one consult; returns its number (1, 2, 3 … in the order asked on this fingerprint). ValueError, before
+    anything is sent, for a vocabulary the table does not hold or a count below zero."""
+    from genios_engine.contracts.claim_check import FATES
+    from genios_engine.contracts.model_ladder import CLIMB_REASONS
+    if isinstance(rung, bool) or not isinstance(rung, int) or rung < 1:
+        raise ValueError(f"a rung is one or more, not {rung!r}")
+    if not str(model or "").strip():
+        raise ValueError("an attempt names its model")
+    if consult not in CONSULTS:
+        raise ValueError(f"a consult is one of {CONSULTS}, not {consult!r}")
+    if status not in STATUSES:
+        raise ValueError(f"unknown status {status!r}: one of {', '.join(STATUSES)}")
+    if fate is not None and fate not in FATES:
+        raise ValueError(f"a fate is one of {FATES}, not {fate!r}")
+    if climbed_because is not None and climbed_because not in CLIMB_REASONS:
+        raise ValueError(f"a climb is for one of {CLIMB_REASONS}, not {climbed_because!r}")
+    if min(input_tokens, output_tokens, cost_micro_usd) < 0:
+        raise ValueError("an attempt's tokens and cost are not below zero")
+    return int(conn.execute(_ATTEMPT_WRITE, {
+        "o": org_id, "f": file_id, "fp": fingerprint, "rung": rung, "model": model, "consult": consult,
+        "status": status, "fate": fate, "climbed": climbed_because, "tin": input_tokens, "tout": output_tokens,
+        "cost": cost_micro_usd, "at": at}).scalar_one())
+
+
+def attempts_for(conn, org_id: str, file_id: str, fingerprint: str) -> tuple[Attempt, ...]:
+    """Every consult of the file on this fingerprint, in the order asked — the review that stands is `read_review`'s."""
+    return tuple(Attempt(**dict(row._mapping))
+                 for row in conn.execute(_ATTEMPTS_READ, {"o": org_id, "f": file_id, "fp": fingerprint}))
 
 
 def _stored(row) -> StoredReview:
@@ -248,7 +326,8 @@ def _stored(row) -> StoredReview:
         triggers=None if triggers is None else tuple((t["kind"], t["says"]) for t in triggers),
         checked=None if checked is None else CheckedReview.from_mapping(checked),
         checked_at=m["checked_at"], dossier=m["dossier"],
-        card_lines=None if m["card_lines"] is None else CardLines.from_mapping(m["card_lines"]))
+        card_lines=None if m["card_lines"] is None else CardLines.from_mapping(m["card_lines"]),
+        rung=m["rung"] or 1)
 
 
 def read_review(conn, org_id: str, file_id: str, fingerprint: str) -> StoredReview | None:
@@ -312,6 +391,6 @@ def current_judgments(conn, org_id: str, *, now: datetime) -> dict[str, CurrentJ
     return out
 
 
-__all__ = ["CurrentJudgment", "FAILED", "LIVE_LANE", "OVER_BUDGET", "REFUSED", "RETRYABLE", "SHADOW_LANE", "STANDING",
+__all__ = ["Attempt", "CONSULTS", "CurrentJudgment", "FAILED", "LIVE_LANE", "OVER_BUDGET", "REFUSED", "RETRYABLE", "SHADOW_LANE", "STANDING",
            "STATUSES", "TRUNCATED", "VALID", "StoredReview", "current_judgments", "latest_standing", "latest_valid",
-           "read_review", "reviewed", "write_check", "write_review"]
+           "read_review", "reviewed", "write_attempt", "attempts_for", "write_check", "write_review"]

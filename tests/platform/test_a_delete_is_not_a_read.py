@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_254, (
+    assert r["statements"] == 3_256, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -675,6 +675,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MERGED 16 Oct: STEP-13b's line (3,127, with the two moves above) onto the integration line's 3,250,
     # re-measured on the merge (`table_coverage.resolution()`): 3,254 = 3,250 + STEP-13b's 4 (the two SELECTs of
     # `context/company_record` and the two of `engine_reader.learned_for`); nothing else moved.
+    # ⛔ MOVED 3,254 → 3,256 by yc2_w27_s13b/M38.C2.L-data.V1.U01 (the attempts kept): `reason/expert/store` — the INSERT of one
+    # consult of a file on a fingerprint (`write_attempt`, numbered in the statement) and the SELECT that reads them
+    # back (`attempts_for`). Two literals, each at its own `text()`; both plan.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
