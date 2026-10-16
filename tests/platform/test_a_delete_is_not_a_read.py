@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_189, (
+    assert r["statements"] == 3_191, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -560,6 +560,9 @@ def test_the_statement_count_did_NOT_move():
     # version leaves the card where it was): `check_what_the_card_contract_refused` reads which file cards wait on their
     # last words behind a refused version — one literal; `platform/card_refusals._INSERT` is still one statement (an
     # insert-select, kept once per writer, card and rule). The run-time ratchet did not move (272).
+    # ⛔ MOVED 3,189 → 3,191 by yc2_w27_s14/M42.C1.L-data.V1.U04 (the STEP-14 crosscheck's finding 6, a claimed card is
+    # held only by a live claim): `check_no_card_is_claimed_by_nobody` counts the claimed cards and reads those with no
+    # live claim — two literals; `card_lifecycle._HELD` lost its state arm (no statement added). Ratchet 272.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

@@ -132,6 +132,11 @@ def engine():
                        "('cev_dismissed', 'c_dismissed', :o, 'card.dismissed', 'extension', 'seat_1')"), {"o": ORG})
         c.execute(text("insert into agent_claims (signal_id, card_id, org_id, agent_id, expires_at) values "
                        "('sig_g', 'c_agent', :o, 'agent_1', :exp)"), {"o": ORG, "exp": AT + timedelta(minutes=15)})
+        # ⛔ RESTATED by `yc2_w27_s14` M42.C1.L-data.V1.U04 (the STEP-14 crosscheck, finding 6): `c_claimed` was held by
+        # its STATE alone, the defect — a card is held by a live claim. Its claim, as a claimed card has one; a card
+        # left `claimed` by nobody is `tests/platform/test_a_claimed_card_is_held_only_by_a_live_claim.py`'s.
+        c.execute(text("insert into agent_claims (signal_id, card_id, org_id, agent_id, expires_at) values "
+                       "('sig_f', 'c_claimed', :o, 'agent_1', :exp)"), {"o": ORG, "exp": AT + timedelta(minutes=15)})
     yield eng
     _reset(eng)
 

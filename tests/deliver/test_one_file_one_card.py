@@ -116,9 +116,11 @@ def test_a_question_and_the_decision_after_it_are_versions_of_one_card(world, ca
 
 
 def test_a_card_an_agent_holds_makes_the_files_next_version_wait(world, cards):
+    from genios_engine.deliver import agent_api
     store, org, registry, anchor, events, first = _first(world, cards)
-    with store.engine.begin() as c:
-        c.execute(text("update cards set state = 'claimed' where card_id = :c"), {"c": first.card_id})
+    # ⛔ RESTATED by `yc2_w27_s14` M42.C1.L-data.V1.U04 (the STEP-14 crosscheck, finding 6): this set the card's STATE
+    # to `claimed` with no claim — the shape a late result leaves, held forever. An agent holds a card by its claim.
+    assert agent_api.claim(store, org, first.signal_id, "agent_1", eval_time=NOW + timedelta(minutes=1))["ok"]
     _write(store, org, anchor, SECOND, events, next_move=OTHER_MOVE)
     later = NOW + timedelta(hours=6)
     _compile(store, org, registry, covered={anchor: SECOND}, at=later)

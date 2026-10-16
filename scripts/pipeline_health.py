@@ -1143,6 +1143,29 @@ def check_every_file_card_passes_one_door(conn, org: str, *, now=None) -> Check:
         detail=[f"{card} passes " + (" and ".join(passed) if passed else "no door") for card, passed in bad[:20]])
 
 
+def check_no_card_is_claimed_by_nobody(conn, org: str) -> Check:
+    """⛔ STEP-14 (the crosscheck's finding 6): an agent's late result closes its claim and leaves the card `claimed` —
+    it used to be held forever. A card is held only by a live claim (`platform/card_lifecycle._HELD`); one `claimed`
+    with none is a card the founder no longer sees until the file's next version frees it."""
+    name = "no card is claimed by nobody"
+    claimed = _scalar(conn, "select count(*) from cards where org_id = :o and state = 'claimed'", o=org)
+    if not claimed:
+        return Check(name=name, ok=True, no_data=True, measured="no claimed card",
+                     expected="skipped — nothing to judge", fix="")
+    rows = conn.execute(sql(
+        "select k.card_id from cards k where k.org_id = :o and k.state = 'claimed' "
+        "   and not exists (select 1 from agent_claims ac where ac.org_id = k.org_id and ac.card_id = k.card_id "
+        "                   and ac.released_at is null and ac.result is null) order by k.card_id"),
+        {"o": org}).fetchall()
+    return Check(
+        name=name, ok=not rows, measured=f"{len(rows)} of {claimed} claimed card(s) have no live claim",
+        expected="0 — a claimed card is an agent's open claim; its result or its expiry frees the card",
+        fix="deliver/agent_api.result (V-08, a late result) and CardStore.sweep_lifecycle (claim expiry) close the "
+            "claim; the file's next version re-surfaces the card (platform/card_lifecycle.version_card) — one left "
+            "claimed is a path that closed a claim and moved no card",
+        detail=[r.card_id for r in rows[:20]])
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -1167,6 +1190,7 @@ CHECKS = (
     check_what_the_card_contract_refused,
     check_every_expert_card_reaches_the_app,
     check_every_file_card_passes_one_door,
+    check_no_card_is_claimed_by_nobody,
 )
 
 

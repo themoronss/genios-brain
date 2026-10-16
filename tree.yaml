@@ -9799,6 +9799,19 @@ yc2_w27_s14:
                       artifact: "genios_engine/platform/card_lifecycle.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/platform/test_one_way_to_version_a_card.py tests/platform/test_card_lifecycle.py tests/platform/test_one_way_to_expire_a_card.py"
                       depends_on: [M42.C1.L-contract.V0.U01, M42.C1.L-contract.V0.U02]
+                    - id: M42.C1.L-data.V1.U04
+                      what: >
+                        A card an agent claimed is held only while the claim is live (added 16 Oct by the STEP-14
+                        crosscheck, finding 6): a late result (V-08) closes the claim and leaves the card `claimed`,
+                        and `_HELD` read the state — held forever: never versioned, lapsed, freed or closed, every
+                        later decision of its file `version_waits`, 0220's index blocking a second card. `_HELD` is
+                        an open claim with no result; a `claimed` card with none is versioned like any card and
+                        comes back `surfaced`; the end of the pass may close one whose signal closed;
+                        `check_no_card_is_claimed_by_nobody` counts them. Two tests that made "held" by setting the
+                        state are restated with a real claim. Latent: no live agent in production.
+                      artifact: "genios_engine/platform/card_lifecycle.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> .venv/bin/python -m pytest -q tests/platform/test_a_claimed_card_is_held_only_by_a_live_claim.py tests/platform/test_one_way_to_version_a_card.py tests/deliver/test_one_file_one_card.py tests/platform/test_a_delete_is_not_a_read.py"
+                      depends_on: [M42.C1.L-data.V1.U03, M42.C3.L-integration.V2.U03]
         - id: M42.C2
           name: Reason hands the file on
           layers:

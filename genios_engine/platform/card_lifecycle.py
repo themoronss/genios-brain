@@ -142,10 +142,13 @@ _UNDECIDED = (
     "k.state <> all(:decided) and k.resolved_at is null "
     "and not exists (select 1 from card_events e where e.org_id = k.org_id and e.card_id = k.card_id "
     "                and e.kind = any(:deciding))")
-#: An agent holds it: claimed, or an agent's claim on it neither released nor finished.
+#: An agent holds it: an agent's claim on it neither released nor finished.
+#: ⛔ A LIVE CLAIM, NEVER THE STATE (STEP-14 fix, the crosscheck's finding 6, `yc2_w27_s14` M42.C1.L-data.V1.U04): a late
+#: result closes the claim and leaves the card `claimed` (`deliver/agent_api`, V-08) — read by its state, it was held
+#: forever: never versioned, lapsed, freed nor closed, and every later decision of its file waited.
 _HELD = (
-    "(k.state = 'claimed' or exists (select 1 from agent_claims ac where ac.org_id = k.org_id "
-    " and ac.card_id = k.card_id and ac.released_at is null and ac.result is null))")
+    "exists (select 1 from agent_claims ac where ac.org_id = k.org_id "
+    " and ac.card_id = k.card_id and ac.released_at is null and ac.result is null)")
 
 _FILE_CARD = text(
     "select k.card_id, k.signal_id, k.version, k.state, " + _HELD + " as held from cards k "
@@ -155,7 +158,8 @@ _FILE_CARD = text(
 _VERSION = text(
     "with before as (select card_id, signal_id, state from cards where org_id = :o and card_id = :card) "
     "update cards k set signal_id = :signal, version = :version, expires_at = :expires, "
-    "       state = case k.state when 'expired' then 'queued' else k.state end "
+    # A card `claimed` by nobody (no live claim: `_HELD` above) comes back in front of the founder.
+    "       state = case k.state when 'expired' then 'queued' when 'claimed' then 'surfaced' else k.state end "
     # `before` is this tenant's card or nothing, and `card_id` is the key: the join names one row of this tenant.
     "  from before where k.card_id = before.card_id and k.file_id is not null "
     "   and k.version = :version - 1 and not " + _HELD + " and " + _UNDECIDED +

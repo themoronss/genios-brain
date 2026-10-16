@@ -428,7 +428,9 @@ def _version_file_card(card_store, card: dict, copy: dict, token: str, out: dict
 #: an expert or question card from before 0220 that names no file.
 _ORPHANED_FILE_CARDS = (
     "select k.card_id, k.file_id from cards k join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
-    " where k.org_id = :o and k.state = any(:open) and k.state <> 'claimed' and s.status <> 'open' "
+    # ⛔ `claimed` included (STEP-14 fix, the crosscheck's finding 6): a claim is held by a LIVE claim (below), never
+    # by the state a late result left behind.
+    " where k.org_id = :o and k.state = any(:open) and s.status <> 'open' "
     "   and (k.file_id is not null or k.capability_key = :expert or k.builder_version = :question_builder) "
     "   and not exists (select 1 from agent_claims ac where ac.org_id = k.org_id and ac.card_id = k.card_id "
     "                   and ac.released_at is null and ac.result is null)")
