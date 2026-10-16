@@ -63,6 +63,8 @@ Enterprise Centre (archived at `llm_junk` until now) and F22's from the Universi
 Each programme is now one file of kind `program`; neither case moves on the board — both are brief-only,
 not expressible (D12d), and no card is built for either. The gate's promise is unchanged: nothing
 dropped, every other archive the same.
+RESTATED BY STEP-16 (`yc2_w27_s16` M47.C4.L-data.V1.U04–U06). Three cases are new (`ADDED_AFTER`: F65–F67, your
+corrections); the gate keeps and reads every one of their mails. Nothing else moved.
 """
 from __future__ import annotations
 
@@ -137,7 +139,9 @@ ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-
                                "F58": "yc2_w27_align",
                                # STEP-14 (`yc2_w27_s14` M43.C6, s14-D5): the Atlas's replay 02 introductions.
                                "F59": "STEP-14", "F60": "STEP-14", "F61": "STEP-14", "F62": "STEP-14",
-                               "F63": "STEP-14", "F64": "STEP-14"}
+                               "F63": "STEP-14", "F64": "STEP-14",
+                               # STEP-16 (`yc2_w27_s16` M47.C4.L-data.V1.U04–U06): your corrections, new cases.
+                               "F65": "STEP-16"}
 
 #: A case added after STEP-03 whose mail today's gate ARCHIVES — held to that code, as the dropped mail
 #: of the cases before it is. F56: a vendor's renewal notice, which the junk filter's own prompt drops

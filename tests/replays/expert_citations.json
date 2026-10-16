@@ -3540,5 +3540,37 @@
     0
    ]
   ]
+ },
+ "F65": {
+  "corr:fc_7639bcbe2099667febc2db8a": [
+   [
+    "- [#] “Leah asked on our call for news only on real milestones — a signed pilot or the round opening. Don't push me to write before one.”",
+    0
+   ]
+  ],
+  "evt_01ac642ee942ecde3a9c03d1": [
+   [
+    "- [#] 2026-09-21 05:00 UTC · they wrote · Leah Varma",
+    0
+   ]
+  ],
+  "num:your_reply_time:leah@lumenvc.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "pb:founder_office.heu.investor_relations.silence_reads_by_stage": [
+   [
+    "- [#] Investor silence means different things at different stages. Before a first meeting it is the default; after a first call that named no next step it is usually a soft no; more than a week after a partners' meeting it is usually a no; in diligence it is the work; after a term sheet it is paperwork, until the timetable slips. Read silence by the stage, never by its length alone. — why: Each stage has a different decider and a different clock. A firm in diligence is calling references and writing its memo (Gompers et al. measured ten reference calls on average); a partnership decides in a weekly meeting, and its rejection \"will rarely come in the form of an actual 'no'\" (Dixon); and investors at every stage prefer an open option to a closed door — \"Some of the worse ones never actually do say no; they just stop replying to your emails\" (Graham). The same twelve days of quiet is therefore nothing in diligence and an answer after a partners' meeting. (not yet reviewed)",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.investor_relations.run_an_investor_conversation": [
+   [
+    "Run an investor conversation to a decision [#], version pb-d3f940d86e88 — playbook not yet reviewed",
+    0
+   ]
+  ]
  }
 }
