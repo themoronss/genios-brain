@@ -111,8 +111,11 @@ def _what_the_check_reads(case_id: str, key: str, review) -> None:
     founder = CASES[case_id].founder
     names = [n for n in (founder.name, (founder.name or "").split()[0], founder.company) if n]
     card = [move.what if move is not None else review.frames.primary, review.frames.primary,
-            review.done_when]
-    for text in card:
+            review.done_when,
+            # STEP-14 (`yc2_w27_s14` M43.C2.L-data.V2.U05): the gold card shows the alternative and when to wait or
+            # stop (0221) — card words now, held by the check (check.v3), so they speak to you too.
+            review.alternative, review.wait_or_stop]
+    for text in (t for t in card if t):
         assert not _THE_FOUNDER.search(text), f"{where}: a card calls you the founder — {text!r}"
         for name in names:
             assert not re.search(rf"\b{re.escape(name)}\b", text), \
@@ -156,6 +159,9 @@ def test_a_number_its_first_dossier_does_not_hold_is_refused(monkeypatch):
     (lambda a: a.update(done_when="The founder has sent the deck."), "calls you the founder"),
     (lambda a: a["frames"].update(primary="Arjun owes Kunal the deck."), "names 'Arjun'"),
     (lambda a: a["next_move"].update(what="Send the Nimbus Labs deck to Kunal"), "names 'Nimbus Labs'"),
+    # STEP-14 (M43.C2.L-data.V2.U05): the alternative and the stop rule are card words too.
+    (lambda a: a.update(alternative="If the founder prefers, send it after the call."), "calls you the founder"),
+    (lambda a: a.update(wait_or_stop="Wait until Arjun hears back, then stop."), "names 'Arjun'"),
 ])
 def test_what_the_check_reads_is_held_on_every_answer(monkeypatch, spoil, says):
     """⛔ Its teeth (M35.C4.L-data.V0.U01): F05's general answer passes; each spoilt copy of it fails, for

@@ -84,7 +84,9 @@ def recall_verdict(counts: Mapping[str, Any]) -> RecallVerdict:
     would have reported a loss on every pass that improved an existing card, and the "fix" for a
     false alarm is always to loosen the check.
     """
-    built = int(counts.get("built", 0) or 0) + int(counts.get("refreshed", 0) or 0)
+    # STEP-14: a VERSION of a file's card is a card this pass wrote — tallied where it is written, as a build is.
+    built = int(counts.get("built", 0) or 0) + int(counts.get("refreshed", 0) or 0) \
+        + int(counts.get("versioned", 0) or 0)
     accounted = sum(int(counts.get(k, 0) or 0) for k in TALLY_KEYS)
     undeclared = tuple(sorted(k for k in TALLY_KEYS if k not in counts))
     return RecallVerdict(cards_built=built, cards_accounted=accounted, undeclared=undeclared)

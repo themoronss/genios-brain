@@ -135,6 +135,22 @@ Shapes your documents ask for rather than items the benchmark found: the Possibi
 | 57 | An ask you answered with what was asked for, then never raised again · 4 Aug → 5 Oct | `yes` | | `claude` |
 | 58 | Your company domain, which is also GeniOS's own · 4 Aug → 5 Oct | `no` | | `claude` |
 
+## Your connector's introductions, one file each — 6 items (`STEP-14`, s14-D5, added 2026-10-13)
+
+The Atlas's golden replay 02 asks ten things of a connector's introductions (`06` D54); six of them are
+shapes your Boardy mail has, or will have (s14-D5). Rows 3–9 ask whether each real introduction reaches
+you; these ask whether each introduction stays its OWN file — three people, three files, three cards —
+whatever shape the introductions come in. Boardy stays the connector, never the person you write to (row 37).
+
+| # | Item — sender · date | Claude's answer | Your answer | Labelled by |
+|---|---|---|---|---|
+| 59 | Boardy → Maria, Sal and Nitesh, three introductions in three threads · 6 Aug | `yes` | | `claude` |
+| 60 | Your connector, three introductions forwarded in one thread · 4 Aug → 5 Oct | `yes` | | `claude` |
+| 61 | Boardy → Sal, who replied, beside Silas and Ori, who stayed silent · 4–6 Aug | `yes` | | `claude` |
+| 62 | Boardy → Lalitha, a call booked, beside an introduction with a time only proposed · 12–13 Aug | `yes` | | `claude` |
+| 63 | Your connector, an introduction that leaves the contact's address out · 4 Aug → 5 Oct | `yes` | | `claude` |
+| 64 | Your connector, an introduction the contact declined · 4 Aug → 5 Oct | `no` | | `claude` |
+
 ---
 
 ## Why I answered as I did
@@ -163,6 +179,13 @@ Shapes your documents ask for rather than items the benchmark found: the Possibi
 - **56–58**: a renewal at a higher price is a decision with a date and money (56 — a plain receipt
   stays archived, row 33); an ask answered with the thing asked for is closed, and never raised again
   (57); your company's domain is also GeniOS's sending domain, and mail on it is still you (58).
+- **59–64** (`STEP-14`, the Atlas's replay 02): three introductions are three files, a card each and
+  none about the connector (59), even when they arrive forwarded in one thread — split per contact,
+  never one ask (60); when one contact replies, that file's card moves on and the two silent ones stand,
+  none closed by the other's reply (61); a booked call and a time only proposed stay in their own files
+  (62); an introduction that leaves the contact's address out asks you one question — never a guessed
+  address (63); a declined introduction clears its card and never comes back from old activity, while the
+  connector's history is kept (64 — `no`: nothing to act on, and nothing may resurface).
 
 A `brief only` answer is scored as *not expressible* until `STEP-15` builds the morning brief —
 the board counts it apart rather than as a pass or a fail.

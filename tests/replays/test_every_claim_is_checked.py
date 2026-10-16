@@ -281,7 +281,10 @@ MUTATIONS: tuple[Mutation, ...] = (
              _set_quote(4, "Neha has waited nine days for our answer", rest_on=True),
              "quote:4", DROPPED, MISQUOTED, "Neha has waited", SHOWN,
              reads=("Neha has waited nine days for our answer",)),
-    Mutation("a_quote_on_an_unworded_meeting", "F28", "novacore.test", 1,
+    # ⛔ RESTATED by `yc2_w27_s14` (M42, the living card): served to the file's SECOND review. F28's second review
+    # versions the one card its first made, so what the first review's card said is a version the card no longer
+    # shows — the negative control reads the card's current words, and the second review is the one they are.
+    Mutation("a_quote_on_an_unworded_meeting", "F28", "novacore.test", 2,
              _set_quote(2, "Ishita confirmed the call for the eighth"),
              "quote:2", DROPPED, MISQUOTED, "Ishita confirmed", SHOWN,
              reads=("Ishita confirmed the call for the eighth",)),
@@ -455,6 +458,11 @@ def _ran(case_id: str, mutation: Mutation | None, *, checked: bool = True) -> Ra
         if not checked:
             # One seam: the review run and the sweep's re-check both call `review.check`, which calls this.
             mp.setattr(expert_review, "check_review", _as_written)
+            # ⛔ RESTATED by `yc2_w27_s14` M43.C4.L-integration.V1.U02: since STEP-14 the card contract stands behind
+            # the check at both card writers (`contracts/card_contract`) — a draft to us is refused there too. The
+            # negative control asks what the CHECK alone stops, so with the check off the contract is off as well.
+            from genios_engine.deliver import pipeline
+            mp.setattr(pipeline, "_contract_refusals", lambda *_a, **_k: ())
         run = run_case(case, llm, keep=True)
     engine = routes._graph.engine
     try:

@@ -614,7 +614,7 @@
        "fact:4"
       ]
      },
-     "alternative": "If Ira asks Arjun to join the meeting, prepare the walk-through of the design partners he offered.",
+     "alternative": "If Ira asks you to join the meeting, prepare the walk-through of the design partners you offered.",
      "wait_or_stop": "Wait until the Monday meeting has passed and a week more; then ask Ira once. If that also goes unanswered, stop chasing and keep Larkspur for a later update with news.",
      "done_when": "Larkspur's answer from the Monday meeting is known, and the next step, a call, more material or a pass, is in the file.",
      "draft": null

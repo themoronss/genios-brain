@@ -14,6 +14,12 @@ ITS OWN MODULE, because it is its own writer of `signals` (`reason/situation_bin
 function each): a question is not the compiled lane's decision, and folding its insert into
 `reason/domain_shadow` hid a second writer behind the first's declaration. `domain_shadow` calls it, a
 covered file at a time.
+
+⛔ IT HANDS THE FILE ON (STEP-14, `yc2_w27_s14` M42.C2.L-integration.V2.U05; `03` F176, s14-F13). A file's question is
+its card's next version, and so is the decision after it: a new question, and a decision after a question, retire
+the old signal and LEAVE ITS CARD — delivery versions it onto the file's new signal (`deliver/store`, M42.C3) —
+never expired REPLACED, which made each a second card. Only a question nothing will version closes its card: one the
+file already answered, one whose file left the expert's coverage, one no decision follows.
 """
 from __future__ import annotations
 
@@ -233,10 +239,9 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
                 "and resolved_at is null"), {**bound, "s": standing.signal_id})
             return STANDING
         if standing is not None:
+            # A NEW question retires the old one's signal; its card is the new question's to version (STEP-14).
             conn.execute(text("update signals set status = 'expired' where org_id = :o and signal_id = :s"),
                          {"o": org_id, "s": standing.signal_id})
-            card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
-                                        signal_ids=[standing.signal_id])
         conn.execute(text(
             "insert into signals (signal_id, org_id, pack_id, pack_version, rule_id, rule_version, level, "
             "subject_node_id, score, reason_code, evidence, eval_time, config_snapshot_id, reasoning_run_id, "
@@ -258,9 +263,11 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
     return ASKED
 
 
-def retire_question(store, *, org_id: str, file_id: str, eval_time, why: str | None = None) -> bool:
+def retire_question(store, *, org_id: str, file_id: str, eval_time, why: str | None = None,
+                    hand_on: bool = False) -> bool:
     """A decision that is no question — or a file no longer the expert's to decide (`LEFT_COVERAGE`): the
-    file's open question retires, saying why, and its signal and card with it."""
+    file's open question retires, saying why, and its signal with it. Its card goes too — unless `hand_on`: the
+    decision the file emits (or keeps) is the card's next version, and delivery versions it (STEP-14)."""
     from genios_engine.context import founder_questions as questions
 
     with store.engine.begin() as conn:
@@ -268,7 +275,7 @@ def retire_question(store, *, org_id: str, file_id: str, eval_time, why: str | N
         retired = questions.retire(conn, org_id=org_id, file_id=file_id, why=why or questions.NO_LONGER_ASKED,
                                    at=eval_time)
         expired = conn.execute(text(_EXPIRE_QUESTION_SIGNALS), {"o": org_id, "n": file_id}).fetchall()
-        if expired:
+        if expired and not hand_on:
             card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
                                         signal_ids=[item.signal_id for item in expired])
     return bool(retired or expired)

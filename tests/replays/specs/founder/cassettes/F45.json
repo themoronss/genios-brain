@@ -1,7 +1,7 @@
 {
  "case_id": "F45",
  "source": "ideal_reader",
- "recorded_at": "e4a2fa89",
+ "recorded_at": "b8b4804d",
  "answers": {
   "0d05660a005c1a914e38118e41460164ea8d5a598f1b4a0241972ed8b34c4fab": {
    "site": "extraction",
@@ -56,6 +56,213 @@
    "framed": true,
    "input_tokens": 1510,
    "output_tokens": 54,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "1de75ecb5d33b17e54169a8187afdb9ca97defbe8ff64ca867bc05e8ed08ed07": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "On the ninth of September Meera Shah of Bluepeak Ventures asked whether two of the pilot customers could take a short reference call with Bluepeak.",
+      "evidence": [
+       "evt_#2"
+      ],
+      "quote": "pilot customers take a short reference call with us? Meera Shah Bluepeak Ventures"
+     },
+     {
+      "claim": "On the fifteenth Arjun answered that two pilot leads had agreed, and that he would send their details separately.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "two pilot leads have agreed; I will send their details separately. Arjun"
+     },
+     {
+      "claim": "That mail is the file's last word: nothing has followed it, and the file has been quiet for well over a week, longer than any gap it closed before.",
+      "evidence": [
+       "evt_#1",
+       "num:days_quiet",
+       "num:longest_gap"
+      ],
+      "quote": "Re: Bluepeak x Nimbus - references Hi Meera, Yes"
+     },
+     {
+      "claim": "Before that she asked which tool the pilot teams use instead of Nimbus Labs, and Arjun answered that most of them use shared spreadsheets and a chat channel.",
+      "evidence": [
+       "evt_#4",
+       "evt_#3"
+      ],
+      "quote": "use shared spreadsheets and a chat channel today. Arjun"
+     },
+     {
+      "claim": "Her August questions — among them the first engineer after the round and the pipeline — were each answered too, and the file's older exchanges have the same shape: her question, then his answer.",
+      "evidence": [
+       "evt_#8",
+       "evt_#7",
+       "evt_#6",
+       "evt_#5",
+       "evt_#12",
+       "evt_#11",
+       "evt_#10",
+       "evt_#9"
+      ],
+      "quote": "Re: Bluepeak x Nimbus - pipeline Hi Meera, Nine teams"
+     },
+     {
+      "claim": "Arjun's answers to her usually take a day and a half over six answers, the same as his normal across every counterparty.",
+      "evidence": [
+       "num:your_reply_time:meera@bluepeak.test",
+       "num:your_normal:meera@bluepeak.test",
+       "num:your_normal_overall"
+      ]
+     },
+     {
+      "claim": "The file still lists her hiring question of August as an open ask that waits on us, though Arjun's answer to it is in the file.",
+      "evidence": [
+       "loop:loop_#1",
+       "evt_#7"
+      ],
+      "quote": "Re: Bluepeak x Nimbus - hiring Hi Meera, A backend"
+     },
+     {
+      "claim": "The brief names no kind of work for Bluepeak; the engine filed the file under admin, and its pricing exchange as a sales opportunity now marked dormant.",
+      "evidence": [
+       "sit:sit_#2",
+       "sit:sit_#1"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Bluepeak has moved from single questions to asking for customer references, a step toward a decision, and the next move toward it is the founder's: the two pilot leads' details.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "As far as the file shows, the details have not gone: no mail carrying them follows the founder's word, though he may have sent them another way.",
+      "based_on": [
+       "fact:2",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "The open hiring ask is stale: Arjun answered it, though with a profile rather than a name.",
+      "based_on": [
+       "fact:7"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "The founder answers her in about a day and a half, as he answers everyone; the quiet after his own word this time is far longer than that.",
+      "based_on": [
+       "num:your_reply_time:meera@bluepeak.test",
+       "num:your_normal_overall",
+       "fact:3"
+      ]
+     },
+     {
+      "kind": "counter_pattern",
+      "claim": "Every gap this file closed before was shorter than the quiet now, so this silence breaks the file's own rhythm rather than following it.",
+      "based_on": [
+       "num:longest_gap",
+       "num:days_quiet"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Meera Shah is waiting for the two pilot leads' details the founder said he would send separately, and has nothing to act on until they come.",
+      "needs": "The founder's word on whether the details went out, by mail or another channel."
+     },
+     {
+      "proposition": "The details went by another channel and the reference calls are already being arranged.",
+      "needs": "The founder's confirmation, or a mail from Meera Shah about the calls."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether the two pilot leads' details reached Meera Shah — the file holds no mail carrying them.",
+      "relevance": "If they did not, the next move is the founder's and is late; if they did, the file is waiting on Bluepeak."
+     },
+     {
+      "question": "Where Bluepeak stands in its own process, and when it expects to decide.",
+      "relevance": "Reference calls are a step toward a decision, but the file does not say how close Bluepeak is; the founder cannot pace the round around it without knowing."
+     },
+     {
+      "question": "Whether the founder and Meera Shah have spoken outside mail.",
+      "relevance": "A call the file cannot see may already have set the next step."
+     }
+    ],
+    "frames": {
+     "primary": "An investor at the reference stage of diligence, left without what you offered: Meera Shah asked for reference calls with pilot customers, you wrote that two pilot leads agreed and that you would send their details separately, and nothing after that is in the file.",
+     "rivals": [
+      "The details went by another channel and Bluepeak is quietly making the calls.",
+      "Bluepeak has lost interest, and the quiet is a pass that nobody sends."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "investor",
+     "why": "Meera Shah writes for Bluepeak Ventures and asks about the pilots, pricing, the first hire after the round and the pipeline — an investor's questions about the seed round — while the engine filed the file under admin and as a sales opportunity.",
+     "evidence": [
+      "evt_#8",
+      "evt_#12",
+      "sit:sit_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, the founder's own word sets it: the two pilot leads' details, sent separately, so Bluepeak can take its reference calls.",
+     "actual": "No mail carrying the details is in the file, and the file has been quiet for longer than any gap it closed before."
+    },
+    "scenarios": {
+     "do_nothing": "Bluepeak cannot take its reference calls, the diligence stalls on your side, and the quiet reads to the fund as lost momentum.",
+     "act": "The details reach Meera Shah, the reference calls go ahead, and Bluepeak can move toward a decision.",
+     "best": "The references speak well of the pilots and Bluepeak names its next step toward an offer.",
+     "worst": "Bluepeak reads the delay as a weak signal from the founder and lets the conversation lapse.",
+     "signals_to_watch": [
+      "Meera Shah confirming the reference calls are booked.",
+      "A further request from Bluepeak — a call, a partners' meeting, terms.",
+      "Continued quiet after the details go."
+     ]
+    },
+    "appraisal": {
+     "stakes": "high",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "Raising the seed round is the brief's first goal, and Bluepeak has reached reference calls.",
+      "The founder's own word to send the details is the last thing in the file, and nothing after it shows they went.",
+      "The quiet is already longer than any gap the file closed before."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Introduce Meera Shah to the two pilot leads who agreed to a reference call — copying them in, or sending their contact details — as you wrote you would, and ask for Bluepeak's next step.",
+     "for_whom": "Meera Shah, Bluepeak Ventures",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "fact:4",
+      "fact:5",
+      "fact:7"
+     ],
+     "to": "Meera"
+    },
+    "alternative": "If the details already went another way, write one line confirming the leads expect her call, and ask for Bluepeak's next step and timing.",
+    "wait_or_stop": "Do not wait: the next move is yours. Once the details have gone, give Bluepeak a week for the calls; if nothing comes, ask Meera Shah directly where Bluepeak stands, then stop.",
+    "done_when": "Meera Shah has the two pilot leads' details and the reference calls are booked.",
+    "draft": "Hi Meera, here are the two pilot leads who agreed to take a reference call with you — I've copied them both so you can find a time directly. Once you've spoken, could we talk about Bluepeak's next step? Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"On the ninth of September Meera Shah of Bluepeak Ventures asked whether two of the pilot customers could take a short reference call with Bluepeak.\", \"evidence\": [\"evt_#2\"], \"quote\": \"pilot customers take a short reference call with us? Meera Shah Bluepeak Ventures\"}, {\"claim\": \"On the fifteenth Arjun answered that two pilot leads had agreed, and that he would send their details separately.\", \"evidence\": [\"evt_#1\"], \"quote\": \"two pilot leads have agreed; I will send their details separately. Arjun\"}, {\"claim\": \"That mail is the file's last word: nothing has followed it, and the file has been quiet for well over a week, longer than any gap it closed before.\", \"evidence\": [\"evt_#1\", \"num:days_quiet\", \"num:longest_gap\"], \"quote\": \"Re: Bluepeak x Nimbus - references Hi Meera, Yes\"}, {\"claim\": \"Before that she asked which tool the pilot teams use instead of Nimbus Labs, and Arjun answered that most of them use shared spreadsheets and a chat channel.\", \"evidence\": [\"evt_#4\", \"evt_#3\"], \"quote\": \"use shared spreadsheets and a chat channel today. Arjun\"}, {\"claim\": \"Her August questions — among them the first engineer after the round and the pipeline — were each answered too, and the file's older exchanges have the same shape: her question, then his answer.\", \"evidence\": [\"evt_#8\", \"evt_#7\", \"evt_#6\", \"evt_#5\", \"evt_#12\", \"evt_#11\", \"evt_#10\", \"evt_#9\"], \"quote\": \"Re: Bluepeak x Nimbus - pipeline Hi Meera, Nine teams\"}, {\"claim\": \"Arjun's answers to her usually take a day and a half over six answers, the same as his normal across every counterparty.\", \"evidence\": [\"num:your_reply_time:meera@bluepeak.test\", \"num:your_normal:meera@bluepeak.test\", \"num:your_normal_overall\"]}, {\"claim\": \"The file still lists her hiring question of August as an open ask that waits on us, though Arjun's answer to it is in the file.\", \"evidence\": [\"loop:loop_#1\", \"evt_#7\"], \"quote\": \"Re: Bluepeak x Nimbus - hiring Hi Meera, A backend\"}, {\"claim\": \"The brief names no kind of work for Bluepeak; the engine filed the file under admin, and its pricing exchange as a sales opportunity now marked dormant.\", \"evidence\": [\"sit:sit_#2\", \"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Bluepeak has moved from single questions to asking for customer references, a step toward a decision, and the next move toward it is the founder's: the two pilot leads' details.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"As far as the file shows, the details have not gone: no mail carrying them follows the founder's word, though he may have sent them another way.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"The open hiring ask is stale: Arjun answered it, though with a profile rather than a name.\", \"based_on\": [\"fact:7\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"The founder answers her in about a day and a half, as he answers everyone; the quiet after his own word this time is far longer than that.\", \"based_on\": [\"num:your_reply_time:meera@bluepeak.test\", \"num:your_normal_overall\", \"fact:3\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"Every gap this file closed before was shorter than the quiet now, so this silence breaks the file's own rhythm rather than following it.\", \"based_on\": [\"num:longest_gap\", \"num:days_quiet\"]}], \"hypotheses\": [{\"proposition\": \"Meera Shah is waiting for the two pilot leads' details the founder said he would send separately, and has nothing to act on until they come.\", \"needs\": \"The founder's word on whether the details went out, by mail or another channel.\"}, {\"proposition\": \"The details went by another channel and the reference calls are already being arranged.\", \"needs\": \"The founder's confirmation, or a mail from Meera Shah about the calls.\"}], \"unknowns\": [{\"question\": \"Whether the two pilot leads' details reached Meera Shah — the file holds no mail carrying them.\", \"relevance\": \"If they did not, the next move is the founder's and is late; if they did, the file is waiting on Bluepeak.\"}, {\"question\": \"Where Bluepeak stands in its own process, and when it expects to decide.\", \"relevance\": \"Reference calls are a step toward a decision, but the file does not say how close Bluepeak is; the founder cannot pace the round around it without knowing.\"}, {\"question\": \"Whether the founder and Meera Shah have spoken outside mail.\", \"relevance\": \"A call the file cannot see may already have set the next step.\"}], \"frames\": {\"primary\": \"An investor at the reference stage of diligence, left without what you offered: Meera Shah asked for reference calls with pilot customers, you wrote that two pilot leads agreed and that you would send their details separately, and nothing after that is in the file.\", \"rivals\": [\"The details went by another channel and Bluepeak is quietly making the calls.\", \"Bluepeak has lost interest, and the quiet is a pass that nobody sends.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Meera Shah writes for Bluepeak Ventures and asks about the pilots, pricing, the first hire after the round and the pipeline — an investor's questions about the seed round — while the engine filed the file under admin and as a sales opportunity.\", \"evidence\": [\"evt_#8\", \"evt_#12\", \"sit:sit_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the founder's own word sets it: the two pilot leads' details, sent separately, so Bluepeak can take its reference calls.\", \"actual\": \"No mail carrying the details is in the file, and the file has been quiet for longer than any gap it closed before.\"}, \"scenarios\": {\"do_nothing\": \"Bluepeak cannot take its reference calls, the diligence stalls on your side, and the quiet reads to the fund as lost momentum.\", \"act\": \"The details reach Meera Shah, the reference calls go ahead, and Bluepeak can move toward a decision.\", \"best\": \"The references speak well of the pilots and Bluepeak names its next step toward an offer.\", \"worst\": \"Bluepeak reads the delay as a weak signal from the founder and lets the conversation lapse.\", \"signals_to_watch\": [\"Meera Shah confirming the reference calls are booked.\", \"A further request from Bluepeak — a call, a partners' meeting, terms.\", \"Continued quiet after the details go.\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Bluepeak has reached reference calls.\", \"The founder's own word to send the details is the last thing in the file, and nothing after it shows they went.\", \"The quiet is already longer than any gap the file closed before.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Introduce Meera Shah to the two pilot leads who agreed to a reference call — copying them in, or sending their contact details — as you wrote you would, and ask for Bluepeak's next step.\", \"for_whom\": \"Meera Shah, Bluepeak Ventures\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\", \"fact:5\", \"fact:7\"], \"to\": \"Meera\"}, \"alternative\": \"If the details already went another way, write one line confirming the leads expect her call, and ask for Bluepeak's next step and timing.\", \"wait_or_stop\": \"Do not wait: the next move is yours. Once the details have gone, give Bluepeak a week for the calls; if nothing comes, ask Meera Shah directly where Bluepeak stands, then stop.\", \"done_when\": \"Meera Shah has the two pilot leads' details and the reference calls are booked.\", \"draft\": \"Hi Meera, here are the two pilot leads who agreed to take a reference call with you — I've copied them both so you can find a time directly. Once you've spoken, could we talk about Bluepeak's next step? Arjun\"}",
+   "framed": true,
+   "input_tokens": 4079,
+   "output_tokens": 2011,
    "model": "claude-haiku-4-5-20251001"
   },
   "1e1d0cb17ce281d75029805fbc1168aa040d5ff915e1d7575c113551bd19ee06": {
@@ -681,7 +888,7 @@
    "output_tokens": 229,
    "model": "claude-haiku-4-5-20251001"
   },
-  "935fc1970f226751023378bd034cd2c83043e52260e169b5221a8fee321578e1": {
+  "8efe72f169a7e3e450bf47f432be609d46d345e4d87addc75b2c266cf60261f9": {
    "site": "bundle_narrator",
    "parsed": {
     "headline": "Next move",
@@ -693,7 +900,7 @@
    },
    "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
    "framed": true,
-   "input_tokens": 1676,
+   "input_tokens": 1592,
    "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
@@ -880,213 +1087,6 @@
    "framed": true,
    "input_tokens": 1510,
    "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "dc1ac2fcd203188f8a5eaa5f6e3035447621960a2cba3f6862ed8a81ba3510f3": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "On the ninth of September Meera Shah of Bluepeak Ventures asked whether two of the pilot customers could take a short reference call with Bluepeak.",
-      "evidence": [
-       "evt_#2"
-      ],
-      "quote": "pilot customers take a short reference call with us? Meera Shah Bluepeak Ventures"
-     },
-     {
-      "claim": "On the fifteenth Arjun answered that two pilot leads had agreed, and that he would send their details separately.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "two pilot leads have agreed; I will send their details separately. Arjun"
-     },
-     {
-      "claim": "That mail is the file's last word: nothing has followed it, and the file has been quiet for well over a week, longer than any gap it closed before.",
-      "evidence": [
-       "evt_#1",
-       "num:days_quiet",
-       "num:longest_gap"
-      ],
-      "quote": "Re: Bluepeak x Nimbus - references Hi Meera, Yes"
-     },
-     {
-      "claim": "Before that she asked which tool the pilot teams use instead of Nimbus Labs, and Arjun answered that most of them use shared spreadsheets and a chat channel.",
-      "evidence": [
-       "evt_#4",
-       "evt_#3"
-      ],
-      "quote": "use shared spreadsheets and a chat channel today. Arjun"
-     },
-     {
-      "claim": "Her August questions — among them the first engineer after the round and the pipeline — were each answered too, and the file's older exchanges have the same shape: her question, then his answer.",
-      "evidence": [
-       "evt_#8",
-       "evt_#7",
-       "evt_#6",
-       "evt_#5",
-       "evt_#12",
-       "evt_#11",
-       "evt_#10",
-       "evt_#9"
-      ],
-      "quote": "Re: Bluepeak x Nimbus - pipeline Hi Meera, Nine teams"
-     },
-     {
-      "claim": "Arjun's answers to her usually take a day and a half over six answers, the same as his normal across every counterparty.",
-      "evidence": [
-       "num:your_reply_time:meera@bluepeak.test",
-       "num:your_normal:meera@bluepeak.test",
-       "num:your_normal_overall"
-      ]
-     },
-     {
-      "claim": "The file still lists her hiring question of August as an open ask that waits on us, though Arjun's answer to it is in the file.",
-      "evidence": [
-       "loop:loop_#1",
-       "evt_#7"
-      ],
-      "quote": "Re: Bluepeak x Nimbus - hiring Hi Meera, A backend"
-     },
-     {
-      "claim": "The brief names no kind of work for Bluepeak; the engine filed the file under admin, and its pricing exchange as a sales opportunity now marked dormant.",
-      "evidence": [
-       "sit:sit_#2",
-       "sit:sit_#1"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "Bluepeak has moved from single questions to asking for customer references, a step toward a decision, and the next move toward it is the founder's: the two pilot leads' details.",
-      "based_on": [
-       "fact:1",
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "As far as the file shows, the details have not gone: no mail carrying them follows the founder's word, though he may have sent them another way.",
-      "based_on": [
-       "fact:2",
-       "fact:3"
-      ]
-     },
-     {
-      "claim": "The open hiring ask is stale: Arjun answered it, though with a profile rather than a name.",
-      "based_on": [
-       "fact:7"
-      ]
-     }
-    ],
-    "patterns": [
-     {
-      "kind": "pattern",
-      "claim": "The founder answers her in about a day and a half, as he answers everyone; the quiet after his own word this time is far longer than that.",
-      "based_on": [
-       "num:your_reply_time:meera@bluepeak.test",
-       "num:your_normal_overall",
-       "fact:3"
-      ]
-     },
-     {
-      "kind": "counter_pattern",
-      "claim": "Every gap this file closed before was shorter than the quiet now, so this silence breaks the file's own rhythm rather than following it.",
-      "based_on": [
-       "num:longest_gap",
-       "num:days_quiet"
-      ]
-     }
-    ],
-    "hypotheses": [
-     {
-      "proposition": "Meera Shah is waiting for the two pilot leads' details the founder said he would send separately, and has nothing to act on until they come.",
-      "needs": "The founder's word on whether the details went out, by mail or another channel."
-     },
-     {
-      "proposition": "The details went by another channel and the reference calls are already being arranged.",
-      "needs": "The founder's confirmation, or a mail from Meera Shah about the calls."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "Whether the two pilot leads' details reached Meera Shah — the file holds no mail carrying them.",
-      "relevance": "If they did not, the next move is the founder's and is late; if they did, the file is waiting on Bluepeak."
-     },
-     {
-      "question": "Where Bluepeak stands in its own process, and when it expects to decide.",
-      "relevance": "Reference calls are a step toward a decision, but the file does not say how close Bluepeak is; the founder cannot pace the round around it without knowing."
-     },
-     {
-      "question": "Whether the founder and Meera Shah have spoken outside mail.",
-      "relevance": "A call the file cannot see may already have set the next step."
-     }
-    ],
-    "frames": {
-     "primary": "An investor at the reference stage of diligence, left without what you offered: Meera Shah asked for reference calls with pilot customers, you wrote that two pilot leads agreed and that you would send their details separately, and nothing after that is in the file.",
-     "rivals": [
-      "The details went by another channel and Bluepeak is quietly making the calls.",
-      "Bluepeak has lost interest, and the quiet is a pass that nobody sends."
-     ]
-    },
-    "proposed_kind": {
-     "kind": "investor",
-     "why": "Meera Shah writes for Bluepeak Ventures and asks about the pilots, pricing, the first hire after the round and the pipeline — an investor's questions about the seed round — while the engine filed the file under admin and as a sales opportunity.",
-     "evidence": [
-      "evt_#8",
-      "evt_#12",
-      "sit:sit_#1"
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "Without a playbook, the founder's own word sets it: the two pilot leads' details, sent separately, so Bluepeak can take its reference calls.",
-     "actual": "No mail carrying the details is in the file, and the file has been quiet for longer than any gap it closed before."
-    },
-    "scenarios": {
-     "do_nothing": "Bluepeak cannot take its reference calls, the diligence stalls on your side, and the quiet reads to the fund as lost momentum.",
-     "act": "The details reach Meera Shah, the reference calls go ahead, and Bluepeak can move toward a decision.",
-     "best": "The references speak well of the pilots and Bluepeak names its next step toward an offer.",
-     "worst": "Bluepeak reads the delay as a weak signal from the founder and lets the conversation lapse.",
-     "signals_to_watch": [
-      "Meera Shah confirming the reference calls are booked.",
-      "A further request from Bluepeak — a call, a partners' meeting, terms.",
-      "Continued quiet after the details go."
-     ]
-    },
-    "appraisal": {
-     "stakes": "high",
-     "urgency": "high",
-     "reversibility": "costly_to_reverse",
-     "reasons": [
-      "Raising the seed round is the brief's first goal, and Bluepeak has reached reference calls.",
-      "The founder's own word to send the details is the last thing in the file, and nothing after it shows they went.",
-      "The quiet is already longer than any gap the file closed before."
-     ]
-    },
-    "mode": "act",
-    "next_move": {
-     "who": "Arjun",
-     "what": "Introduce Meera Shah to the two pilot leads who agreed to a reference call — copying them in, or sending their contact details — as you wrote you would, and ask for Bluepeak's next step.",
-     "for_whom": "Meera Shah, Bluepeak Ventures",
-     "by_when": null,
-     "rests_on": [
-      "fact:1",
-      "fact:2",
-      "fact:3",
-      "fact:4",
-      "fact:5",
-      "fact:7"
-     ],
-     "to": "Meera"
-    },
-    "alternative": "If the details already went another way, write one line confirming the leads expect her call, and ask for Bluepeak's next step and timing.",
-    "wait_or_stop": "Do not wait: the next move is the founder's. Once the details have gone, give Bluepeak a week for the calls; if nothing comes, ask Meera Shah directly where Bluepeak stands, then stop.",
-    "done_when": "Meera Shah has the two pilot leads' details and the reference calls are booked.",
-    "draft": "Hi Meera, here are the two pilot leads who agreed to take a reference call with you — I've copied them both so you can find a time directly. Once you've spoken, could we talk about Bluepeak's next step? Arjun"
-   },
-   "raw": "{\"facts\": [{\"claim\": \"On the ninth of September Meera Shah of Bluepeak Ventures asked whether two of the pilot customers could take a short reference call with Bluepeak.\", \"evidence\": [\"evt_#2\"], \"quote\": \"pilot customers take a short reference call with us? Meera Shah Bluepeak Ventures\"}, {\"claim\": \"On the fifteenth Arjun answered that two pilot leads had agreed, and that he would send their details separately.\", \"evidence\": [\"evt_#1\"], \"quote\": \"two pilot leads have agreed; I will send their details separately. Arjun\"}, {\"claim\": \"That mail is the file's last word: nothing has followed it, and the file has been quiet for well over a week, longer than any gap it closed before.\", \"evidence\": [\"evt_#1\", \"num:days_quiet\", \"num:longest_gap\"], \"quote\": \"Re: Bluepeak x Nimbus - references Hi Meera, Yes\"}, {\"claim\": \"Before that she asked which tool the pilot teams use instead of Nimbus Labs, and Arjun answered that most of them use shared spreadsheets and a chat channel.\", \"evidence\": [\"evt_#4\", \"evt_#3\"], \"quote\": \"use shared spreadsheets and a chat channel today. Arjun\"}, {\"claim\": \"Her August questions — among them the first engineer after the round and the pipeline — were each answered too, and the file's older exchanges have the same shape: her question, then his answer.\", \"evidence\": [\"evt_#8\", \"evt_#7\", \"evt_#6\", \"evt_#5\", \"evt_#12\", \"evt_#11\", \"evt_#10\", \"evt_#9\"], \"quote\": \"Re: Bluepeak x Nimbus - pipeline Hi Meera, Nine teams\"}, {\"claim\": \"Arjun's answers to her usually take a day and a half over six answers, the same as his normal across every counterparty.\", \"evidence\": [\"num:your_reply_time:meera@bluepeak.test\", \"num:your_normal:meera@bluepeak.test\", \"num:your_normal_overall\"]}, {\"claim\": \"The file still lists her hiring question of August as an open ask that waits on us, though Arjun's answer to it is in the file.\", \"evidence\": [\"loop:loop_#1\", \"evt_#7\"], \"quote\": \"Re: Bluepeak x Nimbus - hiring Hi Meera, A backend\"}, {\"claim\": \"The brief names no kind of work for Bluepeak; the engine filed the file under admin, and its pricing exchange as a sales opportunity now marked dormant.\", \"evidence\": [\"sit:sit_#2\", \"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Bluepeak has moved from single questions to asking for customer references, a step toward a decision, and the next move toward it is the founder's: the two pilot leads' details.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"As far as the file shows, the details have not gone: no mail carrying them follows the founder's word, though he may have sent them another way.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"The open hiring ask is stale: Arjun answered it, though with a profile rather than a name.\", \"based_on\": [\"fact:7\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"The founder answers her in about a day and a half, as he answers everyone; the quiet after his own word this time is far longer than that.\", \"based_on\": [\"num:your_reply_time:meera@bluepeak.test\", \"num:your_normal_overall\", \"fact:3\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"Every gap this file closed before was shorter than the quiet now, so this silence breaks the file's own rhythm rather than following it.\", \"based_on\": [\"num:longest_gap\", \"num:days_quiet\"]}], \"hypotheses\": [{\"proposition\": \"Meera Shah is waiting for the two pilot leads' details the founder said he would send separately, and has nothing to act on until they come.\", \"needs\": \"The founder's word on whether the details went out, by mail or another channel.\"}, {\"proposition\": \"The details went by another channel and the reference calls are already being arranged.\", \"needs\": \"The founder's confirmation, or a mail from Meera Shah about the calls.\"}], \"unknowns\": [{\"question\": \"Whether the two pilot leads' details reached Meera Shah — the file holds no mail carrying them.\", \"relevance\": \"If they did not, the next move is the founder's and is late; if they did, the file is waiting on Bluepeak.\"}, {\"question\": \"Where Bluepeak stands in its own process, and when it expects to decide.\", \"relevance\": \"Reference calls are a step toward a decision, but the file does not say how close Bluepeak is; the founder cannot pace the round around it without knowing.\"}, {\"question\": \"Whether the founder and Meera Shah have spoken outside mail.\", \"relevance\": \"A call the file cannot see may already have set the next step.\"}], \"frames\": {\"primary\": \"An investor at the reference stage of diligence, left without what you offered: Meera Shah asked for reference calls with pilot customers, you wrote that two pilot leads agreed and that you would send their details separately, and nothing after that is in the file.\", \"rivals\": [\"The details went by another channel and Bluepeak is quietly making the calls.\", \"Bluepeak has lost interest, and the quiet is a pass that nobody sends.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Meera Shah writes for Bluepeak Ventures and asks about the pilots, pricing, the first hire after the round and the pipeline — an investor's questions about the seed round — while the engine filed the file under admin and as a sales opportunity.\", \"evidence\": [\"evt_#8\", \"evt_#12\", \"sit:sit_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the founder's own word sets it: the two pilot leads' details, sent separately, so Bluepeak can take its reference calls.\", \"actual\": \"No mail carrying the details is in the file, and the file has been quiet for longer than any gap it closed before.\"}, \"scenarios\": {\"do_nothing\": \"Bluepeak cannot take its reference calls, the diligence stalls on your side, and the quiet reads to the fund as lost momentum.\", \"act\": \"The details reach Meera Shah, the reference calls go ahead, and Bluepeak can move toward a decision.\", \"best\": \"The references speak well of the pilots and Bluepeak names its next step toward an offer.\", \"worst\": \"Bluepeak reads the delay as a weak signal from the founder and lets the conversation lapse.\", \"signals_to_watch\": [\"Meera Shah confirming the reference calls are booked.\", \"A further request from Bluepeak — a call, a partners' meeting, terms.\", \"Continued quiet after the details go.\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Bluepeak has reached reference calls.\", \"The founder's own word to send the details is the last thing in the file, and nothing after it shows they went.\", \"The quiet is already longer than any gap the file closed before.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Introduce Meera Shah to the two pilot leads who agreed to a reference call — copying them in, or sending their contact details — as you wrote you would, and ask for Bluepeak's next step.\", \"for_whom\": \"Meera Shah, Bluepeak Ventures\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\", \"fact:5\", \"fact:7\"], \"to\": \"Meera\"}, \"alternative\": \"If the details already went another way, write one line confirming the leads expect her call, and ask for Bluepeak's next step and timing.\", \"wait_or_stop\": \"Do not wait: the next move is the founder's. Once the details have gone, give Bluepeak a week for the calls; if nothing comes, ask Meera Shah directly where Bluepeak stands, then stop.\", \"done_when\": \"Meera Shah has the two pilot leads' details and the reference calls are booked.\", \"draft\": \"Hi Meera, here are the two pilot leads who agreed to take a reference call with you — I've copied them both so you can find a time directly. Once you've spoken, could we talk about Bluepeak's next step? Arjun\"}",
-   "framed": true,
-   "input_tokens": 4084,
-   "output_tokens": 2013,
    "model": "claude-haiku-4-5-20251001"
   },
   "eb4e3179aa6ba68a08af4b50e788a49cf489b674604747da0a5973943ca8dae0": {
@@ -1370,7 +1370,7 @@
    "output_tokens": 1725,
    "model": "claude-haiku-4-5-20251001"
   },
-  "f901bfef754cc0bb2e2468736ed8b8e82441f8c105a22e34fa7f0040001a1ca5": {
+  "f8fbd4c70d83dc80d0d8283d7272b36e91c9a089998ac18490ef2d67404c4ce0": {
    "site": "bundle_narrator",
    "parsed": {
     "headline": "Next move",
@@ -1382,7 +1382,7 @@
    },
    "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
    "framed": true,
-   "input_tokens": 1592,
+   "input_tokens": 1676,
    "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   }

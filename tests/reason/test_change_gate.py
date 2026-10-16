@@ -118,3 +118,41 @@ def test_a_live_subject_whose_last_run_was_shadow_runs():
     """The fingerprint carries the lane, so this cannot happen on one fingerprint — and if it does,
     the gate runs the decision rather than guess what a shadow outcome means for a live card."""
     assert _gate(_stored(SHADOW)) == cg.GateVerdict(skip=False, reason=cg.CHANGED)
+
+
+# ── STEP-14 · a file's standing decision is RENEWED, not lapsed and replaced (`yc2_w27_s14` M42.C2.L-logic.V0.U01) ──
+#
+# `03` F52, F53 on the expert's path (STEP-14 s14-F5): while a file decision's window held, the file branch
+# answered "standing"; in production the cron lapsed the card first, and the same advice came back as a new card.
+# Since STEP-14 the file branch re-emits the same advice inside its renewal margin and the card is VERSIONED
+# (`reason/domain_shadow`, M42.C2.L-integration.V2.U02) — so a file decision is decided again in its last twelve
+# hours, before its window closes: more than one 6-hourly sweep, so a sweep always lands inside it. The compiled
+# lane keeps RENEW_MARGIN — its re-run inside the window still answers "standing" and renews nothing (F27's
+# measurement above stands for it).
+
+def test_a_files_decision_renews_more_than_one_sweep_before_its_window_closes():
+    assert cg.FILE_RENEW_MARGIN == timedelta(hours=12)
+    assert cg.FILE_RENEW_MARGIN > cg.SWEEP_EVERY == timedelta(hours=6)
+    assert cg.RENEW_MARGIN == timedelta(0), "the compiled lane's margin does not move"
+
+
+@pytest.mark.parametrize("left, skip", [
+    (timedelta(hours=11, minutes=59), False), (timedelta(hours=12), False), (timedelta(hours=6), False),
+    (timedelta(hours=12, minutes=1), True), (timedelta(days=3), True),
+])
+def test_a_files_standing_decision_is_decided_again_inside_its_margin(left, skip):
+    verdict = cg.should_skip(_stored(STANDING), "fp_a", live=True, standing_expires_at=NOW + left,
+                             eval_time=NOW, renew_margin=cg.FILE_RENEW_MARGIN)
+    assert verdict == cg.GateVerdict(skip=skip, reason=cg.UNCHANGED if skip else cg.EXPIRING)
+
+
+def test_every_sweep_of_a_week_window_lands_one_renewal_before_it_lapses():
+    """A decision decided at hour 0 with a 168-hour window, swept every six hours (any phase): the first sweep
+    the gate lets through is inside the margin and before the window closes — never after it lapsed."""
+    window = timedelta(hours=168)
+    for phase_minutes in range(0, 360, 15):
+        sweeps = [timedelta(minutes=phase_minutes) + n * cg.SWEEP_EVERY for n in range(40)]
+        first = next(at for at in sweeps if not cg.should_skip(
+            _stored(STANDING), "fp_a", live=True, standing_expires_at=NOW + window, eval_time=NOW + at,
+            renew_margin=cg.FILE_RENEW_MARGIN).skip)
+        assert window - cg.FILE_RENEW_MARGIN <= first < window, (phase_minutes, first)

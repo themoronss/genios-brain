@@ -24,18 +24,30 @@ rate caps — `reason/moments/guards.py`) decide `display`; a suppressed toast i
 the card is written either way. `realtime_events(moment.new)` rides the same transaction.
 
 NEVER CREDIT-CHARGED: nothing here touches billing.
+
+THE CARD CONTRACT FIRST (STEP-14, `yc2_w27_s14` M43.C4.L-integration.V1.U03; s14-F10). This writer runs no renderer and
+no validator — production's *"Which is right? Maria Exconde: party.role"* was one of its cards. Before anything is
+written, the words the card AND its moment show pass `contracts/card_contract` against the situation's own evidence:
+no internal field name or unfilled slot, no money unless its evidence holds money, no quote that is not its
+evidence's words (a clipped quote is still its words), no number or date its evidence does not hold. Refused: no
+card, no moment, no situation row — `None`, counted per rule in `counts` (`refused_contract:<rule>`) and logged.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Iterable
 
 from sqlalchemy import text
 
+from genios_engine.contracts import card_contract
+from genios_engine.platform import card_refusals
 from genios_engine.platform import realtime
 from genios_engine.platform.ids import new_id
+from genios_engine.platform.logging import get_logger
+from genios_engine.platform.self_identity import SelfIdentity
 from genios_engine.reason.moments import guards as G
 from genios_engine.reason.moments.common import iso
 from genios_engine.contracts.reasoning import DecisionOutcome, OutputLane
@@ -85,13 +97,52 @@ def _with_open_card(actions: Iterable[dict] | None, card_id: str) -> list[dict]:
                        "payload": {"card_id": card_id, "url": card_url(card_id)}}]
 
 
+_log = get_logger("genios.reason.team.emit")
+
+#: Evidence that holds money: a key naming an amount, or a value carrying a currency.
+_MONEY_KEYS = ("amount", "price", "invoice", "payment", "fee", "revenue", "budget", "cost")
+#: A clipped text ends in an ellipsis (`clip`) — the quote before it is still the evidence's words.
+_CLIPPED = re.compile(r"\s*(?:…|\.\.\.)\s*(?=”|\"|$)")
+
+
+def _money_in(evidence) -> bool:
+    flat = json.dumps(evidence, default=str, ensure_ascii=False).lower()
+    return any(f'"{k}' in flat for k in _MONEY_KEYS) or any(s in flat for s in ("₹", "$", "€", "£"))
+
+
+def refusals(*, headline: str, body: str | None, evidence, corpus: Iterable[str] = ()) -> tuple:
+    """What `contracts/card_contract` refuses in a situation's card and moment, against its own evidence and what its
+    writer composed its words from (`corpus`: the facts' values and the counts code computed — never the words)."""
+    texts = [_CLIPPED.sub("", t) for t in (headline, body or "") if t]
+    card = card_contract.CardText(headline=texts[0] if texts else "", situation=texts[-1] if texts else "",
+                                  draft=None)
+    return card_contract.check(card, us=SelfIdentity(),
+                               corpus=[json.dumps(evidence, default=str, ensure_ascii=False),
+                                       *(str(c) for c in corpus or () if c is not None)],
+                               money_evidence=_money_in(evidence))
+
+
+def _keep_refusals(engine, org_id: str, *, ref: str, refused, counts: dict | None) -> None:
+    """Keep what the contract refused where `scripts/pipeline_health` reads it (`platform/card_refusals`, 0222).
+    ⛔ Keeping it may never cost the emitter: unkept, it is counted `refusals_unkept` and logged."""
+    try:
+        with engine.begin() as c:
+            card_refusals.record(c, org_id=org_id, writer=card_refusals.TEAM, ref=ref, refusals=refused)
+    except Exception as exc:      # noqa: BLE001 — see the docstring
+        if counts is not None:
+            counts["refusals_unkept"] = counts.get("refusals_unkept", 0) + 1
+        _log.warning("could not keep the card contract's refusal org=%s key=%s: %s", org_id, ref, exc)
+
+
 def emit_situation(engine, card_store, org_id: str, *, kind: str, key: str, seat_id: str,
                    subject_node_ids, headline: str, body: str | None, actions, evidence,
                    priority: str = "high", ttl_seconds: int, digest: str,
                    capability_id: str | None = None, now: datetime | None = None,
-                   expires_at: datetime | None = None) -> tuple[str, str] | None:
+                   expires_at: datetime | None = None, counts: dict | None = None,
+                   corpus: Iterable[str] = ()) -> tuple[str, str] | None:
     """See the module docstring. `capability_id`, `now` and `expires_at` are optional extensions
-    (defaults: `<kind>.situation`, the wall clock, now + 7 d for the card)."""
+    (defaults: `<kind>.situation`, the wall clock, now + 7 d for the card); `counts` gathers what the
+    card contract refused; `corpus` is what the words were composed from beyond the evidence (`refusals`)."""
     if kind not in KINDS:
         raise ValueError(f"kind must be one of {KINDS}")
     if priority not in PRIORITIES:
@@ -102,6 +153,15 @@ def emit_situation(engine, card_store, org_id: str, *, kind: str, key: str, seat
     capability = capability_id or f"{kind}.situation"
     subjects = sorted({str(s) for s in (subject_node_ids or ()) if s})
     evidence = [dict(e) for e in (evidence or ()) if isinstance(e, dict)][:20]
+    refused = refusals(headline=headline, body=body, evidence=evidence, corpus=corpus)
+    if refused:
+        for r in refused:
+            if counts is not None:
+                counts[f"refused_contract:{r.rule}"] = counts.get(f"refused_contract:{r.rule}", 0) + 1
+        _log.warning("team card refused by the card contract org=%s key=%s: %s", org_id, key,
+                     "; ".join(f"{r.rule}: {r.found}" for r in refused))
+        _keep_refusals(engine, org_id, ref=f"{kind}:{key}", refused=refused, counts=counts)
+        return None
     card_exp = expires_at or now + timedelta(days=CARD_TTL_DAYS)
     ttl = max(60, min(int(ttl_seconds or 900), 86400))
     shown = False

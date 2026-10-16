@@ -1,0 +1,493 @@
+{
+ "case_id": "F64",
+ "title": "A declined introduction clears and never comes back from old activity",
+ "kind": "must_abstain",
+ "label_row": 64,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-05T18:00:00Z",
+  "2026-08-12T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-05T06:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "zara@northlake.test"
+   ],
+   "subject": "Arjun <> Zara Hussain (Northlake)",
+   "body": "Arjun, meet Zara Hussain, who runs operations at Northlake and is looking at tools for her team. Zara, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-zara",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Zara Hussain",
+       "entity_type": "person",
+       "quote": "Zara Hussain"
+      },
+      {
+       "surface_form": "Northlake",
+       "entity_type": "organization",
+       "quote": "Northlake"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Zara Hussain",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Zara Hussain"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "decline",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-05T12:40:00Z",
+   "from": "Zara Hussain <zara@northlake.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Zara Hussain (Northlake)",
+   "body": "Hi Arjun,\n\nThank you, and nice to meet you. We've just signed with another vendor, so I'll pass for now. Best of luck with Nimbus Labs.\n\nZara Hussain\nHead of Operations, Northlake",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-zara",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "decline",
+     "stance": "negative",
+     "topics": [
+      "introduction declined"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Zara Hussain",
+       "entity_type": "person",
+       "quote": "Zara Hussain"
+      },
+      {
+       "surface_form": "Northlake",
+       "entity_type": "organization",
+       "quote": "Northlake"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Zara Hussain",
+       "value": "Head of Operations",
+       "standing": "observed",
+       "quote": "Head of Operations, Northlake"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "low",
+      "motive": "decline the introduction"
+     },
+     "decision_states": [
+      {
+       "state": "declined",
+       "subject": "the introduction to Nimbus Labs",
+       "quote": "We've just signed with another vendor, so I'll pass for now."
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "nudge",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-08-12T06:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Did you and Zara connect?",
+   "body": "Hi Arjun, a week ago I introduced you to Zara Hussain at Northlake. Did the two of you get a chance to connect?\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-nudge",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.35,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "introduction follow-up"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Zara Hussain",
+       "entity_type": "person",
+       "quote": "Zara Hussain"
+      },
+      {
+       "surface_form": "Northlake",
+       "entity_type": "organization",
+       "quote": "Northlake"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "casual",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "low",
+      "motive": "check whether an introduction landed"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "decline": "emitted"
+  },
+  "memory": {
+   "decline": true,
+   "nudge": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Zara",
+     "Northlake"
+    ],
+    "min": 0,
+    "max": 0
+   },
+   {
+    "about": [
+     "Introly"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "last chance",
+   "checking in",
+   "Reply to Introly",
+   "reply to Introly",
+   "follow up with Zara"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "decline"
+  ]
+ },
+ "not_expressible": {},
+ "notes": "Replay 02 m07: Zara declined the introduction the day it was made. Nothing to act on, and the connector's nudge a week later is old activity: it reopens nothing. The connector's history is kept.",
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<northlake.test>",
+     "Did the two of you get a chance to connect"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly introduced Zara Hussain, who runs operations at Northlake and is looking at tools for her team.",
+       "evidence": [
+        "evt_644a1ed352de6d5d4df10a1f"
+       ],
+       "quote": "Zara Hussain, who runs operations at Northlake and is looking at tools for her team"
+      },
+      {
+       "claim": "Zara replied the same day that Northlake has just signed with another vendor, so she will pass for now.",
+       "evidence": [
+        "evt_82176891046b60ffedfd14e2"
+       ],
+       "quote": "We've just signed with another vendor, so I'll pass for now."
+      },
+      {
+       "claim": "She signs as Head of Operations at Northlake.",
+       "evidence": [
+        "evt_82176891046b60ffedfd14e2"
+       ],
+       "quote": "Zara Hussain Head of Operations, Northlake"
+      },
+      {
+       "claim": "A week later Introly asked whether the two of you got a chance to connect.",
+       "evidence": [
+        "evt_f57098a13db33849acbcc6e4"
+       ],
+       "quote": "Did the two of you get a chance to connect?"
+      },
+      {
+       "claim": "The file sits under a situation seen for the first time.",
+       "evidence": [
+        "sit:sit_daa79845cb07cfdf0b7243d5",
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The introduction is closed by the person introduced: there is nothing for you to do in this file.",
+       "based_on": [
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "The connector's question is old activity about a closed introduction: it reopens nothing, and it asks nothing that needs an answer from this file.",
+       "based_on": [
+        "fact:2",
+        "fact:4"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+       "based_on": [
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Northlake may look for tools again later.",
+       "needs": "A new mail from Zara saying so."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether Northlake's new vendor will last.",
+       "relevance": "A failed vendor could reopen the conversation, on Zara's word."
+      }
+     ],
+     "frames": {
+      "primary": "An introduction the person introduced declined the same day: closed, with nothing for you to do.",
+      "rivals": [
+       "A polite pause that Northlake could end later.",
+       "A decline that leaves the door open for a later pilot."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "intro",
+      "why": "Introly introduced you to Zara Hussain of Northlake, and she declined the introduction.",
+      "evidence": [
+       "evt_644a1ed352de6d5d4df10a1f",
+       "evt_82176891046b60ffedfd14e2"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: a declined introduction is closed, and nothing reopens it but the person's own word.",
+      "actual": "Zara declined the introduction the day it was made. The connector later asked whether you connected; nothing from Zara since."
+     },
+     "scenarios": {
+      "do_nothing": "The file stays closed, at no cost.",
+      "act": "Writing to Zara now would ask her to reverse a decision she made the same day.",
+      "best": "Northlake comes back of its own accord, later.",
+      "worst": "A nudge reaches someone who already said no.",
+      "signals_to_watch": [
+       "A new mail from Zara saying Northlake is looking again"
+      ]
+     },
+     "appraisal": {
+      "stakes": "low",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "Zara declined the introduction.",
+       "Nothing in the file asks anything of you."
+      ]
+     },
+     "mode": "nothing",
+     "next_move": null,
+     "alternative": "If you want to keep the door open, leave it to Zara: she knows where to find you.",
+     "wait_or_stop": "Stop: the introduction is declined. A new word from Zara is what reopens it; the connector's activity never does.",
+     "done_when": "Nothing remains to do: the introduction is closed with its reason.",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<northlake.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly introduced Zara Hussain, who runs operations at Northlake and is looking at tools for her team.",
+       "evidence": [
+        "evt_644a1ed352de6d5d4df10a1f"
+       ],
+       "quote": "Zara Hussain, who runs operations at Northlake and is looking at tools for her team"
+      },
+      {
+       "claim": "Zara replied the same day that Northlake has just signed with another vendor, so she will pass for now.",
+       "evidence": [
+        "evt_82176891046b60ffedfd14e2"
+       ],
+       "quote": "We've just signed with another vendor, so I'll pass for now."
+      },
+      {
+       "claim": "She signs as Head of Operations at Northlake.",
+       "evidence": [
+        "evt_82176891046b60ffedfd14e2"
+       ],
+       "quote": "Zara Hussain Head of Operations, Northlake"
+      },
+      {
+       "claim": "The file sits under a situation seen for the first time.",
+       "evidence": [
+        "sit:sit_daa79845cb07cfdf0b7243d5",
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The introduction is closed by the person introduced: there is nothing for you to do in this file.",
+       "based_on": [
+        "fact:2"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+       "based_on": [
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Northlake may look for tools again later.",
+       "needs": "A new mail from Zara saying so."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether Northlake's new vendor will last.",
+       "relevance": "A failed vendor could reopen the conversation, on Zara's word."
+      }
+     ],
+     "frames": {
+      "primary": "An introduction the person introduced declined the same day: closed, with nothing for you to do.",
+      "rivals": [
+       "A polite pause that Northlake could end later.",
+       "A decline that leaves the door open for a later pilot."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "intro",
+      "why": "Introly introduced you to Zara Hussain of Northlake, and she declined the introduction.",
+      "evidence": [
+       "evt_644a1ed352de6d5d4df10a1f",
+       "evt_82176891046b60ffedfd14e2"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: a declined introduction is closed, and nothing reopens it but the person's own word.",
+      "actual": "Zara declined the introduction the day it was made."
+     },
+     "scenarios": {
+      "do_nothing": "The file stays closed, at no cost.",
+      "act": "Writing to Zara now would ask her to reverse a decision she made the same day.",
+      "best": "Northlake comes back of its own accord, later.",
+      "worst": "A nudge reaches someone who already said no.",
+      "signals_to_watch": [
+       "A new mail from Zara saying Northlake is looking again"
+      ]
+     },
+     "appraisal": {
+      "stakes": "low",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "Zara declined the introduction.",
+       "Nothing in the file asks anything of you."
+      ]
+     },
+     "mode": "nothing",
+     "next_move": null,
+     "alternative": "If you want to keep the door open, leave it to Zara: she knows where to find you.",
+     "wait_or_stop": "Stop: the introduction is declined. A new word from Zara is what reopens it; the connector's activity never does.",
+     "done_when": "Nothing remains to do: the introduction is closed with its reason.",
+     "draft": null
+    }
+   }
+  ]
+ }
+}

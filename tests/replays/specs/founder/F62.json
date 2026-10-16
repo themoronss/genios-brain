@@ -1,0 +1,599 @@
+{
+ "case_id": "F62",
+ "title": "One contact's call is booked, another's time only proposed: each file keeps its own state",
+ "kind": "must_detect",
+ "label_row": 62,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-11T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro-farhan",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T06:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "farhan@bluewater.test"
+   ],
+   "subject": "Arjun <> Farhan Ali (Bluewater Studio)",
+   "body": "Arjun, meet Farhan Ali, who runs Bluewater Studio, a design agency of twenty. Farhan, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-farhan",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Farhan Ali",
+       "entity_type": "person",
+       "quote": "Farhan Ali"
+      },
+      {
+       "surface_form": "Bluewater Studio",
+       "entity_type": "organization",
+       "quote": "Bluewater Studio"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Farhan Ali",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Farhan Ali"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "intro-ira",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T06:20:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "ira@lanternfish.test"
+   ],
+   "subject": "Arjun <> Ira Menon (Lanternfish)",
+   "body": "Arjun, meet Ira Menon, a product lead at Lanternfish. Ira, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-ira",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ira Menon",
+       "entity_type": "person",
+       "quote": "Ira Menon"
+      },
+      {
+       "surface_form": "Lanternfish",
+       "entity_type": "organization",
+       "quote": "Lanternfish"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Ira Menon",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Ira Menon"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "farhan",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T09:00:00Z",
+   "from": "Farhan Ali <farhan@bluewater.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Farhan Ali (Bluewater Studio)",
+   "body": "Hi Arjun,\n\nGreat to meet you. I've sent you an invite for Thursday 14 August at 4 pm IST to see the product. Looking forward to it.\n\nFarhan Ali\nFounder, Bluewater Studio",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-farhan",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "product demo",
+      "meeting booked"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Farhan Ali",
+       "entity_type": "person",
+       "quote": "Farhan Ali"
+      },
+      {
+       "surface_form": "Bluewater Studio",
+       "entity_type": "organization",
+       "quote": "Bluewater Studio"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Farhan Ali",
+       "value": "Founder",
+       "standing": "observed",
+       "quote": "Founder, Bluewater Studio"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "medium",
+      "motive": "a booked demo"
+     }
+    }
+   }
+  },
+  {
+   "id": "booked",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T09:01:00Z",
+   "summary": "Nimbus Labs demo — Farhan Ali (Bluewater Studio)",
+   "start": "2026-08-14T10:30:00Z",
+   "end": "2026-08-14T11:00:00Z",
+   "organizer": "farhan@bluewater.test",
+   "attendees": [
+    "farhan@bluewater.test",
+    "arjun@nimbuslabs.test"
+   ],
+   "status": "confirmed"
+  },
+  {
+   "id": "ira",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T11:30:00Z",
+   "from": "Ira Menon <ira@lanternfish.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Ira Menon (Lanternfish)",
+   "body": "Hi Arjun,\n\nThanks for the intro. Would Tuesday 12 August at 11 am work for a call? If not, send me a time that suits you.\n\nBest,\nIra Menon\nProduct Lead, Lanternfish",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-ira",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "intro call"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ira Menon",
+       "entity_type": "person",
+       "quote": "Ira Menon"
+      },
+      {
+       "surface_form": "Lanternfish",
+       "entity_type": "organization",
+       "quote": "Lanternfish"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Ira Menon",
+       "value": "Product Lead",
+       "standing": "observed",
+       "quote": "Product Lead, Lanternfish"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "a first call"
+     },
+     "questions": [
+      {
+       "text": "Does Tuesday 12 August at 11 am work for a call with Ira?",
+       "asked_by": "Ira Menon",
+       "asked_of": "Arjun Rao",
+       "quote": "Would Tuesday 12 August at 11 am work for a call?"
+      }
+     ],
+     "scheduling_proposals": [
+      {
+       "proposer": "Ira Menon",
+       "text": "Tuesday 12 August at 11 am",
+       "evidence_text": "Would Tuesday 12 August at 11 am work for a call?"
+      }
+     ],
+     "implied_actions": [
+      "accept or counter Ira's proposed time"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "farhan": "emitted",
+   "ira": "emitted"
+  },
+  "memory": {
+   "farhan": true,
+   "ira": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Ira",
+     "Lanternfish"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "Tuesday"
+    ]
+   },
+   {
+    "about": [
+     "Farhan",
+     "Bluewater"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Reply to Introly",
+   "reply to Introly",
+   "4 pm",
+   "14 August"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {},
+ "notes": "Replay 02 m03: Farhan's demo is on both calendars for Thursday; Ira has only proposed Tuesday. Ira's card answers her proposed time; Farhan's file waits for its call with nothing to do — and no card carries the other contact's time.",
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<bluewater.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly introduced Farhan Ali, who runs Bluewater Studio, a design agency of twenty.",
+       "evidence": [
+        "evt_5f983c58fadf579a7680f246"
+       ],
+       "quote": "Farhan Ali, who runs Bluewater Studio, a design agency of twenty"
+      },
+      {
+       "claim": "Farhan replied that he has sent you an invite for Thursday 14 August at 4 pm IST to see the product.",
+       "evidence": [
+        "evt_9f87e9fcf19a0763f032f078"
+       ],
+       "quote": "I've sent you an invite for Thursday 14 August at 4 pm IST to see the product"
+      },
+      {
+       "claim": "The demo is booked on the calendar.",
+       "evidence": [
+        "evt_fc7250e640c88874fd5c9ff6"
+       ]
+      },
+      {
+       "claim": "The file sits under a situation seen for the first time.",
+       "evidence": [
+        "sit:sit_f86e6a00652a0b0470fbc926",
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Nothing waits on you before the demo: Farhan booked it himself and it is on the calendar.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+       "based_on": [
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Bluewater Studio may become a customer.",
+       "needs": "The demo, and what Farhan's agency needs."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "What Farhan wants to see in the product.",
+       "relevance": "It shapes the demo."
+      }
+     ],
+     "frames": {
+      "primary": "An introduced founder booked a demo himself; the call is on the calendar and nothing is owed before it.",
+      "rivals": [
+       "A prospect who will want a short brief before the call.",
+       "A courtesy demo with no need behind it."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "intro",
+      "why": "Farhan Ali came to you through the connector's introduction and booked a demo.",
+      "evidence": [
+       "evt_5f983c58fadf579a7680f246",
+       "evt_9f87e9fcf19a0763f032f078"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: once a call is booked, the file waits for it.",
+      "actual": "Farhan booked the demo the day of the introduction; it is on the calendar."
+     },
+     "scenarios": {
+      "do_nothing": "The demo happens as booked.",
+      "act": "There is nothing to do before the demo but turn up prepared.",
+      "best": "The demo goes well and Bluewater Studio becomes a customer.",
+      "worst": "The demo is missed.",
+      "signals_to_watch": [
+       "Farhan moving or cancelling the invite",
+       "The day of the demo"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The demo is booked and nothing is owed before it.",
+       "A booked call can be moved, so nothing is lost by waiting."
+      ]
+     },
+     "mode": "wait",
+     "next_move": null,
+     "alternative": "If you want to prepare, read Farhan's two mails again before the demo.",
+     "wait_or_stop": "Wait for the demo; if Farhan moves or cancels it, the file reads it again.",
+     "done_when": "The demo with Farhan Ali has taken place.",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<lanternfish.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Introly introduced Ira Menon, a product lead at Lanternfish, and left the two of you to take it from there.",
+       "evidence": [
+        "evt_00bec3f68d30dc9e4f0f08c5"
+       ],
+       "quote": "Ira Menon, a product lead at Lanternfish"
+      },
+      {
+       "claim": "Ira asked whether Tuesday 12 August at 11 am works for a call, or for a time that suits you.",
+       "evidence": [
+        "evt_0922a95db2a6c9f48007a3ee"
+       ],
+       "quote": "Would Tuesday 12 August at 11 am work for a call? If not, send me a time that suits you."
+      },
+      {
+       "claim": "She signs as Product Lead at Lanternfish.",
+       "evidence": [
+        "evt_0922a95db2a6c9f48007a3ee"
+       ],
+       "quote": "Ira Menon Product Lead, Lanternfish"
+      },
+      {
+       "claim": "The ask is open in this file and waits on you.",
+       "evidence": [
+        "loop:loop_d0b16a736069e70b677cac82"
+       ]
+      },
+      {
+       "claim": "The file sits under a situation seen for the first time.",
+       "evidence": [
+        "sit:sit_bfe1fd8616d638a514f580dc",
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The move is yours: one reply answers Ira's ask.",
+       "based_on": [
+        "fact:2",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Introly has done its part; the reply goes to Ira, never to the connector.",
+       "based_on": [
+        "fact:1"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+       "based_on": [
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Lanternfish may be a fit for the product.",
+       "needs": "The call, and what Ira asks."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether Tuesday 12 August at 11 am is free on your calendar.",
+       "relevance": "It decides whether you accept or counter."
+      }
+     ],
+     "frames": {
+      "primary": "An introduced product lead proposed a call for Tuesday; your answer is owed.",
+      "rivals": [
+       "A product lead exploring a fit with Lanternfish.",
+       "A courtesy call, with nothing behind it yet."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "intro",
+      "why": "Ira Menon came to you through the connector's introduction and proposed a call.",
+      "evidence": [
+       "evt_00bec3f68d30dc9e4f0f08c5",
+       "evt_0922a95db2a6c9f48007a3ee"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, from the brief and the file: a contact who proposes a time gets an answer before it.",
+      "actual": "Ira proposed Tuesday 12 August at 11 am; nothing from you is in the file."
+     },
+     "scenarios": {
+      "do_nothing": "Tuesday passes unanswered, and a contact who proposed a time reads the silence as no.",
+      "act": "A short answer now books the call she proposed.",
+      "best": "The call happens on Tuesday and leads somewhere useful.",
+      "worst": "No answer goes before Tuesday, or one goes to the connector, and the call is lost.",
+      "signals_to_watch": [
+       "Ira accepting the invite",
+       "Tuesday drawing near with nothing agreed"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "high",
+      "reversibility": "reversible",
+      "reasons": [
+       "Ira proposed a time and waits on your answer.",
+       "Her proposed day is tomorrow.",
+       "A missed call can be offered again, so a wrong move is reversible."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "You",
+      "what": "Accept Ira Menon's call on Tuesday 12 August at 11 am, or send her a time that suits you",
+      "for_whom": "Ira Menon at Lanternfish",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ],
+      "to": "Ira Menon",
+      "answers": "loop:loop_d0b16a736069e70b677cac82"
+     },
+     "alternative": "If Tuesday does not work, reply to Ira with a time that suits you, as she asked.",
+     "wait_or_stop": "Do not wait: the move is yours. Once you have answered, wait for Ira; if no answer comes within a week, nudge once, then stop.",
+     "done_when": "A call with Ira Menon is on both calendars.",
+     "draft": "Hi Ira, thanks, and good to meet you. Tuesday 12 August at 11 am works for me. I'll send an invite. Best"
+    }
+   }
+  ]
+ }
+}

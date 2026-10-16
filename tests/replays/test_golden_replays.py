@@ -36,7 +36,7 @@ CASES = {c.case_id: c for c in load_cases()}
 #: The replays the founder set drives. 08–12 follow when their cases exist.
 DRIVEN = {f"{n:02d}" for n in range(1, 8)}
 _PREDICATES = {"case", "card_about", "min", "max", "mentions", "level_in", "memory", "no_phrase",
-               "why"}
+               "why", "each", "open_at_end", "versioned"}
 
 
 def _scratch_db() -> None:

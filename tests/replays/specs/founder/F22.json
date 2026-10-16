@@ -243,7 +243,7 @@
       ]
      },
      "alternative": "Ask the cell directly who may apply, and decide from its answer.",
-     "wait_or_stop": "Do not wait for the cell; its mail is a notice. Stop if Nimbus Labs is not incubated on campus — close the file with that reason.",
+     "wait_or_stop": "Do not wait for the cell; its mail is a notice. Stop if your company is not incubated on campus — close the file with that reason.",
      "done_when": "The file shows either the application's receipt before the thirtieth, or why you did not apply.",
      "draft": null
     }

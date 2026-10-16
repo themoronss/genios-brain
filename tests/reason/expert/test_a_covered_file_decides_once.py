@@ -150,7 +150,9 @@ def test_a_covered_file_decides_once_and_its_situations_stand_down(world, monkey
         ends = {r.situation_id: (r.outcome, r.reason) for r in c.execute(text(
             "select situation_id, outcome, reason from situation_outcomes where org_id = :o"),
             {"o": org})}
-    assert tuple(run) == ("expert.file_review", "live", "ffp-fund-first-review-00000")
+    # ⛔ RESTATED by yc2_w27_s13/M35.C3.L-integration.V1.U06 (X12): keyed on the review and its check.
+    from genios_engine.contracts.claim_check import CHECK_VERSION
+    assert tuple(run) == ("expert.file_review", "live", f"ffp-fund-first-review-00000@{CHECK_VERSION}")
     assert all(ends[s] == ("decided", "covered_by_review") for s in situations), ends
 
 
@@ -201,7 +203,8 @@ def test_a_new_review_replaces_the_files_signal(world):
                            {"o": org, "s": first.signal_id}).scalar()
         trigger = c.execute(text("select trigger_ref from reasoning_runs where org_id = :o "
                                  "and run_id = :r"), {"o": org, "r": second.reasoning_run_id}).scalar()
-    assert status == "expired" and trigger == "ffp-fund-second-review-0000"
+    from genios_engine.reason.expert.decide import fingerprint_of      # ⛔ RESTATED (M35.C3.L-integration.V1.U06)
+    assert status == "expired" and fingerprint_of(trigger) == "ffp-fund-second-review-0000"
 
 
 def test_a_situation_the_review_never_saw_keeps_its_own_decision(world):
@@ -305,7 +308,7 @@ def test_the_same_review_checked_again_under_a_new_check_is_decided_again(world)
     covered = {anchor: "ffp-fund-first-review-00000"}
     _compile(store, org, registry, covered=covered)
     with store.engine.begin() as c:
-        c.execute(text("update expert_reviews set checked = jsonb_set(checked, '{version}', '\"check.v2\"') "
+        c.execute(text("update expert_reviews set checked = jsonb_set(checked, '{version}', '\"check.v-next\"') "
                        "where org_id = :o"), {"o": org})
     again = _compile(store, org, registry, covered=covered, at=NOW + timedelta(minutes=15))
     assert again.get("expert_unchanged", 0) == 0 and again.get("expert_decided") == 1, again
@@ -331,3 +334,81 @@ def test_the_advice_a_card_gave_is_what_the_check_let_stand():
                            because="fact:1 unquoted (fact 1)", words=C.CardWords(None, "s", "d", None, None))
     assert _advice(SimpleNamespace(review=review, checked=held)) == ("find_out", None)
     assert _advice(SimpleNamespace(review=review, checked=None)) == (None, None)
+
+
+def test_a_recheck_that_holds_the_move_an_older_check_showed_clears_its_decision(world):
+    """STEP-13 X12 (`yc2_w27_s13` M35.C3.L-integration.V1.U06, `06` D48). The file's decision is keyed on its review
+    AND its check (`decide.decision_ref`): the same review checked again by a newer check version that HOLDS the move
+    the older check showed must clear the older check's decision — keyed on the fingerprint alone, `_CLEAR_FILE_
+    DECISIONS` saw "this same review" and left its card live beside the question for up to 168 hours."""
+    from genios_engine.reason.expert import decide as D
+    from tests.reason.expert.test_a_held_file_asks import _held
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    fp = "ffp-fund-shown-then-held-00"
+    _write(store, org, anchor, fp, events)
+    with store.engine.begin() as c:                  # the review as an older check showed it
+        c.execute(text("update expert_reviews set checked = jsonb_set(checked, '{version}', '\"check.v1\"') "
+                       "where org_id = :o and fingerprint = :fp"), {"o": org, "fp": fp})
+    _compile(store, org, registry, covered={anchor: fp})
+    [shown] = [s for s in _open_signals(store, org, anchor) if s.rule_id == "file_review"]
+    with store.engine.connect() as c:
+        ref = c.execute(text("select trigger_ref from reasoning_runs where org_id = :o and run_id = :r"),
+                        {"o": org, "r": shown.reasoning_run_id}).scalar()
+    assert ref == D.decision_ref(fp, "check.v1")
+    review = ExpertReview.from_mapping(_review(sorted(events)[0]))
+    with store.engine.begin() as c:                  # checked again today: the move is held
+        assert R.write_check(c, org_id=org, file_id=anchor, fingerprint=fp, checked=_held(review),
+                             at=NOW + timedelta(hours=1))
+    counts = _compile(store, org, registry, covered={anchor: fp}, at=NOW + timedelta(hours=1))
+    left = [s.rule_id for s in _open_signals(store, org, anchor)]
+    assert "file_review" not in left and counts.get("expert_cleared") == 1, (left, counts)
+    assert "founder_question" in left, "the file asks its question in the decision's place"
+
+
+def test_the_same_advice_through_another_check_is_decided_again(world):
+    """STEP-13 X12: the advice a decision gave is the advice its CHECK let stand — once the row is checked again,
+    that check is gone from it. So a decision made through an older check is never "the same advice" as the review
+    now says it: the file's decision is made again from what the newer check let stand (here, its corrected
+    words), never left standing on the older check's."""
+    import genios_engine.contracts.claim_check as C
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    fp = "ffp-fund-corrected-review-0"
+    _write(store, org, anchor, fp, events)
+    with store.engine.begin() as c:
+        c.execute(text("update expert_reviews set checked = jsonb_set(checked, '{version}', '\"check.v1\"') "
+                       "where org_id = :o and fingerprint = :fp"), {"o": org, "fp": fp})
+    _compile(store, org, registry, covered={anchor: fp})
+    [first] = [s for s in _open_signals(store, org, anchor) if s.rule_id == "file_review"]
+    review = ExpertReview.from_mapping(_review(sorted(events)[0]))
+    shown = as_written(review)
+    corrected = C.CheckedReview(verdicts=shown.verdicts, fate=C.SHOWN, cited=shown.cited,
+                                words=C.CardWords(**{**shown.words.as_mapping(),
+                                                     "headline": "Send Arjun the deck and Q3's metrics",
+                                                     "evidence": tuple(shown.words.evidence),
+                                                     "quotes": tuple(shown.words.quotes)}))
+    with store.engine.begin() as c:
+        assert R.write_check(c, org_id=org, file_id=anchor, fingerprint=fp, checked=corrected,
+                             at=NOW + timedelta(hours=1))
+    counts = _compile(store, org, registry, covered={anchor: fp}, at=NOW + timedelta(hours=1))
+    [now_open] = [s for s in _open_signals(store, org, anchor) if s.rule_id == "file_review"]
+    assert now_open.signal_id != first.signal_id and counts.get("expert_emitted") == 1, counts
+
+
+def test_the_same_review_through_the_same_check_stands_on_its_key_alone(world, monkeypatch):
+    """The decision's key is enough: the same review through the same check stands without asking whether its
+    advice is the same (`_same_advice` is never the only road to standing)."""
+    from genios_engine.reason import domain_shadow
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    fp = "ffp-fund-same-key-review-00"
+    _write(store, org, anchor, fp, events)
+    _compile(store, org, registry, covered={anchor: fp})
+    [first] = _open_signals(store, org, anchor)
+    monkeypatch.setattr(domain_shadow, "_same_advice", lambda *_a, **_k: False)
+    with store.engine.begin() as c:            # the gate forgets it: decided again, on the same key
+        c.execute(text("delete from reasoning_fingerprints where org_id = :o"), {"o": org})
+    counts = _compile(store, org, registry, covered={anchor: fp}, at=NOW + timedelta(minutes=15))
+    assert counts.get("expert_standing") == 1 and [s.signal_id for s in _open_signals(store, org, anchor)] == [
+        first.signal_id], counts

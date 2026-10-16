@@ -467,5 +467,11 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # (YC-II W27 STEP-13, `yc2_w27_s13/M36.C2.L-contract.V0.U01`): one new table, whose first reference is
     # the tenant reset's `delete` list. An engine change, not a resolver change; its store and readers
     # (`context/founder_questions.py`, M36.C2.L-data.V1.U02) are later units.
-    assert len(TC.table_usage()) == 194
-    assert len(TC._known_tables()) == 196
+    # ⛔ RE-PINNED 194 → 195 and 196 → 197 on 2026-10-13 by migration `0222_card_refusals` (YC-II W27 STEP-14,
+    # `yc2_w27_s14/M43.C4.L-integration.V2.U05`): one new table, written by its one writer
+    # (`platform/card_refusals.record`, called by `deliver/pipeline` and `reason/team/emit`), read by
+    # `scripts/pipeline_health.py`, deleted by the tenant reset — measured: `table_usage()["card_refusals"]` is
+    # `{"insert", "read", "delete"}`. An engine change, not a resolver change; read as well as written, so the
+    # nine write-only members above did not move.
+    assert len(TC.table_usage()) == 195
+    assert len(TC._known_tables()) == 197

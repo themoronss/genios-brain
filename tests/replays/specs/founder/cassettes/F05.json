@@ -1,7 +1,7 @@
 {
  "case_id": "F05",
  "source": "ideal_reader",
- "recorded_at": "e4a2fa89",
+ "recorded_at": "b8b4804d",
  "answers": {
   "068f9e4953b68f6d23a604bea129ae7d564dd1b6d99795345c0ceab6c06b3d70": {
    "site": "junk_gate_batch",
@@ -17,6 +17,149 @@
    "framed": true,
    "input_tokens": 1058,
    "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "1c5df08d8bda5f351b517bcb5f3ef78f4d50bd3d1849cef9329f2f5d83105dfa": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Marco Ruiz, who backs business-to-business software at Altavia Partners, to the founder and left the two to take it from there.",
+      "evidence": [
+       "evt_#2"
+      ],
+      "quote": "Ruiz, who backs B2B software at Altavia Partners. Marco, meet Arjun Rao, the founder"
+     },
+     {
+      "claim": "Marco replied about five days later, apologising for the slow reply, saying he would like to understand how Nimbus handles investor pipelines, and asking for a short deck before they set up a call.",
+      "evidence": [
+       "evt_#1",
+       "num:usual_gap"
+      ],
+      "quote": "slow reply. I'd like to understand how Nimbus handles investor pipelines."
+     },
+     {
+      "claim": "His ask is open in this file and waits on us.",
+      "evidence": [
+       "loop:loop_#1"
+      ]
+     },
+     {
+      "claim": "Marco Ruiz is the person this file's numbers follow, and no reply time has been measured either way.",
+      "evidence": [
+       "num:their_reply_time:marco@altavia.test",
+       "num:your_reply_time:marco@altavia.test"
+      ]
+     },
+     {
+      "claim": "The file sits under an account admin situation, seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Altavia Partners reads as an investor: Marco backs business-to-business software and wants a deck before a call, the way an investor screens.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "The slow part of this file was Marco's; the founder should not add a second delay.",
+      "based_on": [
+       "fact:2",
+       "fact:3"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Marco's question on how Nimbus handles investor pipelines is diligence on the product before spending a call on it.",
+      "needs": "Marco's response to the deck, or the questions he brings to a call."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether a short deck fit to send to an investor exists today.",
+      "relevance": "If it does, the move is a reply with an attachment; if not, the deck is the work."
+     },
+     {
+      "question": "Whether Altavia invests at seed, and in products like Nimbus Labs.",
+      "relevance": "It sets how much of the founder's time this deserves."
+     },
+     {
+      "question": "Whether the founder has answered Marco since the mailbox was last read.",
+      "relevance": "A reply sent after the last sync would not show here, and the move would already be made."
+     }
+    ],
+    "frames": {
+     "primary": "An introduced investor has answered and asked for a short deck before a call; the deck is owed by you.",
+     "rivals": [
+      "A polite screen in which the deck decides whether a call follows at all.",
+      "An investor whose focus may not fit a seed-stage AI product, making the deck a courtesy."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "investor",
+     "why": "Marco Ruiz backs business-to-business software at Altavia Partners and asks for a deck before a call, which reads as a fund screening a raise; while the founder raises the seed round, the work this file holds is raising from it, introduced by the connector.",
+     "evidence": [
+      "evt_#2",
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "With no playbook, from the brief and the file: an investor who asks for a deck before a call gets it promptly, short and specific, with a call offered.",
+     "actual": "Marco answered the introduction after about five days, apologised for the slow reply, said he wants to understand how Nimbus handles investor pipelines, and asked for a short deck before a call; the founder has not written in this file, and the question waits on us."
+    },
+    "scenarios": {
+     "do_nothing": "Marco's ask goes unanswered; an investor who asked for a deck reads the silence as a weak process, and no call follows.",
+     "act": "A short deck sent now, with a line on how Nimbus handles investor pipelines and an offer of a call, keeps the thread warm.",
+     "best": "Marco reads the deck, a call is booked, and Altavia joins the seed round's pipeline.",
+     "worst": "The deck goes late or reads poorly, and Altavia passes without a call.",
+     "signals_to_watch": [
+      "Marco acknowledging the deck or proposing a time",
+      "Questions from Marco that show what Altavia screens for",
+      "Further silence after the deck is sent"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "Raising the seed round is the brief's first goal, and Altavia reads as a fund.",
+      "A direct ask from the investor waits on us.",
+      "The first material an investor sees is hard to take back."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun Rao",
+     "what": "Reply to Marco Ruiz with a short deck attached, a line on how you handle investor pipelines, and an offer to set up a call once he has read it",
+     "for_whom": "Marco Ruiz at Altavia Partners",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "to": "Marco",
+     "answers": "loop:loop_#1"
+    },
+    "alternative": "If the deck is not ready, reply now to say it will follow within the week, and offer a call meanwhile.",
+    "wait_or_stop": "Do not wait: the ask is Marco's and the move is ours. After the deck goes, wait for his answer; follow up once after about a week, then stop.",
+    "done_when": "Marco has the deck and a call with Altavia Partners is booked, or he has said it is not a fit.",
+    "draft": "Hi Marco, thanks for coming back, and no apology needed. Attaching a short deck on Nimbus Labs, including how we handle investor pipelines for founders. Happy to set up a call once you have had a look. Best, Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Marco Ruiz, who backs business-to-business software at Altavia Partners, to the founder and left the two to take it from there.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Ruiz, who backs B2B software at Altavia Partners. Marco, meet Arjun Rao, the founder\"}, {\"claim\": \"Marco replied about five days later, apologising for the slow reply, saying he would like to understand how Nimbus handles investor pipelines, and asking for a short deck before they set up a call.\", \"evidence\": [\"evt_#1\", \"num:usual_gap\"], \"quote\": \"slow reply. I'd like to understand how Nimbus handles investor pipelines.\"}, {\"claim\": \"His ask is open in this file and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"Marco Ruiz is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:marco@altavia.test\", \"num:your_reply_time:marco@altavia.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Altavia Partners reads as an investor: Marco backs business-to-business software and wants a deck before a call, the way an investor screens.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The slow part of this file was Marco's; the founder should not add a second delay.\", \"based_on\": [\"fact:2\", \"fact:3\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Marco's question on how Nimbus handles investor pipelines is diligence on the product before spending a call on it.\", \"needs\": \"Marco's response to the deck, or the questions he brings to a call.\"}], \"unknowns\": [{\"question\": \"Whether a short deck fit to send to an investor exists today.\", \"relevance\": \"If it does, the move is a reply with an attachment; if not, the deck is the work.\"}, {\"question\": \"Whether Altavia invests at seed, and in products like Nimbus Labs.\", \"relevance\": \"It sets how much of the founder's time this deserves.\"}, {\"question\": \"Whether the founder has answered Marco since the mailbox was last read.\", \"relevance\": \"A reply sent after the last sync would not show here, and the move would already be made.\"}], \"frames\": {\"primary\": \"An introduced investor has answered and asked for a short deck before a call; the deck is owed by you.\", \"rivals\": [\"A polite screen in which the deck decides whether a call follows at all.\", \"An investor whose focus may not fit a seed-stage AI product, making the deck a courtesy.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Marco Ruiz backs business-to-business software at Altavia Partners and asks for a deck before a call, which reads as a fund screening a raise; while the founder raises the seed round, the work this file holds is raising from it, introduced by the connector.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the file: an investor who asks for a deck before a call gets it promptly, short and specific, with a call offered.\", \"actual\": \"Marco answered the introduction after about five days, apologised for the slow reply, said he wants to understand how Nimbus handles investor pipelines, and asked for a short deck before a call; the founder has not written in this file, and the question waits on us.\"}, \"scenarios\": {\"do_nothing\": \"Marco's ask goes unanswered; an investor who asked for a deck reads the silence as a weak process, and no call follows.\", \"act\": \"A short deck sent now, with a line on how Nimbus handles investor pipelines and an offer of a call, keeps the thread warm.\", \"best\": \"Marco reads the deck, a call is booked, and Altavia joins the seed round's pipeline.\", \"worst\": \"The deck goes late or reads poorly, and Altavia passes without a call.\", \"signals_to_watch\": [\"Marco acknowledging the deck or proposing a time\", \"Questions from Marco that show what Altavia screens for\", \"Further silence after the deck is sent\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Altavia reads as a fund.\", \"A direct ask from the investor waits on us.\", \"The first material an investor sees is hard to take back.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Reply to Marco Ruiz with a short deck attached, a line on how you handle investor pipelines, and an offer to set up a call once he has read it\", \"for_whom\": \"Marco Ruiz at Altavia Partners\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Marco\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If the deck is not ready, reply now to say it will follow within the week, and offer a call meanwhile.\", \"wait_or_stop\": \"Do not wait: the ask is Marco's and the move is ours. After the deck goes, wait for his answer; follow up once after about a week, then stop.\", \"done_when\": \"Marco has the deck and a call with Altavia Partners is booked, or he has said it is not a fit.\", \"draft\": \"Hi Marco, thanks for coming back, and no apology needed. Attaching a short deck on Nimbus Labs, including how we handle investor pipelines for founders. Happy to set up a call once you have had a look. Best, Arjun\"}",
+   "framed": true,
+   "input_tokens": 3513,
+   "output_tokens": 1353,
    "model": "claude-haiku-4-5-20251001"
   },
   "22e2cb9cba13c999373daa9b9f79c8b481ce6ada6a86e3b192155eea090beaba": {
@@ -249,149 +392,6 @@
    "framed": true,
    "input_tokens": 1544,
    "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8d4a7073da682ed98cc21cfaf6a34eea75760732e65e07abf29a33ddc846781f": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "Introly introduced Marco Ruiz, who backs business-to-business software at Altavia Partners, to the founder and left the two to take it from there.",
-      "evidence": [
-       "evt_#2"
-      ],
-      "quote": "Ruiz, who backs B2B software at Altavia Partners. Marco, meet Arjun Rao, the founder"
-     },
-     {
-      "claim": "Marco replied about five days later, apologising for the slow reply, saying he would like to understand how Nimbus handles investor pipelines, and asking for a short deck before they set up a call.",
-      "evidence": [
-       "evt_#1",
-       "num:usual_gap"
-      ],
-      "quote": "slow reply. I'd like to understand how Nimbus handles investor pipelines."
-     },
-     {
-      "claim": "His ask is open in this file and waits on us.",
-      "evidence": [
-       "loop:loop_#1"
-      ]
-     },
-     {
-      "claim": "Marco Ruiz is the person this file's numbers follow, and no reply time has been measured either way.",
-      "evidence": [
-       "num:their_reply_time:marco@altavia.test",
-       "num:your_reply_time:marco@altavia.test"
-      ]
-     },
-     {
-      "claim": "The file sits under an account admin situation, seen for the first time.",
-      "evidence": [
-       "sit:sit_#1",
-       "hist:derived.history.times_seen@admin"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "Altavia Partners reads as an investor: Marco backs business-to-business software and wants a deck before a call, the way an investor screens.",
-      "based_on": [
-       "fact:1",
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "The slow part of this file was Marco's; the founder should not add a second delay.",
-      "based_on": [
-       "fact:2",
-       "fact:3"
-      ]
-     }
-    ],
-    "patterns": [],
-    "hypotheses": [
-     {
-      "proposition": "Marco's question on how Nimbus handles investor pipelines is diligence on the product before spending a call on it.",
-      "needs": "Marco's response to the deck, or the questions he brings to a call."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "Whether a short deck fit to send to an investor exists today.",
-      "relevance": "If it does, the move is a reply with an attachment; if not, the deck is the work."
-     },
-     {
-      "question": "Whether Altavia invests at seed, and in products like Nimbus Labs.",
-      "relevance": "It sets how much of the founder's time this deserves."
-     },
-     {
-      "question": "Whether the founder has answered Marco since the mailbox was last read.",
-      "relevance": "A reply sent after the last sync would not show here, and the move would already be made."
-     }
-    ],
-    "frames": {
-     "primary": "An introduced investor has answered and asked for a short deck before a call; the deck is owed by you.",
-     "rivals": [
-      "A polite screen in which the deck decides whether a call follows at all.",
-      "An investor whose focus may not fit a seed-stage AI product, making the deck a courtesy."
-     ]
-    },
-    "proposed_kind": {
-     "kind": "investor",
-     "why": "Marco Ruiz backs business-to-business software at Altavia Partners and asks for a deck before a call, which reads as a fund screening a raise; while the founder raises the seed round, the work this file holds is raising from it, introduced by the connector.",
-     "evidence": [
-      "evt_#2",
-      "evt_#1"
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "With no playbook, from the brief and the file: an investor who asks for a deck before a call gets it promptly, short and specific, with a call offered.",
-     "actual": "Marco answered the introduction after about five days, apologised for the slow reply, said he wants to understand how Nimbus handles investor pipelines, and asked for a short deck before a call; the founder has not written in this file, and the question waits on us."
-    },
-    "scenarios": {
-     "do_nothing": "Marco's ask goes unanswered; an investor who asked for a deck reads the silence as a weak process, and no call follows.",
-     "act": "A short deck sent now, with a line on how Nimbus handles investor pipelines and an offer of a call, keeps the thread warm.",
-     "best": "Marco reads the deck, a call is booked, and Altavia joins the seed round's pipeline.",
-     "worst": "The deck goes late or reads poorly, and Altavia passes without a call.",
-     "signals_to_watch": [
-      "Marco acknowledging the deck or proposing a time",
-      "Questions from Marco that show what Altavia screens for",
-      "Further silence after the deck is sent"
-     ]
-    },
-    "appraisal": {
-     "stakes": "medium",
-     "urgency": "high",
-     "reversibility": "costly_to_reverse",
-     "reasons": [
-      "Raising the seed round is the brief's first goal, and Altavia reads as a fund.",
-      "A direct ask from the investor waits on us.",
-      "The first material an investor sees is hard to take back."
-     ]
-    },
-    "mode": "act",
-    "next_move": {
-     "who": "Arjun Rao",
-     "what": "Reply to Marco Ruiz with a short deck attached, a line on how you handle investor pipelines, and an offer to set up a call once he has read it",
-     "for_whom": "Marco Ruiz at Altavia Partners",
-     "by_when": null,
-     "rests_on": [
-      "fact:1",
-      "fact:2",
-      "fact:3"
-     ],
-     "to": "Marco",
-     "answers": "loop:loop_#1"
-    },
-    "alternative": "If the deck is not ready, reply now to say it will follow within the week, and offer a call meanwhile.",
-    "wait_or_stop": "Do not wait: the ask is Marco's and the move is ours. After the deck goes, wait for his answer; follow up once after about a week, then stop.",
-    "done_when": "Marco has the deck and a call with Altavia Partners is booked, or he has said it is not a fit.",
-    "draft": "Hi Marco, thanks for coming back, and no apology needed. Attaching a short deck on Nimbus Labs, including how we handle investor pipelines for founders. Happy to set up a call once you have had a look. Best, Arjun"
-   },
-   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Marco Ruiz, who backs business-to-business software at Altavia Partners, to the founder and left the two to take it from there.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Ruiz, who backs B2B software at Altavia Partners. Marco, meet Arjun Rao, the founder\"}, {\"claim\": \"Marco replied about five days later, apologising for the slow reply, saying he would like to understand how Nimbus handles investor pipelines, and asking for a short deck before they set up a call.\", \"evidence\": [\"evt_#1\", \"num:usual_gap\"], \"quote\": \"slow reply. I'd like to understand how Nimbus handles investor pipelines.\"}, {\"claim\": \"His ask is open in this file and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"Marco Ruiz is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:marco@altavia.test\", \"num:your_reply_time:marco@altavia.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Altavia Partners reads as an investor: Marco backs business-to-business software and wants a deck before a call, the way an investor screens.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The slow part of this file was Marco's; the founder should not add a second delay.\", \"based_on\": [\"fact:2\", \"fact:3\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Marco's question on how Nimbus handles investor pipelines is diligence on the product before spending a call on it.\", \"needs\": \"Marco's response to the deck, or the questions he brings to a call.\"}], \"unknowns\": [{\"question\": \"Whether a short deck fit to send to an investor exists today.\", \"relevance\": \"If it does, the move is a reply with an attachment; if not, the deck is the work.\"}, {\"question\": \"Whether Altavia invests at seed, and in products like Nimbus Labs.\", \"relevance\": \"It sets how much of the founder's time this deserves.\"}, {\"question\": \"Whether the founder has answered Marco since the mailbox was last read.\", \"relevance\": \"A reply sent after the last sync would not show here, and the move would already be made.\"}], \"frames\": {\"primary\": \"An introduced investor has answered and asked for a short deck before a call; the deck is owed by you.\", \"rivals\": [\"A polite screen in which the deck decides whether a call follows at all.\", \"An investor whose focus may not fit a seed-stage AI product, making the deck a courtesy.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Marco Ruiz backs business-to-business software at Altavia Partners and asks for a deck before a call, which reads as a fund screening a raise; while the founder raises the seed round, the work this file holds is raising from it, introduced by the connector.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the file: an investor who asks for a deck before a call gets it promptly, short and specific, with a call offered.\", \"actual\": \"Marco answered the introduction after about five days, apologised for the slow reply, said he wants to understand how Nimbus handles investor pipelines, and asked for a short deck before a call; the founder has not written in this file, and the question waits on us.\"}, \"scenarios\": {\"do_nothing\": \"Marco's ask goes unanswered; an investor who asked for a deck reads the silence as a weak process, and no call follows.\", \"act\": \"A short deck sent now, with a line on how Nimbus handles investor pipelines and an offer of a call, keeps the thread warm.\", \"best\": \"Marco reads the deck, a call is booked, and Altavia joins the seed round's pipeline.\", \"worst\": \"The deck goes late or reads poorly, and Altavia passes without a call.\", \"signals_to_watch\": [\"Marco acknowledging the deck or proposing a time\", \"Questions from Marco that show what Altavia screens for\", \"Further silence after the deck is sent\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Altavia reads as a fund.\", \"A direct ask from the investor waits on us.\", \"The first material an investor sees is hard to take back.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Reply to Marco Ruiz with a short deck attached, a line on how you handle investor pipelines, and an offer to set up a call once he has read it\", \"for_whom\": \"Marco Ruiz at Altavia Partners\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Marco\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If the deck is not ready, reply now to say it will follow within the week, and offer a call meanwhile.\", \"wait_or_stop\": \"Do not wait: the ask is Marco's and the move is ours. After the deck goes, wait for his answer; follow up once after about a week, then stop.\", \"done_when\": \"Marco has the deck and a call with Altavia Partners is booked, or he has said it is not a fit.\", \"draft\": \"Hi Marco, thanks for coming back, and no apology needed. Attaching a short deck on Nimbus Labs, including how we handle investor pipelines for founders. Happy to set up a call once you have had a look. Best, Arjun\"}",
-   "framed": true,
-   "input_tokens": 3516,
-   "output_tokens": 1353,
    "model": "claude-haiku-4-5-20251001"
   },
   "e5205ab2a6760f040acbb031bd458d402f15d774d32d0f26bb575bec8d074c5c": {

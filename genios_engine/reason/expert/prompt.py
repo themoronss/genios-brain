@@ -44,8 +44,10 @@ from .dossier import Dossier
 
 #: ⛔ v2 since M32.C1.L-contract.V0.U09 (2026-10-11): the frame step asks for a proposed kind of work.
 #: No review was ever written under v1 — the pass was not yet wired. ⛔ v3 since STEP-13 (2026-10-12): the
-#: quote, `rests_on`, `to`, `answers`, and "you". Every file is reviewed once more under it (the
-#: fingerprint names the prompt) — in production, the first pass after the deploy.
+#: quote, `rests_on`, `to`, `answers`, and "you". ⛔ CORRECTED 12 Oct (`06` D48, crosscheck X11): a version
+#: change alone reviews no file again. The fingerprint names the prompt, so every fingerprint moves — and each
+#: standing review is checked again on the dossier it was reviewed on, its file reviewed again only when the
+#: file itself moved (`reason/expert/sweep`).
 PROMPT_VERSION = "expert-review.v3"
 
 

@@ -38,6 +38,17 @@ BUTTONS = {"run_play", "do_it_myself", "snooze", "wrong", "requeue", "answer"}
 # shows the answer, its fingerprint moves, and the next sweep reviews the file with your answer in front of
 # the expert. A question card offers `answer` and the deferrals, nothing else; no other card is a question.
 QUESTION_OFFERS = frozenset({"answer", "snooze", "requeue"})
+# ⛔ STEP-14 · YOUR ANSWER KEEPS THE FILE'S CARD (`yc2_w27_s14` M42.C3.L-interface.V4.U05, s14-D3 — amends the above). The
+# card is no longer resolved nor its signal acted: it is VERSIONED — answered, "your answer is in; the file is read
+# again", the question you answered as its situation, the Monitor lane, nothing to press but later — and the file's
+# next review versions it again (a decision, or another question): one card from question to move. Its signal
+# stays open, so nothing closes the card in between; its question answered, no door shows it until then.
+ANSWERED_HEADLINE = "Your answer is in; the file is read again"
+#: What an answered card offers: later, and nothing else — there is nothing left to press until the file moves.
+ANSWERED_ACTIONS = [{"type": "snooze", "options": ["4h", "tomorrow_09", "3d", "custom"]}]
+#: The lane an answered card waits in (`reason/output_lane`): the file is watched, not decided.
+ANSWERED_LANE = "monitor"
+ANSWERED_LANE_REASON = "your answer is in; the file's next review decides it"
 #: A founder's answer is a sentence or a paragraph, not a document.
 MAX_ANSWER_CHARS = 4000
 # ⛔ THE ONE VOCABULARY, IMPORTED — never a fourth hand-written copy of it.
@@ -170,7 +181,7 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             return {"ok": False, "error": "card_not_actionable"}
 
         state = "acted" if action in {"run_play", "do_it_myself", "wrong"} \
-            else ("snoozed" if action == "snooze" else ("resolved" if action == "answer" else "queued"))
+            else ("snoozed" if action == "snooze" else (card["state"] if action == "answer" else "queued"))
         detail = {"reason": reason} if reason else {}
         if action == "answer":
             # Your words are kept on the question, once — never copied into the event log.
@@ -185,10 +196,11 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             # card done in the desktop app shows done on the web — this only says where it happened.
             detail["surface"] = surface
 
-        c.execute(text(
-            "update cards set state=:state, snooze_until=:snooze "
-            "where card_id=:card and org_id=:o"),
-            {"state": state, "snooze": snooze_at, "card": card_id, "o": org_id})
+        if action != "answer":                     # an answer leaves where the card sits as it was (s14-D3)
+            c.execute(text(
+                "update cards set state=:state, snooze_until=:snooze "
+                "where card_id=:card and org_id=:o"),
+                {"state": state, "snooze": snooze_at, "card": card_id, "o": org_id})
         if state == "acted":
             c.execute(text(
                 "update signals set status='acted' where signal_id=:signal and org_id=:o"),
@@ -198,11 +210,8 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
 
             founder_questions.answer(c, org_id=org_id, question_id=question_id, words=words, by=actor,
                                      at=eval_time)
-            c.execute(text("update cards set resolved_at=:at where card_id=:card and org_id=:o"),
-                      {"at": eval_time, "card": card_id, "o": org_id})
-            c.execute(text(
-                "update signals set status='acted' where signal_id=:signal and org_id=:o"),
-                {"signal": card["signal_id"], "o": org_id})
+            answered_version = _version_answered(c, org_id=org_id, card=card, question_id=question_id,
+                                                 actor=actor, at=eval_time)
 
         c.execute(text(
             "insert into human_events (id, org_id, type, actor_id, target, detail, occurred_at) "
@@ -252,4 +261,30 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
         return {"ok": True, "state": state, "snooze_until": snooze_at.isoformat()}
     return {"ok": True, "state": state, "action": action,
             **({"reason": reason} if action == "wrong" else {}),
-            **({"question_id": question_id} if action == "answer" else {})}
+            **({"question_id": question_id, "version": answered_version} if action == "answer" else {})}
+
+
+def _version_answered(c, *, org_id: str, card, question_id: str, actor: str, at) -> int | None:
+    """The answered version of the file's card (s14-D3, see `ANSWERED_HEADLINE`): one `card.versioned` event, its
+    words before the question's — and none of your words — the card kept on its open signal, its words in place."""
+    from genios_engine.contracts.card_version import ANSWERED_MODE, VersionWords, version_of
+    from genios_engine.deliver.store import _LAST_WORDS
+    from genios_engine.platform import card_lifecycle
+
+    row = c.execute(text("select version, headline, situation, output_lane from cards "
+                         "where org_id=:o and card_id=:card"), {"o": org_id, "card": card["card_id"]}).first()
+    said = c.execute(text(_LAST_WORDS), {"o": org_id, "id": card["card_id"]}).scalar()
+    before = (VersionWords.from_mapping(said) if said else
+              VersionWords(headline=row.headline, situation=row.situation, lane=row.output_lane))
+    after = VersionWords(headline=ANSWERED_HEADLINE, situation=row.headline, lane=ANSWERED_LANE,
+                         mode=ANSWERED_MODE, ask=question_id)
+    version = version_of(before, after, version=int(row.version) + 1, signal_id=card["signal_id"], answered=True)
+    if not card_lifecycle.version_card(c, org_id=org_id, card_id=card["card_id"], version=version,
+                                       expires_at=card["expires_at"], actor=actor, at=at):
+        return None
+    c.execute(text(
+        "update cards set headline=:h, situation=:s, output_lane=:lane, lane_reason=:why, "
+        "actions=cast(:act as jsonb) where org_id=:o and card_id=:card"),
+        {"h": after.headline, "s": after.situation, "lane": ANSWERED_LANE, "why": ANSWERED_LANE_REASON,
+         "act": json.dumps(ANSWERED_ACTIONS), "o": org_id, "card": card["card_id"]})
+    return version.version
