@@ -33,7 +33,9 @@ def _verdict(checked: C.CheckedReview, line: str) -> C.LineVerdict:
     return next(v for v in checked.verdicts if v.line == line and v.verdict != C.NOTED)
 
 
-@pytest.mark.parametrize("stray", [W.ASK, "fact:9", "inference:1", "evt_x"])
+# ⛔ RESTATED by STEP-13b M37.C1.L-contract.V0.U02: `inference:<n>` of the review is now a ground a move may
+# rest on; the strays are the ones past the list.
+@pytest.mark.parametrize("stray", [W.ASK, "fact:9", "inference:9", "evt_x"])
 def test_a_stray_ref_beside_the_facts_a_move_names_drops_alone(stray):
     """`rests_on: ["fact:1", "fact:2", "evt_x"]` — X15's own counter-example — is no structural slip: the
     move stands on facts 1 and 2, and the stray ref is the line that drops."""
@@ -71,7 +73,7 @@ def test_every_fact_of_the_review_may_be_named_the_last_one_too():
     assert not any(v.line == "rests_on" for v in check_review(review, dossier.text, people).verdicts)
 
 
-@pytest.mark.parametrize("rests_on", [["evt_x"], ["fact:9"], ["inference:1", "fact:0"]])
+@pytest.mark.parametrize("rests_on", [["evt_x"], ["fact:9"], ["inference:9", "fact:0"]])
 def test_a_move_resting_on_no_fact_of_the_review_is_still_refused_whole(rests_on):
     dossier, _ = W.world()
     review = W.review(move={"rests_on": rests_on})

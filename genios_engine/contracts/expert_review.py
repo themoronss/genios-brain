@@ -78,6 +78,8 @@ LEVELS: tuple[str, ...] = ("low", "medium", "high")
 REVERSIBILITY: tuple[str, ...] = ("reversible", "costly_to_reverse", "irreversible")
 #: What a pattern line is (Plane R: pattern match, counter-pattern, base rate).
 PATTERN_KINDS: tuple[str, ...] = ("pattern", "counter_pattern", "base_rate")
+#: STEP-13b: what the expert's OWN line is — a practice, a base rate, a counter-pattern, a benchmark.
+OWN_KINDS: tuple[str, ...] = ("practice", "base_rate", "counter_pattern", "benchmark")
 
 #: Why a review is refused — closed, so a refusal can be counted by kind.
 UNCITED_FACT = "uncited_fact"
@@ -95,6 +97,8 @@ REFUSALS: tuple[str, ...] = (UNCITED_FACT, UNKNOWN_EVIDENCE, UNGROUNDED_INFERENC
 ASK_PREFIX = "loop:"
 
 _FACT_REF = re.compile(r"^fact:(\d+)$")
+_OWN_REF = re.compile(r"^own:(\d+)$")
+_INFERENCE_REF = re.compile(r"^inference:(\d+)$")
 # A comma groups thousands only before exactly three digits: "1,400" is one number, "7,8" is two — or, in
 # Indian grouping, pairs before the last three: "12,50,000" (twelve lakh fifty thousand) is one number, not
 # "12" and "50000" (STEP-13 crosscheck X45, M35.C2.L-logic.V1.U10).
@@ -250,6 +254,16 @@ class NextMove:
     rests_on: tuple[str, ...] = ()               # STEP-13: `fact:<n>` — () rests on every fact
     to: str | None = None                        # STEP-13: whom the draft goes to
     answers: str | None = None                   # STEP-13: the ask (`loop:<id>`) it answers
+    guided_by: tuple[str, ...] = ()              # STEP-13b: the engine or own lines it follows
+
+
+@dataclass(frozen=True, slots=True)
+class Own:
+    """STEP-13b: the expert's own expertise — a practice, a base rate, a counter-pattern or a benchmark,
+    in words, with why. Never a fact about the file (`verify` says so by code)."""
+    kind: str                                    # one of OWN_KINDS
+    claim: str
+    why: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -277,6 +291,7 @@ class ExpertReview:
     done_when: str
     draft: str | None = None
     proposed_kind: ProposedKind | None = None
+    own: tuple[Own, ...] = ()                    # STEP-13b: `own:<n>` (1-based) in a based_on or guided_by
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "ExpertReview":
@@ -301,7 +316,8 @@ class ExpertReview:
                                  rests_on=_texts(nm.get("rests_on"), "what the next move rests on"),
                                  to=_text(nm.get("to"), "whom the draft goes to", required=False) or None,
                                  answers=_text(nm.get("answers"), "the ask the next move answers",
-                                               required=False) or None)
+                                               required=False) or None,
+                                 guided_by=_texts(nm.get("guided_by"), "what the next move is guided by"))
         pk = raw.get("proposed_kind")
         proposed_kind = None
         if pk:
@@ -352,7 +368,11 @@ class ExpertReview:
             wait_or_stop=_text(raw.get("wait_or_stop"), "when to wait or stop"),
             done_when=_text(raw.get("done_when"), "what done looks like"),
             draft=_text(raw.get("draft"), "a draft", required=False) or None,
-            proposed_kind=proposed_kind)
+            proposed_kind=proposed_kind,
+            own=tuple(Own(kind=_one_of(o.get("kind"), OWN_KINDS, "an own line's kind"),
+                          claim=_text(o.get("claim"), "an own line's claim"),
+                          why=_text(o.get("why"), "why an own line holds"))
+                      for o in _items(raw.get("own"), "own", "an own line")))
 
     def as_mapping(self) -> dict[str, Any]:
         """The review as `from_mapping` reads it — what is stored, and what a replay reads back."""
@@ -383,13 +403,16 @@ class ExpertReview:
                 "by_when": nm.by_when.isoformat() if nm.by_when else None,
                 **({"rests_on": list(nm.rests_on)} if nm.rests_on else {}),
                 **({"to": nm.to} if nm.to else {}),
-                **({"answers": nm.answers} if nm.answers else {})},
+                **({"answers": nm.answers} if nm.answers else {}),
+                **({"guided_by": list(nm.guided_by)} if nm.guided_by else {})},
             "alternative": self.alternative,
             "wait_or_stop": self.wait_or_stop,
             "done_when": self.done_when,
             "draft": self.draft,
             "proposed_kind": None if pk is None else {"kind": pk.kind, "why": pk.why,
                                                       "evidence": list(pk.evidence)},
+            **({"own": [{"kind": o.kind, "claim": o.claim, "why": o.why} for o in self.own]}
+               if self.own else {}),
         }
 
     def texts(self) -> tuple[str, ...]:
@@ -407,6 +430,7 @@ class ExpertReview:
         out += list(self.appraisal.reasons)
         if self.next_move is not None:
             out += [self.next_move.who, self.next_move.what, self.next_move.for_whom]
+        out += [t for o in self.own for t in (o.claim, o.why)]
         out += [self.alternative, self.wait_or_stop, self.done_when, self.draft or ""]
         if self.proposed_kind is not None:
             out.append(self.proposed_kind.why)
@@ -442,8 +466,23 @@ def fact_ref(ref: str, facts: int) -> int | None:
     return int(m.group(1)) if m is not None and 1 <= int(m.group(1)) <= facts else None
 
 
+def _numbered(pattern: re.Pattern, ref: str, n: int) -> int | None:
+    m = pattern.match(str(ref))
+    return int(m.group(1)) if m is not None and 1 <= int(m.group(1)) <= n else None
+
+
+def own_ref(ref: str, owns: int) -> int | None:
+    """The own line `ref` names — `own:<n>`, n one of the review's `own` — or None."""
+    return _numbered(_OWN_REF, ref, owns)
+
+
+def inference_ref(ref: str, inferences: int) -> int | None:
+    """The inference `ref` names — `inference:<n>`, n one of the review's `inferences` — or None."""
+    return _numbered(_INFERENCE_REF, ref, inferences)
+
+
 def _grounds(refs: tuple[str, ...], facts: int, catalogue: DossierCatalogue, what: str,
-             ungrounded: str) -> list[tuple[str, str]]:
+             ungrounded: str, owns: int = 0) -> list[tuple[str, str]]:
     """Each way a line's `based_on` rests on nothing the review or its dossier holds."""
     if not refs:
         return [(ungrounded, f"{what} rests on nothing")]
@@ -453,6 +492,9 @@ def _grounds(refs: tuple[str, ...], facts: int, catalogue: DossierCatalogue, wha
         if m is not None:
             if not 1 <= int(m.group(1)) <= facts:
                 problems.append((ungrounded, f"{what} rests on {ref}"))
+        elif _OWN_REF.match(ref) is not None:
+            if own_ref(ref, owns) is None:
+                problems.append((UNKNOWN_EVIDENCE, f"{what} rests on {ref}"))
         elif ref not in catalogue.evidence_ids:
             problems.append((UNKNOWN_EVIDENCE, f"{what} rests on {ref}"))
     return problems
@@ -473,10 +515,10 @@ def validate(review: ExpertReview, catalogue: DossierCatalogue) -> Validation:
                 problems.append((UNKNOWN_EVIDENCE, f"the proposed kind cites {ref}"))
     for n, inference in enumerate(review.inferences, start=1):
         problems += _grounds(inference.based_on, len(review.facts), catalogue, f"inference {n}",
-                             UNGROUNDED_INFERENCE)
+                             UNGROUNDED_INFERENCE, len(review.own))
     for n, pattern in enumerate(review.patterns, start=1):
         problems += _grounds(pattern.based_on, len(review.facts), catalogue, f"pattern {n}",
-                             UNGROUNDED_PATTERN)
+                             UNGROUNDED_PATTERN, len(review.own))
     stage = review.expected_vs_actual.stage
     if stage is not None and stage not in catalogue.stages:
         problems.append((UNKNOWN_STAGE, stage))
@@ -487,11 +529,17 @@ def validate(review: ExpertReview, catalogue: DossierCatalogue) -> Validation:
         # A move resting on NO fact of the review is no move (`ungrounded_move`, refused whole). A stray
         # ref beside the facts it does name is a slip of one optional field: named, never refused whole —
         # the check drops that line and the move stands on its facts (M35.C1.L-contract.V0.U04).
-        strays = [ref for ref in move.rests_on if fact_ref(ref, len(review.facts)) is None]
+        strays = [ref for ref in move.rests_on if fact_ref(ref, len(review.facts)) is None
+                  and inference_ref(ref, len(review.inferences)) is None]
         grounded = len(strays) < len(move.rests_on)
         for ref in strays:
             problems.append((UNKNOWN_EVIDENCE, f"the next move rests on {ref}, no fact of the review")
                             if grounded else (UNGROUNDED_MOVE, f"the next move rests on {ref}"))
+        # What it is guided by is a line of the engine the dossier printed, or an own line of this review:
+        # a slip of one optional field, named and never refused whole, as a stray `rests_on` is.
+        for ref in move.guided_by:
+            if own_ref(ref, len(review.own)) is None and ref not in catalogue.evidence_ids:
+                problems.append((UNKNOWN_EVIDENCE, f"the next move is guided by {ref}"))
         if move.answers is not None:
             # An `answers` that is no ask the dossier showed loses its line, as an unprinted ask does.
             if not move.answers.startswith(ASK_PREFIX):
@@ -505,9 +553,9 @@ def validate(review: ExpertReview, catalogue: DossierCatalogue) -> Validation:
 
 
 __all__ = ["ASK_PREFIX", "Appraisal", "DossierCatalogue", "ExpectedVsActual", "ExpertReview", "Fact", "Frames",
-           "fact_ref",
+           "fact_ref", "inference_ref", "own_ref",
            "Hypothesis", "Inference", "LEVELS", "MODES", "MOVING", "NO_NEXT_MOVE",
-           "NUMBER_NOT_IN_DOSSIER", "NUMBER_PATTERN", "NextMove", "PATTERN_KINDS", "Pattern", "ProposedKind", "REFUSALS",
+           "NUMBER_NOT_IN_DOSSIER", "NUMBER_PATTERN", "NextMove", "OWN_KINDS", "Own", "PATTERN_KINDS", "Pattern", "ProposedKind", "REFUSALS",
            "REVERSIBILITY",
            "Scenarios", "UNCITED_FACT", "UNGROUNDED_INFERENCE", "UNGROUNDED_MOVE", "UNGROUNDED_PATTERN",
            "UNKNOWN_EVIDENCE",
