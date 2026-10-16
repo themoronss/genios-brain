@@ -10399,6 +10399,21 @@ yc2_w27_s14:
                       artifact: "tests/replays/atlas_expression.py"
                       verify: ".venv/bin/python -m pytest -q tests/replays/test_golden_replays.py -k 02"
                       depends_on: [M43.C6.L-data.V1.U02, M43.C6.L-data.V1.U03, M43.C6.L-data.V1.U04, M43.C6.L-data.V1.U05, M43.C6.L-data.V1.U06, M43.C6.L-data.V1.U07]
+                    - id: M43.C6.L-integration.V2.U12
+                      what: >
+                        F63 and replay 02's m05 read what the card ASKS (added 16 Oct by the STEP-14 crosscheck,
+                        finding 10): they passed on "address" in the card's situation line while it asked "Can you
+                        tell us whether Ishaan will write first?" — the review's first unknown ("Ishaan Mehra's email
+                        address.") is a noun phrase and `asks._find_out_question` asks only a question or an indirect
+                        one (STEP-13 G8's design, pinned by tests/reason/expert/test_a_held_file_asks.py). A case's
+                        card expectation and an Atlas expression may say what the HEADLINE must say
+                        (`headline_says`); F63 and m05 require the address there and are blocked (strict xfail) —
+                        asking a missing thing named as a noun phrase is a decision, owner STEP-13b (M37). The
+                        bound, declared: the subject is the connector because the file is the connector's (no file
+                        forms for a contact with no address).
+                      artifact: "tests/replays/marking.py"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_a_case_reads_what_the_card_asks.py tests/replays/test_founder_case_contract.py"
+                      depends_on: [M43.C6.L-integration.V2.U08, M43.C6.L-data.V1.U06]
                 - level: 3
                   units:
                     - id: M43.C6.L-integration.V3.U09

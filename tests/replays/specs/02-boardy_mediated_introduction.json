@@ -101,8 +101,8 @@
       "expected_decision": "Return Review source with the exact discriminating question.",
       "prohibited": "Guessing the address from company, domain or display name.",
       "pass_condition": "No BSO is promoted to expertise and no action button is rendered.",
-      "implemented": "possible_today",
-      "blocked_on": ""
+      "implemented": "blocked_missing_capability",
+      "blocked_on": "F63's question card asks whether Ishaan will write first, never the discriminating question (his address): the review's first unknown is a noun phrase and reason/expert/asks._find_out_question asks only a question or an indirect one — STEP-14 crosscheck finding 10, owner STEP-13b (M37); the expression now requires the address in the card's headline"
     },
     {
       "mutation": "The same display name maps to two separately anchored people.",

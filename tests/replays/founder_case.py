@@ -251,6 +251,10 @@ class CardExpectation:
     min: int
     max: int
     mentions: tuple[str, ...] = ()
+    #: STEP-14 fix (the crosscheck's finding 10, `yc2_w27_s14` M43.C6.L-integration.V2.U12): what the card's HEADLINE —
+    #: the move it advises, the question it asks — says. `mentions` reads every line, so F63 passed on "address" in
+    #: its situation while its card asked whether Ishaan would write first.
+    headline_says: tuple[str, ...] = ()
     #: `09` G6 (`yc2_w27_align` M34.C1.L-data.V0.U03) — from this sweep on (an index into the case's
     #: sweeps) no card about the subject is open: the work was done, and done means never raised
     #: again. None: not judged.
@@ -398,7 +402,7 @@ _GMAIL_KEYS = {"id", "source", "sweep", "occurred_at", "from", "to", "cc", "thre
 _MAILBOX = re.compile(r"^[a-z][a-z0-9]{0,15}$")
 _GCAL_KEYS = {"id", "source", "sweep", "occurred_at", "summary", "start", "end", "organizer",
               "attendees", "status", "description", "location", "recurringEventId", "read"}
-_CARD_KEYS = {"about", "min", "max", "mentions", "closed_from"}
+_CARD_KEYS = {"about", "min", "max", "mentions", "headline_says", "closed_from"}
 _ID = re.compile(r"^F\d{2}$")
 
 
@@ -642,6 +646,7 @@ def _card(raw: Any, where: str) -> CardExpectation:
         raise CaseError(f"{where}: closed_from must be a sweep index")
     return CardExpectation(about=about, min=lo, max=hi,
                            mentions=tuple(str(t) for t in raw.get("mentions") or ()),
+                           headline_says=tuple(str(t) for t in raw.get("headline_says") or ()),
                            closed_from=closed_from)
 
 

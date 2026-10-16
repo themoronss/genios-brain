@@ -104,6 +104,9 @@
     "max": 1,
     "mentions": [
      "address"
+    ],
+    "headline_says": [
+     "address"
     ]
    }
   ]
@@ -123,6 +126,7 @@
  },
  "witness": null,
  "not_expressible": {},
+ "blocked_on": "the card asks the review's SECOND unknown — whether Ishaan will write first — never his address: the first unknown is a noun phrase (Ishaan Mehra's email address.) and asks._find_out_question asks only a question or an indirect one (STEP-13 G8's design, pinned by tests/reason/expert/test_a_held_file_asks.py: a statement unknown is passed over); asking a missing thing named as a noun phrase is a decision — STEP-14 crosscheck finding 10, owner STEP-13b (M37, the unknowns' framing)",
  "notes": "Replay 02 m05: the introduction names Ishaan and his company but carries no address of his; the file asks you one question — his address — and no card guesses one from the company's name. No file can form for a contact with no address, so the question comes from the connector's own file.",
  "model": {
   "expert": [

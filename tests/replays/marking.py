@@ -156,6 +156,11 @@ def _card_check(index: int, exp: CardExpectation, run: CaseRun, kind: str = "mus
         if missing:
             return Check(name, FAIL, f"card {card.card_id} about {subject} does not say "
                                      f"{missing}")
+        headline = str((getattr(card, "gold", None) or {}).get("headline") or "")
+        unsaid = [t for t in getattr(exp, "headline_says", ()) if not says(headline, t)]
+        if unsaid:
+            return Check(name, FAIL, f"card {card.card_id} about {subject} does not say {unsaid} in its "
+                                     f"headline (“{headline}”)")
     if exp.closed_from is not None:
         # `09` G6 · done means never raised again: open after a sweep at or past `closed_from`.
         still = [(c.card_id, max(c.sweeps)) for c in matched

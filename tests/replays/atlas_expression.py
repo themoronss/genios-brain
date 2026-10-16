@@ -15,6 +15,8 @@ Predicates, all over one case's run:
 
   card_about / min / max   cards whose text names any of the terms, counted over every sweep
   mentions                 …and each of those cards says these words
+  headline_says            …and each of those cards says these in its headline — what it advises or asks
+                           (STEP-14 fix, the crosscheck's finding 10)
   level_in                 …and each of those cards is at one of these levels
   memory                   these objects reached memory — the WITNESS that keeps "no card" from
                            passing on a chain that never reached the stage
@@ -62,7 +64,8 @@ EXPRESSED: dict[tuple[str, int], dict] = {
                 "why": "the connector asks which stage the founder is raising at"},
     # m05 — the introduced address is missing: one discriminating question, no action, never a guessed address.
     ("02", 5): {"case": "F63", "card_about": ["Ishaan", "Corvane"], "min": 1, "max": 1, "level_in": ["review"],
-                "mentions": ["address"], "memory": ["intro"], "no_phrase": ["ishaan@", "Reply to Introly"],
+                "mentions": ["address"], "headline_says": ["address"], "memory": ["intro"],
+                "no_phrase": ["ishaan@", "Reply to Introly"],
                 "why": "the introduction names Ishaan and Corvane and carries no address of his"},
     # m07 — a declined introduction: stopped, and the connector's later nudge reopens nothing; its history kept.
     ("02", 7): {"case": "F64", "card_about": ["Zara", "Northlake"], "max": 0, "memory": ["decline", "nudge"],
@@ -136,6 +139,10 @@ def check(spec: dict, run) -> list[str]:
         missing = [t for t in spec.get("mentions") or [] if not says(card.text, t)]
         if missing:
             problems.append(f"card {card.card_id} does not say {missing}")
+        headline = str((getattr(card, "gold", None) or {}).get("headline") or "")
+        unsaid = [t for t in spec.get("headline_says") or [] if not says(headline, t)]
+        if unsaid:
+            problems.append(f"card {card.card_id} does not say {unsaid} in its headline")
         levels = spec.get("level_in")
         if levels and card.level not in levels:
             problems.append(f"card {card.card_id} is {card.level!r}, not one of {levels}")
