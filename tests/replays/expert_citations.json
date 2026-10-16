@@ -3024,6 +3024,10 @@
    [
     "- [#] question, they wait on us, open since 2026-09-01 05:00 UTC",
     0
+   ],
+   [
+    "- [#] an ask (question) closed — only replied to by [#], 2026-09-03 06:00 UTC",
+    0
    ]
   ],
   "num:days_quiet": [

@@ -1,7 +1,7 @@
 {
  "case_id": "F50",
  "source": "ideal_reader",
- "recorded_at": "b8b4804d",
+ "recorded_at": "unknown",
  "answers": {
   "19b2c56be3dcc524e4369dfa75344cbcf4fcdbe0e41d005644c84ccdd2ac68b6": {
    "site": "junk_gate_batch",
@@ -42,74 +42,7 @@
    "output_tokens": 70,
    "model": "claude-haiku-4-5-20251001"
   },
-  "92d85f5d96148c1819e0e9083a922570e8067367518c6e64cf9a5d2bc383cf7d": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Two quick questions",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     },
-     {
-      "item": 2,
-      "business": true,
-      "description": "Two quick questions",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Two quick questions\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Two quick questions\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "framed": true,
-   "input_tokens": 1257,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a3c8cbfadd0a12f77620d23c22419d7910b3b60231674d615aaa4d5fc26dc586": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Owen Park",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Owen",
-        "start_offset": 28,
-        "end_offset": 32
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "templated",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "medium",
-     "motive": "the company's standard details"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Owen Park\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Owen\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"medium\", \"motive\": \"the company's standard details\"}}",
-   "framed": true,
-   "input_tokens": 5534,
-   "output_tokens": 119,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "cf50288a836657bfb3c5b3c50c39bc277e33708b4cee0d1d763d24dcb93bf05a": {
+  "7b51119e511e383c5f7ebe79496cd0db1c3e20a1e474560dd16367cb4fbaa6cf": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -265,8 +198,75 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Owen Park of Saltmarsh Ventures asked Arjun two questions to settle before his partner meeting: the current monthly revenue, and how many months of runway Nimbus Labs has.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Arjun, Two quick questions before our partner meeting: what is your current monthly revenue\"}, {\"claim\": \"Arjun's answer the same day thanked Owen for connecting, sent the deck, a one-pager and the demo link, and offered a call, and gave neither number.\", \"evidence\": [\"evt_#1\", \"num:your_reply_time:owen@saltmarshvc.test\"], \"quote\": \"deck and a one-pager are attached, and the demo\"}, {\"claim\": \"Owen has not written since Arjun's answer; the dossier says no reply since then may be said.\", \"evidence\": [\"num:days_quiet\"]}, {\"claim\": \"The engine holds the file as an investor relationship seen for the first time, marks the move as Owen's, and lists no open asks.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@fundraising\"]}], \"inferences\": [{\"claim\": \"Both of Owen's questions are still open: nothing in Arjun's answer gives the monthly revenue or the runway.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The move is ours, not Owen's: a reply went out, so the thread looks answered, but what he asked for never reached him.\", \"based_on\": [\"fact:2\", \"fact:4\"]}, {\"claim\": \"Owen wanted the numbers for his partner meeting, so that meeting is the deadline that matters, and the file does not say when it is.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"Arjun's answer reads as a standard first note to a new contact, not as an answer to these two questions.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Arjun answers Owen fast, within the day, but here fast was not complete: speed is not what is missing.\", \"based_on\": [\"num:your_reply_time:owen@saltmarshvc.test\", \"fact:2\"]}], \"hypotheses\": [{\"proposition\": \"Owen is holding Nimbus Labs back from the partner meeting until he has the two numbers.\", \"needs\": \"Owen's word, or the meeting's date and whether Nimbus Labs came up in it.\"}, {\"proposition\": \"The partner meeting has already passed without the numbers.\", \"needs\": \"Its date, from Owen.\"}, {\"proposition\": \"Owen got the numbers some other way, by phone or on another thread.\", \"needs\": \"Arjun's word; the file shows no such answer.\"}], \"unknowns\": [{\"question\": \"When Saltmarsh's partner meeting is, and whether it has passed.\", \"relevance\": \"If it is ahead, the numbers must reach Owen before it; if it has passed, the note must also ask where it landed.\"}, {\"question\": \"The monthly revenue and the runway themselves.\", \"relevance\": \"The dossier holds neither; only Arjun can supply them, and a guessed figure would do more harm than the silence.\"}], \"frames\": {\"primary\": \"An investor's two questions left unanswered: Owen asked for the monthly revenue and the runway before Saltmarsh's partner meeting, and got a deck, a one-pager and a demo link instead; the move is ours, though the thread looks answered.\", \"rivals\": [\"The numbers reached Owen another way, on a call or in a mail outside this file, and the file only looks open.\", \"Owen has cooled on Nimbus Labs, and his quiet is a soft pass rather than a wait for the numbers.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Owen signs for Saltmarsh Ventures and asks for monthly revenue and runway before a partner meeting, an investor's questions; the engine already holds the file as an investor relationship, but the brief names no kind of work for it.\", \"evidence\": [\"evt_#2\", \"sit:sit_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the file: an investor's direct questions before a partner meeting expect direct answers, the two numbers, before that meeting.\", \"actual\": \"Arjun answered within the day with the deck, a one-pager and the demo link and no number; Owen has not written since.\"}, \"scenarios\": {\"do_nothing\": \"Owen goes into the partner meeting without the numbers, or reads the answer as dodging them; Saltmarsh drops you quietly while the file keeps looking answered.\", \"act\": \"The two numbers sent now, with one line owning the miss, answer exactly what Owen asked and give him something to take into the partner meeting.\", \"best\": \"Owen has the numbers before the partner meeting, Saltmarsh discusses Nimbus Labs, and a call or a next step follows.\", \"worst\": \"The partner meeting passed without them, and Saltmarsh reads an answer that skipped revenue and runway as evasion.\", \"signals_to_watch\": [\"Owen answering once the numbers reach him\", \"Owen naming the partner meeting's date or outcome\", \"Silence from Owen after the numbers are sent\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Owen asked these questions to take into a partner meeting.\", \"Both questions are still open; the answer sent gave neither number.\", \"The partner meeting's date is not in the file, so the window may be closing or already shut.\", \"Numbers given to an investor are hard to walk back, so they must be the exact current ones.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Write back to Owen with the two numbers he asked for, the current monthly revenue and the months of runway, in plain lines, owning that the last note missed them, and ask when the partner meeting is\", \"for_whom\": \"Owen Park at Saltmarsh Ventures\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Owen\"}, \"alternative\": \"If the numbers need checking first, tell Owen today when they will come and send them then, or offer a short call before the partner meeting to go through both.\", \"wait_or_stop\": \"Do not wait: the questions are already open. Once the numbers are sent, give Owen until his partner meeting has passed; if he is silent after it, ask once where it landed, then stop.\", \"done_when\": \"Owen has both numbers in writing in time for his partner meeting, and the file shows his response or Saltmarsh's next step.\", \"draft\": \"Hi Owen, my last note skipped your two questions, sorry about that. Current monthly revenue: [amount]. Runway: [months of runway]. Happy to walk through either before your partner meeting; when is it? Arjun\"}",
    "framed": true,
-   "input_tokens": 3444,
+   "input_tokens": 3561,
    "output_tokens": 1586,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "92d85f5d96148c1819e0e9083a922570e8067367518c6e64cf9a5d2bc383cf7d": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Two quick questions",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Two quick questions",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Two quick questions\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Two quick questions\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1257,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a3c8cbfadd0a12f77620d23c22419d7910b3b60231674d615aaa4d5fc26dc586": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Owen Park",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Owen",
+        "start_offset": 28,
+        "end_offset": 32
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "templated",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "medium",
+     "motive": "the company's standard details"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Owen Park\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Owen\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"medium\", \"motive\": \"the company's standard details\"}}",
+   "framed": true,
+   "input_tokens": 5534,
+   "output_tokens": 119,
    "model": "claude-haiku-4-5-20251001"
   },
   "d5ce3d77c5c1de08cadd85b795c73dd9cb50a36b6a36d8195bf840e2759b1846": {

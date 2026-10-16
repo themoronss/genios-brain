@@ -1,7 +1,7 @@
 {
  "case_id": "F49",
  "source": "ideal_reader",
- "recorded_at": "b8b4804d",
+ "recorded_at": "unknown",
  "answers": {
   "0e48cea5a0e6f2c08661c2d93c638302d241a7b0267f97525517630b85994099": {
    "site": "extraction",
@@ -66,7 +66,99 @@
    "output_tokens": 51,
    "model": "claude-haiku-4-5-20251001"
   },
-  "19c1983636bc32259bcfa89692c878d2588071855de0b8e193529f19efb79254": {
+  "1e28fb7318d9dc264e76d01ab95ad222c34dcac6a6cd7983d933494eebd0ae8b": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "commit",
+    "stance": "positive",
+    "topics": [
+     "partnership"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Kunal Mehta",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Kunal",
+        "start_offset": 33,
+        "end_offset": 38
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "commitments": [
+     {
+      "actor": "Arjun Rao",
+      "action": "book the call again",
+      "beneficiary": "Kunal Mehta",
+      "is_conditional": false,
+      "evidence": [
+       {
+        "quote": "I will book it again",
+        "start_offset": 113,
+        "end_offset": 133
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Resend the calendar link",
+      "asked_by": "Arjun Rao",
+      "asked_of": "Kunal Mehta",
+      "evidence": [
+       {
+        "quote": "Please resend the calendar link",
+        "start_offset": 79,
+        "end_offset": 110
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "apologetic",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "to book the missed call again"
+    }
+   },
+   "raw": "{\"intent\": \"commit\", \"stance\": \"positive\", \"topics\": [\"partnership\"], \"entity_mentions\": [{\"surface_form\": \"Kunal Mehta\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kunal\", \"start_offset\": 33, \"end_offset\": 38}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Arjun Rao\", \"action\": \"book the call again\", \"beneficiary\": \"Kunal Mehta\", \"is_conditional\": false, \"evidence\": [{\"quote\": \"I will book it again\", \"start_offset\": 113, \"end_offset\": 133}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Resend the calendar link\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Kunal Mehta\", \"evidence\": [{\"quote\": \"Please resend the calendar link\", \"start_offset\": 79, \"end_offset\": 110}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"apologetic\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"to book the missed call again\"}}",
+   "framed": true,
+   "input_tokens": 5516,
+   "output_tokens": 237,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2ca17ee4e0803f2ee75170b05ab1fe0e52c7cfac89e412120d0ccf5ad50a10cb": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1079,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "303395a995687bdf514b263963fe6f4b7b2dad6719c2830ac6a6fd9a4af3b80d": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -205,100 +297,8 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"On the eighth of July Arjun apologised to Kunal Mehta for missing their slot that morning, asked for the calendar link again, and wrote that he would book it again.\", \"evidence\": [\"evt_#2\"], \"quote\": \"morning. Please resend the calendar link - I will book it again. Arjun\"}, {\"claim\": \"Kunal answered the same day with his calendar link and told Arjun to block any time that works for him.\", \"evidence\": [\"evt_#1\", \"num:their_reply_time:kunal@sparkreach.test\"], \"quote\": \"calendar: cal.sparkreach.test/kunal. Block any time that works for you. Kunal\"}, {\"claim\": \"Nothing from Arjun has followed: the file has been quiet for well over a week, longer than any gap it closed before.\", \"evidence\": [\"num:days_quiet\", \"num:longest_gap\"]}, {\"claim\": \"The brief names no kind of work for Sparkreach; the engine filed it under admin.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Kunal did his part the same day; the booking is Arjun's to make, and after well over a week it is late.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, {\"claim\": \"A missed slot followed by no booking gives Kunal two signals that the call does not matter to Nimbus Labs.\", \"based_on\": [\"fact:1\", \"fact:3\"]}], \"patterns\": [{\"kind\": \"counter_pattern\", \"claim\": \"This file moved fast before — Kunal answered the same day — and the quiet now is longer than any gap it closed before.\", \"based_on\": [\"num:their_reply_time:kunal@sparkreach.test\", \"num:days_quiet\"]}], \"hypotheses\": [{\"proposition\": \"Arjun booked a slot through the link, and the calendar invite is not in this file.\", \"needs\": \"A look at the founder's calendar for a booking with Kunal.\"}, {\"proposition\": \"Arjun lost track of the link after the missed slot.\", \"needs\": \"The founder's word.\"}], \"unknowns\": [{\"question\": \"Whether a slot was booked through Kunal's link outside the mail.\", \"relevance\": \"A booking made on his calendar may leave no mail; if one exists, nothing is owed.\"}, {\"question\": \"What the call with Sparkreach is for.\", \"relevance\": \"The brief names no kind of work for Sparkreach, so how much the call matters cannot be read from the file.\"}], \"frames\": {\"primary\": \"Your own promise, not kept: you said you would book the missed call again, Kunal sent his calendar link the same day, and nothing has followed. The move is ours.\", \"rivals\": [\"A booking made through Kunal's calendar that left no mail in this file.\", \"A call that no longer matters to either side, left to lapse.\"]}, \"proposed_kind\": {\"kind\": \"partner\", \"why\": \"A call between Nimbus Labs and Sparkreach as two companies, being rebooked after a missed slot — the shape of the partner talks the brief lists, with nothing in the file pointing to an investor, a hire or a programme.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the founder's own word sets it: once Kunal sent the link, Arjun books a time.\", \"actual\": \"Kunal sent the link the same day; no booking or mail from Arjun has followed, and the file has been quiet for well over a week.\"}, \"scenarios\": {\"do_nothing\": \"The call is never rebooked, and Kunal reads the silence after a missed slot as lost interest.\", \"act\": \"A slot booked through Kunal's link now, with a short apology, repairs the missed call and keeps the conversation alive.\", \"best\": \"The call goes ahead soon and the Sparkreach conversation picks up where it stopped.\", \"worst\": \"Kunal stops making room for Nimbus Labs and the conversation lapses.\", \"signals_to_watch\": [\"Kunal accepting the booked slot.\", \"No booking appearing on the founder's calendar.\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"The promise to book is the founder's own, and the other side did its part the same day.\", \"The quiet is longer than any gap the file closed before.\", \"A second lapse after a missed slot is hard to undo.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Book a time on Kunal's calendar through the link he sent, then send him a one-line note that it is booked.\", \"for_whom\": \"Kunal Mehta, Sparkreach\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Kunal\"}, \"alternative\": \"If no slot on the link suits, write to Kunal with two times that do, and apologise for the delay.\", \"wait_or_stop\": \"Do not wait: the move is yours and it is late. Once the call is booked, nothing more is needed unless Kunal moves it.\", \"done_when\": \"A call with Kunal is on both calendars.\", \"draft\": \"Hi Kunal, sorry this took me a while — I've booked a time on your calendar through the link you sent. Looking forward to it. Arjun\"}",
    "framed": true,
-   "input_tokens": 3387,
+   "input_tokens": 3503,
    "output_tokens": 1186,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "1e28fb7318d9dc264e76d01ab95ad222c34dcac6a6cd7983d933494eebd0ae8b": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "commit",
-    "stance": "positive",
-    "topics": [
-     "partnership"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Kunal Mehta",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Kunal",
-        "start_offset": 33,
-        "end_offset": 38
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "commitments": [
-     {
-      "actor": "Arjun Rao",
-      "action": "book the call again",
-      "beneficiary": "Kunal Mehta",
-      "is_conditional": false,
-      "evidence": [
-       {
-        "quote": "I will book it again",
-        "start_offset": 113,
-        "end_offset": 133
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Resend the calendar link",
-      "asked_by": "Arjun Rao",
-      "asked_of": "Kunal Mehta",
-      "evidence": [
-       {
-        "quote": "Please resend the calendar link",
-        "start_offset": 79,
-        "end_offset": 110
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "apologetic",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "to book the missed call again"
-    }
-   },
-   "raw": "{\"intent\": \"commit\", \"stance\": \"positive\", \"topics\": [\"partnership\"], \"entity_mentions\": [{\"surface_form\": \"Kunal Mehta\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kunal\", \"start_offset\": 33, \"end_offset\": 38}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Arjun Rao\", \"action\": \"book the call again\", \"beneficiary\": \"Kunal Mehta\", \"is_conditional\": false, \"evidence\": [{\"quote\": \"I will book it again\", \"start_offset\": 113, \"end_offset\": 133}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Resend the calendar link\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Kunal Mehta\", \"evidence\": [{\"quote\": \"Please resend the calendar link\", \"start_offset\": 79, \"end_offset\": 110}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"apologetic\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"to book the missed call again\"}}",
-   "framed": true,
-   "input_tokens": 5516,
-   "output_tokens": 237,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "2ca17ee4e0803f2ee75170b05ab1fe0e52c7cfac89e412120d0ccf5ad50a10cb": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1079,
-   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
   "8ddd315a1c0de2d08e9b3c68cb899c4fe2f08495350541b1ea0408a46875e9c7": {

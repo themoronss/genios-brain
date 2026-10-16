@@ -1,7 +1,7 @@
 {
  "case_id": "F30",
  "source": "ideal_reader",
- "recorded_at": "b8b4804d",
+ "recorded_at": "unknown",
  "answers": {
   "452b50e297ab2e7dbd9dafc71bd5117bcb1366430cdffd1f9ddddf69699e0de6": {
    "site": "junk_gate_batch",
@@ -107,7 +107,7 @@
    "output_tokens": 37,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e217bdf3e75743bd2dfbf45b78044727c158d13bd3f6ac583151af0732bc18ee": {
+  "b0d1152c738b5cf038f56a40101ead0da9fbd9860b5aa414b982e5a918c38877": {
    "site": "expert",
    "parsed": {
     "proposed_kind": null,
@@ -242,7 +242,7 @@
    },
    "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Gaurav, as promised, here is the pilot proposal. Happy to walk you through it whenever suits you. Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Finish the pilot proposal and send it to Gaurav by Friday, as promised.\", \"for_whom\": \"Gaurav at Stackfield\", \"by_when\": \"2026-09-25\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Gaurav\"}, \"facts\": [{\"claim\": \"Arjun wrote to Gaurav at Stackfield that, as he said on WhatsApp, he will send the pilot proposal by Friday.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Gaurav, As I said on WhatsApp, I'll send the pilot proposal by Friday. Arjun\"}, {\"claim\": \"The file lists that promise — to send the pilot proposal — as open, due on the twenty-fifth of September.\", \"evidence\": [\"promise:node_#2\"]}, {\"claim\": \"The promise is Arjun's own, made in his own mail.\", \"evidence\": [\"evt_#1\", \"promise:node_#2\"], \"quote\": \"Pilot proposal Hi Gaurav, As I said on WhatsApp, I'll\"}, {\"claim\": \"The engine reads the file's one situation as a sales opportunity.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The next move is ours even though the file reads the turn as Stackfield's: Gaurav is owed the proposal, not an answer to a question.\", \"based_on\": [\"fact:1\", \"fact:3\"]}, {\"claim\": \"The promise was made on WhatsApp and again in writing, so Gaurav will expect the proposal on Friday.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of how Stackfield takes a slipped date.\", \"based_on\": [\"hist:derived.history.times_seen@sales\", \"hist:derived.history.prior_outcome@sales\"]}], \"hypotheses\": [{\"proposition\": \"The pilot proposal may be partly written.\", \"needs\": \"Arjun's word on where the draft stands.\"}, {\"proposition\": \"Stackfield may be a design partner rather than a paying customer.\", \"needs\": \"Arjun's word, or the brief naming Stackfield's kind of work.\"}], \"unknowns\": [{\"question\": \"What kind of work is Stackfield — a design-partner pilot or a customer pilot? The brief names none.\", \"relevance\": \"It decides which playbook the file follows and what the proposal must hold.\"}, {\"question\": \"What did Arjun and Gaurav agree on WhatsApp beyond the date?\", \"relevance\": \"The proposal must match what was said there, and none of it is in this file.\"}, {\"question\": \"Is the proposal on track for Friday?\", \"relevance\": \"If not, Gaurav should hear a new date before Friday, not after it.\"}], \"frames\": {\"primary\": \"A promise of your own, with a date: you told Gaurav, on WhatsApp and again by mail, that the pilot proposal comes by Friday — the work is ours to finish and send.\", \"rivals\": [\"A sales opportunity where the proposal opens a negotiation, and the content matters more than the day.\", \"A soft date that Gaurav will not hold Arjun to.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From Arjun's own promise: the pilot proposal with Gaurav by Friday the twenty-fifth.\", \"actual\": \"The promise is open; nothing in the file shows the proposal written or sent.\"}, \"scenarios\": {\"do_nothing\": \"Friday passes with the proposal unsent, and a promise you made twice is broken in front of a prospective pilot.\", \"act\": \"Finishing the proposal this week and sending it by Friday keeps Arjun's word and moves the pilot forward.\", \"best\": \"The proposal goes out on time and Stackfield agrees to the pilot.\", \"worst\": \"The date slips without a word, Gaurav reads it as how Nimbus Labs keeps promises, and the pilot cools.\", \"signals_to_watch\": [\"The proposal sent to Gaurav by Friday\", \"Gaurav writing to ask after it\", \"Friday passing with the promise still open\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"The promise is Arjun's own, made twice, with a date.\", \"Friday is days away, and the proposal has to be written before it can be sent.\", \"A slipped date can be mended with an early note and a new date, so the damage stays small if handled before Friday.\"]}, \"mode\": \"act\", \"alternative\": \"If the proposal cannot be ready by Friday, write to Gaurav before Friday with a new date.\", \"wait_or_stop\": \"No waiting — the promise is ours; once the proposal is sent, wait for Gaurav's response.\", \"done_when\": \"Gaurav has the pilot proposal by Friday, and the promise is closed.\"}",
    "framed": true,
-   "input_tokens": 3346,
+   "input_tokens": 3462,
    "output_tokens": 1112,
    "model": "claude-haiku-4-5-20251001"
   },

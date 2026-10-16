@@ -1,439 +1,9 @@
 {
  "case_id": "F03",
  "source": "ideal_reader",
- "recorded_at": "b8b4804d",
+ "recorded_at": "unknown",
  "answers": {
-  "1ce702b68252a38d04513f710723109a0d3fa813bc12968ea1a738eedd971a03": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "Introly introduced Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, to the founder.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure."
-     },
-     {
-      "claim": "Introly said it would let the two take it from there, so the next step is between the founder and Rahul.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "two should talk. I'll let you take it from here. Introly"
-     },
-     {
-      "claim": "Rahul Menon at Kestrel Capital is the person this file's numbers follow, and no reply time has been measured either way.",
-      "evidence": [
-       "num:their_reply_time:rahul@kestrelcap.test",
-       "num:your_reply_time:rahul@kestrelcap.test"
-      ]
-     },
-     {
-      "claim": "The file sits under an account admin situation, seen for the first time.",
-      "evidence": [
-       "sit:sit_#1",
-       "hist:derived.history.times_seen@admin"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "Kestrel Capital is a fund and the founder is raising the seed round: this is a prospective investor, not an admin account.",
-      "based_on": [
-       "fact:1"
-      ]
-     },
-     {
-      "claim": "With the connector stepped back, silence from the founder reads as silence to Rahul.",
-      "based_on": [
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "Filing this under account admin understates it; the work is the raise.",
-      "based_on": [
-       "fact:1",
-       "fact:4"
-      ]
-     }
-    ],
-    "patterns": [
-     {
-      "kind": "base_rate",
-      "claim": "There is no history to go on: this work is seen for the first time, with no earlier card or outcome.",
-      "based_on": [
-       "hist:derived.history.times_seen@admin",
-       "hist:derived.history.prior_outcome@admin"
-      ]
-     }
-    ],
-    "hypotheses": [
-     {
-      "proposition": "Kestrel Capital may fit the seed round: Rahul invests in early-stage AI infrastructure and Nimbus Labs builds an AI chief of staff for founders.",
-      "needs": "Kestrel's stage, cheque size and focus, from Rahul on a first call or from the fund's own material."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "Whether Kestrel Capital invests at seed, and in AI products as well as infrastructure.",
-      "relevance": "It decides whether this is a real prospect for the round or a courtesy call."
-     },
-     {
-      "question": "How warm Rahul's interest is, given the introduction came from an automated connector rather than someone who knows both.",
-      "relevance": "A cold match needs a sharper first note than a warm personal introduction."
-     },
-     {
-      "question": "Whether Rahul has written to the founder outside this file.",
-      "relevance": "If he has, the note owed answers his, rather than opening fresh."
-     }
-    ],
-    "frames": {
-     "primary": "An investor introduction during the seed raise: a partner at a fund that backs early-stage AI infrastructure has been put in front of you, and the first move is ours.",
-     "rivals": [
-      "An automated match that may not fit the round, worth a short exploratory call rather than a pitch.",
-      "A courtesy introduction Rahul did not seek, where a note may go unanswered."
-     ]
-    },
-    "proposed_kind": {
-     "kind": "investor",
-     "why": "Kestrel Capital is a fund and Rahul Menon a partner who invests in early-stage AI infrastructure; while the founder raises the seed round, the work this file holds is raising from that fund, which the connector introduced.",
-     "evidence": [
-      "evt_#1"
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "With no playbook, from the brief and the introduction: an introduction to an investor during a raise is answered by the founder promptly, aiming at a first call.",
-     "actual": "The introduction arrived and the connector stepped back; the founder has not written in this file."
-    },
-    "scenarios": {
-     "do_nothing": "The introduction goes cold: a partner who was told you would take it from here hears nothing, and the fund is lost to the round without a conversation.",
-     "act": "A short, specific note to Rahul now, offering a call, turns the introduction into a first meeting while it is warm.",
-     "best": "Rahul answers, a first call is booked, and Kestrel Capital turns out to fit the round.",
-     "worst": "No note goes, or it goes to the connector instead of Rahul, and the introduction dies.",
-     "signals_to_watch": [
-      "Rahul answering the founder's note, or writing first",
-      "Further reminders from the connector",
-      "Whether Kestrel's focus fits a seed-stage AI product"
-     ]
-    },
-    "appraisal": {
-     "stakes": "medium",
-     "urgency": "high",
-     "reversibility": "costly_to_reverse",
-     "reasons": [
-      "Raising the seed round is the brief's first goal, and Rahul is a partner at a fund.",
-      "Whether Kestrel fits a seed-stage AI product is not known, so this is one prospect among the round's, not the round.",
-      "The connector stepped back and the move is ours; an introduction left unanswered cools.",
-      "A poor first impression with a partner is hard to undo."
-     ]
-    },
-    "mode": "act",
-    "next_move": {
-     "who": "Arjun Rao",
-     "what": "Write to Rahul Menon directly: thank him for taking the introduction, say in two lines what you are building and that the seed round is open, and offer a short call",
-     "for_whom": "Rahul Menon at Kestrel Capital",
-     "by_when": null,
-     "rests_on": [
-      "fact:1",
-      "fact:2"
-     ],
-     "to": "Rahul"
-    },
-    "alternative": "If you want to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.",
-    "wait_or_stop": "Do not wait: the move is ours. After the note, wait for Rahul's answer; if none comes in about a week, follow up once, then stop.",
-    "done_when": "Rahul has your note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.",
-    "draft": "Hi Rahul, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and we're raising our seed round. Given your focus on early-stage AI infrastructure, I'd value your view on whether we fit what Kestrel backs. Would a short call next week suit you? Happy to work around your calendar. Best, Arjun"
-   },
-   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, to the founder.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure.\"}, {\"claim\": \"Introly said it would let the two take it from there, so the next step is between the founder and Rahul.\", \"evidence\": [\"evt_#1\"], \"quote\": \"two should talk. I'll let you take it from here. Introly\"}, {\"claim\": \"Rahul Menon at Kestrel Capital is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:rahul@kestrelcap.test\", \"num:your_reply_time:rahul@kestrelcap.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Kestrel Capital is a fund and the founder is raising the seed round: this is a prospective investor, not an admin account.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"With the connector stepped back, silence from the founder reads as silence to Rahul.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"Filing this under account admin understates it; the work is the raise.\", \"based_on\": [\"fact:1\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to go on: this work is seen for the first time, with no earlier card or outcome.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Kestrel Capital may fit the seed round: Rahul invests in early-stage AI infrastructure and Nimbus Labs builds an AI chief of staff for founders.\", \"needs\": \"Kestrel's stage, cheque size and focus, from Rahul on a first call or from the fund's own material.\"}], \"unknowns\": [{\"question\": \"Whether Kestrel Capital invests at seed, and in AI products as well as infrastructure.\", \"relevance\": \"It decides whether this is a real prospect for the round or a courtesy call.\"}, {\"question\": \"How warm Rahul's interest is, given the introduction came from an automated connector rather than someone who knows both.\", \"relevance\": \"A cold match needs a sharper first note than a warm personal introduction.\"}, {\"question\": \"Whether Rahul has written to the founder outside this file.\", \"relevance\": \"If he has, the note owed answers his, rather than opening fresh.\"}], \"frames\": {\"primary\": \"An investor introduction during the seed raise: a partner at a fund that backs early-stage AI infrastructure has been put in front of you, and the first move is ours.\", \"rivals\": [\"An automated match that may not fit the round, worth a short exploratory call rather than a pitch.\", \"A courtesy introduction Rahul did not seek, where a note may go unanswered.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Kestrel Capital is a fund and Rahul Menon a partner who invests in early-stage AI infrastructure; while the founder raises the seed round, the work this file holds is raising from that fund, which the connector introduced.\", \"evidence\": [\"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the introduction: an introduction to an investor during a raise is answered by the founder promptly, aiming at a first call.\", \"actual\": \"The introduction arrived and the connector stepped back; the founder has not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"The introduction goes cold: a partner who was told you would take it from here hears nothing, and the fund is lost to the round without a conversation.\", \"act\": \"A short, specific note to Rahul now, offering a call, turns the introduction into a first meeting while it is warm.\", \"best\": \"Rahul answers, a first call is booked, and Kestrel Capital turns out to fit the round.\", \"worst\": \"No note goes, or it goes to the connector instead of Rahul, and the introduction dies.\", \"signals_to_watch\": [\"Rahul answering the founder's note, or writing first\", \"Further reminders from the connector\", \"Whether Kestrel's focus fits a seed-stage AI product\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Rahul is a partner at a fund.\", \"Whether Kestrel fits a seed-stage AI product is not known, so this is one prospect among the round's, not the round.\", \"The connector stepped back and the move is ours; an introduction left unanswered cools.\", \"A poor first impression with a partner is hard to undo.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Write to Rahul Menon directly: thank him for taking the introduction, say in two lines what you are building and that the seed round is open, and offer a short call\", \"for_whom\": \"Rahul Menon at Kestrel Capital\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Rahul\"}, \"alternative\": \"If you want to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.\", \"wait_or_stop\": \"Do not wait: the move is ours. After the note, wait for Rahul's answer; if none comes in about a week, follow up once, then stop.\", \"done_when\": \"Rahul has your note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.\", \"draft\": \"Hi Rahul, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and we're raising our seed round. Given your focus on early-stage AI infrastructure, I'd value your view on whether we fit what Kestrel backs. Would a short call next week suit you? Happy to work around your calendar. Best, Arjun\"}",
-   "framed": true,
-   "input_tokens": 3358,
-   "output_tokens": 1448,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "44799780b9b32c119d0a6c09aeef1f34c4b76e75e0e6758adc6bede35904a790": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Did you see my intro to Rahul?",
-    "start_offset": 0,
-    "end_offset": 30,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Did you see my intro to Rahul?\", \"start_offset\": 0, \"end_offset\": 30, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1517,
-   "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "745c9a9460a4d3ee50ebd440b44d3b2f5c46569f735dbbb92079cd886e337d3f": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "Introly introduced Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, to the founder.",
-      "evidence": [
-       "evt_#2"
-      ],
-      "quote": "Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure."
-     },
-     {
-      "claim": "Introly said it would let the two take it from there, so the next step is between the founder and Rahul.",
-      "evidence": [
-       "evt_#2"
-      ],
-      "quote": "two should talk. I'll let you take it from here. Introly"
-     },
-     {
-      "claim": "Rahul Menon at Kestrel Capital is the person this file's numbers follow, and no reply time has been measured either way.",
-      "evidence": [
-       "num:their_reply_time:rahul@kestrelcap.test",
-       "num:your_reply_time:rahul@kestrelcap.test"
-      ]
-     },
-     {
-      "claim": "The file sits under an account admin situation, seen for the first time.",
-      "evidence": [
-       "sit:sit_#1",
-       "hist:derived.history.times_seen@admin"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "Kestrel Capital is a fund and the founder is raising the seed round: this is a prospective investor, not an admin account.",
-      "based_on": [
-       "fact:1"
-      ]
-     },
-     {
-      "claim": "With the connector stepped back, silence from the founder reads as silence to Rahul.",
-      "based_on": [
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "Filing this under account admin understates it; the work is the raise.",
-      "based_on": [
-       "fact:1",
-       "fact:4"
-      ]
-     }
-    ],
-    "patterns": [
-     {
-      "kind": "base_rate",
-      "claim": "There is no history to go on: this work is seen for the first time, with no earlier card or outcome.",
-      "based_on": [
-       "hist:derived.history.times_seen@admin",
-       "hist:derived.history.prior_outcome@admin"
-      ]
-     }
-    ],
-    "hypotheses": [
-     {
-      "proposition": "Kestrel Capital may fit the seed round: Rahul invests in early-stage AI infrastructure and Nimbus Labs builds an AI chief of staff for founders.",
-      "needs": "Kestrel's stage, cheque size and focus, from Rahul on a first call or from the fund's own material."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "Whether Kestrel Capital invests at seed, and in AI products as well as infrastructure.",
-      "relevance": "It decides whether this is a real prospect for the round or a courtesy call."
-     },
-     {
-      "question": "How warm Rahul's interest is, given the introduction came from an automated connector rather than someone who knows both.",
-      "relevance": "A cold match needs a sharper first note than a warm personal introduction."
-     },
-     {
-      "question": "Whether Rahul has written to the founder outside this file.",
-      "relevance": "If he has, the note owed answers his, rather than opening fresh."
-     }
-    ],
-    "frames": {
-     "primary": "An investor introduction during the seed raise: a partner at a fund that backs early-stage AI infrastructure has been put in front of you, and the first move is ours.",
-     "rivals": [
-      "An automated match that may not fit the round, worth a short exploratory call rather than a pitch.",
-      "A courtesy introduction Rahul did not seek, where a note may go unanswered."
-     ]
-    },
-    "proposed_kind": {
-     "kind": "investor",
-     "why": "Kestrel Capital is a fund and Rahul Menon a partner who invests in early-stage AI infrastructure; while the founder raises the seed round, the work this file holds is raising from that fund, which the connector introduced.",
-     "evidence": [
-      "evt_#2"
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "With no playbook, from the brief and the introduction: an introduction to an investor during a raise is answered by the founder promptly, aiming at a first call.",
-     "actual": "The introduction arrived and the connector stepped back; the founder has not written in this file."
-    },
-    "scenarios": {
-     "do_nothing": "The introduction goes cold: a partner who was told you would take it from here hears nothing, and the fund is lost to the round without a conversation.",
-     "act": "A short, specific note to Rahul now, offering a call, turns the introduction into a first meeting while it is warm.",
-     "best": "Rahul answers, a first call is booked, and Kestrel Capital turns out to fit the round.",
-     "worst": "No note goes, or it goes to the connector instead of Rahul, and the introduction dies.",
-     "signals_to_watch": [
-      "Rahul answering the founder's note, or writing first",
-      "Further reminders from the connector",
-      "Whether Kestrel's focus fits a seed-stage AI product"
-     ]
-    },
-    "appraisal": {
-     "stakes": "medium",
-     "urgency": "high",
-     "reversibility": "costly_to_reverse",
-     "reasons": [
-      "Raising the seed round is the brief's first goal, and Rahul is a partner at a fund.",
-      "Whether Kestrel fits a seed-stage AI product is not known, so this is one prospect among the round's, not the round.",
-      "The connector stepped back and the move is ours; an introduction left unanswered cools.",
-      "A poor first impression with a partner is hard to undo."
-     ]
-    },
-    "mode": "act",
-    "next_move": {
-     "who": "Arjun Rao",
-     "what": "Write to Rahul Menon directly: thank him for taking the introduction, say in two lines what you are building and that the seed round is open, and offer a short call",
-     "for_whom": "Rahul Menon at Kestrel Capital",
-     "by_when": null,
-     "rests_on": [
-      "fact:1",
-      "fact:2"
-     ],
-     "to": "Rahul"
-    },
-    "alternative": "If you want to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.",
-    "wait_or_stop": "Do not wait: the move is ours. After the note, wait for Rahul's answer; if none comes in about a week, follow up once, then stop.",
-    "done_when": "Rahul has your note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.",
-    "draft": "Hi Rahul, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and we're raising our seed round. Given your focus on early-stage AI infrastructure, I'd value your view on whether we fit what Kestrel backs. Would a short call next week suit you? Happy to work around your calendar. Best, Arjun"
-   },
-   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, to the founder.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure.\"}, {\"claim\": \"Introly said it would let the two take it from there, so the next step is between the founder and Rahul.\", \"evidence\": [\"evt_#2\"], \"quote\": \"two should talk. I'll let you take it from here. Introly\"}, {\"claim\": \"Rahul Menon at Kestrel Capital is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:rahul@kestrelcap.test\", \"num:your_reply_time:rahul@kestrelcap.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Kestrel Capital is a fund and the founder is raising the seed round: this is a prospective investor, not an admin account.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"With the connector stepped back, silence from the founder reads as silence to Rahul.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"Filing this under account admin understates it; the work is the raise.\", \"based_on\": [\"fact:1\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to go on: this work is seen for the first time, with no earlier card or outcome.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Kestrel Capital may fit the seed round: Rahul invests in early-stage AI infrastructure and Nimbus Labs builds an AI chief of staff for founders.\", \"needs\": \"Kestrel's stage, cheque size and focus, from Rahul on a first call or from the fund's own material.\"}], \"unknowns\": [{\"question\": \"Whether Kestrel Capital invests at seed, and in AI products as well as infrastructure.\", \"relevance\": \"It decides whether this is a real prospect for the round or a courtesy call.\"}, {\"question\": \"How warm Rahul's interest is, given the introduction came from an automated connector rather than someone who knows both.\", \"relevance\": \"A cold match needs a sharper first note than a warm personal introduction.\"}, {\"question\": \"Whether Rahul has written to the founder outside this file.\", \"relevance\": \"If he has, the note owed answers his, rather than opening fresh.\"}], \"frames\": {\"primary\": \"An investor introduction during the seed raise: a partner at a fund that backs early-stage AI infrastructure has been put in front of you, and the first move is ours.\", \"rivals\": [\"An automated match that may not fit the round, worth a short exploratory call rather than a pitch.\", \"A courtesy introduction Rahul did not seek, where a note may go unanswered.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Kestrel Capital is a fund and Rahul Menon a partner who invests in early-stage AI infrastructure; while the founder raises the seed round, the work this file holds is raising from that fund, which the connector introduced.\", \"evidence\": [\"evt_#2\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the introduction: an introduction to an investor during a raise is answered by the founder promptly, aiming at a first call.\", \"actual\": \"The introduction arrived and the connector stepped back; the founder has not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"The introduction goes cold: a partner who was told you would take it from here hears nothing, and the fund is lost to the round without a conversation.\", \"act\": \"A short, specific note to Rahul now, offering a call, turns the introduction into a first meeting while it is warm.\", \"best\": \"Rahul answers, a first call is booked, and Kestrel Capital turns out to fit the round.\", \"worst\": \"No note goes, or it goes to the connector instead of Rahul, and the introduction dies.\", \"signals_to_watch\": [\"Rahul answering the founder's note, or writing first\", \"Further reminders from the connector\", \"Whether Kestrel's focus fits a seed-stage AI product\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Rahul is a partner at a fund.\", \"Whether Kestrel fits a seed-stage AI product is not known, so this is one prospect among the round's, not the round.\", \"The connector stepped back and the move is ours; an introduction left unanswered cools.\", \"A poor first impression with a partner is hard to undo.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Write to Rahul Menon directly: thank him for taking the introduction, say in two lines what you are building and that the seed round is open, and offer a short call\", \"for_whom\": \"Rahul Menon at Kestrel Capital\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Rahul\"}, \"alternative\": \"If you want to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.\", \"wait_or_stop\": \"Do not wait: the move is ours. After the note, wait for Rahul's answer; if none comes in about a week, follow up once, then stop.\", \"done_when\": \"Rahul has your note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.\", \"draft\": \"Hi Rahul, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and we're raising our seed round. Given your focus on early-stage AI infrastructure, I'd value your view on whether we fit what Kestrel backs. Would a short call next week suit you? Happy to work around your calendar. Best, Arjun\"}",
-   "framed": true,
-   "input_tokens": 3492,
-   "output_tokens": 1448,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "76e949eed49f7b65a6a437ffe78a10a863aecf2d7a84953c0ee3d3b261c4ed9b": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "introduce",
-    "stance": "positive",
-    "topics": [
-     "introduction",
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Rahul Menon",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Rahul Menon",
-        "start_offset": 46,
-        "end_offset": 57
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Kestrel Capital",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Kestrel Capital",
-        "start_offset": 16,
-        "end_offset": 31
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Introly",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Introly",
-        "start_offset": 298,
-        "end_offset": 305
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "roles": [
-     {
-      "party": "Introly",
-      "role": "connector",
-      "evidence": [
-       {
-        "quote": "I think you two should talk",
-        "start_offset": 236,
-        "end_offset": 263
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "party": "Rahul Menon",
-      "role": "investor",
-      "evidence": [
-       {
-        "quote": "a partner at Kestrel Capital who invests in early-stage AI infrastructure",
-        "start_offset": 59,
-        "end_offset": 132
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "relationships": [
-     {
-      "party": "Rahul Menon",
-      "nature": "introduced investor",
-      "direction": "inbound",
-      "evidence_text": "Arjun, meet Rahul Menon"
-     }
-    ],
-    "business_facts": [
-     {
-      "field": "person.title",
-      "subject": "Rahul Menon",
-      "value": "Partner",
-      "standing": "observed",
-      "evidence": [
-       {
-        "quote": "a partner at Kestrel Capital",
-        "start_offset": 59,
-        "end_offset": 87
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": false,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "introduce an investor"
-    },
-    "implied_actions": [
-     "reply to Rahul Menon to take the introduction forward"
-    ]
-   },
-   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\", \"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Rahul Menon\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Rahul Menon\", \"start_offset\": 46, \"end_offset\": 57}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kestrel Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kestrel Capital\", \"start_offset\": 16, \"end_offset\": 31}], \"confidence_bp\": 9000}, {\"surface_form\": \"Introly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Introly\", \"start_offset\": 298, \"end_offset\": 305}], \"confidence_bp\": 9000}], \"roles\": [{\"party\": \"Introly\", \"role\": \"connector\", \"evidence\": [{\"quote\": \"I think you two should talk\", \"start_offset\": 236, \"end_offset\": 263}], \"confidence_bp\": 9000}, {\"party\": \"Rahul Menon\", \"role\": \"investor\", \"evidence\": [{\"quote\": \"a partner at Kestrel Capital who invests in early-stage AI infrastructure\", \"start_offset\": 59, \"end_offset\": 132}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Rahul Menon\", \"nature\": \"introduced investor\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Rahul Menon\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Rahul Menon\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"a partner at Kestrel Capital\", \"start_offset\": 59, \"end_offset\": 87}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"introduce an investor\"}, \"implied_actions\": [\"reply to Rahul Menon to take the introduction forward\"]}",
-   "framed": true,
-   "input_tokens": 5557,
-   "output_tokens": 417,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8de57595b0e695a0d2e8a765578c8a61431428b214bf5e58173723d0dd0712c5": {
+  "16395b23c4e970a703fdcb500e8c98446709c7155685d2bcee8f5700aefd887d": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -577,8 +147,290 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Introly introduced Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, to the founder.\", \"evidence\": [\"evt_#3\"], \"quote\": \"Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure.\"}, {\"claim\": \"Introly said it would let the two take it from there, so the next step is between the founder and Rahul.\", \"evidence\": [\"evt_#3\"], \"quote\": \"two should talk. I'll let you take it from here. Introly\"}, {\"claim\": \"Rahul Menon at Kestrel Capital is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:rahul@kestrelcap.test\", \"num:your_reply_time:rahul@kestrelcap.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Kestrel Capital is a fund and the founder is raising the seed round: this is a prospective investor, not an admin account.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"With the connector stepped back, silence from the founder reads as silence to Rahul.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"Filing this under account admin understates it; the work is the raise.\", \"based_on\": [\"fact:1\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to go on: this work is seen for the first time, with no earlier card or outcome.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Kestrel Capital may fit the seed round: Rahul invests in early-stage AI infrastructure and Nimbus Labs builds an AI chief of staff for founders.\", \"needs\": \"Kestrel's stage, cheque size and focus, from Rahul on a first call or from the fund's own material.\"}], \"unknowns\": [{\"question\": \"Whether Kestrel Capital invests at seed, and in AI products as well as infrastructure.\", \"relevance\": \"It decides whether this is a real prospect for the round or a courtesy call.\"}, {\"question\": \"How warm Rahul's interest is, given the introduction came from an automated connector rather than someone who knows both.\", \"relevance\": \"A cold match needs a sharper first note than a warm personal introduction.\"}, {\"question\": \"Whether Rahul has written to the founder outside this file.\", \"relevance\": \"If he has, the note owed answers his, rather than opening fresh.\"}], \"frames\": {\"primary\": \"An investor introduction during the seed raise: a partner at a fund that backs early-stage AI infrastructure has been put in front of you, and the first move is ours.\", \"rivals\": [\"An automated match that may not fit the round, worth a short exploratory call rather than a pitch.\", \"A courtesy introduction Rahul did not seek, where a note may go unanswered.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Kestrel Capital is a fund and Rahul Menon a partner who invests in early-stage AI infrastructure; while the founder raises the seed round, the work this file holds is raising from that fund, which the connector introduced.\", \"evidence\": [\"evt_#3\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the introduction: an introduction to an investor during a raise is answered by the founder promptly, aiming at a first call.\", \"actual\": \"The introduction arrived and the connector stepped back; the founder has not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"The introduction goes cold: a partner who was told you would take it from here hears nothing, and the fund is lost to the round without a conversation.\", \"act\": \"A short, specific note to Rahul now, offering a call, turns the introduction into a first meeting while it is warm.\", \"best\": \"Rahul answers, a first call is booked, and Kestrel Capital turns out to fit the round.\", \"worst\": \"No note goes, or it goes to the connector instead of Rahul, and the introduction dies.\", \"signals_to_watch\": [\"Rahul answering the founder's note, or writing first\", \"Further reminders from the connector\", \"Whether Kestrel's focus fits a seed-stage AI product\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Rahul is a partner at a fund.\", \"Whether Kestrel fits a seed-stage AI product is not known, so this is one prospect among the round's, not the round.\", \"The connector stepped back and the move is ours; an introduction left unanswered cools.\", \"A poor first impression with a partner is hard to undo.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Write to Rahul Menon directly: thank him for taking the introduction, say in two lines what you are building and that the seed round is open, and offer a short call\", \"for_whom\": \"Rahul Menon at Kestrel Capital\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Rahul\"}, \"alternative\": \"If you want to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.\", \"wait_or_stop\": \"Do not wait: the move is ours. After the note, wait for Rahul's answer; if none comes in about a week, follow up once, then stop.\", \"done_when\": \"Rahul has your note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.\", \"draft\": \"Hi Rahul, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and we're raising our seed round. Given your focus on early-stage AI infrastructure, I'd value your view on whether we fit what Kestrel backs. Would a short call next week suit you? Happy to work around your calendar. Best, Arjun\"}",
    "framed": true,
-   "input_tokens": 3584,
+   "input_tokens": 3700,
    "output_tokens": 1448,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3e6c237e73ff63e8e718b8c3af845131773c1093464870846e2d828dc5f92b86": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, to the founder.",
+      "evidence": [
+       "evt_#2"
+      ],
+      "quote": "Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure."
+     },
+     {
+      "claim": "Introly said it would let the two take it from there, so the next step is between the founder and Rahul.",
+      "evidence": [
+       "evt_#2"
+      ],
+      "quote": "two should talk. I'll let you take it from here. Introly"
+     },
+     {
+      "claim": "Rahul Menon at Kestrel Capital is the person this file's numbers follow, and no reply time has been measured either way.",
+      "evidence": [
+       "num:their_reply_time:rahul@kestrelcap.test",
+       "num:your_reply_time:rahul@kestrelcap.test"
+      ]
+     },
+     {
+      "claim": "The file sits under an account admin situation, seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Kestrel Capital is a fund and the founder is raising the seed round: this is a prospective investor, not an admin account.",
+      "based_on": [
+       "fact:1"
+      ]
+     },
+     {
+      "claim": "With the connector stepped back, silence from the founder reads as silence to Rahul.",
+      "based_on": [
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Filing this under account admin understates it; the work is the raise.",
+      "based_on": [
+       "fact:1",
+       "fact:4"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "There is no history to go on: this work is seen for the first time, with no earlier card or outcome.",
+      "based_on": [
+       "hist:derived.history.times_seen@admin",
+       "hist:derived.history.prior_outcome@admin"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Kestrel Capital may fit the seed round: Rahul invests in early-stage AI infrastructure and Nimbus Labs builds an AI chief of staff for founders.",
+      "needs": "Kestrel's stage, cheque size and focus, from Rahul on a first call or from the fund's own material."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether Kestrel Capital invests at seed, and in AI products as well as infrastructure.",
+      "relevance": "It decides whether this is a real prospect for the round or a courtesy call."
+     },
+     {
+      "question": "How warm Rahul's interest is, given the introduction came from an automated connector rather than someone who knows both.",
+      "relevance": "A cold match needs a sharper first note than a warm personal introduction."
+     },
+     {
+      "question": "Whether Rahul has written to the founder outside this file.",
+      "relevance": "If he has, the note owed answers his, rather than opening fresh."
+     }
+    ],
+    "frames": {
+     "primary": "An investor introduction during the seed raise: a partner at a fund that backs early-stage AI infrastructure has been put in front of you, and the first move is ours.",
+     "rivals": [
+      "An automated match that may not fit the round, worth a short exploratory call rather than a pitch.",
+      "A courtesy introduction Rahul did not seek, where a note may go unanswered."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "investor",
+     "why": "Kestrel Capital is a fund and Rahul Menon a partner who invests in early-stage AI infrastructure; while the founder raises the seed round, the work this file holds is raising from that fund, which the connector introduced.",
+     "evidence": [
+      "evt_#2"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "With no playbook, from the brief and the introduction: an introduction to an investor during a raise is answered by the founder promptly, aiming at a first call.",
+     "actual": "The introduction arrived and the connector stepped back; the founder has not written in this file."
+    },
+    "scenarios": {
+     "do_nothing": "The introduction goes cold: a partner who was told you would take it from here hears nothing, and the fund is lost to the round without a conversation.",
+     "act": "A short, specific note to Rahul now, offering a call, turns the introduction into a first meeting while it is warm.",
+     "best": "Rahul answers, a first call is booked, and Kestrel Capital turns out to fit the round.",
+     "worst": "No note goes, or it goes to the connector instead of Rahul, and the introduction dies.",
+     "signals_to_watch": [
+      "Rahul answering the founder's note, or writing first",
+      "Further reminders from the connector",
+      "Whether Kestrel's focus fits a seed-stage AI product"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "Raising the seed round is the brief's first goal, and Rahul is a partner at a fund.",
+      "Whether Kestrel fits a seed-stage AI product is not known, so this is one prospect among the round's, not the round.",
+      "The connector stepped back and the move is ours; an introduction left unanswered cools.",
+      "A poor first impression with a partner is hard to undo."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun Rao",
+     "what": "Write to Rahul Menon directly: thank him for taking the introduction, say in two lines what you are building and that the seed round is open, and offer a short call",
+     "for_whom": "Rahul Menon at Kestrel Capital",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "to": "Rahul"
+    },
+    "alternative": "If you want to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.",
+    "wait_or_stop": "Do not wait: the move is ours. After the note, wait for Rahul's answer; if none comes in about a week, follow up once, then stop.",
+    "done_when": "Rahul has your note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.",
+    "draft": "Hi Rahul, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and we're raising our seed round. Given your focus on early-stage AI infrastructure, I'd value your view on whether we fit what Kestrel backs. Would a short call next week suit you? Happy to work around your calendar. Best, Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, to the founder.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure.\"}, {\"claim\": \"Introly said it would let the two take it from there, so the next step is between the founder and Rahul.\", \"evidence\": [\"evt_#2\"], \"quote\": \"two should talk. I'll let you take it from here. Introly\"}, {\"claim\": \"Rahul Menon at Kestrel Capital is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:rahul@kestrelcap.test\", \"num:your_reply_time:rahul@kestrelcap.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Kestrel Capital is a fund and the founder is raising the seed round: this is a prospective investor, not an admin account.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"With the connector stepped back, silence from the founder reads as silence to Rahul.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"Filing this under account admin understates it; the work is the raise.\", \"based_on\": [\"fact:1\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to go on: this work is seen for the first time, with no earlier card or outcome.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Kestrel Capital may fit the seed round: Rahul invests in early-stage AI infrastructure and Nimbus Labs builds an AI chief of staff for founders.\", \"needs\": \"Kestrel's stage, cheque size and focus, from Rahul on a first call or from the fund's own material.\"}], \"unknowns\": [{\"question\": \"Whether Kestrel Capital invests at seed, and in AI products as well as infrastructure.\", \"relevance\": \"It decides whether this is a real prospect for the round or a courtesy call.\"}, {\"question\": \"How warm Rahul's interest is, given the introduction came from an automated connector rather than someone who knows both.\", \"relevance\": \"A cold match needs a sharper first note than a warm personal introduction.\"}, {\"question\": \"Whether Rahul has written to the founder outside this file.\", \"relevance\": \"If he has, the note owed answers his, rather than opening fresh.\"}], \"frames\": {\"primary\": \"An investor introduction during the seed raise: a partner at a fund that backs early-stage AI infrastructure has been put in front of you, and the first move is ours.\", \"rivals\": [\"An automated match that may not fit the round, worth a short exploratory call rather than a pitch.\", \"A courtesy introduction Rahul did not seek, where a note may go unanswered.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Kestrel Capital is a fund and Rahul Menon a partner who invests in early-stage AI infrastructure; while the founder raises the seed round, the work this file holds is raising from that fund, which the connector introduced.\", \"evidence\": [\"evt_#2\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the introduction: an introduction to an investor during a raise is answered by the founder promptly, aiming at a first call.\", \"actual\": \"The introduction arrived and the connector stepped back; the founder has not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"The introduction goes cold: a partner who was told you would take it from here hears nothing, and the fund is lost to the round without a conversation.\", \"act\": \"A short, specific note to Rahul now, offering a call, turns the introduction into a first meeting while it is warm.\", \"best\": \"Rahul answers, a first call is booked, and Kestrel Capital turns out to fit the round.\", \"worst\": \"No note goes, or it goes to the connector instead of Rahul, and the introduction dies.\", \"signals_to_watch\": [\"Rahul answering the founder's note, or writing first\", \"Further reminders from the connector\", \"Whether Kestrel's focus fits a seed-stage AI product\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Rahul is a partner at a fund.\", \"Whether Kestrel fits a seed-stage AI product is not known, so this is one prospect among the round's, not the round.\", \"The connector stepped back and the move is ours; an introduction left unanswered cools.\", \"A poor first impression with a partner is hard to undo.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Write to Rahul Menon directly: thank him for taking the introduction, say in two lines what you are building and that the seed round is open, and offer a short call\", \"for_whom\": \"Rahul Menon at Kestrel Capital\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Rahul\"}, \"alternative\": \"If you want to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.\", \"wait_or_stop\": \"Do not wait: the move is ours. After the note, wait for Rahul's answer; if none comes in about a week, follow up once, then stop.\", \"done_when\": \"Rahul has your note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.\", \"draft\": \"Hi Rahul, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and we're raising our seed round. Given your focus on early-stage AI infrastructure, I'd value your view on whether we fit what Kestrel backs. Would a short call next week suit you? Happy to work around your calendar. Best, Arjun\"}",
+   "framed": true,
+   "input_tokens": 3608,
+   "output_tokens": 1448,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "44799780b9b32c119d0a6c09aeef1f34c4b76e75e0e6758adc6bede35904a790": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Did you see my intro to Rahul?",
+    "start_offset": 0,
+    "end_offset": 30,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Did you see my intro to Rahul?\", \"start_offset\": 0, \"end_offset\": 30, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1517,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "76e949eed49f7b65a6a437ffe78a10a863aecf2d7a84953c0ee3d3b261c4ed9b": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "introduction",
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Rahul Menon",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Rahul Menon",
+        "start_offset": 46,
+        "end_offset": 57
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Kestrel Capital",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Kestrel Capital",
+        "start_offset": 16,
+        "end_offset": 31
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Introly",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Introly",
+        "start_offset": 298,
+        "end_offset": 305
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "roles": [
+     {
+      "party": "Introly",
+      "role": "connector",
+      "evidence": [
+       {
+        "quote": "I think you two should talk",
+        "start_offset": 236,
+        "end_offset": 263
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "party": "Rahul Menon",
+      "role": "investor",
+      "evidence": [
+       {
+        "quote": "a partner at Kestrel Capital who invests in early-stage AI infrastructure",
+        "start_offset": 59,
+        "end_offset": 132
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "relationships": [
+     {
+      "party": "Rahul Menon",
+      "nature": "introduced investor",
+      "direction": "inbound",
+      "evidence_text": "Arjun, meet Rahul Menon"
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Rahul Menon",
+      "value": "Partner",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "a partner at Kestrel Capital",
+        "start_offset": 59,
+        "end_offset": 87
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "introduce an investor"
+    },
+    "implied_actions": [
+     "reply to Rahul Menon to take the introduction forward"
+    ]
+   },
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\", \"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Rahul Menon\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Rahul Menon\", \"start_offset\": 46, \"end_offset\": 57}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kestrel Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kestrel Capital\", \"start_offset\": 16, \"end_offset\": 31}], \"confidence_bp\": 9000}, {\"surface_form\": \"Introly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Introly\", \"start_offset\": 298, \"end_offset\": 305}], \"confidence_bp\": 9000}], \"roles\": [{\"party\": \"Introly\", \"role\": \"connector\", \"evidence\": [{\"quote\": \"I think you two should talk\", \"start_offset\": 236, \"end_offset\": 263}], \"confidence_bp\": 9000}, {\"party\": \"Rahul Menon\", \"role\": \"investor\", \"evidence\": [{\"quote\": \"a partner at Kestrel Capital who invests in early-stage AI infrastructure\", \"start_offset\": 59, \"end_offset\": 132}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Rahul Menon\", \"nature\": \"introduced investor\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Rahul Menon\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Rahul Menon\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"a partner at Kestrel Capital\", \"start_offset\": 59, \"end_offset\": 87}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"introduce an investor\"}, \"implied_actions\": [\"reply to Rahul Menon to take the introduction forward\"]}",
+   "framed": true,
+   "input_tokens": 5557,
+   "output_tokens": 417,
    "model": "claude-haiku-4-5-20251001"
   },
   "a0cb28abf625721fbe1e7a1a6523a6fe3e22ea42e82bdae4a1b60d9403612de5": {
@@ -741,6 +593,154 @@
    "framed": true,
    "input_tokens": 5510,
    "output_tokens": 272,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "bdc55720473fc0316395a32832ceda264ee27c2bcc7c847f119f9974a97cd9a1": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, to the founder.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure."
+     },
+     {
+      "claim": "Introly said it would let the two take it from there, so the next step is between the founder and Rahul.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "two should talk. I'll let you take it from here. Introly"
+     },
+     {
+      "claim": "Rahul Menon at Kestrel Capital is the person this file's numbers follow, and no reply time has been measured either way.",
+      "evidence": [
+       "num:their_reply_time:rahul@kestrelcap.test",
+       "num:your_reply_time:rahul@kestrelcap.test"
+      ]
+     },
+     {
+      "claim": "The file sits under an account admin situation, seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Kestrel Capital is a fund and the founder is raising the seed round: this is a prospective investor, not an admin account.",
+      "based_on": [
+       "fact:1"
+      ]
+     },
+     {
+      "claim": "With the connector stepped back, silence from the founder reads as silence to Rahul.",
+      "based_on": [
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Filing this under account admin understates it; the work is the raise.",
+      "based_on": [
+       "fact:1",
+       "fact:4"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "There is no history to go on: this work is seen for the first time, with no earlier card or outcome.",
+      "based_on": [
+       "hist:derived.history.times_seen@admin",
+       "hist:derived.history.prior_outcome@admin"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Kestrel Capital may fit the seed round: Rahul invests in early-stage AI infrastructure and Nimbus Labs builds an AI chief of staff for founders.",
+      "needs": "Kestrel's stage, cheque size and focus, from Rahul on a first call or from the fund's own material."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether Kestrel Capital invests at seed, and in AI products as well as infrastructure.",
+      "relevance": "It decides whether this is a real prospect for the round or a courtesy call."
+     },
+     {
+      "question": "How warm Rahul's interest is, given the introduction came from an automated connector rather than someone who knows both.",
+      "relevance": "A cold match needs a sharper first note than a warm personal introduction."
+     },
+     {
+      "question": "Whether Rahul has written to the founder outside this file.",
+      "relevance": "If he has, the note owed answers his, rather than opening fresh."
+     }
+    ],
+    "frames": {
+     "primary": "An investor introduction during the seed raise: a partner at a fund that backs early-stage AI infrastructure has been put in front of you, and the first move is ours.",
+     "rivals": [
+      "An automated match that may not fit the round, worth a short exploratory call rather than a pitch.",
+      "A courtesy introduction Rahul did not seek, where a note may go unanswered."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "investor",
+     "why": "Kestrel Capital is a fund and Rahul Menon a partner who invests in early-stage AI infrastructure; while the founder raises the seed round, the work this file holds is raising from that fund, which the connector introduced.",
+     "evidence": [
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "With no playbook, from the brief and the introduction: an introduction to an investor during a raise is answered by the founder promptly, aiming at a first call.",
+     "actual": "The introduction arrived and the connector stepped back; the founder has not written in this file."
+    },
+    "scenarios": {
+     "do_nothing": "The introduction goes cold: a partner who was told you would take it from here hears nothing, and the fund is lost to the round without a conversation.",
+     "act": "A short, specific note to Rahul now, offering a call, turns the introduction into a first meeting while it is warm.",
+     "best": "Rahul answers, a first call is booked, and Kestrel Capital turns out to fit the round.",
+     "worst": "No note goes, or it goes to the connector instead of Rahul, and the introduction dies.",
+     "signals_to_watch": [
+      "Rahul answering the founder's note, or writing first",
+      "Further reminders from the connector",
+      "Whether Kestrel's focus fits a seed-stage AI product"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "Raising the seed round is the brief's first goal, and Rahul is a partner at a fund.",
+      "Whether Kestrel fits a seed-stage AI product is not known, so this is one prospect among the round's, not the round.",
+      "The connector stepped back and the move is ours; an introduction left unanswered cools.",
+      "A poor first impression with a partner is hard to undo."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun Rao",
+     "what": "Write to Rahul Menon directly: thank him for taking the introduction, say in two lines what you are building and that the seed round is open, and offer a short call",
+     "for_whom": "Rahul Menon at Kestrel Capital",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "to": "Rahul"
+    },
+    "alternative": "If you want to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.",
+    "wait_or_stop": "Do not wait: the move is ours. After the note, wait for Rahul's answer; if none comes in about a week, follow up once, then stop.",
+    "done_when": "Rahul has your note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.",
+    "draft": "Hi Rahul, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and we're raising our seed round. Given your focus on early-stage AI infrastructure, I'd value your view on whether we fit what Kestrel backs. Would a short call next week suit you? Happy to work around your calendar. Best, Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, to the founder.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure.\"}, {\"claim\": \"Introly said it would let the two take it from there, so the next step is between the founder and Rahul.\", \"evidence\": [\"evt_#1\"], \"quote\": \"two should talk. I'll let you take it from here. Introly\"}, {\"claim\": \"Rahul Menon at Kestrel Capital is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:rahul@kestrelcap.test\", \"num:your_reply_time:rahul@kestrelcap.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Kestrel Capital is a fund and the founder is raising the seed round: this is a prospective investor, not an admin account.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"With the connector stepped back, silence from the founder reads as silence to Rahul.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"Filing this under account admin understates it; the work is the raise.\", \"based_on\": [\"fact:1\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to go on: this work is seen for the first time, with no earlier card or outcome.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Kestrel Capital may fit the seed round: Rahul invests in early-stage AI infrastructure and Nimbus Labs builds an AI chief of staff for founders.\", \"needs\": \"Kestrel's stage, cheque size and focus, from Rahul on a first call or from the fund's own material.\"}], \"unknowns\": [{\"question\": \"Whether Kestrel Capital invests at seed, and in AI products as well as infrastructure.\", \"relevance\": \"It decides whether this is a real prospect for the round or a courtesy call.\"}, {\"question\": \"How warm Rahul's interest is, given the introduction came from an automated connector rather than someone who knows both.\", \"relevance\": \"A cold match needs a sharper first note than a warm personal introduction.\"}, {\"question\": \"Whether Rahul has written to the founder outside this file.\", \"relevance\": \"If he has, the note owed answers his, rather than opening fresh.\"}], \"frames\": {\"primary\": \"An investor introduction during the seed raise: a partner at a fund that backs early-stage AI infrastructure has been put in front of you, and the first move is ours.\", \"rivals\": [\"An automated match that may not fit the round, worth a short exploratory call rather than a pitch.\", \"A courtesy introduction Rahul did not seek, where a note may go unanswered.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Kestrel Capital is a fund and Rahul Menon a partner who invests in early-stage AI infrastructure; while the founder raises the seed round, the work this file holds is raising from that fund, which the connector introduced.\", \"evidence\": [\"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the introduction: an introduction to an investor during a raise is answered by the founder promptly, aiming at a first call.\", \"actual\": \"The introduction arrived and the connector stepped back; the founder has not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"The introduction goes cold: a partner who was told you would take it from here hears nothing, and the fund is lost to the round without a conversation.\", \"act\": \"A short, specific note to Rahul now, offering a call, turns the introduction into a first meeting while it is warm.\", \"best\": \"Rahul answers, a first call is booked, and Kestrel Capital turns out to fit the round.\", \"worst\": \"No note goes, or it goes to the connector instead of Rahul, and the introduction dies.\", \"signals_to_watch\": [\"Rahul answering the founder's note, or writing first\", \"Further reminders from the connector\", \"Whether Kestrel's focus fits a seed-stage AI product\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and Rahul is a partner at a fund.\", \"Whether Kestrel fits a seed-stage AI product is not known, so this is one prospect among the round's, not the round.\", \"The connector stepped back and the move is ours; an introduction left unanswered cools.\", \"A poor first impression with a partner is hard to undo.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Write to Rahul Menon directly: thank him for taking the introduction, say in two lines what you are building and that the seed round is open, and offer a short call\", \"for_whom\": \"Rahul Menon at Kestrel Capital\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Rahul\"}, \"alternative\": \"If you want to qualify Kestrel first, look up the fund's stage and recent investments today and send the note by tomorrow at the latest.\", \"wait_or_stop\": \"Do not wait: the move is ours. After the note, wait for Rahul's answer; if none comes in about a week, follow up once, then stop.\", \"done_when\": \"Rahul has your note and a first call with Kestrel Capital is booked, or Rahul has said it is not a fit.\", \"draft\": \"Hi Rahul, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and we're raising our seed round. Given your focus on early-stage AI infrastructure, I'd value your view on whether we fit what Kestrel backs. Would a short call next week suit you? Happy to work around your calendar. Best, Arjun\"}",
+   "framed": true,
+   "input_tokens": 3474,
+   "output_tokens": 1448,
    "model": "claude-haiku-4-5-20251001"
   },
   "e6f08399e12770716cf08b40fe39884f61009e0f05911e2ba8d1f377b419953a": {

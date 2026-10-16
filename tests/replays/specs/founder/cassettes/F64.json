@@ -1,7 +1,7 @@
 {
  "case_id": "F64",
  "source": "ideal_reader",
- "recorded_at": "b8b4804d",
+ "recorded_at": "unknown",
  "answers": {
   "0d72039ffe890b664521b566b7f796fe34c70436047b231a9b373bf7363c7448": {
    "site": "extraction",
@@ -135,266 +135,7 @@
    "output_tokens": 164,
    "model": "claude-haiku-4-5-20251001"
   },
-  "42aab2ccab642a1a82f9d4ba585edaddc5b28d62b877c4376e900d2e9af78715": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Arjun <> Zara Hussain (Northlake)",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Zara Hussain (Northlake)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "framed": true,
-   "input_tokens": 1188,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "5c643012bceafca50624bc72105ed7153011beb70ac9f389f181dcd3d1a3973a": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Did you and Zara connect?",
-    "start_offset": 0,
-    "end_offset": 25,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Did you and Zara connect?\", \"start_offset\": 0, \"end_offset\": 25, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1517,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "70fa500b9dcd53491954af871d914083eb0b006ab673c7720c29fd1e10863558": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "Introly introduced Zara Hussain, who runs operations at Northlake and is looking at tools for her team.",
-      "evidence": [
-       "evt_#2"
-      ],
-      "quote": "Zara Hussain, who runs operations at Northlake and is looking at tools for her team"
-     },
-     {
-      "claim": "Zara replied the same day that Northlake has just signed with another vendor, so she will pass for now.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "We've just signed with another vendor, so I'll pass for now."
-     },
-     {
-      "claim": "She signs as Head of Operations at Northlake.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "Zara Hussain Head of Operations, Northlake"
-     },
-     {
-      "claim": "The file sits under a situation seen for the first time.",
-      "evidence": [
-       "sit:sit_#1",
-       "hist:derived.history.times_seen@admin"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "The introduction is closed by the person introduced: there is nothing for you to do in this file.",
-      "based_on": [
-       "fact:2"
-      ]
-     }
-    ],
-    "patterns": [
-     {
-      "kind": "base_rate",
-      "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
-      "based_on": [
-       "hist:derived.history.times_seen@admin"
-      ]
-     }
-    ],
-    "hypotheses": [
-     {
-      "proposition": "Northlake may look for tools again later.",
-      "needs": "A new mail from Zara saying so."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "Whether Northlake's new vendor will last.",
-      "relevance": "A failed vendor could reopen the conversation, on Zara's word."
-     }
-    ],
-    "frames": {
-     "primary": "An introduction the person introduced declined the same day: closed, with nothing for you to do.",
-     "rivals": [
-      "A polite pause that Northlake could end later.",
-      "A decline that leaves the door open for a later pilot."
-     ]
-    },
-    "proposed_kind": {
-     "kind": "intro",
-     "why": "Introly introduced you to Zara Hussain of Northlake, and she declined the introduction.",
-     "evidence": [
-      "evt_#2",
-      "evt_#1"
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "Without a playbook, from the brief and the file: a declined introduction is closed, and nothing reopens it but the person's own word.",
-     "actual": "Zara declined the introduction the day it was made."
-    },
-    "scenarios": {
-     "do_nothing": "The file stays closed, at no cost.",
-     "act": "Writing to Zara now would ask her to reverse a decision she made the same day.",
-     "best": "Northlake comes back of its own accord, later.",
-     "worst": "A nudge reaches someone who already said no.",
-     "signals_to_watch": [
-      "A new mail from Zara saying Northlake is looking again"
-     ]
-    },
-    "appraisal": {
-     "stakes": "low",
-     "urgency": "low",
-     "reversibility": "reversible",
-     "reasons": [
-      "Zara declined the introduction.",
-      "Nothing in the file asks anything of you."
-     ]
-    },
-    "mode": "nothing",
-    "next_move": null,
-    "alternative": "If you want to keep the door open, leave it to Zara: she knows where to find you.",
-    "wait_or_stop": "Stop: the introduction is declined. A new word from Zara is what reopens it; the connector's activity never does.",
-    "done_when": "Nothing remains to do: the introduction is closed with its reason.",
-    "draft": null
-   },
-   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Zara Hussain, who runs operations at Northlake and is looking at tools for her team.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Zara Hussain, who runs operations at Northlake and is looking at tools for her team\"}, {\"claim\": \"Zara replied the same day that Northlake has just signed with another vendor, so she will pass for now.\", \"evidence\": [\"evt_#1\"], \"quote\": \"We've just signed with another vendor, so I'll pass for now.\"}, {\"claim\": \"She signs as Head of Operations at Northlake.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Zara Hussain Head of Operations, Northlake\"}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The introduction is closed by the person introduced: there is nothing for you to do in this file.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.\", \"based_on\": [\"hist:derived.history.times_seen@admin\"]}], \"hypotheses\": [{\"proposition\": \"Northlake may look for tools again later.\", \"needs\": \"A new mail from Zara saying so.\"}], \"unknowns\": [{\"question\": \"Whether Northlake's new vendor will last.\", \"relevance\": \"A failed vendor could reopen the conversation, on Zara's word.\"}], \"frames\": {\"primary\": \"An introduction the person introduced declined the same day: closed, with nothing for you to do.\", \"rivals\": [\"A polite pause that Northlake could end later.\", \"A decline that leaves the door open for a later pilot.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Introly introduced you to Zara Hussain of Northlake, and she declined the introduction.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: a declined introduction is closed, and nothing reopens it but the person's own word.\", \"actual\": \"Zara declined the introduction the day it was made.\"}, \"scenarios\": {\"do_nothing\": \"The file stays closed, at no cost.\", \"act\": \"Writing to Zara now would ask her to reverse a decision she made the same day.\", \"best\": \"Northlake comes back of its own accord, later.\", \"worst\": \"A nudge reaches someone who already said no.\", \"signals_to_watch\": [\"A new mail from Zara saying Northlake is looking again\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"Zara declined the introduction.\", \"Nothing in the file asks anything of you.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If you want to keep the door open, leave it to Zara: she knows where to find you.\", \"wait_or_stop\": \"Stop: the introduction is declined. A new word from Zara is what reopens it; the connector's activity never does.\", \"done_when\": \"Nothing remains to do: the introduction is closed with its reason.\", \"draft\": null}",
-   "framed": true,
-   "input_tokens": 3433,
-   "output_tokens": 768,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "992cbc3ead298a5832a2e7b9c803aea165d9ed78833825d6f6c58f45f0041fad": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "I'll let you two take it from here.",
-    "start_offset": 233,
-    "end_offset": 268,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 233, \"end_offset\": 268, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1550,
-   "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "bf17dadb5b49ef8d1899b07849a31e8371a10c314d6153f8a8a5d41f2b36795c": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1057,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d631c089f5941b22516c824f78a61091490cc6c899887d5e504e3c366edaa3f8": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "introduce",
-    "stance": "positive",
-    "topics": [
-     "introduction"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Zara Hussain",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Zara Hussain",
-        "start_offset": 9,
-        "end_offset": 21
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Northlake",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Northlake",
-        "start_offset": 23,
-        "end_offset": 32
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "relationships": [
-     {
-      "party": "Zara Hussain",
-      "nature": "introduced contact",
-      "direction": "inbound",
-      "evidence_text": "Arjun, meet Zara Hussain"
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": false,
-     "asks_for_reply": true,
-     "engagement": "medium",
-     "motive": "introduce a contact"
-    }
-   },
-   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Zara Hussain\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Zara Hussain\", \"start_offset\": 9, \"end_offset\": 21}], \"confidence_bp\": 9000}, {\"surface_form\": \"Northlake\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Northlake\", \"start_offset\": 23, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Zara Hussain\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Zara Hussain\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
-   "framed": true,
-   "input_tokens": 5549,
-   "output_tokens": 197,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "de1e0f5707cbc2a323586b986f0d1bd28a952250d94e52b36bef405ac8c79cbf": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "We've just signed with another vendor, so I'll pass for now.",
-    "start_offset": 83,
-    "end_offset": 143,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"We've just signed with another vendor, so I'll pass for now.\", \"start_offset\": 83, \"end_offset\": 143, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1535,
-   "output_tokens": 53,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "decfab491db864980924deb40b88dd3489f91e9abfb28913e5d93953157adc04": {
+  "284e6baac90655fa95047f7ab9cdfaadbdd9c10658c18974ca4bc74357022e8e": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -517,8 +258,267 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Introly introduced Zara Hussain, who runs operations at Northlake and is looking at tools for her team.\", \"evidence\": [\"evt_#3\"], \"quote\": \"Zara Hussain, who runs operations at Northlake and is looking at tools for her team\"}, {\"claim\": \"Zara replied the same day that Northlake has just signed with another vendor, so she will pass for now.\", \"evidence\": [\"evt_#2\"], \"quote\": \"We've just signed with another vendor, so I'll pass for now.\"}, {\"claim\": \"She signs as Head of Operations at Northlake.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Zara Hussain Head of Operations, Northlake\"}, {\"claim\": \"A week later Introly asked whether the two of you got a chance to connect.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Did the two of you get a chance to connect?\"}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The introduction is closed by the person introduced: there is nothing for you to do in this file.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"The connector's question is old activity about a closed introduction: it reopens nothing, and it asks nothing that needs an answer from this file.\", \"based_on\": [\"fact:2\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.\", \"based_on\": [\"hist:derived.history.times_seen@admin\"]}], \"hypotheses\": [{\"proposition\": \"Northlake may look for tools again later.\", \"needs\": \"A new mail from Zara saying so.\"}], \"unknowns\": [{\"question\": \"Whether Northlake's new vendor will last.\", \"relevance\": \"A failed vendor could reopen the conversation, on Zara's word.\"}], \"frames\": {\"primary\": \"An introduction the person introduced declined the same day: closed, with nothing for you to do.\", \"rivals\": [\"A polite pause that Northlake could end later.\", \"A decline that leaves the door open for a later pilot.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Introly introduced you to Zara Hussain of Northlake, and she declined the introduction.\", \"evidence\": [\"evt_#3\", \"evt_#2\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: a declined introduction is closed, and nothing reopens it but the person's own word.\", \"actual\": \"Zara declined the introduction the day it was made. The connector later asked whether you connected; nothing from Zara since.\"}, \"scenarios\": {\"do_nothing\": \"The file stays closed, at no cost.\", \"act\": \"Writing to Zara now would ask her to reverse a decision she made the same day.\", \"best\": \"Northlake comes back of its own accord, later.\", \"worst\": \"A nudge reaches someone who already said no.\", \"signals_to_watch\": [\"A new mail from Zara saying Northlake is looking again\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"Zara declined the introduction.\", \"Nothing in the file asks anything of you.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If you want to keep the door open, leave it to Zara: she knows where to find you.\", \"wait_or_stop\": \"Stop: the introduction is declined. A new word from Zara is what reopens it; the connector's activity never does.\", \"done_when\": \"Nothing remains to do: the introduction is closed with its reason.\", \"draft\": null}",
    "framed": true,
-   "input_tokens": 3523,
+   "input_tokens": 3640,
    "output_tokens": 883,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "42aab2ccab642a1a82f9d4ba585edaddc5b28d62b877c4376e900d2e9af78715": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Zara Hussain (Northlake)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Zara Hussain (Northlake)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1188,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5c643012bceafca50624bc72105ed7153011beb70ac9f389f181dcd3d1a3973a": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Did you and Zara connect?",
+    "start_offset": 0,
+    "end_offset": 25,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Did you and Zara connect?\", \"start_offset\": 0, \"end_offset\": 25, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1517,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "992cbc3ead298a5832a2e7b9c803aea165d9ed78833825d6f6c58f45f0041fad": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 233,
+    "end_offset": 268,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 233, \"end_offset\": 268, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1550,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "bb7e6cfd2c73223eb9dd6d0a3a5d3da347ea5957c6b416e938c5a8c40c45c591": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Zara Hussain, who runs operations at Northlake and is looking at tools for her team.",
+      "evidence": [
+       "evt_#2"
+      ],
+      "quote": "Zara Hussain, who runs operations at Northlake and is looking at tools for her team"
+     },
+     {
+      "claim": "Zara replied the same day that Northlake has just signed with another vendor, so she will pass for now.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "We've just signed with another vendor, so I'll pass for now."
+     },
+     {
+      "claim": "She signs as Head of Operations at Northlake.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Zara Hussain Head of Operations, Northlake"
+     },
+     {
+      "claim": "The file sits under a situation seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The introduction is closed by the person introduced: there is nothing for you to do in this file.",
+      "based_on": [
+       "fact:2"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+      "based_on": [
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Northlake may look for tools again later.",
+      "needs": "A new mail from Zara saying so."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether Northlake's new vendor will last.",
+      "relevance": "A failed vendor could reopen the conversation, on Zara's word."
+     }
+    ],
+    "frames": {
+     "primary": "An introduction the person introduced declined the same day: closed, with nothing for you to do.",
+     "rivals": [
+      "A polite pause that Northlake could end later.",
+      "A decline that leaves the door open for a later pilot."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "intro",
+     "why": "Introly introduced you to Zara Hussain of Northlake, and she declined the introduction.",
+     "evidence": [
+      "evt_#2",
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, from the brief and the file: a declined introduction is closed, and nothing reopens it but the person's own word.",
+     "actual": "Zara declined the introduction the day it was made."
+    },
+    "scenarios": {
+     "do_nothing": "The file stays closed, at no cost.",
+     "act": "Writing to Zara now would ask her to reverse a decision she made the same day.",
+     "best": "Northlake comes back of its own accord, later.",
+     "worst": "A nudge reaches someone who already said no.",
+     "signals_to_watch": [
+      "A new mail from Zara saying Northlake is looking again"
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "Zara declined the introduction.",
+      "Nothing in the file asks anything of you."
+     ]
+    },
+    "mode": "nothing",
+    "next_move": null,
+    "alternative": "If you want to keep the door open, leave it to Zara: she knows where to find you.",
+    "wait_or_stop": "Stop: the introduction is declined. A new word from Zara is what reopens it; the connector's activity never does.",
+    "done_when": "Nothing remains to do: the introduction is closed with its reason.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Zara Hussain, who runs operations at Northlake and is looking at tools for her team.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Zara Hussain, who runs operations at Northlake and is looking at tools for her team\"}, {\"claim\": \"Zara replied the same day that Northlake has just signed with another vendor, so she will pass for now.\", \"evidence\": [\"evt_#1\"], \"quote\": \"We've just signed with another vendor, so I'll pass for now.\"}, {\"claim\": \"She signs as Head of Operations at Northlake.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Zara Hussain Head of Operations, Northlake\"}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The introduction is closed by the person introduced: there is nothing for you to do in this file.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.\", \"based_on\": [\"hist:derived.history.times_seen@admin\"]}], \"hypotheses\": [{\"proposition\": \"Northlake may look for tools again later.\", \"needs\": \"A new mail from Zara saying so.\"}], \"unknowns\": [{\"question\": \"Whether Northlake's new vendor will last.\", \"relevance\": \"A failed vendor could reopen the conversation, on Zara's word.\"}], \"frames\": {\"primary\": \"An introduction the person introduced declined the same day: closed, with nothing for you to do.\", \"rivals\": [\"A polite pause that Northlake could end later.\", \"A decline that leaves the door open for a later pilot.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Introly introduced you to Zara Hussain of Northlake, and she declined the introduction.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: a declined introduction is closed, and nothing reopens it but the person's own word.\", \"actual\": \"Zara declined the introduction the day it was made.\"}, \"scenarios\": {\"do_nothing\": \"The file stays closed, at no cost.\", \"act\": \"Writing to Zara now would ask her to reverse a decision she made the same day.\", \"best\": \"Northlake comes back of its own accord, later.\", \"worst\": \"A nudge reaches someone who already said no.\", \"signals_to_watch\": [\"A new mail from Zara saying Northlake is looking again\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"Zara declined the introduction.\", \"Nothing in the file asks anything of you.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If you want to keep the door open, leave it to Zara: she knows where to find you.\", \"wait_or_stop\": \"Stop: the introduction is declined. A new word from Zara is what reopens it; the connector's activity never does.\", \"done_when\": \"Nothing remains to do: the introduction is closed with its reason.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 3549,
+   "output_tokens": 768,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "bf17dadb5b49ef8d1899b07849a31e8371a10c314d6153f8a8a5d41f2b36795c": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1057,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d631c089f5941b22516c824f78a61091490cc6c899887d5e504e3c366edaa3f8": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "introduction"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Zara Hussain",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Zara Hussain",
+        "start_offset": 9,
+        "end_offset": 21
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Northlake",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Northlake",
+        "start_offset": 23,
+        "end_offset": 32
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "relationships": [
+     {
+      "party": "Zara Hussain",
+      "nature": "introduced contact",
+      "direction": "inbound",
+      "evidence_text": "Arjun, meet Zara Hussain"
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "medium",
+     "motive": "introduce a contact"
+    }
+   },
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Zara Hussain\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Zara Hussain\", \"start_offset\": 9, \"end_offset\": 21}], \"confidence_bp\": 9000}, {\"surface_form\": \"Northlake\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Northlake\", \"start_offset\": 23, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Zara Hussain\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Zara Hussain\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
+   "framed": true,
+   "input_tokens": 5549,
+   "output_tokens": 197,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "de1e0f5707cbc2a323586b986f0d1bd28a952250d94e52b36bef405ac8c79cbf": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "We've just signed with another vendor, so I'll pass for now.",
+    "start_offset": 83,
+    "end_offset": 143,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"We've just signed with another vendor, so I'll pass for now.\", \"start_offset\": 83, \"end_offset\": 143, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1535,
+   "output_tokens": 53,
    "model": "claude-haiku-4-5-20251001"
   }
  }

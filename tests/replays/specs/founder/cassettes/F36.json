@@ -1,7 +1,7 @@
 {
  "case_id": "F36",
  "source": "ideal_reader",
- "recorded_at": "b8b4804d",
+ "recorded_at": "unknown",
  "answers": {
   "11e382df2a4d97388e58240df1aa0b6d2a3d136981ba3ce32c885fa8c99c6bae": {
    "site": "extraction",
@@ -78,7 +78,7 @@
    "output_tokens": 37,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c9ba682684cd5737a793715422d3e361e7213b0318d852f4ab713328d024db3e": {
+  "e5c21e7f5fc6a794991f95290e3389d5d9bbf0ffb76802946b8691dc1a76d808": {
    "site": "expert",
    "parsed": {
     "proposed_kind": null,
@@ -186,7 +186,7 @@
    },
    "raw": "{\"proposed_kind\": null, \"draft\": null, \"next_move\": null, \"facts\": [{\"claim\": \"Arjun sent Ravi at partnerco.test the integration doc Ravi had asked for, and asked him to say if anything is unclear.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"No reply time of Ravi's is measured: the file holds no answer from him since the doc went.\", \"evidence\": [\"num:their_reply_time:ravi@partnerco.test\"]}, {\"claim\": \"The file's history holds no earlier card or outcome: the engine sees it for the first time.\", \"evidence\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"inferences\": [{\"claim\": \"The move is Ravi's: Arjun answered his ask, and the note asks nothing of Ravi beyond questions if he has any.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"Nothing in the file is owed by the founder.\", \"based_on\": [\"fact:1\", \"fact:2\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"With one touch on file, there is no measure of how quickly Ravi answers or how long this work usually sits quiet.\", \"based_on\": [\"num:their_reply_time:ravi@partnerco.test\", \"num:usual_gap\"]}], \"hypotheses\": [{\"proposition\": \"Ravi may be reviewing the doc with his team.\", \"needs\": \"His reply, or his questions.\"}], \"unknowns\": [{\"question\": \"What kind of work is this — an integration partner, a customer or a vendor? The brief names none.\", \"relevance\": \"It decides which playbook the file follows and how long its quiet can run before a check-in is fair.\"}, {\"question\": \"What did Ravi need the doc for, and by when?\", \"relevance\": \"A date on his side would set when a check-in makes sense.\"}], \"frames\": {\"primary\": \"Work handed over and now in the other side's hands: Ravi asked for the integration doc, you sent it, and the next move is Ravi's.\", \"rivals\": [\"An integration going quiet, where a short check-in after a while would be in order.\", \"A partner the brief has not named yet, which may deserve a line of its own.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the file's own history: after the doc, Ravi reads it and comes back with questions or a next step.\", \"actual\": \"The doc went to Ravi, nothing has come back yet, and nothing in the file is owed by us.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the ball is with Ravi, and the file waits for his questions.\", \"act\": \"A chase this soon adds pressure for no gain; the doc's note already invites his questions.\", \"best\": \"Ravi reads the doc and comes back with a next step for the integration.\", \"worst\": \"The integration stalls on Ravi's side and nobody notices for weeks.\", \"signals_to_watch\": [\"Ravi writing with questions or a next step\", \"A long quiet with no word from Ravi\", \"Anyone else at partnerco.test joining the thread\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The brief names no kind of work for this file, and what Ravi asked for went out.\", \"Nothing is owed by us, and no date is set.\", \"A check-in can be sent at any time, so waiting costs little.\"]}, \"mode\": \"wait\", \"alternative\": \"If the integration matters and Ravi stays quiet for a couple of weeks, one short check-in from you on whether the doc covered what he needed.\", \"wait_or_stop\": \"Wait for Ravi's reply; stop waiting, with a single check-in, only if a long quiet sets in and the integration still matters.\", \"done_when\": \"Ravi confirms the doc covers what he needed, or names the next step.\"}",
    "framed": true,
-   "input_tokens": 3318,
+   "input_tokens": 3434,
    "output_tokens": 862,
    "model": "claude-haiku-4-5-20251001"
   },
