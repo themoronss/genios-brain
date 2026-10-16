@@ -562,7 +562,24 @@ def _contract_refusals(card: dict, copy: dict, *, us, our_names, identities, exp
     return card_contract.check(text_, us=us or SelfIdentity(), our_names=our_names,
                                quotes=[*(str(q.get("quote") or "") for q in quotes if isinstance(q, dict)),
                                        *evidence],
-                               corpus=corpus, money_evidence=money)
+                               corpus=corpus, money_evidence=money,
+                               figures=_checked_figures(card) if expert and not question else ())
+
+
+def _checked_figures(card: dict) -> list[str]:
+    """The words an expert decision's check let stand, as the decision recorded them (`reason/expert/decide._render`,
+    the card's `_template`): its headline, reading, draft, gold lines, done-when and do-nothing. The check held every
+    FIGURE of them against
+    the dossier — a calculator's "14.06 days", a draft's "4 Aug at 3pm" — so their numbers are held; never their money
+    words nor their quoted spans (amended after the golden lane, the crosscheck's finding 4)."""
+    render = card.get("_template") if isinstance(card.get("_template"), dict) else {}
+    said = render.get("fallback") if isinstance(render.get("fallback"), dict) else {}
+    gold = render.get("gold") if isinstance(render.get("gold"), dict) else {}
+    move = gold.get("recommended") if isinstance(gold.get("recommended"), dict) else {}
+    # …and what done looks like and what doing nothing costs, which the decision carries as the check held them.
+    return [str(t) for t in (said.get("headline"), said.get("situation"), render.get("draft"), move.get("what"),
+                             gold.get("alternative"), gold.get("wait_or_stop"), card.get("success_signal"),
+                             card.get("do_nothing_consequence")) if t]
 
 
 def _refused(out: dict, org_id: str, card: dict, refusals, *, engine=None) -> bool:

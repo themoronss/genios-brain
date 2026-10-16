@@ -159,13 +159,16 @@ def _number(texts: tuple[str, ...], nums: set[str]) -> str | None:
 
 
 def check(card: CardText, *, us: SelfIdentity, our_names: Iterable[str] = (), quotes: Iterable[str] = (),
-          corpus: Iterable[str] = (), money_evidence: bool = False) -> tuple[Refusal, ...]:
+          corpus: Iterable[str] = (), money_evidence: bool = False,
+          figures: Iterable[str] = ()) -> tuple[Refusal, ...]:
     """Every rule `card` breaks, once each, in the order of `RULES` — `()` when it may be shown. `quotes`: the words
     it may quote; `corpus`: what its words were made from (facts, quotes, the lines code computed); `money_evidence`:
-    whether its evidence holds money."""
+    whether its evidence holds money; `figures`: texts whose NUMBERS are held and nothing else (an expert card's words
+    as its check let them stand — the check holds every figure, never a money word nor a quoted span)."""
     texts = card.shown()
     quoted = [str(q) for q in quotes if q]
     held_text, nums = corpus_of([*quoted, *(str(c) for c in corpus if c)])
+    nums = nums | corpus_of([str(f) for f in figures if f])[1]
     held = fold(held_text).lower()
     found = {US: _about_us(card, us, our_names), INTERNAL: _internal(texts),
              MONEY: _money(texts, money_evidence), QUOTE: _quote(texts, held), NUMBER: _number(texts, nums)}

@@ -120,11 +120,25 @@ def test_an_expert_card_is_held_to_the_evidence_it_rests_on(monkeypatch):
 
 
 def test_an_expert_cards_own_words_are_not_its_evidence(monkeypatch):
-    """The same card with nothing under it: its money, its quote and its date are each refused."""
+    """The same card with nothing under it: its money and its quote are each refused. Its dates are not — the check
+    holds every figure of the words it let stand (the review's words, `_template`), so a number is held by them; a
+    money word and a quoted span it never held (amended after the golden lane: a calculator's "14.06 days" and a
+    draft's "4 Aug at 3pm" are the check's, and were refused)."""
     _built, out = _pass(monkeypatch, [_signal("s2", "expert.file_review", "file_review")],
                         templates={"expert.file_review": CHECKED})
     assert out["built"] == 0, out
-    assert (out["refused_contract:money"], out["refused_contract:quote"], out["refused_contract:number"]) == (1, 1, 1)
+    assert (out["refused_contract:money"], out["refused_contract:quote"], out["refused_contract:number"]) == (1, 1, 0)
+
+
+def test_a_number_the_check_never_saw_is_refused(monkeypatch):
+    """A figure in the card's words that is not in the words the check held — written after it (the acceptance's
+    plant) — is held by nothing."""
+    sig = {**_signal("s2", "expert.file_review", "file_review"), "capability_render": RESTS_ON}
+    served = pipeline.review_copy
+    monkeypatch.setattr(pipeline, "review_copy", lambda copy, template: (lambda c: {
+        **c, "situation": c["situation"] + " The demo moved to 17 Nov."})(served(copy, template)))
+    _built, out = _pass(monkeypatch, [sig], templates={"expert.file_review": CHECKED})
+    assert out["built"] == 0 and out["refused_contract:number"] == 1, out
 
 
 def test_what_doing_nothing_costs_is_read_too(monkeypatch):
@@ -278,3 +292,16 @@ def test_the_evidence_is_the_mail_the_move_rests_on_not_a_fragment_of_it(world):
     assert got == [whole]
     assert pipeline._cited_texts(pg_store, org, {"headline": {"evidence": ["loop:l1"]}}) == []
     assert pipeline._cited_texts(SimpleNamespace(engine=None), org, {"headline": {"evidence": [ev]}}) == []
+
+
+@pytest.mark.parametrize("part", ["headline", "situation", "draft"])
+def test_a_figure_the_check_held_in_any_of_its_words_is_held(monkeypatch, part):
+    """Each part of the words the check let stand holds its figures — the draft's "21 Oct" as much as the headline's."""
+    words = {"headline": "Send Arjun the deck", "situation": "a fund", "draft": "Hi Arjun, the deck."}
+    words[part] = words[part] + " — by 21 Oct"
+    template = {**EXPERT_TEMPLATE, "fallback": {"headline": words["headline"], "situation": words["situation"]},
+                "draft": words["draft"]}
+    sig = {**_signal("s2", "expert.file_review", "file_review"), "capability_render": {"sources": {"headline": {
+        "evidence": ["evt_k1"], "quotes": ["Hi Arjun, could you send the deck? Kavya"]}}}}
+    _built, out = _pass(monkeypatch, [sig], templates={"expert.file_review": template})
+    assert out["built"] == 1 and out["refused_contract:number"] == 0, out

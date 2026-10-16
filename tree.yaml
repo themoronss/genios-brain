@@ -10296,7 +10296,10 @@ yc2_w27_s14:
                         its move rests on: the quotes its check matched, the whole retained text of the mails those
                         are from (`pipeline._cited_texts`, `prepared_content`), the file's facts and quotes, and the
                         lines code wrote from the dossier (why now, what remains); money only where that evidence
-                        holds money (`card_contract.holds_money`). What done looks like and what doing nothing costs
+                        holds money (`card_contract.holds_money`). Its NUMBERS are held by the words its check let
+                        stand (`pipeline._checked_figures`, `card_contract.check(figures=)`: the check holds every
+                        figure, never a money word nor a quoted span — amended 16 Oct after the golden lane, where a
+                        calculator's "14.06 days" was refused). What done looks like and what doing nothing costs
                         are read too (`CardText.success`, `do_nothing`). A question card's words are ours and stay
                         its corpus. The golden set refuses 0 cards (the board unchanged); M43's acceptance plants
                         money, a quote and a number on F04's expert card, each refused, each shown with the contract
