@@ -640,10 +640,26 @@ def _in_order(rows, events_after: list[set[str]] | None) -> list:
 
 
 def _said(words: Any) -> str:
-    """One version's words as the founder read them: headline, situation, the draft. Not the move whole — no card
-    shows it yet (STEP-14 M43 puts it under *recommended*, and then it is read here)."""
+    """One version's words as the founder read them: headline, situation, the draft — what a case is matched ABOUT.
+    The move whole, its alternative and its stop rule are read apart (`_said_beyond`)."""
     words = words if isinstance(words, dict) else {}
     return "\n".join(str(words[k]) for k in ("headline", "situation", "draft") if words.get(k))
+
+
+def _said_beyond(words: Any) -> tuple[str, ...]:
+    """A version's other shown lines (STEP-14 fix, the crosscheck's finding 9): the move whole, its alternative, when to
+    stop — for the forbidden judge (`CardView.shown_lines`), never for what a card is about."""
+    words = words if isinstance(words, dict) else {}
+    return tuple(str(words[k]) for k in ("move", "alternative", "wait_or_stop") if words.get(k))
+
+
+def _gold_lines(row: Any) -> tuple[str, ...]:
+    """The card's shown lines `CardView.text` does not hold (STEP-14 fix, finding 9): the move whole — who, what, for
+    whom, to — its alternative, when to stop, what done looks like, what doing nothing costs, the role."""
+    move = row.recommended if isinstance(row.recommended, dict) else {}
+    return tuple(str(v) for v in (*(move.get(k) for k in ("who", "what", "for_whom", "to")), row.alternative,
+                                  row.wait_or_stop, row.success_signal, row.do_nothing_consequence,
+                                  row.relationship_role) if v)
 
 
 def _cards(engine: Any, org: str, open_after: list[set[str]],
@@ -659,16 +675,20 @@ def _cards(engine: Any, org: str, open_after: list[set[str]],
         rows = conn.execute(text(
             "select card_id, state, level, headline, situation, why, actions, artifact, "
             "business_subject, unresolved_item, why_now, output_lane, file_id, relationship_role, recommended, "
-            "alternative, wait_or_stop, outcome_window_days, capability_key, builder_version, confidence_vector "
+            "alternative, wait_or_stop, outcome_window_days, capability_key, builder_version, confidence_vector, "
+            "success_signal, do_nothing_consequence "
             "from cards "
             "where org_id = :o and card_id = any(:ids) order by card_id"),
             {"o": org, "ids": sorted(seen)}).fetchall()
         versions: dict[str, list[str]] = {}
+        beyond: dict[str, list[str]] = {}
         for v in conn.execute(text(_VERSIONS), {"o": org, "ids": sorted(seen)}):
             detail = v.detail if isinstance(v.detail, dict) else json.loads(v.detail or "{}")
             if not versions.get(v.card_id) and isinstance(detail.get("before"), dict):
                 versions.setdefault(v.card_id, []).append(_said(detail["before"]))   # its first, unrecorded
+                beyond.setdefault(v.card_id, []).extend(_said_beyond(detail["before"]))
             versions.setdefault(v.card_id, []).append(_said(detail.get("words")))
+            beyond.setdefault(v.card_id, []).extend(_said_beyond(detail.get("words")))
         history: dict[str, list[tuple]] = {}
         for h in _in_order(conn.execute(text(_HISTORY), {"o": org, "ids": sorted(seen)}).fetchall(), events_after):
             detail = h.detail if isinstance(h.detail, dict) else json.loads(h.detail or "{}")
@@ -696,6 +716,7 @@ def _cards(engine: Any, org: str, open_after: list[set[str]],
                             app_sweeps=tuple(i for i, ids in enumerate(shown_after) if r.card_id in ids),
                             versions=tuple(versions.get(r.card_id, ())),
                             file_id=r.file_id, events=tuple(history.get(r.card_id, ())),
+                            shown_lines=tuple(dict.fromkeys((*_gold_lines(r), *beyond.get(r.card_id, ())))),
                             gold={"headline": r.headline, "subject": r.business_subject, "role": r.relationship_role,
                                   "why_now": r.why_now, "what_remains": r.unresolved_item,
                                   "recommended": r.recommended, "alternative": r.alternative,

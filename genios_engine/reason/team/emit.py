@@ -267,7 +267,9 @@ def _write_card(c, *, org_id, kind, key, seat_id, subjects, headline, body, acti
             # the words ride on the event: a card refreshed in place otherwise loses what it said
             _log_card_event(c, held_card_id, org_id, "card.rebuilt", capability,
                             {"digest": digest, "builder_version": BUILDER_VERSION,
-                             "headline": head, "situation": sit})
+                             "headline": head, "situation": sit,
+                             # STEP-14 fix (the crosscheck's finding 9): its words as every card's events keep them.
+                             "words": {"headline": head, "situation": sit}})
             return held_card_id
         # The user SNOOZED the previous card: its words stay as answered, but it must not wake
         # later beside the new generation saying something no longer true — resolve it.
@@ -309,7 +311,8 @@ def _write_card(c, *, org_id, kind, key, seat_id, subjects, headline, body, acti
                          {"s": signal_id, "o": org_id}).scalar()
     _log_card_event(c, card_id, org_id, "card.created", capability,
                     {"band": band, "render_mode": "template", "situation_key": key,
-                     "digest": digest, "headline": head, "situation": sit})
+                     "digest": digest, "headline": head, "situation": sit,
+                     "words": {"headline": head, "situation": sit}})
     return card_id
 
 

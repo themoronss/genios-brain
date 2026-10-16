@@ -186,3 +186,16 @@ def test_a_readiness_card_holds_its_own_counts(monkeypatch):
     (s,) = R.situations(None, ctx)
     assert "1 away" in s.headline and "3 pending" in s.headline, s.headline
     assert E.refusals(headline=s.headline, body=s.body, evidence=list(s.evidence)) == ()
+
+
+def test_a_team_cards_events_keep_its_words(engine):
+    """STEP-14 fix (the crosscheck's finding 9, M43.C6.L-integration.V3.U11): a P4 card's created and rebuilt events keep
+    its `words`, as every card's do — the board judges each of a card's words, never only its last."""
+    assert _emit(engine) is not None
+    assert _emit(engine, digest="d2", now=NOW + timedelta(hours=1),
+                 headline="Anisha is away 14–16 Sep — Shalini covers “Send the ISO pack to Kestrel …”") is not None
+    with engine.connect() as c:
+        kept = c.execute(text("select kind, detail -> 'words' ->> 'headline' from card_events where org_id = :o "
+                              "and kind in ('card.created', 'card.rebuilt') order by occurred_at, id"),
+                         {"o": ORG}).all()
+    assert [k for k, _h in kept] == ["card.created", "card.rebuilt"] and all(h for _k, h in kept), kept

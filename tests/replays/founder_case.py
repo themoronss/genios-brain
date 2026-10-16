@@ -366,6 +366,11 @@ class CardView:
     #: business_subject, relationship_role, why_now, unresolved_item, recommended, alternative, wait_or_stop,
     #: outcome_window_days, the window receipt (`why`, source card_lines), capability_key, builder_version.
     gold: Mapping[str, Any] = field(default_factory=dict)
+    #: STEP-14 fix (the crosscheck's finding 9, `yc2_w27_s14` M43.C6.L-integration.V3.U11): every other line the founder
+    #: is shown — the move whole (who, what, for whom, to), its alternative, when to stop, what done looks like, what
+    #: doing nothing costs, the role, and each version's move, alternative and stop rule. The forbidden judge reads
+    #: them; which cards a case is ABOUT is still matched on `text` and `versions`.
+    shown_lines: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

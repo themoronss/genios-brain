@@ -10382,6 +10382,19 @@ yc2_w27_s14:
                       artifact: "tests/replays/specs/founder/cassettes"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
                       depends_on: [M43.C3.L-data.V4.U02, M43.C3.L-interface.V3.U03, M43.C4.L-integration.V1.U02, M43.C5.L-interface.V0.U01, M43.C2.L-data.V2.U05, M43.C6.L-integration.V2.U08, M42.C4.L-integration.V4.U05]
+                    - id: M43.C6.L-integration.V3.U11
+                      what: >
+                        The board's forbidden judge reads every line the founder is shown (added 16 Oct by the
+                        STEP-14 crosscheck, finding 9): `CardView.text` left out the move whole, the alternative,
+                        when to stop, what done looks like, what doing nothing costs and the role; `_said` read a
+                        version's headline, situation and draft only; P4 events kept no `words` — a phrase planted
+                        in the gold columns passed. `CardView.shown_lines` holds them (the card's columns and every
+                        version's move, alternative and stop rule) and `marking._forbidden` reads them; which cards
+                        a case is ABOUT stays matched on `text` and `versions` (the board unchanged). The P4 writer's
+                        created and rebuilt events keep their `words`.
+                      artifact: "tests/replays/marking.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_the_board_reads_every_line_shown.py tests/reason/test_the_team_writer_keeps_the_contract.py"
+                      depends_on: [M43.C6.L-integration.V3.U09, M42.C4.L-logic.V2.U03]
                 - level: 4
                   units:
                     - id: M43.C6.L-integration.V4.U10

@@ -169,7 +169,8 @@ def _card_check(index: int, exp: CardExpectation, run: CaseRun, kind: str = "mus
 
 def _forbidden(case: FounderCase, run: CaseRun):
     for card in run.cards:
-        said = every_word(card)                # STEP-14: every card, every version's words
+        # STEP-14: every card, every version's words — and (the crosscheck's finding 9) every gold line it showed.
+        said = "\n".join((every_word(card), *getattr(card, "shown_lines", ())))
         for name in case.forbidden_names:
             if says(said, name):
                 yield card.card_id, name
