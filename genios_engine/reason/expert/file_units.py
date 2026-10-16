@@ -55,6 +55,7 @@ Pure, deterministic, no model: a `ContextSnapshot` in, an `EngineRead` out.
 from __future__ import annotations
 
 import hashlib
+from decimal import Decimal
 from collections.abc import Mapping
 from datetime import datetime
 
@@ -247,7 +248,7 @@ def _sanitized_facts(facts: Mapping[str, object]) -> dict[str, object]:
     out: dict[str, object] = {}
     for field, record in facts.items():
         if not isinstance(record, Mapping) or "confidence" not in record:
-            out[field] = record
+            out[field] = _exact(record)
             continue
         value = record["confidence"]
         copy = dict(record)
@@ -256,8 +257,20 @@ def _sanitized_facts(facts: Mapping[str, object]) -> dict[str, object]:
             copy["confidence_bp"] = max(0, min(10_000, round(value * 10_000)))
         elif value is not None:
             copy["confidence_bp"] = value
-        out[field] = copy
+        out[field] = _exact(copy)
     return out
+
+
+def _exact(value: object) -> object:
+    """Every float in a fact's tree as the exact `Decimal` it prints as: `ContextSnapshot` refuses a float anywhere, and a
+    fact's value (a money figure, a ratio) is one — the whole engine read of a file failed on it (golden F54)."""
+    if isinstance(value, float):
+        return Decimal(repr(value))
+    if isinstance(value, Mapping):
+        return {key: _exact(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_exact(item) for item in value]
+    return value
 
 
 def units_for_node(store, org_id: str, node_id: str, node_type: str, *, evaluation_time: datetime,

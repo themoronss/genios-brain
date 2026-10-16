@@ -300,3 +300,19 @@ def test_units_for_node_reads_the_graph_and_sanitizes_the_float_confidence(db):
 def test_units_for_node_on_an_unknown_node_reads_insufficient_context_not_a_crash(db):
     read = FU.units_for_node(db, ORG, "node_does_not_exist", "thread", evaluation_time=NOW)
     assert read.by_ref["ru:core.timeline"].words.startswith("insufficient context")
+
+
+def test_a_float_anywhere_in_a_fact_is_made_exact_not_refused():
+    """F54 (13b guards, 17 Oct): a fact's VALUE held a float; `ContextSnapshot` forbids one anywhere in its tree, and the
+    whole engine read of that file failed. Every float is an exact Decimal now, wherever it sits."""
+    from decimal import Decimal
+    from genios_engine.contracts.reasoning import ContextSnapshot
+    from genios_engine.reason.expert.file_units import _sanitized_facts
+    facts = {"amount": {"value": 12.5, "confidence": 0.9, "meta": {"ratios": [0.25, 2]}}, "name": {"value": "x"}}
+    clean = _sanitized_facts(facts)
+    assert clean["amount"]["value"] == Decimal("12.5") and clean["amount"]["meta"]["ratios"] == [Decimal("0.25"), 2]
+    assert clean["amount"]["confidence_bp"] == 9000 and "confidence" not in clean["amount"]
+    assert clean["name"] == {"value": "x"}
+    ContextSnapshot(org_id="o", graph_version=0, root_entity_id="n", root_entity_type="person",
+                    evaluation_time=__import__("datetime").datetime(2026, 1, 1, tzinfo=__import__("datetime").timezone.utc),
+                    selector_version="shadow-v1", facts=clean)
