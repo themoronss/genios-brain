@@ -31,15 +31,25 @@ _INSERT = text(
     "                   and rule = :rule)")
 
 
+#: The same refusal again moves its row's `refused_at` to the last time (`deliver/pipeline.REFUSAL_RETRY` reads it).
+_AGAIN = text(
+    "update card_refusals set refused_at = coalesce(cast(:at as timestamptz), now()) "
+    " where org_id = :o and writer = :w and ref = :ref and rule = :rule")
+
+
 def record(conn, *, org_id: str, writer: str, ref: str, refusals: Iterable, at=None) -> int:
-    """Keep one row per refusal (`contracts/card_contract.Refusal`) — once per writer, card and rule; returns how
-    many were new."""
+    """Keep one row per refusal (`contracts/card_contract.Refusal`) — once per writer, card and rule, its `found` the
+    first and its `refused_at` the last; returns how many were new."""
     if writer not in WRITERS:
         raise ValueError(f"a refusal's writer is one of {WRITERS}, not {writer!r}")
     n = 0
     for r in refusals:
-        n += conn.execute(_INSERT, {"o": org_id, "id": new_id("cref"), "w": writer, "ref": str(ref),
-                                    "rule": r.rule, "found": str(r.found)[:500], "at": at}).rowcount or 0
+        bound = {"o": org_id, "id": new_id("cref"), "w": writer, "ref": str(ref), "rule": r.rule,
+                 "found": str(r.found)[:500], "at": at}
+        new = conn.execute(_INSERT, bound).rowcount or 0
+        if not new:
+            conn.execute(_AGAIN, bound)
+        n += new
     return n
 
 

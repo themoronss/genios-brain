@@ -72,10 +72,12 @@ def test_a_refused_decision_leaves_the_files_card_as_it_was(world):
 
 
 def test_a_refusal_is_kept_once_however_many_passes_refuse_it(world):
+    """⛔ RESTATED by M43.C4.L-integration.V1.U09 (finding 14): the passes after the first no longer build the refused
+    signal at all (`skipped_refused_recently`) — a pass a day apart refuses it again — and the row is still one."""
     store, org, cards, card_id, before, later = _a_card_then_a_refused_decision(world)
     for n in range(3):
         out = pipeline.build_cards_for_org(graph=store, card_store=cards, org_id=org,
-                                           eval_time=later + timedelta(minutes=n))
+                                           eval_time=later + n * (pipeline.REFUSAL_RETRY + timedelta(minutes=1)))
         assert out["refused_contract:internal"] == 1 and out["file_cards_replaced"] == 0, out
     row, events, _n, kept = _state(store, org, card_id)
     assert (row, events, kept) == (before, [], 1), "one row per writer, card and rule"
@@ -130,7 +132,7 @@ def test_the_health_check_names_the_contract_not_the_reason_writers(world):
     pipeline.build_cards_for_org(graph=store, card_store=cards, org_id=org, eval_time=later)
     with store.engine.connect() as c:
         replaced = ph.check_no_file_card_is_replaced(c, org)
-        refused = ph.check_what_the_card_contract_refused(c, org)
+        refused = ph.check_what_the_card_contract_refused(c, org, now=later)     # a refusal is dated by its pass
     assert replaced.ok, replaced
     assert refused.ok and "1 file card(s) wait on their last words behind a refused version" in refused.measured, \
         refused

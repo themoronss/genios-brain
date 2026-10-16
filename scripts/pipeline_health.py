@@ -1065,16 +1065,19 @@ def check_no_file_card_is_replaced(conn, org: str) -> Check:
         detail=[f"{r.file_id} {r.card_id}" for r in rows[:20]])
 
 
-def check_what_the_card_contract_refused(conn, org: str) -> Check:
+def check_what_the_card_contract_refused(conn, org: str, *, now=None) -> Check:
     """⛔ STEP-14 (s14-F10, F11): production showed *"nsrcel — a dated payment obligation is open"* and *"Which is
     right? Maria Exconde: party.role"*. The card contract now refuses a card that names us, shows a field's name,
     claims money with none in its evidence, quotes words nobody said or a number nothing holds — and a refused card
     is never written, so it is said here, per rule (`card_refusals`, 0222). Refused is the contract working: said,
-    never a failure."""
+    never a failure. `now` is for a replay that pins the clock; the deploy gate reads the database's."""
     name = "what the card contract refused"
+    # `now` for a replay that pins the clock (a refusal is dated by its pass, STEP-14 fix finding 14); else the
+    # database's.
     rows = conn.execute(sql(
         "select writer, ref, rule, found from card_refusals where org_id = :o "
-        "   and refused_at > now() - interval '7 days' order by writer, ref, rule, found"), {"o": org}).fetchall()
+        "   and refused_at > coalesce(cast(:now as timestamptz), now()) - interval '7 days' "
+        " order by writer, ref, rule, found"), {"o": org, "now": now}).fetchall()
     if not rows:
         return Check(name=name, ok=True, no_data=True, measured="no card refused in 7 days",
                      expected="said — nothing was refused", fix="")

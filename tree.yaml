@@ -10307,6 +10307,19 @@ yc2_w27_s14:
                       artifact: "genios_engine/deliver/pipeline.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/deliver/test_no_card_breaks_the_contract.py tests/contracts tests/replays/test_every_card_is_in_the_gold_shape.py"
                       depends_on: [M43.C4.L-integration.V1.U02, M43.C4.L-contract.V0.U01, M43.C6.L-integration.V4.U10]
+                    - id: M43.C4.L-integration.V1.U09
+                      what: >
+                        A refused card is not rebuilt every pass (added 16 Oct by the STEP-14 crosscheck, finding 14):
+                        a refused signal stays open with no card, and every pass built it, NARRATED it (a model call on
+                        a card no review wrote — `render_copy` runs before the contract) and refused it again. A
+                        signal the pipeline refused within `pipeline.REFUSAL_RETRY` (a day, by the pass's clock — a
+                        refusal is recorded at its pass's instant) is skipped, counted `skipped_refused_recently`, a
+                        decision's or a question's; its file's card stays as it was (the end of the pass reads the
+                        refusal from `card_refusals`, not only from the pass); the same refusal again moves its one
+                        row's `refused_at`. `check_what_the_card_contract_refused` takes a pinned clock.
+                      artifact: "genios_engine/deliver/pipeline.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> .venv/bin/python -m pytest -q tests/deliver/test_a_refused_card_is_not_rebuilt_every_pass.py tests/deliver/test_a_refused_version_leaves_the_card_where_it_was.py tests/platform/test_a_delete_is_not_a_read.py"
+                      depends_on: [M43.C4.L-integration.V1.U06, M43.C4.L-integration.V2.U05]
                 - level: 2
                   units:
                     - id: M43.C4.L-integration.V2.U05

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
@@ -327,7 +327,7 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
 
 def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: datetime, out: dict, *,
                           us=None, our_names: tuple[str, ...] = (), identities: tuple[str, ...] = (),
-                          refused_files: set[str] | None = None) -> None:
+                          refused_files: set[str] | None = None, refused_recently: frozenset[str] = frozenset()) -> None:
     """Each open question with no live card gets one — counted where it is written, its lane tallied as
     every card's is. ⛔ A pass that could not read its questions says so (`questions_unread`) and keeps
     the decisions' cards: a read refused here must never cost a card the founder was owed elsewhere."""
@@ -340,6 +340,9 @@ def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: 
         out["questions_unread"] = 1
         return
     for row in questions:
+        if row["signal_id"] in (refused_recently or ()):
+            out["skipped_refused_recently"] += 1          # tried again a day after its refusal (`REFUSAL_RETRY`)
+            continue
         token = card_store.claim_build(org_id, row["signal_id"], eval_time=eval_time,
                                        builder_version=QUESTION_CARD_BUILDER)
         if token is None:
@@ -350,7 +353,7 @@ def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: 
             # STEP-14 · the card contract first (M43.C4.L-integration.V1.U02): a question is the expert's checked words.
             if _refused(out, org_id, card, _contract_refusals(card, copy, us=us, our_names=our_names,
                                                               identities=identities, expert=True, question=True),
-                        engine=getattr(graph, "engine", None)):
+                        engine=getattr(graph, "engine", None), at=eval_time):
                 if refused_files is not None and card.get("file_id"):
                     refused_files.add(str(card["file_id"]))      # its card stays as it was (`_close_the_files_pass`)
                 continue
@@ -428,7 +431,10 @@ def _version_file_card(card_store, card: dict, copy: dict, token: str, out: dict
 #: The file cards whose signal closed and that no version reached: open, not held by an agent — a file's card, or
 #: an expert or question card from before 0220 that names no file.
 _ORPHANED_FILE_CARDS = (
-    "select k.card_id, k.file_id from cards k join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+    "select k.card_id, k.file_id, exists (select 1 from signals n join card_refusals r on r.org_id = n.org_id "
+    "        and r.ref = n.signal_id and r.writer = 'pipeline' where n.org_id = k.org_id "
+    "        and n.subject_node_id = k.file_id and n.status = 'open') as waits "
+    "  from cards k join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
     # ⛔ `claimed` included (STEP-14 fix, the crosscheck's finding 6): a claim is held by a LIVE claim (below), never
     # by the state a late result left behind.
     " where k.org_id = :o and k.state = any(:open) and s.status <> 'open' "
@@ -465,7 +471,8 @@ def _close_the_files_pass(graph, org_id: str, out: dict, refused_files=frozenset
         with graph.engine.begin() as c:
             orphans, kept = [], 0
             for r in c.execute(text(_ORPHANED_FILE_CARDS), params):
-                if r.file_id is not None and str(r.file_id) in refused_files:
+                # Refused this pass, or an open signal of the file refused before (skipped since: finding 14).
+                if r.file_id is not None and (str(r.file_id) in refused_files or r.waits):
                     kept += 1
                 else:
                     orphans.append(r.card_id)
@@ -582,7 +589,30 @@ def _checked_figures(card: dict) -> list[str]:
                              card.get("do_nothing_consequence")) if t]
 
 
-def _refused(out: dict, org_id: str, card: dict, refusals, *, engine=None) -> bool:
+#: How long a signal the card contract refused waits before it is built again (STEP-14 fix, the crosscheck's finding 14):
+#: a refused signal stays open with no card, and every pass rebuilt it — and NARRATED it, a model call on a card no
+#: review wrote, `render_copy` running before the contract — to refuse it again. Once a day, by the pass's clock.
+REFUSAL_RETRY = timedelta(days=1)
+
+_REFUSED_RECENTLY = (
+    "select distinct ref from card_refusals where org_id = :o and writer = 'pipeline' "
+    "   and refused_at > :since")
+
+
+def _refused_recently(graph, org_id: str, eval_time: datetime) -> frozenset[str]:
+    """The signals the pipeline refused within `REFUSAL_RETRY` of this pass. ⛔ A read that fails skips nothing."""
+    engine = getattr(graph, "engine", None)
+    if engine is None:
+        return frozenset()
+    try:
+        with engine.connect() as c:
+            return frozenset(r.ref for r in c.execute(text(_REFUSED_RECENTLY), {
+                "o": org_id, "since": eval_time - REFUSAL_RETRY}))
+    except Exception:      # noqa: BLE001 — see the docstring
+        return frozenset()
+
+
+def _refused(out: dict, org_id: str, card: dict, refusals, *, engine=None, at=None) -> bool:
     """Count, log and keep what the contract refused (`platform/card_refusals`, 0222 — a refused card is never
     written, so it is kept where `scripts/pipeline_health` reads it); True when the card must not be written.
     ⛔ Keeping it may never cost the pass: unkept, it is counted `refusals_unkept` and logged."""
@@ -601,7 +631,7 @@ def _refused(out: dict, org_id: str, card: dict, refusals, *, engine=None) -> bo
         try:
             with engine.begin() as c:
                 card_refusals.record(c, org_id=org_id, writer=card_refusals.PIPELINE,
-                                     ref=str(card.get("signal_id") or "-"), refusals=refusals)
+                                     ref=str(card.get("signal_id") or "-"), refusals=refusals, at=at)
         except Exception as exc:      # noqa: BLE001 — see the docstring
             out["refusals_unkept"] = out.get("refusals_unkept", 0) + 1
             log.warning("could not keep the card contract's refusal org=%s: %s", org_id, exc)
@@ -783,7 +813,7 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
            "versioned": 0, "renewed": 0, "reworded": 0, "quiet_version_not_pushed": 0, "version_waits": 0,
            "version_refused": 0, "file_cards_replaced": 0, "files_with_two_open_cards": 0,
            # STEP-14 fix (the crosscheck's finding 3): a file's card left as it was, its next version refused.
-           "file_cards_kept_on_refusal": 0,
+           "file_cards_kept_on_refusal": 0, "skipped_refused_recently": 0,
            # STEP-14 · the card contract — each rule counted from zero (M43.C4.L-integration.V1.U02).
            **{f"refused_contract:{rule}": 0 for rule in card_contract.RULES},
            # ⛔ THE LANE MIX. Zeroed for the same reason as the three above — "a key that appears
@@ -807,6 +837,7 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
     our_names = tuple(i for i in identities if "@" not in i)
     # The files whose next version the card contract refused this pass: their cards stay as they were.
     refused_files: set[str] = set()
+    refused_recently = _refused_recently(graph, org_id, eval_time)
     signals = _open_signals_without_cards(graph, org_id, eval_time)
 
     # ⛔ L2-7 · THE COLLAPSE RATIO, READ ON EVERY SWEEP. One extra grouped SELECT, no writes, and
@@ -840,6 +871,9 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
 
     absorbed = _cohort_absorbed(graph, org_id, signals)
     for sig in signals:
+        if sig["signal_id"] in refused_recently:
+            out["skipped_refused_recently"] += 1          # tried again a day after its refusal (`REFUSAL_RETRY`)
+            continue
         if sig["signal_id"] in absorbed:
             # Counted, never silent. A suppressed card is a decision this layer made about what
             # the user sees, and a suppression nobody can see the size of is indistinguishable
@@ -982,7 +1016,7 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                                                      (sig.get("capability_render") or {}).get("sources"))
             if _refused(out, org_id, draft, _contract_refusals(draft, copy, us=us, our_names=our_names,
                                                                identities=identities, expert=from_review),
-                        engine=getattr(graph, "engine", None)):
+                        engine=getattr(graph, "engine", None), at=eval_time):
                 if draft.get("file_id"):
                     refused_files.add(str(draft["file_id"]))      # its card stays as it was (`_close_the_files_pass`)
                 continue
@@ -1108,7 +1142,7 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
     # STEP-13 · the questions held files ask, each on its own card (M36.C2.L-interface.V3.U05) — after the
     # decisions, inside the recall guard below: a question card is a card, its lane tallied.
     _build_question_cards(graph, card_store, org_id, eval_time, out, us=us, our_names=our_names,
-                          identities=identities, refused_files=refused_files)
+                          identities=identities, refused_files=refused_files, refused_recently=refused_recently)
     # STEP-14 · the file cards no version reached, and the files with two open cards (see `_close_the_files_pass`).
     _close_the_files_pass(graph, org_id, out, refused_files)
 
