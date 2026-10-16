@@ -164,8 +164,17 @@ FUNCTION_WORDS: frozenset[str] = frozenset(
 #: is owed" (F38-F41, F49, F54), "Say whether you met" and "Memory holds" (F54), "Sign in" (F01). Read as
 #: the words they are, never as invented names; the card validator's list itself is unchanged, so a
 #: narrator's card is judged exactly as before.
-EARNED: frozenset[str] = frozenset({"accept", "ahead", "attaching", "beside", "block", "download", "file",
-                                    "finish", "memory", "nothing", "say", "sign"})
+#: ⛔ STEP-13b (`yc2_w27_s13b` M37.C4.L-logic.V8.U02), earned the same way — Haiku's pass, 12 Oct, dropped 38 facts, 19
+#: done-whens and 12 moves `unsupported` on ordinary words read as invented names: "Two" ("Two weeks is long"), "Done"
+#: ("Done means the deck is sent"), "By" ("By the end of the week"), "Silence" ("Silence since August"), "Log" ("Log the
+#: call"). Each opens a sentence; mid-sentence it is read as written, so a company called Log still drops.
+EARNED: frozenset[str] = frozenset({"accept", "ahead", "attaching", "beside", "block", "by", "done", "download",
+                                    "file", "finish", "log", "memory", "nothing", "say", "sign", "silence", "two"})
+#: Acronyms of the trade the same pass read as names ("an API", "10:00 UTC") — words anywhere in a sentence, since an
+#: acronym is not a person or a company; the same acronym the file holds is grounded anyway, and any other capitalised
+#: token still drops.
+ACRONYMS: frozenset[str] = frozenset({"api", "utc"})
+_ACRONYM = re.compile(r"\b(?:" + "|".join(sorted(a.upper() for a in ACRONYMS)) + r")\b")
 _EARNED = re.compile(r"\b(?:" + "|".join(sorted(EARNED)) + r")\b", re.I)
 #: What comes before a word that OPENS a sentence: nothing, or a stop, a question, an exclamation, a colon, a
 #: semicolon, a dash or a line break — and any opening quote. An earned word anywhere else is read as written:
@@ -684,6 +693,7 @@ def _invented(text: str, corpus: str, people: FilePeople) -> str | None:
     held, _nums = corpus_of([corpus, *people.our_names])
     plain = _EARNED.sub(lambda m: m.group(0).lower() if _OPENS.search(text[:m.start()]) else m.group(0),
                         text)
+    plain = _ACRONYM.sub(lambda m: m.group(0).lower(), plain)
     # A month written out is the month its lines write short — "4 Aug" grounds "August" (F51, 12 Oct): a
     # calendar word, never an invented name. A month its lines never write stays a name, and is refused.
     shorts = {w for w in re.findall(r"[a-z]+", held) if len(w) >= 3}
@@ -1449,7 +1459,7 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         because=held if fate in (C.HELD, C.SUPPRESSED) else None)
 
 
-__all__ = ["ANSWER_PREFIX", "CURRENCIES", "REPEATS_SHARE", "cited_anywhere", "confirms", "repeats", "the_connector", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
+__all__ = ["ACRONYMS", "ANSWER_PREFIX", "CURRENCIES", "REPEATS_SHARE", "cited_anywhere", "confirms", "repeats", "the_connector", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
            "Correction", "RESTATES_WORDS", "Stray", "UNITS", "about_us", "answered_by", "check_review",
            "correction_of",
            "figures_in", "matches", "unheld",

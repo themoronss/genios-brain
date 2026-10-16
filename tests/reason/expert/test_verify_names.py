@@ -166,3 +166,37 @@ def test_a_card_naming_the_founder_by_first_name_is_noted():
     assert checked.stands("done_when")
     assert not any(v.reason == C.SPEAKS_OF_YOU for v in _check(draft="Hi Marco, the deck is attached. Arjun").verdicts), \
         "the draft is the founder's own: signing it is no third person"
+
+
+# ── STEP-13b M37.C4.L-logic.V8.U02 · Haiku's pass read ordinary words as invented names ────────
+
+@pytest.mark.parametrize("word, text", [
+    ("two", "Two weeks is long, so send Marco the short deck"),
+    ("done", "Done means Marco has the deck"),
+    ("by", "By the end of the week send Marco the short deck"),
+    ("silence", "Silence since August: send Marco the short deck"),
+    ("log", "Log the call and send Marco the short deck")])
+def test_a_word_haikus_pass_dropped_is_ordinary_where_it_opens_a_sentence(word, text):
+    from genios_engine.reason.expert.verify import EARNED
+    assert word in EARNED
+    assert _verdict(_check(move={"what": text}), "move").verdict != C.DROPPED
+
+
+@pytest.mark.parametrize("word", ["Two", "Done", "Silence", "Log"])
+def test_the_same_word_mid_sentence_is_still_a_name_of_the_file(word):
+    """A company called Log, Two or Done is a name: only an opening word is read as a word."""
+    checked = _check(move={"what": f"Send Marco the short deck and copy {word} on it"})
+    assert _verdict(checked, "move").reason == C.UNSUPPORTED and _verdict(checked, "move").detail == f"name:{word}"
+
+
+@pytest.mark.parametrize("text", ["Send Marco the API short deck", "Send Marco the short deck by noon UTC",
+                                  "Send Marco the short deck; the API docs follow"])
+def test_an_acronym_of_the_trade_is_a_word_anywhere(text):
+    from genios_engine.reason.expert.verify import ACRONYMS
+    assert {"api", "utc"} <= ACRONYMS
+    assert _verdict(_check(move={"what": text}), "move").verdict != C.DROPPED
+
+
+def test_a_name_that_looks_like_an_acronym_still_drops_when_the_file_does_not_hold_it():
+    checked = _check(move={"what": "Send Marco the short deck and copy ACME on it"})
+    assert _verdict(checked, "move").reason == C.UNSUPPORTED
