@@ -3616,5 +3616,43 @@
     0
    ]
   ]
+ },
+ "F67": {
+  "evt_2dafa529fdc05317083745b4": [
+   [
+    "- [#] 2026-09-21 05:30 UTC · they wrote · Vikram Sole",
+    0
+   ]
+  ],
+  "evt_5ca213f75866964f0ebcd801": [
+   [
+    "- [#] 2026-09-21 04:30 UTC · they wrote · Nadia Qureshi",
+    0
+   ]
+  ],
+  "hist:derived.history.prior_card_verdict@fundraising": [
+   [
+    "- [#] derived.history.prior_card_verdict@fundraising = first_time",
+    0
+   ]
+  ],
+  "num:your_reply_time:nadia@techbridge.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "num:your_reply_time:vikram@awadhec.test": [
+   [
+    "your reply time to them: not measured [#] — on every answer you sent them, not split by who wrote first, as decided",
+    0
+   ]
+  ],
+  "pb:founder_office.pb.program_applications.follow_an_application": [
+   [
+    "Follow an application from the deadline to the first day [#], version pb-8f465e5ab424 — playbook not yet reviewed",
+    0
+   ]
+  ]
  }
 }
