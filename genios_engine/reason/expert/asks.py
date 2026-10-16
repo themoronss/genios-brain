@@ -46,6 +46,10 @@ _EXPIRE_QUESTION_SIGNALS = (
 ASKED = "asked"
 STANDING = "standing"
 ANSWERED_ALREADY = "answered_already"
+#: ⛔ STEP-16 (`yc2_w27_s16` M46.C3.L-integration.V4.U06, S16-D10, `s16-F15`): words you called wrong are never asked
+#: again — no question is filed and no signal, and the file's open question signal expires: the file is held with no
+#: card, and the sweep counts it `expert_question_called_wrong` (the scorecard's "held — its question called wrong").
+CALLED_WRONG_ALREADY = "called_wrong"
 #: What leaves the file's question standing — what the change gate remembers as STANDING on its window.
 ASKING: frozenset[str] = frozenset({ASKED, STANDING})
 
@@ -217,12 +221,13 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
             asked = questions.ask(conn, org_id=org_id, file_id=file_id, fingerprint=review.fingerprint,
                                   run_id=run.get("run_id"), question=after_your_answer(latest.answer),
                                   why=WHY_AFTER_YOUR_ANSWER, at=eval_time)
-        if asked.state == questions.ANSWERED:
+        called_wrong = asked.state == questions.RETIRED and asked.retired_why == questions.CALLED_WRONG
+        if asked.state == questions.ANSWERED or called_wrong:
             expired = conn.execute(text(_EXPIRE_QUESTION_SIGNALS), {"o": org_id, "n": file_id}).fetchall()
             if expired:
                 card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
                                             signal_ids=[item.signal_id for item in expired])
-            return ANSWERED_ALREADY
+            return CALLED_WRONG_ALREADY if called_wrong else ANSWERED_ALREADY
         standing = conn.execute(text(_OPEN_QUESTION_SIGNAL), {"o": org_id, "n": file_id}).first()
         bound = {"o": org_id, "run": run.get("run_id"), "dhash": output.get("decision_hash"),
                  "exp": decision.expires_at, "cfg": run.get("config_snapshot_id"), "et": eval_time}

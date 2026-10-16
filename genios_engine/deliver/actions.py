@@ -39,7 +39,12 @@ BUTTONS = {"run_play", "do_it_myself", "snooze", "wrong", "requeue", "answer"}
 # the file (`context/founder_questions.answer`), the card resolved, its signal acted. The file's dossier
 # shows the answer, its fingerprint moves, and the next sweep reviews the file with your answer in front of
 # the expert. A question card offers `answer` and the deferrals, nothing else; no other card is a question.
-QUESTION_OFFERS = frozenset({"answer", "snooze", "requeue"})
+QUESTION_OFFERS = frozenset({"answer", "snooze", "requeue", "wrong"})
+# ⛔ STEP-16 · *DON'T ASK ME THIS* (`yc2_w27_s16` M46.C3.L-integration.V4.U06; S16-D10). A question card may be called
+# `wrong`: a verdict on its file, through the one writer, bound to the question's own authority (rule
+# `founder_question`, no pack revision — calibration, which scores pack rules on revision-bound cards, never reads it);
+# the file's question retired `CALLED_WRONG` (`context/founder_questions`) — never asked again in its words — and its
+# signal acted; your words, if any, a correction of the file. One transaction.
 # ⛔ STEP-14 · YOUR ANSWER KEEPS THE FILE'S CARD (`yc2_w27_s14` M42.C3.L-interface.V4.U05, s14-D3 — amends the above). The
 # card is no longer resolved nor its signal acted: it is VERSIONED — answered, "your answer is in; the file is read
 # again", the question you answered as its situation, the Monitor lane, nothing to press but later — and the file's
@@ -239,6 +244,9 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             c.execute(text(
                 "update signals set status='acted' where signal_id=:signal and org_id=:o"),
                 {"signal": card["signal_id"], "o": org_id})
+        if question_id is not None and action == "wrong":
+            from genios_engine.context import founder_questions as _questions
+            _questions.retire(c, org_id=org_id, file_id=asking, why=_questions.CALLED_WRONG, at=eval_time)
         if action == "answer":
             from genios_engine.context import founder_questions
 
@@ -307,7 +315,8 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
     return {"ok": True, "state": state, "action": action,
             **({"reason": reason} if action == "wrong" else {}),
             **({"correction_id": correction.correction_id} if correction is not None else {}),
-            **({"question_id": question_id, "version": answered_version} if action == "answer" else {})}
+            **({"question_id": question_id, "version": answered_version} if action == "answer" else {}),
+            **({"question_id": question_id} if action == "wrong" and question_id is not None else {})}
 
 
 def _version_answered(c, *, org_id: str, card, question_id: str, actor: str, at) -> int | None:
