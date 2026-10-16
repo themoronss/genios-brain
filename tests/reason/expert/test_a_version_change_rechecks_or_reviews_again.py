@@ -167,7 +167,8 @@ def test_a_prompt_version_change_on_a_moved_file_reviews_it_again(world, monkeyp
     quiet, expert = _pass(store, now + timedelta(days=11))
     assert len(expert.prompts) == 2 and quiet["version_moved"] == 2 and quiet["reviewed"] == {R.VALID: 2}
     newest = [r for r in _rows(store).values() if r.fingerprint in quiet["covered"].values()]
-    assert {r.triggers[0]["says"] for r in newest} == {"the prompt moved: expert-review.v3 → expert-review.v99"}
+    # ⛔ RESTATED v3 → v4 on 16 Oct by STEP-16 M46.C4.L-interface.V0.U02: the prompt it moved FROM is the current one.
+    assert {r.triggers[0]["says"] for r in newest} == {"the prompt moved: expert-review.v4 → expert-review.v99"}
 
 
 def test_a_recheck_that_now_refuses_covers_nothing(world, monkeypatch):

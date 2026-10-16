@@ -12,6 +12,9 @@ gate's complaint. `PROMPT_VERSION` is "expert-review.v2": ⛔ moved from v1 by M
 began to ask for a proposed kind of work (no review was ever written under v1). ⛔ "expert-review.v3" since
 STEP-13 (`yc2_w27_s13` M35.C3.L-interface.V0.U04): the checklist asks for what the check reads — a quote for
 each fact a move rests on, `rests_on`, `to`, `answers` — and the rules speak to the founder as you (F178).
+⛔ "expert-review.v4" since STEP-16 (`yc2_w27_s16` M46.C4.L-interface.V0.U02): the rules and the next move's step say
+what a correction is — the founder's word on the file, followed or outweighed in an inference citing it; for a kind
+of work, over the playbook's prior; a card called wrong not advised again in its words uncited.
 """
 from __future__ import annotations
 
@@ -72,7 +75,24 @@ def _shape(value):
 
 
 def test_the_prompt_has_a_version():
-    assert P.PROMPT_VERSION == "expert-review.v3"
+    assert P.PROMPT_VERSION == "expert-review.v4"
+
+
+def test_the_rules_say_what_a_correction_is():
+    """STEP-16 (M46.C4.L-interface.V0.U02): your word on the file — followed, or outweighed in an inference citing
+    it; for the kind of work, over the playbook's prior; a card called wrong not advised again uncited. The check
+    holds a move that ignores it (`reason/expert/verify`): the prompt warns of what the check does."""
+    prompt = P.build_prompt(_dossier())
+    for words in ("A correction under WHAT YOU CORRECTED is the founder's word on this file",
+                  "in an inference that cites its corr: id",
+                  "A correction for the kind of work outweighs the playbook's prior",
+                  "A card the founder called wrong is not advised again in its words unless you cite it"):
+        assert words in prompt, words
+    assert P.RULES[-1].startswith("A correction under WHAT YOU CORRECTED")
+    move_step = next(s.asks for s in P.CHECKLIST if s.name == "next_move")
+    assert "the move follows the correction — or an inference citing it says why not" in move_step
+    from genios_engine.reason.expert.dossier import TITLES
+    assert TITLES["corrections"] == "WHAT YOU CORRECTED", "the rule names the dossier's own section"
 
 
 def test_the_checklist_asks_for_what_the_check_reads_and_speaks_to_you():
