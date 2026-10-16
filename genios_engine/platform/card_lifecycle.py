@@ -30,6 +30,14 @@ version (`contracts/card_version`): its words, the words before, the signal it c
 the change and whether it is material — in the caller's transaction. Its words are the card store's to write
 (`deliver/store.CardStore.version_card`). `file_card` reads which card a file's next version goes to, by the same
 rule. `tests/platform/test_one_way_to_version_a_card.py` fails on any other SQL that sets `cards.signal_id`.
+
+⛔ AND ONE WAY TO RESOLVE A CARD (STEP-16, `yc2_w27_s16` M47.C1.L-data.V0.U01; `s16-F6`). A card ending well had no
+writer: the card lifecycle could expire a card and never resolve one, and the team lane set `resolved` by its own
+statements. `resolve_cards` moves the named cards still open to `resolved` (and `resolved_at`), and writes one
+`card.resolved` event per card naming its cause — in the caller's transaction: `verified` (a file decision whose ask
+closed ANSWERED — its evidence the event that closed the ask, the loop and the basis, each required), and the team
+lane's `situation_cleared` and `superseded`. A card already ended is neither moved nor given an event.
+`tests/platform/test_one_way_to_resolve_a_card.py` fails on any other SQL that sets a card `resolved`.
 """
 from __future__ import annotations
 
@@ -187,6 +195,47 @@ def file_card(conn, *, org_id: str, file_id: str) -> FileCard | None:
         return None
     return FileCard(card_id=row.card_id, signal_id=row.signal_id, version=int(row.version), state=row.state,
                     held=bool(row.held))
+
+
+# ── the one writer of a card's resolution (STEP-16) ─────────────────────────────────────────────────────────
+#: What a resolution's event is called — an ending, beside `KINDS`.
+RESOLVED = "card.resolved"
+#: Why a card was resolved — closed. `VERIFIED`: the ask the file's move answered closed ANSWERED, by an event.
+VERIFIED = "verified"
+#: The team lane's (`reason/team/emit`): the situation it carried cleared; a snoozed card superseded by its next one.
+SITUATION_CLEARED = "situation_cleared"
+SUPERSEDED = "superseded"
+RESOLVE_CAUSES: frozenset[str] = frozenset({VERIFIED, SITUATION_CLEARED, SUPERSEDED})
+#: What a `verified` resolution must name: the event that closed the ask, the ask's loop and how it closed.
+VERIFIED_EVIDENCE: tuple[str, ...] = ("event_id", "loop_id", "basis")
+
+_RESOLVE = text(
+    "update cards set state = 'resolved', resolved_at = coalesce(cast(:at as timestamptz), now()) "
+    " where org_id = :o and state = any(:states) "
+    "   and (signal_id = any(:signals) or card_id = any(:cards)) "
+    "returning card_id, signal_id")
+
+
+def resolve_cards(conn, *, org_id: str, cause: str, signal_ids: Sequence[str] = (), card_ids: Sequence[str] = (),
+                  evidence: Mapping | None = None, actor: str = "system", at=None,
+                  states: Sequence[str] = OPEN_STATES) -> list[str]:
+    """Resolve this tenant's still-open cards of `signal_ids` and `card_ids`: one `card.resolved` event each, naming
+    its cause and its evidence, in the caller's transaction, at `at`. Returns the ids of the cards it moved — a card
+    already ended, or another tenant's, is neither moved nor given an event. ValueError for an unknown cause, or a
+    `verified` resolution that does not name the event, the loop and the basis it rests on."""
+    if cause not in RESOLVE_CAUSES:
+        raise ValueError(f"unknown resolution cause {cause!r}; add it to platform/card_lifecycle.RESOLVE_CAUSES")
+    if cause == VERIFIED and any(not (evidence or {}).get(key) for key in VERIFIED_EVIDENCE):
+        raise ValueError(f"a verified resolution names {VERIFIED_EVIDENCE}, not {dict(evidence or {})}")
+    signals, cards = [str(s) for s in signal_ids], [str(c) for c in card_ids]
+    if not signals and not cards:
+        return []
+    moved = conn.execute(_RESOLVE, {"o": org_id, "states": list(states), "signals": signals, "cards": cards,
+                                    "at": at}).fetchall()
+    for row in moved:
+        _event(conn, card_id=row.card_id, org_id=org_id, kind=RESOLVED, cause=cause, actor=actor,
+               detail=evidence, signal_id=row.signal_id, at=at)
+    return [row.card_id for row in moved]
 
 
 def version_card(conn, *, org_id: str, card_id: str, version: CardVersion, expires_at,
