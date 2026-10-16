@@ -185,10 +185,12 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     # the review's advice changed as the file moved (`03` F176), a must-abstain case's recap gone.
     "F17": ("STEP-12", ("must_detect", "pass", None, 1)),
     # STEP-15 (`yc2_w27_s15 · M44.C5`, `06` D12d): a brief-only case's answer is judged on the morning brief the
-    # runner now composes after the last sweep, never a card — F20 and F23 keep the one card STEP-12 found (a
-    # small move still makes one today, s15-D3 unbuilt) and now pass on their brief's "today" line too.
-    "F20": ("STEP-15", ("must_detect", "pass", None, 1)),
-    "F23": ("STEP-15", ("must_detect", "pass", None, 1)),
+    # runner now composes after the last sweep, never a card — F20 and F23 passed on their brief's "today" line and
+    # kept the one card STEP-12 found. ⛔ RESTATED 16 Oct by M45.C4.L-integration.V0.U03 (s15-D3, `06` D66): a small
+    # move (act, low stakes, low urgency, writing to no one) emits no signal, so F20's meetup and F23's registration
+    # are a line in the brief and NO card — 1 → 0, and still a pass (the case is brief-only; its card was never judged).
+    "F20": ("STEP-15", ("must_detect", "pass", None, 0)),
+    "F23": ("STEP-15", ("must_detect", "pass", None, 0)),
     "F27": ("STEP-12", ("must_detect", "pass", None, 1)),
     "F29": ("STEP-14", ("must_detect", "pass", None, 1)),
     "F40": ("STEP-12", ("must_abstain", "pass", None, 0)),

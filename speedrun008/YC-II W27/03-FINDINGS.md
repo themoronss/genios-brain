@@ -824,6 +824,19 @@ the twelve conflicts were all resolved by keeping both sides — and a fourth de
 | F64 | pass → **pass**, held: the changed section does not reopen a file the review found nothing owed in (s15-F20) |
 | atlas replays | unchanged by the merge: passing 12/80, blocked 1/80, not expressible 67 |
 
+**Then, 16 Oct, `STEP-15`'s s15-D3 unit** (`M45.C4.L-integration.V0.U03`, `06` D66): a small move is a line in the brief and
+no card. F20's meetup and F23's registration — `act` reviews appraised low stakes and low urgency — are decided as before
+(the audited run stands, the change gate remembers them) and emit no signal; their cards go, 1 → 0 each, and both still
+pass on their *today* line (brief-only; their card was never judged). No mark and no board line moves
+(`test_the_gate_deletes_nothing.MOVED_AFTER`: F20, F23 `(…, 1)` → `(…, 0)`).
+
+  * **s15-F24 · D66's words alone would have taken STEP-14's F61.** Built literally — act, low, low — the rule also
+    removed F61's two silent introductions (*"Write to Omkar Joshi offering a call…"*, appraised low/low; replay 02 m02),
+    whose labelled answer is a card each: must-detect 47 → 46 and the Atlas 12 → 11 on the first measurement. The rule is
+    narrowed by what a card is FOR — it puts a draft to a person in front of you: a small move that writes to no one
+    (`next_move.to` empty) is a line; one that writes to someone stays a card. Both labels hold as built. **s15-D6 (open):**
+    whether D66 meant that. 4 of the 111 authored reviews are low/low acts: F20, F23, and F61's two.
+
 The table below is the board's state now.
 
 | | |

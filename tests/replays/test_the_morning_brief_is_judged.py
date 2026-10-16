@@ -181,6 +181,34 @@ def test_the_brief_hides_no_open_card(case):
 
 
 # =================================================================================================
+# 3b · a small move is a line in the brief and no card (s15-D3, M45.C4.L-integration.V0.U03)
+# =================================================================================================
+@pytest.mark.pg
+@pytest.mark.golden
+@pytest.mark.parametrize("case_id, subject", [("F20", "TechBridge"), ("F23", "State Startup Mission")])
+def test_a_small_move_is_a_line_in_the_brief_and_no_card(case_id, subject):
+    """F20's meetup and F23's registration are `act` reviews appraised low stakes and low urgency that write to no one:
+    decided, remembered, and no signal — so no card — while the brief still says them, in `today`. F61's two silent
+    introductions are low/low too, but write to a person (a draft): they stay cards (03 s15-F24)."""
+    _scratch_db()
+    run = cassettes.replayed(next(c for c in CASES if c.case_id == case_id))
+    assert run.cards == ()
+    named = [l for l in (run.brief or ()) if says(l.text, subject)]
+    (today,) = [l for l in named if l.section == "today"]          # (F23 also has its changed line: "… wrote")
+    assert today.card_id is None and not any(l.card_id for l in named)
+
+
+@pytest.mark.pg
+@pytest.mark.golden
+def test_a_move_that_writes_to_a_person_stays_a_card_though_it_is_small():
+    _scratch_db()
+    run = cassettes.replayed(next(c for c in CASES if c.case_id == "F61"))
+    subjects = {c.subject for c in run.cards}
+    assert any("Omkar" in (s or "") or "Redfern" in (s or "") for s in subjects)
+    assert any("Tanvi" in (s or "") or "Copperleaf" in (s or "") for s in subjects)
+
+
+# =================================================================================================
 # 4 · the negative control: with no brief composed, every brief-only case is not expressible again
 # =================================================================================================
 @pytest.mark.pg
