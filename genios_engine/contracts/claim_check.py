@@ -33,7 +33,9 @@ from typing import Any
 #: ⛔ check.v3 since 13 Oct (`yc2_w27_s14` M43.C2.L-logic.V1.U01): STEP-13's second fix wave changed it again (an ask
 #: asked again, a move resting on your answer, the held question's words) and the gold card's alternative and stop
 #: rule are card lines it holds — so a review v2 checked is checked again.
-CHECK_VERSION = "check.v3"
+#: ⛔ check.v4 since 16 Oct (`yc2_w27_s16` M46.C4.L-logic.V3.U06): never silently — a move over a correction it does not
+#: cite, or in the words of a card you called wrong, is held as one question; a review checked by v3 is checked again.
+CHECK_VERSION = "check.v4"
 
 # ── what happened to a line ────────────────────────────────────────────────────────────────────
 # One name to a line: `tests/test_no_missing_module_deps` reads what a module defines by its assignments,
@@ -100,7 +102,10 @@ CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", 
                                "rests_on", "do_nothing", "question",
                                # STEP-14 (`yc2_w27_s14` M43.C1.L-contract.V0.U02): the gold card shows them (0221), so
                                # they are card words the check holds — no longer prose no founder is shown.
-                               "alternative", "wait_or_stop")
+                               "alternative", "wait_or_stop",
+                               # STEP-16 (`yc2_w27_s16` M46.C4.L-logic.V3.U06): how the review stands with your
+                               # corrections and with the cards you called wrong — never silently.
+                               "correction", "called_wrong")
 #: What a file asks when nothing checked can be asked — ours, closed (`reason/expert/asks`, and a held question
 #: that would name you, M36.C2.L-logic.V2.U19).
 NOTHING_TO_ASK = "Can you tell us where this file stands?"

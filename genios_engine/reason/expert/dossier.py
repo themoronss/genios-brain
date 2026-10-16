@@ -793,6 +793,23 @@ QUESTION_CARD_RULE = "founder_question"
 
 
 @dataclass(frozen=True, slots=True)
+class CorrectionSeen:
+    """A correction the dossier showed, as the check reads it (STEP-16): its id as printed, your words, the day you
+    said them as you would read it ("12 Oct"), and what it reaches."""
+    ref: str
+    words: str
+    said_on: str
+    scope: str
+
+
+@dataclass(frozen=True, slots=True)
+class CalledWrong:
+    """A card of the file you called wrong, as the dossier printed it (STEP-16): its id and its headline."""
+    ref: str
+    headline: str
+
+
+@dataclass(frozen=True, slots=True)
 class FilePeople:
     """Whom a draft of this file may go to: who its mail shows, who is us, and the connector that
     introduced its counterparty (None on the connector's own file, and on a file nobody introduced) —
@@ -811,6 +828,10 @@ class FilePeople:
     #: headline is our question, never a ground for the claim it asked about — and the questions you answered.
     question_cards: tuple[str, ...] = ()
     answered: tuple[Answered, ...] = ()
+    #: STEP-16 (`yc2_w27_s16` M46.C4.L-logic.V3.U06): your standing corrections the dossier showed, newest first, and
+    #: the cards of the file you called wrong — what "never silently" holds a review to (`reason/expert/verify`).
+    corrections: tuple[CorrectionSeen, ...] = ()
+    called_wrong: tuple[CalledWrong, ...] = ()
 
 
 def label_of(key: str | None) -> str | None:
@@ -876,7 +897,15 @@ def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str]
                                            if getattr(c, "rule_id", None) == QUESTION_CARD_RULE),
                       answered=tuple(Answered(ref=f"answer:{a.question_id}", question=str(a.question),
                                               words=" ".join(str(a.answer).split()))
-                                     for a in (parts.answers or ()) if a.answer))
+                                     for a in (parts.answers or ()) if a.answer),
+                      # STEP-16: your corrections as the dossier printed them, and the cards you called wrong.
+                      corrections=tuple(CorrectionSeen(
+                          ref=f"corr:{c.correction_id}", words=" ".join(str(c.words).split()),
+                          said_on=f"{c.corrected_at.day} {c.corrected_at.strftime('%b')}", scope=c.scope)
+                          for c in (parts.corrections or ())),
+                      called_wrong=tuple(CalledWrong(ref=f"card:{c.card_id}", headline=str(c.headline))
+                                         for c in cards if any(v.cause == "wrong" for v in c.verdicts)
+                                         and c.headline))
 
 
 def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | None:
@@ -885,7 +914,8 @@ def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | 
     return build_dossier(parts) if parts is not None else None
 
 
-__all__ = ["Answered", "AskSeen", "QUESTION_CARD_RULE", "CLAIMS_LIMIT", "meeting_events", "read_meeting_titles",
+__all__ = ["Answered", "AskSeen", "CalledWrong", "CorrectionSeen",
+           "QUESTION_CARD_RULE", "CLAIMS_LIMIT", "meeting_events", "read_meeting_titles",
            "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine",
            "DossierParts", "Seen",
            "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",

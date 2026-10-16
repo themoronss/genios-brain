@@ -83,6 +83,20 @@ ONE PASS, IN ONE ORDER.
       denied): that is the bound, and the confirmation is what holds it. A question card's headline is our
       own question, never a ground (`_ours_blanked`).
 
+  6 · NEVER SILENTLY (STEP-16, `yc2_w27_s16` M46.C4.L-logic.V3.U06; §8.4 item 5). Your corrections the dossier
+      showed (`[corr:<id>]`, the file's own and its kind of work's — `FilePeople.corrections`) are followed, or
+      outweighed IN WORDS that cite them: a move — act or find out — over a correction no fact, inference or
+      pattern of the review cites is HELD, and the file asks ONE question, the newest such correction's: "You
+      said “…” on 12 Oct; does it still hold?" (`correction_unheeded`). So is a move in the words of a card you
+      called wrong (`FilePeople.called_wrong`) that cites neither the card nor your verdict — its content words
+      covering three quarters of the card's headline (`repeats`): "You called “…” wrong; should we advise it
+      again?" (`called_wrong`). A review with no move that cites none of your corrections is NOTED
+      (`uncited_correction`). A move already held, suppressed or refused keeps that fate and its one question;
+      the verdict is written all the same, for the scorecard to count. A correction of how your company works
+      is the brief's line, and needs no citation. ⛔ THE BOUND: whether the review's words FOLLOW your
+      correction is not read — that it cites it is; the check holds the citation, the founder reads the rest.
+      This is what makes it model-agnostic: a weaker model costs you a question, never an ignored correction.
+
 WHAT `validate` STILL REFUSES WHOLE — the structure (`STRUCTURAL`): a moving mode with no move, a move
 resting on no fact the review has, a stage the playbook does not name. A slip of one optional move field
 drops its own line (M35.C1.L-contract.V0.U04): a `rests_on` ref beside the facts it names that is no fact
@@ -1043,6 +1057,29 @@ def _prose(review: ExpertReview) -> list[str]:
             *review.appraisal.reasons]
 
 
+def cited_anywhere(review: ExpertReview) -> set[str]:
+    """Every id the review's facts, inferences and patterns cite — what "citing your correction" reads."""
+    return ({e for f in review.facts for e in f.evidence}
+            | {g for i in review.inferences for g in i.based_on}
+            | {g for p in review.patterns for g in p.based_on})
+
+
+#: How much of a card's headline a move must say to be repeating it: three quarters of its content words.
+REPEATS_SHARE = 0.75
+
+
+def _content_words(said: str | None) -> set[str]:
+    return {w for w in re.findall(r"[a-z0-9]+", fold(said or "")) if len(w) > 1 and w not in FUNCTION_WORDS}
+
+
+def repeats(move: str | None, headline: str | None) -> bool:
+    """Does `move` say, in its words, the card `headline` you called wrong? At least two of the headline's content
+    words, and three quarters of them (`REPEATS_SHARE`), are the move's. Pure."""
+    card, said = _content_words(headline), _content_words(move)
+    shared = len(card & said)
+    return len(card) >= 2 and shared >= 2 and shared >= REPEATS_SHARE * len(card)
+
+
 def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
                  evidence_ids: Iterable[str] | None = None) -> C.CheckedReview:
     """`review`, checked line by line against the dossier it was written from (see the module docstring).
@@ -1218,6 +1255,23 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
             fate = C.HELD
         elif review.mode == "find_out":
             question = headline
+    # NEVER SILENTLY (STEP-16, see the module docstring, 6): your corrections and the cards you called wrong.
+    cites = cited_anywhere(review)
+    unheeded = [c for c in people.corrections if c.ref not in cites]
+    if review.mode in MOVING and move is not None:
+        repeated = [w for w in people.called_wrong if w.ref not in cites and repeats(said, w.headline)]
+        if unheeded:
+            run.say("correction", C.DROPPED, C.CORRECTION_UNHEEDED, ", ".join(c.ref for c in unheeded))
+        if repeated:
+            run.say("called_wrong", C.DROPPED, C.CALLED_WRONG, repeated[0].ref)
+        if fate == C.SHOWN and unheeded:
+            fate, held = C.HELD, C.HELD_BECAUSE[C.CORRECTION_UNHEEDED]
+            question = C.correction_question(unheeded[0].words, unheeded[0].said_on)
+        elif fate == C.SHOWN and repeated:
+            fate, held = C.HELD, C.HELD_BECAUSE[C.CALLED_WRONG]
+            question = C.called_wrong_question(repeated[0].headline)
+    elif unheeded:
+        run.say("correction", C.NOTED, C.UNCITED_CORRECTION, ", ".join(c.ref for c in unheeded))
     # A QUESTION TO YOU NEVER NAMES YOU (M36.C2.L-logic.V2.U19, second crosscheck F3): a held question that names
     # us — outside your own quoted words — is noted and asked as our closed question; a find-out file's
     # candidates (its first unknown, its move) are noted here, and asked in the second person, or passed over,
@@ -1246,7 +1300,7 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         because=held if fate in (C.HELD, C.SUPPRESSED) else None)
 
 
-__all__ = ["ANSWER_PREFIX", "CURRENCIES", "confirms", "the_connector", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
+__all__ = ["ANSWER_PREFIX", "CURRENCIES", "REPEATS_SHARE", "cited_anywhere", "confirms", "repeats", "the_connector", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
            "Correction", "RESTATES_WORDS", "Stray", "UNITS", "about_us", "answered_by", "check_review",
            "correction_of",
            "figures_in", "matches", "unheld",
