@@ -38,6 +38,10 @@ _ENGINE = _PKG.parent
 #: CLOSED, and checked in BOTH directions by `tests/feedback/test_the_feedback_layer_says_what_it_does_not_call.py`: an entry naming a function that
 #: is now called is as much a lie as a function that is unreached and undeclared.
 UNREACHED: dict[str, tuple[str, str]] = {
+    "scorecard.scorecard_for": (
+        "STEP-16 (yc2_w27_s16 M47.C3.L-logic.V5.U01): one tenant's week, read and composed — usefulness, what was held back, coverage, outcomes, your corrections — built one unit ahead of its route, the owner's view of a week",
+        "MOVES WHEN M47.C3.L-interface.V6.U02 lands: GET /v1/learning/scorecard serves it — delete this entry in that commit"),
+
     "attribution.timing_never_grades_accuracy": (
         "⛔ A BUILD-TIME PROPERTY GUARD, NOT A DEFECT. *'Every reason this map calls a "
         "timing-or-fit complaint must be absent from the precision'* denominator. It reads the "
@@ -57,13 +61,8 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "MOVES WITH `timing_never_grades_accuracy` — the two guard one map from opposite sides and "
         "neither is wanted at runtime"),
 
-    "attribution.route": (
-        "*'Judgment rows to a ranked layer report. Total over any input.'* Eight test callers — the "
-        "most exercised function in this table — and no production caller. ⛔ So the ranking is "
-        "correct, well covered, and asked for by nothing: the report it produces has no renderer, "
-        "the same shape as `capture/intent_rate` and `packs/substrate_demand`.",
-        "MOVES WHEN a precision-by-layer surface exists. ⛔ `calibrate` consumes the RAW judgments "
-        "directly, so the ranked view is for a reader rather than for the loop"),
+    # ⛔ `attribution.route` LEFT THIS TABLE on 16 Oct (STEP-16 `yc2_w27_s16` M47.C3.L-logic.V5.U01): its mover came —
+    # the week's scorecard (`feedback/scorecard`, served at `GET /v1/learning/scorecard`) reads each reason's layer.
 
     # ───────────────────────────────────── the permitted-use guards (`S10`, Atlas L7 #5) (4)
     # ⛔ BUILD-TIME PROPERTY GUARDS over the visibility seam, filed exactly like the four above.

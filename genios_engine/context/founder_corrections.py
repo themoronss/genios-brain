@@ -230,6 +230,15 @@ def standing_for(conn, org_id: str, file_id: str, *, people: tuple[str, ...] = (
     return Standing(corrections=tuple(_row(r) for r in rows), cut=max(0, total - len(rows)))
 
 
+def made_between(conn, org_id: str, *, since: datetime, until: datetime) -> tuple[Correction, ...]:
+    """Every correction made in [since, until) — standing or withdrawn since — oldest first: the week's
+    (`feedback/scorecard`, STEP-16 M47.C3.L-logic.V5.U01)."""
+    return tuple(_row(r) for r in conn.execute(text(
+        f"select {_COLUMNS} from founder_corrections where org_id = :o and corrected_at >= :since "
+        "and corrected_at < :until order by corrected_at, correction_id"),
+        {"o": org_id, "since": since, "until": until}))
+
+
 __all__ = ["COMPANY", "COMPANY_SECTION", "Correction", "FILE", "KIND", "MAX_WORDS", "SCOPES", "SHOWN",
            "STANDING", "Standing", "WITHDRAWN", "by_id", "correct", "correction_id_for", "file_of_card",
-           "refused", "standing_for", "withdraw"]
+           "made_between", "refused", "standing_for", "withdraw"]
