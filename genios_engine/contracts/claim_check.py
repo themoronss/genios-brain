@@ -61,10 +61,17 @@ ANSWERED = "answered"                        # the ask it answers is answered al
 NOTHING_STANDS = "nothing_stands"            # no fact of the review stands
 ON_YOUR_ANSWER = "on_your_answer"            # a move resting only on what you told us: confirmed with you first
 DECLINED_BY_YOU = "declined_by_you"          # …and you did not confirm it
+# ⛔ STEP-16 · NEVER SILENTLY (`yc2_w27_s16` M46.C4.L-contract.V0.U01; STEP-16 §8.4 item 5). Your correction of a file,
+# shown in its dossier (`[corr:<id>]`), is followed or outweighed IN WORDS that cite it — and a move made over one the
+# review does not cite is held as ONE question to you, as is a move in the words of a card you called wrong that cites
+# neither the card nor your verdict. This is what makes it model-agnostic: a weaker model costs you a question, never
+# an ignored correction.
+CORRECTION_UNHEEDED = "correction_unheeded"  # a move over a correction no fact, inference or pattern cites
+CALLED_WRONG = "called_wrong"                # a move in the words of a card you called wrong, citing neither
 REASONS: tuple[str, ...] = (UNCITED, UNKNOWN_EVIDENCE, UNQUOTED, MISQUOTED, UNSUPPORTED, WRONG_NUMBER,
                             UNGROUNDED, NO_RECIPIENT, RECIPIENT_NOT_ON_FILE, RECIPIENT_IS_US,
                             RECIPIENT_IS_CONNECTOR, NOT_OURS_TO_ANSWER, ANSWERED, NOTHING_STANDS,
-                            ON_YOUR_ANSWER, DECLINED_BY_YOU)
+                            ON_YOUR_ANSWER, DECLINED_BY_YOU, CORRECTION_UNHEEDED, CALLED_WRONG)
 #: How a line is corrected — closed, as a reason is.
 BY_CALCULATOR = "by_calculator"              # a number replaced by the one its calculator line holds
 BY_ALTERNATIVE = "by_alternative"            # a move to a connector replaced by the review's alternative
@@ -73,7 +80,8 @@ CORRECTIONS: tuple[str, ...] = (BY_CALCULATOR, BY_ALTERNATIVE)
 SPEAKS_OF_YOU = "speaks_of_you"              # a card text calling the founder "the founder", or naming us
 UNHELD_NUMBER = "unheld_number"              # a number in prose no founder is shown, not in the dossier
 CONFIRMED_BY_YOU = "confirmed_by_you"        # a move resting only on what you told us, that you confirmed
-NOTES: tuple[str, ...] = (SPEAKS_OF_YOU, UNHELD_NUMBER, CONFIRMED_BY_YOU)
+UNCITED_CORRECTION = "uncited_correction"    # STEP-16: a review with no move that cites none of your corrections
+NOTES: tuple[str, ...] = (SPEAKS_OF_YOU, UNHELD_NUMBER, CONFIRMED_BY_YOU, UNCITED_CORRECTION)
 
 # ── what happens to the move ───────────────────────────────────────────────────────────────────
 SHOWN = "shown"
@@ -116,7 +124,28 @@ HELD_BECAUSE: dict[str, str] = {
     RECIPIENT_IS_CONNECTOR: "the move goes to whoever made the introduction",
     ANSWERED: "the ask the move answers is already answered",
     ON_YOUR_ANSWER: "the move rests only on what you told us",
+    # STEP-16 · never silently: the question a held move asks names your correction or your verdict
+    # (`reason/expert/verify`, "you said … on <date>; does it still hold?").
+    CORRECTION_UNHEEDED: "the move does not say how it stands with a correction you made",
+    CALLED_WRONG: "the move repeats a card you called wrong",
 }
+
+
+def correction_question(words: str, said_on: str) -> str:
+    """The ONE question a move made over an uncited correction asks (STEP-16): your words, the day you said them,
+    and whether they still hold. Pure: the date is the caller's, as you would read it ("12 Oct")."""
+    said = " ".join(str(words or "").split())
+    if not said:
+        raise ValueError("a correction's question quotes the correction")
+    return f"You said “{said}” on {said_on}; does it still hold?"
+
+
+def called_wrong_question(headline: str) -> str:
+    """The ONE question a move repeating a card you called wrong asks (STEP-16)."""
+    said = " ".join(str(headline or "").split())
+    if not said:
+        raise ValueError("the question quotes the card you called wrong")
+    return f"You called “{said}” wrong; should we advise it again?"
 
 
 def _closed(value: Any, allowed: tuple[str, ...], name: str) -> str:
@@ -263,7 +292,8 @@ class CheckedReview:
                    version=str(raw.get("version") or CHECK_VERSION))
 
 
-__all__ = ["ANSWERED", "BY_ALTERNATIVE", "BY_CALCULATOR", "CARD_LINES", "CHECK_VERSION", "CORRECTED",
+__all__ = ["ANSWERED", "BY_ALTERNATIVE", "BY_CALCULATOR", "CALLED_WRONG", "CARD_LINES", "CHECK_VERSION",
+           "CORRECTED", "CORRECTION_UNHEEDED", "UNCITED_CORRECTION", "called_wrong_question", "correction_question",
            "HELD_BECAUSE", "HELD_MOVE",
            "CORRECTIONS", "CardWords", "CheckedReview", "DROPPED", "FATES", "HELD", "KEPT", "LINE_KINDS",
            "LineVerdict", "MISQUOTED", "NOTED", "NOTES", "NOTHING_STANDS", "NOT_OURS_TO_ANSWER",
