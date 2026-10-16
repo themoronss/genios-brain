@@ -58,6 +58,7 @@ from typing import Any
 
 from sqlalchemy import text
 
+from genios_engine.contracts import engine_read as E
 from genios_engine.contracts.expert_review import DossierCatalogue, number_tokens
 from genios_engine.platform.self_identity import PUBLIC_MAIL_DOMAINS, SelfIdentity
 
@@ -468,9 +469,11 @@ def _engine(p: DossierParts, cite: _Ids) -> Section:
     kind, authored and learned, each line its id and source — a PRIOR about the work, never a fact about this file. The
     corpus situations whose condition the file's facts could not answer are NAMED as ones that may apply; the file's
     situations that were not read are named and why; every family's cut is counted."""
-    read = p.engine
+    read = p.engine or E.EngineRead()
     lines = ["A prior about the work, not a fact about this file. Cite a line by its id only to say what a "
              "professional knows; it is not evidence."]
+    if p.engine_error:
+        lines.append(f"Not read — {p.engine_error}.")
     lines.extend(_engine_line(line, cite) for line in read.lines)
     for m in read.may_apply:
         lines.append(f"May apply, not shown — {m.situation}" + (f" ({m.capability})" if m.capability else "")
@@ -758,7 +761,7 @@ def build_dossier(parts: DossierParts) -> Dossier:
         by_name["company"] = _company(parts, cite)
         follows = OPTIONAL["company"] if OPTIONAL["company"] in names else OPTIONAL["answers"]
         names.insert(names.index(follows) + 1, "company")
-    if _has_engine(parts.engine):
+    if _has_engine(parts.engine) or parts.engine_error:
         # ⛔ ONLY WHEN THERE IS SOMETHING TO SAY (STEP-13b): a file the engine read nothing for is printed as before.
         by_name["engine"] = _engine(parts, cite)
         names.insert(names.index(OPTIONAL["engine"]) + 1, "engine")

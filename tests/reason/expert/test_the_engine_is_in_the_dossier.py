@@ -87,3 +87,10 @@ def test_the_dossier_stays_deterministic_with_the_engine():
     read = E.EngineRead(lines=(CAP, RULE))
     assert _with(engine=read).digest == _with(engine=read).digest
     assert _with(engine=read).digest != D.build_dossier(W.parts()).digest
+
+
+def test_an_engine_that_could_not_be_read_is_said_so_and_a_file_without_one_is_not_told():
+    d = _with(engine=None, engine_error="the engine could not be read for this file")
+    assert "Not read — the engine could not be read for this file." in d.text
+    assert "WHAT THE ENGINE KNOWS ABOUT ITS SITUATIONS" in d.text
+    assert _with(engine=None, engine_error=None).text == D.build_dossier(W.parts()).text
