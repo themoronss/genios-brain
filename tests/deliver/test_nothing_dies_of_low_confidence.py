@@ -210,12 +210,22 @@ def test_the_l5_receipt_count_is_six_and_they_are_the_measured_six():
     `platform/card_lifecycle` and one from before the migration (`06` D24) are not counted. Moved in
     the unit's own diff, as the note above asks.
 
-    ⛔ SCOPED TO L5, like L4's. An eighth means something was added without a decision.
+    ⛔ SEVEN -> EIGHT ON 2026-10-16, a decision: STEP-16 (`yc2_w27_s16 · M47.C3.L-integration.V2.U03`,
+    `speedrun008/YC-II W27/STEP-16` §8.4 item 9) —
+
+        every verified card names what closed it                            STEP-16
+
+    and it can fail: `tests/platform/test_a_verified_card_names_what_closed_it.py` writes a verified
+    resolution naming no event (three shapes) and the receipt counts it; one resolved through
+    `platform/card_lifecycle.resolve_cards` names its event and passes, and none in scope is
+    NOT_EXERCISED. Moved by the guard run of its group, recorded as the note above asks.
+
+    ⛔ SCOPED TO L5, like L4's. A ninth means something was added without a decision.
     """
     from genios_engine.platform import receipts as R
 
     l5 = [r.claim for r in R.receipts(None) if r.layer == "L5"]
-    assert len(l5) == 7, f"L5 receipt count moved: {l5}"
+    assert len(l5) == 8, f"L5 receipt count moved: {l5}"
     assert set(l5) == {
         "every delivered card carries a lane, or is labelled unrouted",
         "decisions become tracked commitments",
@@ -223,6 +233,7 @@ def test_the_l5_receipt_count_is_six_and_they_are_the_measured_six():
         "no card outlives its own window in a live state",
         "a card parked for want of a channel is revived when one appears",
         "no open card's subject is one of us",
+        "every verified card names what closed it",
         "every expired card says why",
     }
 
