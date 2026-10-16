@@ -1,9 +1,64 @@
 {
  "case_id": "F09",
  "source": "ideal_reader",
- "recorded_at": "20c262d1",
+ "recorded_at": "417c10fb",
  "answers": {
-  "79cb1438919079c86d7f2d30516a98f6bc410131d7952535324706d5f5690c0e": {
+  "96f0af10861f7527ef9db58831845c58c49f1ad2014309ea5004e01e8afa0e3b": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "introductions"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Arjun",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Arjun",
+        "start_offset": 103,
+        "end_offset": 108
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"introductions\"], \"entity_mentions\": [{\"surface_form\": \"Arjun\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Arjun\", \"start_offset\": 103, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
+   "input_tokens": 5498,
+   "output_tokens": 108,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a9a1197bcf14f45edc95c0fa2b2d3f9108460909d02465aad79f91c02f371def": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "To match you better, which stage are you raising at, and how much?",
+    "start_offset": 25,
+    "end_offset": 91,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"To match you better, which stage are you raising at, and how much?\", \"start_offset\": 25, \"end_offset\": 91, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1521,
+   "output_tokens": 54,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "aff8c27262d58b680c28073622cb5fc4f0043eec5c37e356fc6cdaaf3da5c4b0": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -168,63 +223,8 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Arjun wrote to Introly thanking it for the introductions so far and saying he is especially keen on investors in AI tooling.\", \"evidence\": [\"evt_#2\"], \"quote\": \"introductions so far. I'm especially keen on investors in AI tooling. Arjun\"}, {\"claim\": \"Introly answered in the same minute, asking which stage Nimbus Labs is raising at and how much, and said one line back would let it line up the next introductions.\", \"evidence\": [\"evt_#1\", \"num:usual_gap\"], \"quote\": \"much? Reply with one line and I'll line up the next introductions. Introly\"}, {\"claim\": \"The file holds one open ask: Introly's question, waiting on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The file counts no people introduced by Introly, although Arjun's mail thanks it for introductions so far.\", \"evidence\": [\"num:introductions\", \"evt_#2\"], \"quote\": \"Thanks for the introductions so far.\"}, {\"claim\": \"The only situation anchored on this file is typed as an investor's, in the fundraising domain.\", \"evidence\": [\"sit:sit_#1\"]}, {\"claim\": \"The file's history records no earlier verdict or outcome.\", \"evidence\": [\"hist:derived.history.prior_card_verdict@fundraising\", \"hist:derived.history.prior_outcome@fundraising\"]}], \"inferences\": [{\"claim\": \"Introly's question is the price of the next introductions: it cannot match Arjun with investors in AI tooling without the stage and size of the raise.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The stage is settled in the brief — the seed round — so only the amount is Arjun's to state.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"This is the connector's own bounded ask, not an investor conversation: answering it hands Introly its matching criteria and opens no conversation with any fund.\", \"based_on\": [\"fact:2\", \"fact:5\"]}, {\"claim\": \"The speed of Introly's answer marks it as an automated agent, so what matters is the content of the one line, not tone or follow-up.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: this file has no earlier verdict or outcome, and no playbook speaks for a connector's asks.\", \"based_on\": [\"hist:derived.history.prior_outcome@fundraising\", \"hist:derived.history.times_seen@fundraising\"]}], \"hypotheses\": [{\"proposition\": \"Introly will line up introductions to investors in AI tooling once it has the stage and the amount.\", \"needs\": \"Introductions from Introly arriving after Arjun's answer.\"}, {\"proposition\": \"Arjun may prefer not to state a round size to an automated matcher.\", \"needs\": \"Arjun's own word on what he is willing to share with it.\"}], \"unknowns\": [{\"question\": \"How much Nimbus Labs is raising.\", \"relevance\": \"It is the half of Introly's question the dossier cannot answer; the line cannot go without it, and it must come from Arjun, never be guessed.\"}, {\"question\": \"Which introductions Introly made so far, and what came of them.\", \"relevance\": \"If they led nowhere, the criteria Arjun gives now matter more; this file holds none of them.\"}, {\"question\": \"Whether Introly passes what it is told on to the investors it contacts.\", \"relevance\": \"It decides how Arjun words the amount.\"}], \"frames\": {\"primary\": \"Your own intro agent has asked one bounded question — the stage and size of the raise — and holds the next investor introductions until it is answered.\", \"rivals\": [\"An automated nudge that would line up introductions anyway, making the answer optional.\", \"A data-gathering step by a third-party matcher, where what Arjun shares travels beyond his control.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the brief and the file set the expectation: the connector works for Arjun, so its questions get a brief answer and it lines up introductions.\", \"actual\": \"Arjun told Introly what kind of investor he wants; Introly asked at once for the stage and amount, and the file holds no answer from Arjun yet.\"}, \"scenarios\": {\"do_nothing\": \"Introly's question stays open and the next introductions wait on it; the raise loses introductions you asked for.\", \"act\": \"A one-line answer — the seed round and its size — lets Introly line up introductions to investors in AI tooling.\", \"best\": \"Introly matches Arjun with investors in AI tooling who back seed rounds, and the introductions arrive soon after.\", \"worst\": \"The question sits unanswered and the introductions stop, or Arjun states an amount he later wishes he had not.\", \"signals_to_watch\": [\"New introductions from Introly after Arjun's answer\", \"A further question from Introly instead of introductions\", \"Introductions to investors outside AI tooling or outside the seed stage\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Raising the seed round is the brief's first goal, and the connector's next introductions to investors wait on this answer.\", \"The ask is one line and carries no date.\", \"What Arjun tells Introly can be corrected with another line.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Answer Introly's question in one line: the seed round, and the amount you are raising\", \"for_whom\": \"Introly, so it can line up the next introductions to investors in AI tooling\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"], \"to\": \"Introly\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If you would rather not state an amount to an automated matcher, give the stage alone and the kind of investor you want, and accept looser matches.\", \"wait_or_stop\": \"Nothing to wait for on our side. After answering, wait for the introductions Introly lines up, and stop feeding it details if what it lines up does not fit the seed round or AI tooling.\", \"done_when\": \"Introly has the stage and the amount from you, and the introductions it lines up next sit on their own files.\", \"draft\": \"Seed round — raising [amount]. As before, I'm most keen on investors in AI tooling. Arjun\"}",
    "framed": true,
-   "input_tokens": 3461,
+   "input_tokens": 3577,
    "output_tokens": 1521,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "96f0af10861f7527ef9db58831845c58c49f1ad2014309ea5004e01e8afa0e3b": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "positive",
-    "topics": [
-     "introductions"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Arjun",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Arjun",
-        "start_offset": 103,
-        "end_offset": 108
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"introductions\"], \"entity_mentions\": [{\"surface_form\": \"Arjun\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Arjun\", \"start_offset\": 103, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "framed": true,
-   "input_tokens": 5498,
-   "output_tokens": 108,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a9a1197bcf14f45edc95c0fa2b2d3f9108460909d02465aad79f91c02f371def": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "To match you better, which stage are you raising at, and how much?",
-    "start_offset": 25,
-    "end_offset": 91,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"To match you better, which stage are you raising at, and how much?\", \"start_offset\": 25, \"end_offset\": 91, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1521,
-   "output_tokens": 54,
    "model": "claude-haiku-4-5-20251001"
   },
   "b8bd14aa9a0785437442667a465d62169c4464c0ad817f72d455fe2fd3800463": {

@@ -1,7 +1,7 @@
 {
  "case_id": "F06",
  "source": "ideal_reader",
- "recorded_at": "20c262d1",
+ "recorded_at": "417c10fb",
  "answers": {
   "11c2e22ffda70a881234e907dd7ed0a62abd4bd3560086bcda55b8d0b1a351c5": {
    "site": "extraction",
@@ -62,6 +62,124 @@
    "output_tokens": 197,
    "model": "claude-haiku-4-5-20251001"
   },
+  "16d92d146ccff7fd12e1b7e0da08ed8d328e3f305085e5323b0d898e9d63c8eb": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Nikhil Bose, the CTO of Quillstack, to the founder and left the two to take it from there.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder"
+     },
+     {
+      "claim": "Nikhil Bose is the person this file's numbers follow, and no reply time has been measured either way.",
+      "evidence": [
+       "num:their_reply_time:nikhil@quillstack.test",
+       "num:your_reply_time:nikhil@quillstack.test"
+      ]
+     },
+     {
+      "claim": "The file sits under an account admin situation, seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "With the connector stepped back, the first move is the founder's.",
+      "based_on": [
+       "fact:1"
+      ]
+     },
+     {
+      "claim": "Why the connector paired the founder with Quillstack's CTO is not said: he could be a prospective user, a design partner or a technical peer.",
+      "based_on": [
+       "fact:1"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Quillstack could become a design partner, which the brief is looking for.",
+      "needs": "A first conversation with Nikhil about what his team needs."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "What Quillstack does and why its CTO was introduced.",
+      "relevance": "It decides whether this is a design partner prospect or a courtesy."
+     },
+     {
+      "question": "Whether Nikhil expects to write first.",
+      "relevance": "If he does, the founder's note is a courtesy; if not, silence ends the introduction."
+     }
+    ],
+    "frames": {
+     "primary": "A fresh introduction to Quillstack's CTO; the first move is yours, and its purpose is not yet known.",
+     "rivals": [
+      "A possible design partner, which the brief is looking for.",
+      "A courtesy match with no need behind it."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "intro",
+     "why": "Quillstack came to the founder through the connector's introduction of its CTO, and the work in this file is taking that introduction forward.",
+     "evidence": [
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "With no playbook, from the brief and the introduction: an introduced contact is answered by the founder promptly, aiming at a first conversation.",
+     "actual": "The introduction arrived and the connector stepped back; the founder has not written in this file."
+    },
+    "scenarios": {
+     "do_nothing": "The introduction cools; Nikhil may write first, or may not.",
+     "act": "A short note to Nikhil offering a call starts the conversation while the introduction is fresh.",
+     "best": "A call is booked and Quillstack becomes a design partner.",
+     "worst": "No note goes, or it goes to the connector rather than Nikhil, and the introduction lapses.",
+     "signals_to_watch": [
+      "Nikhil writing to the founder",
+      "A reminder from the connector"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "medium",
+     "reversibility": "reversible",
+     "reasons": [
+      "The connector stepped back and the first move is ours.",
+      "Landing design partners is a goal now, though Quillstack's fit is not known.",
+      "A note sent a day late can still start the conversation."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun Rao",
+     "what": "Write to Nikhil Bose directly, say in two lines what you are building, and offer a short call",
+     "for_whom": "Nikhil Bose at Quillstack",
+     "by_when": null,
+     "rests_on": [
+      "fact:1"
+     ],
+     "to": "Nikhil"
+    },
+    "alternative": "Look up what Quillstack builds first, then write by tomorrow with a sharper reason to talk.",
+    "wait_or_stop": "Do not wait long: the first move is ours. After the note, wait for Nikhil; follow up once after about a week, then stop.",
+    "done_when": "Nikhil has your note and a call is booked, or he has said there is no need.",
+    "draft": "Hi Nikhil, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and I'd love to hear what you're working on at Quillstack. Would a short call suit you? Best, Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Nikhil Bose, the CTO of Quillstack, to the founder and left the two to take it from there.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder\"}, {\"claim\": \"Nikhil Bose is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:nikhil@quillstack.test\", \"num:your_reply_time:nikhil@quillstack.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"With the connector stepped back, the first move is the founder's.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"Why the connector paired the founder with Quillstack's CTO is not said: he could be a prospective user, a design partner or a technical peer.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Quillstack could become a design partner, which the brief is looking for.\", \"needs\": \"A first conversation with Nikhil about what his team needs.\"}], \"unknowns\": [{\"question\": \"What Quillstack does and why its CTO was introduced.\", \"relevance\": \"It decides whether this is a design partner prospect or a courtesy.\"}, {\"question\": \"Whether Nikhil expects to write first.\", \"relevance\": \"If he does, the founder's note is a courtesy; if not, silence ends the introduction.\"}], \"frames\": {\"primary\": \"A fresh introduction to Quillstack's CTO; the first move is yours, and its purpose is not yet known.\", \"rivals\": [\"A possible design partner, which the brief is looking for.\", \"A courtesy match with no need behind it.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Quillstack came to the founder through the connector's introduction of its CTO, and the work in this file is taking that introduction forward.\", \"evidence\": [\"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the introduction: an introduced contact is answered by the founder promptly, aiming at a first conversation.\", \"actual\": \"The introduction arrived and the connector stepped back; the founder has not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"The introduction cools; Nikhil may write first, or may not.\", \"act\": \"A short note to Nikhil offering a call starts the conversation while the introduction is fresh.\", \"best\": \"A call is booked and Quillstack becomes a design partner.\", \"worst\": \"No note goes, or it goes to the connector rather than Nikhil, and the introduction lapses.\", \"signals_to_watch\": [\"Nikhil writing to the founder\", \"A reminder from the connector\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"The connector stepped back and the first move is ours.\", \"Landing design partners is a goal now, though Quillstack's fit is not known.\", \"A note sent a day late can still start the conversation.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Write to Nikhil Bose directly, say in two lines what you are building, and offer a short call\", \"for_whom\": \"Nikhil Bose at Quillstack\", \"by_when\": null, \"rests_on\": [\"fact:1\"], \"to\": \"Nikhil\"}, \"alternative\": \"Look up what Quillstack builds first, then write by tomorrow with a sharper reason to talk.\", \"wait_or_stop\": \"Do not wait long: the first move is ours. After the note, wait for Nikhil; follow up once after about a week, then stop.\", \"done_when\": \"Nikhil has your note and a call is booked, or he has said there is no need.\", \"draft\": \"Hi Nikhil, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and I'd love to hear what you're working on at Quillstack. Would a short call suit you? Best, Arjun\"}",
+   "framed": true,
+   "input_tokens": 3455,
+   "output_tokens": 961,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "2f274ab7d96e44f739b744d1ade18aa121084f0bc8f77b5ff47cf41bc5671faa": {
    "site": "relevance",
    "parsed": {
@@ -82,7 +200,7 @@
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
-  "47298da1e08d2b3aec48b7d7e28913497901f28b7fe2122fe1b5d2b7c2129f21": {
+  "429a70034b72b5b6707a9b9a20c419d583db4ea5b04628d07a740cafce5da6f1": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -236,7 +354,7 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Introly introduced Nikhil Bose, the CTO of Quillstack, to the founder and left the two to take it from there.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder\"}, {\"claim\": \"Nikhil replied about three days later, thanking the founder for the introduction and asking whether he is around on Thursday for a thirty-minute call, or what times work for him next week.\", \"evidence\": [\"evt_#1\", \"num:usual_gap\"], \"quote\": \"call? If not, what times work for you next week? Nikhil\"}, {\"claim\": \"Nikhil signs as CTO of Quillstack.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Nikhil Bose CTO, Quillstack\"}, {\"claim\": \"His question is open in this file and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"Nikhil Bose is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:nikhil@quillstack.test\", \"num:your_reply_time:nikhil@quillstack.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"A CTO who comes back within days with a proposed time is engaged; a quick answer keeps him so.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"The answer must go before Thursday, or the founder offers times next week instead, as Nikhil invited.\", \"based_on\": [\"fact:2\", \"fact:4\"]}, {\"claim\": \"Why the connector paired the founder with Quillstack's CTO is not said: he could be a prospective user, a design partner or a technical peer.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Quillstack could become a design partner, which the brief is looking for.\", \"needs\": \"The call, and what Nikhil says his team needs.\"}], \"unknowns\": [{\"question\": \"Whether the founder is free on Thursday.\", \"relevance\": \"If so, the answer is a yes and a time; if not, it offers times next week, as Nikhil invited.\"}, {\"question\": \"What Nikhil wants from the call.\", \"relevance\": \"It shapes whether the founder brings a demo, questions, or both.\"}, {\"question\": \"Whether the founder has answered Nikhil since the mailbox was last read.\", \"relevance\": \"A reply sent after the last sync would not show here, and the move would already be made.\"}], \"frames\": {\"primary\": \"An introduced contact, Quillstack's CTO, has asked for a thirty-minute call on Thursday or a time next week; the answer is owed by you.\", \"rivals\": [\"A prospective design partner reaching out with intent.\", \"A courtesy call to honour the connector's introduction, with no need behind it.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Quillstack came to the founder through the connector's introduction of its CTO, and the work in this file is taking that introduction forward: Nikhil has asked for a call.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the file: an introduced contact who proposes a time gets a prompt yes, or another time, from the founder.\", \"actual\": \"Nikhil answered the introduction after about three days, asked whether the founder is around on Thursday for a thirty-minute call or what times work next week; the founder has not written in this file, and the question waits on us.\"}, \"scenarios\": {\"do_nothing\": \"Thursday passes unanswered, and a CTO who reached out reads the silence as a no.\", \"act\": \"An answer now confirming Thursday with a time, or offering two times next week, books the call.\", \"best\": \"The call is booked, and Quillstack becomes a design partner or an early user.\", \"worst\": \"No answer goes before Thursday and the introduction goes cold.\", \"signals_to_watch\": [\"Nikhil accepting a time or sending an invite\", \"A nudge from Nikhil\", \"Thursday drawing near with no time agreed\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"A direct question from an introduced contact waits on us.\", \"The time Nikhil proposed is the coming Thursday, so the answer must go before then.\", \"Landing design partners is a goal now, and a CTO asking for a call could become one.\", \"If Thursday slips, times next week can still recover the call.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Answer Nikhil Bose: confirm Thursday for a thirty-minute call and ask what time suits him, or offer two times next week if Thursday does not work\", \"for_whom\": \"Nikhil Bose at Quillstack\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"], \"to\": \"Nikhil\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If you cannot commit a time today, send a short note saying Thursday is being checked and a time will follow by tomorrow.\", \"wait_or_stop\": \"Do not wait: the move is ours. Once a time is set, wait for the call; if Nikhil does not answer your note within a week, nudge once, then stop.\", \"done_when\": \"A thirty-minute call with Nikhil Bose is on both calendars.\", \"draft\": \"Hi Nikhil, thanks for reaching out, and good to meet you. Thursday works for a thirty-minute call. What time suits you? If Thursday fills up on your side, I can do early next week instead. Best, Arjun\"}",
    "framed": true,
-   "input_tokens": 3502,
+   "input_tokens": 3618,
    "output_tokens": 1344,
    "model": "claude-haiku-4-5-20251001"
   },
@@ -363,124 +481,6 @@
    "framed": true,
    "input_tokens": 1528,
    "output_tokens": 50,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ed1ad2c3179c9ad7abd911ddd74560c26765f9441cdcdf1c4b0fc569dcc416bd": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "Introly introduced Nikhil Bose, the CTO of Quillstack, to the founder and left the two to take it from there.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder"
-     },
-     {
-      "claim": "Nikhil Bose is the person this file's numbers follow, and no reply time has been measured either way.",
-      "evidence": [
-       "num:their_reply_time:nikhil@quillstack.test",
-       "num:your_reply_time:nikhil@quillstack.test"
-      ]
-     },
-     {
-      "claim": "The file sits under an account admin situation, seen for the first time.",
-      "evidence": [
-       "sit:sit_#1",
-       "hist:derived.history.times_seen@admin"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "With the connector stepped back, the first move is the founder's.",
-      "based_on": [
-       "fact:1"
-      ]
-     },
-     {
-      "claim": "Why the connector paired the founder with Quillstack's CTO is not said: he could be a prospective user, a design partner or a technical peer.",
-      "based_on": [
-       "fact:1"
-      ]
-     }
-    ],
-    "patterns": [],
-    "hypotheses": [
-     {
-      "proposition": "Quillstack could become a design partner, which the brief is looking for.",
-      "needs": "A first conversation with Nikhil about what his team needs."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "What Quillstack does and why its CTO was introduced.",
-      "relevance": "It decides whether this is a design partner prospect or a courtesy."
-     },
-     {
-      "question": "Whether Nikhil expects to write first.",
-      "relevance": "If he does, the founder's note is a courtesy; if not, silence ends the introduction."
-     }
-    ],
-    "frames": {
-     "primary": "A fresh introduction to Quillstack's CTO; the first move is yours, and its purpose is not yet known.",
-     "rivals": [
-      "A possible design partner, which the brief is looking for.",
-      "A courtesy match with no need behind it."
-     ]
-    },
-    "proposed_kind": {
-     "kind": "intro",
-     "why": "Quillstack came to the founder through the connector's introduction of its CTO, and the work in this file is taking that introduction forward.",
-     "evidence": [
-      "evt_#1"
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "With no playbook, from the brief and the introduction: an introduced contact is answered by the founder promptly, aiming at a first conversation.",
-     "actual": "The introduction arrived and the connector stepped back; the founder has not written in this file."
-    },
-    "scenarios": {
-     "do_nothing": "The introduction cools; Nikhil may write first, or may not.",
-     "act": "A short note to Nikhil offering a call starts the conversation while the introduction is fresh.",
-     "best": "A call is booked and Quillstack becomes a design partner.",
-     "worst": "No note goes, or it goes to the connector rather than Nikhil, and the introduction lapses.",
-     "signals_to_watch": [
-      "Nikhil writing to the founder",
-      "A reminder from the connector"
-     ]
-    },
-    "appraisal": {
-     "stakes": "medium",
-     "urgency": "medium",
-     "reversibility": "reversible",
-     "reasons": [
-      "The connector stepped back and the first move is ours.",
-      "Landing design partners is a goal now, though Quillstack's fit is not known.",
-      "A note sent a day late can still start the conversation."
-     ]
-    },
-    "mode": "act",
-    "next_move": {
-     "who": "Arjun Rao",
-     "what": "Write to Nikhil Bose directly, say in two lines what you are building, and offer a short call",
-     "for_whom": "Nikhil Bose at Quillstack",
-     "by_when": null,
-     "rests_on": [
-      "fact:1"
-     ],
-     "to": "Nikhil"
-    },
-    "alternative": "Look up what Quillstack builds first, then write by tomorrow with a sharper reason to talk.",
-    "wait_or_stop": "Do not wait long: the first move is ours. After the note, wait for Nikhil; follow up once after about a week, then stop.",
-    "done_when": "Nikhil has your note and a call is booked, or he has said there is no need.",
-    "draft": "Hi Nikhil, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and I'd love to hear what you're working on at Quillstack. Would a short call suit you? Best, Arjun"
-   },
-   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Nikhil Bose, the CTO of Quillstack, to the founder and left the two to take it from there.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder\"}, {\"claim\": \"Nikhil Bose is the person this file's numbers follow, and no reply time has been measured either way.\", \"evidence\": [\"num:their_reply_time:nikhil@quillstack.test\", \"num:your_reply_time:nikhil@quillstack.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"With the connector stepped back, the first move is the founder's.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"Why the connector paired the founder with Quillstack's CTO is not said: he could be a prospective user, a design partner or a technical peer.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Quillstack could become a design partner, which the brief is looking for.\", \"needs\": \"A first conversation with Nikhil about what his team needs.\"}], \"unknowns\": [{\"question\": \"What Quillstack does and why its CTO was introduced.\", \"relevance\": \"It decides whether this is a design partner prospect or a courtesy.\"}, {\"question\": \"Whether Nikhil expects to write first.\", \"relevance\": \"If he does, the founder's note is a courtesy; if not, silence ends the introduction.\"}], \"frames\": {\"primary\": \"A fresh introduction to Quillstack's CTO; the first move is yours, and its purpose is not yet known.\", \"rivals\": [\"A possible design partner, which the brief is looking for.\", \"A courtesy match with no need behind it.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Quillstack came to the founder through the connector's introduction of its CTO, and the work in this file is taking that introduction forward.\", \"evidence\": [\"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the introduction: an introduced contact is answered by the founder promptly, aiming at a first conversation.\", \"actual\": \"The introduction arrived and the connector stepped back; the founder has not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"The introduction cools; Nikhil may write first, or may not.\", \"act\": \"A short note to Nikhil offering a call starts the conversation while the introduction is fresh.\", \"best\": \"A call is booked and Quillstack becomes a design partner.\", \"worst\": \"No note goes, or it goes to the connector rather than Nikhil, and the introduction lapses.\", \"signals_to_watch\": [\"Nikhil writing to the founder\", \"A reminder from the connector\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"The connector stepped back and the first move is ours.\", \"Landing design partners is a goal now, though Quillstack's fit is not known.\", \"A note sent a day late can still start the conversation.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Write to Nikhil Bose directly, say in two lines what you are building, and offer a short call\", \"for_whom\": \"Nikhil Bose at Quillstack\", \"by_when\": null, \"rests_on\": [\"fact:1\"], \"to\": \"Nikhil\"}, \"alternative\": \"Look up what Quillstack builds first, then write by tomorrow with a sharper reason to talk.\", \"wait_or_stop\": \"Do not wait long: the first move is ours. After the note, wait for Nikhil; follow up once after about a week, then stop.\", \"done_when\": \"Nikhil has your note and a call is booked, or he has said there is no need.\", \"draft\": \"Hi Nikhil, thanks for taking the introduction. I'm building Nimbus Labs, an AI chief of staff for founders, and I'd love to hear what you're working on at Quillstack. Would a short call suit you? Best, Arjun\"}",
-   "framed": true,
-   "input_tokens": 3339,
-   "output_tokens": 961,
    "model": "claude-haiku-4-5-20251001"
   },
   "f4c4b494c08d0eb5dd8d8499925edf34b02278213789926e9a34d0fa00d02548": {

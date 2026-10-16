@@ -1,7 +1,7 @@
 {
  "case_id": "F62",
  "source": "ideal_reader",
- "recorded_at": "20c262d1",
+ "recorded_at": "417c10fb",
  "answers": {
   "0f5d155b63b37e93b13f0ae60fefd39264e2bd54426f395fe5feb2ed6dbbd117": {
    "site": "resolution",
@@ -96,120 +96,6 @@
    "output_tokens": 47,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3538550bd535c79d8bd8c21fdd7619f6d224b08c44bb04258fb3915753ef1f5a": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "Introly introduced Farhan Ali, who runs Bluewater Studio, a design agency of twenty.",
-      "evidence": [
-       "evt_#2"
-      ],
-      "quote": "Farhan Ali, who runs Bluewater Studio, a design agency of twenty"
-     },
-     {
-      "claim": "Farhan replied that he has sent you an invite for Thursday 14 August at 4 pm IST to see the product.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "I've sent you an invite for Thursday 14 August at 4 pm IST to see the product"
-     },
-     {
-      "claim": "The demo is booked on the calendar.",
-      "evidence": [
-       "evt_#3"
-      ]
-     },
-     {
-      "claim": "The file sits under a situation seen for the first time.",
-      "evidence": [
-       "sit:sit_#1",
-       "hist:derived.history.times_seen@admin"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "Nothing waits on you before the demo: Farhan booked it himself and it is on the calendar.",
-      "based_on": [
-       "fact:2",
-       "fact:3"
-      ]
-     }
-    ],
-    "patterns": [
-     {
-      "kind": "base_rate",
-      "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
-      "based_on": [
-       "hist:derived.history.times_seen@admin"
-      ]
-     }
-    ],
-    "hypotheses": [
-     {
-      "proposition": "Bluewater Studio may become a customer.",
-      "needs": "The demo, and what Farhan's agency needs."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "What Farhan wants to see in the product.",
-      "relevance": "It shapes the demo."
-     }
-    ],
-    "frames": {
-     "primary": "An introduced founder booked a demo himself; the call is on the calendar and nothing is owed before it.",
-     "rivals": [
-      "A prospect who will want a short brief before the call.",
-      "A courtesy demo with no need behind it."
-     ]
-    },
-    "proposed_kind": {
-     "kind": "intro",
-     "why": "Farhan Ali came to you through the connector's introduction and booked a demo.",
-     "evidence": [
-      "evt_#2",
-      "evt_#1"
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "Without a playbook, from the brief and the file: once a call is booked, the file waits for it.",
-     "actual": "Farhan booked the demo the day of the introduction; it is on the calendar."
-    },
-    "scenarios": {
-     "do_nothing": "The demo happens as booked.",
-     "act": "There is nothing to do before the demo but turn up prepared.",
-     "best": "The demo goes well and Bluewater Studio becomes a customer.",
-     "worst": "The demo is missed.",
-     "signals_to_watch": [
-      "Farhan moving or cancelling the invite",
-      "The day of the demo"
-     ]
-    },
-    "appraisal": {
-     "stakes": "medium",
-     "urgency": "low",
-     "reversibility": "reversible",
-     "reasons": [
-      "The demo is booked and nothing is owed before it.",
-      "A booked call can be moved, so nothing is lost by waiting."
-     ]
-    },
-    "mode": "wait",
-    "next_move": null,
-    "alternative": "If you want to prepare, read Farhan's two mails again before the demo.",
-    "wait_or_stop": "Wait for the demo; if Farhan moves or cancels it, the file reads it again.",
-    "done_when": "The demo with Farhan Ali has taken place.",
-    "draft": null
-   },
-   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Farhan Ali, who runs Bluewater Studio, a design agency of twenty.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Farhan Ali, who runs Bluewater Studio, a design agency of twenty\"}, {\"claim\": \"Farhan replied that he has sent you an invite for Thursday 14 August at 4 pm IST to see the product.\", \"evidence\": [\"evt_#1\"], \"quote\": \"I've sent you an invite for Thursday 14 August at 4 pm IST to see the product\"}, {\"claim\": \"The demo is booked on the calendar.\", \"evidence\": [\"evt_#3\"]}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Nothing waits on you before the demo: Farhan booked it himself and it is on the calendar.\", \"based_on\": [\"fact:2\", \"fact:3\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.\", \"based_on\": [\"hist:derived.history.times_seen@admin\"]}], \"hypotheses\": [{\"proposition\": \"Bluewater Studio may become a customer.\", \"needs\": \"The demo, and what Farhan's agency needs.\"}], \"unknowns\": [{\"question\": \"What Farhan wants to see in the product.\", \"relevance\": \"It shapes the demo.\"}], \"frames\": {\"primary\": \"An introduced founder booked a demo himself; the call is on the calendar and nothing is owed before it.\", \"rivals\": [\"A prospect who will want a short brief before the call.\", \"A courtesy demo with no need behind it.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Farhan Ali came to you through the connector's introduction and booked a demo.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: once a call is booked, the file waits for it.\", \"actual\": \"Farhan booked the demo the day of the introduction; it is on the calendar.\"}, \"scenarios\": {\"do_nothing\": \"The demo happens as booked.\", \"act\": \"There is nothing to do before the demo but turn up prepared.\", \"best\": \"The demo goes well and Bluewater Studio becomes a customer.\", \"worst\": \"The demo is missed.\", \"signals_to_watch\": [\"Farhan moving or cancelling the invite\", \"The day of the demo\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The demo is booked and nothing is owed before it.\", \"A booked call can be moved, so nothing is lost by waiting.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If you want to prepare, read Farhan's two mails again before the demo.\", \"wait_or_stop\": \"Wait for the demo; if Farhan moves or cancels it, the file reads it again.\", \"done_when\": \"The demo with Farhan Ali has taken place.\", \"draft\": null}",
-   "framed": true,
-   "input_tokens": 3495,
-   "output_tokens": 714,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "41d3cffa516db123b81fdf1d1a75430ae4217281bfd2d7f55139706005e66936": {
    "site": "resolution",
    "parsed": {
@@ -227,138 +113,7 @@
    "output_tokens": 50,
    "model": "claude-haiku-4-5-20251001"
   },
-  "64447a7298ba9e8f9af1ac5bb1c4655eb4525be0859a18fe053b07cfb91cc9e2": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "positive",
-    "topics": [
-     "intro call"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Ira Menon",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Ira Menon",
-        "start_offset": 13,
-        "end_offset": 22
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Lanternfish",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Lanternfish",
-        "start_offset": 24,
-        "end_offset": 35
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "business_facts": [
-     {
-      "field": "person.title",
-      "subject": "Ira Menon",
-      "value": "Product Lead",
-      "standing": "observed",
-      "evidence": [
-       {
-        "quote": "Product Lead, Lanternfish",
-        "start_offset": 177,
-        "end_offset": 202
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "a first call"
-    },
-    "questions": [
-     {
-      "text": "Does Tuesday 12 August at 11 am work for a call with Ira?",
-      "asked_by": "Ira Menon",
-      "asked_of": "Arjun Rao",
-      "evidence": [
-       {
-        "quote": "Would Tuesday 12 August at 11 am work for a call?",
-        "start_offset": 71,
-        "end_offset": 120
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "scheduling_proposals": [
-     {
-      "proposer": "Ira Menon",
-      "text": "Tuesday 12 August at 11 am",
-      "evidence_text": "Would Tuesday 12 August at 11 am work for a call?"
-     }
-    ],
-    "implied_actions": [
-     "accept or counter Ira's proposed time"
-    ]
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"intro call\"], \"entity_mentions\": [{\"surface_form\": \"Ira Menon\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira Menon\", \"start_offset\": 13, \"end_offset\": 22}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lanternfish\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lanternfish\", \"start_offset\": 24, \"end_offset\": 35}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Ira Menon\", \"value\": \"Product Lead\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Product Lead, Lanternfish\", \"start_offset\": 177, \"end_offset\": 202}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"a first call\"}, \"questions\": [{\"text\": \"Does Tuesday 12 August at 11 am work for a call with Ira?\", \"asked_by\": \"Ira Menon\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Would Tuesday 12 August at 11 am work for a call?\", \"start_offset\": 71, \"end_offset\": 120}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Ira Menon\", \"text\": \"Tuesday 12 August at 11 am\", \"evidence_text\": \"Would Tuesday 12 August at 11 am work for a call?\"}], \"implied_actions\": [\"accept or counter Ira's proposed time\"]}",
-   "framed": true,
-   "input_tokens": 5527,
-   "output_tokens": 341,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "73fc0b9cc91aba193648643c58c27195239d7460d66779d8e7b5b91946208b2e": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1107,
-   "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "78a735dabcdb5db6afe8133d8c38e422b7df555d231a68859502e2da0229ffda": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "I'll let you two take it from here.",
-    "start_offset": 221,
-    "end_offset": 256,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 221, \"end_offset\": 256, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1547,
-   "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b01d1d9281db1957e46025d1193013b6a13c662c0674c7d2d3d7d49265d9f8e2": {
+  "4b13dc2feb83b16b9439886b022d5817da5f6a29c8efe29091ab5332b58dfc76": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -495,8 +250,253 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Introly introduced Ira Menon, a product lead at Lanternfish, and left the two of you to take it from there.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Ira Menon, a product lead at Lanternfish\"}, {\"claim\": \"Ira asked whether Tuesday 12 August at 11 am works for a call, or for a time that suits you.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Would Tuesday 12 August at 11 am work for a call? If not, send me a time that suits you.\"}, {\"claim\": \"She signs as Product Lead at Lanternfish.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Ira Menon Product Lead, Lanternfish\"}, {\"claim\": \"The ask is open in this file and waits on you.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The move is yours: one reply answers Ira's ask.\", \"based_on\": [\"fact:2\", \"fact:4\"]}, {\"claim\": \"Introly has done its part; the reply goes to Ira, never to the connector.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.\", \"based_on\": [\"hist:derived.history.times_seen@admin\"]}], \"hypotheses\": [{\"proposition\": \"Lanternfish may be a fit for the product.\", \"needs\": \"The call, and what Ira asks.\"}], \"unknowns\": [{\"question\": \"Whether Tuesday 12 August at 11 am is free on your calendar.\", \"relevance\": \"It decides whether you accept or counter.\"}], \"frames\": {\"primary\": \"An introduced product lead proposed a call for Tuesday; your answer is owed.\", \"rivals\": [\"A product lead exploring a fit with Lanternfish.\", \"A courtesy call, with nothing behind it yet.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Ira Menon came to you through the connector's introduction and proposed a call.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: a contact who proposes a time gets an answer before it.\", \"actual\": \"Ira proposed Tuesday 12 August at 11 am; nothing from you is in the file.\"}, \"scenarios\": {\"do_nothing\": \"Tuesday passes unanswered, and a contact who proposed a time reads the silence as no.\", \"act\": \"A short answer now books the call she proposed.\", \"best\": \"The call happens on Tuesday and leads somewhere useful.\", \"worst\": \"No answer goes before Tuesday, or one goes to the connector, and the call is lost.\", \"signals_to_watch\": [\"Ira accepting the invite\", \"Tuesday drawing near with nothing agreed\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Ira proposed a time and waits on your answer.\", \"Her proposed day is tomorrow.\", \"A missed call can be offered again, so a wrong move is reversible.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"You\", \"what\": \"Accept Ira Menon's call on Tuesday 12 August at 11 am, or send her a time that suits you\", \"for_whom\": \"Ira Menon at Lanternfish\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"], \"to\": \"Ira Menon\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If Tuesday does not work, reply to Ira with a time that suits you, as she asked.\", \"wait_or_stop\": \"Do not wait: the move is yours. Once you have answered, wait for Ira; if no answer comes within a week, nudge once, then stop.\", \"done_when\": \"A call with Ira Menon is on both calendars.\", \"draft\": \"Hi Ira, thanks, and good to meet you. Tuesday 12 August at 11 am works for me. I'll send an invite. Best\"}",
    "framed": true,
-   "input_tokens": 3442,
+   "input_tokens": 3558,
    "output_tokens": 927,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4d6953eaeda393b53040ffa3579c4ad3cf0bf45c07176db0e3a29fe8123322d8": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Farhan Ali, who runs Bluewater Studio, a design agency of twenty.",
+      "evidence": [
+       "evt_#2"
+      ],
+      "quote": "Farhan Ali, who runs Bluewater Studio, a design agency of twenty"
+     },
+     {
+      "claim": "Farhan replied that he has sent you an invite for Thursday 14 August at 4 pm IST to see the product.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "I've sent you an invite for Thursday 14 August at 4 pm IST to see the product"
+     },
+     {
+      "claim": "The demo is booked on the calendar.",
+      "evidence": [
+       "evt_#3"
+      ]
+     },
+     {
+      "claim": "The file sits under a situation seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Nothing waits on you before the demo: Farhan booked it himself and it is on the calendar.",
+      "based_on": [
+       "fact:2",
+       "fact:3"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+      "based_on": [
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Bluewater Studio may become a customer.",
+      "needs": "The demo, and what Farhan's agency needs."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "What Farhan wants to see in the product.",
+      "relevance": "It shapes the demo."
+     }
+    ],
+    "frames": {
+     "primary": "An introduced founder booked a demo himself; the call is on the calendar and nothing is owed before it.",
+     "rivals": [
+      "A prospect who will want a short brief before the call.",
+      "A courtesy demo with no need behind it."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "intro",
+     "why": "Farhan Ali came to you through the connector's introduction and booked a demo.",
+     "evidence": [
+      "evt_#2",
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, from the brief and the file: once a call is booked, the file waits for it.",
+     "actual": "Farhan booked the demo the day of the introduction; it is on the calendar."
+    },
+    "scenarios": {
+     "do_nothing": "The demo happens as booked.",
+     "act": "There is nothing to do before the demo but turn up prepared.",
+     "best": "The demo goes well and Bluewater Studio becomes a customer.",
+     "worst": "The demo is missed.",
+     "signals_to_watch": [
+      "Farhan moving or cancelling the invite",
+      "The day of the demo"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The demo is booked and nothing is owed before it.",
+      "A booked call can be moved, so nothing is lost by waiting."
+     ]
+    },
+    "mode": "wait",
+    "next_move": null,
+    "alternative": "If you want to prepare, read Farhan's two mails again before the demo.",
+    "wait_or_stop": "Wait for the demo; if Farhan moves or cancels it, the file reads it again.",
+    "done_when": "The demo with Farhan Ali has taken place.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Farhan Ali, who runs Bluewater Studio, a design agency of twenty.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Farhan Ali, who runs Bluewater Studio, a design agency of twenty\"}, {\"claim\": \"Farhan replied that he has sent you an invite for Thursday 14 August at 4 pm IST to see the product.\", \"evidence\": [\"evt_#1\"], \"quote\": \"I've sent you an invite for Thursday 14 August at 4 pm IST to see the product\"}, {\"claim\": \"The demo is booked on the calendar.\", \"evidence\": [\"evt_#3\"]}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Nothing waits on you before the demo: Farhan booked it himself and it is on the calendar.\", \"based_on\": [\"fact:2\", \"fact:3\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.\", \"based_on\": [\"hist:derived.history.times_seen@admin\"]}], \"hypotheses\": [{\"proposition\": \"Bluewater Studio may become a customer.\", \"needs\": \"The demo, and what Farhan's agency needs.\"}], \"unknowns\": [{\"question\": \"What Farhan wants to see in the product.\", \"relevance\": \"It shapes the demo.\"}], \"frames\": {\"primary\": \"An introduced founder booked a demo himself; the call is on the calendar and nothing is owed before it.\", \"rivals\": [\"A prospect who will want a short brief before the call.\", \"A courtesy demo with no need behind it.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Farhan Ali came to you through the connector's introduction and booked a demo.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: once a call is booked, the file waits for it.\", \"actual\": \"Farhan booked the demo the day of the introduction; it is on the calendar.\"}, \"scenarios\": {\"do_nothing\": \"The demo happens as booked.\", \"act\": \"There is nothing to do before the demo but turn up prepared.\", \"best\": \"The demo goes well and Bluewater Studio becomes a customer.\", \"worst\": \"The demo is missed.\", \"signals_to_watch\": [\"Farhan moving or cancelling the invite\", \"The day of the demo\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The demo is booked and nothing is owed before it.\", \"A booked call can be moved, so nothing is lost by waiting.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If you want to prepare, read Farhan's two mails again before the demo.\", \"wait_or_stop\": \"Wait for the demo; if Farhan moves or cancels it, the file reads it again.\", \"done_when\": \"The demo with Farhan Ali has taken place.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 3611,
+   "output_tokens": 714,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "64447a7298ba9e8f9af1ac5bb1c4655eb4525be0859a18fe053b07cfb91cc9e2": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "intro call"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ira Menon",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ira Menon",
+        "start_offset": 13,
+        "end_offset": 22
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Lanternfish",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Lanternfish",
+        "start_offset": 24,
+        "end_offset": 35
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Ira Menon",
+      "value": "Product Lead",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Product Lead, Lanternfish",
+        "start_offset": 177,
+        "end_offset": 202
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "a first call"
+    },
+    "questions": [
+     {
+      "text": "Does Tuesday 12 August at 11 am work for a call with Ira?",
+      "asked_by": "Ira Menon",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Would Tuesday 12 August at 11 am work for a call?",
+        "start_offset": 71,
+        "end_offset": 120
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Ira Menon",
+      "text": "Tuesday 12 August at 11 am",
+      "evidence_text": "Would Tuesday 12 August at 11 am work for a call?"
+     }
+    ],
+    "implied_actions": [
+     "accept or counter Ira's proposed time"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"intro call\"], \"entity_mentions\": [{\"surface_form\": \"Ira Menon\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira Menon\", \"start_offset\": 13, \"end_offset\": 22}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lanternfish\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lanternfish\", \"start_offset\": 24, \"end_offset\": 35}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Ira Menon\", \"value\": \"Product Lead\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Product Lead, Lanternfish\", \"start_offset\": 177, \"end_offset\": 202}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"a first call\"}, \"questions\": [{\"text\": \"Does Tuesday 12 August at 11 am work for a call with Ira?\", \"asked_by\": \"Ira Menon\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Would Tuesday 12 August at 11 am work for a call?\", \"start_offset\": 71, \"end_offset\": 120}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Ira Menon\", \"text\": \"Tuesday 12 August at 11 am\", \"evidence_text\": \"Would Tuesday 12 August at 11 am work for a call?\"}], \"implied_actions\": [\"accept or counter Ira's proposed time\"]}",
+   "framed": true,
+   "input_tokens": 5527,
+   "output_tokens": 341,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "73fc0b9cc91aba193648643c58c27195239d7460d66779d8e7b5b91946208b2e": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1107,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "78a735dabcdb5db6afe8133d8c38e422b7df555d231a68859502e2da0229ffda": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 221,
+    "end_offset": 256,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 221, \"end_offset\": 256, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1547,
+   "output_tokens": 47,
    "model": "claude-haiku-4-5-20251001"
   },
   "c0abee66647b7b6e602daa0985c561d826bf33e1f5f3269bd989b6ca82f1f38a": {

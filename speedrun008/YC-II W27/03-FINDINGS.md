@@ -517,7 +517,7 @@ ideal reader's recorded answers (cassettes recorded at `b47239c9`, `06-DECISIONS
 spend). `scripts/golden_score.py --assert-recorded` holds the two lines below to every later run.
 
 ```
-founder golden set   must-detect  35/50 (12 not expressible)   must-abstain  14/14 (0 not exercised)   forbidden outputs  0
+founder golden set   must-detect  49/53 (0 not expressible)   must-abstain  14/14 (0 not exercised)   forbidden outputs  0
 atlas replays 01–07  passing  11/80   blocked  2/80   not expressible  67
 ```
 
@@ -869,21 +869,41 @@ ANSWERED and its card ends `verified` by that mail; F57 still passes, now judged
 | F66 | new → **pass**: one correction for every investor file; both files reviewed again, both cite it, both wait — their cards cleared |
 | F67 | new → **pass**: a bare wrong on one programme's card brings back that file only and writes no correction; the other programme keeps its card |
 
-**16 Oct, the integration line `yc2w27-int16`:** three boards meet here — STEP-15's above (47/50 · 14/14 · Atlas 12/80,
-measured on STEP-14 before its fix wave), STEP-14's fix wave (35/50 · 14/14 · Atlas 11/80) and STEP-16's (39/53 · 14/14 ·
-Atlas 12/80, on STEP-14 before its fix wave). The two lines at the top of this section and the table below are restated
-after the one re-record on the merged tree.
+**Re-recorded 2026-10-16 on the integration line `yc2w27-int16`** (STEP-14 with its crosscheck fix wave, 7a578a9e;
+STEP-15 merged at 454f9dbb; STEP-16 at 417c10fb). Three re-records met here — the fix wave's (d9a5d8c8), STEP-15's merge
+(which re-recorded nothing: the brief is composed from the reviews) and STEP-16's (676d853e, b0810aad, and F57, F65–F67).
+None was hand-merged: the merges carried the fix wave's cassettes plus STEP-16's three new ones, and ONE re-record ran on
+the merged tree from the ideal reader (no spend), in the house order, each step on a fresh scratch database — the sweep
+(every one of the 67 cases), the citations (512 over 62 cases, byte for byte: no authored citation moved), the
+first-connect door, the re-sync. Of the 79 recordings (67 cases, 10 doors, 2 re-syncs), 76 are STEP-16's answers
+byte for byte (STEP-16's prompts — `expert-review.v4`, check.v4, the dossier's corrections and closed asks — are the
+merged tree's); F25's and its door's are the fix wave's rewording (finding 7) under those prompts; F23's lost its two
+narrator answers — STEP-15's small move (s15-D3) leaves its registration a brief line, with no card to narrate. No
+expert answer was edited. `golden_score.py --assert-recorded` reads the two lines above. Measured against each step's
+own board:
+
+| moved on the integration line | from → to |
+|---|---|
+| F08, F14, F20, F21, F22, F23, F30, F45, F53, F54, F55 | against STEP-14's fix wave (35/50) and STEP-16 (39/53): not expressible → **pass** — STEP-15's brief-only cases, judged on the brief as on STEP-15's own board; F20 and F23 a brief line and no card (s15-D3) |
+| F18 | against STEP-14's fix wave and STEP-16: not expressible → **fail**, *no stage to read* (`06` D29), as on STEP-15's board |
+| F63 | against STEP-15 (47/50) and STEP-16 (39/53), each measured on STEP-14 before its fix wave: pass → **lost in reasoning** — the fix wave's `headline_says` (finding 10): its card asks whether Ishaan will write first, never his address. Strict xfail, `blocked_on` |
+| F65, F66, F67 | against STEP-14's fix wave and STEP-15 (50 cases each): new → **pass**, STEP-16's corrections, as on STEP-16's board |
+| F57 | **pass** on every board — judged here on its `verified` end, by the signed NDA's mail (STEP-16) |
+| atlas replays | against STEP-15 and STEP-16: passing 12 → **11**, blocked 1 → **2** — replay 02 m05, the fix wave's (F63's card); as on the fix wave's board |
+
+So 35 + 11 (STEP-15's brief) + 3 (STEP-16's cases) = 49 of 53 — and 47 − F63 + 3, and 39 + 11 − F63: the three
+boards agree. No must-abstain case and no forbidden output moved.
 
 The table below is the board's state now.
 
 | | |
 |---|---|
-| must-detect that pass · 35 | F03, F04, F10, F13, F26, F28, F42, F44, F46 (as before STEP-12), F09, F11, F16, F17, F27, F29, F47, F48, F49, F51, F57 (STEP-12), F01, F52 (STEP-13 — the question card), F02, F05, F06, F07, F12, F19, F24, F25, F50 (STEP-14 — the living card), F59, F60, F61, F62 (STEP-14 — replay 02) |
+| must-detect that pass · 49 | F03, F04, F10, F13, F26, F28, F42, F44, F46 (as before STEP-12), F09, F11, F16, F17, F27, F29, F47, F48, F49, F51, F57 (STEP-12; judged on its `verified` end since STEP-16), F01, F52 (STEP-13 — the question card), F02, F05, F06, F07, F12, F19, F24, F25, F50 (STEP-14 — the living card), F59, F60, F61, F62 (STEP-14 — replay 02), F08, F14, F20, F21, F22, F23, F30, F45, F53, F54, F55 (STEP-15 — the morning brief), F65, F66, F67 (STEP-16 — your corrections) |
 | must-detect lost at the gate · 1 | F56 (a vendor's renewal notice — the junk filter's prompt drops plan notices; no vendor kind) |
 | must-detect lost before memory · 0 | — (ten before STEP-05) |
-| must-detect lost in reasoning · 1 | F63 (its card asks whether Ishaan will write first, never his address — STEP-14's fix wave; owner STEP-13b) — eight before STEP-14: F176's second cards, and F19 |
-| must-detect with no stage to read · 1 | F15 (the outreach wave: each fund reviewed once, *wait*, never again — F169, `06` D57) |
-| not expressible · 12 | F08, F14, F18, F20–F23, F45, F53, F54, F55 (`brief only` — `STEP-15`), F30 (the screen door) |
+| must-detect lost in reasoning · 1 | F63 (its card asks whether Ishaan will write first, never his address — STEP-14's fix wave; owner STEP-13b) — eight before STEP-14: F176's second cards, and F19; F53 on the first measurement of STEP-15's merge, until its section was restated — s15-F22 |
+| must-detect with no stage to read · 2 | F15 (the outreach wave: each fund reviewed once, *wait*, never again — F169, `06` D57), F18 (a fund's round notice, archived at the gate — `06` D29: no file, no review, no brief line) |
+| not expressible · 0 | — (twelve before STEP-15: the *brief only* cases F08, F14, F18, F20–F23, F45, F53, F54, F55 and F30's screen door; F30's WhatsApp half stays declared in its `not_expressible`) |
 | must-abstain that pass · 14 | F31 (the assignment), F32 (archived, and Lakshya's social read and not carded — STEP-07), F33, F34 (archived), F35, F36, F37 (the connector is never the person to reply to — since STEP-09 no reply situation about it arises at all), F38 (an answer elsewhere closes the ask), F39, F40 (a meeting nobody confirmed, not recapped — STEP-12), F41, F43 (the founder's own mail, in memory, not carded), F58 (the company domain that is also the platform's — still the founder), F64 (a declined introduction — STEP-14) |
 | must-abstain not exercised · 0 | — (four before STEP-05) |
 | must-abstain that fail · 0 | — (F40 before STEP-12; F38 transiently, within STEP-15's own commit, s15-F17; F64 transiently, on the first measurement of the merge, s15-F20) |

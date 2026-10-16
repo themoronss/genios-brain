@@ -1,7 +1,7 @@
 {
  "case_id": "F17",
  "source": "ideal_reader",
- "recorded_at": "20c262d1",
+ "recorded_at": "417c10fb",
  "answers": {
   "2370705a80912229415dc7800dc051894eacf7d1c42ddbf70b66e71460ea3d13": {
    "site": "extraction",
@@ -41,7 +41,156 @@
    "output_tokens": 110,
    "model": "claude-haiku-4-5-20251001"
   },
-  "32ff319da569307447bf32369f325b063e6d54cf53e9ff5f89d183ce8d4f572b": {
+  "5d1562b1034a340802f3dd20300863cf049bd53f62f8c84d02ca79305f790813": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1546,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6be1c2f2fd05488210be552a17f7babb4df390af7839278b1884897db9642e40": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1026,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6ccae95fa6cdda8e12fba662a06fc7090bc88eb0db718896772f71acb10be5b6": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "accelerator application",
+     "interview"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Amira Saleh",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Amira Saleh",
+        "start_offset": 166,
+        "end_offset": 177
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Gulf Launchpad",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Gulf Launchpad",
+        "start_offset": 0,
+        "end_offset": 14
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "decision_states": [
+     {
+      "subject": "Gulf Launchpad cohort 9 application",
+      "state": "pending",
+      "owner": "Gulf Launchpad",
+      "evidence": [
+       {
+        "quote": "Your application has moved to the interview stage.",
+        "start_offset": 48,
+        "end_offset": 98
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Book a 30-minute interview slot by 10 Oct",
+      "asked_by": "Amira Saleh",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Please book a 30-minute slot using the scheduling link by 10 Oct.",
+        "start_offset": 99,
+        "end_offset": 164
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "10 Oct",
+      "earliest": "2026-10-10T00:00:00+05:30",
+      "latest": "2026-10-10T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-10-01T07:30:00Z",
+      "evidence": [
+       {
+        "quote": "10 Oct",
+        "start_offset": 157,
+        "end_offset": 163
+       }
+      ]
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Amira Saleh",
+      "value": "Programme Manager",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Programme Manager, Gulf Launchpad",
+        "start_offset": 178,
+        "end_offset": 211
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "book the interview"
+    },
+    "implied_actions": [
+     "book an interview slot by 10 Oct"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"accelerator application\", \"interview\"], \"entity_mentions\": [{\"surface_form\": \"Amira Saleh\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Amira Saleh\", \"start_offset\": 166, \"end_offset\": 177}], \"confidence_bp\": 9000}, {\"surface_form\": \"Gulf Launchpad\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Gulf Launchpad\", \"start_offset\": 0, \"end_offset\": 14}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"Gulf Launchpad cohort 9 application\", \"state\": \"pending\", \"owner\": \"Gulf Launchpad\", \"evidence\": [{\"quote\": \"Your application has moved to the interview stage.\", \"start_offset\": 48, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Book a 30-minute interview slot by 10 Oct\", \"asked_by\": \"Amira Saleh\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Please book a 30-minute slot using the scheduling link by 10 Oct.\", \"start_offset\": 99, \"end_offset\": 164}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"10 Oct\", \"earliest\": \"2026-10-10T00:00:00+05:30\", \"latest\": \"2026-10-10T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-10-01T07:30:00Z\", \"evidence\": [{\"quote\": \"10 Oct\", \"start_offset\": 157, \"end_offset\": 163}]}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Amira Saleh\", \"value\": \"Programme Manager\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Programme Manager, Gulf Launchpad\", \"start_offset\": 178, \"end_offset\": 211}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"book the interview\"}, \"implied_actions\": [\"book an interview slot by 10 Oct\"]}",
+   "framed": true,
+   "input_tokens": 5530,
+   "output_tokens": 446,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "815bbfd0cb052e7f9c4944154e819441f977861788f961cb938f44cd305ceac8": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -223,157 +372,8 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Amira Saleh, Gulf Launchpad's programme manager, wrote that the application has moved to the interview stage and asked Arjun to book a thirty-minute slot through the scheduling link by the tenth of October.\", \"evidence\": [\"evt_#1\"], \"quote\": \"slot using the scheduling link by 10 Oct. Amira Saleh Programme Manager, Gulf\"}, {\"claim\": \"The file holds one open ask from that mail, waiting on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"Her mail came more than a month after Arjun told her the application form was submitted.\", \"evidence\": [\"evt_#2\", \"num:their_reply_time:amira@gulflaunchpad.test\"], \"quote\": \"submitted the application form. Arjun\"}, {\"claim\": \"The programme playbook, not yet reviewed, says the interview stage is the founders' turn to book, prepare and attend, and that the date an invitation carries is a deadline, not a suggestion.\", \"evidence\": [\"pb:founder_office.pb.program_applications.follow_an_application\"]}, {\"claim\": \"Its interview move says to book by the date the invitation gives, write the time on both clocks, know the format, and have what changed since the application ready to say in a sentence.\", \"evidence\": [\"pb:founder_office.pb.program_applications.prepare_for_the_interview\"]}, {\"claim\": \"The playbook holds that a programme is a selection process with a published calendar, not an investor conversation, even when it invests.\", \"evidence\": [\"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\"]}, {\"claim\": \"The only situation anchored on this file is typed for an investor in the fundraising domain, and the engine recorded it as a misfiled kind.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The turn is ours, and the tenth of October is the date that will not move.\", \"based_on\": [\"fact:1\", \"fact:4\", \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"]}, {\"claim\": \"Read as an investor's file, the application would draw an investor's moves, and each would be wrong here; the programme's own calendar governs.\", \"based_on\": [\"fact:6\", \"fact:7\"]}, {\"claim\": \"A short interview rewards a crisp account of what changed since the application went in, over a month ago.\", \"based_on\": [\"fact:3\", \"fact:5\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"At the interview stage quiet typically means the turn is ours, and the invitation's date is a deadline.\", \"based_on\": [\"pb:founder_office.pb.program_applications.follow_an_application\"]}, {\"kind\": \"pattern\", \"claim\": \"The programme's deadline is the one fixed point; every other date is set back from it, on the programme's clock.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"A programme is not an investor: no chase and no warm introduction; its own calendar and rules decide.\", \"based_on\": [\"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\"]}, {\"kind\": \"base_rate\", \"claim\": \"Interview rounds typically run two to four weeks, from a single short interview to several rounds before a committee.\", \"based_on\": [\"pb:founder_office.pb.program_applications.follow_an_application\"]}], \"hypotheses\": [{\"proposition\": \"There will be further rounds after this interview before a decision.\", \"needs\": \"What Gulf Launchpad says after the interview about its next round or its decision date.\"}, {\"proposition\": \"Slots remain open well before the tenth of October.\", \"needs\": \"Arjun opening the scheduling link.\"}], \"unknowns\": [{\"question\": \"Which slots remain open, and in which time zone the link shows them.\", \"relevance\": \"Booking late can leave only poor times, and the time must be read on both clocks.\"}, {\"question\": \"Who from Nimbus Labs must attend.\", \"relevance\": \"It decides whose calendar the slot must fit.\"}, {\"question\": \"The interview's format and what the programme will ask.\", \"relevance\": \"Preparation follows the programme's own format, and the file holds none of it.\"}], \"frames\": {\"primary\": \"Gulf Launchpad has moved your application to its interview round and asked you to book a thirty-minute slot by the tenth of October: the turn is ours, and the date is a deadline.\", \"rivals\": [\"A first screen among several interview rounds, where booking is only the first of the programme's dates.\", \"An invitation sent to a wide shortlist, where the interview is a light filter rather than a near-final step.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"interview\", \"expected\": \"At the interview stage the founders book by the programme's date, prepare for its format and attend; between rounds the programme's quiet is scheduling.\", \"actual\": \"The programme moved the application to interview and asked for a slot to be booked through its link by the tenth of October; the file shows no booking yet.\"}, \"scenarios\": {\"do_nothing\": \"The slot goes unbooked past the programme's date, and the application is lost on a date rather than on merit.\", \"act\": \"Booking now secures a good slot well before the deadline and leaves time to prepare.\", \"best\": \"The interview is held with the right people present, the change since the application is clear, and the programme moves Nimbus Labs to a decision or an offer.\", \"worst\": \"The booking slips past the tenth of October, or the interview is held unprepared, and the application ends there.\", \"signals_to_watch\": [\"A booking confirmation from the scheduling link\", \"A note from Amira on the format or on who should attend\", \"The programme's date for a decision after the interview\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"irreversible\", \"reasons\": [\"Getting into accelerator programmes is one of the brief's goals, and this application has reached interview.\", \"The invitation carries a date, and the playbook treats the programme's date as a deadline that will not move.\", \"A slot missed past the programme's date loses the application for this intake.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Book a thirty-minute interview slot through Gulf Launchpad's scheduling link, and put the time on both clocks\", \"for_whom\": \"Gulf Launchpad's selection team, through Amira Saleh\", \"by_when\": \"2026-10-10\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If no slot fits, write to Amira before the tenth of October asking for another time, rather than letting the date pass.\", \"wait_or_stop\": \"Do not wait to book. After booking, the programme's quiet until the interview is scheduling; after the interview, wait for its decision date and ask once, through its own channel, only once that date has passed.\", \"done_when\": \"A slot is booked before the tenth of October, its time is on both clocks, and the interview is held with the right people present.\", \"draft\": null}",
    "framed": true,
-   "input_tokens": 9385,
+   "input_tokens": 9501,
    "output_tokens": 1732,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "5d1562b1034a340802f3dd20300863cf049bd53f62f8c84d02ca79305f790813": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1546,
-   "output_tokens": 143,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6be1c2f2fd05488210be552a17f7babb4df390af7839278b1884897db9642e40": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1026,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6ccae95fa6cdda8e12fba662a06fc7090bc88eb0db718896772f71acb10be5b6": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "positive",
-    "topics": [
-     "accelerator application",
-     "interview"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Amira Saleh",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Amira Saleh",
-        "start_offset": 166,
-        "end_offset": 177
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Gulf Launchpad",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Gulf Launchpad",
-        "start_offset": 0,
-        "end_offset": 14
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "decision_states": [
-     {
-      "subject": "Gulf Launchpad cohort 9 application",
-      "state": "pending",
-      "owner": "Gulf Launchpad",
-      "evidence": [
-       {
-        "quote": "Your application has moved to the interview stage.",
-        "start_offset": 48,
-        "end_offset": 98
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Book a 30-minute interview slot by 10 Oct",
-      "asked_by": "Amira Saleh",
-      "asked_of": "Arjun Rao",
-      "evidence": [
-       {
-        "quote": "Please book a 30-minute slot using the scheduling link by 10 Oct.",
-        "start_offset": 99,
-        "end_offset": 164
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "dates_mentioned": [
-     {
-      "as_written": "10 Oct",
-      "earliest": "2026-10-10T00:00:00+05:30",
-      "latest": "2026-10-10T23:59:59+05:30",
-      "certainty": "range",
-      "resolved_against": "2026-10-01T07:30:00Z",
-      "evidence": [
-       {
-        "quote": "10 Oct",
-        "start_offset": 157,
-        "end_offset": 163
-       }
-      ]
-     }
-    ],
-    "business_facts": [
-     {
-      "field": "person.title",
-      "subject": "Amira Saleh",
-      "value": "Programme Manager",
-      "standing": "observed",
-      "evidence": [
-       {
-        "quote": "Programme Manager, Gulf Launchpad",
-        "start_offset": 178,
-        "end_offset": 211
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "book the interview"
-    },
-    "implied_actions": [
-     "book an interview slot by 10 Oct"
-    ]
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"accelerator application\", \"interview\"], \"entity_mentions\": [{\"surface_form\": \"Amira Saleh\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Amira Saleh\", \"start_offset\": 166, \"end_offset\": 177}], \"confidence_bp\": 9000}, {\"surface_form\": \"Gulf Launchpad\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Gulf Launchpad\", \"start_offset\": 0, \"end_offset\": 14}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"Gulf Launchpad cohort 9 application\", \"state\": \"pending\", \"owner\": \"Gulf Launchpad\", \"evidence\": [{\"quote\": \"Your application has moved to the interview stage.\", \"start_offset\": 48, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Book a 30-minute interview slot by 10 Oct\", \"asked_by\": \"Amira Saleh\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Please book a 30-minute slot using the scheduling link by 10 Oct.\", \"start_offset\": 99, \"end_offset\": 164}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"10 Oct\", \"earliest\": \"2026-10-10T00:00:00+05:30\", \"latest\": \"2026-10-10T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-10-01T07:30:00Z\", \"evidence\": [{\"quote\": \"10 Oct\", \"start_offset\": 157, \"end_offset\": 163}]}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Amira Saleh\", \"value\": \"Programme Manager\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Programme Manager, Gulf Launchpad\", \"start_offset\": 178, \"end_offset\": 211}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"book the interview\"}, \"implied_actions\": [\"book an interview slot by 10 Oct\"]}",
-   "framed": true,
-   "input_tokens": 5530,
-   "output_tokens": 446,
    "model": "claude-haiku-4-5-20251001"
   },
   "a208ea0ba3efacd8cabd270294b02c2b9f002f104b1cadb221acc481872449c6": {
@@ -413,40 +413,7 @@
    "output_tokens": 54,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c8c9bb9a70979561b811271b4ed658d5e74f5b388f2ca7451908ca77047adf14": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1752,
-   "output_tokens": 143,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "cf18b0c48275d653f7d1cf27506388128ccbe020f649d7cf556c42d963c8cfc4": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Re: Gulf Launchpad cohort 9",
-    "start_offset": 0,
-    "end_offset": 27,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Gulf Launchpad cohort 9\", \"start_offset\": 0, \"end_offset\": 27, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1504,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "fb6a80db750a2df8cbe60d8677cd774d686eabbdec0587bf0b2df9ac09434f40": {
+  "bdefbab1277ca92537d2dd9096dab762ab3b49b2753959001169ca9f31649ad8": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -593,8 +560,41 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Arjun wrote to Amira at Gulf Launchpad, on the application thread, that the application form was submitted.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The programme playbook, not yet reviewed, says the applied stage owes nothing and that the one thing to check is the receipt: a confirmation mail or the portal's submitted status.\", \"evidence\": [\"pb:founder_office.pb.program_applications.follow_an_application\"]}, {\"claim\": \"The playbook's deadline move says to file the application's receipt, because without it the application may not have gone in.\", \"evidence\": [\"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"]}, {\"claim\": \"The playbook holds that a programme reading applications as a batch answers on its own published calendar, and its quiet before that date is not a no.\", \"evidence\": [\"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"]}, {\"claim\": \"The playbook holds that a programme is a selection process with a published calendar, not an investor conversation.\", \"evidence\": [\"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\"]}, {\"claim\": \"The only situation anchored on this file is typed for an investor, in the fundraising domain.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The founder's part is done for now; the programme moves next, on its own calendar.\", \"based_on\": [\"fact:1\", \"fact:4\"]}, {\"claim\": \"Nothing in the file confirms the programme received the application: Arjun's own word is the only record.\", \"based_on\": [\"fact:1\", \"fact:3\"]}, {\"claim\": \"Read as an investor's file, the application would draw a chase it should never get.\", \"based_on\": [\"fact:5\", \"fact:6\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"A batch programme is silent until it decides; quiet before its published date carries no information.\", \"based_on\": [\"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"A programme is not an investor: no chase and no warm introduction; its calendar and rules decide.\", \"based_on\": [\"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\"]}], \"hypotheses\": [{\"proposition\": \"Gulf Launchpad will invite Nimbus Labs to interview once its window closes.\", \"needs\": \"An invitation from the programme.\"}, {\"proposition\": \"The application went in and its confirmation sits outside this file, from a portal address.\", \"needs\": \"The confirmation mail or the portal's submitted status.\"}], \"unknowns\": [{\"question\": \"The programme's deadline and decision date for this cohort.\", \"relevance\": \"They set when quiet starts to mean anything; the file holds neither.\"}, {\"question\": \"Whether a confirmation of the application exists.\", \"relevance\": \"Without it the application may not have gone in, and the wait would be on nothing.\"}, {\"question\": \"What Amira's earlier mail on this thread said.\", \"relevance\": \"Arjun's mail answers it, and it may carry a date or a next step; the file does not hold it.\"}], \"frames\": {\"primary\": \"An accelerator application that has just gone in: your part is done, and the programme decides on its own calendar.\", \"rivals\": [\"An application that never reached the programme, where the quiet would hide a failed submission.\", \"A rolling programme that reads applications as they arrive, where an answer could come any day.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"applied\", \"expected\": \"At the applied stage nothing is owed; the one thing to check is the receipt, and the stage ends when the programme's deadline passes or it shows the application is being read.\", \"actual\": \"Arjun told Amira the application form was submitted; the file holds no confirmation of receipt and no word from the programme since.\"}, \"scenarios\": {\"do_nothing\": \"The application waits on the programme's calendar; nothing decays, unless it never went in.\", \"act\": \"Filing the confirmation of receipt now settles whether the application went in, at almost no cost.\", \"best\": \"The programme reads the application and invites Nimbus Labs to interview.\", \"worst\": \"The application never went in, and the quiet is read as the programme's process until the cohort is chosen.\", \"signals_to_watch\": [\"A confirmation of receipt from the programme or its portal\", \"A status change, an eligibility check or a request for a document\", \"An invitation to interview\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"Getting into accelerator programmes is one of the brief's goals, and this application is live.\", \"Nothing is owed while the programme reads, and its quiet carries no information yet.\", \"A missing receipt is cheap to check, and fixable while the programme is still reading.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If no confirmation of receipt is on file, check the programme's portal or confirmation mail once, so the wait rests on an application that went in.\", \"wait_or_stop\": \"Wait for the programme's own next word — a confirmation, an invitation, a request or a decision — on its published calendar; stop waiting only on the programme's own date, never on the clock.\", \"done_when\": \"The application's receipt is on file, and the programme's next word has arrived.\", \"draft\": null}",
    "framed": true,
-   "input_tokens": 9269,
+   "input_tokens": 9385,
    "output_tokens": 1338,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c8c9bb9a70979561b811271b4ed658d5e74f5b388f2ca7451908ca77047adf14": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1752,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "cf18b0c48275d653f7d1cf27506388128ccbe020f649d7cf556c42d963c8cfc4": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Gulf Launchpad cohort 9",
+    "start_offset": 0,
+    "end_offset": 27,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Gulf Launchpad cohort 9\", \"start_offset\": 0, \"end_offset\": 27, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1504,
+   "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   }
  }

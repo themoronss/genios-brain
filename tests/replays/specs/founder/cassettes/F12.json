@@ -1,7 +1,7 @@
 {
  "case_id": "F12",
  "source": "ideal_reader",
- "recorded_at": "20c262d1",
+ "recorded_at": "417c10fb",
  "answers": {
   "1d0769cc1bf05aa81f728f428df6a7791ba762785f0f498afc01cbd7080f22e6": {
    "site": "bundle_narrator",
@@ -33,185 +33,6 @@
    "framed": true,
    "input_tokens": 1640,
    "output_tokens": 143,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "24e3624ebde42dab9ddae7adb95973118b3a4b546590723e1843f95a87b72a44": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "Neeraj Joshi of Harbor Point Partners thanked Arjun for an update and asked, before their call, to see how retention looks for the first three pilot customers.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "retention looks for your first three pilot customers. Neeraj Joshi Harbor Point Partners"
-     },
-     {
-      "claim": "A meeting is booked for the eighth of October, the date of the call Neeraj names.",
-      "evidence": [
-       "evt_#2",
-       "evt_#1"
-      ],
-      "quote": "Re: Nimbus Labs update Hi Arjun, Thanks for the update."
-     },
-     {
-      "claim": "The file holds one open ask, Neeraj's request, waiting on us.",
-      "evidence": [
-       "loop:loop_#1"
-      ]
-     },
-     {
-      "claim": "Our reply time to Neeraj is not measured: the file holds no mail from Arjun to him.",
-      "evidence": [
-       "num:your_reply_time:neeraj@harborpoint.test"
-      ]
-     },
-     {
-      "claim": "The investor playbook's call preparation says to know what the investor asked for and whether it was sent, to name the next step to ask for, and to confirm it in writing the same day.",
-      "evidence": [
-       "pb:founder_office.pb.investor_relations.before_an_investor_call"
-      ]
-     },
-     {
-      "claim": "The engine files this investor's conversation under an admin account situation, not a fundraising one.",
-      "evidence": [
-       "sit:sit_#1"
-      ]
-     },
-     {
-      "claim": "The what-if says two weeks of nothing take the file past the meeting date.",
-      "evidence": [
-       "whatif:14"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "Retention for the first pilots is the evidence Neeraj wants in hand before the call; arriving without it, the call spends its time on the gap.",
-      "based_on": [
-       "fact:1",
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "The call is the request's deadline, so the figures must reach him ahead of it, with time to read.",
-      "based_on": [
-       "fact:1",
-       "fact:2",
-       "fact:3"
-      ]
-     },
-     {
-      "claim": "A request met before the call shows the follow-through the playbook's preparation is built on.",
-      "based_on": [
-       "fact:5"
-      ]
-     }
-    ],
-    "patterns": [
-     {
-      "kind": "pattern",
-      "claim": "When the turn is ours the clock runs against us, and nobody says so.",
-      "based_on": [
-       "pb:founder_office.heu.investor_relations.investors_do_not_chase"
-      ]
-     },
-     {
-      "kind": "pattern",
-      "claim": "A call that repeats the last one moves the conversation backwards; the preparation is what was asked for, and whether it was sent.",
-      "based_on": [
-       "pb:founder_office.pb.investor_relations.before_an_investor_call"
-      ]
-     },
-     {
-      "kind": "base_rate",
-      "claim": "At a venture firm about one company in three whose management it meets is reviewed at a partners' meeting.",
-      "based_on": [
-       "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
-      ]
-     }
-    ],
-    "hypotheses": [
-     {
-      "proposition": "Neeraj will use the retention figures to decide whether to take Nimbus Labs to his partners.",
-      "needs": "The next step Neeraj proposes on the call."
-     },
-     {
-      "proposition": "Retention for the first three pilots reads well enough to send as it is.",
-      "needs": "Arjun's own figures."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "How retention actually looks for the first three pilots.",
-      "relevance": "It decides whether the reply leads with the figures or with their context; the dossier holds none, and none may be guessed."
-     },
-     {
-      "question": "Whether an earlier call with Harbor Point took place, and which update Neeraj is thanking Arjun for.",
-      "relevance": "It sets the stage of the conversation and what the call should not repeat."
-     },
-     {
-      "question": "Who else from Harbor Point joins the call.",
-      "relevance": "A partner on the call would raise the stakes of the preparation."
-     }
-    ],
-    "frames": {
-     "primary": "An investor with a call booked has asked to see pilot retention ahead of it; sending the figures a day before the call is the preparation.",
-     "rivals": [
-      "A fund testing follow-through before spending more time, where a late answer matters more than the figures.",
-      "A routine request Neeraj would accept on the call itself, where the figures could wait for the meeting."
-     ]
-    },
-    "proposed_kind": null,
-    "expected_vs_actual": {
-     "stage": "first_contact",
-     "expected": "At first contact nothing has started until a first meeting or call takes place; with the call booked, the playbook's preparation is to send what the investor asked for before it.",
-     "actual": "The call is booked and Neeraj asked for retention on the first three pilots before it; the file holds no answer from Arjun."
-    },
-    "scenarios": {
-     "do_nothing": "The call arrives with the retention question open; Neeraj spends it on what he asked for, and the fund reads the gap as slow follow-through.",
-     "act": "Retention sent a day ahead lets Neeraj read it before the call, and the call can move on to a next step.",
-     "best": "The figures land well and the call ends with a named next step — a partners' meeting or a data room — confirmed in writing that day.",
-     "worst": "The figures arrive late or unexplained, the call stalls on them, and the conversation decays.",
-     "signals_to_watch": [
-      "Neeraj acknowledging the figures, or asking about them, before the call",
-      "Who joins the call from Harbor Point",
-      "A next step and a date named at the end of the call"
-     ]
-    },
-    "appraisal": {
-     "stakes": "high",
-     "urgency": "high",
-     "reversibility": "costly_to_reverse",
-     "reasons": [
-      "A booked call with an investor in the seed round, the brief's first goal.",
-      "The request names the call as its deadline, and the reply is ours.",
-      "Once the call happens without the figures, the chance to frame them first is gone."
-     ]
-    },
-    "mode": "act",
-    "next_move": {
-     "who": "Arjun",
-     "what": "Send Neeraj retention for the first three pilot customers, with a line of context on each, a day before the call",
-     "for_whom": "Neeraj Joshi at Harbor Point Partners",
-     "by_when": "2026-10-07",
-     "rests_on": [
-      "fact:1",
-      "fact:2",
-      "fact:3"
-     ],
-     "to": "Neeraj",
-     "answers": "loop:loop_#1"
-    },
-    "alternative": "If the figures cannot be ready in time, write to Neeraj before the call saying when they will come, and take him through them on the call.",
-    "wait_or_stop": "Do not wait: the call is the deadline. After sending, wait for the call itself; at the call, ask for the next step and its date, and confirm both in writing that day.",
-    "done_when": "Neeraj has the retention figures before the call, and the call ends with a next step confirmed in writing.",
-    "draft": "Hi Neeraj, ahead of our call, here is how retention looks for our first three pilot customers: [retention for each, with a line of context]. Happy to go deeper on the call. Arjun"
-   },
-   "raw": "{\"facts\": [{\"claim\": \"Neeraj Joshi of Harbor Point Partners thanked Arjun for an update and asked, before their call, to see how retention looks for the first three pilot customers.\", \"evidence\": [\"evt_#1\"], \"quote\": \"retention looks for your first three pilot customers. Neeraj Joshi Harbor Point Partners\"}, {\"claim\": \"A meeting is booked for the eighth of October, the date of the call Neeraj names.\", \"evidence\": [\"evt_#2\", \"evt_#1\"], \"quote\": \"Re: Nimbus Labs update Hi Arjun, Thanks for the update.\"}, {\"claim\": \"The file holds one open ask, Neeraj's request, waiting on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"Our reply time to Neeraj is not measured: the file holds no mail from Arjun to him.\", \"evidence\": [\"num:your_reply_time:neeraj@harborpoint.test\"]}, {\"claim\": \"The investor playbook's call preparation says to know what the investor asked for and whether it was sent, to name the next step to ask for, and to confirm it in writing the same day.\", \"evidence\": [\"pb:founder_office.pb.investor_relations.before_an_investor_call\"]}, {\"claim\": \"The engine files this investor's conversation under an admin account situation, not a fundraising one.\", \"evidence\": [\"sit:sit_#1\"]}, {\"claim\": \"The what-if says two weeks of nothing take the file past the meeting date.\", \"evidence\": [\"whatif:14\"]}], \"inferences\": [{\"claim\": \"Retention for the first pilots is the evidence Neeraj wants in hand before the call; arriving without it, the call spends its time on the gap.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The call is the request's deadline, so the figures must reach him ahead of it, with time to read.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, {\"claim\": \"A request met before the call shows the follow-through the playbook's preparation is built on.\", \"based_on\": [\"fact:5\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"When the turn is ours the clock runs against us, and nobody says so.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.investors_do_not_chase\"]}, {\"kind\": \"pattern\", \"claim\": \"A call that repeats the last one moves the conversation backwards; the preparation is what was asked for, and whether it was sent.\", \"based_on\": [\"pb:founder_office.pb.investor_relations.before_an_investor_call\"]}, {\"kind\": \"base_rate\", \"claim\": \"At a venture firm about one company in three whose management it meets is reviewed at a partners' meeting.\", \"based_on\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]}], \"hypotheses\": [{\"proposition\": \"Neeraj will use the retention figures to decide whether to take Nimbus Labs to his partners.\", \"needs\": \"The next step Neeraj proposes on the call.\"}, {\"proposition\": \"Retention for the first three pilots reads well enough to send as it is.\", \"needs\": \"Arjun's own figures.\"}], \"unknowns\": [{\"question\": \"How retention actually looks for the first three pilots.\", \"relevance\": \"It decides whether the reply leads with the figures or with their context; the dossier holds none, and none may be guessed.\"}, {\"question\": \"Whether an earlier call with Harbor Point took place, and which update Neeraj is thanking Arjun for.\", \"relevance\": \"It sets the stage of the conversation and what the call should not repeat.\"}, {\"question\": \"Who else from Harbor Point joins the call.\", \"relevance\": \"A partner on the call would raise the stakes of the preparation.\"}], \"frames\": {\"primary\": \"An investor with a call booked has asked to see pilot retention ahead of it; sending the figures a day before the call is the preparation.\", \"rivals\": [\"A fund testing follow-through before spending more time, where a late answer matters more than the figures.\", \"A routine request Neeraj would accept on the call itself, where the figures could wait for the meeting.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"first_contact\", \"expected\": \"At first contact nothing has started until a first meeting or call takes place; with the call booked, the playbook's preparation is to send what the investor asked for before it.\", \"actual\": \"The call is booked and Neeraj asked for retention on the first three pilots before it; the file holds no answer from Arjun.\"}, \"scenarios\": {\"do_nothing\": \"The call arrives with the retention question open; Neeraj spends it on what he asked for, and the fund reads the gap as slow follow-through.\", \"act\": \"Retention sent a day ahead lets Neeraj read it before the call, and the call can move on to a next step.\", \"best\": \"The figures land well and the call ends with a named next step — a partners' meeting or a data room — confirmed in writing that day.\", \"worst\": \"The figures arrive late or unexplained, the call stalls on them, and the conversation decays.\", \"signals_to_watch\": [\"Neeraj acknowledging the figures, or asking about them, before the call\", \"Who joins the call from Harbor Point\", \"A next step and a date named at the end of the call\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"A booked call with an investor in the seed round, the brief's first goal.\", \"The request names the call as its deadline, and the reply is ours.\", \"Once the call happens without the figures, the chance to frame them first is gone.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Neeraj retention for the first three pilot customers, with a line of context on each, a day before the call\", \"for_whom\": \"Neeraj Joshi at Harbor Point Partners\", \"by_when\": \"2026-10-07\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Neeraj\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If the figures cannot be ready in time, write to Neeraj before the call saying when they will come, and take him through them on the call.\", \"wait_or_stop\": \"Do not wait: the call is the deadline. After sending, wait for the call itself; at the call, ask for the next step and its date, and confirm both in writing that day.\", \"done_when\": \"Neeraj has the retention figures before the call, and the call ends with a next step confirmed in writing.\", \"draft\": \"Hi Neeraj, ahead of our call, here is how retention looks for our first three pilot customers: [retention for each, with a line of context]. Happy to go deeper on the call. Arjun\"}",
-   "framed": true,
-   "input_tokens": 8284,
-   "output_tokens": 1589,
    "model": "claude-haiku-4-5-20251001"
   },
   "37629f239a95e4f85002307f48dc0a42cbd59335bb1fd179fc35cc52121652f7": {
@@ -247,7 +68,7 @@
    "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
-  "8e9cf840b73cd1638e447654ced2a0f238621333efb41002e1b4bcffc402a920": {
+  "7f6a30c71da8fbebb3a92e4ab7a6bc1b38c7df4adc58cb7d176c3dcc05288406": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -422,7 +243,186 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Neeraj Joshi of Harbor Point Partners thanked Arjun for an update and asked, before their call, to see how retention looks for the first three pilot customers.\", \"evidence\": [\"evt_#1\"], \"quote\": \"retention looks for your first three pilot customers. Neeraj Joshi Harbor Point Partners\"}, {\"claim\": \"A meeting is booked for the eighth of October, the date of the call Neeraj names.\", \"evidence\": [\"evt_#2\", \"evt_#1\"], \"quote\": \"Re: Nimbus Labs update Hi Arjun, Thanks for the update.\"}, {\"claim\": \"The file holds one open ask, Neeraj's request, waiting on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"Our reply time to Neeraj is not measured: the file holds no mail from Arjun to him.\", \"evidence\": [\"num:your_reply_time:neeraj@harborpoint.test\"]}, {\"claim\": \"The investor playbook's call preparation says to know what the investor asked for and whether it was sent, to name the next step to ask for, and to confirm it in writing the same day.\", \"evidence\": [\"pb:founder_office.pb.investor_relations.before_an_investor_call\"]}, {\"claim\": \"The engine files this investor's conversation under an admin account situation, not a fundraising one.\", \"evidence\": [\"sit:sit_#1\"]}, {\"claim\": \"The what-if says two weeks of nothing take the file past the meeting date.\", \"evidence\": [\"whatif:14\"]}], \"inferences\": [{\"claim\": \"Retention for the first pilots is the evidence Neeraj wants in hand before the call; arriving without it, the call spends its time on the gap.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The call is the request's deadline, so the figures must reach him ahead of it, with time to read.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, {\"claim\": \"A request met before the call shows the follow-through the playbook's preparation is built on.\", \"based_on\": [\"fact:5\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"When the turn is ours the clock runs against us, and nobody says so.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.investors_do_not_chase\"]}, {\"kind\": \"pattern\", \"claim\": \"A call that repeats the last one moves the conversation backwards; the preparation is what was asked for, and whether it was sent.\", \"based_on\": [\"pb:founder_office.pb.investor_relations.before_an_investor_call\"]}, {\"kind\": \"base_rate\", \"claim\": \"At a venture firm about one company in three whose management it meets is reviewed at a partners' meeting.\", \"based_on\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]}], \"hypotheses\": [{\"proposition\": \"Neeraj will use the retention figures to decide whether to take Nimbus Labs to his partners.\", \"needs\": \"The next step Neeraj proposes on the call.\"}, {\"proposition\": \"Retention for the first three pilots reads well enough to send as it is.\", \"needs\": \"Arjun's own figures.\"}], \"unknowns\": [{\"question\": \"How retention actually looks for the first three pilots.\", \"relevance\": \"It decides whether the reply leads with the figures or with their context; the dossier holds none, and none may be guessed.\"}, {\"question\": \"Whether an earlier call with Harbor Point took place, and which update Neeraj is thanking Arjun for.\", \"relevance\": \"It sets the stage of the conversation and what the call should not repeat.\"}, {\"question\": \"Who else from Harbor Point joins the call.\", \"relevance\": \"A partner on the call would raise the stakes of the preparation.\"}], \"frames\": {\"primary\": \"An investor with a call booked has asked to see pilot retention ahead of it; sending the figures a day before the call is the preparation.\", \"rivals\": [\"A fund testing follow-through before spending more time, where a late answer matters more than the figures.\", \"A routine request Neeraj would accept on the call itself, where the figures could wait for the meeting.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"first_contact\", \"expected\": \"At first contact nothing has started until a first meeting or call takes place; with the call booked, the playbook's preparation is to send what the investor asked for before it.\", \"actual\": \"The call is booked and Neeraj asked for retention on the first three pilots before it; the file holds no answer from Arjun.\"}, \"scenarios\": {\"do_nothing\": \"The call arrives with the retention question open; Neeraj spends it on what he asked for, and the fund reads the gap as slow follow-through.\", \"act\": \"Retention sent a day ahead lets Neeraj read it before the call, and the call can move on to a next step.\", \"best\": \"The figures land well and the call ends with a named next step — a partners' meeting or a data room — confirmed in writing that day.\", \"worst\": \"The figures arrive late or unexplained, the call stalls on them, and the conversation decays.\", \"signals_to_watch\": [\"Neeraj acknowledging the figures, or asking about them, before the call\", \"Who joins the call from Harbor Point\", \"A next step and a date named at the end of the call\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"A booked call with an investor in the seed round, the brief's first goal.\", \"The request names the call as its deadline, and the reply is ours.\", \"Once the call happens without the figures, the chance to frame them first is gone.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Neeraj retention for the first three pilot customers, with a line of context on each, a day before the call\", \"for_whom\": \"Neeraj Joshi at Harbor Point Partners\", \"by_when\": \"2026-10-07\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Neeraj\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If the figures cannot be ready in time, write to Neeraj before the call saying when they will come, and take him through them on the call.\", \"wait_or_stop\": \"Do not wait: the call is the deadline. After sending, wait for the call itself; at the call, ask for the next step and its date, and confirm both in writing that day.\", \"done_when\": \"Neeraj has the retention figures before the call, and the call ends with a next step confirmed in writing.\", \"draft\": \"Hi Neeraj, ahead of our call, here is how retention looks for our first three pilot customers: [retention for each, with a line of context]. Happy to go deeper on the call. Arjun\"}",
    "framed": true,
-   "input_tokens": 8360,
+   "input_tokens": 8400,
+   "output_tokens": 1589,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "af8fbb6c4fef40c0decf9abe61e0616aa7c8ba0a90d61494f122243118e0d9f0": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Neeraj Joshi of Harbor Point Partners thanked Arjun for an update and asked, before their call, to see how retention looks for the first three pilot customers.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "retention looks for your first three pilot customers. Neeraj Joshi Harbor Point Partners"
+     },
+     {
+      "claim": "A meeting is booked for the eighth of October, the date of the call Neeraj names.",
+      "evidence": [
+       "evt_#2",
+       "evt_#1"
+      ],
+      "quote": "Re: Nimbus Labs update Hi Arjun, Thanks for the update."
+     },
+     {
+      "claim": "The file holds one open ask, Neeraj's request, waiting on us.",
+      "evidence": [
+       "loop:loop_#1"
+      ]
+     },
+     {
+      "claim": "Our reply time to Neeraj is not measured: the file holds no mail from Arjun to him.",
+      "evidence": [
+       "num:your_reply_time:neeraj@harborpoint.test"
+      ]
+     },
+     {
+      "claim": "The investor playbook's call preparation says to know what the investor asked for and whether it was sent, to name the next step to ask for, and to confirm it in writing the same day.",
+      "evidence": [
+       "pb:founder_office.pb.investor_relations.before_an_investor_call"
+      ]
+     },
+     {
+      "claim": "The engine files this investor's conversation under an admin account situation, not a fundraising one.",
+      "evidence": [
+       "sit:sit_#1"
+      ]
+     },
+     {
+      "claim": "The what-if says two weeks of nothing take the file past the meeting date.",
+      "evidence": [
+       "whatif:14"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Retention for the first pilots is the evidence Neeraj wants in hand before the call; arriving without it, the call spends its time on the gap.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "The call is the request's deadline, so the figures must reach him ahead of it, with time to read.",
+      "based_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "A request met before the call shows the follow-through the playbook's preparation is built on.",
+      "based_on": [
+       "fact:5"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "When the turn is ours the clock runs against us, and nobody says so.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+      ]
+     },
+     {
+      "kind": "pattern",
+      "claim": "A call that repeats the last one moves the conversation backwards; the preparation is what was asked for, and whether it was sent.",
+      "based_on": [
+       "pb:founder_office.pb.investor_relations.before_an_investor_call"
+      ]
+     },
+     {
+      "kind": "base_rate",
+      "claim": "At a venture firm about one company in three whose management it meets is reviewed at a partners' meeting.",
+      "based_on": [
+       "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Neeraj will use the retention figures to decide whether to take Nimbus Labs to his partners.",
+      "needs": "The next step Neeraj proposes on the call."
+     },
+     {
+      "proposition": "Retention for the first three pilots reads well enough to send as it is.",
+      "needs": "Arjun's own figures."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "How retention actually looks for the first three pilots.",
+      "relevance": "It decides whether the reply leads with the figures or with their context; the dossier holds none, and none may be guessed."
+     },
+     {
+      "question": "Whether an earlier call with Harbor Point took place, and which update Neeraj is thanking Arjun for.",
+      "relevance": "It sets the stage of the conversation and what the call should not repeat."
+     },
+     {
+      "question": "Who else from Harbor Point joins the call.",
+      "relevance": "A partner on the call would raise the stakes of the preparation."
+     }
+    ],
+    "frames": {
+     "primary": "An investor with a call booked has asked to see pilot retention ahead of it; sending the figures a day before the call is the preparation.",
+     "rivals": [
+      "A fund testing follow-through before spending more time, where a late answer matters more than the figures.",
+      "A routine request Neeraj would accept on the call itself, where the figures could wait for the meeting."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": "first_contact",
+     "expected": "At first contact nothing has started until a first meeting or call takes place; with the call booked, the playbook's preparation is to send what the investor asked for before it.",
+     "actual": "The call is booked and Neeraj asked for retention on the first three pilots before it; the file holds no answer from Arjun."
+    },
+    "scenarios": {
+     "do_nothing": "The call arrives with the retention question open; Neeraj spends it on what he asked for, and the fund reads the gap as slow follow-through.",
+     "act": "Retention sent a day ahead lets Neeraj read it before the call, and the call can move on to a next step.",
+     "best": "The figures land well and the call ends with a named next step — a partners' meeting or a data room — confirmed in writing that day.",
+     "worst": "The figures arrive late or unexplained, the call stalls on them, and the conversation decays.",
+     "signals_to_watch": [
+      "Neeraj acknowledging the figures, or asking about them, before the call",
+      "Who joins the call from Harbor Point",
+      "A next step and a date named at the end of the call"
+     ]
+    },
+    "appraisal": {
+     "stakes": "high",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "A booked call with an investor in the seed round, the brief's first goal.",
+      "The request names the call as its deadline, and the reply is ours.",
+      "Once the call happens without the figures, the chance to frame them first is gone."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Send Neeraj retention for the first three pilot customers, with a line of context on each, a day before the call",
+     "for_whom": "Neeraj Joshi at Harbor Point Partners",
+     "by_when": "2026-10-07",
+     "rests_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "to": "Neeraj",
+     "answers": "loop:loop_#1"
+    },
+    "alternative": "If the figures cannot be ready in time, write to Neeraj before the call saying when they will come, and take him through them on the call.",
+    "wait_or_stop": "Do not wait: the call is the deadline. After sending, wait for the call itself; at the call, ask for the next step and its date, and confirm both in writing that day.",
+    "done_when": "Neeraj has the retention figures before the call, and the call ends with a next step confirmed in writing.",
+    "draft": "Hi Neeraj, ahead of our call, here is how retention looks for our first three pilot customers: [retention for each, with a line of context]. Happy to go deeper on the call. Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Neeraj Joshi of Harbor Point Partners thanked Arjun for an update and asked, before their call, to see how retention looks for the first three pilot customers.\", \"evidence\": [\"evt_#1\"], \"quote\": \"retention looks for your first three pilot customers. Neeraj Joshi Harbor Point Partners\"}, {\"claim\": \"A meeting is booked for the eighth of October, the date of the call Neeraj names.\", \"evidence\": [\"evt_#2\", \"evt_#1\"], \"quote\": \"Re: Nimbus Labs update Hi Arjun, Thanks for the update.\"}, {\"claim\": \"The file holds one open ask, Neeraj's request, waiting on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"Our reply time to Neeraj is not measured: the file holds no mail from Arjun to him.\", \"evidence\": [\"num:your_reply_time:neeraj@harborpoint.test\"]}, {\"claim\": \"The investor playbook's call preparation says to know what the investor asked for and whether it was sent, to name the next step to ask for, and to confirm it in writing the same day.\", \"evidence\": [\"pb:founder_office.pb.investor_relations.before_an_investor_call\"]}, {\"claim\": \"The engine files this investor's conversation under an admin account situation, not a fundraising one.\", \"evidence\": [\"sit:sit_#1\"]}, {\"claim\": \"The what-if says two weeks of nothing take the file past the meeting date.\", \"evidence\": [\"whatif:14\"]}], \"inferences\": [{\"claim\": \"Retention for the first pilots is the evidence Neeraj wants in hand before the call; arriving without it, the call spends its time on the gap.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The call is the request's deadline, so the figures must reach him ahead of it, with time to read.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, {\"claim\": \"A request met before the call shows the follow-through the playbook's preparation is built on.\", \"based_on\": [\"fact:5\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"When the turn is ours the clock runs against us, and nobody says so.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.investors_do_not_chase\"]}, {\"kind\": \"pattern\", \"claim\": \"A call that repeats the last one moves the conversation backwards; the preparation is what was asked for, and whether it was sent.\", \"based_on\": [\"pb:founder_office.pb.investor_relations.before_an_investor_call\"]}, {\"kind\": \"base_rate\", \"claim\": \"At a venture firm about one company in three whose management it meets is reviewed at a partners' meeting.\", \"based_on\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]}], \"hypotheses\": [{\"proposition\": \"Neeraj will use the retention figures to decide whether to take Nimbus Labs to his partners.\", \"needs\": \"The next step Neeraj proposes on the call.\"}, {\"proposition\": \"Retention for the first three pilots reads well enough to send as it is.\", \"needs\": \"Arjun's own figures.\"}], \"unknowns\": [{\"question\": \"How retention actually looks for the first three pilots.\", \"relevance\": \"It decides whether the reply leads with the figures or with their context; the dossier holds none, and none may be guessed.\"}, {\"question\": \"Whether an earlier call with Harbor Point took place, and which update Neeraj is thanking Arjun for.\", \"relevance\": \"It sets the stage of the conversation and what the call should not repeat.\"}, {\"question\": \"Who else from Harbor Point joins the call.\", \"relevance\": \"A partner on the call would raise the stakes of the preparation.\"}], \"frames\": {\"primary\": \"An investor with a call booked has asked to see pilot retention ahead of it; sending the figures a day before the call is the preparation.\", \"rivals\": [\"A fund testing follow-through before spending more time, where a late answer matters more than the figures.\", \"A routine request Neeraj would accept on the call itself, where the figures could wait for the meeting.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"first_contact\", \"expected\": \"At first contact nothing has started until a first meeting or call takes place; with the call booked, the playbook's preparation is to send what the investor asked for before it.\", \"actual\": \"The call is booked and Neeraj asked for retention on the first three pilots before it; the file holds no answer from Arjun.\"}, \"scenarios\": {\"do_nothing\": \"The call arrives with the retention question open; Neeraj spends it on what he asked for, and the fund reads the gap as slow follow-through.\", \"act\": \"Retention sent a day ahead lets Neeraj read it before the call, and the call can move on to a next step.\", \"best\": \"The figures land well and the call ends with a named next step — a partners' meeting or a data room — confirmed in writing that day.\", \"worst\": \"The figures arrive late or unexplained, the call stalls on them, and the conversation decays.\", \"signals_to_watch\": [\"Neeraj acknowledging the figures, or asking about them, before the call\", \"Who joins the call from Harbor Point\", \"A next step and a date named at the end of the call\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"A booked call with an investor in the seed round, the brief's first goal.\", \"The request names the call as its deadline, and the reply is ours.\", \"Once the call happens without the figures, the chance to frame them first is gone.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Neeraj retention for the first three pilot customers, with a line of context on each, a day before the call\", \"for_whom\": \"Neeraj Joshi at Harbor Point Partners\", \"by_when\": \"2026-10-07\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Neeraj\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If the figures cannot be ready in time, write to Neeraj before the call saying when they will come, and take him through them on the call.\", \"wait_or_stop\": \"Do not wait: the call is the deadline. After sending, wait for the call itself; at the call, ask for the next step and its date, and confirm both in writing that day.\", \"done_when\": \"Neeraj has the retention figures before the call, and the call ends with a next step confirmed in writing.\", \"draft\": \"Hi Neeraj, ahead of our call, here is how retention looks for our first three pilot customers: [retention for each, with a line of context]. Happy to go deeper on the call. Arjun\"}",
+   "framed": true,
+   "input_tokens": 8476,
    "output_tokens": 1589,
    "model": "claude-haiku-4-5-20251001"
   },
