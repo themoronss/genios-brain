@@ -38,10 +38,6 @@ _ENGINE = _PKG.parent
 #: CLOSED, and checked in BOTH directions by `tests/feedback/test_the_feedback_layer_says_what_it_does_not_call.py`: an entry naming a function that
 #: is now called is as much a lie as a function that is unreached and undeclared.
 UNREACHED: dict[str, tuple[str, str]] = {
-    "scorecard.scorecard_for": (
-        "STEP-16 (yc2_w27_s16 M47.C3.L-logic.V5.U01): one tenant's week, read and composed — usefulness, what was held back, coverage, outcomes, your corrections — built one unit ahead of its route, the owner's view of a week",
-        "MOVES WHEN M47.C3.L-interface.V6.U02 lands: GET /v1/learning/scorecard serves it — delete this entry in that commit"),
-
     "attribution.timing_never_grades_accuracy": (
         "⛔ A BUILD-TIME PROPERTY GUARD, NOT A DEFECT. *'Every reason this map calls a "
         "timing-or-fit complaint must be absent from the precision'* denominator. It reads the "
