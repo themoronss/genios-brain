@@ -116,6 +116,43 @@ def _checked(scope: str, reason: str | None, kind: str | None) -> str | None:
     return word
 
 
+def refused(words: str | None, scope: str) -> str | None:
+    """Why these words with this scope are no correction — or None. Pure, so a door can refuse before it writes
+    anything: words that say nothing, are not one line or run past `MAX_WORDS`, a scope outside the closed list,
+    and a `COMPANY` correction longer than a line of the brief may be (`contracts/company_brief.MAX_LINE_CHARS`)."""
+    from genios_engine.contracts.company_brief import MAX_LINE_CHARS
+    try:
+        said = _said(words)
+    except ValueError as exc:
+        return str(exc)
+    if scope not in SCOPES:
+        return f"a correction's scope is one of {SCOPES}, not {scope!r}"
+    if scope == COMPANY and len(said) > MAX_LINE_CHARS:
+        return f"a correction of how your company works is a line of the brief, at most {MAX_LINE_CHARS} characters"
+    return None
+
+
+#: The file a card is about (STEP-16 M46.C3.L-integration.V3.U04): a file's card names its file (`cards.file_id`,
+#: 0220); any other card's file is the one its subject belongs to — the subject, when a correlation is anchored on
+#: it; else the anchor it works at; else the subject itself (whose corrections a file of its company reads, since a
+#: file's people are read with it).
+_FILE_OF_CARD = (
+    "select coalesce(k.file_id, "
+    "  (select c.anchor_node_id from context_correlations c where c.org_id = k.org_id "
+    "    and c.anchor_node_id = s.subject_node_id limit 1), "
+    "  (select e.to_node_id from graph_edges e join context_correlations c on c.org_id = e.org_id "
+    "    and c.anchor_node_id = e.to_node_id where e.org_id = k.org_id and e.edge_type = 'works_at' "
+    "    and e.valid_to is null and e.from_node_id = s.subject_node_id order by e.to_node_id limit 1), "
+    "  s.subject_node_id) as file_id "
+    "from cards k join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+    "where k.org_id = :o and k.card_id = :c")
+
+
+def file_of_card(conn, *, org_id: str, card_id: str) -> str | None:
+    """The file a card is about — see `_FILE_OF_CARD`. None for a card this tenant does not hold."""
+    return conn.execute(text(_FILE_OF_CARD), {"o": org_id, "c": card_id}).scalar()
+
+
 def by_id(conn, org_id: str, correction_id: str) -> Correction | None:
     r = conn.execute(text(
         "select correction_id, file_id, card_id, feedback_id, reason, words, scope, kind, brief_line_id, "
@@ -194,5 +231,5 @@ def standing_for(conn, org_id: str, file_id: str, *, people: tuple[str, ...] = (
 
 
 __all__ = ["COMPANY", "COMPANY_SECTION", "Correction", "FILE", "KIND", "MAX_WORDS", "SCOPES", "SHOWN",
-           "STANDING", "Standing", "WITHDRAWN", "by_id", "correct", "correction_id_for", "standing_for",
-           "withdraw"]
+           "STANDING", "Standing", "WITHDRAWN", "by_id", "correct", "correction_id_for", "file_of_card",
+           "refused", "standing_for", "withdraw"]

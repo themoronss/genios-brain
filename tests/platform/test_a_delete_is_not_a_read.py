@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_204, (
+    assert r["statements"] == 3_205, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -575,6 +575,8 @@ def test_the_statement_count_did_NOT_move():
     # STEP-17/18's follow-ups), re-measured on the merge (`table_coverage.resolution()`): 3,187 = 3,183 + 4.
     # ⛔ MERGED 16 Oct: STEP-14's line at 9d469efb (3,187) into STEP-16's line (3,140), re-measured on the merge (`table_coverage.resolution()`): 3,204 = 3,187 + STEP-16's 17
     # (3,140 − 3,123); nothing else moved. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,204 → 3,205 by yc2_w27_s16/M46.C3.L-integration.V3.U04 (the card's wrong with your words): one SELECT,
+    # `context/founder_corrections._FILE_OF_CARD` — the file a card is about. The run-time ratchet stays 272.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
