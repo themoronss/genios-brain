@@ -715,6 +715,39 @@ numbers). The citation table is whole again (441 over 53 cases).
 | F07 | **pass → lost in reasoning**: two cards about the file — before the call the review's move (accept the invite, read the brief), after it the question it asks (did the call take place, and what was promised?). Each is right in its sweep; the founder should see ONE card change, which is `STEP-14`'s living card (F176) |
 | find-out files | F21, F22, F54 ask once each and their marks do not move (`tests/replays/test_a_held_file_asks_once.py`) |
 
+**Re-recorded 2026-10-13 by `STEP-15`** (`yc2_w27_s15 · M44.C5.L-integration.V2.U05`, M44's acceptance). The runner
+now composes the founder's morning brief after each case's last sweep, with no model (`executive/morning.compose`),
+and the marking judges a brief-only case (`06` D12d) on it instead of declaring it not expressible. Ten of the
+twelve brief-only cases pass: F08 and F14 (a *watching* line), F20, F21, F22 and F23 (a *today* line — F21's and
+F22's question cards, STEP-13's, are named by it too), F30 (a *promises* line — its `not_expressible` keeps the
+screen door's half, unresolved: WhatsApp promises still arrive through a door the runner does not drive), F45 (a
+*today* line, your reply time), F54 (a *meetings* line, the mixer with no follow-up) and F55 (a *desk* line, four
+weeks of silence). The other two stay blocked and say on what: F18 at the gate (`06` D29 — the round's notice is
+archived `not_business`, so no file, no review, nothing a brief could read) and F53 on s15-D2 (a file decided on
+the shadow lane is not yet a brief line — `yc2_w27_s15` M45.C4.L-logic.V0.U01, not built by M44). Every
+must-abstain case's brief names nothing its case forbids, and the brief hides no open card
+(`tests/replays/test_the_morning_brief_is_judged.py`, all four of its checks, including the negative control: a
+run composing no brief reads every brief-only case not expressible again). The gate's own promise did not move;
+the atlas board did not move (unchanged: passing 6/80, blocked 1/80, not expressible 73).
+
+One regression, found by this measurement and fixed before it reached the board: F38 (must-abstain, *"a question
+answered on another channel is not owed again"*) failed its first run of this acceptance — the brief's *desk*
+line said *"1 person waits on you: Pooja Iyer (2 days)"*, which the case forbids (`03` provisional s15-F17).
+`context/your_desk.py` read the file's raw open ask, never the expert's own judgment of it, and the raw ask is
+stale: the review's own facts and `wait_or_stop` already read Pooja's reply on WhatsApp and say nothing is owed.
+Fixed additively in `executive/morning_day._resolved_nothing` (read-only of `reason/expert/decide.mode_of`): the
+desk now excludes a file whose current judgment's effective mode is `nothing` before asking who waits on you.
+Must-abstain never moved past 13/13 on the board recorded below — the regression was caught and closed inside
+this same commit.
+
+| moved by STEP-15 | from → to |
+|---|---|
+| F08, F14, F30 | not expressible → **pass**: a brief line (*watching*, *watching*, *promises*), no card either side |
+| F20, F21, F22, F23 | not expressible → **pass**: the one card STEP-12/STEP-13 already found stands; the brief's *today* line now passes too |
+| F45, F54, F55 | not expressible → **pass** (`ADDED_AFTER`, outside `test_the_gate_deletes_nothing`'s board: a *today*, a *meetings* and a *desk* line) |
+| F18 | not expressible → **fail**, `blocked_on` `06` D29 (no stage to read: the gate archives its one mail as expected, and no line of the brief can name a file that was never read) |
+| F53 | not expressible → **fail**, `blocked_on` s15-D2 (lost in reasoning: the shadow-lane file is read, but not yet a brief line) |
+
 **Re-recorded 2026-10-14 by `STEP-14`** (`yc2_w27_s14 · M42.C4.L-integration.V3.U04`, M43; `06` s14-D1–D8), one
 file, one living card, in the gold shape. A file's next decision or question VERSIONS its one card (`migrations/0220`,
 `platform/card_lifecycle.version_card`) — never a second card beside it; the board counts a must-detect card only once
@@ -742,6 +775,68 @@ the contract — a day or a meeting's title the dossier printed — and was disc
 | F64 | new → must-abstain **pass**: a declined introduction stays cleared, the connector's nudge reopens nothing |
 | atlas replays | passing 6 → **12**: replay 02 m00, m01, m02, m03, m05 and m07 on F59–F64 (s14-D5); m06, m08, m09 stay declared, each with what owns it |
 
+**Re-measured 2026-10-16 on the merge of `STEP-14` into `STEP-15`** (`yc2_w27_s15`, `yc2w27-s15` after `git merge
+yc2w27-int14` at 9d469efb; STEP-14's 45 units, its re-record 073da2ad and board 36/50 · 14/14 · Atlas 12/80). A NEW
+measurement, on a fresh scratch database, from STEP-14's cassettes — this step re-records nothing: the brief is
+composed from the reviews (no model), and no cassette answers a brief. STEP-14's twelve brief-only cases were
+*not expressible*; on the merged tree the runner composes the brief after the last sweep and the marking judges
+them on it (`06` D12d). The first measurement, 45/50 and 13/14, found three losses that no text conflict showed —
+the twelve conflicts were all resolved by keeping both sides — and a fourth defect beneath them:
+
+  * **s15-F21 · `store.current_judgments`'s select list had drifted from `_stored`.** STEP-13 and STEP-14 taught
+    `_stored` three more columns (`checked_at`, `dossier`, `card_lines` — 0202, 0221) and extended the other three
+    reads; STEP-15's fourth read was written before them. Four statements far apart, so git merged them cleanly —
+    and every golden replay of the brief died on `NoSuchColumnError: checked_at`. Fixed in `reason/expert/store.py`;
+    `tests/reason/expert/test_every_read_of_a_review_selects_what_a_stored_review_is_made_of.py` reads the columns
+    `_stored` subscripts out of its own source against every statement's select list (pure; 3 of 3 mutations killed).
+  * **s15-F20 · F64 (STEP-14's must-abstain: a declined introduction stays cleared) failed on the brief.** The
+    connector's nudge a week later is new evidence, so it triggers a review; the review reads *"nothing for you to
+    do in this file"*; its trigger is still sayable — and the changed section said *"Northlake: Introly wrote."*
+    about an introduction the expert had closed. `read_changes` now takes the files whose current judgment found
+    nothing owed (`_resolved_nothing`, the set the desk already excludes, s15-F17): no line in the day, no change
+    line either. 4 of 4 mutations killed.
+  * **s15-F19 · F22 passed only on a clumsy question wording.** *"Can you tell us: Find out whether you count as a
+    startup incubated on the university's campus and, if it does, work the seed grant application back from the
+    thirtieth?"* said what the file was about by accident; STEP-14's plain ask — *"Can you tell us whether you are a
+    startup incubated on the university's campus?"* — does not, and a question line that is only the ask does not
+    say what it is for. The question item now carries the review's situation (`morning_day._about`, the sentence
+    the file's card carries beside its question) and the line reads it first: *"University Startup Cell: A
+    university cell's notice of a seed grant closing on the thirtieth, open to startups incubated on its campus —
+    one you could apply to only if you are one of them. Can you tell us whether you are … ? By 30 Sep."* The
+    case's expectation (*"seed grant"*, *"30 Sep"*) is untouched. 10 of 10 mutations killed.
+  * **s15-F22 · F53's expected section was authored before any line existed to measure.** The plan's table said
+    `stuck`; `executive/morning_order` seats a lone decision among today's five and keeps `stuck` for the decision
+    that did not fit them and is quiet past 14 days (and the plan's own example puts a 33-day-quiet decision under
+    *things that need you*). The unit that built the shadow-lane line (M45.C4.L-logic.V0.U01) carried, as its own
+    contract, "F53's line restated and its `blocked_on` lifted" — it could not be done then, the spec being
+    off limits that hour. Done now: the same words and the same label, in `today`. Whether a decision outside
+    your switched-on work, quiet six months, should leave today's five is a product call (**s15-D5**, open).
+  * **s15-F23 · a pin that read an authored answer's words moved with STEP-14's rewording.** F55's Meadow wait
+    rule, *"…stop if Arjun decides…"* (kept out of the brief because it speaks of you), became *"…stop if you
+    decide…"* (M43.C2.L-data.V2.U05) and is now kept. The assertion is restated, not loosened: kept as said, and
+    the same rule naming the founder is put back into a copy of the tenant and must be dropped.
+
+| moved by the merge | from → to |
+|---|---|
+| F08, F14, F20, F21, F22, F23, F30, F45, F54, F55 | not expressible → **pass**: STEP-15's ten brief-only cases, now over STEP-14's living cards — F20–F23 keep their one card and pass on their *today* line too; F22's line says what its question is about (s15-F19) |
+| F53 | not expressible → **pass**: a file decided on the shadow lane is a labelled line (s15-D2), the case's section restated to where the order seats it (s15-F22) |
+| F18 | not expressible → **fail**, `blocked_on` `06` D29: the round's notice is archived at the gate — no file, no review, nothing a brief can name |
+| F64 | pass → **pass**, held: the changed section does not reopen a file the review found nothing owed in (s15-F20) |
+| atlas replays | unchanged by the merge: passing 12/80, blocked 1/80, not expressible 67 |
+
+**Then, 16 Oct, `STEP-15`'s s15-D3 unit** (`M45.C4.L-integration.V0.U03`, `06` D66): a small move is a line in the brief and
+no card. F20's meetup and F23's registration — `act` reviews appraised low stakes and low urgency — are decided as before
+(the audited run stands, the change gate remembers them) and emit no signal; their cards go, 1 → 0 each, and both still
+pass on their *today* line (brief-only; their card was never judged). No mark and no board line moves
+(`test_the_gate_deletes_nothing.MOVED_AFTER`: F20, F23 `(…, 1)` → `(…, 0)`).
+
+  * **s15-F24 · D66's words alone would have taken STEP-14's F61.** Built literally — act, low, low — the rule also
+    removed F61's two silent introductions (*"Write to Omkar Joshi offering a call…"*, appraised low/low; replay 02 m02),
+    whose labelled answer is a card each: must-detect 47 → 46 and the Atlas 12 → 11 on the first measurement. The rule is
+    narrowed by what a card is FOR — it puts a draft to a person in front of you: a small move that writes to no one
+    (`next_move.to` empty) is a line; one that writes to someone stays a card. Both labels hold as built. **s15-D6 (open):**
+    whether D66 meant that. 4 of the 111 authored reviews are low/low acts: F20, F23, and F61's two.
+
 **Re-recorded 2026-10-16 by STEP-14's fix wave** (`yc2_w27_s14` M43.C6.L-integration.V3.U13; the STEP-14 crosscheck,
 `yc2w27-s14-fix`). Two prompt-moving fixes were in before it ran: a rewording of a move that names no ask is ONE ask,
 a quiet `reworded` version (`contracts/card_version.one_ask`, finding 7) — F25's card now says so, and the dossier its
@@ -757,6 +852,10 @@ stamp. And the board reads what a card ASKS: `headline_says` (finding 10) — F6
 | atlas replays | passing 12 → **11**, blocked 1 → **2**: replay 02 m05 (the same card) |
 | F25 | **pass**, unchanged — its version is now `reworded` (quiet), where it was `updated` and pushed |
 
+**16 Oct, the integration line `yc2w27-int16`:** STEP-15's board above (47/50 · 14/14 · Atlas 12/80, measured on
+STEP-14 before its fix wave) and STEP-14's fix wave (35/50 · 14/14 · Atlas 11/80) meet here, with STEP-16's. The two
+lines at the top of this section and the table below are restated after the one re-record on the merged tree.
+
 The table below is the board's state now.
 
 | | |
@@ -769,6 +868,6 @@ The table below is the board's state now.
 | not expressible · 12 | F08, F14, F18, F20–F23, F45, F53, F54, F55 (`brief only` — `STEP-15`), F30 (the screen door) |
 | must-abstain that pass · 14 | F31 (the assignment), F32 (archived, and Lakshya's social read and not carded — STEP-07), F33, F34 (archived), F35, F36, F37 (the connector is never the person to reply to — since STEP-09 no reply situation about it arises at all), F38 (an answer elsewhere closes the ask), F39, F40 (a meeting nobody confirmed, not recapped — STEP-12), F41, F43 (the founder's own mail, in memory, not carded), F58 (the company domain that is also the platform's — still the founder), F64 (a declined introduction — STEP-14) |
 | must-abstain not exercised · 0 | — (four before STEP-05) |
-| must-abstain that fail · 0 | — (F40 before STEP-12) |
+| must-abstain that fail · 0 | — (F40 before STEP-12; F38 transiently, within STEP-15's own commit, s15-F17; F64 transiently, on the first measurement of the merge, s15-F20) |
 | forbidden outputs · 0 | — (eight before STEP-12: *"happened"* ×4, *"could you resend"*, the organiser's mailbox ×3) |
 | what the numbers judge | the ENGINE, given a faithful reader of every prompt. The model's own mistakes — production junked the real investor mails — are the live evaluation's to measure (`scripts/golden_eval.py --live`, ≈ $0.63 a pass on Haiku 4.5) |

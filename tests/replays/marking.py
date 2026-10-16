@@ -24,13 +24,21 @@ read on every version it showed (a living card that was about the unit economics
 deck was a card about each — F24); its `mentions` on its final words. Forbidden names and phrases, `forbidden:us` and a must-abstain case read EVERY card, shown
 or not, and every version's words (`CardView.versions`) — a word a card once showed was shown. A case reports the
 cards about its subject the app never showed (`unshown`), beside the verdict and deciding nothing.
+
+THE MORNING BRIEF (STEP-15, `yc2_w27_s15` M44.C5.L-integration.V1.U04) is judged as the cards are: each line a case
+expects present, in its section, about whom it says, saying what it must; every forbidden name and phrase absent from
+every line; a must-abstain case's subjects — what its `max: 0` cards are about — absent from every line, as a line
+or as a card (`golden-labels.md`: `no` is never surfaced). A case whose cards are brief-only (`06` D12d) is judged on
+its brief. What a line QUOTES is read apart from what it says (`BriefLineView.quotes`), as STEP-13's judge reads a
+card's sources (eb2b0486): a line that quotes "Introly connected us" is not a line about Introly. A run that composed
+no brief (`brief=False`) leaves the brief not expressible — the negative control.
 """
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
 
-from tests.replays.founder_case import CardExpectation, CaseRun, FounderCase
+from tests.replays.founder_case import BriefLineExpectation, CardExpectation, CaseRun, FounderCase
 
 PASS, FAIL, NOT_EXERCISED, NOT_EXPRESSIBLE = "pass", "fail", "not_exercised", "not_expressible"
 VERDICTS = (PASS, FAIL, NOT_EXERCISED, NOT_EXPRESSIBLE)
@@ -77,6 +85,8 @@ def judge(case: FounderCase, run: CaseRun) -> Mark:
     card_checks = [_card_check(i, exp, run, case.kind) for i, exp in enumerate(case.cards)
                    if case.expressible("cards")]
     checks += card_checks
+    brief_checks = _brief_checks(case, run)
+    checks += brief_checks
     if case.kind == "must_detect" and case.expressible("cards"):
         unshown = _unshown(case, run)
         if unshown:
@@ -98,11 +108,11 @@ def judge(case: FounderCase, run: CaseRun) -> Mark:
         checks.append(Check(key, NOT_EXPRESSIBLE, reason))
 
     # ── the verdict ───────────────────────────────────────────────────────────────────────────
-    deciding = [c for c in checks if c.name.startswith(("run", "cards", "forbidden"))]
+    deciding = [c for c in checks if c.name.startswith(("run", "cards", "forbidden", "brief"))]
     failed = [c for c in deciding if c.verdict == FAIL]
     if failed:
         verdict, reason = FAIL, " | ".join(c.reason for c in failed)
-    elif not card_checks:
+    elif not card_checks and not any(c.verdict == PASS for c in brief_checks):
         verdict, reason = NOT_EXPRESSIBLE, "every card expectation is declared not expressible"
     elif witness is not None and witness.verdict != PASS:
         verdict, reason = NOT_EXERCISED, witness.reason
@@ -170,6 +180,60 @@ def _card_check(index: int, exp: CardExpectation, run: CaseRun, kind: str = "mus
                                                f"sweep {s} — closed from sweep {exp.closed_from}"
                                                for cid, s in still))
     return Check(name, PASS, f"{n} card(s) about {subject}")
+
+
+def brief_judged(case: FounderCase, run: CaseRun) -> bool:
+    """Whether the case's brief is judged on this run: it expects lines, its brief is expressible, and the run
+    composed one."""
+    return bool(case.brief is not None and case.brief.lines and case.expressible("brief")
+                and run.brief is not None)
+
+
+def lines_about(run: CaseRun, about: tuple[str, ...], section: str | None = None):
+    """The brief's lines about any of `about` — in their words, never their quotes — in `section` when named."""
+    return [l for l in (run.brief or ()) if (section is None or l.section == section)
+            and any(says(l.text, t) for t in about)]
+
+
+def _brief_line_check(index: int, exp: BriefLineExpectation, run: CaseRun) -> Check:
+    name = f"brief[{index}]"
+    matched = lines_about(run, exp.about, exp.section)
+    n = len(matched)
+    subject = "/".join(exp.about)
+    if not exp.min <= n <= exp.max:
+        elsewhere = sorted({l.section for l in lines_about(run, exp.about)} - {exp.section})
+        bound = f"exactly {exp.min}" if exp.min == exp.max else f"{exp.min}–{exp.max}"
+        return Check(name, FAIL, f"{n} line{'s' if n != 1 else ''} about {subject} in {exp.section}; expected "
+                                 f"{bound}" + (f" (found in {elsewhere})" if elsewhere else ""))
+    for line in matched:
+        missing = [t for t in exp.mentions if not says(line.text, t)]
+        if missing:
+            return Check(name, FAIL, f"the {exp.section} line about {subject} does not say {missing}: "
+                                     f"{line.text!r}")
+    return Check(name, PASS, f"{n} line(s) about {subject} in {exp.section}")
+
+
+def _brief_checks(case: FounderCase, run: CaseRun) -> list[Check]:
+    """The brief's checks: each expected line (when judged), and — on every run that composed a brief — no
+    forbidden name or phrase on any line, and no must-abstain subject."""
+    out: list[Check] = []
+    if case.brief is not None and case.brief.lines and case.expressible("brief") and run.brief is None:
+        out.append(Check("brief", NOT_EXPRESSIBLE, "no brief was composed on this run"))
+    if brief_judged(case, run):
+        out += [_brief_line_check(i, exp, run) for i, exp in enumerate(case.brief.lines)]
+    if run.brief is None:
+        return out
+    hits = sorted({(l.line_id, term) for l in run.brief
+                   for term in (*case.forbidden_names, *case.forbidden_phrases) if says(l.text, term)})
+    if hits:
+        out.append(Check("brief:forbidden", FAIL, "; ".join(f"line {lid} says {term!r}" for lid, term in hits)))
+    if case.kind == "must_abstain":
+        never = tuple(t for c in case.cards if c.max == 0 for t in c.about)
+        surfaced = [(l.section, l.text) for l in lines_about(run, never)] if never else []
+        if surfaced:
+            out.append(Check("brief:abstain", FAIL, "; ".join(f"the {sec} line names what the case forbids: "
+                                                            f"{text!r}" for sec, text in surfaced)))
+    return out
 
 
 def _forbidden(case: FounderCase, run: CaseRun):

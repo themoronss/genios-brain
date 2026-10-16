@@ -20,6 +20,7 @@ never is.
 """
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
@@ -202,6 +203,44 @@ def to_you(text: str | None, us: SelfIdentity, names: Iterable[str | None] = ())
     if re.search(r"\b[Yy]ou (?!are\b|were\b|have\b|do\b)[a-z]*[^siu]s\b", out):   # "you wants", never "you discuss"
         return None
     return out
+
+
+#: STEP-15 · mailboxes that are a ROLE, not a person — a name spelled from one would name nobody: "Events" did not
+#: meet you at the mixer, its organiser's mailbox sent the invitation (F54). Matched against the whole local part.
+ROLE_MAILBOXES: frozenset[str] = frozenset({
+    "accounts", "admin", "apply", "applications", "billing", "careers", "community", "contact", "deals",
+    "events", "founders", "hello", "help", "hi", "hr", "info", "invest", "investors", "jobs", "mail", "media",
+    "news", "newsletter", "noreply", "notifications", "office", "partners", "partnerships", "press",
+    "program", "programme", "programs", "sales", "startups", "support", "team", "updates"})
+
+_SPOKEN_PART = re.compile(r"^[a-z]{2,}$")
+
+
+def spoken_name(display_name: str | None, key: str | None = None) -> str | None:
+    """How the brief says who someone is (STEP-15, `yc2_w27_s15` M44.C2.L-data.V0.U03): their display name when it
+    is a name; else the word their address or domain spells — `gaurav@stackfield.test` "Gaurav",
+    `kavitha.nair@…` "Kavitha Nair", `bluepeak.test` "Bluepeak" — and None when there is no such word: a role
+    mailbox (`events@`, `no-reply@`), a local part with digits, a public mail host. Never an address."""
+    name = " ".join(str(display_name or "").split())
+    if name and "@" not in name and not re.fullmatch(r"[\w-]+(?:\.[\w-]+)+", name):
+        return name
+    raw = str(key or (name if name else "")).strip().lower()
+    if not raw:
+        return None
+    if "@" in raw:
+        local = raw.rsplit("@", 1)[0].split("+", 1)[0]
+        if local.replace("-", "").replace("_", "").replace(".", "") in ROLE_MAILBOXES:
+            return None
+        parts = [p for p in re.split(r"[._-]", local) if p]
+        if not parts or len(parts) > 3 or not all(_SPOKEN_PART.match(p) for p in parts) \
+                or any(p in ROLE_MAILBOXES for p in parts):
+            return None
+        return " ".join(p.capitalize() for p in parts)
+    domain = norm_domain(raw)
+    if domain is None or domain in PUBLIC_MAIL_DOMAINS:
+        return None
+    label = domain.split(".", 1)[0]
+    return label.capitalize() if _SPOKEN_PART.match(label) else None
 
 
 def identity_sql(org: str = ":o") -> str:

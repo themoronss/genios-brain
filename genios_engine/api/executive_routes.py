@@ -15,12 +15,12 @@ an owner changed). None of them decide anything — the sweep does that, and it 
 against live state before every message it sends."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timezone
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy import text
 
-from genios_engine.platform.auth import AuthCtx, get_current_org, require_owner
+from genios_engine.platform.auth import AuthCtx, get_current_org, require_owner, require_workspace_user
 from genios_engine.platform.wiring import make_graph_store, make_pack_registry
 
 router = APIRouter(prefix="/v1/executive", tags=["executive"])
@@ -81,6 +81,112 @@ def why_not_route(entity_id: str | None = None, rule_id: str | None = None,
     _require_db()
     from genios_engine.executive.explain import why_not
     return why_not(_graph, org_id, entity_id=entity_id, rule_id=rule_id, days=days)
+
+
+# ---------------------------------------------------------------------------------------
+# The morning brief (STEP-15, `yc2_w27_s15` M44.C4.L-interface.V2.U04; `06` D9). The engine composes it at 08:00
+# in the org's timezone on whichever tick comes first; this route serves it — and composes it on read when the
+# hour has passed and no tick has (the row's key makes it once). The dashboard's Today view reads this; the
+# screen is `genios-dashboard`'s to build.
+
+def _brief_seat(ctx: AuthCtx) -> str:
+    """Whose brief: the signed-in seat's; an owner-level key's is the account owner's seat."""
+    if ctx.seat_id:
+        return ctx.seat_id
+    with _graph.engine.connect() as c:
+        seat = c.execute(text(
+            "select s.seat_id from org_seats s join orgs o on o.id = s.org_id "
+            " where s.org_id = :o and s.active and lower(s.email) = lower(o.email) order by s.seat_id limit 1"),
+            {"o": ctx.org_id}).scalar()
+    if not seat:
+        raise HTTPException(404, "this workspace has no owner's seat to brief")
+    return seat
+
+
+def _served(brief, *, state: str, marks: dict | None = None) -> dict:
+    """A kept brief as the Today view reads it: the one line, each section with its title and lines — each line's
+    words, kind, who it is about, where it came from, whose words they are and the check's verdict — what was cut,
+    and how it was written."""
+    from genios_engine.contracts.morning_brief import SECTIONS, TITLES
+    marks = marks or {}
+    sections = []
+    for name in SECTIONS:
+        lines = brief.section(name)
+        if not lines:
+            continue
+        sections.append({"section": name, "title": TITLES[name], "lines": [
+            {**line.as_mapping(),
+             "marks": [{"by": m.marked_by, "mark": m.mark, "words": m.words, "at": m.marked_at.isoformat()}
+                       for m in marks.get(line.line_id, ())]}
+            for line in lines]})
+    return {"state": state, "local_date": brief.local_date.isoformat(), "timezone": brief.timezone,
+            "as_of": brief.as_of.isoformat(), "one_line": brief.one_line, "sections": sections,
+            "cut": [{"section": s, "n": n} for s, n in brief.cut], "flexed": brief.flexed,
+            "words": brief.words, "written_by": brief.written_by, "why": brief.why, "model": brief.model,
+            "tier": brief.tier, "cost_micro_usd": brief.cost_micro_usd}
+
+
+@router.get("/morning")
+def morning_brief(ctx: AuthCtx = Depends(require_workspace_user)) -> dict:
+    """Your brief for today. Before the hour: the last one, saying when today's arrives. After it with none kept:
+    composed now, once."""
+    _require_db()
+    from zoneinfo import ZoneInfo
+    from genios_engine.executive import morning, morning_store
+    from genios_engine.executive.morning_day import zone_of
+    seat, now = _brief_seat(ctx), _now()
+    with _graph.engine.connect() as c:
+        tz = zone_of(c, ctx.org_id)
+        local = now.astimezone(ZoneInfo(tz)).date()
+        kept = morning_store.read(c, ctx.org_id, seat, local)
+        if kept is not None:
+            return _served(kept, state="today", marks=morning_store.marks_for(c, ctx.org_id, seat, local))
+    if morning.is_due(now, tz, kept=False):
+        brief, _wrote = morning.compose(_graph.engine, ctx.org_id, seat, now=now)
+        with _graph.engine.connect() as c:
+            marks = morning_store.marks_for(c, ctx.org_id, seat, brief.local_date)
+        return _served(brief, state="today", marks=marks)
+    arrives = datetime.combine(local, time(morning.BRIEF_HOUR), tzinfo=ZoneInfo(tz))
+    with _graph.engine.connect() as c:
+        last = morning_store.last_before(c, ctx.org_id, seat, local)
+        marks = morning_store.marks_for(c, ctx.org_id, seat, last.local_date) if last is not None else {}
+    return {"state": "before_the_hour", "arrives_at": arrives.isoformat(), "timezone": tz,
+            "last": _served(last, state="last", marks=marks) if last is not None else None}
+
+
+@router.get("/morning/{day}")
+def morning_brief_of(day: date, ctx: AuthCtx = Depends(require_workspace_user)) -> dict:
+    """Your brief of one local day, as it was kept — 404 when none was."""
+    _require_db()
+    from genios_engine.executive import morning_store
+    seat = _brief_seat(ctx)
+    with _graph.engine.connect() as c:
+        kept = morning_store.read(c, ctx.org_id, seat, day)
+        if kept is None:
+            raise HTTPException(404, f"no brief was kept for {day.isoformat()}")
+        return _served(kept, state="kept", marks=morning_store.marks_for(c, ctx.org_id, seat, day))
+
+
+@router.post("/morning/lines/{line_id}/mark")
+def mark_morning_line(line_id: str, mark: str = Body(..., embed=True),
+                      words: str | None = Body(None, embed=True),
+                      ctx: AuthCtx = Depends(require_workspace_user)) -> dict:
+    """Useful, or not useful with your words. A later mark of yours replaces an earlier one; marks are per
+    person, so your mark never overwrites someone else's. Recorded only — STEP-16 turns marks into proposals
+    you accept, never this step (M45.C3.L-interface.V0.U02)."""
+    _require_db()
+    from genios_engine.executive import morning_store
+    seat = _brief_seat(ctx)
+    try:
+        with _graph.engine.begin() as c:
+            kept = morning_store.mark_line(c, org_id=ctx.org_id, line_id=line_id, marked_by=seat, mark=mark,
+                                           words=words, at=_now())
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    return {"line_id": kept.line_id, "marked_by": kept.marked_by, "mark": kept.mark, "words": kept.words,
+            "marked_at": kept.marked_at.isoformat()}
 
 
 # ---------------------------------------------------------------------------------------

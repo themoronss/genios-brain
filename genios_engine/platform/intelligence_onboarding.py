@@ -49,6 +49,7 @@ from dataclasses import dataclass, field
 from genios_engine.platform.l4_activation import (FEATURE_CALIBRATION_APPLY,
                                                   FEATURE_CARDS_FROM_SITUATIONS,
                                                   FEATURE_EXPERT_REVIEW,
+                                                  FEATURE_MORNING_BRIEF,
                                                   FEATURE_SITUATION_REASONER, L4_FEATURES)
 from genios_engine.platform.logging import get_logger
 
@@ -183,6 +184,11 @@ NOT_DEFAULT_ON = {
         "default-on switch that costs money per file is a bill a tenant never agreed to; it is "
         "armed per tenant, Rohit's org first, after the live golden pass on the D7 model (`06` "
         "D50).",
+    FEATURE_MORNING_BRIEF:
+        "it spends a MODEL CALL every morning — the brief's writer (R-8 Haiku-class, R-8E "
+        "Sonnet-class once on a failed check). A default-on switch that costs money every day is "
+        "a bill a tenant never agreed to; it is armed per tenant only after the live look s15-D1 "
+        "names (58 briefs, under $1 `[MODELLED]`). Off, the brief is the template's own words.",
 }
 
 #: Layer 4's default features in wave order — `L4_FEATURES` minus the declared exclusions above.

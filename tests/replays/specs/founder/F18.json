@@ -45,7 +45,20 @@
     "max": 1
    }
   ],
-  "brief": "one line: a round you could apply to, closing 31 Oct"
+  "brief": {
+   "says": "one line: a round you could apply to, closing 31 Oct",
+   "lines": [
+    {
+     "section": "today",
+     "about": [
+      "Sabarmati"
+     ],
+     "mentions": [
+      "31 Oct"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -56,7 +69,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 — there is no morning brief to appear in"
- }
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)"
+ },
+ "blocked_on": "06 D29 — the fund's round notice is archived at the gate (the junk gate drops it, relevance not_business): no file, no review, nothing a brief could read (STEP-15 s15-F6)"
 }

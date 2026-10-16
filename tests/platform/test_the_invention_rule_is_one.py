@@ -46,6 +46,26 @@ def test_a_corpus_of_plain_lines_grounds_a_date_as_a_sentence_writes_it():
     assert G.invention_ok("Neel introduced Marco", text, nums) == (False, "name:Neel")
 
 
+def test_quiet_and_by_open_a_sentence_without_reading_as_an_entity():
+    """STEP-15 M45.C5.L-integration.V1.U02's acceptance: `executive/morning_template.words_for`
+    writes "Quiet for 7 days." and "By 9 Oct." as a line's own second sentence — the template's own
+    faithful words, failing the check they are the ground truth for, the first time this guard was
+    ever run against them. Same mechanism as "Pending"/"Waiting" above it in `_GRAMMAR_WORDS`; each
+    claim but the opening word is grounded the same way the file's own date test above grounds one."""
+    # Mid-string, after a period — exactly how `words_for` writes it, and the shape that read as
+    # invented: the FIRST word of a checked string is treated differently than one that opens a
+    # LATER sentence, so a one-sentence probe would not have reproduced the failure this pins.
+    # The corpus must NOT itself contain the word "quiet" — `quiet_days` is a computed signal,
+    # never an item's own material, and a corpus that happened to say it would mask the very
+    # thing this test exists to isolate (the stop-list, not a coincidental match).
+    quiet_text, quiet_nums = G.corpus_of(["Bluepeak has not replied since they wrote on 7 days."])
+    assert "quiet" not in quiet_text
+    assert G.invention_ok("Bluepeak has not replied. Quiet for 7 days.", quiet_text, quiet_nums) \
+        == (True, None)
+    by_text, by_nums = G.corpus_of(["Bluepeak owes a reply.", "2026-10-09 the reply is due."])
+    assert G.invention_ok("Bluepeak owes a reply. By 9 Oct.", by_text, by_nums) == (True, None)
+
+
 def test_the_rule_still_refuses_what_it_always_refused():
     corpus, nums = render._corpus({"deal.amount": {"value": 1200}}, {}, quotes=[{"quote": "Thanks Priya"}])
     assert render.invention_ok("Priya agreed to 1200", corpus, nums) == (True, None)

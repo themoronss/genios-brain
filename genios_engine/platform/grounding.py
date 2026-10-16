@@ -123,6 +123,18 @@ _GRAMMAR_WORDS = frozenset({
     "problem", "problems", "solution", "product", "platform", "service", "support", "sales",
     "revenue", "cost", "value", "time", "today", "tomorrow", "yesterday", "week", "month",
     "quarter", "year", "morning", "afternoon", "evening", "now", "soon", "later",
+    # Earned 14 Oct (STEP-15 M45.C5.L-integration.V1.U02's acceptance, the first time this guard
+    # was ever run against `executive/morning_template.words_for`'s OWN words): "Quiet for 7
+    # days." opens a WATCHED or STUCK line's second sentence — `words_for`'s own rendering, never
+    # a model's — and read as an invented entity for the same reason "Pending"/"Waiting" above
+    # already needed the guard's forgiveness. The template's faithful words failing the check they
+    # are the ground truth for is the acceptance test's own job to catch.
+    "quiet",
+    # Same run, same cause: "By 9 Oct." opens the second sentence of a DECISION or PROMISE line
+    # (`words_for`'s own "By {_day(...)}." for a deadline or a due date) — a preposition, not an
+    # entity, and the calendar date after it is already grounded by `_expand_dates`, never by this
+    # word.
+    "by",
 })
 
 # Calendar words are deliberately NOT exempt. A weekday or a month is not an entity, but it IS a

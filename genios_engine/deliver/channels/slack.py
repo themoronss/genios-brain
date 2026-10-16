@@ -74,14 +74,26 @@ def format_card_message(card: dict, *, base_url: str = "",
                         "text": {"type": "mrkdwn", "text": "\n".join(lines)}}]}
 
 
+def _escaped(said: object) -> str:
+    """Slack reads `&`, `<` and `>` as markup, and `<!channel>` pages a whole workspace — so a word that came from a mail
+    (a sender's name, a file's title) is escaped to the three entities Slack asks for (STEP-15: the digest is now a brief
+    whose lines name people and files from mail)."""
+    return str(said).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
 def format_digest_message(digest: dict) -> dict:
-    """Pure: the morning digest dict → one Slack message. Counted numbers only."""
-    one_line = str(digest.get("one_line") or "Nothing needs you right now.")
+    """Pure: the morning digest dict → one Slack message. An item carrying a `line` is a line of the kept morning brief
+    (STEP-15, M45.C3.L-integration.V0.U03) and is said as it was kept; any other item is "entity: reason (S score)" —
+    counted numbers only. Everything is escaped for Slack (`_escaped`)."""
+    one_line = _escaped(digest.get("one_line") or "Nothing needs you right now.")
     items = digest.get("top_items") or digest.get("items") or []
     lines = [f"☀️ *Morning brief* — {one_line}"]
     for it in items[:5]:
-        entity = it.get("entity") or "—"
-        reason = str(it.get("reason") or it.get("reason_code") or "").replace("_", " ")
+        if it.get("line"):
+            lines.append(f"• {_escaped(it['line'])}")
+            continue
+        entity = _escaped(it.get("entity") or "—")
+        reason = _escaped(str(it.get("reason") or it.get("reason_code") or "").replace("_", " "))
         score = it.get("score")
         lines.append(f"• {entity}: {reason}" + (f" (S {score})" if score is not None else ""))
     return {"text": lines[0],

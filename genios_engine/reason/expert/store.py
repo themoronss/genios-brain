@@ -32,6 +32,14 @@ WHEN, AND ON WHAT (0202, STEP-13 `yc2_w27_s13` M35.C3.L-integration.V1.U06; `06`
 is dated (`checked_at`): with its review, or by the re-check that wrote it. And a row keeps the dossier it was
 written against (`dossier`: its text and the ids it printed), so a check of a newer version reads THAT dossier,
 never today's (`reason/expert/review.recheck`).
+
+EVERY FILE'S CURRENT JUDGMENT, IN ONE READ (STEP-15, `yc2_w27_s15` M44.C2.L-data.V0.U01, `03` s15-F13). The morning
+brief reads every file at once: `current_judgments` gives each file's newest STANDING row as of an instant — a
+valid review with its check, or a refusal or a truncation with its reason — and the lane its decision was taken
+on, from the change gate's record of the file (`reasoning_fingerprints`, `<file>|expert.file_review`): `shadow`
+when the file's domain is not switched on, the live lane for any other word, none when nothing was decided.
+`latest_valid` read per file would hand back an older valid review when the newest standing one was refused —
+a judgment the expert no longer stands behind.
 """
 from __future__ import annotations
 
@@ -98,6 +106,20 @@ _LATEST_STANDING = text(
     " where org_id = :o and file_id = :f and status in ('valid', 'refused', 'truncated') "
     " order by reviewed_at desc, fingerprint desc "
     " limit 1")
+
+
+#: STEP-15 · every file's newest STANDING row as of an instant, and the change gate's record of its decision —
+#: one statement for the whole tenant. `distinct on` keeps one row per file: the newest, the newest
+#: fingerprint on a tie, as `_LATEST_STANDING` orders one file's.
+_CURRENT = text(
+    "select distinct on (r.file_id) r.file_id, r.fingerprint, r.model, r.prompt_version, r.dossier_digest, "
+    "       r.status, r.reason, r.review, r.input_tokens, r.output_tokens, r.cost_micro_usd, r.reviewed_at, "
+    "       r.inputs, r.triggers, r.checked, r.checked_at, r.dossier, r.card_lines, g.outcome as gate_outcome "
+    "  from expert_reviews r "
+    "  left join reasoning_fingerprints g on g.org_id = r.org_id "
+    "       and g.subject_key = r.file_id || :decision and g.decided_at <= :now "
+    " where r.org_id = :o and r.status in ('valid', 'refused', 'truncated') and r.reviewed_at <= :now "
+    " order by r.file_id, r.reviewed_at desc, r.fingerprint desc")
 
 
 @dataclass(frozen=True)
@@ -254,6 +276,42 @@ def latest_standing(conn, org_id: str, file_id: str) -> StoredReview | None:
     return None if row is None else _stored(row)
 
 
-__all__ = ["FAILED", "OVER_BUDGET", "REFUSED", "RETRYABLE", "STANDING", "STATUSES", "TRUNCATED", "VALID",
-           "StoredReview", "latest_standing", "latest_valid", "read_review", "reviewed", "write_check",
-           "write_review"]
+#: The lanes a file's decision is taken on (`reason/domain_shadow._decide_covered_files`): the change gate records
+#: `shadow` for a file whose domain the tenant has not switched on, and the live lane's own word otherwise.
+LIVE_LANE = "live"
+SHADOW_LANE = "shadow"
+
+
+@dataclass(frozen=True)
+class CurrentJudgment:
+    """A file's current judgment: its newest standing review, and the lane its decision was taken on — None when
+    no decision was taken (a refusal decides nothing; a file with no situation has no corpus to decide in)."""
+    stored: StoredReview
+    lane: str | None
+    outcome: str | None                          # the change gate's word for what the decision came to
+
+    @property
+    def valid(self) -> bool:
+        return self.stored.status == VALID
+
+    @property
+    def checked(self) -> CheckedReview | None:
+        """The check of a valid review — a refusal carries none (`write_review` refuses one on it)."""
+        return self.stored.checked
+
+
+def current_judgments(conn, org_id: str, *, now: datetime) -> dict[str, CurrentJudgment]:
+    """Every file's current judgment as of `now` — file id → its newest standing review and its lane. One
+    statement. A failed or carried row judged nothing and is passed over; a later review is not yet written."""
+    from genios_engine.reason.expert.decide import CAPABILITY_ID
+    out: dict[str, CurrentJudgment] = {}
+    for row in conn.execute(_CURRENT, {"o": org_id, "now": now, "decision": f"|{CAPABILITY_ID}"}):
+        outcome = row._mapping["gate_outcome"]
+        lane = None if outcome is None else (SHADOW_LANE if outcome == SHADOW_LANE else LIVE_LANE)
+        out[row.file_id] = CurrentJudgment(stored=_stored(row), lane=lane, outcome=outcome)
+    return out
+
+
+__all__ = ["CurrentJudgment", "FAILED", "LIVE_LANE", "OVER_BUDGET", "REFUSED", "RETRYABLE", "SHADOW_LANE", "STANDING",
+           "STATUSES", "TRUNCATED", "VALID", "StoredReview", "current_judgments", "latest_standing", "latest_valid",
+           "read_review", "reviewed", "write_check", "write_review"]

@@ -226,7 +226,21 @@
     "max": 1
    }
   ],
-  "brief": "a wait line: send only on a material milestone"
+  "brief": {
+   "says": "a wait line: send only on a material milestone",
+   "lines": [
+    {
+     "section": "watching",
+     "about": [
+      "Tara",
+      "Fjord"
+     ],
+     "mentions": [
+      "milestone"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -238,8 +252,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 — there is no morning brief to appear in"
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)"
  },
  "model": {
   "decider": [

@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_193, (
+    assert r["statements"] == 3_219, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -520,6 +520,30 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,078 → 3,079 by yc2_w27_s18/M48.C3.L-data.V0.U11 (STEP-18 B20's second half): one
     # DELETE, `scripts/gmail_l1.py` — the gmail events' `message_fingerprints`, before the events. A
     # literal in its statement list.
+    # ⛔ MERGED 12 Oct: STEP-15's moves below were measured on its own branch (3,113 → 3,122, net +9); merged with
+    # the integration line at 6650b1c4 (its own 3,113 → 3,120, the STEP-13 fixes) they make 3,129 — re-measured on
+    # the merge, not added by hand.
+    # ⛔ MOVED 3,113 → 3,114 by yc2_w27_s15/M44.C2.L-data.V0.U01 (STEP-15, every file's current judgment):
+    # one SELECT, `reason/expert/store._CURRENT` — each file's newest standing review and the change gate's
+    # record of its decision, for the whole tenant in one read. A literal.
+    # ⛔ MOVED 3,114 → 3,116 by yc2_w27_s15/M44.C2.L-data.V0.U03 (STEP-15, your desk): two SELECTs in
+    # `context/your_desk` — every sender's newest mail as of the instant (`_LAST_BY_SENDER`, which are ours is asked
+    # of the identity) and the names of who asked (`_NAMES`). Two literals.
+    # ⛔ MOVED 3,116 → 3,120 by yc2_w27_s15/M44.C2.L-data.V0.U04 (STEP-15, the meetings of a day): four SELECTs in
+    # `context/meeting_days` — the seat's meetings, their attendees, the titles a series shares, the mail to them.
+    # Each one literal: the seat-visibility predicate is written into each, not concatenated from a constant,
+    # which the census would have counted as one render per prefix (measured: 10, and four new holes).
+    # ⛔ MOVED 3,120 → 3,122 by yc2_w27_s15/M44.C2.L-data.V0.U05 (STEP-15, your promises due): two SELECTs in
+    # `context/promises_due` — every promise with its due date, status, owner, maker and mail, and the people its
+    # mail went to. Two literals.
+    # ⛔ MOVED 3,129 → 3,130 by yc2_w27_s15/M44.C2.L-data.V0.U02 (STEP-15, every open question): one SELECT,
+    # `context/your_desk._OPEN_QUESTIONS` — every open question with the open card its asking run raised. A literal.
+    # ⛔ MOVED 3,130 → 3,136 by yc2_w27_s15/M44.C4.L-data.V0.U01 (STEP-15, the brief kept): six statements in
+    # `executive/morning_store` — the keep (an INSERT … on conflict do nothing), a day's brief and the last before a
+    # day (two SELECTs), the brief a line stands in (a SELECT), the mark (an INSERT … on conflict update) and the
+    # marks of a brief (a SELECT). Six literals.
+    # ⛔ MOVED 3,136 → 3,139 by yc2_w27_s15/M44.C3.L-logic.V0.U02 (STEP-15, the day): three SELECTs in
+    # `executive/morning_day` — the seat and its org, the files' people, the org's timezone. Three literals.
     # ⛔ MOVED 3,120 → 3,119 by yc2_w27_s18/M48.C2.L-integration.V2.U16 (crosscheck S18-X06): one SELECT
     # removed, `scripts/rebuild_graph.main`'s `count(distinct event_id) from l1_extraction_results` —
     # the cache count behind the "may cost LLM" estimate; no road calls a model, so the estimate, the
@@ -567,6 +591,27 @@ def test_the_statement_count_did_NOT_move():
     # card is not rebuilt every pass): `deliver/pipeline._REFUSED_RECENTLY` (the signals refused within a day) and
     # `platform/card_refusals._AGAIN` (the same refusal moves its row's time) — two literals; the end of the pass's
     # orphan read gained a column, not a statement. Ratchet 272.
+    # ⛔ MERGED 13 Oct: the integration line (3,123) into STEP-15's line (3,139), re-measured on the merge (`table_coverage.resolution()`): 3,142.
+    # ⛔ MOVED 3,142 → 3,146 by yc2_w27_s15/M44.C3.L-logic.V1.U04 (STEP-15, what changed since your last brief):
+    # four SELECTs in `executive/morning_day.read_changes` — the reviews since an instant, who sent the mails a
+    # trigger names, the states of the questions and of the cards a gone line named. Four literals. (U03's template
+    # had a false fifth: the literal `" with "` opens on `with`, the census's own SQL shape — rewritten `", with "`,
+    # so the pin the merge measured, 3,142, held at U03's head only by its omission; measured per file here.)
+    # ⛔ MOVED 3,146 → 3,147 by yc2_w27_s15/M44.C4.L-integration.V1.U02 (STEP-15, compose): one SELECT,
+    # `executive/morning._OWNERS` — each org's account owner's seat. A literal.
+    # ⛔ MOVED 3,147 → 3,148 by yc2_w27_s15/M44.C4.L-interface.V2.U04 (STEP-15, GET /v1/executive/morning): one
+    # SELECT, `api/executive_routes._brief_seat` — an owner-level key's brief is the account owner's seat. A literal.
+    # ⛔ MOVED 3,148 → 3,149 by yc2_w27_s15/M45.C3.L-integration.V0.U01 (STEP-15, compose writes through the
+    # writer): one SELECT, `executive/morning._FOUNDER_NAME` — the founder's own name (`orgs.name`), read once
+    # per compose so `write_brief` can hold "you" against it; a second query rather than a new field on `Day`,
+    # since `Day` is M44's own contract and this unit's artifact is `morning.py` alone. A literal.
+    # ⛔ MERGED 16 Oct: STEP-14 and the integration line (3,187) into STEP-15's line (3,149), re-measured on the
+    # merge (`table_coverage.resolution()`): 3,213 = 3,187 + 26 — STEP-15's own moves above (3,149 over the
+    # integration's 3,123), each a literal at its own call site. The merge fix (s15-F19 to F23) added none: a
+    # field on an item, a branch in `read_changes`, a column in `store._CURRENT`'s existing select list.
+    # ⛔ MERGED 16 Oct (the integration line `yc2w27-int16`): STEP-14 with its crosscheck fix wave (3,193) and STEP-15's
+    # line (3,213, which already held STEP-14's 3,187), re-measured on the merge (`table_coverage.resolution()`): 3,219 =
+    # 3,193 + 26 — STEP-15's own moves, nothing else. The run-time ratchet stays 272.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

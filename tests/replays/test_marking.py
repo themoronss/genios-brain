@@ -63,13 +63,14 @@ def _card(card_id: str, text: str, sweeps=(0, 1), subject: str | None = None, *,
 
 
 def _run(*, cards=(), outcome="emitted", reason=None, facts=3, situations=(), chain_ok=(True, True),
-         misses=()) -> fc.CaseRun:
+         misses=(), brief=None) -> fc.CaseRun:
     return fc.CaseRun(
         case_id="F93", org_id="org_golden_f93",
         landed=(fc.Landed(object_id="ask", source_object_id="f93-ask", event_id="evt_1",
                           outcome=outcome, reason=reason, sweep=0),),
         memory={"ask": facts}, situations=tuple(situations), cards=tuple(cards),
-        funnel=({}, {}), chain_ok=tuple(chain_ok), model_calls=(), misses=tuple(misses))
+        funnel=({}, {}), chain_ok=tuple(chain_ok), model_calls=(), misses=tuple(misses),
+        brief=None if brief is None else tuple(brief))
 
 
 # =================================================================================================
@@ -247,7 +248,6 @@ def test_a_card_still_open_after_the_work_was_done_fails():
     assert "still open after sweep 1" in mark.reason, mark.reason
 
 
-
 # =================================================================================================
 # STEP-14 · the board counts what you see (`yc2_w27_s14` M42.C4.L-logic.V2.U03, s14-D4)
 # =================================================================================================
@@ -315,3 +315,88 @@ def test_a_living_card_is_about_every_version_the_app_showed():
         "Finish the unit economics sheet", "Upload the Phase-1 review deck"))
     assert judge(case, _run(cards=[living])).verdict == PASS
     assert judge(case, _run(cards=[_card("c1", "Upload the Phase-1 review deck")])).verdict == FAIL
+
+
+# =================================================================================================
+# STEP-15 · the brief judged (`yc2_w27_s15` M44.C5.L-integration.V1.U04)
+# =================================================================================================
+def _brief_case(**brief) -> fc.FounderCase:
+    raw = copy.deepcopy(BASE)
+    raw["expected"]["brief"] = brief or {"says": "Kavya's deck, today", "lines": [
+        {"section": "today", "about": ["Kavya", "Lotus"], "mentions": ["deck"]}]}
+    raw["not_expressible"] = {**raw["not_expressible"], "cards": "brief only (D12d)"}
+    return fc.parse_case(raw, source="t.json")
+
+
+def _line(section, text, *, quotes=(), lid="bl_1"):
+    return fc.BriefLineView(line_id=lid, section=section, kind="decision", text=text, quotes=tuple(quotes))
+
+
+def test_a_brief_only_case_is_judged_on_its_brief_and_passes_on_the_right_line():
+    run = _run(brief=[_line("today", "Lotus Ventures: send Kavya the deck before Monday.")])
+    mark = judge(_brief_case(), run)
+    assert mark.verdict == PASS and any(c.name == "brief[0]" and c.verdict == PASS for c in mark.checks)
+
+
+@pytest.mark.parametrize("lines, why", [
+    ([], "0 lines"),
+    ([_line("watching", "Lotus Ventures: send Kavya the deck.")], "found in ['watching']"),
+    ([_line("today", "Lotus Ventures: write to Kavya.")], "does not say ['deck']"),
+    ([_line("today", "Kavya: the deck.", lid="a"), _line("today", "Lotus: the deck.", lid="b")], "2 lines"),
+])
+def test_a_brief_without_the_line_fails_and_says_why(lines, why):
+    mark = judge(_brief_case(), _run(brief=lines))
+    assert mark.verdict == FAIL and why in mark.reason
+
+
+def test_what_a_line_quotes_is_read_apart_from_what_it_says():
+    """F37's lesson: a line that quotes the connector is not a line about the connector."""
+    case = _brief_case(says="x", lines=[{"section": "today", "about": ["Introly"]}])
+    quoting = _line("today", "Lotus Ventures: send Kavya the deck.", quotes=("Arjun, Introly connected us",))
+    assert judge(case, _run(brief=[quoting])).verdict == FAIL
+
+
+def test_a_forbidden_name_or_phrase_on_any_line_fails():
+    run = _run(brief=[_line("today", "Lotus Ventures: send Kavya the deck."),
+                      _line("watching", "Lotus: last chance before the round.", lid="bl_2")])
+    mark = judge(_brief_case(), run)
+    assert mark.verdict == FAIL and "line bl_2 says 'last chance'" in mark.reason
+    named = _run(brief=[_line("today", "Lotus Ventures: send Kavya the deck — Arjun Rao asked.")])
+    assert judge(_brief_case(), named).verdict == FAIL
+
+
+def test_a_must_abstain_cases_subject_on_any_line_fails_and_its_absence_passes():
+    abstain = _abstain()
+    witnessed = dict(facts=3)
+    assert judge(abstain, _run(brief=[_line("watching", "Kavya: waiting on the deck.")], **witnessed)).verdict == FAIL
+    assert judge(abstain, _run(brief=[_line("today", "Orbitly: send the pilot plan.")], **witnessed)).verdict == PASS
+    assert judge(abstain, _run(brief=[], **witnessed)).verdict == PASS
+
+
+def test_with_no_brief_composed_a_brief_only_case_is_not_expressible_again():
+    mark = judge(_brief_case(), _run(brief=None))
+    assert mark.verdict == NOT_EXPRESSIBLE
+    assert any(c.name == "brief" and c.verdict == NOT_EXPRESSIBLE for c in mark.checks)
+
+
+def test_a_brief_declared_not_expressible_decides_nothing():
+    raw = copy.deepcopy(BASE)
+    raw["expected"]["brief"] = "a line about the deck"
+    raw["not_expressible"] = {**raw["not_expressible"], "brief": "not restated", "cards": "brief only"}
+    case = fc.parse_case(raw, source="t.json")
+    assert judge(case, _run(brief=[_line("today", "Orbitly: nothing about it.")])).verdict == NOT_EXPRESSIBLE
+
+
+def test_a_case_judged_on_cards_still_has_its_brief_held_to_its_forbidden_words():
+    card = _card("c1", "Reply to Kavya Menon: send the deck")
+    ok = judge(_case(), _run(cards=[card], brief=[_line("today", "Lotus: the deck.")]))
+    bad = judge(_case(), _run(cards=[card], brief=[_line("today", "Lotus: last chance.")]))
+    assert ok.verdict == PASS and bad.verdict == FAIL
+
+
+def test_lines_declared_not_expressible_are_not_judged():
+    raw = copy.deepcopy(BASE)
+    raw["expected"]["brief"] = {"says": "x", "lines": [{"section": "today", "about": ["Kavya"]}]}
+    raw["not_expressible"] = {**raw["not_expressible"], "brief": "restated, waiting on a decision", "cards": "brief only"}
+    case = fc.parse_case(raw, source="t.json")
+    assert judge(case, _run(brief=[])).verdict == NOT_EXPRESSIBLE

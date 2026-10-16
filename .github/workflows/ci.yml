@@ -78,7 +78,7 @@ jobs:
       - name: Golden set
         shell: bash
         run: |
-          pytest -q tests/replays tests/test_golden_labels_sheet.py -rfE > pytest.log 2>&1 && status=0 || status=$?
+          pytest -q tests/replays tests/test_golden_labels_sheet.py tests/executive/test_the_brief_in_words.py -rfE > pytest.log 2>&1 && status=0 || status=$?
           cat pytest.log
           grep -E '^(FAILED|ERROR) ' pytest.log | head -40 | sed 's/^/::error title=pytest::/' || true
           exit $status

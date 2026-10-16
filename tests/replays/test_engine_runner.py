@@ -539,3 +539,45 @@ def test_a_run_asks_the_app_queue_at_each_sweeps_instant_and_leaves_no_impressio
         (True, False, at) for at in case.sweeps], "once per sweep, the admin's whole queue, at its instant"
     assert all(set(c.app_sweeps) <= set(c.sweeps) for c in run.cards)
     assert routes._card_store is not None
+
+
+# =================================================================================================
+# STEP-15 · the runner composes the founder's brief after the last sweep (`yc2_w27_s15` M44.C5.L-integration.V0.U03)
+# =================================================================================================
+@pytest.mark.pg
+@needs_db
+def test_the_runner_composes_the_founders_brief_after_the_last_sweep_with_no_model():
+    """F45, replayed from its cassette: after the last sweep the runner composes the brief at that instant — the
+    owner's seat, the template's words, no model asked beyond the chain's own calls — and reports its lines; with
+    `brief=False` it composes none (the negative control), and the chain's own calls are the same either way."""
+    from tests.replays import cassettes
+    case = next(c for c in fc.load_cases() if c.case_id == "F45")
+    run = er.run_case(case, RecordedLLM(cassettes.load(case)))
+    assert run.misses == () and run.brief is not None
+    (today,) = [l for l in run.brief if l.section == "today"]
+    assert today.kind == "decision" and today.subject == "Bluepeak" and "(n=6)" in today.text
+    assert "the two pilot leads" in today.text                     # the review of the LAST sweep, 30 Sep
+    assert all(l.line_id.startswith("bl_") and l.quotes == () for l in run.brief)
+    off = er.run_case(case, RecordedLLM(cassettes.load(case)), brief=False)
+    assert off.brief is None and off.model_calls == run.model_calls
+
+
+@pytest.mark.pg
+@needs_db
+def test_the_brief_is_kept_for_the_owners_local_day_and_removed_with_the_tenant():
+    from sqlalchemy import text
+
+    from genios_engine.api import routes
+    from tests.replays import cassettes
+    case = next(c for c in fc.load_cases() if c.case_id == "F20")
+    run = er.run_case(case, RecordedLLM(cassettes.load(case)), keep=True)
+    try:
+        with routes._graph.engine.connect() as c:
+            kept = c.execute(text("select seat_id, local_date::text, timezone, written_by, as_of from morning_briefs "
+                                  "where org_id = :o"), {"o": run.org_id}).all()
+        assert [tuple(r)[:4] for r in kept] == [("seat_owner", "2026-09-13", "Asia/Kolkata", "template")]
+        assert kept[0].as_of == case.sweeps[-1]                    # 13 Sep 18:00 UTC is 23:30 that day in Kolkata
+    finally:
+        er.remove_tenant(routes._graph.engine, run.org_id)
+    with routes._graph.engine.connect() as c:
+        assert c.execute(text("select count(*) from morning_briefs where org_id = :o"), {"o": run.org_id}).scalar() == 0

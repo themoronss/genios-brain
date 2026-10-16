@@ -33,7 +33,7 @@
 #   yc2_w27_align                     M34         ← before STEP-12, all aligned (built 10 Oct)
 #   yc2_w27_s13                       M35, M36    ← STEP-13, check every claim (planned 12 Oct)
 #   yc2_w27_s17 · yc2_w27_s18         M40, M41 · M48-M50 ← STEP-17, STEP-18 (M50: Claude 5 thinking)
-#   yc2_w27_s14                       M42, M43    ← STEP-14, the card (12 Oct)
+#   yc2_w27_s14 · yc2_w27_s15         M42-M45     ← STEP-14, the card (12 Oct) · STEP-15, the morning brief
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -10508,3 +10508,505 @@ yc2_w27_s14:
                       artifact: "tests/replays/test_every_card_is_in_the_gold_shape.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_every_card_is_in_the_gold_shape.py"
                       depends_on: [M43.C6.L-integration.V3.U09, M43.C4.L-integration.V1.U03, M43.C4.L-logic.V0.U04, M43.C4.L-integration.V2.U05, M43.C5.L-integration.V1.U02]
+
+yc2_w27_s15:
+  status: built   # 2026-10-12→16 in the worktree s15-build (branch yc2w27-s15, merged with yc2w27-int14): 34 units + their fixes, every code unit mutation-tested; s15-D1..D4, `06` D8 and D9 at their recommended answers; the golden board 47/50 · 14/14 · Atlas 12/80; not pushed
+  source: >
+    speedrun008/YC-II W27/STEP-15 §1-§6, re-checked claim by claim against fbd0aeaa (STEP-13 at 24 of 29
+    units) and measured on a fresh scratch database: the twelve brief-only golden cases and ten must-abstain
+    cases replayed from their cassettes (no spend), and the existing morning surfaces called on four kept
+    tenants. Twelve of the 45 must-detect cases are brief-only and counted not expressible, so must-detect
+    >= 90% cannot be reached without a brief (ceiling 33/45). The summary ladder counts signals: it says
+    "Nothing needs you right now." on F14 and F22 while the expert holds a wait rule and an open question.
+    The digest goes to Slack only, once per UTC day; meeting prep is a desktop moment 3 h ahead; nothing in
+    the engine runs at a local hour; `executive/` reads no file, review, question, promise or meeting.
+  vision: >
+    At 08:00 in your timezone you read one brief, in under three minutes: today's five things — a meeting
+    today and a dated promise or deadline within 48 hours always among them — then what changed since
+    yesterday, what is stuck, what a file asks you, your promises, your meetings with their prep, and what I
+    am watching and why. Code reads the day and orders it from the expert's own appraisals; a cheap model
+    writes it from that checked material, and a strong one only when the cheap one fails the check; every
+    line says where it came from, uses no name, number or date its source does not hold, speaks to you as
+    "you", and takes your mark. An empty morning says so — and only when nothing is open, asked, due or
+    watched.
+  order_note: >
+    M44 first and whole: the brief's CONTENT, by code, with no model — the contract and 0230, the five
+    readers, the day, its order and the template, the store, compose and the tick, the route; then the
+    golden set judges it (C5, the board restated). M45 after M44's acceptance: the sites, the budget and the
+    feature, the prompt, the line check and the writer, compose through the writer, the mark, the digest,
+    the live look, M45's acceptance last. M45.C4 waits for its decisions — U01 on s15-D2 (a file on the
+    shadow lane), U02 on `06` D8 (screen reminders), U03 on s15-D3 (a small move) — and is not built on the
+    default answer. The live look spends only on Rohit's yes and a key (s15-D1). STEP-13 closed first: its
+    question card (M36.C2.L-interface.V3.U05) is where an asked line leads, and its golden judge already
+    keeps a card's quoted sources apart from its words (eb2b0486) — the brief's judge does the same. STEP-14
+    is not a precondition: the brief is built per file, from reviews, not from cards. Every unit: its own tests, a mutation run, the repo's guards; the step:
+    a crosscheck and the whole QA tier, awake.
+  milestones:
+    - id: M44
+      name: The brief's content, read and ordered by code, at 08:00 (STEP-15 §3.1-§3.4)
+      ships: >
+        On the golden set the brief composed after each case's last sweep holds the expected line of 10 of
+        the 12 brief-only cases (F18 blocked at the gate, `06` D29; F53 on s15-D2), every must-abstain
+        case's brief names nothing its case forbids, and forbidden outputs stay 0 over cards and brief lines:
+        must-detect 21 -> 31 of 45. Every line names its source. One brief per seat per local day, composed
+        on the first tick after 08:00 in the org's timezone and served at GET /v1/executive/morning; no
+        model is asked.
+      categories:
+        - id: M44.C1
+          name: What a brief is
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M44.C1.L-contract.V0.U01
+                      what: >
+                        The brief's contract: an ITEM — its kind, closed (a decision, a question, a watched
+                        file, a promise, a meeting, a meeting with no follow-up, your desk, a change), the
+                        file or meeting it is about, the material its words may use (the checked words, each
+                        number with the calculator that made it and its n, the dates, the names) and its
+                        sources; a SECTION, closed (today's five, changed, stuck, asked, promises, meetings,
+                        watching), each capped; a LINE — a content-addressed id, its item, its words, whose
+                        words they are (the template's or the writer's) and the check's verdict; the BRIEF —
+                        org, seat, local date, timezone, as of, the one line, the lines, how it was written,
+                        what it cost — and its word budget (600: three minutes at 200 a minute). Frozen,
+                        pure; read back as stored.
+                      artifact: "genios_engine/contracts/morning_brief.py"
+                      verify: ".venv/bin/python -m pytest -q tests/executive/test_the_morning_brief_contract.py"
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M44.C1.L-contract.V1.U02
+                      what: >
+                        `0230_morning_briefs`: one brief per seat per local day — the row is the claim (a
+                        second composer finds it) and the artifact (its lines with their sources and
+                        verdicts, the digest of the day's material, how it was written, the model, tier and
+                        cost, when) — and `morning_brief_marks`: your mark on a line (useful, or not useful
+                        with your words), the latest standing. Wiped by `/reset`
+                        (`api/account_routes._ORG_SCOPED_TABLES`); the tenant's deletion cascades; rolled
+                        back cleanly; the resolver's table pins moved, said.
+                      artifact: "migrations/0230_morning_briefs.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_the_morning_briefs_table.py tests/platform/test_the_code_can_always_be_rolled_back.py tests/platform/test_the_resolver_says_what_it_cannot_see.py"
+                      depends_on: [M44.C1.L-contract.V0.U01]
+        - id: M44.C2
+          name: The day's material — each a reader over one connection, no model
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M44.C2.L-data.V0.U01
+                      what: >
+                        Every file's CURRENT judgment in one statement (`current_judgments`): its newest
+                        standing review — valid, with its check (the fate, the checked words, the
+                        question), or refused or truncated, with its reason — and whether its decision went
+                        to the live lane or the shadow one (the change gate's record). An older valid review
+                        never stands in for a newer refusal, as `latest_valid` read per file would let it
+                        (`03` s15-F13).
+                      artifact: "genios_engine/reason/expert/store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_every_file_has_its_current_judgment.py tests/reason/expert/test_the_review_store.py"
+                      depends_on: []
+                    - id: M44.C2.L-data.V0.U02
+                      what: >
+                        Every open question of the tenant (`open_questions`), oldest first, with its file, when
+                        it was asked, and the card that asks it when one is open (STEP-13's question card,
+                        M36.C2.L-interface.V3.U05 — its Answer action is where the brief's line leads) — what
+                        `06` D60 lists in the brief beside that card; today a question is read one file at a
+                        time (`open_question`).
+                      artifact: "genios_engine/context/founder_questions.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_every_open_question_is_listed.py tests/context/test_a_file_asks_one_question.py"
+                      depends_on: []
+                    - id: M44.C2.L-data.V0.U03
+                      what: >
+                        Your desk, measured: your last mail out across every mailbox of ours and the days
+                        since — said only where the coverage receipt shows each mailbox read that far back
+                        (`context/coverage_receipt.covers`) — and the files waiting on you (an open ask owed
+                        by us), each with since when. F55: "nothing for 28 days while three people wait".
+                        Each number a `Measured`, with its n.
+                      artifact: "genios_engine/context/your_desk.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_your_desk.py"
+                      depends_on: []
+                    - id: M44.C2.L-data.V0.U04
+                      what: >
+                        The meetings of a day, for a seat (seat-visible, cancelled ones out): today's and
+                        tomorrow's that it attends; and each external meeting of the last 14 days with no
+                        mail of ours to any attendee within 7 days after it (F54) — a gathering of more than
+                        ten, or a recurring session, excluded (F31: a cohort session is not an obligation).
+                      artifact: "genios_engine/context/meeting_days.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_the_meetings_of_a_day.py"
+                      depends_on: []
+                    - id: M44.C2.L-data.V0.U05
+                      what: >
+                        Your promises due: every open commitment of ours — its owner is us, by STEP-04's one
+                        identity — overdue or due within seven days, with the mail it was made in and the
+                        person it is owed to. F30: "the pilot proposal to Gaurav, by Friday", from your own
+                        sent mail.
+                      artifact: "genios_engine/context/promises_due.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_your_promises_due.py"
+                      depends_on: []
+        - id: M44.C3
+          name: The day, assembled and ordered
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M44.C3.L-logic.V0.U01
+                      what: >
+                        The order, pure. Today's five: a meeting today and a dated deadline or promise
+                        within 48 hours always in (the five flexes, said); then the open decisions by
+                        `reason/brief_ranking.book_rank` — under `06` D1 their utility is the expert's
+                        appraisal, and a card left unread steps down; then the questions. The sections:
+                        watching is a waiting or blocked file once it is quiet past the first rung, 7 days
+                        (F08, F14 in; F39, F40, F43 — must-abstain — out); stuck is a file whose move is
+                        ours and quiet past the second rung, 14 days, or a wave past its window; each
+                        section capped, the word budget kept, what was cut said.
+                      artifact: "genios_engine/executive/morning_order.py"
+                      verify: ".venv/bin/python -m pytest -q tests/executive/test_the_day_is_ordered.py"
+                      depends_on: [M44.C1.L-contract.V0.U01]
+                    - id: M44.C3.L-logic.V0.U02
+                      what: >
+                        The day, assembled for one seat at one instant: the files
+                        (`context/workstreams.files_for`) with their current judgments, the open questions,
+                        your desk, the day's meetings with their prep (`reason/meetings/prep.read` and
+                        `compose`, for the day — not the desktop's 3-hour precompute), your promises due,
+                        your reply time with a waiting file where it holds (n >= 5, `06` D37 — F45), and a
+                        file gone cold after real exchanges (F53's shape) from its timeline and numbers.
+                        Each item with its material and sources. A file decided on the shadow lane is left
+                        out (s15-D2's default). Pure assembly over one connection; no model.
+                      artifact: "genios_engine/executive/morning_day.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_the_day.py"
+                      depends_on: [M44.C1.L-contract.V0.U01, M44.C2.L-data.V0.U01, M44.C2.L-data.V0.U02, M44.C2.L-data.V0.U03, M44.C2.L-data.V0.U04, M44.C2.L-data.V0.U05]
+                - level: 1
+                  units:
+                    - id: M44.C3.L-logic.V1.U03
+                      what: >
+                        The template brief, pure — code's own words for every line, from its item's
+                        material only: the checked headline, the expert's wait rule, the question, the
+                        numbers with their n; you as "you" (`03` F178), the person and never the connector
+                        who introduced them, no address, no quote; the one line ("3 things need you; a
+                        meeting today"); "Nothing needs you today" only when nothing is open, asked, due or
+                        watched (`03` s15-F2). What you read when no model writes.
+                      artifact: "genios_engine/executive/morning_template.py"
+                      verify: ".venv/bin/python -m pytest -q tests/executive/test_the_template_brief.py"
+                      depends_on: [M44.C3.L-logic.V0.U01]
+                    - id: M44.C3.L-logic.V1.U04
+                      what: >
+                        What changed since your last brief: each review since it with what triggered it
+                        (0199, in words — "Hub71 wrote", "Khushi is now 18 days unanswered"), the items new
+                        today and the ones gone — answered, closed or suppressed, each with why — read
+                        against the seat's last kept brief.
+                      artifact: "genios_engine/executive/morning_day.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_what_changed_since_the_last_brief.py tests/executive/test_the_day.py"
+                      depends_on: [M44.C3.L-logic.V0.U02, M44.C4.L-data.V0.U01]
+        - id: M44.C4
+          name: Where the brief runs and arrives
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M44.C4.L-data.V0.U01
+                      what: >
+                        The brief kept: written once per seat per local day — a second composer reads the
+                        first's; today's, a given day's, and the seat's last brief before a day read back;
+                        a mark kept per line per person, the latest standing.
+                      artifact: "genios_engine/executive/morning_store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_the_brief_is_kept_once_a_day.py"
+                      depends_on: [M44.C1.L-contract.V1.U02]
+            - layer: interface
+              levels:
+                - level: 2
+                  units:
+                    - id: M44.C4.L-interface.V2.U04
+                      what: >
+                        GET /v1/executive/morning — your brief for today: before the hour the last one,
+                        saying when today's arrives; after it with none kept, composed on read (the row's
+                        key makes it once); and GET /v1/executive/morning/{date}. Its lines, their sections,
+                        where each came from, how it was written. The dashboard's Today view reads this; the
+                        screen is `genios-dashboard`'s (`06` D9).
+                      artifact: "genios_engine/api/executive_routes.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_the_morning_route.py"
+                      depends_on: [M44.C4.L-integration.V1.U02]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M44.C4.L-integration.V1.U02
+                      what: >
+                        Compose: the day, ordered, in the template's words, kept. `compose_due`: for each
+                        org's account owner whose brief is due — the local time in `orgs.timezone` past the
+                        brief's hour (`06` D9: 08:00) and none kept for today — compose once; never raises
+                        past a seat.
+                      artifact: "genios_engine/executive/morning.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_one_brief_a_day.py"
+                      depends_on: [M44.C3.L-logic.V1.U03, M44.C3.L-logic.V1.U04, M44.C4.L-data.V0.U01]
+                - level: 2
+                  units:
+                    - id: M44.C4.L-integration.V2.U03
+                      what: >
+                        The brief arrives at 08:00: every sweep — the 6-hour heavy tick, the 15-minute light
+                        tick and /ingest/all — ends with `compose_due`, in its own block that never kills the
+                        beat; so a brief lands within one light tick of the hour, after the morning's mail
+                        (`03` s15-F12: nothing ran at a local hour).
+                      artifact: "genios_engine/api/routes.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_the_brief_arrives_at_eight.py"
+                      depends_on: [M44.C4.L-integration.V1.U02]
+        - id: M44.C5
+          name: The golden set judges the brief
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M44.C5.L-contract.V0.U01
+                      what: >
+                        A case's brief is an expectation like its cards: lines, each about whom (the case's
+                        people), in which section, saying what. `brief` leaves NOT_EXPRESSIBLE_TODAY; a case
+                        whose cards are brief-only (`06` D12d) is judged on its brief; a must-abstain case's
+                        subjects and every case's forbidden names and phrases are read over the brief too —
+                        `golden-labels.md`: `no` is never surfaced, as a card or as a line.
+                      artifact: "tests/replays/founder_case.py"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py"
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M44.C5.L-data.V1.U02
+                      what: >
+                        The twelve brief-only cases restated: F08 watching (Simon, Omar), F14 watching
+                        (Tara, Fjord), F20 today (TechBridge, 27 Sep), F21 asked (Awadh), F22 asked (seed
+                        grant, 30 Sep), F23 changed (State Startup Mission, SSM-2026-3381), F30 promises
+                        (Gaurav, the pilot proposal), F45 today (Meera, Bluepeak, 1.5 days, n=6), F54
+                        meetings (the Bluebay mixer), F55 your desk (28 days; Dev, Rhea, Kabir); F53
+                        `blocked_on` s15-D2 (its file is decided on the shadow lane) and F18 `blocked_on`
+                        the gate (`06` D29: the round's notice is archived, read by nothing).
+                      artifact: "tests/replays/specs/founder"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_case_forbids_something.py"
+                      depends_on: [M44.C5.L-contract.V0.U01]
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M44.C5.L-integration.V0.U03
+                      what: >
+                        The runner composes the founder's brief after the last sweep, at its instant, with
+                        no model — the template: the brief's CONTENT is code's and the golden set judges it;
+                        its WORDS are the writer's, judged by the check and the live look (STEP-12 §8.3 N8's
+                        split) — and reports its lines (`CaseRun.brief`).
+                      artifact: "tests/replays/engine_runner.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/replays/test_engine_runner.py"
+                      depends_on: [M44.C4.L-integration.V1.U02]
+                - level: 1
+                  units:
+                    - id: M44.C5.L-integration.V1.U04
+                      what: >
+                        The brief judged: each expected line present, in its section, about whom it says;
+                        every forbidden name and phrase absent from every line; a must-abstain case's
+                        subjects absent from the brief; a brief-only case's verdict is its brief's. What a
+                        line quotes is read apart from what it says, as STEP-13's judge reads a card's sources
+                        (eb2b0486).
+                      artifact: "tests/replays/marking.py"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_marking.py tests/replays/test_marking_matches_the_claim.py"
+                      depends_on: [M44.C5.L-contract.V0.U01, M44.C5.L-integration.V0.U03]
+                - level: 2
+                  units:
+                    - id: M44.C5.L-integration.V2.U05
+                      what: >
+                        M44's acceptance: 10 of the 12 brief-only cases pass on their brief (F18 at the gate,
+                        F53 on s15-D2), every must-abstain case's brief names nothing its case forbids,
+                        forbidden outputs 0 over cards and lines, and every open decision card's file is a
+                        line of its brief (the brief hides no card); with the brief switched off each
+                        brief-only case is not expressible again (the negative control); the board restated
+                        in its five places.
+                      artifact: "tests/replays/test_the_morning_brief_is_judged.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_the_morning_brief_is_judged.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M44.C5.L-integration.V1.U04, M44.C5.L-data.V1.U02]
+    - id: M45
+      name: The brief in a chief of staff's words — Haiku writes, the check holds, Sonnet only when Haiku fails (STEP-15 §3.2-§3.5, Rohit 12 Oct)
+      ships: >
+        With `morning_brief` armed, the brief is written by the T1 model from the day's checked material and
+        checked line by line: a line naming, numbering or dating what its item does not hold, calling you
+        "the founder", or making a connector the one to act gets its template words back; a draft failing
+        twice is written once by T2; never T3. On the golden set's briefs each mutation of a written line is
+        caught on its own line, and with the check off it reaches the kept brief (the negative control).
+        Every line takes your mark; the Slack digest is the brief; the live look counts its calls and
+        dollars before anything is spent.
+      categories:
+        - id: M45.C1
+          name: The writer's site, its budget and its switch
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M45.C1.L-contract.V0.U01
+                      what: >
+                        Two sites: R-8, the morning brief, on T1 (Haiku-class), and R-8E, the same brief
+                        asked once more, on T2 (Sonnet-class) — never T3 (Opus); their output ceilings sized,
+                        said (the live look measures them); both in the closed list with their tiers.
+                      artifact: "genios_engine/reason/bundle/sites.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_the_brief_sites.py tests/reason/test_llm_policy.py"
+                      depends_on: []
+                    - id: M45.C1.L-contract.V0.U03
+                      what: >
+                        The feature `morning_brief`: off by default, armed per tenant only after the live
+                        look (s15-D1). Off, the brief is the template and nothing is spent.
+                      artifact: "genios_engine/platform/l4_activation.py"
+                      verify: ".venv/bin/python -m pytest -q tests/platform/test_the_morning_brief_feature.py"
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M45.C1.L-contract.V1.U02
+                      what: >
+                        The brief's own day: `OWN_BUDGETS` gains R-8 and R-8E — $0.25 a day per org and
+                        $0.03 a call (sized: a brief is about 6,000 tokens in and 800 out, about $0.01 on T1
+                        and $0.02 on T2) — never out of the expert's $2 (`06` D7) nor the narrative's.
+                      artifact: "genios_engine/reason/bundle/budget.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_the_brief_has_its_own_budget.py"
+                      depends_on: [M45.C1.L-contract.V0.U01]
+        - id: M45.C2
+          name: The writer
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M45.C2.L-logic.V0.U01
+                      what: >
+                        The writer's prompt: a 30-year chief of staff's morning note, written only from the
+                        day's items and in their order — each line from its item's material; for each of
+                        today's five one reason why today, drawn from its file's appraisal reasons; at most
+                        one observation across files, labelled as the writer's own reading; "you", never
+                        your name or "the founder"; no number, name or date it was not handed; no connector
+                        as the one to act; the company brief's block (STEP-07). The prompt names no model.
+                      artifact: "genios_engine/executive/morning_prompt.py"
+                      verify: ".venv/bin/python -m pytest -q tests/executive/test_the_brief_prompt.py"
+                      depends_on: [M44.C1.L-contract.V0.U01]
+                    - id: M45.C2.L-logic.V0.U02
+                      what: >
+                        The line check, pure: each written line against its own item's material by the
+                        engine's invention rule (`platform/grounding.invention_ok`: names, numbers, dates —
+                        and the expert check's earned words); "you" (`speaks_of_you`); no connector as the
+                        actor; no address; one line per item, none added, dropped or moved; the word budget.
+                        A line that fails is given its template words, said — a verdict per line.
+                      artifact: "genios_engine/executive/morning_check.py"
+                      verify: ".venv/bin/python -m pytest -q tests/executive/test_every_brief_line_is_checked.py"
+                      depends_on: [M44.C1.L-contract.V0.U01, M44.C3.L-logic.V1.U03]
+                - level: 1
+                  units:
+                    - id: M45.C2.L-logic.V1.U03
+                      what: >
+                        The writer: the day's items through `reason/llm_sites.run_site` on R-8 — its gate,
+                        its own budget, a cache keyed on the day's material and the prompt version — then
+                        checked; two lines failing, or an answer malformed after its one syntax repair, and
+                        the brief is asked ONCE of R-8E; failing again, the template stands. The brief says
+                        which — written, escalated or template, and why — and what it cost.
+                      artifact: "genios_engine/executive/morning_writer.py"
+                      verify: ".venv/bin/python -m pytest -q tests/executive/test_the_brief_writer.py"
+                      depends_on: [M45.C1.L-contract.V0.U01, M45.C1.L-contract.V1.U02, M45.C1.L-contract.V0.U03, M45.C2.L-logic.V0.U01, M45.C2.L-logic.V0.U02]
+        - id: M45.C3
+          name: Where the words run, and your mark
+          layers:
+            - layer: interface
+              levels:
+                - level: 0
+                  units:
+                    - id: M45.C3.L-interface.V0.U02
+                      what: >
+                        POST /v1/executive/morning/lines/{line_id}/mark — useful, or not useful with your
+                        words; a later mark of yours replaces it; recorded only — STEP-16 turns marks into
+                        proposals you accept, never this step.
+                      artifact: "genios_engine/api/executive_routes.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_every_line_takes_a_mark.py"
+                      depends_on: [M44.C4.L-interface.V2.U04, M44.C4.L-data.V0.U01]
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M45.C3.L-integration.V0.U01
+                      what: >
+                        Compose writes through the writer when `morning_brief` is armed for the tenant, in
+                        the template's words otherwise; the brief kept with the writer's receipt — model,
+                        tier, cost and each line's verdict.
+                      artifact: "genios_engine/executive/morning.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_one_brief_a_day.py tests/executive/test_the_brief_is_written_when_armed.py"
+                      depends_on: [M45.C2.L-logic.V1.U03, M44.C4.L-integration.V1.U02]
+                    - id: M45.C3.L-integration.V0.U03
+                      what: >
+                        One morning surface: the daily digest a Slack tenant receives is the kept brief —
+                        its one line and today's five, sent once it is kept — not the signal count
+                        (`executive/summary.build_summary`) at the heavy tick's UTC day; a tenant with only
+                        the pull surface reads it on the dashboard (`03` s15-F4).
+                      artifact: "genios_engine/deliver/outbox.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_the_digest_is_the_brief.py"
+                      depends_on: [M44.C4.L-integration.V1.U02]
+        - id: M45.C4
+          name: As Rohit decides — each built only on its answer
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M45.C4.L-logic.V0.U01
+                      what: >
+                        On s15-D2 = yes only: a file decided on the shadow lane — its domain not switched on
+                        — is a line in your brief, labelled "outside your switched-on work", never a card
+                        (`06` D2 governs cards). F53's line restated and its `blocked_on` lifted: "Larkspur
+                        went quiet after four exchanges in March — six months" (must-detect 31 -> 32 of 45).
+                      artifact: "genios_engine/executive/morning_day.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_a_dark_file_is_a_line.py tests/executive/test_the_day.py"
+                      depends_on: [M44.C3.L-logic.V1.U04]
+                    - id: M45.C4.L-logic.V0.U02
+                      what: >
+                        On `06` D8 = yes only: your open screen follow-ups — what you promised, what you
+                        were asked, a deadline within 48 hours (`reason/moments/followups.open_items`) — in
+                        your own brief, beside the file whose person they name
+                        (`platform/identity.person_name_key`), the rest under your promises; seat-private,
+                        never in a file's timeline (`06` D22, D53); the popups stay hidden.
+                      artifact: "genios_engine/executive/morning_screen.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_screen_reminders_in_the_brief.py"
+                      depends_on: [M44.C3.L-logic.V0.U02]
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M45.C4.L-integration.V0.U03
+                      what: >
+                        On s15-D3 = yes only: an `act` review appraised low stakes and low urgency is decided
+                        as before and emits no signal — its line is in your brief, never a card (F20, F23:
+                        the labels' answer, 2 of 94 authored reviews).
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_small_move_is_a_brief_line.py tests/reason/expert/test_the_review_decides.py"
+                      depends_on: [M44.C5.L-integration.V2.U05]
+        - id: M45.C5
+          name: The live look, and the acceptance
+          layers:
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M45.C5.L-integration.V0.U01
+                      what: >
+                        `scripts/golden_eval.py --site brief`: the writer over the golden set's briefs on T1
+                        and on T2, each written brief checked and set beside its template — per model, the
+                        lines kept, the lines given back their template words, the escalations; `--dry-run`
+                        counts the calls and dollars first; it spends only with a key and `--spend-ok`
+                        (s15-D1's live look).
+                      artifact: "scripts/golden_eval.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_golden_eval_brief.py"
+                      depends_on: [M45.C2.L-logic.V1.U03, M44.C5.L-integration.V0.U03]
+                - level: 1
+                  units:
+                    - id: M45.C5.L-integration.V1.U02
+                      what: >
+                        M45's acceptance: on the golden set's briefs a faithful writer's lines stand the
+                        check; each mutation of a written line — a name, number or date its item does not
+                        hold, "the founder", a connector to act, an item added, dropped or moved — is caught
+                        on its own line and given its template words; a T1 draft failing twice is asked of
+                        T2 once, and T3 never; with the check off each mutation reaches the kept brief (the
+                        negative control); the board unchanged.
+                      artifact: "tests/executive/test_the_brief_in_words.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/executive/test_the_brief_in_words.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M45.C3.L-integration.V0.U01, M45.C5.L-integration.V0.U01, M44.C5.L-integration.V2.U05]

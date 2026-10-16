@@ -57,16 +57,16 @@ FETCHES = ("refused", "ok")
 
 #: What the engine cannot express yet, and why. A case that expects one of these MUST declare it
 #: in its own `not_expressible`, so the board counts it apart. When a capability lands, its row is
-#: deleted here, and every case that declared it is then judged on it.
+#: deleted here, and every case that declared it is then judged on it. `brief` left on 12 Oct (STEP-15,
+#: `yc2_w27_s15` M44.C5.L-contract.V0.U01): the morning brief is composed after each case's last sweep.
 NOT_EXPRESSIBLE_TODAY: dict[str, str] = {
     "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
     "stage": "STEP-09 — no stage is derived for a workstream",
     "lane": "F10 — cards.output_lane is written NULL on the decided path",
-    "brief": "STEP-15 — there is no morning brief to appear in",
     "outcome": "STEP-16 — no card's end records the evidence that closed it",
 }
 #: Expectation keys the runner can check today.
-EXPRESSIBLE_KEYS = ("gate", "memory", "cards")
+EXPRESSIBLE_KEYS = ("gate", "memory", "cards", "brief")
 EXPECTATION_KEYS = EXPRESSIBLE_KEYS + tuple(NOT_EXPRESSIBLE_TODAY)
 
 #: People and organisations from the founder's real mailbox (`04-NOW-VS-SHOULD-VS-EXPECTED.md` §2,
@@ -262,6 +262,30 @@ class CardExpectation:
 
 
 @dataclass(frozen=True)
+class BriefLineExpectation:
+    """A line the founder must — or must never — read in the morning brief (STEP-15).
+
+    A line is ABOUT this expectation when any `about` term appears in its words (whole word, any case) — its
+    quotes read apart, never as its words — and it stands in `section` (`contracts/morning_brief.SECTIONS`).
+    `min`/`max` bound how many such lines the brief holds; every matched line says each of `mentions`."""
+
+    section: str
+    about: tuple[str, ...]
+    min: int = 1
+    max: int = 1
+    mentions: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class BriefExpectation:
+    """The case's morning brief, composed after its last sweep: what the label says (`says`), and the lines the
+    marking judges. No lines: prose only — declared not expressible, with its reason."""
+
+    says: str
+    lines: tuple[BriefLineExpectation, ...] = ()
+
+
+@dataclass(frozen=True)
 class Witness:
     """The stage a must-abstain case must show it reached, so its silence is a decision."""
 
@@ -284,7 +308,7 @@ class FounderCase:
     expected_gate: Mapping[str, str]
     expected_memory: Mapping[str, bool]
     cards: tuple[CardExpectation, ...]
-    expected_other: Mapping[str, str]            # workstream / stage / lane / brief, as written
+    expected_other: Mapping[str, str]            # workstream / stage / lane / outcome, as written
     forbidden_names: tuple[str, ...]
     forbidden_phrases: tuple[str, ...]
     witness: Witness | None
@@ -302,6 +326,8 @@ class FounderCase:
     #: case (`settings.platform_domains`), when the founder's company domain is also the product's,
     #: as the design partner's is. Empty: production's default stands.
     platform_domains: tuple[str, ...] = ()
+    #: STEP-15 (`yc2_w27_s15` M44.C5.L-contract.V0.U01) · the morning brief after the last sweep — or None.
+    brief: BriefExpectation | None = None
 
     def expressible(self, key: str) -> bool:
         return key not in self.not_expressible
@@ -378,6 +404,26 @@ class CardView:
 
 
 @dataclass(frozen=True)
+class BriefLineView:
+    """One line of the brief composed after a case's last sweep, as the founder reads it (STEP-15)."""
+
+    line_id: str
+    section: str
+    kind: str
+    text: str                                   # the line's words
+    subject: str | None = None
+    #: What the line QUOTES of others' words — evidence, read apart from what it says, as a card's sources are
+    #: (STEP-13, F37: a line that quotes "Introly connected us" is not a line about Introly). The template quotes
+    #: nothing; a writer's line may.
+    quotes: tuple[str, ...] = ()
+    #: M44's acceptance (`yc2_w27_s15` M44.C5.L-integration.V2.U05): the open card this line's item sources
+    #: (`contracts.morning_brief.SOURCE_CARD`) — a decision card from the book re-rank, or a question's own card
+    #: (STEP-13) — when one is open; None when the line names no card. So the brief and the card queue can be read
+    #: against each other: no open card this run produced is missing from both.
+    card_id: str | None = None
+
+
+@dataclass(frozen=True)
 class CaseRun:
     case_id: str
     org_id: str
@@ -389,6 +435,9 @@ class CaseRun:
     chain_ok: tuple[bool, ...]                  # per sweep: `_run_l2_chain`'s own answer
     model_calls: tuple[tuple[str, str], ...]    # (site, cassette key), in call order
     misses: tuple[tuple[str, str], ...]
+    #: STEP-15 · the brief composed after the last sweep, its lines in order — None when none was composed (the
+    #: runner asked with `brief=False`: the negative control, which reads the brief not expressible).
+    brief: tuple[BriefLineView, ...] | None = None
 
 
 # =================================================================================================
@@ -403,6 +452,8 @@ _MAILBOX = re.compile(r"^[a-z][a-z0-9]{0,15}$")
 _GCAL_KEYS = {"id", "source", "sweep", "occurred_at", "summary", "start", "end", "organizer",
               "attendees", "status", "description", "location", "recurringEventId", "read"}
 _CARD_KEYS = {"about", "min", "max", "mentions", "headline_says", "closed_from"}
+_BRIEF_KEYS = {"says", "lines"}
+_BRIEF_LINE_KEYS = {"section", "about", "min", "max", "mentions"}
 _ID = re.compile(r"^F\d{2}$")
 
 
@@ -486,6 +537,7 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
         raise CaseError(f"{where}: a must_abstain case names the card that must not exist "
                         "(max 0)")
     other = {k: str(expected[k]) for k in NOT_EXPRESSIBLE_TODAY if k in expected}
+    brief = _brief(expected["brief"], f"{where}.expected.brief") if "brief" in expected else None
 
     not_expressible = {str(k): str(v) for k, v in (raw.get("not_expressible") or {}).items()}
     for key, reason in not_expressible.items():
@@ -493,6 +545,9 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
             raise CaseError(f"{where}: not_expressible names {key!r}, which is no expectation")
         if not reason.strip():
             raise CaseError(f"{where}: not_expressible[{key!r}] gives no reason")
+    if brief is not None and not brief.lines and "brief" not in not_expressible:
+        raise CaseError(f"{where}: a brief expectation with no lines is prose the marking cannot judge — give it "
+                        "lines, or declare `brief` in not_expressible with the reason")
     for key in other:
         if key not in not_expressible:
             raise CaseError(
@@ -542,7 +597,7 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
         expected_other=other, forbidden_names=tuple(forbidden.get("names") or ()),
         forbidden_phrases=tuple(forbidden.get("phrases") or ()), witness=witness,
         not_expressible=not_expressible, model=model, blocked_on=blocked_on, source=source,
-        platform_domains=platform_domains)
+        platform_domains=platform_domains, brief=brief)
 
 
 def load_cases(folder: Path = FOUNDER_DIR) -> tuple[FounderCase, ...]:
@@ -648,6 +703,34 @@ def _card(raw: Any, where: str) -> CardExpectation:
                            mentions=tuple(str(t) for t in raw.get("mentions") or ()),
                            headline_says=tuple(str(t) for t in raw.get("headline_says") or ()),
                            closed_from=closed_from)
+
+
+def _brief(raw: Any, where: str) -> BriefExpectation:
+    """A brief expectation: the label's prose alone (a string), or `{says, lines}`."""
+    if isinstance(raw, str):
+        if not raw.strip():
+            raise CaseError(f"{where}: a brief expectation says something")
+        return BriefExpectation(says=raw.strip())
+    _no_unknown(raw, _BRIEF_KEYS, where)
+    says = str(raw.get("says") or "").strip()
+    if not says:
+        raise CaseError(f"{where}: a brief expectation keeps what its label says (`says`)")
+    from genios_engine.contracts.morning_brief import SECTIONS
+    lines = []
+    for i, line in enumerate(raw.get("lines") or ()):
+        at = f"{where}.lines[{i}]"
+        _no_unknown(line, _BRIEF_LINE_KEYS, at)
+        if line.get("section") not in SECTIONS:
+            raise CaseError(f"{at}: section {line.get('section')!r} is not one of {SECTIONS}")
+        about = tuple(str(t) for t in line.get("about") or ())
+        if not about:
+            raise CaseError(f"{at}: a brief line expectation names its subject in `about`")
+        lo, hi = line.get("min", 1), line.get("max", 1)
+        if not (isinstance(lo, int) and isinstance(hi, int) and 0 <= lo <= hi):
+            raise CaseError(f"{at}: min and max must be integers with 0 <= min <= max")
+        lines.append(BriefLineExpectation(section=line["section"], about=about, min=lo, max=hi,
+                                          mentions=tuple(str(t) for t in line.get("mentions") or ())))
+    return BriefExpectation(says=says, lines=tuple(lines))
 
 
 def _instant(value: Any, where: str) -> datetime:

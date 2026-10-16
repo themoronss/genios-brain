@@ -691,6 +691,7 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
     from genios_engine.reason.change_gate import FILE_RENEW_MARGIN, QUESTION_RENEW_MARGIN, should_skip
     from genios_engine.reason.expert import asks
     from genios_engine.reason.expert import decide as expert
+    from genios_engine.reason.expert.small_move import is_small_move
 
     if not reviews:
         return
@@ -763,6 +764,7 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
                 counts["expert_shadow"] += 1
                 gate.record(key, fingerprint, "shadow", run_id)
                 continue
+            small = is_small_move(review)       # STEP-15 s15-D3 (`06` D66): a line in the brief, never a card
             # THE SAME DAILY CAP, the same pool (see the situation loop above) — on what it is for: a
             # decision that would be SHOWN. ⛔ AFTER THE OUTCOME (STEP-13 M36.C2.L-integration.V2.U11, `03`
             # X27): a review that names no move now emits nothing — it asks its question, or clears the
@@ -775,18 +777,26 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             # same advice re-emitted inside its renewal margin publishes nothing new — a quiet version (s14-D1) — and a
             # spent cap stopped it, so the card lapsed at its window, the lapse the margin exists to prevent.
             renewal = _renews_its_decision(conn, org_id, file_id, rule_id, review, eval_time)
-            if remaining[0] <= 0 and execution.decision.outcome not in _NO_MOVE and not renewal:
+            if (remaining[0] <= 0 and execution.decision.outcome not in _NO_MOVE and not renewal
+                    and not small):
                 counts["budget_exhausted"] += 1
                 gate.record(key, fingerprint, "indeterminate", run_id)
                 continue
             bundle: dict = {}
-            outcome = _persist_live(
-                store=store, reasoning_store=reasoning_store, org_id=org_id, node_id=file_id,
-                package=_REVIEWED, execution=execution, eval_time=eval_time, pack=pack,
-                situation_id=str(home.situation_id),
-                replace_unless_from=expert.decision_ref(review.fingerprint, review.checked.version),
-                same_advice=lambda prior, _file=file_id, _row=review: _same_advice(
-                    conn, org_id, _file, prior, _row), bundle_out=bundle)
+            if small:
+                # DECIDED AS BEFORE — the audited run is persisted — and no signal: delivery has nothing to build a
+                # card from; the brief reads the review and says the line (`executive/morning_day`).
+                bundle.update(persist_execution(store=reasoning_store, execution=execution))
+                outcome = "nothing_to_emit"
+                counts["expert_small_move"] += 1
+            else:
+                outcome = _persist_live(
+                    store=store, reasoning_store=reasoning_store, org_id=org_id, node_id=file_id,
+                    package=_REVIEWED, execution=execution, eval_time=eval_time, pack=pack,
+                    situation_id=str(home.situation_id),
+                    replace_unless_from=expert.decision_ref(review.fingerprint, review.checked.version),
+                    same_advice=lambda prior, _file=file_id, _row=review: _same_advice(
+                        conn, org_id, _file, prior, _row), bundle_out=bundle)
             counts[f"expert_{outcome}"] += 1
             # STEP-13 (M36.C2.L-integration.V2.U03): a file decided INSUFFICIENT on its answer asks the
             # founder its one question; any other decision retires the question it asked before.
@@ -802,7 +812,7 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
                 counts["expert_question_retired"] += 1
             if outcome != "rule_id_collision":
                 decided[file_id] = review.fingerprint
-            if outcome == "nothing_to_emit" and execution.decision.outcome in _NO_MOVE:
+            if outcome == "nothing_to_emit" and (small or execution.decision.outcome in _NO_MOVE):
                 cleared = _clear_file_decision(store, org_id, file_id, rule_id,
                                                cards=asked not in asks.ASKING)
                 if cleared:

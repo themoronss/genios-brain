@@ -72,7 +72,9 @@ def test_no_opus_tier_exists():
 # ── the expert's own budget ────────────────────────────────────────────────────────────────────
 
 def test_the_expert_has_its_own_ceilings():
-    assert B.OWN_BUDGETS == {S.SITE_EXPERT: ("2.00", "0.10")}
+    # STEP-15 added R-8/R-8E (`tests/reason/test_the_brief_has_its_own_budget.py`) — this file's own
+    # claim is only about the expert's own two numbers, never that it is the only entry.
+    assert B.OWN_BUDGETS[S.SITE_EXPERT] == ("2.00", "0.10")
     own = B.NarrativeBudget.for_site(S.SITE_EXPERT, org_id=ORG)
     assert own.daily_cap_micro_usd == 2_000_000 and own.per_call_cap_micro_usd == 100_000
     assert own.site == S.SITE_EXPERT

@@ -63,6 +63,17 @@ Enterprise Centre (archived at `llm_junk` until now) and F22's from the Universi
 Each programme is now one file of kind `program`; neither case moves on the board — both are brief-only,
 not expressible (D12d), and no card is built for either. The gate's promise is unchanged: nothing
 dropped, every other archive the same.
+
+RESTATED BY STEP-15 (`yc2_w27_s15` M44.C5.L-integration.V2.U05, M44's acceptance). The runner now composes the
+morning brief after a case's last sweep, with no model, and the marking judges a brief-only case on it
+(`06` D12d). Seven of these cases are inside F01–F40 and move on this board: F08 and F14 (a "watching" line,
+no card either side), F30 (a "promises" line — its `not_expressible` keeps the screen door's half, unresolved),
+F20 and F23 (the one card STEP-12 found stands; the brief's "today" line now passes too), and F21 and F22
+(STEP-13's question card stands; the brief's "today" line names it too). The gate's own promise did not move on
+any case: nothing dropped, every archive the same. (F18, F45, F53, F54 and F55 are brief-only too; F18 stays
+blocked at the gate — `06` D29 — and F45/F54/F55 are `ADDED_AFTER`, outside this file's board; F53 stayed
+blocked on s15-D2 then, and passes since 16 Oct — s15-F22, also `ADDED_AFTER`, so no row here moves for it.
+`tests/replays/test_the_morning_brief_is_judged.py` is where the brief is judged whole.)
 """
 from __future__ import annotations
 
@@ -173,8 +184,13 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     # explains standing down — one card about a file where there were two or three, a second card where
     # the review's advice changed as the file moved (`03` F176), a must-abstain case's recap gone.
     "F17": ("STEP-12", ("must_detect", "pass", None, 1)),
-    "F20": ("STEP-12", ("must_detect", "not_expressible", None, 1)),
-    "F23": ("STEP-12", ("must_detect", "not_expressible", None, 1)),
+    # STEP-15 (`yc2_w27_s15 · M44.C5`, `06` D12d): a brief-only case's answer is judged on the morning brief the
+    # runner now composes after the last sweep, never a card — F20 and F23 passed on their brief's "today" line and
+    # kept the one card STEP-12 found. ⛔ RESTATED 16 Oct by M45.C4.L-integration.V0.U03 (s15-D3, `06` D66): a small
+    # move (act, low stakes, low urgency, writing to no one) emits no signal, so F20's meetup and F23's registration
+    # are a line in the brief and NO card — 1 → 0, and still a pass (the case is brief-only; its card was never judged).
+    "F20": ("STEP-15", ("must_detect", "pass", None, 0)),
+    "F23": ("STEP-15", ("must_detect", "pass", None, 0)),
     "F27": ("STEP-12", ("must_detect", "pass", None, 1)),
     "F29": ("STEP-14", ("must_detect", "pass", None, 1)),
     "F40": ("STEP-12", ("must_abstain", "pass", None, 0)),
@@ -184,10 +200,20 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     "F01": ("STEP-13", ("must_detect", "pass", None, 1)),
     "F07": ("STEP-14", ("must_detect", "pass", None, 1)),
     # F21's file asks once — since the question is the review's first unknown (M36.C2.L-logic.V2.U10), its two
-    # reviews ask the same question and the second re-binds the first card — F22's once; both still
-    # `brief only` (not expressible, STEP-15), their question cards counted.
-    "F21": ("STEP-13", ("must_detect", "not_expressible", None, 1)),
-    "F22": ("STEP-13", ("must_detect", "not_expressible", None, 1)),
+    # reviews ask the same question and the second re-binds the first card — F22's once; their question card is
+    # kept (STEP-13's), and STEP-15's brief now has a "today" line naming it too — both pass.
+    "F21": ("STEP-15", ("must_detect", "pass", None, 1)),
+    "F22": ("STEP-15", ("must_detect", "pass", None, 1)),
+    # STEP-15 (`yc2_w27_s15 · M44.C5`, `06` D12d): the morning brief composed after the last sweep is F08's and
+    # F14's answer — a "watching" line each, no card either side of this step — and F30's: "promises" names
+    # Gaurav's pilot proposal from the founder's own sent mail; the screen door's half of its `not_expressible`
+    # (WhatsApp promises) is untouched and still named.
+    "F08": ("STEP-15", ("must_detect", "pass", None, 0)),
+    "F14": ("STEP-15", ("must_detect", "pass", None, 0)),
+    "F30": ("STEP-15", ("must_detect", "pass", None, 0)),
+    # STEP-15: F18 stays blocked (`06` D29 — the round's notice is archived `not_business`, as it was; no file,
+    # no review, nothing a brief could read) — not_expressible → a named fail, never silently passing.
+    "F18": ("STEP-15", ("must_detect", "fail", None, 0)),
     # STEP-14 (`yc2_w27_s14 · M42`, M43, s14-D4): ONE FILE, ONE LIVING CARD — a file's next decision or question versions
     # its card, never a second card (F176). F02, F05, F06, F07, F19, F24 and F29 are one card each, its versions the
     # advice as the file moved (F19: the move whole names the three people, `06` D58); F12 and F25 are back at their
