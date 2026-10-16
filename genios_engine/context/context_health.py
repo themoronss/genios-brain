@@ -34,9 +34,9 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/context/test_the_context_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
-    "file_outcomes.ended_for_files": (
-        "STEP-16 (yc2_w27_s16 M47.C1.L-data.V2.U03): how each card of one file, or of a kind of work's files, ended, in one read — built ahead of your numbers for a kind of work (context/kind_numbers)",
-        "MOVES WHEN M47.C2.L-logic.V3.U01 lands: the kind's verified share is read through it — delete this entry in that commit"),
+    "kind_numbers.numbers_for_kind": (
+        "STEP-16 (yc2_w27_s16 M47.C2.L-logic.V3.U01): your numbers for a kind of work — how far your files got, how long each stage took you, what ended verified — built one unit ahead of the dossier that prints them beside the playbook's prior",
+        "MOVES WHEN M47.C2.L-logic.V4.U02 lands: the dossier and the sweep read them — delete this entry in that commit"),
 
     "file_outcomes.ended_for_cards": (
         "STEP-16 (yc2_w27_s16 M47.C1.L-data.V2.U03): how each card a file's dossier shows ended — built ahead of the dossier's WHAT WAS JUDGED BEFORE, which prints the end under each card (M47.C2.L-logic.V4.U02)",

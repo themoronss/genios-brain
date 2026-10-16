@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_210, (
+    assert r["statements"] == 3_211, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -588,6 +588,8 @@ def test_the_statement_count_did_NOT_move():
     # how that ask closed. The run-time ratchet stays 272.
     # ⛔ MOVED 3,206 → 3,210 by yc2_w27_s16/M47.C1.L-data.V2.U03 (how each decision of a file ended): four SELECTs in
     # `context/file_outcomes` — `_CARDS`, `_ENDINGS`, `_PRESSED`, `_VERDICTS`. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,210 → 3,211 by yc2_w27_s16/M47.C2.L-logic.V3.U01 (your numbers for a kind of work): one SELECT,
+    # `context/kind_numbers._STAGES` — each valid review's stage. The run-time ratchet stays 272.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
