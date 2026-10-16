@@ -373,10 +373,77 @@ def test_a_closing_sweep_names_a_later_sweep_of_the_case(closed_from):
         _parse(_two_sweeps(closed_from=closed_from))
 
 
-def test_a_verified_close_is_a_declared_gap_until_step_16():
+# ── STEP-16 (`yc2_w27_s16` M47.C4.L-contract.V0.U01): how a card ends, and your acts ─────────────────────
+def test_a_card_can_be_expected_to_end_verified_by_an_object_of_the_case():
+    """`outcome` left `NOT_EXPRESSIBLE_TODAY`: a card's end is read (`context/file_outcomes`), so a case says how
+    its card ends and by what — `ended`, and `by` an object of the case."""
+    assert "outcome" not in fc.NOT_EXPRESSIBLE_TODAY
+    raw = _two_sweeps(closed_from=1, ended="verified", by="ask")
+    raw["expected"]["outcome"] = "verified by the signed NDA"
+    case = _parse(raw)
+    assert (case.cards[0].ended, case.cards[0].by) == ("verified", "ask")
+    assert case.expected_other["outcome"] == "verified by the signed NDA"
+
+
+@pytest.mark.parametrize("card, message", [
+    ({"ended": "settled"}, "ended"),
+    ({"ended": "open"}, "ended"),
+    ({"by": "ask"}, "names how it ended"),
+    ({"ended": "taken", "by": "ask"}, "verified or replied"),
+    ({"ended": "verified", "by": "nothing"}, "not an object"),
+])
+def test_an_end_is_one_the_engine_reads_and_its_proof_an_object_of_the_case(card, message):
+    with pytest.raises(fc.CaseError, match=message):
+        _parse(_two_sweeps(**card))
+
+
+def test_a_prose_outcome_needs_a_card_end_that_judges_it():
     raw = _case()
     raw["expected"]["outcome"] = "verified on 3 Sep by the signed NDA"
     with pytest.raises(fc.CaseError, match="outcome"):
         _parse(raw)
-    raw["not_expressible"]["outcome"] = "STEP-16 — no card's end records the evidence that closed it"
-    assert _parse(raw).expected_other["outcome"] == "verified on 3 Sep by the signed NDA"
+
+
+def _acting(*acts) -> dict:
+    raw = _case(sweeps=["2026-09-18T12:00:00Z", "2026-09-19T12:00:00Z"])
+    raw["acts"] = list(acts)
+    return raw
+
+
+def test_a_case_may_carry_your_acts_after_a_sweep():
+    case = _parse(_acting(
+        {"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant",
+         "words": "Kavya wants the deck only after the partners meet.", "scope": "file"},
+        {"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "bad_timing"},
+        {"after_sweep": 0, "on": ["Kavya", "Lotus"], "correct": "Funds we met once get news on milestones only.",
+         "scope": "kind"}))
+    wrong, bare, correction = case.acts
+    assert (wrong.after_sweep, wrong.on, wrong.wrong, wrong.scope) == (0, ("Kavya", "Lotus"), "not_relevant", "file")
+    assert (bare.words, bare.scope) == (None, None)
+    assert (correction.correct, correction.wrong, correction.scope) == (
+        "Funds we met once get news on milestones only.", None, "kind")
+    assert _parse(_case()).acts == ()
+
+
+@pytest.mark.parametrize("act, message", [
+    ({"after_sweep": 2, "on": ["Kavya", "Lotus"], "wrong": "not_relevant"}, "sweep"),
+    ({"after_sweep": "0", "on": ["Kavya", "Lotus"], "wrong": "not_relevant"}, "sweep"),
+    ({"after_sweep": 0, "on": ["Somebody"], "wrong": "not_relevant"}, "a card the case expects"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "too_loud"}, "eleven reasons"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant", "words": "x", "scope": "team"},
+     "scope"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant", "scope": "file"}, "words"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"]}, "wrong or correct"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant", "correct": "x"}, "wrong or correct"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "correct": "  "}, "words"),
+    ({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant", "when": "now"}, "unknown key"),
+])
+def test_an_act_is_refused_at_load_when_it_could_not_be_played(act, message):
+    with pytest.raises(fc.CaseError, match=message):
+        _parse(_acting(act))
+
+
+def test_an_act_carries_no_real_name():
+    with pytest.raises(fc.CaseError, match="real name"):
+        _parse(_acting({"after_sweep": 0, "on": ["Kavya", "Lotus"], "wrong": "not_relevant",
+                        "words": "Theresa said so.", "scope": "file"}))
