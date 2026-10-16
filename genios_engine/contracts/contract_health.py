@@ -33,20 +33,6 @@ _ENGINE = _PKG.parent
 #: CLOSED, and checked in BOTH directions by `tests/contracts/test_the_contracts_layer_says_what_it_does_not_call.py`: an entry naming a function that
 #: is now called is as much a lie as a function that is unreached and undeclared.
 UNREACHED: dict[str, tuple[str, str]] = {
-    # ⛔ STEP-13b — CONTRACTS BUILT BEFORE THEIR CALLER, ON PURPOSE (bottom-up, `yc2_w27_s13b`): each entry below is
-    # deleted in the commit that wires it, as `expert_review.validate`'s was.
-    "model_ladder.next_step": (
-        "STEP-13b M38.C1.L-contract.V2.U01: the ladder's rule — final, repair once, climb, exhausted, carried — built "
-        "before the mechanism that asks the models. Test callers only.",
-        "MOVES WHEN `reason/expert/ladder` runs a file up the rungs (M38.C2.L-logic.V3.U02)"),
-    "model_ladder.complaint": (
-        "STEP-13b M38.C1.L-contract.V2.U01: the check's verdicts handed back to a repair as the prompt's complaint. "
-        "Test callers only.",
-        "MOVES WITH `next_step` — see that entry"),
-    "model_ladder.best_of": (
-        "STEP-13b M38.C1.L-contract.V2.U01: when every rung failed, the best fate stands. Test callers only.",
-        "MOVES WITH `next_step` — see that entry"),
-
     "brain_address.build_address": (
         "⛔ A GUARANTEE THAT IS KEPT BY DISCIPLINE RATHER THAN BY CONSTRUCTION. *'`BrainAddress` "
         "with the tenant token always present, **so no producer can forget it**.'* Measured: zero "

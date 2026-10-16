@@ -72,16 +72,19 @@ def _fact_line(line: str) -> tuple[int, int] | None:
     return (int(n), 0 if kind == "fact" else 1) if kind in ("fact", "quote") and n.isdigit() else None
 
 
-def writer_fault(status: str, checked: C.CheckedReview | None) -> str | None:
+def writer_fault(status: str, checked: C.CheckedReview | None, reason: str | None = None) -> str | None:
     """The writer's fault in a consult's answer — one of `CLIMB_REASONS` — or None when the answer is final (or
-    no fault of the writer's, as a day spent). Raises on a status the table does not have, or `valid` with no check:
-    a consult that parsed was checked."""
+    no fault of the writer's, as a day spent). `reason` is the row's own (`expert_reviews.reason`): a consult REFUSED
+    on substance because no fact stood (`nothing_stands: …`) is that fault, not a misshapen answer. Raises on a
+    status the table does not have, or `valid` with no check: a consult that parsed was checked."""
     if status not in STATUSES:
         raise ValueError(f"a consult's status is one of {STATUSES}, not {status!r}")
     if status == "over_budget":
         return None
     if status == "truncated":
         return TRUNCATED
+    if status == "refused" and str(reason or "").startswith(NOTHING_STANDS):
+        return NOTHING_STANDS
     if status in ("refused", "failed"):
         return MALFORMED
     if checked is None:
@@ -113,6 +116,7 @@ class Consult:
     status: str                                      # one of STATUSES
     checked: C.CheckedReview | None = None
     repair: bool = False                             # the rung's second ask, with the check's verdicts
+    reason: str | None = None                        # the row's own reason — a refusal says why (`nothing_stands: …`)
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,7 +139,7 @@ def next_step(consults: Sequence[Consult], *, rung: int, rungs: int) -> Step:
     last = consults[-1]
     if last.status == "over_budget":
         return Step(CARRIED)
-    fault = writer_fault(last.status, last.checked)
+    fault = writer_fault(last.status, last.checked, last.reason)
     if fault is None:
         return Step(FINAL)
     if len(consults) == 1 and last.status != "truncated":

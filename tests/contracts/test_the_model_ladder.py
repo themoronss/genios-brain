@@ -240,3 +240,30 @@ def test_a_step_and_a_fault_are_closed():
     with pytest.raises(ValueError):
         M.Step(M.CLIMB, "rude")
     assert M.Step(M.FINAL).fault is None
+
+
+# ── M38.C2.L-logic.V3.U02 · the ladder reads a refusal on substance as what it is ──────────────
+
+def test_a_refusal_because_nothing_stands_is_that_fault_not_a_misshapen_answer():
+    """A consult refused `nothing_stands` is refused on SUBSTANCE (the check held no fact), whatever else the status
+    `refused` also means — a stronger model may write facts that stand; the fault is named as the table does."""
+    assert M.writer_fault("refused", None, "nothing_stands: fact:1 uncited") == "nothing_stands"
+    checked = C.CheckedReview(verdicts=(_drop("fact:1", C.UNCITED),), fate=C.REFUSED, words=NONE, cited=(),
+                              because=C.NOTHING_STANDS)
+    assert M.writer_fault("refused", checked, "nothing_stands: fact:1 uncited") == "nothing_stands"
+    assert M.writer_fault("refused", None, "no_next_move: act") == "malformed", "a structure refusal is a misshapen answer"
+    assert M.writer_fault("refused", None) == "malformed" and M.writer_fault("failed", None, "nothing_stands") == "malformed"
+
+
+def test_the_step_reads_the_reason_a_consult_carries():
+    refused = M.Consult("refused", reason="nothing_stands: fact:1 uncited")
+    assert M.next_step([refused], rung=1, rungs=2) == M.Step(M.REPAIR, "nothing_stands")
+    assert M.next_step([refused, M.Consult("refused", reason="nothing_stands: x", repair=True)], rung=1,
+                       rungs=2) == M.Step(M.CLIMB, "nothing_stands")
+
+
+def test_the_complaint_of_a_refused_answer_hands_back_its_checks_verdicts():
+    checked = C.CheckedReview(verdicts=(_drop("fact:1", C.UNCITED), _drop("fact:2", C.MISQUOTED, "x y")),
+                              fate=C.REFUSED, words=NONE, cited=(), because=C.NOTHING_STANDS)
+    said = M.complaint("refused", checked)
+    assert "fact:1 (uncited)" in said and "fact:2 (misquoted: x y)" in said
