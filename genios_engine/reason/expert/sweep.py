@@ -72,6 +72,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from collections.abc import Mapping
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -80,7 +81,7 @@ from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW, activate
 from genios_engine.platform.logging import get_logger
 from genios_engine.reason.bundle.budget import NarrativeBudget
 from genios_engine.reason.bundle.gate import RSiteGate
-from genios_engine.reason.bundle.sites import SITE_EXPERT, tier_for
+from genios_engine.reason.bundle.sites import SITE_EXPERT, expert_ladder, tier_for
 from genios_engine.reason.bundle.store import BundleStore
 from genios_engine.reason import llm_sites
 
@@ -91,6 +92,7 @@ from .dossier import build_dossier, people_of, read_parts
 from .fingerprint import NONE, file_fingerprint, fingerprint_inputs, nearest_due
 from .kind_proposal import propose_kind
 from .prompt import PROMPT_VERSION
+from .ladder import Rung
 from .review import recheck, review_file
 from .triggers import ENGINE_MOVED, SELF_MOVED, triggers_for
 
@@ -200,9 +202,26 @@ def _with_engine(engine, org_id: str, parts, *, now, kind_numbers, domains_on, r
     return full
 
 
+def _clients(llm, ladder, *, allow_opus: bool) -> list[tuple[str, Any]] | None:
+    """The rungs' clients, cheapest first, as `(tier, client)` — or None when no model is configured. `llm` is a lone
+    client (asked once, on the site's own tier), a mapping of tier → client (a ladder of those tiers), or None:
+    production's — `ladder` (default `sites.expert_ladder`: Haiku-class then Sonnet-class; Opus-class only when the
+    tenant allows it, off for all, s13b-D1), each tier's client from `llm_sites.make_site_client`."""
+    if llm is not None and not isinstance(llm, Mapping):
+        return [(tier_for(SITE_EXPERT), llm)]
+    tiers = expert_ladder(sorted(llm) if llm is not None else ladder, allow_opus=allow_opus)
+    made = [(tier, llm[tier] if llm is not None else llm_sites.make_site_client(tier)) for tier in tiers]
+    return None if any(client is None for _tier, client in made) else made
+
+
 def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
-                budget: NarrativeBudget | None = None, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
-    """Review every changed file of the tenant once. Returns the pass's receipt; never raises past a file."""
+                budget: NarrativeBudget | None = None, max_per_pass: int = MAX_PER_PASS,
+                ladder: tuple[str, ...] | None = None, allow_opus: bool = False) -> dict[str, Any]:
+    """Review every changed file of the tenant once. Returns the pass's receipt; never raises past a file.
+
+    STEP-13b: the file's review climbs a LADDER — `ladder` names its rungs (default Haiku-class then Sonnet-class),
+    `allow_opus` the tenant's leave for an Opus-class third (off for all). `llm`: a lone client (asked once), or a
+    mapping of tier → client for a ladder of those tiers."""
     now = now or datetime.now(timezone.utc)
     engine = getattr(store, "engine", None)
     if engine is None:
@@ -212,10 +231,9 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
         return {"skipped": "expert_review_not_activated"}
     # The R-sites' own door, read when the pass runs — what production's wiring sets and the golden
     # runner opens (`tests/replays/engine_runner.py`); a name bound at import would never see it.
-    client = llm if llm is not None else llm_sites.make_site_client(tier_for(SITE_EXPERT))
-    if client is None:
+    clients = _clients(llm, ladder, allow_opus=allow_opus)
+    if clients is None:
         return {"skipped": "no_model_configured"}
-    model = getattr(client, "model", None) or llm_sites.tier_model(tier_for(SITE_EXPERT))
 
     from genios_engine.context.kind_numbers import numbers_for_kind
     from genios_engine.context.workstreams import files_for
@@ -223,7 +241,9 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                                "waiting": Counter(), "reviewed": Counter(), "carried": 0,
                                "proposed_kinds": 0, "cost_micro_usd": 0, "covered": {}, "people": {},
                                "unchecked": 0, "checked": Counter(), "rechecked": 0, "version_moved": 0,
-                               "engine_reads": 0, "engine_cut": 0, "engine_unread": 0, "engine_moved": 0}
+                               "engine_reads": 0, "engine_cut": 0, "engine_unread": 0, "engine_moved": 0,
+                               "attempts": Counter(), "climbs": Counter(), "cost_by_tier": Counter(),
+                               "stood": Counter()}
     due = []
     from sqlalchemy import text
 
@@ -345,11 +365,15 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     # ⛔ THE LEDGER. Every consult is a row of `l4_r_site_calls` (the gate's receipt), and the expert's
     # own budget opens each pass from today's R-7 rows there — without it, `06` D7's $2 a day would
     # bind within one pass and never across a day's passes.
-    gate = RSiteGate(org_id=org_id, engine=engine, client=client, store=BundleStore(engine),
-                     activated=activated,
-                     budget=budget or NarrativeBudget.for_site(SITE_EXPERT, org_id=org_id,
-                                                               engine=engine, now=now),
-                     cost_recorder=getattr(store, "record_cost", None), eval_time=now)
+    day = budget or NarrativeBudget.for_site(SITE_EXPERT, org_id=org_id, engine=engine, now=now)
+    gates = [(tier, RSiteGate(org_id=org_id, engine=engine, client=client, store=BundleStore(engine),
+                              activated=activated, budget=day,
+                              cost_recorder=getattr(store, "record_cost", None), eval_time=now))
+             for tier, client in clients]
+    # ONE DAY FOR EVERY RUNG: the rungs' gates share the day's budget. A lone client (a test's, a caller's) is asked once
+    # as before; a ladder of clients (production's, or a mapping of tiers) climbs.
+    rungs = None if (llm is not None and not isinstance(llm, Mapping)) else [Rung(tier, gate) for tier, gate in gates]
+    gate = gates[0][1]
     for i, (_hours, _order, parts, inputs, fp, found, people) in enumerate(due):
         if i >= max_per_pass:
             receipt["carried"] += len(due) - i
@@ -357,13 +381,20 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
         parts = _with_engine(engine, org_id, parts, now=now, kind_numbers=numbers_by_kind, domains_on=domains_on,
                              record=record, receipt=receipt)
         result = review_file(engine, org_id=org_id, dossier=build_dossier(parts), fingerprint=fp,
-                             inputs=inputs, triggers=found, gate=gate, at=now, people=people, parts=parts)
+                             inputs=inputs, triggers=found, gate=gate, at=now, people=people, parts=parts,
+                             ladder=rungs)
         receipt["reviewed"][result.status or "skipped"] += 1
         if result.status == reviews.VALID:
             receipt["checked"][result.checked.fate] += 1
             _cover(receipt, parts.file_id, fp, parts.file.people)
-        if result.receipt is not None:
-            receipt["cost_micro_usd"] += result.receipt.cost_micro_usd
+        receipt["cost_micro_usd"] += result.cost_micro_usd
+        for attempt in result.attempts:
+            receipt["attempts"][f"{attempt.tier}:{attempt.consult}"] += 1
+            if attempt.climbed_because:
+                receipt["climbs"][attempt.climbed_because] += 1
+            receipt["cost_by_tier"][attempt.tier] += attempt.cost_micro_usd
+        if result.rung is not None and result.status == reviews.VALID:
+            receipt["stood"][f"T{result.rung}"] += 1
         if result.status == reviews.OVER_BUDGET:
             receipt["carried"] += len(due) - i - 1
             break
@@ -381,6 +412,8 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     receipt["waiting"] = dict(receipt["waiting"])
     receipt["reviewed"] = dict(receipt["reviewed"])
     receipt["checked"] = dict(receipt["checked"])
+    for key in ("attempts", "climbs", "cost_by_tier", "stood"):
+        receipt[key] = dict(receipt[key])
     if receipt["reviewed"] or receipt["carried"]:
         _log.info("the expert pass org=%s %s", org_id, receipt)
     return receipt

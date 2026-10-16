@@ -81,6 +81,8 @@ class Outcome:
     attempts: tuple[Attempted, ...]
     stood: Attempted | None                     # None: no consult reached the question (feature off, no model …)
     carried: bool = False                       # the day was spent mid-climb
+    why: str | None = None                      # …and when none did, why (the receipt's reasons)
+    receipt: SiteReceipt | None = None          # …and the receipt of the consult that did not reach it
 
     @property
     def cost_micro_usd(self) -> int:
@@ -96,9 +98,9 @@ class Outcome:
 
 
 def _consult(rung: int, step: Rung, *, org_id: str, dossier: Dossier, fingerprint: str, people: FilePeople | None,
-             kind: str, complaint: str | None, check) -> tuple[Attempted | None, str | None]:
+             kind: str, complaint: str | None, check) -> tuple[Attempted | None, SiteReceipt | None]:
     """Ask one rung once (or, with the check's verdicts, once more) through its own gate. Returns the attempt — None
-    when no consult reached the question (the feature off, the force-fail switch, no model) — and the receipt's reason."""
+    when no consult reached the question (the feature off, the force-fail switch, no model) — and that receipt."""
     last: dict[str, Any] = {}
 
     def _parse(payload):
@@ -129,7 +131,7 @@ def _consult(rung: int, step: Rung, *, org_id: str, dossier: Dossier, fingerprin
     receipt = result.receipt
     status = _status(receipt.outcome, receipt.reason_codes)
     if status is None:
-        return None, ", ".join(receipt.reason_codes) or receipt.outcome
+        return None, receipt
     review, checked = last.get("review"), last.get("checked")
     if status == store.VALID:
         reason = None
@@ -142,7 +144,7 @@ def _consult(rung: int, step: Rung, *, org_id: str, dossier: Dossier, fingerprin
         status=status, reason=reason, fate=None if checked is None else checked.fate, climbed_because=None,
         input_tokens=receipt.input_tokens, output_tokens=receipt.output_tokens, cost_micro_usd=receipt.cost_micro_usd,
         review=review if status == store.VALID else None, checked=checked,
-        raw=last.get("raw"), receipt=receipt), reason
+        raw=last.get("raw"), receipt=receipt), None
 
 
 def _status(outcome: str, codes: tuple[str, ...]) -> str | None:
@@ -153,11 +155,12 @@ def _status(outcome: str, codes: tuple[str, ...]) -> str | None:
 
 
 def run_ladder(*, org_id: str, dossier: Dossier, fingerprint: str, people: FilePeople | None,
-               rungs: Sequence[Rung], check) -> Outcome:
+               rungs: Sequence[Rung], check, repairs: bool = True) -> Outcome:
     """Climb the file's ladder (see the module docstring) and return every consult and the one that stands.
 
     `check(review, dossier, people)` is the check (`review.check`). Never raises past a consult: a consult that failed
-    is a failed attempt and the rule decides."""
+    is a failed attempt and the rule decides. `repairs=False`: no rung is asked twice — a consult that failed climbs (or,
+    on the top rung, ends the ladder): a lone gate handed to `review.review_file` is asked once, as before the ladder."""
     if not rungs:
         raise ValueError("a ladder has at least one rung")
     attempts: list[Attempted] = []
@@ -166,12 +169,15 @@ def run_ladder(*, org_id: str, dossier: Dossier, fingerprint: str, people: FileP
         complaint: str | None = None
         while True:
             kind = REPAIR if on_rung else FIRST
-            attempted, _why = _consult(number, step, org_id=org_id, dossier=dossier, fingerprint=fingerprint,
-                                       people=people, kind=kind, complaint=complaint, check=check)
+            attempted, unreached = _consult(number, step, org_id=org_id, dossier=dossier, fingerprint=fingerprint,
+                                      people=people, kind=kind, complaint=complaint, check=check)
             if attempted is None:
-                return Outcome(tuple(attempts), None) if not attempts else _stand(attempts)
+                return Outcome((), None, why=", ".join(unreached.reason_codes) or unreached.outcome,
+                               receipt=unreached) if not attempts else _stand(attempts)
             on_rung.append(M.Consult(attempted.status, attempted.checked, kind == REPAIR, attempted.reason))
             decision = M.next_step(on_rung, rung=number, rungs=len(rungs))
+            if decision.kind == M.REPAIR and not repairs:
+                decision = M.Step(M.CLIMB if number < len(rungs) else M.EXHAUSTED, decision.fault)
             attempts.append(_with(attempted, climbed_because=decision.fault if decision.kind == M.CLIMB else None))
             if decision.kind == M.FINAL:
                 return Outcome(tuple(attempts), attempts[-1])

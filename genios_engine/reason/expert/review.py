@@ -39,41 +39,28 @@ never around it.
 """
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from genios_engine.contracts.claim_check import CHECK_VERSION, NOTHING_STANDS, REFUSED, CheckedReview
-from genios_engine.contracts.expert_review import REFUSALS, ExpertReview, validate
+from genios_engine.contracts.claim_check import CHECK_VERSION, CheckedReview
+from genios_engine.contracts.expert_review import ExpertReview
 from genios_engine.platform.self_identity import SelfIdentity
-from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW
-from genios_engine.reason.bundle.gate import MALFORMED, REPAIR_SYNTAX, RSiteGate
-from genios_engine.reason.bundle.sites import (OUTCOME_FAILED_GENERATION, OUTCOME_FAILED_VALIDATION,
-                                               OUTCOME_NO_BUDGET, OUTCOME_RAN, OUTCOME_TRUNCATED,
-                                               SITE_EXPERT, tier_for)
-from genios_engine.reason.llm_sites import SiteReceipt, SiteRejection, run_site, tier_model
+from genios_engine.reason.bundle.gate import RSiteGate
+from genios_engine.reason.bundle.sites import SITE_EXPERT, tier_for
+from genios_engine.reason.llm_sites import SiteReceipt
 
 from . import store
 from .card_lines import CardLines
 from .card_lines import card_lines
 from .dossier import Dossier, DossierParts, FilePeople, Person
-from .prompt import PROMPT_VERSION, build_prompt
-from .verify import STRUCTURAL, check_review
+from .ladder import Attempted, Rung, run_ladder
+from .prompt import PROMPT_VERSION
+from .verify import check_review
 
 #: Whom a review is checked against when its caller names nobody: no draft goes anywhere.
 NOBODY = FilePeople(counterparty=Person(None, None), people=(), us=SelfIdentity())
-
-#: What each consult outcome is on the row. A validation refusal is `refused` when it is one of the
-#: contract's refusals (substance) and `failed` otherwise — still misshapen after its one repair, or a
-#: validator that broke. An outcome not named here writes no row.
-STATUS_OF: Mapping[str, str] = {
-    OUTCOME_RAN: store.VALID,
-    OUTCOME_TRUNCATED: store.TRUNCATED,
-    OUTCOME_NO_BUDGET: store.OVER_BUDGET,
-    OUTCOME_FAILED_GENERATION: store.FAILED,
-}
-
 
 @dataclass(frozen=True, slots=True)
 class ReviewResult:
@@ -82,18 +69,17 @@ class ReviewResult:
     status: str | None              # the row's status — None when no consult reached the question
     reason: str | None
     review: ExpertReview | None     # only for a valid review
-    receipt: SiteReceipt | None     # None when a standing row answered with no consult
+    receipt: SiteReceipt | None     # the consult that STANDS; None when a standing row answered with no consult
     written: bool                   # whether this call wrote the row
     checked: CheckedReview | None = None    # a valid review's check (STEP-13)
     card_lines: CardLines | None = None     # what code wrote for its card (STEP-14, 0221) — a valid review's
-
-
-def _status(outcome: str, codes: tuple[str, ...]) -> str | None:
-    if outcome == OUTCOME_FAILED_VALIDATION:
-        # Substance: the contract's refusals, and a review none of whose facts stood the check.
-        return store.REFUSED if codes and (codes[0] in REFUSALS or codes[0] == NOTHING_STANDS) \
-            else store.FAILED
-    return STATUS_OF.get(outcome)
+    #: STEP-13b (`yc2_w27_s13b` M38.C2.L-integration.V11.U03): the rung whose review stands (1 = the cheapest), every
+    #: consult the ladder made (`ladder.Attempted`, each kept in `expert_review_attempts`, 0250), what they all cost
+    #: together, and whether the day was spent mid-climb (the file is carried).
+    rung: int | None = None
+    attempts: tuple[Attempted, ...] = ()
+    cost_micro_usd: int = 0
+    carried: bool = False
 
 
 def check(review: ExpertReview, dossier: Dossier, people: FilePeople | None) -> CheckedReview:
@@ -118,15 +104,20 @@ def recheck(row: store.StoredReview, people: FilePeople | None, *, today: Dossie
 
 
 def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inputs: Mapping[str, Any],
-                triggers: Iterable[Any], gate: RSiteGate, at: datetime,
-                people: FilePeople | None = None, parts: DossierParts | None = None) -> ReviewResult:
+                triggers: Iterable[Any], gate: RSiteGate | None = None, at: datetime,
+                people: FilePeople | None = None, parts: DossierParts | None = None,
+                ladder: Sequence[Rung] | None = None) -> ReviewResult:
     """Review one file once for this fingerprint, check it, and keep what came of it. A standing valid
     row checked under an older check version — or before checks — is checked again, against this same
     dossier (the fingerprint is the dossier's inputs), and the check written onto it.
 
     STEP-14 (`yc2_w27_s14` M43.C2.L-integration.V2.U03): handed the dossier's `parts`, a valid review keeps beside
     its check the lines code writes for its card (`card_lines`, 0221) — from this dossier, with these triggers.
-    A row written before 0221, or with no parts, keeps none: its card shows the review's own words."""
+    A row written before 0221, or with no parts, keeps none: its card shows the review's own words.
+
+    STEP-13b: `ladder` — the rungs (`ladder.Rung`) cheapest first, sharing one day's budget. The row is the consult that
+    STANDS (`ladder.run_ladder`): its model, `rung`, and — beside the cost of every consult — the review and its check;
+    every consult is kept in `expert_review_attempts` (0250). `gate` alone is a ladder of one rung asked once."""
     triggers = tuple(triggers)
     file_id = dossier.file_id
     with engine.connect() as conn:
@@ -142,60 +133,40 @@ def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inpu
                             reason=standing.reason, review=standing.review, receipt=None,
                             written=False, checked=checked, card_lines=standing.card_lines)
 
-    last: dict[str, Any] = {}
-
-    def _parse(payload: Mapping[str, Any]) -> Mapping[str, Any]:
-        last.clear()
-        last["raw"] = dict(payload)
-        try:
-            review = ExpertReview.from_mapping(payload)
-        except ValueError as exc:
-            last["reason"] = f"{MALFORMED}: {exc}"
-            raise SiteRejection(MALFORMED, str(exc)) from None
-        structure = [(kind, detail) for kind, detail in validate(review, dossier.catalogue).problems
-                     if kind in STRUCTURAL]
-        if structure:
-            last["reason"] = "; ".join(f"{kind}: {detail}" for kind, detail in structure)
-            raise SiteRejection(structure[0][0], last["reason"])
-        checked = check(review, dossier, people)
-        if checked.fate == REFUSED:
-            last["reason"] = f"{NOTHING_STANDS}: " + "; ".join(
-                f"{v.line} {v.reason}" + (f" ({v.detail})" if v.detail else "") for v in checked.dropped)
-            raise SiteRejection(NOTHING_STANDS, last["reason"])
-        last["review"], last["checked"] = review, checked
-        return review.as_mapping()
-
-    result = run_site(site=SITE_EXPERT, org_id=org_id, seed={"file": file_id, "fingerprint": fingerprint},
-                      precondition=True, build_prompt=lambda feedback: build_prompt(dossier, feedback),
-                      parse=_parse, fallback=dict, gate=gate, subject_ref=file_id,
-                      feature=FEATURE_EXPERT_REVIEW, repair=REPAIR_SYNTAX)
-    receipt = result.receipt
-    status = _status(receipt.outcome, receipt.reason_codes)
-    if status is None:
-        return ReviewResult(file_id=file_id, fingerprint=fingerprint, status=None,
-                            reason=", ".join(receipt.reason_codes) or receipt.outcome, review=None,
-                            receipt=receipt, written=False)
-    review = last.get("review")                  # set only by an answer that parsed and validated
-    if status == store.VALID:
-        reason = None
-    elif receipt.outcome == OUTCOME_FAILED_VALIDATION and last.get("reason"):
-        reason = "; ".join([last["reason"], *receipt.reason_codes[1:]])     # and why no repair, if any
+    # THE LADDER (STEP-13b M38.C2.L-integration.V11.U03). Handed `ladder` — the rungs, cheapest first, each its own gate
+    # over one shared day — a file climbs it (`reason/expert/ladder`): repaired once on a rung with the check's verdicts,
+    # a stronger model only when that fails. Handed a lone `gate`, it is asked once, as before the ladder.
+    if ladder:
+        rungs, repairs = tuple(ladder), True
     else:
-        reason = ", ".join(receipt.reason_codes) or receipt.outcome
+        rungs, repairs = (Rung(tier_for(SITE_EXPERT), gate),), False
+    outcome = run_ladder(org_id=org_id, dossier=dossier, fingerprint=fingerprint, people=people, rungs=rungs,
+                         check=check, repairs=repairs)
+    stood = outcome.stood
+    if stood is None:
+        return ReviewResult(file_id=file_id, fingerprint=fingerprint, status=None, reason=outcome.why, review=None,
+                            receipt=outcome.receipt, written=False)
+    status, review = stood.status, stood.review
     lines = card_lines(parts, review, triggers) if status == store.VALID and parts is not None else None
     with engine.begin() as conn:
         written = store.write_review(
-            conn, org_id=org_id, file_id=file_id, fingerprint=fingerprint,
-            model=receipt.model or tier_model(tier_for(SITE_EXPERT)), prompt_version=PROMPT_VERSION,
-            dossier_digest=dossier.digest, status=status, reason=reason,
-            review=review if status == store.VALID else last.get("raw"),
-            input_tokens=receipt.input_tokens, output_tokens=receipt.output_tokens,
-            cost_micro_usd=receipt.cost_micro_usd, at=at, inputs=inputs, triggers=triggers,
-            checked=last.get("checked") if status == store.VALID else None, dossier=kept(dossier),
-            card_lines=lines)
-    return ReviewResult(file_id=file_id, fingerprint=fingerprint, status=status, reason=reason,
-                        review=review, receipt=receipt, written=written,
-                        checked=last.get("checked") if status == store.VALID else None, card_lines=lines)
+            conn, org_id=org_id, file_id=file_id, fingerprint=fingerprint, model=stood.model,
+            prompt_version=PROMPT_VERSION, dossier_digest=dossier.digest, status=status, reason=stood.reason,
+            review=review if status == store.VALID else stood.raw,
+            input_tokens=outcome.input_tokens, output_tokens=outcome.output_tokens,
+            cost_micro_usd=outcome.cost_micro_usd, at=at, inputs=inputs, triggers=triggers,
+            checked=stood.checked if status == store.VALID else None, dossier=kept(dossier),
+            card_lines=lines, rung=stood.rung)
+        for attempt in outcome.attempts:
+            store.write_attempt(
+                conn, org_id=org_id, file_id=file_id, fingerprint=fingerprint, rung=attempt.rung,
+                model=attempt.model, consult=attempt.consult, status=attempt.status, fate=attempt.fate,
+                climbed_because=attempt.climbed_because, input_tokens=attempt.input_tokens,
+                output_tokens=attempt.output_tokens, cost_micro_usd=attempt.cost_micro_usd, at=at)
+    return ReviewResult(file_id=file_id, fingerprint=fingerprint, status=status, reason=stood.reason, review=review,
+                        receipt=stood.receipt, written=written, checked=stood.checked if status == store.VALID else None,
+                        card_lines=lines, rung=stood.rung, attempts=outcome.attempts,
+                        cost_micro_usd=outcome.cost_micro_usd, carried=outcome.carried)
 
 
-__all__ = ["NOBODY", "ReviewResult", "STATUS_OF", "check", "kept", "recheck", "review_file"]
+__all__ = ["NOBODY", "ReviewResult", "check", "kept", "recheck", "review_file"]
