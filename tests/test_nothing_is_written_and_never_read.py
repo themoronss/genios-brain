@@ -185,18 +185,6 @@ KNOWN_UNREAD: dict[str, str] = {
         "requires the exact sentence, so turning an adjudicated candidate into a card is a "
         "separate decision nobody has made. MOVES WHEN: a reader carries an adjudicated "
         "candidate somewhere a person sees it.",
-    "open_loops.closed_basis":
-        "Both closers record whether the closing message ANSWERED the ask (a kind in the "
-        "`discharges` table) or merely arrived on the thread, and no reading selects it yet. "
-        "Recorded now rather than when a consumer appears because it CANNOT BE RECOVERED LATER: "
-        "once a closure is a flat `closed`, which observations the closer saw — and which loops "
-        "it was closing at that instant — is gone, unlike a typed absence that any later reader "
-        "can recompute. The obvious consumer is `support_situations.read_backlog_items`, and it "
-        "is deliberately not wired today: that reading requires the loop OPEN and the ball ours, "
-        "so a loop closed on contact alone is hidden by two conditions rather than one, and "
-        "lifting either changes card VOLUME by an amount nobody has measured against a real "
-        "tenant. MOVES WHEN: the effect on live card counts is measured and the ball-in-court "
-        "half is decided with it.",
 }
 
 

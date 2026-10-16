@@ -49,6 +49,7 @@ from genios_engine.context.situation_bso import (
     stored_importance,
 )
 from genios_engine.context.situation_publisher import publish_situation
+from genios_engine.context.vocabulary import CLOSED_ANSWERED
 from genios_engine.contracts.reasoning import DecisionOutcome, ExecutionMode
 from genios_engine.packs.compiler import DomainCompiler, PostgresRuntimeBrains
 from genios_engine.packs.compiler.errors import (
@@ -614,17 +615,51 @@ def _same_advice(conn, org_id: str, file_id: str, ref: str | None, row) -> bool:
     return prior is not None and prior.review is not None and _advice(prior) == _advice(row)
 
 
+#: STEP-16 (`yc2_w27_s16` M47.C1.L-integration.V1.U02, `s16-F6`): each cleared decision's card, the ask its move answered
+#: — the ask its last version names (`deliver/pipeline._decision_words`) — and how that ask closed
+#: (`open_loops.closed_by_event`, `closed_basis`: written since 0167, read here first).
+_CLEARED_CARDS = (
+    "select k.card_id, k.signal_id, l.loop_id, l.closed_by_event, l.closed_basis from cards k "
+    "left join lateral (select e.detail -> 'words' ->> 'ask' as ask from card_events e "
+    "  where e.org_id = k.org_id and e.card_id = k.card_id "
+    "    and e.kind in ('card.created', 'card.rebuilt', 'card.versioned') and e.detail ? 'words' "
+    "  order by coalesce((e.detail ->> 'version')::int, 1) desc, e.occurred_at desc, e.id desc limit 1) w on true "
+    "left join open_loops l on l.org_id = k.org_id and l.status = 'closed' and 'loop:' || l.loop_id = w.ask "
+    "where k.org_id = :o and k.signal_id = any(:sigs) order by k.card_id")
+
+
 def _clear_file_decision(store, org_id: str, file_id: str, rule_id: str, *, cards: bool = True) -> int:
     """The file's new review names no move now: every open decision of the file — an earlier review's, or this
     same review's through an older check (STEP-13 X12) — is cleared, its cards RULE_CLEARED (STEP-06), the rule
     that fired no longer holding on its subject. ⛔ `cards` False when the file ASKS instead (STEP-14
-    M42.C2.L-integration.V2.U02): the question is the card's next version, so the card is left to it."""
+    M42.C2.L-integration.V2.U02): the question is the card's next version, so the card is left to it.
+
+    ⛔ A FILE DECISION THAT ENDS SAYS HOW (STEP-16, `yc2_w27_s16` M47.C1.L-integration.V1.U02; §8.4 item 8). A card whose
+    move named the ask it answers, and whose ask closed ANSWERED (`open_loops.closed_basis`), is RESOLVED `verified`
+    — its evidence the event that closed the ask, the loop and the basis (`platform/card_lifecycle.resolve_cards`).
+    One whose ask closed only REPLIED, or whose move named no ask, is cleared as today, the closing event — when an
+    ask closed at all — in its detail."""
     with store.engine.begin() as conn:
         cleared = conn.execute(text(_CLEAR_FILE_DECISIONS), {
             "o": org_id, "r": rule_id, "n": file_id}).fetchall()
         if cleared and cards:
-            card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.RULE_CLEARED,
-                                        signal_ids=[item.signal_id for item in cleared])
+            signals = [item.signal_id for item in cleared]
+            said: set[str] = set()
+            for card in conn.execute(text(_CLEARED_CARDS), {"o": org_id, "sigs": signals}).fetchall():
+                if not (card.loop_id and card.closed_by_event):
+                    continue                    # its ask open, or none named: cleared below, as before
+                said.add(card.signal_id)
+                closed = {"event_id": card.closed_by_event, "loop_id": card.loop_id, "basis": card.closed_basis}
+                if card.closed_basis == CLOSED_ANSWERED:
+                    card_lifecycle.resolve_cards(conn, org_id=org_id, cause=card_lifecycle.VERIFIED,
+                                                 card_ids=[card.card_id], evidence=closed)
+                else:
+                    card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.RULE_CLEARED,
+                                                card_ids=[card.card_id], detail={"closed_by": closed})
+            left = [s for s in signals if s not in said]
+            if left:
+                card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.RULE_CLEARED,
+                                            signal_ids=left)
     return len(cleared)
 
 
