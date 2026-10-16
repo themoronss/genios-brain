@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_256, (
+    assert r["statements"] == 3_257, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -678,6 +678,8 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,254 → 3,256 by yc2_w27_s13b/M38.C2.L-data.V1.U01 (the attempts kept): `reason/expert/store` — the INSERT of one
     # consult of a file on a fingerprint (`write_attempt`, numbered in the statement) and the SELECT that reads them
     # back (`attempts_for`). Two literals, each at its own `text()`; both plan.
+    # ⛔ MOVED 3,256 → 3,257 by yc2_w27_s13b/M37.C5.L-logic.V4.U01 (the fingerprint names the engine): `engine_reader.
+    # learned_snapshot` — the one SELECT of the brain, subject and version of what `learned_for` would read, for every file.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

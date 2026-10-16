@@ -70,7 +70,7 @@ def test_a_file_with_no_answer_is_printed_byte_for_byte_as_before():
 
 
 def test_the_fingerprint_names_the_answer_and_no_answer_moves_nothing():
-    kw = dict(model="claude-sonnet-5", prompt_version="expert-review.v3")
+    kw = dict(prompt_version="expert-review.v3")
     plain, answered = F.fingerprint_inputs(_parts(), **kw), F.fingerprint_inputs(_answered(ANSWER), **kw)
     assert "answers" not in plain and F.fingerprint_inputs(_answered(), **kw) == plain
     assert answered["answers"] == [CITE]
@@ -78,7 +78,7 @@ def test_the_fingerprint_names_the_answer_and_no_answer_moves_nothing():
 
 
 def test_an_answer_the_last_review_did_not_see_brings_the_file_back():
-    kw = dict(model="claude-sonnet-5", prompt_version="expert-review.v3")
+    kw = dict(prompt_version="expert-review.v3")
     then = F.fingerprint_inputs(_parts(), **kw)
     last = type("Last", (), {"inputs": then, "reviewed_at": NOW - timedelta(days=3)})()
     parts = _answered(ANSWER)

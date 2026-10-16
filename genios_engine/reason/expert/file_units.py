@@ -54,6 +54,7 @@ Pure, deterministic, no model: a `ContextSnapshot` in, an `EngineRead` out.
 """
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Mapping
 from datetime import datetime
 
@@ -104,6 +105,10 @@ _SHADOW_PLAY = PlayDefinition(play_id="shadow.read_only", version="1.0.0", label
                               steps=("Read the file's own facts; decide nothing.",), read_only=True)
 
 _VERSION = "1.0.0"
+#: The roster's version for a file's fingerprint (STEP-13b M37.C5.L-logic.V4.U01): the units a file runs, those it does
+#: not, and the units' own version — a unit added or retired is a different reader of the file.
+UNITS_ROSTER_VERSION = "units-" + hashlib.sha256(
+    "|".join([_VERSION, *RUN_ORDER, "/", *NOT_RUN]).encode("utf-8")).hexdigest()[:10]
 
 
 def _manifest(context: ContextSnapshot) -> CapabilityManifest:
@@ -273,4 +278,4 @@ def units_for_node(store, org_id: str, node_id: str, node_type: str, *, evaluati
     return units_for(context)
 
 
-__all__ = ["NOT_RUN", "RUN_ORDER", "units_for", "units_for_node"]
+__all__ = ["NOT_RUN", "RUN_ORDER", "UNITS_ROSTER_VERSION", "units_for", "units_for_node"]

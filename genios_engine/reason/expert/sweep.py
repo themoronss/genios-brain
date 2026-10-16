@@ -210,8 +210,8 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                 if parts is None:
                     receipt["unreadable"] += 1
                     continue
-                inputs = fingerprint_inputs(parts, model=model, prompt_version=PROMPT_VERSION)
-                fp = file_fingerprint(parts, model=model, prompt_version=PROMPT_VERSION)
+                inputs = fingerprint_inputs(parts, prompt_version=PROMPT_VERSION)
+                fp = file_fingerprint(parts, prompt_version=PROMPT_VERSION)
                 people = people_of(parts, us=us, our_names=our_names)
                 row = reviews.read_review(conn, org_id, work.file_id, fp)
             if row is not None and row.status in reviews.STANDING:

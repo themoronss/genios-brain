@@ -69,6 +69,20 @@ def route_key_of(work: Any, lifecycle: Any, *, domains_on: frozenset[str] | None
         return R.ROUTE_NONE
 
 
+def snapshot_of(conn: Any, org_id: str, work: Any, lifecycle: Any, *,
+                domains_on: frozenset[str] | None = None) -> tuple[str, str]:
+    """What the fingerprint names of the engine, for EVERY file and cheaply: the route key and the learned brains'
+    snapshot for the file's subjects (one read). `("none", "none")` when it cannot be computed — a fingerprint input
+    that cannot be computed names nothing."""
+    try:
+        key, capabilities = R.reach(situations_of(lifecycle), kind=getattr(work, "work_kind", None),
+                                    activated=domains_on)
+        return key, R.learned_snapshot(conn, org_id=org_id, tokens=learned_tokens(work, capabilities))
+    except Exception:      # noqa: BLE001 — see the docstring
+        _log.exception("could not compute the engine snapshot for file=%s", getattr(work, "file_id", None))
+        return R.ROUTE_NONE, "none"
+
+
 def _one_connection(conn: Any) -> Any:
     """`_load_context` opens `store.engine.connect()`; the dossier reads on ONE connection, so it is handed that."""
     return SimpleNamespace(engine=SimpleNamespace(connect=lambda: nullcontext(conn)))

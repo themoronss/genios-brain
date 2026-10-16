@@ -183,10 +183,8 @@ def test_what_came_of_it_is_no_input_of_the_fingerprint():
     full = _with(plain, outcomes=(_ended(O.VERIFIED, by="evt_signed_nda"),), asks_closed=(_closed(0),),
                  kind_numbers=_numbers())
     assert D.build_dossier(full).digest != D.build_dossier(plain).digest, "the dossier says it"
-    assert fingerprint_inputs(full, model="m", prompt_version="p") == fingerprint_inputs(plain, model="m",
-                                                                                            prompt_version="p")
-    assert file_fingerprint(full, model="m", prompt_version="p") == file_fingerprint(plain, model="m",
-                                                                                        prompt_version="p")
+    assert fingerprint_inputs(full, prompt_version="p") == fingerprint_inputs(plain, prompt_version="p")
+    assert file_fingerprint(full, prompt_version="p") == file_fingerprint(plain, prompt_version="p")
 
 
 def test_a_maximal_dossier_with_everything_that_came_of_it_stays_under_its_bound():

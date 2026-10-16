@@ -204,3 +204,39 @@ def test_the_family_is_bounded_and_the_cut_counted(db):
 def test_no_tokens_and_no_rows_reads_an_empty_engine_read(db):
     read = _read(db, tokens=())
     assert read.lines == () and read.empty
+
+
+# ── STEP-13b M37.C5.L-logic.V4.U01 · the fingerprint's name for what the brains hold ───────────
+
+def test_the_snapshot_is_none_when_the_brains_hold_nothing_for_the_file(db):
+    assert R.learned_snapshot(db, org_id=ORG, tokens=("node:node_a",)) == "none"
+
+
+def test_the_snapshot_moves_with_an_entry_a_version_or_a_retirement(db):
+    _entry(db, brain="organization", subject="orgrule:spend", value={"statement": "Two approvers."})
+    one = R.learned_snapshot(db, org_id=ORG, tokens=())
+    assert one.startswith("learned-") and one == R.learned_snapshot(db, org_id=ORG, tokens=())
+    from sqlalchemy import text
+    db.execute(text("update learned_brain_entries set active=false where org_id=:o"), {"o": ORG})
+    _entry(db, brain="organization", subject="orgrule:spend", version=2, value={"statement": "Three approvers."})
+    two = R.learned_snapshot(db, org_id=ORG, tokens=())
+    assert two != one, "a new version is a different snapshot"
+    db.execute(text("update learned_brain_entries set active=false where org_id=:o"), {"o": ORG})
+    assert R.learned_snapshot(db, org_id=ORG, tokens=()) == "none", "a retired entry is read no more"
+
+
+def test_the_snapshot_reads_what_learned_for_would_and_no_more(db):
+    _entry(db, brain="behavior", subject="node:node_a", value={"pattern_statement": "Replies on Mondays."})
+    _entry(db, brain="behavior", subject="node:node_b", value={"pattern_statement": "Replies on Fridays."})
+    a = R.learned_snapshot(db, org_id=ORG, tokens=("node:node_a",))
+    assert a != "none" and a != R.learned_snapshot(db, org_id=ORG, tokens=("node:node_b",))
+    assert R.learned_snapshot(db, org_id=ORG, tokens=("node:node_c",)) == "none"
+    assert R.learned_snapshot(db, org_id=OTHER_ORG, tokens=("node:node_a",)) == "none", "another tenant's is not ours"
+    assert len(_read(db, tokens=("node:node_a",)).of_family(E.BEHAVIOUR)) == 1
+
+
+def test_the_snapshot_by_an_address_token_of_the_entry(db):
+    _entry(db, brain="adaptive", subject="pref:x",
+           value={"statement": "Keep it short.", "address": {"tokens": ["capability:founder_office.x"]}})
+    assert R.learned_snapshot(db, org_id=ORG, tokens=("capability:founder_office.x",)) != "none"
+    assert R.learned_snapshot(db, org_id=ORG, tokens=("capability:other",)) == "none"

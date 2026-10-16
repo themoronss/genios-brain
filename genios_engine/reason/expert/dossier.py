@@ -169,6 +169,7 @@ class DossierParts:
     #: brains learned, `units` the reasoning units' readings in shadow, `company` the company's own record (`06` D63,
     #: one read a sweep). A read that could not be made is `engine_error` — counted, never a failed review.
     route_key: str | None = None
+    learned_snapshot: str | None = None     # what the brains hold for the file's subjects, named for its fingerprint
     engine: Any = None
     units: Any = None
     engine_error: str | None = None
@@ -922,10 +923,13 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
     judgments = judgments_for(conn, org_id, file_id, people=work.people)
     read = file_engine.read_file_engine(conn, org_id, work, lifecycle, now=now, domains_on=domains_on) \
         if engine else None
-    record = None
-    if engine:
+    # What a fingerprint names, for every file (cheap): the route key and the learned snapshot; the read above is for a
+    # file due for review.
+    route_key, learned = file_engine.snapshot_of(conn, org_id, work, lifecycle, domains_on=domains_on)
+    record = company_record
+    if record is None and engine:
         from genios_engine.context.company_record import read_company_record
-        record = company_record if company_record is not None else read_company_record(conn, org_id, now=now)
+        record = read_company_record(conn, org_id, now=now)
     return DossierParts(
         org_id=org_id, file_id=str(file_id), as_of=now, brief=brief, file=work, timeline=timeline,
         numbers=numbers_for(conn, org_id, work, timeline, now=now), playbook=playbook,
@@ -947,8 +951,7 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
                                       since=judgments.reviews[0].reviewed_at) if judgments.reviews else ()),
         kind_numbers=(((kind_numbers or {}).get(work.work_kind)
                        or numbers_for_kind(conn, org_id, work.work_kind, now=now)) if work.work_kind else None),
-        route_key=(read.route_key if read is not None
-                   else file_engine.route_key_of(work, lifecycle, domains_on=domains_on)),
+        route_key=route_key, learned_snapshot=learned,
         engine=None if read is None else read.engine, units=None if read is None else read.units,
         engine_error=None if read is None else read.error, company=record)
 

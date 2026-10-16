@@ -31,11 +31,12 @@ from tests.reason.expert.test_the_dossier import NOW, _judgments, _parts, _playb
 
 pytestmark = pytest.mark.unit
 
-MODEL, PROMPT = "claude-sonnet-5", "expert-review.v1"
+PROMPT = "expert-review.v1"
 
 
-def _fp(parts, *, model=MODEL, prompt=PROMPT) -> str:
-    return F.file_fingerprint(parts, model=model, prompt_version=prompt)
+def _fp(parts, *, ladder=None, prompt=PROMPT) -> str:
+    # ⛔ RESTATED (STEP-13b M37.C5.L-logic.V4.U01): the fingerprint names the ladder, not a model.
+    return F.file_fingerprint(parts, prompt_version=prompt, **({"ladder_version": ladder} if ladder else {}))
 
 
 def _later(parts, minutes: float):
@@ -107,7 +108,7 @@ def test_the_brief_the_playbook_and_who_decides_are_inputs():
     base = _parts()
     assert _fp(_parts(brief=False)) != _fp(base)
     assert _fp(_parts(playbook=_playbook(reviewed=True))) != _fp(base)
-    assert _fp(base, model="claude-sonnet-6") != _fp(base)
+    assert _fp(base, ladder="ladder.v9") != _fp(base)       # was: another model; now another ladder (STEP-13b)
     assert _fp(base, prompt="expert-review.v2") != _fp(base)
 
 
@@ -150,10 +151,9 @@ def test_a_deadline_closing_in_counts_by_its_rung(before, after, moves):
 
 def test_the_nearest_open_promise_is_the_deadline_ours_or_theirs():
     near, far = _promise(70.0, pid="node_c1"), _promise(500.0, pid="node_c2", ours=False)
-    inputs = F.fingerprint_inputs(_promised(far, near), model=MODEL, prompt_version=PROMPT)
+    inputs = F.fingerprint_inputs(_promised(far, near), prompt_version=PROMPT)
     assert inputs["due"] == "<=72"
-    theirs = F.fingerprint_inputs(_promised(_promise(70.0, ours=False)), model=MODEL,
-                                  prompt_version=PROMPT)
+    theirs = F.fingerprint_inputs(_promised(_promise(70.0, ours=False)), prompt_version=PROMPT)
     assert theirs["due"] == "<=72"
     assert F.nearest_due(_promised(far, near)) == NOW + timedelta(hours=70)
 
@@ -161,8 +161,7 @@ def test_the_nearest_open_promise_is_the_deadline_ours_or_theirs():
 @pytest.mark.parametrize("status", [None, "", "open", "Open ", "OPEN"])
 def test_a_promise_with_no_status_or_open_in_any_case_is_still_owed(status):
     """`commitment.status` defaults to open where nothing wrote it (`context/outreach_situations`)."""
-    inputs = F.fingerprint_inputs(_promised(_promise(70.0, status=status)), model=MODEL,
-                                  prompt_version=PROMPT)
+    inputs = F.fingerprint_inputs(_promised(_promise(70.0, status=status)), prompt_version=PROMPT)
     assert inputs["due"] == "<=72"
 
 
@@ -173,7 +172,7 @@ def test_a_promise_with_no_status_or_open_in_any_case_is_still_owed(status):
     _promise(70.0, status="cancelled"),
 ])
 def test_a_promise_that_is_no_deadline_moves_nothing(promise):
-    assert F.fingerprint_inputs(_promised(promise), model=MODEL, prompt_version=PROMPT)["due"] is None
+    assert F.fingerprint_inputs(_promised(promise), prompt_version=PROMPT)["due"] is None
     assert _fp(_promised(promise)) == _fp(_parts())
 
 
@@ -182,10 +181,9 @@ def test_a_quarter_of_an_hour_later_a_deadline_is_the_same_deadline():
 
 
 def test_the_inputs_are_readable_and_carry_no_instant():
-    inputs = F.fingerprint_inputs(_meeting_in(_quiet(_parts(), 6.0), 4.0), model=MODEL,
-                                  prompt_version=PROMPT)
+    inputs = F.fingerprint_inputs(_meeting_in(_quiet(_parts(), 6.0), 4.0), prompt_version=PROMPT)
     assert inputs["quiet"] == ">=5" and inputs["next_meeting"] == "<=168" and inputs["due"] is None
-    assert inputs["who_decides"] == {"model": MODEL, "prompt_version": PROMPT,
+    assert inputs["who_decides"] == {"ladder": "ladder.v1", "prompt_version": PROMPT,   # ⛔ RESTATED (STEP-13b M37.C5.L-logic.V4.U01): was {"model": …}
                                      "dossier_version": "dossier.v2"}   # ⛔ RESTATED by STEP-13b M37.C3.L-interface.V4.U01: was dossier.v1
     assert "as_of" not in inputs and "reviews" not in inputs
     assert F.HOURS_UNTIL[:3] == (0, 48, 72)
@@ -204,7 +202,7 @@ def _corrected(parts, *ids, scope="file"):
 
 def test_a_file_with_no_correction_is_fingerprinted_as_before():
     parts = _parts()
-    assert "corrections" not in F.fingerprint_inputs(parts, model=MODEL, prompt_version=PROMPT)
+    assert "corrections" not in F.fingerprint_inputs(parts, prompt_version=PROMPT)
     assert _fp(_corrected(parts)) == _fp(parts)
 
 
@@ -213,7 +211,7 @@ def test_your_correction_of_the_file_or_its_kind_moves_it(scope):
     parts = _parts()
     one = _corrected(parts, "fc_a", scope=scope)
     assert _fp(one) != _fp(parts)
-    assert F.fingerprint_inputs(one, model=MODEL, prompt_version=PROMPT)["corrections"] == ["corr:fc_a"]
+    assert F.fingerprint_inputs(one, prompt_version=PROMPT)["corrections"] == ["corr:fc_a"]
     assert _fp(_corrected(parts, "fc_a", "fc_b", scope=scope)) != _fp(one), "another correction moves it again"
 
 

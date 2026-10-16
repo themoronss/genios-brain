@@ -336,6 +336,13 @@ def route_key(situations: Sequence[FileSituation], *, kind: str | None, activate
               catalog: ExpertBrainCatalog | None = None) -> str:
     """The content hashes of everything the file's routes and kind can reach — no predicate read, so it
     is cheap for every file. `ROUTE_NONE` when they reach nothing."""
+    return reach(situations, kind=kind, activated=activated, catalog=catalog)[0]
+
+
+def reach(situations: Sequence[FileSituation], *, kind: str | None, activated: frozenset[str] | None,
+          catalog: ExpertBrainCatalog | None = None) -> tuple[str, tuple[str, ...]]:
+    """The route key, and the capabilities the file's routes and kind can reach (no predicate read): the second is
+    what a learned line addressed by `capability:<id>` is found by, before the file is read at all."""
     catalog = catalog or _shipped_catalog()
     reached: dict[str, str] = {}
     owners: list[str | None] = [KIND_CAPABILITY.get(kind) if kind else None]
@@ -345,10 +352,13 @@ def route_key(situations: Sequence[FileSituation], *, kind: str | None, activate
             document = catalog.domain(domain_id).situations[sid]
             reached[sid] = document.content_hash
             owners.append((document.content.get("identity") or {}).get("owner_capability"))
+    capabilities: list[str] = []
     for owner in owners:
         domain, capability = _capability(catalog, owner)
         if capability is None:
             continue
+        if capability.id not in capabilities:
+            capabilities.append(capability.id)
         reached[capability.id] = capability.content_hash
         manifest = domain.knowledge_manifests.get(capability.id)
         for key in ("playbooks", "heuristics", "rules", *_FRAME_KEYS):
@@ -357,8 +367,8 @@ def route_key(situations: Sequence[FileSituation], *, kind: str | None, activate
                 if doc is not None:
                     reached[aid] = doc.content_hash
     if not reached:
-        return ROUTE_NONE
-    return "route-" + semantic_hash(sorted(reached.items()))[:12]
+        return ROUTE_NONE, ()
+    return "route-" + semantic_hash(sorted(reached.items()))[:12], tuple(capabilities)
 
 
 def _learned_words(entry) -> str:
@@ -370,6 +380,23 @@ def _learned_words(entry) -> str:
     pct = entry.confidence_bp / 100
     tail = f"confidence {pct:g}%, since {entry.effective_at.date().isoformat()}"
     return f"{words} — {tail}"
+
+
+def learned_snapshot(connection, *, org_id: str, tokens: Iterable[str]) -> str:
+    """A fingerprint's name for what the tenant's brains hold for a file: the brain, subject and version of every active
+    entry `learned_for` would read (the leases aside — they expire by the clock, and a clock is never a fingerprint
+    input). `none` when there are none. One read, no write (STEP-13b M37.C5.L-logic.V4.U01)."""
+    token_list = sorted({str(t) for t in tokens})
+    rows = connection.execute(text(
+        "select brain, subject, version from learned_brain_entries "
+        "where org_id=:o and active and brain in ('organization','behavior','adaptive') "
+        "and (brain='organization' or subject=any(cast(:tokens as text[])) "
+        "or jsonb_exists_any(coalesce(value->'address'->'tokens', '[]'::jsonb), cast(:tokens as text[]))) "
+        "order by brain, subject, version"),
+        {"o": org_id, "tokens": token_list}).all()
+    if not rows:
+        return "none"
+    return "learned-" + semantic_hash([[str(r[0]), str(r[1]), str(r[2])] for r in rows])[:12]
 
 
 def learned_for(connection, *, org_id: str, tokens: Iterable[str],
@@ -426,4 +453,4 @@ def learned_for(connection, *, org_id: str, tokens: Iterable[str],
 
 
 __all__ = ["Anchor", "FileEngine", "FileSituation", "LIMITS", "LINE_CHARS", "NO_ANCHOR", "ROUTE_NONE",
-           "engine_for", "learned_for", "route_key"]
+           "engine_for", "learned_for", "learned_snapshot", "reach", "route_key"]
