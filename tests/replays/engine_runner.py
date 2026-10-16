@@ -327,6 +327,7 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
     funnel: list[dict[str, int]] = []
     open_after: list[set[str]] = []
     shown_after: list[set[str]] = []
+    events_after: list[set[str]] = []
     finished = False
     try:
         with production_switches(llm, platform_domains=case.platform_domains), \
@@ -353,12 +354,13 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
                 funnel.append(_funnel(engine, org, at))
                 open_after.append(_open_cards(engine, org))
                 shown_after.append(_shown_cards(routes._card_store, org, at))
+                events_after.append(_event_ids(engine, org))
         calls = tuple(getattr(llm, "calls", ()) or ())
         misses = tuple(getattr(llm, "misses", ()) or ())
         report = CaseRun(case_id=case.case_id, org_id=org, landed=tuple(landed),
                          memory=_memory(engine, org, case, landed),
                          situations=_situations(engine, org),
-                         cards=_cards(engine, org, open_after, shown_after), funnel=tuple(funnel),
+                         cards=_cards(engine, org, open_after, shown_after, events_after), funnel=tuple(funnel),
                          chain_ok=tuple(chain_ok), model_calls=calls, misses=misses)
         finished = True
     finally:
@@ -603,11 +605,38 @@ _VERSIONS = (
     " order by card_id, coalesce((detail ->> 'version')::int, 1), occurred_at, id")
 
 
-#: A card's history, in order (STEP-14 M42.C4.L-integration.V4.U05): what made it, versioned it, pushed it, ended it.
+#: A card's history (STEP-14 M42.C4.L-integration.V4.U05): what made it, versioned it, pushed it, ended it — put in
+#: order by `_in_order`.
 _HISTORY = (
-    "select card_id, kind, cause, detail from card_events where org_id = :o and card_id = any(:ids) "
+    "select id, card_id, kind, cause, detail, occurred_at from card_events where org_id = :o and card_id = any(:ids) "
     "   and kind in ('card.created', 'card.versioned', 'card.surfaced', 'card.expired') "
     " order by card_id, occurred_at, id")
+#: Within one sweep, the order a pass writes a card's history: made or versioned, then pushed, then ended.
+_PASS_ORDER = {"card.created": 0, "card.versioned": 1, "card.surfaced": 2, "card.expired": 3}
+
+
+def _event_ids(engine: Any, org: str) -> set[str]:
+    """Every card event of the tenant so far — read after each sweep, so each event is placed in the sweep that
+    wrote it (`_in_order`)."""
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        return {r[0] for r in conn.execute(text("select id from card_events where org_id = :o"), {"o": org})}
+
+
+def _in_order(rows, events_after: list[set[str]] | None) -> list:
+    """A card's history in the order it happened. ⛔ NEVER BY `occurred_at` ALONE (STEP-14 fix, the crosscheck's
+    finding 8, M42.C4.L-integration.V4.U06): a version is dated by the sweep's pinned instant, a creation and a push by
+    the database's clock — the wall clock, weeks after every pinned instant — so every version sorted before its
+    card's creation, `card.created` reset what was last material, and the "pushed after a quiet version" check could
+    not fail (the mutant that pushes quiet renewals passed F12 and F50). The sweep that first saw an event orders it;
+    within a sweep, a pass makes or versions a card (by its version number), then pushes it, then ends it."""
+    def sweep(row) -> int:
+        return next((i for i, ids in enumerate(events_after or ()) if row.id in ids), len(events_after or ()))
+
+    def version(row) -> int:
+        detail = row.detail if isinstance(row.detail, dict) else json.loads(row.detail or "{}")
+        return int(detail.get("version") or 0)
+    return sorted(rows, key=lambda r: (sweep(r), _PASS_ORDER.get(r.kind, 9), version(r), r.occurred_at, r.id))
 
 
 def _said(words: Any) -> str:
@@ -618,7 +647,8 @@ def _said(words: Any) -> str:
 
 
 def _cards(engine: Any, org: str, open_after: list[set[str]],
-           shown_after: list[set[str]] | None = None) -> tuple[CardView, ...]:
+           shown_after: list[set[str]] | None = None,
+           events_after: list[set[str]] | None = None) -> tuple[CardView, ...]:
     """Every card the founder could see after at least one sweep, with what it says — the sweeps the APP showed it
     (`app_sweeps`, STEP-14: never asked, none) and every version's words."""
     from sqlalchemy import text
@@ -640,7 +670,7 @@ def _cards(engine: Any, org: str, open_after: list[set[str]],
                 versions.setdefault(v.card_id, []).append(_said(detail["before"]))   # its first, unrecorded
             versions.setdefault(v.card_id, []).append(_said(detail.get("words")))
         history: dict[str, list[tuple]] = {}
-        for h in conn.execute(text(_HISTORY), {"o": org, "ids": sorted(seen)}):
+        for h in _in_order(conn.execute(text(_HISTORY), {"o": org, "ids": sorted(seen)}).fetchall(), events_after):
             detail = h.detail if isinstance(h.detail, dict) else json.loads(h.detail or "{}")
             history.setdefault(h.card_id, []).append(
                 (h.kind, h.cause, detail.get("change"), detail.get("material"), isinstance(detail.get("before"), dict)))

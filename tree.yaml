@@ -10042,6 +10042,20 @@ yc2_w27_s14:
                       artifact: "tests/replays/test_one_file_one_living_card.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_one_file_one_living_card.py"
                       depends_on: [M42.C4.L-integration.V3.U04, M42.C3.L-interface.V4.U05]
+                    - id: M42.C4.L-integration.V4.U06
+                      what: >
+                        M42's quiet-push check can fail (added 16 Oct by the STEP-14 crosscheck, finding 8): the
+                        runner ordered a card's history by `occurred_at`, a version dated by the sweep's pinned
+                        instant and a creation or push by the wall clock — every version sorted before its card's
+                        creation, `card.created` reset what was last material, and the mutant that pushes quiet
+                        renewals passed F12 and F50. The runner reads the card events after each sweep
+                        (`engine_runner._event_ids`) and orders a card's history by the sweep that wrote each event,
+                        then made/versioned (by version) → pushed → ended (`_in_order`). The mutant is the negative
+                        control (`test_a_quiet_version_pushed_is_caught`). Production never pushed a quiet version
+                        (pipeline's own check, the unit test kills the mutant).
+                      artifact: "tests/replays/engine_runner.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55434/<fresh> GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_one_file_one_living_card.py"
+                      depends_on: [M42.C4.L-integration.V4.U05]
     - id: M43
       name: The card in the gold shape, and nothing false on it (STEP-14 §3.3-§3.5; 03 F64, F164, F179)
       ships: >

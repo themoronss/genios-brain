@@ -15,7 +15,8 @@ from its cassette through the real chain (`cassettes.replayed`), and on every on
     question cards (F01, F52, F63) are their files' cards. Your answer's version is the unit tests' (no golden case
     presses Answer: `tests/deliver/test_answering_a_question.py`).
 
-THE NEGATIVE CONTROL: with versioning switched off — the builders' drafts naming no file, so every decision is a new
+THE NEGATIVE CONTROLS: a quiet version pushed is caught (`test_a_quiet_version_pushed_is_caught`); and with
+versioning switched off — the builders' drafts naming no file, so every decision is a new
 card, as before STEP-14 — the ideal reader re-runs F176's eight cases (no spend) and each shows its second card
 about its subject again.
 """
@@ -67,14 +68,46 @@ def test_one_file_one_living_card(case):
             if kind == "card.versioned":
                 assert change and kept and material is not None, \
                     f"{case.case_id}: {card.card_id} — a version names what changed and keeps the words before"
-        last_material = None
-        for kind, cause, change, material, _kept in card.events:
-            if kind == "card.created":
-                last_material = True
-            elif kind == "card.versioned":
-                last_material = bool(material)
-            elif kind == "card.surfaced" and cause == "push":
-                assert last_material, f"{case.case_id}: {card.card_id} pushed after a quiet version"
+        assert not _pushed_after_a_quiet_version(card), f"{case.case_id}: {card.card_id} pushed after a quiet version"
+
+
+def _pushed_after_a_quiet_version(card) -> bool:
+    """A push whose card's last version before it was quiet (a renewal, a rewording): what s14-D1 forbids."""
+    last_material = None
+    for kind, cause, _change, material, _kept in card.events:
+        if kind == "card.created":
+            last_material = True
+        elif kind == "card.versioned":
+            last_material = bool(material)
+        elif kind == "card.surfaced" and cause == "push" and not last_material:
+            return True
+    return False
+
+
+@pytest.mark.pg
+@pytest.mark.golden
+def test_a_quiet_version_pushed_is_caught():
+    """⛔ THE NEGATIVE CONTROL (STEP-14 fix, the crosscheck's finding 8, M42.C4.L-integration.V4.U06): the store reports
+    every version MATERIAL to the pipeline while the event it writes says what the rule said — so quiet renewals are
+    pushed. Replayed from their cassettes (no spend), F12 and F50 renew on the golden set: the check above must see a
+    push after a quiet version on each. Before the fix it saw none — history ordered by `occurred_at` put every
+    version before its card's creation."""
+    _scratch_db()
+    from genios_engine.deliver.store import CardStore
+    from tests.replays.engine_runner import run_case
+    from tests.replays.harness import RecordedLLM
+    real = CardStore.version_card
+
+    def everything_material(self, *a, **k):
+        done = real(self, *a, **k)
+        return None if done is None else (done[0], done[1], True, done[3])
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(CardStore, "version_card", everything_material)
+        for cid in ("F12", "F50"):
+            run = run_case(BY_ID[cid], RecordedLLM(cassettes.load(BY_ID[cid])))
+            assert not run.misses, cid
+            assert any(_pushed_after_a_quiet_version(c) for c in run.cards), \
+                f"{cid}: the mutant pushed a quiet renewal and the acceptance did not see it"
 
 
 @pytest.mark.pg
