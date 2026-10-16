@@ -95,7 +95,8 @@ UNHELD_NUMBER = "unheld_number"              # a number in prose no founder is s
 CONFIRMED_BY_YOU = "confirmed_by_you"        # a move resting only on what you told us, that you confirmed
 UNCITED_CORRECTION = "uncited_correction"    # STEP-16: a review with no move that cites none of your corrections
 OWN_DISAGREES = "own_disagrees"              # STEP-13b: an inference citing an own line against an engine line
-NOTES: tuple[str, ...] = (SPEAKS_OF_YOU, UNHELD_NUMBER, CONFIRMED_BY_YOU, UNCITED_CORRECTION, OWN_DISAGREES)
+BY_LINE = "by_line"                          # STEP-13b: a line cited by its own words, read as the id the dossier prints on it
+NOTES: tuple[str, ...] = (SPEAKS_OF_YOU, UNHELD_NUMBER, CONFIRMED_BY_YOU, UNCITED_CORRECTION, OWN_DISAGREES, BY_LINE)
 
 # ── where a line's ground comes from — DERIVED by code from what it cites, never asserted ──────
 DATA = "data"                                # the file's own evidence (mails, numbers, loops, promises …)
@@ -362,7 +363,7 @@ class CheckedReview:
                    engine=tuple(EngineCited.from_mapping(c) for c in raw.get("engine") or ()))
 
 
-__all__ = ["DATA", "ENGINE", "ENGINE_IS_NO_FACT", "EngineCited", "MIXED", "OWN", "OWN_DISAGREES",
+__all__ = ["BY_LINE", "DATA", "ENGINE", "ENGINE_IS_NO_FACT", "EngineCited", "MIXED", "OWN", "OWN_DISAGREES",
            "OWN_NAMES_THE_FILE", "OWN_STATES_A_NUMBER", "SOURCES", "source_of", "ANSWERED", "BY_ALTERNATIVE", "BY_CALCULATOR", "CALLED_WRONG", "CARD_LINES", "CHECK_VERSION",
            "CORRECTED", "CORRECTION_UNHEEDED", "UNCITED_CORRECTION", "called_wrong_question", "correction_question",
            "HELD_BECAUSE", "HELD_MOVE",

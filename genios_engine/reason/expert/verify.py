@@ -111,6 +111,12 @@ ONE PASS, IN ONE ORDER.
       line is labelled by code (`claim_check.source_of`), and the engine lines the standing lines cite are kept on the
       check with their words and source (`CheckedReview.engine`), read back off the line the dossier printed.
 
+  8 · A SLIP OF FORMAT, NEVER OF FACT (STEP-13b M37.C4.L-logic.V9.U04). A fact, inference or pattern that cites a line by
+      its WORDS — the text of a line the dossier prints exactly once, its ids aside, on which exactly one id is printed
+      — is read as that id and noted `by_line` (counted per review); a section title, a version, text that matches no
+      line, several, or a line with several ids drops `unknown_evidence` as before. The line named is checked as if
+      cited by id.
+
 WHAT `validate` STILL REFUSES WHOLE — the structure (`STRUCTURAL`): a moving mode with no move, a move
 resting on no fact the review has, a stage the playbook does not name. A slip of one optional move field
 drops its own line (M35.C1.L-contract.V0.U04): a `rests_on` ref beside the facts it names that is no fact
@@ -126,6 +132,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from collections.abc import Iterable
+import dataclasses
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -1022,6 +1029,49 @@ def _facts_of(review: ExpertReview, inference: int) -> set[int]:
     return {n for r in review.inferences[inference - 1].based_on if (n := fact_ref(r, len(review.facts))) is not None}
 
 
+_BRACKETED = re.compile(r"\[[^\[\]\s]+\]")
+
+
+def _plain(text: str | None) -> str:
+    """A line's words with its ids, marks and bullet aside, folded — what a citation by words is read by."""
+    said = " ".join(_BRACKETED.sub(" ", str(text or "")).replace("“", " ").replace("”", " ").replace('"', " ").split())
+    return re.sub(r"^[-–•\s]+", "", said).strip().rstrip(".;:").strip().casefold()
+
+
+def _by_line(review: ExpertReview, dossier_text: str, known: set[str]) -> tuple[ExpertReview, dict[str, list[str]]]:
+    """A ref that is no printed id but IS the words of a line the dossier prints exactly once — its ids aside, and the
+    line carrying ONE id — is that id (STEP-13b, Haiku cited a line by its words 86 times and the line was there).
+    A title, a version, text that matches no line or several, or a line printing several ids stays as written and
+    drops as before. Returns the review with its refs read, and `{line: ["words -> id", …]}` for the verdicts."""
+    seen: dict[str, list[str | None]] = {}
+    for raw in dossier_text.splitlines():
+        ids = list(dict.fromkeys(i[1:-1] for i in _BRACKETED.findall(raw) if i[1:-1] in known))
+        if words := _plain(raw):               # a line printing no id counts too: the words are not "once" then
+            seen.setdefault(words, []).append(ids[0] if len(ids) == 1 else None)
+    said: dict[str, list[str]] = {}
+
+    def read(line: str, refs: tuple[str, ...]) -> tuple[str, ...]:
+        out = []
+        for ref in refs:
+            held = seen.get(_plain(ref)) if (ref not in known and _FACT_REF.match(ref) is None
+                                             and not _is_own(ref)) else None
+            if held is not None and len(held) == 1 and held[0] is not None:
+                said.setdefault(line, []).append(f"{ref} -> {held[0]}")
+                ref = held[0]
+            out.append(ref)
+        return tuple(out)
+
+    facts = tuple(dataclasses.replace(f, evidence=read(f"fact:{n}", f.evidence))
+                  for n, f in enumerate(review.facts, start=1))
+    inferences = tuple(dataclasses.replace(i, based_on=read(f"inference:{n}", i.based_on))
+                       for n, i in enumerate(review.inferences, start=1))
+    patterns = tuple(dataclasses.replace(p, based_on=read(f"pattern:{n}", p.based_on))
+                     for n, p in enumerate(review.patterns, start=1))
+    if not said:
+        return review, said
+    return dataclasses.replace(review, facts=facts, inferences=inferences, patterns=patterns), said
+
+
 def _rested_on(review: ExpertReview) -> set[int]:
     """The facts, by number, the move rests on — every fact when it names none; none without a move,
     for there is nothing to hold. A ref that names no fact of the review is no ground (`_strays`). A move resting
@@ -1224,7 +1274,11 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     """`review`, checked line by line against the dossier it was written from (see the module docstring).
     `evidence_ids` — the dossier's own catalogue — narrows what counts as printed to exactly what the
     dossier cited; without it, every bracketed id of the text counts."""
-    run = _Run(review=review, lines=lines_by_id(dossier_text, evidence_ids), people=people)
+    lines = lines_by_id(dossier_text, evidence_ids)
+    review, read = _by_line(review, dossier_text, set(lines))
+    run = _Run(review=review, lines=lines, people=people)
+    for line, found in read.items():
+        run.say(line, C.NOTED, C.BY_LINE, "; ".join(found))
     rested = _rested_on(review)
     if strays := _strays(review):
         run.say("rests_on", C.DROPPED, C.UNKNOWN_EVIDENCE, ", ".join(strays))
