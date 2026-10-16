@@ -75,10 +75,10 @@ SECTIONS: tuple[str, ...] = ("brief", "file", "timeline", "promises", "numbers",
 #: founder's answers, M36.C2.L-data.V2.U07; STEP-16: your corrections, M46.C4.L-logic.V2.U03).
 #: STEP-13b: the engine after the playbook, the units' readings after the numbers — each only when it has something to say.
 OPTIONAL: Mapping[str, str] = {"answers": "timeline", "corrections": "answers", "engine": "playbook",
-                               "units": "numbers"}
+                               "units": "numbers", "company": "answers"}
 TITLES: Mapping[str, str] = {
     "brief": "THE COMPANY BRIEF", "file": "THE FILE", "timeline": "WHAT HAPPENED",
-    "answers": "WHAT YOU TOLD US", "corrections": "WHAT YOU CORRECTED",
+    "answers": "WHAT YOU TOLD US", "company": "WHAT YOU SAID OF YOURSELF ELSEWHERE", "corrections": "WHAT YOU CORRECTED",
     "promises": "PROMISES IN ITS MAIL", "numbers": "ITS NUMBERS", "coverage": "WHAT WAS CHECKED",
     "playbook": "WHAT A PROFESSIONAL KNOWS ABOUT THIS WORK", "situations": "ITS SITUATIONS",
     "engine": "WHAT THE GENIOS ENGINE KNOWS ABOUT ITS SITUATIONS", "units": "WHAT THE REASONING UNITS MEASURED",
@@ -486,6 +486,29 @@ def _engine(p: DossierParts, cite: _Ids) -> Section:
     return Section("engine", "\n".join(lines), cut)
 
 
+def _company_lines(p: DossierParts) -> tuple[Any, ...]:
+    """The company's record without THIS file's own mail — that is already its timeline."""
+    if p.company is None:
+        return ()
+    own = {t.event_id for t in (*p.timeline.touches, *p.timeline.upcoming)}
+    return tuple(p.company.excluding(own))
+
+
+def _company(p: DossierParts, cite: _Ids) -> Section:
+    """WHAT YOU SAID OF YOURSELF ELSEWHERE (STEP-13b, `06` D63): what a mail of ours in ANOTHER file said of the company,
+    each statement whole, so a number the company has already given is a number the expert may rest on. Laid out as a
+    touch is — the head line carries the id and the date, the line beneath is the words — so the check resolves a
+    quote of it exactly as it resolves a touch's."""
+    lines: list[str] = []
+    for line in _company_lines(p):
+        lines.append(f"- {cite('self:' + line.event_id)} {_when(line.at)} · written by us, to someone else")
+        lines.append(f"  “{line.said}”" + (f" … ({line.said_cut} characters cut)" if line.said_cut else ""))
+    cut = int(getattr(p.company, "cut", 0) or 0)
+    if cut:
+        lines.append(f"… and {cut} more mail(s) of ours, not shown.")
+    return Section("company", "\n".join(lines), cut)
+
+
 def _units(p: DossierParts, cite: _Ids) -> Section:
     """WHAT THE REASONING UNITS MEASURED (STEP-13b): each situation-level unit's reading of this file's facts, as a
     LEVEL (never a score), with its reason codes — or why it has none. Code's reading, run in shadow: nothing was decided
@@ -729,6 +752,11 @@ def build_dossier(parts: DossierParts) -> Dossier:
         by_name["corrections"] = _corrections(parts, cite)
         follows = OPTIONAL["corrections"] if OPTIONAL["corrections"] in names else OPTIONAL["answers"]
         names.insert(names.index(follows) + 1, "corrections")
+    if _company_lines(parts):
+        # ⛔ ONLY WHEN THERE IS ONE (STEP-13b): after WHAT YOU TOLD US — or, with no answer, after WHAT HAPPENED.
+        by_name["company"] = _company(parts, cite)
+        follows = OPTIONAL["company"] if OPTIONAL["company"] in names else OPTIONAL["answers"]
+        names.insert(names.index(follows) + 1, "company")
     if _has_engine(parts.engine):
         # ⛔ ONLY WHEN THERE IS SOMETHING TO SAY (STEP-13b): a file the engine read nothing for is printed as before.
         by_name["engine"] = _engine(parts, cite)
