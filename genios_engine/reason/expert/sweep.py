@@ -172,6 +172,7 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
         return {"skipped": "no_model_configured"}
     model = getattr(client, "model", None) or llm_sites.tier_model(tier_for(SITE_EXPERT))
 
+    from genios_engine.context.kind_numbers import numbers_for_kind
     from genios_engine.context.workstreams import files_for
     receipt: dict[str, Any] = {"files": 0, "ours": 0, "unchanged": 0, "untouched": 0, "unreadable": 0,
                                "waiting": Counter(), "reviewed": Counter(), "carried": 0,
@@ -187,6 +188,14 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
         org = conn.execute(text("select name, company from orgs where id = :o"), {"o": org_id}).first()
     our_names = tuple(n for n in (getattr(org, "company", None), getattr(org, "name", None)) if n)
     receipt["files"] = len(files)
+    # STEP-16 (M47.C2.L-logic.V4.U02): your numbers for a kind of work, measured ONCE a pass over its files — every
+    # dossier of the kind reads the same numbers, whichever file the pass reads first (all are read before any is
+    # reviewed), and no file reads the tenant's files again.
+    kind_files: dict[str, tuple[str, ...]] = {}
+    for work in files:
+        if work.work_kind:
+            kind_files[work.work_kind] = (*kind_files.get(work.work_kind, ()), work.file_id)
+    numbers_by_kind: dict[str, Any] = {}
     for order, work in enumerate(files):
         if us.is_us_node(work.counterparty_type, work.counterparty_key) \
                 or names_us(work.counterparty, us, names=our_names):
@@ -194,7 +203,10 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
             continue
         try:
             with engine.connect() as conn:
-                parts = read_parts(conn, org_id, work.file_id, now=now)
+                if work.work_kind and work.work_kind not in numbers_by_kind:
+                    numbers_by_kind[work.work_kind] = numbers_for_kind(conn, org_id, work.work_kind, now=now,
+                                                                       files=kind_files[work.work_kind])
+                parts = read_parts(conn, org_id, work.file_id, now=now, kind_numbers=numbers_by_kind)
                 if parts is None:
                     receipt["unreadable"] += 1
                     continue
