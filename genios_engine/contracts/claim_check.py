@@ -131,7 +131,9 @@ CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", 
                                "alternative", "wait_or_stop",
                                # STEP-16 (`yc2_w27_s16` M46.C4.L-logic.V3.U06): how the review stands with your
                                # corrections and with the cards you called wrong — never silently.
-                               "correction", "called_wrong")
+                               "correction", "called_wrong",
+                               # STEP-13b (`yc2_w27_s13b` M37.C4.L-logic.V7.U01): the engine or own lines the move follows.
+                               "guided_by")
 #: What a file asks when nothing checked can be asked — ours, closed (`reason/expert/asks`, and a held question
 #: that would name you, M36.C2.L-logic.V2.U19).
 NOTHING_TO_ASK = "Can you tell us where this file stands?"
@@ -202,7 +204,10 @@ class LineVerdict:
     verdict: str                               # one of VERDICTS
     reason: str | None = None                  # a REASON (dropped), a CORRECTION (corrected), a NOTE (noted)
     detail: str = ""                           # what was found: "number:52 -> 48 (num:reply_gap)", "name:Boardy"
-    source: str | None = None                  # STEP-13b: data · engine · own · mixed — derived by code
+    #: STEP-13b: data · engine · own · mixed — DERIVED by code from what the line cites (`source_of`), never asserted. A
+    #: label, not a verdict: it is not part of what two verdicts are compared by, so a check of one review is the same
+    #: whatever the labels (and a verdict stored before them is the one it was).
+    source: str | None = field(default=None, compare=False)
 
     def __post_init__(self) -> None:
         if self.source is not None:

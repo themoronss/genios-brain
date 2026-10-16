@@ -97,6 +97,20 @@ ONE PASS, IN ONE ORDER.
       correction is not read — that it cites it is; the check holds the citation, the founder reads the rest.
       This is what makes it model-agnostic: a weaker model costs you a question, never an ignored correction.
 
+  7 · THREE SOURCES (STEP-13b, `yc2_w27_s13b` M37.C4.L-logic.V7.U01). The dossier prints the file's data, the GeniOS
+      Engine's lines (`[cap:…]`, `[rule:…]`, `[ru:…]` …) and the company's record (`[self:<event>]`); the expert writes
+      a fourth, its OWN experience (`own:<n>`). The engine is a prior about the WORK and the expert's own a prior about
+      the world: neither is evidence about THIS file. An engine id is held as an evidence id is — printed. A fact citing
+      only engine or own lines drops `engine_is_no_fact`; beside the file's data it stands on the data alone (an engine
+      line grounds no name or number of it, no word of the card and no confidence). An own line with a digit drops
+      `own_states_a_number`, one naming a person, company or address of the file `own_names_the_file`. An own line
+      grounds an inference or pattern only BESIDE a standing line of the file's data; an engine line may ground one
+      alone, and an inference or pattern citing one holds its names and numbers by the card validator's rule, on that
+      line and the data it rests on. `rests_on: inference:N` rests on that inference's facts; `guided_by` is held like
+      a ground (engine lines printed, own lines that stand), a slip dropping its own line and never the move. Every
+      line is labelled by code (`claim_check.source_of`), and the engine lines the standing lines cite are kept on the
+      check with their words and source (`CheckedReview.engine`), read back off the line the dossier printed.
+
 WHAT `validate` STILL REFUSES WHOLE — the structure (`STRUCTURAL`): a moving mode with no move, a move
 resting on no fact the review has, a stage the playbook does not name. A slip of one optional move field
 drops its own line (M35.C1.L-contract.V0.U04): a `rests_on` ref beside the facts it names that is no fact
@@ -117,9 +131,10 @@ from datetime import datetime
 
 from genios_engine.contracts import claim_check as C
 from genios_engine.contracts.claim_check import NOTHING_TO_ASK
+from genios_engine.contracts.engine_read import family_of
 from genios_engine.contracts.expert_review import (
     ASK_PREFIX, MOVING, NO_NEXT_MOVE, NUMBER_PATTERN, UNGROUNDED_MOVE, UNKNOWN_STAGE, ExpertReview, fact_ref,
-    number_tokens)
+    inference_ref, number_tokens, own_ref)
 from genios_engine.platform.grounding import corpus_of, digit_runs, fold, haystack, invention_ok, proper_nouns
 from genios_engine.platform.self_identity import names_us, speaks_of_us, to_you
 from genios_engine.reason.expert.decide import is_event
@@ -130,6 +145,10 @@ STRUCTURAL: frozenset[str] = frozenset({NO_NEXT_MOVE, UNGROUNDED_MOVE, UNKNOWN_S
 #: A quote is the mail's own words — at least this many of them that carry anything (`FUNCTION_WORDS`
 #: aside): "a call" is in a mail asking FOR a call, and proves nothing about it (crosscheck X17).
 QUOTE_MIN_WORDS = 2
+#: A line of the company's own record (`reason/expert/dossier`): quotable like a touch (STEP-13b).
+SELF_PREFIX = "self:"
+#: How the dossier says an authored line no named human reviewed (`dossier._engine_line`).
+_NOT_REVIEWED = ", not yet reviewed"
 #: The words that carry no claim of their own — articles, pronouns, auxiliaries, prepositions,
 #: conjunctions. A closed class: counted out of a quote's length, never out of what it must match.
 FUNCTION_WORDS: frozenset[str] = frozenset(
@@ -883,8 +902,9 @@ class _Run:
                 out.append(self.items([i]))
         return "\n".join(dict.fromkeys(out))
 
-    def say(self, line: str, verdict: str, reason: str | None = None, detail: str = "") -> None:
-        self.verdicts.append(C.LineVerdict(line, verdict, reason, detail))
+    def say(self, line: str, verdict: str, reason: str | None = None, detail: str = "",
+            source: str | None = None) -> None:
+        self.verdicts.append(C.LineVerdict(line, verdict, reason, detail, source))
 
     def reason(self, line: str) -> str | None:
         """The reason `line` was dropped for, or None."""
@@ -973,91 +993,187 @@ def _unshown(run: "_Run", fact) -> str | None:
     return None
 
 
+def _is_engine(ref: str) -> bool:
+    return family_of(ref) is not None
+
+
+def _is_own(ref: str) -> bool:
+    return str(ref).startswith("own:")
+
+
+def _data(refs: Iterable[str]) -> tuple[str, ...]:
+    """The ids of `refs` that are the FILE's — never an engine line, never the expert's own (STEP-13b): only these
+    ground what a fact says of this file, and only these are what a confidence counts."""
+    return tuple(r for r in refs if not _is_engine(r) and not _is_own(r))
+
+
+def _facts_of(review: ExpertReview, inference: int) -> set[int]:
+    """The facts, by number, the inference `inference` rests on."""
+    return {n for r in review.inferences[inference - 1].based_on if (n := fact_ref(r, len(review.facts))) is not None}
+
+
 def _rested_on(review: ExpertReview) -> set[int]:
     """The facts, by number, the move rests on — every fact when it names none; none without a move,
-    for there is nothing to hold. A ref that names no fact of the review is no ground (`_strays`)."""
+    for there is nothing to hold. A ref that names no fact of the review is no ground (`_strays`). A move resting
+    on `inference:N` rests on that inference's facts (STEP-13b)."""
     move = review.next_move
     if move is None:
         return set()
     named = {n for r in move.rests_on if (n := fact_ref(r, len(review.facts))) is not None}
+    for r in move.rests_on:
+        if (k := inference_ref(r, len(review.inferences))) is not None:
+            named |= _facts_of(review, k)
     return named or set(range(1, len(review.facts) + 1))
 
 
 def _strays(review: ExpertReview) -> list[str]:
-    """The refs of the move's `rests_on` that name no fact of the review — beside facts it does name, a
-    slip of one field (M35.C1.L-contract.V0.U04): that line drops, the move stands on the facts it names.
-    (A `rests_on` naming no fact at all, `validate` refuses whole — `ungrounded_move`.)"""
+    """The refs of the move's `rests_on` that name no fact and no inference of the review — beside facts it does
+    name, a slip of one field (M35.C1.L-contract.V0.U04): that line drops, the move stands on the facts it names.
+    (A `rests_on` naming none at all, `validate` refuses whole — `ungrounded_move`.)"""
     move = review.next_move
-    return [] if move is None else [r for r in move.rests_on if fact_ref(r, len(review.facts)) is None]
+    return [] if move is None else [r for r in move.rests_on if fact_ref(r, len(review.facts)) is None
+                                    and inference_ref(r, len(review.inferences)) is None]
 
 
 def _fact(run: _Run, n: int, decisive: bool) -> bool:
     """Check fact `n` (see the module docstring, 1); True when it stands."""
     fact, line = run.review.facts[n - 1], f"fact:{n}"
+    source = C.source_of(fact.evidence)
     if not fact.evidence:
-        run.say(line, C.DROPPED, C.UNCITED)
+        run.say(line, C.DROPPED, C.UNCITED, source=source)
+        return False
+    # THE ENGINE AND THE EXPERT'S OWN ARE NO FACT ABOUT THIS FILE (STEP-13b): a fact citing only them drops.
+    if all(_is_own(e) or (_is_engine(e) and e in run.lines) for e in fact.evidence):
+        run.say(line, C.DROPPED, C.ENGINE_IS_NO_FACT, fact.evidence[0], source)
         return False
     unseen = [e for e in fact.evidence if e not in run.lines]
     if unseen:
-        run.say(line, C.DROPPED, C.UNKNOWN_EVIDENCE, unseen[0])
+        run.say(line, C.DROPPED, C.UNKNOWN_EVIDENCE, unseen[0], source)
         return False
+    evidence = _data(fact.evidence)       # beside the file's data an engine line grounds no name or number of it
     # A quote grounds nothing until it is MATCHED (X01): in the words of a mail or meeting the fact cites,
     # as the dossier printed them — an ask, a calculator, a situation or an older touch prints none.
-    worded = {e: dls for e in fact.evidence if is_event(e)
+    worded = {e: dls for e in evidence if (is_event(e) or e.startswith(SELF_PREFIX))
               if (dls := [dl for dl in run.lines[e] if dl.words])}
     quoted = [dl for dls in worded.values() for dl in dls
               if fact.quote and quoted_in(fact.quote, [dl.words or ""])]
     if decisive and worded:
         if not fact.quote:
-            run.say(line, C.DROPPED, C.UNQUOTED)
+            run.say(line, C.DROPPED, C.UNQUOTED, source=source)
             return False
         if not quoted:
-            run.say(line, C.DROPPED, C.MISQUOTED, fact.quote)
+            run.say(line, C.DROPPED, C.MISQUOTED, fact.quote, source=source)
             return False
     elif fact.quote and not quoted:
         run.say(f"quote:{n}", C.DROPPED, C.MISQUOTED, fact.quote)    # the fact needs none: it alone drops
     if decisive and not worded and (unshown := _unshown(run, fact)) is not None:
-        run.say(line, C.DROPPED, C.UNQUOTED, unshown)              # it needs a quote it cannot have
+        run.say(line, C.DROPPED, C.UNQUOTED, unshown, source=source)              # it needs a quote it cannot have
         return False
     if quoted:
         run.quotes[n] = str(fact.quote)
-    own = "\n".join([run.items(fact.evidence), run.quotes.get(n, "")])
+    own = "\n".join([run.items(evidence), run.quotes.get(n, "")])
     why = _invented(fact.claim, run.named(fact, own), run.people)
     if why is not None:
-        run.say(line, C.DROPPED, C.UNSUPPORTED, why)
+        run.say(line, C.DROPPED, C.UNSUPPORTED, why, source=source)
         return False
     # A decisive fact's NUMBERS are its quote's: the quote, the head of the mail it is in (its date), and
     # the readings it cites beside it — never another sentence of that mail, which the quote does not hold.
-    ground = "\n".join([run.figures(fact.evidence), run.quotes.get(n, "")]) \
+    ground = "\n".join([run.figures(evidence), run.quotes.get(n, "")]) \
         if not (decisive and quoted) else "\n".join(
-            [run.figures(e for e in fact.evidence if e not in worded), *(dl.line for dl in quoted),
+            [run.figures(e for e in evidence if e not in worded), *(dl.line for dl in quoted),
              run.quotes[n]])
     missing = unheld(figures_in(fact.claim), figures_in(ground))          # its own lines, never the head
     if not missing:
-        run.say(line, C.KEPT)
+        run.say(line, C.KEPT, source=source)
         return True
-    calculators = [e for e in fact.evidence if e.startswith("num:")]
+    calculators = [e for e in evidence if e.startswith("num:")]
     values = {v for e in calculators for dl in run.lines[e] if (v := _value_figure(dl.line, e)) is not None}
     if len(missing) == 1 and len(calculators) == 1 and len(values) == 1 and missing[0].value is not None:
         (said, unit, cur), (value, its_unit, its_cur) = missing[0].value, next(iter(values))
         if unit in ("", its_unit) and cur in ("", its_cur):          # within its unit: 9 weeks is no 8.99 days
             run.corrections.append(correction_of(fact.claim, missing[0].value, value))
-            run.say(line, C.CORRECTED, C.BY_CALCULATOR, f"number:{said} -> {value} ({calculators[0]})")
+            run.say(line, C.CORRECTED, C.BY_CALCULATOR, f"number:{said} -> {value} ({calculators[0]})", source=source)
             return True
-    run.say(line, C.DROPPED, C.WRONG_NUMBER, missing[0].detail)
+    run.say(line, C.DROPPED, C.WRONG_NUMBER, missing[0].detail, source=source)
     return False
 
 
-def _grounds(run: _Run, kind: str, items, standing: set[int]) -> None:
-    """Check each inference or pattern (see the module docstring, 2)."""
-    for n, item in enumerate(items, start=1):
-        held = [ref for ref in item.based_on
-                if ((m := _FACT_REF.match(ref)) is not None and int(m.group(1)) in standing)
-                or (m is None and ref in run.lines)]
-        if held:
-            run.say(f"{kind}:{n}", C.KEPT)
+def _file_names(people: FilePeople) -> list[str]:
+    """What names THIS file, word by word: its people's names, their addresses and the hosts and firms of those addresses
+    — never ours (the founder is the founder of every file) and never a word of the function-word class."""
+    tokens: list[str] = []
+    for person in (*people.people, people.connector, people.counterparty):
+        if person is None or (person.key and "@" in person.key and people.us.is_us(person.key)):
+            continue
+        tokens += [w for w in _name_of(person) if len(w) >= 3 and w not in FUNCTION_WORDS]
+        key = str(person.key or "").casefold()
+        if key:
+            tokens += [key, key.rsplit("@", 1)[-1]]
+            if (firm := label_of(key)) and len(firm) >= 3:
+                tokens.append(firm)
+    return list(dict.fromkeys(t for t in tokens if t))
+
+
+def _own_lines(run: _Run) -> set[int]:
+    """Check each of the expert's own lines (STEP-13b): a practice, a base rate, a counter-pattern or a benchmark, in
+    words — never a number (numbers are the calculators', RULE 08) and never a name, address or company of this file
+    (it is experience, not evidence). Returns the numbers of those that stand."""
+    names, standing = _file_names(run.people), set()
+    for n, own in enumerate(run.review.own, start=1):
+        text = f"{own.claim} {own.why}"
+        folded = text.casefold()
+        digit = re.search(r"\d+", text)
+        hit = next((t for t in names if re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", folded)), None)
+        if digit is not None:
+            run.say(f"own:{n}", C.DROPPED, C.OWN_STATES_A_NUMBER, digit.group(0), C.OWN)
+        elif hit is not None:
+            run.say(f"own:{n}", C.DROPPED, C.OWN_NAMES_THE_FILE, hit, C.OWN)
         else:
-            run.say(f"{kind}:{n}", C.DROPPED, C.UNGROUNDED, ", ".join(item.based_on) or "rests on nothing")
+            run.say(f"own:{n}", C.KEPT, source=C.OWN)
+            standing.add(n)
+    return standing
+
+
+def _grounds(run: _Run, kind: str, items, standing: set[int], owns: set[int] = frozenset()) -> None:
+    """Check each inference or pattern (see the module docstring, 2). It stands while a ground of the FILE (a standing
+    fact, a printed id) or of the ENGINE (a printed engine line) stands; an own line grounds it only BESIDE such a
+    one (STEP-13b). One citing an engine line holds its names and numbers by the card validator's rule, on that line,
+    the data it cites and the facts it rests on."""
+    review = run.review
+    for n, item in enumerate(items, start=1):
+        line, source = f"{kind}:{n}", C.source_of(item.based_on)
+        facts = [int(m.group(1)) for ref in item.based_on if (m := _FACT_REF.match(ref)) is not None]
+        data = [ref for ref in item.based_on if (_FACT_REF.match(ref) is not None and int(ref[5:]) in standing)
+                or (_FACT_REF.match(ref) is None and not _is_own(ref) and not _is_engine(ref) and ref in run.lines)]
+        engine = [ref for ref in item.based_on if _is_engine(ref) and ref in run.lines]
+        if not (data or engine):
+            run.say(line, C.DROPPED, C.UNGROUNDED, ", ".join(item.based_on) or "rests on nothing", source)
+            continue
+        if engine:
+            held = [e for k in facts if k in standing for e in _data(review.facts[k - 1].evidence)]
+            ids = [*engine, *(r for r in data if _FACT_REF.match(r) is None), *held]
+            quotes = [run.quotes[k] for k in facts if k in run.quotes and k in standing]
+            text, why = run.stands(item.claim, "\n".join([run.items(ids), *quotes]),
+                                   figures="\n".join([run.figures(ids), *quotes]))
+            if text is None:
+                run.say(line, C.DROPPED, C.WRONG_NUMBER if why.startswith("number:") else C.UNSUPPORTED, why, source)
+                continue
+        run.say(line, C.KEPT, source=source)
+        if engine and any((k := own_ref(ref, len(review.own))) is not None and k in owns for ref in item.based_on):
+            run.say(line, C.NOTED, C.OWN_DISAGREES, ", ".join(engine), source)
+
+
+def _engine_cited(run: _Run, ref: str) -> C.EngineCited:
+    """The engine line `ref` as the dossier printed it — `- [ref] words — source[, not yet reviewed]`, or a unit's
+    `- [ru:…] words` — kept on the check with its words, so a card and a replay say where a sentence came from."""
+    line = next((dl.line for dl in run.lines[ref] if dl.line.startswith(f"- [{ref}]")), "")
+    body, reviewed = line.partition("] ")[2], True
+    if body.endswith(_NOT_REVIEWED):
+        body, reviewed = body[:-len(_NOT_REVIEWED)], False
+    words, sep, source = body.rpartition(" — ")
+    if not sep:
+        words, source, reviewed = body, ref.partition(":")[2], False       # a reading of code: never reviewed
+    return C.EngineCited(ref=ref, words=words, source=source, reviewed=reviewed)
 
 
 def _prose(review: ExpertReview) -> list[str]:
@@ -1106,15 +1222,16 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     if not standing:
         return C.CheckedReview(verdicts=tuple(run.verdicts), fate=C.REFUSED, cited=(),
                                because=C.NOTHING_STANDS, words=C.CardWords(None, None, None, None, None))
-    _grounds(run, "inference", review.inferences, standing)
-    _grounds(run, "pattern", review.patterns, standing)
+    owns = _own_lines(run)
+    _grounds(run, "inference", review.inferences, standing, owns)
+    _grounds(run, "pattern", review.patterns, standing, owns)
     unheld = sorted(set().union(*(numbers_in(t) for t in _prose(review))) - numbers_in(dossier_text))
     if unheld:
         run.say("prose", C.NOTED, C.UNHELD_NUMBER, ", ".join(f"number:{n}" for n in unheld))
 
     def corpus(numbers: Iterable[int], *, figures: bool = False) -> str:
         facts = [review.facts[n - 1] for n in sorted(numbers)]
-        lines = (run.figures if figures else run.items)(e for f in facts for e in f.evidence)
+        lines = (run.figures if figures else run.items)(e for f in facts for e in _data(f.evidence))
         return "\n".join([lines, *(run.quotes.get(n, "") for n in sorted(numbers))])
 
     standing_corpus, move_corpus = corpus(standing), corpus(rested & standing)
@@ -1215,6 +1332,16 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         else:
             run.say("answers", C.KEPT)
 
+    # WHAT THE MOVE IS GUIDED BY (STEP-13b): engine lines the dossier printed, or own lines of this review that stand — a
+    # slip of one optional field, named and never holding the move, as a stray `rests_on` is.
+    if move is not None and move.guided_by:
+        loose = [ref for ref in move.guided_by
+                 if not ((_is_engine(ref) and ref in run.lines)
+                         or ((k := own_ref(ref, len(review.own))) is not None and k in owns))]
+        if loose:
+            run.say("guided_by", C.DROPPED, C.UNKNOWN_EVIDENCE, ", ".join(loose), C.source_of(move.guided_by))
+        else:
+            run.say("guided_by", C.KEPT, source=C.source_of(move.guided_by))
     # A MOVE RESTING ONLY ON WHAT YOU TOLD US (M36.C2.L-logic.V2.U12, second crosscheck B2): the standing facts
     # it rests on cite your answer — or a question card — and no mail or meeting of the file. Its names and
     # numbers are on your words, but whether it says what you SAID is not read (your "No" grounded the claim
@@ -1303,12 +1430,21 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     words = C.CardWords(do_nothing=do_nothing, kind=kind, alternative=alternative, wait_or_stop=wait_or_stop,
                         headline=headline if shown else None, situation=situation, done_when=done_when,
                         draft=draft if shown else None, to=to if shown and draft else None,
-                        evidence=tuple(e for f in grounds for e in f.evidence) if shown else (),
+                        evidence=tuple(e for f in grounds for e in _data(f.evidence)) if shown else (),
                         quotes=tuple(run.quotes[n] for n in sorted(rested & standing) if n in run.quotes)
                         if shown else ())
+    # THE ENGINE LINES THE STANDING LINES CITE, kept with their words (STEP-13b): a fact's, an inference's or a pattern's
+    # that stands, and what the move is guided by when that held.
+    fell = {v.line for v in run.verdicts if v.verdict == C.DROPPED}
+    stood = [*(review.facts[n - 1].evidence for n in sorted(standing)),
+             *(i.based_on for n, i in enumerate(review.inferences, start=1) if f"inference:{n}" not in fell),
+             *(p.based_on for n, p in enumerate(review.patterns, start=1) if f"pattern:{n}" not in fell),
+             *((move.guided_by,) if move is not None and "guided_by" not in fell else ())]
+    engine = tuple(_engine_cited(run, ref) for ref in dict.fromkeys(r for refs in stood for r in refs)
+                   if _is_engine(ref) and ref in run.lines)
     return C.CheckedReview(
-        verdicts=tuple(run.verdicts), fate=fate, words=words,
-        cited=tuple(e for n in sorted(standing) for e in review.facts[n - 1].evidence),
+        verdicts=tuple(run.verdicts), fate=fate, words=words, engine=engine,
+        cited=tuple(e for n in sorted(standing) for e in _data(review.facts[n - 1].evidence)),
         question=question if (fate == C.HELD or (shown and review.mode == "find_out")) else None,
         because=held if fate in (C.HELD, C.SUPPRESSED) else None)
 

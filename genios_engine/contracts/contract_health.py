@@ -35,10 +35,6 @@ _ENGINE = _PKG.parent
 UNREACHED: dict[str, tuple[str, str]] = {
     # ⛔ STEP-13b — CONTRACTS BUILT BEFORE THEIR CALLER, ON PURPOSE (bottom-up, `yc2_w27_s13b`): each entry below is
     # deleted in the commit that wires it, as `expert_review.validate`'s was.
-    "claim_check.source_of": (
-        "STEP-13b M37.C1.L-contract.V1.U03: a line's source (data · engine · own · mixed), DERIVED from what it cites "
-        "— built before the check that stamps it on every verdict. Test callers only.",
-        "MOVES WHEN `reason/expert/verify` derives each line's source (M37.C4.L-logic.V7.U01)"),
     "model_ladder.next_step": (
         "STEP-13b M38.C1.L-contract.V2.U01: the ladder's rule — final, repair once, climb, exhausted, carried — built "
         "before the mechanism that asks the models. Test callers only.",
