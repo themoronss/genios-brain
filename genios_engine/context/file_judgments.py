@@ -147,6 +147,10 @@ class PriorVersion:
     material: bool
     changed: tuple[str, ...]
     at: datetime | None
+    #: The mode its words were shown in (`contracts/card_version.VersionWords.mode`) — `question` or `answered` on a
+    #: version that ASKED you (STEP-14 fix, the crosscheck's finding 1, `yc2_w27_s14` M42.C2.L-interface.V3.U06):
+    #: its headline is our question, never a ground (STEP-13's B2), whatever the card carries now.
+    mode: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {"version": self.version, "headline": self.headline, "change": self.change,
@@ -259,9 +263,10 @@ def _versions(created_at: datetime | None, raw: list[dict]) -> tuple[list[PriorV
         if not out and v.before is not None:
             # The first version's words are the ones its first replacement kept.
             out.append(PriorVersion(version=v.version - 1, headline=v.before.headline, change="created",
-                                    material=True, changed=(), at=created_at))
+                                    material=True, changed=(), at=created_at, mode=v.before.mode))
         out.append(PriorVersion(version=v.version, headline=v.words.headline, change=v.change,
-                                material=v.material, changed=v.changed, at=_utc(event.get("at"))))
+                                material=v.material, changed=v.changed, at=_utc(event.get("at")),
+                                mode=v.words.mode))
     return out, unread
 
 

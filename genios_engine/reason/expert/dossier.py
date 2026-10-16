@@ -740,6 +740,17 @@ class Answered:
 
 #: The rule a question card's signal fires under (`reason/expert/asks.QUESTION_RULE`).
 QUESTION_CARD_RULE = "founder_question"
+#: The modes of a version that ASKED you (`contracts/card_version.QUESTION_MODE`, `ANSWERED_MODE`) — literals here,
+#: as `QUESTION_CARD_RULE` is: what the version event stores.
+ASKING_MODES: tuple[str, ...] = ("question", "answered")
+
+
+def asked_you(card: Any) -> bool:
+    """Whether a card of the file is ours to blank (STEP-14 fix, the crosscheck's finding 1; STEP-13's B2): it is a
+    question card now, or ANY of its versions asked you — a living card that asked, was answered and then decided
+    still prints the question's words on its version line, and its signal's rule is the decision's."""
+    return (getattr(card, "rule_id", None) == QUESTION_CARD_RULE
+            or any(getattr(v, "mode", None) in ASKING_MODES for v in (getattr(card, "versions", None) or ())))
 
 
 @dataclass(frozen=True, slots=True)
@@ -822,8 +833,7 @@ def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str]
     return FilePeople(counterparty=counterparty, people=people, us=us,
                       our_names=tuple(n for n in our_names if n), connector=connector,
                       head=_file(parts, _Ids()).text, asks=asks, replies=replies, meetings=meetings,
-                      question_cards=tuple(f"card:{c.card_id}" for c in cards
-                                           if getattr(c, "rule_id", None) == QUESTION_CARD_RULE),
+                      question_cards=tuple(f"card:{c.card_id}" for c in cards if asked_you(c)),
                       answered=tuple(Answered(ref=f"answer:{a.question_id}", question=str(a.question),
                                               words=" ".join(str(a.answer).split()))
                                      for a in (parts.answers or ()) if a.answer))
@@ -835,7 +845,7 @@ def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | 
     return build_dossier(parts) if parts is not None else None
 
 
-__all__ = ["Answered", "AskSeen", "QUESTION_CARD_RULE", "CLAIMS_LIMIT", "meeting_events", "read_meeting_titles",
+__all__ = ["ASKING_MODES", "Answered", "AskSeen", "QUESTION_CARD_RULE", "asked_you", "CLAIMS_LIMIT", "meeting_events", "read_meeting_titles",
            "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine",
            "DossierParts", "Seen",
            "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",
