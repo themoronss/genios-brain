@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_216, (
+    assert r["statements"] == 3_218, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -597,6 +597,9 @@ def test_the_statement_count_did_NOT_move():
     # `feedback/scorecard` 0 → 2 (`_CHECKED`, `_QUESTIONS`) and `context/founder_corrections` 5 → 7
     # (`made_between`'s one f-string SELECT, counted twice by the template walk, as `{_COLUMNS}` prefixes are).
     # The run-time ratchet stays 272.
+    # ⛔ MOVED 3,216 → 3,218 by yc2_w27_s16/M47.C3.L-integration.V2.U03 (every verified card names what closed it): the
+    # receipt's SELECT and its witness, both written as whole literals (the lifecycle's words inlined, never formatted
+    # in, so the run-time ratchet stays 272).
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

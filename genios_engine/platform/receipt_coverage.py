@@ -109,6 +109,9 @@ RECEIPT_PACKAGE: dict[str, tuple[str, str]] = {
     "every expired card says why": (
         "platform", "STEP-06: `platform/card_lifecycle` is the one writer of a card's `expired` "
                     "state and always writes the event — the promise is this package's"),
+    "every verified card names what closed it": (
+        "platform", "STEP-16: `platform/card_lifecycle.resolve_cards` is the one way a card resolves, and refuses "
+                    "a verified end that names no closing event — the promise is this package's"),
 
     # ── packs/ · domain expertise, a plane ─────────────────────────────────────────────────
     "compiled expertise packages exist": (

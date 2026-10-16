@@ -541,6 +541,32 @@ def check_every_situation_and_card_says_how_it_ended(conn, org: str) -> Check:
                   for kind, counts in silent_types.items()])
 
 
+def check_every_verified_card_names_what_closed_it(conn, org: str, *, now=None) -> Check:
+    """⛔ STEP-16 (`yc2_w27_s16` M47.C3.L-integration.V2.U03, `09` G6). Nothing proved any end before: a covered file
+    whose ask was answered now ends its card RESOLVED `verified`, naming the event that closed the ask
+    (`platform/card_lifecycle.resolve_cards`). Fails on a verified end that names nothing (the receipt's own SQL);
+    prints, without failing, the verified-outcome rate over the last 30 days — of the decisions that ended, how
+    many ended verified, with its n (`context/file_outcomes`). NO DATA when no decision ended in the window."""
+    from datetime import datetime, timedelta, timezone
+
+    from genios_engine.context.file_outcomes import ended_between, rates
+    from genios_engine.platform.receipts import _VERIFIED_WITHOUT_WHAT_CLOSED_IT_SQL
+
+    name = "every verified card names what closed it"
+    now = now or datetime.now(timezone.utc)
+    unproven = _scalar(conn, _VERIFIED_WITHOUT_WHAT_CLOSED_IT_SQL() + " and e.org_id = :o", o=org)
+    verified = rates(ended_between(conn, org, since=now - timedelta(days=30), until=now),
+                     kinds={})["all"]["all"].verified
+    return Check(
+        name=name, ok=unproven == 0, no_data=unproven == 0 and verified.n == 0,
+        measured=(f"{unproven} verified card(s) naming nothing; verified outcomes over the last 30 days: "
+                  f"{verified.says()} decision(s) that ended"),
+        expected="0 — a verified end names the event that closed its ask (STEP-16)",
+        fix=("a card resolved `verified` past `platform/card_lifecycle.resolve_cards`, which refuses one with no "
+             "`event_id` — find the writer that set `state = 'resolved'` itself "
+             "(`tests/platform/test_one_way_to_resolve_a_card.py` should have refused it)"))
+
+
 def check_the_company_brief_exists_and_is_current(conn, org: str) -> Check:
     """⛔ STEP-07 (`yc2_w27_s07/M25.C6`). Every judging and reading prompt carries the company brief —
     once the founder has accepted a line of it. Until then no prompt names the company, its goals, its
@@ -1113,6 +1139,7 @@ CHECKS = (
     check_we_are_never_the_subject,
     check_every_kept_event_entered_memory,
     check_every_situation_and_card_says_how_it_ended,
+    check_every_verified_card_names_what_closed_it,
     check_the_company_brief_exists_and_is_current,
     check_every_gmail_message_in_the_window_has_its_content,
     check_memory_reaches_the_window,
