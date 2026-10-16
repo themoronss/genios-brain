@@ -96,7 +96,9 @@ def test_a_kind_correction_prints_even_where_the_file_has_no_playbook():
     d = D.build_dossier(_with(_parts(playbook=PlaybookAnswer(kind="investor", playbook=None, reason="no_kind")),
                               corrections=(kind,)))
     [playbook] = [s for s in d.sections if s.name == "playbook"]
-    assert playbook.text.splitlines()[0] == "No playbook for this file: the brief names no kind of work for it."
+    # ⛔ RESTATED by STEP-13b M37.C3.L-interface.V4.U01: the "none" carries its id, `[none:playbook]`.
+    assert playbook.text.splitlines()[0] == ("No playbook for this file: the brief names no kind of work for it. "
+                                             "[none:playbook]")
     assert playbook.text.splitlines()[-1] == f"- [corr:fc_{2:024d}] “{KIND_WORDS}”"
 
 

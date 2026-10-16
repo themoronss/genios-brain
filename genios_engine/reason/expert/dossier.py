@@ -61,7 +61,11 @@ from sqlalchemy import text
 from genios_engine.contracts.expert_review import DossierCatalogue, number_tokens
 from genios_engine.platform.self_identity import PUBLIC_MAIL_DOMAINS, SelfIdentity
 
-DOSSIER_VERSION = "dossier.v1"
+#: ⛔ dossier.v2 since 16 Oct (`yc2_w27_s13b` M37.C3.L-interface.V4.U01): every line the expert leans on carries an id —
+#: the file's head, each line of the brief, what was checked, each section's "none". Measured on Haiku's 12 Oct pass: it
+#: cited such lines by their words 288 times and 42 of its 68 held reviews fell on one. A review kept under v1 is
+#: reviewed again only if its file moved (`06` D48): the version rides the fingerprint's `who_decides`, not its inputs.
+DOSSIER_VERSION = "dossier.v2"
 
 #: The sections, in the one order a dossier is ever written in.
 SECTIONS: tuple[str, ...] = ("brief", "file", "timeline", "promises", "numbers", "coverage",
@@ -226,9 +230,28 @@ class _Ids:
         return f"[{ref}]"
 
 
+def _brief_ids(brief: Any, block: str, cite: _Ids) -> str:
+    """The brief as every judging prompt carries it, each line of it with its id (STEP-13b): the company line
+    `[brief:company]`, every accepted line `[brief:<line id>]`. The block is the brief's own text, untouched — an id is
+    added at the end of the line it names, found by the line's own rendering, once each."""
+    from genios_engine.contracts.company_brief import SECTION_TITLES
+    by_text: dict[str, list[str]] = {}
+    for line in brief.lines:
+        by_text.setdefault(line.rendered(), []).append(line.line_id)
+    company, out = f"{SECTION_TITLES['company']}: ", []
+    for row in block.splitlines():
+        if row.startswith(company):
+            row = f"{row} {cite('brief:company')}"
+        elif by_text.get(row):
+            row = f"{row} {cite('brief:' + by_text[row].pop(0))}"
+        out.append(row)
+    return "\n".join(out)
+
+
 def _brief(p: DossierParts, cite: _Ids) -> Section:
     block = p.brief.prompt_block().strip() if p.brief is not None and p.brief else ""
-    return Section("brief", block or "No company brief is accepted for this tenant.")
+    return Section("brief", _brief_ids(p.brief, block, cite) if block
+                   else "No company brief is accepted for this tenant.")
 
 
 def _again(ask: Any) -> datetime | None:
@@ -242,17 +265,17 @@ def _again(ask: Any) -> datetime | None:
 def _file(p: DossierParts, cite: _Ids) -> Section:
     f = p.file
     lines = [f"Counterparty: {f.counterparty} <{f.counterparty_key}> ({f.counterparty_type})",
-             f"Kind of work: {f.work_kind or 'not named by the brief'}",
+             f"Kind of work: {f.work_kind or 'not named by the brief'} {cite('file:kind')}",
              f"Its role in the brief: {f.kind or 'none'}"
-             + (f" — the brief says: “{f.line}”" if f.line else "")]
+             + (f" — the brief says: “{f.line}”" if f.line else "") + f" {cite('file:role')}"]
     if f.introduced_by:
-        lines.append(f"Introduced by: {f.introduced_by}")
-    lines.append(f"Domains: {', '.join(f.domains) or 'none'}")
+        lines.append(f"Introduced by: {f.introduced_by} {cite('file:introduced_by')}")
+    lines.append(f"Domains: {', '.join(f.domains) or 'none'} {cite('file:domains')}")
     # From the timeline — touches up to the dossier's as-of — never a meeting booked ahead (`03` F159).
     touched = p.timeline.touches
-    lines.append(f"First touch {_when(touched[0].at if touched else None)}; "
-                 f"last touch {_when(touched[-1].at if touched else None)}")
-    lines.append(f"Whose move: {f.whose_move or 'not written'}")
+    lines.append(f"First touch {_when(touched[0].at if touched else None)} {cite('file:first_touch')}; "
+                 f"last touch {_when(touched[-1].at if touched else None)} {cite('file:last_touch')}")
+    lines.append(f"Whose move: {f.whose_move or 'not written'} {cite('file:whose_move')}")
     if f.introductions is not None:
         lines.append(f"People it introduced: {_says(f.introductions)} {cite('num:introductions')}; "
                      f"of them wrote to us: {_says(f.replied)} {cite('num:replied')}; "
@@ -277,7 +300,7 @@ def _timeline(p: DossierParts, cite: _Ids) -> Section:
     newest = list(reversed(tl.touches))
     whole, listed = newest[:TOUCHES_WHOLE], newest[TOUCHES_WHOLE:TOUCHES_WHOLE + TOUCHES_LISTED]
     cut = len(newest) - len(whole) - len(listed)
-    lines = [] if newest else ["No touch yet."]
+    lines = [] if newest else [f"No touch yet. {cite('none:touch')}"]
     for t in whole:
         head = (f"- {cite(t.event_id)} {_when(t.at)} · {_DIRECTION.get(t.direction, t.direction)} · "
                 f"{t.who_name or t.who or 'unknown'}")
@@ -417,7 +440,7 @@ def _kind_corrections(p: DossierParts, cite: _Ids) -> list[str]:
 
 def _promises(p: DossierParts, cite: _Ids) -> Section:
     if not p.promises:
-        return Section("promises", "No promise was found in its mail.", p.promises_cut)
+        return Section("promises", f"No promise was found in its mail. {cite('none:promises')}", p.promises_cut)
     lines = []
     for pr in p.promises:
         who = {True: "we promised", False: "they promised"}.get(pr.ours, "a promise")
@@ -476,13 +499,14 @@ def _coverage(p: DossierParts, cite: _Ids) -> Section:
              f"{_when(m.window_start)}; last sync "
              + (f"completed {_when(m.last_finished_at)}" if m.last_completed else
                 f"not completed (last finished {_when(m.last_finished_at)})")
+             + f" {cite('cov:' + (m.address or m.connection_id))}"
              for m in nb.mailboxes] or ["No mailbox is shown to have read this file's mail."]
     # Each line says what was read, and only that (`03` F160): no absence without a mailbox that read
     # it, no "no reply" when they wrote after our last mail, and never past what a mailbox finished.
     if nb.no_reply_since is None:
-        lines.append("We have not written in this file." if nb.mailboxes else
+        lines.append(f"We have not written in this file. {cite('none:we_wrote')}" if nb.mailboxes else
                      "Whether we wrote in this file cannot be said: no mailbox is shown to have read its "
-                     "mail.")
+                     f"mail. {cite('cov:last_mail')}")
         return Section("coverage", "\n".join(lines))
     since = nb.no_reply_since
     answered = [t for t in p.timeline.touches if t.direction == "in" and t.at > since]
@@ -490,14 +514,14 @@ def _coverage(p: DossierParts, cite: _Ids) -> Section:
     read_to = min((m.last_finished_at for m in nb.mailboxes
                    if m.last_completed and m.last_finished_at), default=None)
     if answered:
-        lines.append(f"Our last mail in the file: {_when(since)} — they wrote after it "
+        lines.append(f"Our last mail in the file: {_when(since)} {cite('cov:last_mail')} — they wrote after it "
                      f"{cite(answered[0].event_id)}, so “no reply” is not to be said.")
     elif nb.no_reply_can_be_said and read_to is not None:
-        lines.append(f"Our last mail in the file: {_when(since)} — “no reply since then” may be said up to "
+        lines.append(f"Our last mail in the file: {_when(since)} {cite('cov:last_mail')} — “no reply since then” may be said up to "
                      f"{_when(read_to)}: a mailbox has read that far and finished; after it, nothing was "
                      "read.")
     else:
-        lines.append(f"Our last mail in the file: {_when(since)} — “no reply” may NOT be said: no mailbox "
+        lines.append(f"Our last mail in the file: {_when(since)} {cite('cov:last_mail')} — “no reply” may NOT be said: no mailbox "
                      "is shown to have read that far and finished since.")
     return Section("coverage", "\n".join(lines))
 
@@ -508,7 +532,7 @@ def _playbook(p: DossierParts, cite: _Ids) -> tuple[Section, tuple[str, ...]]:
     if pb is None:
         reason = getattr(answer, "reason", None)
         return Section("playbook", "\n".join([
-            "No playbook for this file: " f"{_NO_PLAYBOOK.get(reason, reason or 'none')}.",
+            "No playbook for this file: " f"{_NO_PLAYBOOK.get(reason, reason or 'none')}. {cite('none:playbook')}",
             *_kind_corrections(p, cite)])), ()
     lines = [f"{pb.name} {cite('pb:' + pb.playbook_id)}, version {pb.version} — "
              + ("reviewed by a named human" if pb.reviewed else (pb.review_label or "not reviewed"))]

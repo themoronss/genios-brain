@@ -186,7 +186,7 @@ def test_the_inputs_are_readable_and_carry_no_instant():
                                   prompt_version=PROMPT)
     assert inputs["quiet"] == ">=5" and inputs["next_meeting"] == "<=168" and inputs["due"] is None
     assert inputs["who_decides"] == {"model": MODEL, "prompt_version": PROMPT,
-                                     "dossier_version": "dossier.v1"}
+                                     "dossier_version": "dossier.v2"}   # ⛔ RESTATED by STEP-13b M37.C3.L-interface.V4.U01: was dossier.v1
     assert "as_of" not in inputs and "reviews" not in inputs
     assert F.HOURS_UNTIL[:3] == (0, 48, 72)
 
