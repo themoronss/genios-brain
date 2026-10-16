@@ -151,7 +151,7 @@ whatever shape the introductions come in. Boardy stays the connector, never the 
 | 63 | Your connector, an introduction that leaves the contact's address out · 4 Aug → 5 Oct | `yes` | | `claude` |
 | 64 | Your connector, an introduction the contact declined · 4 Aug → 5 Oct | `no` | | `claude` |
 
-## Your corrections change the next judgment — 1 item (`STEP-16`, added 2026-10-16)
+## Your corrections change the next judgment — 2 items (`STEP-16`, added 2026-10-16)
 
 STEP-16 (`yc2_w27_s16` M47.C4.L-data.V1.U04–U06): what you tell GeniOS about a file changes its next decision, and
 one click is never a pattern. Synthetic, modelled on the design partner's own corrections; each case plays your act
@@ -160,6 +160,7 @@ between its sweeps through the real doors (`tests/replays/engine_runner.play_act
 | # | Item — sender · date | Claude's answer | Your answer | Labelled by |
 |---|---|---|---|---|
 | 65 | An investor who asked on a call for news only on real milestones, and your correction of her card · 21 Sep | `yes` | | `claude` |
+| 66 | Two investors waiting on a milestone, and one correction for every investor file · 21 Sep | `yes` | | `claude` |
 
 ---
 

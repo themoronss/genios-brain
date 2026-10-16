@@ -1,0 +1,649 @@
+{
+ "case_id": "F66",
+ "source": "ideal_reader",
+ "recorded_at": "unknown",
+ "answers": {
+  "1674e589c9e992f7a3ce1aefc15d05aee27999a09bc15d7b681896938ec48c2d": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Ines asked to be kept posted on how the first paid pilot goes, the milestone her fund would look at.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Keep me posted on how the first paid pilot goes"
+     },
+     {
+      "claim": "Our reply time to Ines is not measured: the file holds no mail from Arjun to them.",
+      "evidence": [
+       "num:your_reply_time:ines@northfieldvc.test"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "You told us investors who asked for news only on a milestone get nothing before it lands, and Ines's milestone has not happened.",
+      "based_on": [
+       "corr:fc_#1",
+       "fact:1"
+      ]
+     },
+     {
+      "claim": "A note to Ines now would be news without the milestone; the file waits.",
+      "based_on": [
+       "corr:fc_#1"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "A conversation an investor parked on a milestone is reopened by the milestone, not by a note.",
+      "based_on": [
+       "corr:fc_#1"
+      ]
+     }
+    ],
+    "frames": {
+     "primary": "an investor waiting on a named milestone",
+     "rivals": [
+      "a conversation already lost"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": "first_call",
+     "expected": "news when the first paid pilot signs",
+     "actual": "no the first paid pilot signs yet"
+    },
+    "unknowns": [
+     {
+      "question": "when the first paid pilot signs",
+      "relevance": "that is the news Ines asked for"
+     }
+    ],
+    "scenarios": {
+     "do_nothing": "Ines hears nothing until there is real news, as asked",
+     "act": "a note now spends the conversation for nothing",
+     "best": "the next note is the first paid pilot signs",
+     "worst": "the milestone never comes",
+     "signals_to_watch": [
+      "the first paid pilot signs",
+      "a note from Ines"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "your correction for every investor file",
+      "no milestone yet"
+     ]
+    },
+    "mode": "wait",
+    "next_move": null,
+    "alternative": null,
+    "wait_or_stop": "wait until the first paid pilot signs, then write to Ines with it",
+    "done_when": "Ines hears from us with the first paid pilot signs",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Ines asked to be kept posted on how the first paid pilot goes, the milestone her fund would look at.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Keep me posted on how the first paid pilot goes\"}, {\"claim\": \"Our reply time to Ines is not measured: the file holds no mail from Arjun to them.\", \"evidence\": [\"num:your_reply_time:ines@northfieldvc.test\"]}], \"inferences\": [{\"claim\": \"You told us investors who asked for news only on a milestone get nothing before it lands, and Ines's milestone has not happened.\", \"based_on\": [\"corr:fc_#1\", \"fact:1\"]}, {\"claim\": \"A note to Ines now would be news without the milestone; the file waits.\", \"based_on\": [\"corr:fc_#1\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"A conversation an investor parked on a milestone is reopened by the milestone, not by a note.\", \"based_on\": [\"corr:fc_#1\"]}], \"frames\": {\"primary\": \"an investor waiting on a named milestone\", \"rivals\": [\"a conversation already lost\"]}, \"expected_vs_actual\": {\"stage\": \"first_call\", \"expected\": \"news when the first paid pilot signs\", \"actual\": \"no the first paid pilot signs yet\"}, \"unknowns\": [{\"question\": \"when the first paid pilot signs\", \"relevance\": \"that is the news Ines asked for\"}], \"scenarios\": {\"do_nothing\": \"Ines hears nothing until there is real news, as asked\", \"act\": \"a note now spends the conversation for nothing\", \"best\": \"the next note is the first paid pilot signs\", \"worst\": \"the milestone never comes\", \"signals_to_watch\": [\"the first paid pilot signs\", \"a note from Ines\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"your correction for every investor file\", \"no milestone yet\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": null, \"wait_or_stop\": \"wait until the first paid pilot signs, then write to Ines with it\", \"done_when\": \"Ines hears from us with the first paid pilot signs\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 8516,
+   "output_tokens": 498,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "249126a2b244e292bd30d8ef7ae5aa72af9cd1a0dd9e12f1ef2871bd640b7776": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ines Duarte",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ines Duarte",
+        "start_offset": 137,
+        "end_offset": 148
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Northfield Ventures",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Northfield Ventures",
+        "start_offset": 160,
+        "end_offset": 179
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Ines Duarte",
+      "value": "Principal",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Principal, Northfield Ventures",
+        "start_offset": 149,
+        "end_offset": 179
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ines Duarte\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ines Duarte\", \"start_offset\": 137, \"end_offset\": 148}], \"confidence_bp\": 9000}, {\"surface_form\": \"Northfield Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Northfield Ventures\", \"start_offset\": 160, \"end_offset\": 179}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Ines Duarte\", \"value\": \"Principal\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Principal, Northfield Ventures\", \"start_offset\": 149, \"end_offset\": 179}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
+   "input_tokens": 5514,
+   "output_tokens": 217,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "29b20c22b62622f1684fe0cb80c5008004cbd01b39768b76975a8e23b325c455": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Marcus asked for a note when the round opens with a lead.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "When the round opens with a lead, send me a note"
+     },
+     {
+      "claim": "Our reply time to Marcus is not measured: the file holds no mail from Arjun to them.",
+      "evidence": [
+       "num:your_reply_time:marcus@harborpoint.test"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "You told us investors who asked for news only on a milestone get nothing before it lands, and Marcus's milestone has not happened.",
+      "based_on": [
+       "corr:fc_#1",
+       "fact:1"
+      ]
+     },
+     {
+      "claim": "A note to Marcus now would be news without the milestone; the file waits.",
+      "based_on": [
+       "corr:fc_#1"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "A conversation an investor parked on a milestone is reopened by the milestone, not by a note.",
+      "based_on": [
+       "corr:fc_#1"
+      ]
+     }
+    ],
+    "frames": {
+     "primary": "an investor waiting on a named milestone",
+     "rivals": [
+      "a conversation already lost"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": "first_call",
+     "expected": "news when the round opens with a lead",
+     "actual": "no the round opens with a lead yet"
+    },
+    "unknowns": [
+     {
+      "question": "when the round opens with a lead",
+      "relevance": "that is the news Marcus asked for"
+     }
+    ],
+    "scenarios": {
+     "do_nothing": "Marcus hears nothing until there is real news, as asked",
+     "act": "a note now spends the conversation for nothing",
+     "best": "the next note is the round opens with a lead",
+     "worst": "the milestone never comes",
+     "signals_to_watch": [
+      "the round opens with a lead",
+      "a note from Marcus"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "your correction for every investor file",
+      "no milestone yet"
+     ]
+    },
+    "mode": "wait",
+    "next_move": null,
+    "alternative": null,
+    "wait_or_stop": "wait until the round opens with a lead, then write to Marcus with it",
+    "done_when": "Marcus hears from us with the round opens with a lead",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Marcus asked for a note when the round opens with a lead.\", \"evidence\": [\"evt_#1\"], \"quote\": \"When the round opens with a lead, send me a note\"}, {\"claim\": \"Our reply time to Marcus is not measured: the file holds no mail from Arjun to them.\", \"evidence\": [\"num:your_reply_time:marcus@harborpoint.test\"]}], \"inferences\": [{\"claim\": \"You told us investors who asked for news only on a milestone get nothing before it lands, and Marcus's milestone has not happened.\", \"based_on\": [\"corr:fc_#1\", \"fact:1\"]}, {\"claim\": \"A note to Marcus now would be news without the milestone; the file waits.\", \"based_on\": [\"corr:fc_#1\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"A conversation an investor parked on a milestone is reopened by the milestone, not by a note.\", \"based_on\": [\"corr:fc_#1\"]}], \"frames\": {\"primary\": \"an investor waiting on a named milestone\", \"rivals\": [\"a conversation already lost\"]}, \"expected_vs_actual\": {\"stage\": \"first_call\", \"expected\": \"news when the round opens with a lead\", \"actual\": \"no the round opens with a lead yet\"}, \"unknowns\": [{\"question\": \"when the round opens with a lead\", \"relevance\": \"that is the news Marcus asked for\"}], \"scenarios\": {\"do_nothing\": \"Marcus hears nothing until there is real news, as asked\", \"act\": \"a note now spends the conversation for nothing\", \"best\": \"the next note is the round opens with a lead\", \"worst\": \"the milestone never comes\", \"signals_to_watch\": [\"the round opens with a lead\", \"a note from Marcus\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"your correction for every investor file\", \"no milestone yet\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": null, \"wait_or_stop\": \"wait until the round opens with a lead, then write to Marcus with it\", \"done_when\": \"Marcus hears from us with the round opens with a lead\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 8507,
+   "output_tokens": 493,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "38aee0173e806ef8cdfedb56cb4ea8f190a53c241777e1a491b36f07703e8dd5": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Marcus Bell",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Marcus Bell",
+        "start_offset": 170,
+        "end_offset": 181
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Harbor Point Partners",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Harbor Point Partners",
+        "start_offset": 191,
+        "end_offset": 212
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Marcus Bell",
+      "value": "Partner",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Partner, Harbor Point Partners",
+        "start_offset": 182,
+        "end_offset": 212
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Marcus Bell\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Marcus Bell\", \"start_offset\": 170, \"end_offset\": 181}], \"confidence_bp\": 9000}, {\"surface_form\": \"Harbor Point Partners\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Harbor Point Partners\", \"start_offset\": 191, \"end_offset\": 212}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Marcus Bell\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Partner, Harbor Point Partners\", \"start_offset\": 182, \"end_offset\": 212}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
+   "input_tokens": 5526,
+   "output_tokens": 217,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "53c72cc30827adacfdf05ed14b0f127e1fc24562d615053ef8c6dc3a667f48ad": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1506,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5551d6c2feb487ecdefa6b10d6c917fbdab4177e9c110710e10ba32f134fe0d6": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1590,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5c929c6e3ac8d884eb455d77cbed89a198afcfda68fad107d29f158270d3a130": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1677,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6334abecbc26fecf6c1c7c65266053f8031528b4dba3cbc4e12309cb4683d701": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Our call",
+    "start_offset": 0,
+    "end_offset": 8,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Our call\", \"start_offset\": 0, \"end_offset\": 8, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1525,
+   "output_tokens": 38,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c01bda34a5c19062a2dd60ad07092c352297a237af56fc70a5dfa7c5e3d7abf8": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1501,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c92a359150b9336e9228da84e1e314f1597397ec6deb11fa6e905348ce14a289": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Ines Duarte, a principal at Northfield Ventures, wrote that it was good to meet on Tuesday.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Good to meet on Tuesday"
+     },
+     {
+      "claim": "She asked to be kept posted on how the first paid pilot goes, the milestone her fund would look at.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Keep me posted on how the first paid pilot goes"
+     },
+     {
+      "claim": "Our reply time to Ines is not measured: the file holds no mail from Arjun to them.",
+      "evidence": [
+       "num:your_reply_time:ines@northfieldvc.test"
+      ]
+     },
+     {
+      "claim": "The playbook, not yet reviewed, says that after a first call that named no next step, silence is usually a soft no.",
+      "evidence": [
+       "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The first call with Ines has been held, and the next move is ours.",
+      "based_on": [
+       "fact:1",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "A short note to Ines while the call is fresh keeps the conversation from decaying.",
+      "based_on": [
+       "fact:2",
+       "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "After a first call that named no next step, an investor's silence is usually a soft no.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+      ]
+     }
+    ],
+    "frames": {
+     "primary": "an investor after a first call, warm, the next move ours",
+     "rivals": [
+      "a polite close of the conversation"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": "first_call",
+     "expected": "a next step named after the call",
+     "actual": "a warm note, and the next move ours"
+    },
+    "unknowns": [
+     {
+      "question": "whether Ines wants to hear from us before the milestone",
+      "relevance": "it decides whether a note now helps or pushes"
+     }
+    ],
+    "scenarios": {
+     "do_nothing": "the conversation decays into a no nobody sends",
+     "act": "Ines hears where we stand while the call is fresh",
+     "best": "a second meeting",
+     "worst": "the note reads as pressure",
+     "signals_to_watch": [
+      "a reply from Ines"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "medium",
+     "reversibility": "reversible",
+     "reasons": [
+      "Northfield Ventures is in the brief's raise",
+      "the call is fresh"
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Send Ines a short note on where the first paid pilot stands",
+     "for_whom": "Ines at Northfield Ventures",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "to": "Ines",
+     "answers": null
+    },
+    "alternative": "wait for the milestone and write then",
+    "wait_or_stop": "if there is no reply, write next only with real news",
+    "done_when": "Ines has a short note on where we stand",
+    "draft": "Hi Ines, thank you for Tuesday. A short note on the first paid pilot: we are close and I will tell you the day it signs. Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Ines Duarte, a principal at Northfield Ventures, wrote that it was good to meet on Tuesday.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Good to meet on Tuesday\"}, {\"claim\": \"She asked to be kept posted on how the first paid pilot goes, the milestone her fund would look at.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Keep me posted on how the first paid pilot goes\"}, {\"claim\": \"Our reply time to Ines is not measured: the file holds no mail from Arjun to them.\", \"evidence\": [\"num:your_reply_time:ines@northfieldvc.test\"]}, {\"claim\": \"The playbook, not yet reviewed, says that after a first call that named no next step, silence is usually a soft no.\", \"evidence\": [\"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"]}], \"inferences\": [{\"claim\": \"The first call with Ines has been held, and the next move is ours.\", \"based_on\": [\"fact:1\", \"fact:3\"]}, {\"claim\": \"A short note to Ines while the call is fresh keeps the conversation from decaying.\", \"based_on\": [\"fact:2\", \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"After a first call that named no next step, an investor's silence is usually a soft no.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"]}], \"frames\": {\"primary\": \"an investor after a first call, warm, the next move ours\", \"rivals\": [\"a polite close of the conversation\"]}, \"expected_vs_actual\": {\"stage\": \"first_call\", \"expected\": \"a next step named after the call\", \"actual\": \"a warm note, and the next move ours\"}, \"unknowns\": [{\"question\": \"whether Ines wants to hear from us before the milestone\", \"relevance\": \"it decides whether a note now helps or pushes\"}], \"scenarios\": {\"do_nothing\": \"the conversation decays into a no nobody sends\", \"act\": \"Ines hears where we stand while the call is fresh\", \"best\": \"a second meeting\", \"worst\": \"the note reads as pressure\", \"signals_to_watch\": [\"a reply from Ines\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Northfield Ventures is in the brief's raise\", \"the call is fresh\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Ines a short note on where the first paid pilot stands\", \"for_whom\": \"Ines at Northfield Ventures\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Ines\", \"answers\": null}, \"alternative\": \"wait for the milestone and write then\", \"wait_or_stop\": \"if there is no reply, write next only with real news\", \"done_when\": \"Ines has a short note on where we stand\", \"draft\": \"Hi Ines, thank you for Tuesday. A short note on the first paid pilot: we are close and I will tell you the day it signs. Arjun\"}",
+   "framed": true,
+   "input_tokens": 8309,
+   "output_tokens": 683,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "db303eb7f4b2759bd5a227baf377ec7fd9a3a65c05d0019841571b53f821b5a4": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Marcus Bell, a partner at Harbor Point Partners, thanked Arjun for walking him through Nimbus Labs on Wednesday.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Thanks for walking me through Nimbus Labs on Wednesday"
+     },
+     {
+      "claim": "He asked for a note when the round opens with a lead, and said his fund would then take a proper look.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "When the round opens with a lead, send me a note"
+     },
+     {
+      "claim": "Our reply time to Marcus is not measured: the file holds no mail from Arjun to them.",
+      "evidence": [
+       "num:your_reply_time:marcus@harborpoint.test"
+      ]
+     },
+     {
+      "claim": "The playbook, not yet reviewed, says that after a first call that named no next step, silence is usually a soft no.",
+      "evidence": [
+       "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The first call with Marcus has been held, and the next move is ours.",
+      "based_on": [
+       "fact:1",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "A short note to Marcus while the call is fresh keeps the conversation from decaying.",
+      "based_on": [
+       "fact:2",
+       "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "After a first call that named no next step, an investor's silence is usually a soft no.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+      ]
+     }
+    ],
+    "frames": {
+     "primary": "an investor after a first call, warm, the next move ours",
+     "rivals": [
+      "a polite close of the conversation"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": "first_call",
+     "expected": "a next step named after the call",
+     "actual": "a warm note, and the next move ours"
+    },
+    "unknowns": [
+     {
+      "question": "whether Marcus wants to hear from us before the milestone",
+      "relevance": "it decides whether a note now helps or pushes"
+     }
+    ],
+    "scenarios": {
+     "do_nothing": "the conversation decays into a no nobody sends",
+     "act": "Marcus hears where we stand while the call is fresh",
+     "best": "a second meeting",
+     "worst": "the note reads as pressure",
+     "signals_to_watch": [
+      "a reply from Marcus"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "medium",
+     "reversibility": "reversible",
+     "reasons": [
+      "Harbor Point Partners is in the brief's raise",
+      "the call is fresh"
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Send Marcus a short note on where the round stands",
+     "for_whom": "Marcus at Harbor Point Partners",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "to": "Marcus",
+     "answers": null
+    },
+    "alternative": "wait for the milestone and write then",
+    "wait_or_stop": "if there is no reply, write next only with real news",
+    "done_when": "Marcus has a short note on where we stand",
+    "draft": "Hi Marcus, thank you for Wednesday. A short note on the round: we are lining up a lead and I will write the day it opens. Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Marcus Bell, a partner at Harbor Point Partners, thanked Arjun for walking him through Nimbus Labs on Wednesday.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Thanks for walking me through Nimbus Labs on Wednesday\"}, {\"claim\": \"He asked for a note when the round opens with a lead, and said his fund would then take a proper look.\", \"evidence\": [\"evt_#1\"], \"quote\": \"When the round opens with a lead, send me a note\"}, {\"claim\": \"Our reply time to Marcus is not measured: the file holds no mail from Arjun to them.\", \"evidence\": [\"num:your_reply_time:marcus@harborpoint.test\"]}, {\"claim\": \"The playbook, not yet reviewed, says that after a first call that named no next step, silence is usually a soft no.\", \"evidence\": [\"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"]}], \"inferences\": [{\"claim\": \"The first call with Marcus has been held, and the next move is ours.\", \"based_on\": [\"fact:1\", \"fact:3\"]}, {\"claim\": \"A short note to Marcus while the call is fresh keeps the conversation from decaying.\", \"based_on\": [\"fact:2\", \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"After a first call that named no next step, an investor's silence is usually a soft no.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"]}], \"frames\": {\"primary\": \"an investor after a first call, warm, the next move ours\", \"rivals\": [\"a polite close of the conversation\"]}, \"expected_vs_actual\": {\"stage\": \"first_call\", \"expected\": \"a next step named after the call\", \"actual\": \"a warm note, and the next move ours\"}, \"unknowns\": [{\"question\": \"whether Marcus wants to hear from us before the milestone\", \"relevance\": \"it decides whether a note now helps or pushes\"}], \"scenarios\": {\"do_nothing\": \"the conversation decays into a no nobody sends\", \"act\": \"Marcus hears where we stand while the call is fresh\", \"best\": \"a second meeting\", \"worst\": \"the note reads as pressure\", \"signals_to_watch\": [\"a reply from Marcus\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Harbor Point Partners is in the brief's raise\", \"the call is fresh\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Marcus a short note on where the round stands\", \"for_whom\": \"Marcus at Harbor Point Partners\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Marcus\", \"answers\": null}, \"alternative\": \"wait for the milestone and write then\", \"wait_or_stop\": \"if there is no reply, write next only with real news\", \"done_when\": \"Marcus has a short note on where we stand\", \"draft\": \"Hi Marcus, thank you for Wednesday. A short note on the round: we are lining up a lead and I will write the day it opens. Arjun\"}",
+   "framed": true,
+   "input_tokens": 8318,
+   "output_tokens": 701,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ed9afae3a35c1b2a419fb532eee7b57466f6b0cf0d0e15b1d759fa7ab0a2c3e0": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "When the round opens with a lead, send me a note and we will take a proper look.",
+    "start_offset": 88,
+    "end_offset": 168,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"When the round opens with a lead, send me a note and we will take a proper look.\", \"start_offset\": 88, \"end_offset\": 168, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1533,
+   "output_tokens": 58,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

@@ -141,7 +141,7 @@ ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-
                                "F59": "STEP-14", "F60": "STEP-14", "F61": "STEP-14", "F62": "STEP-14",
                                "F63": "STEP-14", "F64": "STEP-14",
                                # STEP-16 (`yc2_w27_s16` M47.C4.L-data.V1.U04–U06): your corrections, new cases.
-                               "F65": "STEP-16"}
+                               "F65": "STEP-16", "F66": "STEP-16"}
 
 #: A case added after STEP-03 whose mail today's gate ARCHIVES — held to that code, as the dropped mail
 #: of the cases before it is. F56: a vendor's renewal notice, which the junk filter's own prompt drops
