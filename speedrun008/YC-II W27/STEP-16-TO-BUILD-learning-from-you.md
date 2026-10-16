@@ -335,3 +335,29 @@ and stays yours.
   lane is red from it until the ONE re-record (`M47.C4.L-integration.V5.U07`), which waits on STEP-14's
   files and `tests/replays/` — and its words name dossier sections (`WHAT YOU CORRECTED`, `[corr:…]`) the
   dossier will not print until `M46.C4.L-logic.V2.U03`. Built with the dossier, just before the re-record.
+
+**Found 16 Oct, building the units that waited on STEP-14** (provisional ids):
+
+- **s16-F18 · The team lane resolved cards with nothing saying why.** `reason/team/emit` set
+  `cards.state = 'resolved'` by two raw UPDATEs, with no event: a resolved card could not say what ended it.
+  Both now go through the one writer, `platform/card_lifecycle.resolve_cards` (`situation_cleared`,
+  `superseded`), which writes a `card.resolved` event per card; `context/file_outcomes` reads them as
+  cleared and replaced. ✅ M47.C1.L-data.V0.U01 (`296cbb45`).
+- **s16-F19 · A receipt word formatted in is a statement assembled at run time.** The verified-card
+  receipt first built its SQL with `f"… '{RESOLVED}' …"` from an import inside its builder: the statement
+  census could not read it whole and the run-time ratchet moved 272 → 273. Caught by the unit's own pin
+  run, before its commit; the words are inlined as literals, and the test holds them equal to the
+  lifecycle's. ✅ M47.C3.L-integration.V2.U03 (`d6659787`).
+- **s16-F20 · Your numbers per dossier would read every file per file.** `kind_numbers.numbers_for_kind`
+  with no files reads `files_for` — the tenant's whole file list — and the sweep reads every file's
+  dossier: O(n²). The sweep now measures each kind ONCE a pass over the files it already read (all are read
+  before any is reviewed, so every dossier of a kind reads the same numbers), and the endings of a kind's
+  files are one read (`ended_for_files`). ✅ M47.C2.L-logic.V4.U02 (`846718e2`).
+- **s16-F21 · A commit message named one declaration too many.** `e507b68a` (the scorecard) says
+  `scorecard.compose` and `scorecard_for` were declared unreached until the route; only `scorecard_for`
+  was — `compose` is called by it. The code and its guard were right; recorded here, as the log is
+  append-only.
+- **s16-F22 · An owner check in `card_action` read the old scopes rule.** U04's owner-only test for a kind
+  or company correction wrote `ctx.scopes is None`, which `tests/test_open_loops.py` keeps out of the card
+  routes (seeing and acting use one rule). Found by the group guard; it reads `ctx.is_org_admin` and the
+  admin seat now. ✅ `cdf58447`.

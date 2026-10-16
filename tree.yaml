@@ -10413,6 +10413,7 @@ yc2_w27_s16:
                 - level: 2
                   units:
                     - id: M46.C2.L-integration.V2.U03
+                      status: built   # 16 Oct, b183262b
                       what: >
                         The dashboard's door writes the verdict: `deliver/actions.ingest_action` records
                         `run_play`, `do_it_myself` and `wrong` with its reason through `verdicts.record`, in
@@ -10492,6 +10493,7 @@ yc2_w27_s16:
                 - level: 5
                   units:
                     - id: M46.C3.L-interface.V5.U07
+                      status: built   # 16 Oct, 803cfd77, fix cdf58447
                       what: >
                         The question card offers `wrong` (`deliver/pipeline.QUESTION_ACTIONS`, left for this
                         step by STEP-13): beside answer and snooze, *don't ask me this* — the four reason
@@ -10504,6 +10506,7 @@ yc2_w27_s16:
                 - level: 3
                   units:
                     - id: M46.C3.L-integration.V3.U04
+                      status: built   # 16 Oct, 6a55a240, fix cdf58447
                       what: >
                         The card's `wrong` carries your words and their scope (`POST /cards/{id}/action`:
                         `words`, `scope`): with words, the correction is kept on the card's file in the
@@ -10517,6 +10520,7 @@ yc2_w27_s16:
                 - level: 4
                   units:
                     - id: M46.C3.L-integration.V4.U06
+                      status: built   # 16 Oct, ef2db2c5
                       what: >
                         `wrong` on a question card (`deliver/actions.ingest_action`): the verdict, through the
                         one writer, bound to the question's own authority; the file's question retired
@@ -10533,6 +10537,7 @@ yc2_w27_s16:
                 - level: 0
                   units:
                     - id: M46.C4.L-contract.V0.U01
+                      status: built   # 16 Oct, 9ca93a00
                       what: >
                         The check's closed words grow by two (`contracts/claim_check`): `correction_unheeded`
                         — a correction the dossier showed that no fact, inference or pattern of the review
@@ -10547,6 +10552,7 @@ yc2_w27_s16:
                 - level: 2
                   units:
                     - id: M46.C4.L-logic.V2.U03
+                      status: built   # 16 Oct, 84fa2f4e
                       what: >
                         The dossier shows your corrections: WHAT YOU CORRECTED after WHAT YOU TOLD US — each
                         `[corr:<id>]`, your words verbatim, the card it was about, the scope, when — printed
@@ -10560,6 +10566,7 @@ yc2_w27_s16:
                 - level: 3
                   units:
                     - id: M46.C4.L-logic.V3.U04
+                      status: built   # 16 Oct, 79eda23f
                       what: >
                         The fingerprint names the corrections the dossier shows — the file's and its kind's —
                         so a correction moves the file; with none, its inputs are byte for byte as before.
@@ -10567,6 +10574,7 @@ yc2_w27_s16:
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_file_fingerprint.py"
                       depends_on: [M46.C4.L-logic.V2.U03]
                     - id: M46.C4.L-logic.V3.U06
+                      status: built   # 16 Oct, eefadf8d
                       what: >
                         Never silently (`reason/expert/verify`): a move made over a correction the review does
                         not cite is HELD — the file asks ONE question, "you said … on <date>; does it still
@@ -10579,6 +10587,7 @@ yc2_w27_s16:
                 - level: 4
                   units:
                     - id: M46.C4.L-logic.V4.U05
+                      status: built   # 16 Oct, 3bcc2cc6
                       what: >
                         A correction is a trigger, `founder_corrected` (`05` §5's "you ask about it", given
                         its door): a correction the last review did not see brings the file back; its kind's
@@ -10589,6 +10598,7 @@ yc2_w27_s16:
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_review_says_what_triggered_it.py tests/reason/expert/test_a_correction_brings_the_file_back.py"
                       depends_on: [M46.C4.L-logic.V3.U04]
                     - id: M46.C4.L-logic.V4.U07
+                      status: built   # 16 Oct, 6570a6be
                       what: >
                         What a correction changed, read back (`reason/expert/correction_delta`): for each
                         correction, the last review that did not see it and the first that did — their mode,
@@ -10603,6 +10613,7 @@ yc2_w27_s16:
                 - level: 0
                   units:
                     - id: M46.C4.L-interface.V0.U02
+                      status: built   # 16 Oct, 7113b2c6
                       what: >
                         The checklist says what a correction is: your word on this file — follow it, or say in
                         an inference citing it why the file now outweighs it; a correction for the kind of
@@ -10677,6 +10688,7 @@ yc2_w27_s16:
                 - level: 6
                   units:
                     - id: M46.C6.L-integration.V6.U02
+                      status: built   # 16 Oct, ce9c2796
                       what: >
                         M46's acceptance on Postgres (§6's own file): a file reviewed; your correction on its
                         card; the next sweep reviews it again (`founder_corrected`), its review cites the
@@ -10698,7 +10710,7 @@ yc2_w27_s16:
         prior, your own measured number with its n (observe-only, normal only at n ≥ 5); the week's scorecard
         shows usefulness per lane, what was held back and why, coverage, verified outcomes and what each
         correction changed; a receipt holds that every verified card names what closed it; on the golden set
-        F57's verified close passes, the correction cases F59–F61 pass, and every other case holds.
+        F57's verified close passes, the correction cases F65–F67 pass, and every other case holds.
       categories:
         - id: M47.C1
           name: How each decision of a file ended
@@ -10708,6 +10720,7 @@ yc2_w27_s16:
                 - level: 0
                   units:
                     - id: M47.C1.L-data.V0.U01
+                      status: built   # 16 Oct, 296cbb45, fix 88934ce5
                       what: >
                         One way to resolve a card (`platform/card_lifecycle.resolve_cards`): `resolved`,
                         `resolved_at`, one `card.resolved` event per card naming its cause — `verified`, its
@@ -10720,6 +10733,7 @@ yc2_w27_s16:
                 - level: 2
                   units:
                     - id: M47.C1.L-data.V2.U03
+                      status: built   # 16 Oct, 493ba58c
                       what: >
                         How each decision of a file ended, read (`context/file_outcomes`): per card on the
                         file — verified (by which event), only replied, taken by you (`run_play`,
@@ -10735,6 +10749,7 @@ yc2_w27_s16:
                 - level: 1
                   units:
                     - id: M47.C1.L-integration.V1.U02
+                      status: built   # 16 Oct, 5cf01668, fix 88934ce5
                       what: >
                         A file decision that ends on an answered ask says so: when a covered file's new review
                         names no move (`reason/domain_shadow._clear_file_decision`), a card whose move named
@@ -10754,6 +10769,7 @@ yc2_w27_s16:
                 - level: 3
                   units:
                     - id: M47.C2.L-logic.V3.U01
+                      status: built   # 16 Oct, 3cfadc36
                       what: >
                         Your own numbers for a kind of work (`context/kind_numbers`): across the tenant's files
                         of one kind — how many reached each stage their reviews named, the days between stages
@@ -10765,6 +10781,7 @@ yc2_w27_s16:
                 - level: 4
                   units:
                     - id: M47.C2.L-logic.V4.U02
+                      status: built   # 16 Oct, 846718e2
                       what: >
                         The dossier shows what came of it: WHAT WAS JUDGED BEFORE says how each earlier
                         decision of the file ended (`file_outcomes`, its evidence id citable) and each ask
@@ -10795,6 +10812,7 @@ yc2_w27_s16:
                 - level: 5
                   units:
                     - id: M47.C3.L-logic.V5.U01
+                      status: built   # 16 Oct, e507b68a
                       what: >
                         The weekly scorecard (`feedback/scorecard`), per tenant per ISO week: usefulness per
                         lane — taken, called wrong by reason and the layer each reason debits
@@ -10812,6 +10830,7 @@ yc2_w27_s16:
                 - level: 6
                   units:
                     - id: M47.C3.L-interface.V6.U02
+                      status: built   # 16 Oct, cef9dd6a
                       what: "`GET /v1/learning/scorecard?week=` — the owner's view of a week."
                       artifact: "genios_engine/api/learning_routes.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/api/test_the_scorecard_route.py"
@@ -10821,6 +10840,7 @@ yc2_w27_s16:
                 - level: 2
                   units:
                     - id: M47.C3.L-integration.V2.U03
+                      status: built   # 16 Oct, d6659787, fix 88934ce5
                       what: >
                         Receipts: "every verified card names what closed it" (a card resolved `verified` with
                         no evidence event: 0 to pass, witnessed by the resolved cards in scope —
@@ -10860,31 +10880,31 @@ yc2_w27_s16:
                       depends_on: [M47.C4.L-contract.V0.U01]
                     - id: M47.C4.L-data.V1.U04
                       what: >
-                        F59 — an investor who asked, on a call, for news only on real milestones (no mail says
+                        F65 — an investor who asked, on a call, for news only on real milestones (no mail says
                         so): the expert's first review advises an update; you call its card wrong — "not
                         relevant: she asked for updates only with real news; don't push me", scope file; the
                         next sweep's review waits, cites your correction, and no card is raised; forbidden:
                         "checking in", the first card's headline. Its expert answers authored per sweep
                         (`06` D49).
-                      artifact: "tests/replays/specs/founder/F59.json"
+                      artifact: "tests/replays/specs/founder/F65.json"
                       verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_changed_file_has_an_expert_answer.py"
                       depends_on: [M47.C4.L-contract.V0.U01]
                     - id: M47.C4.L-data.V1.U05
                       what: >
-                        F60 — a correction for a whole kind of work: two investor files, both advised a
+                        F66 — a correction for a whole kind of work: two investor files, both advised a
                         follow-up; on the first you write "investors who asked for news only on milestones get
                         nothing before one lands", scope kind; the next sweep reviews both, each cites the
                         correction, and both wait.
-                      artifact: "tests/replays/specs/founder/F60.json"
+                      artifact: "tests/replays/specs/founder/F66.json"
                       verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_changed_file_has_an_expert_answer.py"
                       depends_on: [M47.C4.L-contract.V0.U01]
                     - id: M47.C4.L-data.V1.U06
                       what: >
-                        F61 — one click is never a pattern (must-abstain on generalising): a bare "wrong: not
+                        F67 — one click is never a pattern (must-abstain on generalising): a bare "wrong: not
                         relevant" on one programme's card changes that file's next review only; a second
                         programme's file keeps its card; forbidden: the second file's card gone, any
                         correction written.
-                      artifact: "tests/replays/specs/founder/F61.json"
+                      artifact: "tests/replays/specs/founder/F67.json"
                       verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_changed_file_has_an_expert_answer.py"
                       depends_on: [M47.C4.L-contract.V0.U01]
             - layer: integration
@@ -10903,9 +10923,11 @@ yc2_w27_s16:
                 - level: 5
                   units:
                     - id: M47.C4.L-integration.V5.U07
+                      # 16 Oct, 676d853e: re-recorded once for v4, check.v4 and the dossier's new parts (the board did not move);
+                      # the three cases F65–F67 and the runner's acts wait — recording them adds three cassettes
                       what: >
                         Re-recorded ONCE for the whole step, under `expert-review.v4`, the dossier's new
-                        sections and the cases F59–F61 — the sweep, the citations, the first-connect door, the
+                        sections and the cases F65–F67 — the sweep, the citations, the first-connect door, the
                         resync — `expert_files.json` re-measured, and the board restated in its five places
                         (blocked_on, MOVED_AFTER, the Atlas specs, the controls, `03` §F.1).
                       artifact: "tests/replays/specs/founder/cassettes"
@@ -10915,10 +10937,10 @@ yc2_w27_s16:
                   units:
                     - id: M47.C4.L-integration.V6.U08
                       what: >
-                        STEP-16's acceptance on the golden set: F57 ends `verified` by its mail; F59 and F60
-                        change their next judgment and cite the correction; F61 changes only its file; every
+                        STEP-16's acceptance on the golden set: F57 ends `verified` by its mail; F65 and F66
+                        change their next judgment and cite the correction; F67 changes only its file; every
                         must-abstain case holds; must-detect does not move backwards. Negative controls, each
-                        caught: the trigger off — F59's card stays; the dashboard door unwired — F59's review
+                        caught: the trigger off — F65's card stays; the dashboard door unwired — F65's review
                         never sees the reason; resolution off — F57 ends `rule_cleared`.
                       artifact: "tests/replays/test_learning_from_you.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_learning_from_you.py"
