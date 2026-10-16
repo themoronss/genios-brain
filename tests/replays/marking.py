@@ -68,6 +68,13 @@ def judge(case: FounderCase, run: CaseRun) -> Mark:
     if crashed:
         checks.append(Check("run", FAIL, "the chain failed at sweep "
                                          + ", ".join(str(i) for i in crashed)))
+    # STEP-16: an act the case could not play is no run of the case (the next sweep never saw it).
+    unplayed = [a for a in getattr(run, "acts", ()) if not a.ok]
+    missing = len(case.acts) - len(getattr(run, "acts", ()))
+    if unplayed or missing:
+        checks.append(Check("run:acts", FAIL, "; ".join(
+            [f"act {a.index} after sweep {a.after_sweep} was not played: {a.said}" for a in unplayed]
+            + ([f"{missing} act(s) never reached their sweep"] if missing > 0 else []))))
 
     # ── stage checks: reported, never the verdict ─────────────────────────────────────────────
     stages = _stage_checks(case, run)
@@ -156,6 +163,14 @@ def _card_check(index: int, exp: CardExpectation, run: CaseRun, kind: str = "mus
         if missing:
             return Check(name, FAIL, f"card {card.card_id} about {subject} does not say "
                                      f"{missing}")
+    if exp.ended is not None:
+        # STEP-16 · how the card ended, and by what (`context/file_outcomes`, the event mapped to its object).
+        ends = [(c.card_id, c.ended, c.ended_by) for c in matched]
+        if not any(end == exp.ended and (exp.by is None or by == exp.by) for _cid, end, by in ends):
+            said = ", ".join(f"card {cid} ended {end or 'open or unrecorded'}" + (f" by {by}" if by else "")
+                             for cid, end, by in ends)
+            return Check(name, FAIL, f"no card about {subject} ended {exp.ended}"
+                                     + (f" by {exp.by}" if exp.by else "") + f" — {said}")
     if exp.closed_from is not None:
         # `09` G6 · done means never raised again: open after a sweep at or past `closed_from`.
         still = [(c.card_id, max(c.sweeps)) for c in matched

@@ -395,6 +395,20 @@ class CardView:
     #: business_subject, relationship_role, why_now, unresolved_item, recommended, alternative, wait_or_stop,
     #: outcome_window_days, the window receipt (`why`, source card_lines), capability_key, builder_version.
     gold: Mapping[str, Any] = field(default_factory=dict)
+    #: STEP-16 (`yc2_w27_s16` M47.C4.L-integration.V4.U02): how the card ended (`context/file_outcomes`) — None while it
+    #: is open, or ended with nothing written — and the object of the case whose event proved it (verified, replied).
+    ended: str | None = None
+    ended_by: str | None = None
+
+
+@dataclass(frozen=True)
+class ActPlayed:
+    """STEP-16 · one of the case's acts, as the runner played it: on which card, and whether the door took it."""
+    index: int
+    after_sweep: int
+    card_id: str | None
+    ok: bool
+    said: str
 
 
 @dataclass(frozen=True)
@@ -409,6 +423,8 @@ class CaseRun:
     chain_ok: tuple[bool, ...]                  # per sweep: `_run_l2_chain`'s own answer
     model_calls: tuple[tuple[str, str], ...]    # (site, cassette key), in call order
     misses: tuple[tuple[str, str], ...]
+    #: STEP-16 · the case's acts, as played after their sweeps.
+    acts: tuple[ActPlayed, ...] = ()
 
 
 # =================================================================================================

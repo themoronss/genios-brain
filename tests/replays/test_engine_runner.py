@@ -539,3 +539,113 @@ def test_a_run_asks_the_app_queue_at_each_sweeps_instant_and_leaves_no_impressio
         (True, False, at) for at in case.sweeps], "once per sweep, the admin's whole queue, at its instant"
     assert all(set(c.app_sweeps) <= set(c.sweeps) for c in run.cards)
     assert routes._card_store is not None
+
+
+# ── STEP-16 (`yc2_w27_s16` M47.C4.L-integration.V4.U02): your acts, through the real doors; how each card ended ────
+def _acting_case(*acts) -> fc.FounderCase:
+    raw = {"case_id": "F92", "title": "You call a card wrong between two sweeps", "kind": "must_detect",
+           "label_row": 10, "labelled_by": "claude", "replays": [], "founder": FOUNDER,
+           "sweeps": ["2026-09-18T12:00:00Z", "2026-09-19T12:00:00Z"],
+           "objects": [{"id": "ask", "source": "gmail", "sweep": 0, "occurred_at": "2026-09-18T09:30:00Z",
+                        "from": "Kavya Menon <kavya@lotusvc.test>", "to": ["arjun@nimbuslabs.test"],
+                        "thread": "t-lotus", "subject": "Deck?", "body": ASK, "labels": ["INBOX"]}],
+           "expected": {"cards": [{"about": ["Kavya"], "min": 1, "max": 1}, {"about": ["metrics"], "min": 1, "max": 1}]},
+           "forbidden": {}, "witness": None,
+           "not_expressible": {}, "acts": list(acts)}
+    return fc.parse_case(raw, source="test.json")
+
+
+def _a_card(engine, org, *, card_id="card_k", state="queued", file_id="node_kavya"):
+    from datetime import datetime, timedelta, timezone
+
+    from sqlalchemy import text
+    at = datetime(2026, 9, 18, 12, tzinfo=timezone.utc)
+    with engine.begin() as c:
+        c.execute(text("insert into orgs (id, name) values (:o, 'acts') on conflict do nothing"), {"o": org})
+        c.execute(text("insert into signals (signal_id, org_id, pack_id, pack_version, rule_id, subject_node_id, "
+                       "score, reason_code, eval_time, status) values (:s, :o, 'founder_office', '0.1.0', "
+                       "'file_review', :f, 50, 'file_review', :at, 'open')"),
+                  {"s": f"sig_{card_id}", "o": org, "f": file_id, "at": at})
+        c.execute(text("insert into cards (card_id, signal_id, org_id, level, urgency_band, headline, situation, "
+                       "score, expires_at, state, file_id) values (:c, :s, :o, 'prescriptive', 'high', "
+                       "'Send Kavya the deck', 'Kavya asked for the deck', 80, :exp, :st, :f)"),
+                  {"c": card_id, "s": f"sig_{card_id}", "o": org, "exp": at + timedelta(days=3), "st": state,
+                   "f": file_id})
+    return at
+
+
+def _gone(engine, org):
+    from sqlalchemy import text
+    with engine.begin() as c:
+        c.execute(text("delete from orgs where id = :o"), {"o": org})
+
+
+from tests.deliver.test_a_card_verdict_reaches_every_reader import decided  # noqa: E402,F401 — fixture
+from tests.reason.expert.test_a_covered_file_decides_once import world  # noqa: E402,F401 — fixture
+from tests.reason.test_a_programme_is_not_decided_as_an_investor import admitted  # noqa: E402,F401 — fixture
+
+
+@pytest.mark.pg
+@needs_db
+def test_an_act_is_played_through_the_dashboards_door_at_the_sweeps_instant(decided):
+    """A decided file's card (the decision's own door built it), called wrong with your words by the runner: the
+    verdict and the correction are the real door's, at the sweep's instant."""
+    from tests.deliver.test_a_card_verdict_reaches_every_reader import AT
+    from sqlalchemy import text
+    store, org, anchor, card = decided
+    case = _acting_case({"after_sweep": 0, "on": ["metrics"], "wrong": "not_relevant",
+                         "words": "Arjun gets the numbers only after the partner meeting is booked.", "scope": "file"},
+                        {"after_sweep": 1, "on": ["metrics"], "wrong": "bad_timing"})
+    [played] = er.play_acts(store.engine, store, case, org, 0, AT)
+    assert (played.index, played.card_id, played.ok) == (0, card.card_id, True), played
+    with store.engine.connect() as c:
+        kept = c.execute(text("select file_id, scope, corrected_at from founder_corrections where org_id = :o"),
+                         {"o": org}).one()
+        verdict = c.execute(text("select cause, reason, occurred_at from card_feedback_verdicts where org_id = :o"),
+                            {"o": org}).one()
+    assert (kept.file_id, kept.scope, kept.corrected_at) == (anchor, "file", AT)
+    assert tuple(verdict) == ("wrong", "not_relevant", AT)
+    again = er.play_acts(store.engine, store, case, org, 0, AT)[0]
+    assert again.ok is False and again.said.startswith("no open card"), \
+        "a card already acted on is no open card to play on: said, never silently skipped"
+
+
+@pytest.mark.pg
+@needs_db
+def test_a_correction_act_is_kept_on_the_cards_file(pg_store):
+    from sqlalchemy import text
+    org = "org_golden_correct"
+    _gone(pg_store.engine, org)
+    at = _a_card(pg_store.engine, org)
+    case = _acting_case({"after_sweep": 0, "on": ["Kavya"], "correct": "Kavya reads mail on Mondays only."})
+    try:
+        [played] = er.play_acts(pg_store.engine, pg_store, case, org, 0, at)
+        assert played.ok and played.said.startswith("fc_")
+        with pg_store.engine.connect() as c:
+            assert c.execute(text("select file_id from founder_corrections where org_id = :o"),
+                             {"o": org}).scalar() == "node_kavya"
+            assert c.execute(text("select state from cards where card_id = 'card_k'")).scalar() == "queued", \
+                "a correction alone leaves the card in front of you"
+    finally:
+        _gone(pg_store.engine, org)
+
+
+@pytest.mark.pg
+@needs_db
+def test_the_card_reader_says_how_each_card_ended_and_by_which_object(pg_store):
+    from genios_engine.platform import card_lifecycle as L
+    org = "org_golden_ends"
+    _gone(pg_store.engine, org)
+    at = _a_card(pg_store.engine, org)
+    _a_card(pg_store.engine, org, card_id="card_open", file_id="node_other")
+    with pg_store.engine.begin() as c:
+        L.resolve_cards(c, org_id=org, cause=L.VERIFIED, card_ids=["card_k"], at=at,
+                        evidence={"event_id": "evt_signed", "loop_id": "loop_x", "basis": "answered"})
+    landed = [fc.Landed(object_id="signed", source_object_id="m1", event_id="evt_signed", outcome="emitted",
+                        reason=None, sweep=1)]
+    try:
+        cards = {c.card_id: c for c in er._cards(pg_store.engine, org, [{"card_k", "card_open"}], landed=landed)}
+        assert (cards["card_k"].ended, cards["card_k"].ended_by) == ("verified", "signed")
+        assert (cards["card_open"].ended, cards["card_open"].ended_by) == (None, None), "still open: no end"
+    finally:
+        _gone(pg_store.engine, org)

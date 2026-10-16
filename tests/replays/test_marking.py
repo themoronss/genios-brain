@@ -315,3 +315,46 @@ def test_a_living_card_is_about_every_version_the_app_showed():
         "Finish the unit economics sheet", "Upload the Phase-1 review deck"))
     assert judge(case, _run(cards=[living])).verdict == PASS
     assert judge(case, _run(cards=[_card("c1", "Upload the Phase-1 review deck")])).verdict == FAIL
+
+
+# ── STEP-16 (`yc2_w27_s16` M47.C4.L-integration.V4.U02): how a card ended, and your acts ─────────────────────
+def _ended_run(*, ended=None, ended_by=None, acts=()):
+    from tests.replays.founder_case import CardView, CaseRun
+    card = CardView(card_id="k1", state="resolved", level="prescriptive", text="Send Zoya the signed NDA",
+                    output_lane="decision", sweeps=(0,), app_sweeps=(0,), ended=ended, ended_by=ended_by)
+    return CaseRun(case_id="F93", org_id="o", landed=(), memory={}, situations=(), cards=(card,), funnel=(),
+                   chain_ok=(True, True), model_calls=(), misses=(), acts=acts)
+
+
+def _ended_case(**card):
+    from tests.replays import founder_case as fc
+    raw = {"case_id": "F93", "title": "a verified close", "kind": "must_detect", "label_row": 57,
+           "labelled_by": "claude", "replays": [],
+           "founder": {"name": "Arjun Rao", "email": "arjun@nimbuslabs.test", "company": "Nimbus Labs",
+                       "timezone": "UTC"},
+           "sweeps": ["2026-09-02T12:00:00Z", "2026-09-04T12:00:00Z"],
+           "objects": [{"id": "signed", "source": "gmail", "sweep": 1, "occurred_at": "2026-09-03T06:00:00Z",
+                        "from": "Arjun <arjun@nimbuslabs.test>", "to": ["zoya@pinecrest.test"],
+                        "subject": "Re: NDA", "body": "Signed NDA attached."}],
+           "expected": {"cards": [{"about": ["Zoya"], "min": 1, "max": 1, **card}]},
+           "forbidden": {}, "witness": None, "not_expressible": {}}
+    return fc.parse_case(raw, source="test.json")
+
+
+def test_a_card_that_ended_as_the_case_expects_passes_and_any_other_end_fails():
+    from tests.replays.marking import FAIL, PASS, judge
+    case = _ended_case(ended="verified", by="signed")
+    assert judge(case, _ended_run(ended="verified", ended_by="signed")).verdict == PASS
+    for ended, by in (("cleared", None), ("verified", None), (None, None)):
+        mark = judge(case, _ended_run(ended=ended, ended_by=by))
+        assert mark.verdict == FAIL and "ended verified by signed" in mark.reason, (ended, by, mark.reason)
+
+
+def test_an_act_the_runner_could_not_play_fails_the_case():
+    from tests.replays import founder_case as fc
+    from tests.replays.marking import FAIL, judge
+    case = _ended_case()
+    case = fc.FounderCase(**{**case.__dict__, "acts": (fc.Act(after_sweep=0, on=("Zoya",), wrong="not_relevant"),)})
+    unplayed = fc.ActPlayed(index=0, after_sweep=0, card_id=None, ok=False, said="no open card about Zoya")
+    assert "was not played" in judge(case, _ended_run(acts=(unplayed,))).reason
+    assert judge(case, _ended_run(acts=())).verdict == FAIL, "an act that never reached its sweep is no run"
