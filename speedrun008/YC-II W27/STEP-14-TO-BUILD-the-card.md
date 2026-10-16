@@ -276,3 +276,59 @@ line); and the merge's own (`531e1ec3`: the contract pulled `capture` into `cont
 **Waits for others**: the push and the merge to the integration line (the lead); s14-F18 and F19 (the lead, Rohit);
 F24 (the statement census counting a bare SQL word, the lead); `08`'s deploy notes for 0220–0222 and the one-time
 churn at switch-on (§8.7, Harsh's list).
+
+### 8.9 · The crosscheck of 16 Oct, and its fix wave — branch `yc2w27-s14-fix` (from `9d469efb`)
+
+The crosscheck (`.yc2w27-helpers/reports/step14-crosscheck.md`; five lenses, 70 rows) said **fix first**: two blocking
+defects reached the founder. Both are fixed, with the fragile findings the brief named, one unit and one commit each
+(failing test first, a mutation run against a baseline that exited 0, guards per group of two or three units).
+
+| Finding | Unit | What it is now |
+|---|---|---|
+| 1 ⛔ B2 survived versioning | M42.C2.L-interface.V3.U06 (+ its fix) | a card whose ANY version asked you is ours to blank: each version line that asked, and the card's own line while it asks — a decision version still grounds what it says (golden F07); the dossier text unchanged |
+| 2 ⛔ the answered card vanished | M42.C3.L-interface.V4.U06 | the question's door admits the answered version (`store.QUESTION_CARD_SQL`, the Monitor lane the answer writes); it offers snooze and requeue only; `doors()` is the health check *every open file card passes one door* |
+| 3 a refused version expired the card REPLACED | M43.C4.L-integration.V1.U06 | the file's card is left as it was (`file_cards_kept_on_refusal`); a refusal is kept once per writer, card and rule; the refusals check names the cards waiting behind one. Bound: such a card is on no door while it waits |
+| 4 money, quote, number vacuous on an expert card | M43.C4.L-integration.V1.U07 (+ its fix) | an expert decision's card is held to the evidence its move rests on — the check's quotes, the whole retained mails they come from, the facts, code's own lines — for money and quotes; its numbers to the words its check let stand (the check holds every figure); success and do-nothing are read |
+| 6 a claimed card held forever | M42.C1.L-data.V1.U04 | held only by a live claim; a card claimed by nobody comes back surfaced; health check *no card is claimed by nobody* |
+| 7 a rewording was pushed | M42.C3.L-integration.V2.U07 | `card_version.one_ask`: the same recipient, date, lane and mode and ≥ 0.8 of the shorter move's content stems — one ask, `reworded`, quiet. Bound measured: F25 0.89, F21 0.88 one ask; F24 0.73 another |
+| 8 the quiet-push acceptance could not fail | M42.C4.L-integration.V4.U06 | the runner orders a card's history by the sweep that wrote each event; the pushing mutant is its negative control |
+| 9 the board's judge skipped the gold lines | M43.C6.L-integration.V3.U11 | `CardView.shown_lines`, read by the forbidden judge (never for what a card is about); P4 events keep their words |
+| 10 F63 / m05 passed on the wrong question | M43.C6.L-integration.V2.U12 | `headline_says`: F63 and m05 need the address in the card's headline — blocked (strict xfail): asking a noun-phrase unknown reverses STEP-13 G8's pinned design, a decision for STEP-13b (M37) |
+| 11 a renewal spent the day's cap | M42.C2.L-integration.V2.U07 | a renewal is not held to the cap and spends none of the pass's allowance. Bound: its signal still counts in `_budget_used` |
+| 13 the health gate red by design | M43.C4.L-integration.V2.U08 | `question_settled`, `left_coverage` (the closed vocabulary +2); REPLACED counted over 7 days |
+| 12 a version push spent no budget | M42.C3.L-integration.V2.U08 | a material version pushed today counts in the seat's daily push budget. Bound: no push CHANNEL carries a version (the outbox's key; latent, in-app only) — STEP-15 |
+| 14 a refused card rebuilt every pass | M43.C4.L-integration.V1.U09 | a signal refused within a day is skipped (`skipped_refused_recently`), its file's card kept; the refusal's one row says when it last was |
+| 7 + 13 | M43.C6.L-integration.V3.U13 | ONE re-record (ideal reader, house order): only F25's answers moved; the board restated |
+| docs | — | `08` §0c, §1.15, §3.15 (finding 23); `06` s14-D6, s14-D7; `03` §F.1's mechanisms for F12, F50, F19 corrected |
+
+**The board** (`03` §F.1; `golden_score.py --assert-recorded` exits 0): must-detect 36/50 → **35/50** (F63 now judged on
+what its card asks — blocked, STEP-13b), must-abstain **14/14**, forbidden outputs **0**, Atlas passing 12/80 → **11/80**,
+blocked 1 → 2 (replay 02 m05, the same card).
+
+**§8.8 restated.** *"A rewording is quiet"* holds now (F25 `reworded`; M42's acceptance requires it). *"Answering a question
+keeps the card"* holds now — on the queue, its detail and its one action. *"Neither card writer … claims money with none in
+its evidence, quotes words nobody said or a number nothing holds"* holds now for an expert card too. *"A refused version
+leaves the card as it was"* holds — as it was, and on no door while it waits (declared).
+
+**Not built in the fix wave — each with its owner** (the crosscheck's findings 15–31; `report_full.md` §4 has the
+evidence and the proposed fix of each):
+
+| # | Finding | Owner |
+|---|---|---|
+| 15 | check.v3 withholds honest alternatives and stop rules that open with an ordinary word (Instead, Rather, Only, Pause… 19 of 42 openers) | STEP-13b `s13b-F4` → M37.C4.L-logic.V8.U02 |
+| 16 | a discrepancy on a field outside the 20-entry map is no longer asked (`compose` → None), counted only in its test | STEP-15 (the brief reads `/v1/discrepancies`), with `M43.C4.L-logic.V0.U04`'s map — the lead |
+| 17 | gold headlines that are only a condition (F15, F53) or end on a dangling verb or possessive (F05, F06, F61) | `M43.C3.L-interface.V3.U01` (s14-D8) — the lead, next STEP-14 follow-up |
+| 18 | a decision's co-recipients carry over into the file's question version (`_stamp_recipients` returns early on an empty set) | `M42.C3.L-data.V1.U02` — the lead, next STEP-14 follow-up |
+| 19 | the daily brief counts a living card's versions as staleness (500 bp per version) | STEP-15 (`reason/brief_ranking`) |
+| 20 | a version keeps no draft and never names a draft change (the drafts survive in `expert_reviews`) | STEP-16 (learning reads a judgment by its version) |
+| 21 | a card the founder called wrong through the feedback route is versioned onto new advice, its verdict printed beside the new headline | STEP-16 — Rohit's decision: does a *wrong* decide the card? |
+| 22 | live cards the contract would refuse survive the deploy unchanged | Rohit: a read-only contract probe of production's open cards (`08` §3.15) |
+| 23 | `08` said nothing Harsh needs for STEP-14 | **done here** — `08` §0c, §1.15, §3.15 |
+| 24 | *what the card contract refused* says NO DATA on zero refusals, so `--require-data` exits 2 on a healthy tenant | `M43.C4.L-integration.V2.U05` follow-up — the lead (said to Harsh in `08` §1.15) |
+| 25 | role is the file-kind enum; the file's company and kind of work never reach a card | `M43.C2.L-logic.V0.U02` — STEP-15 with the brief's kind of work |
+| 26 | a connector's move replaced by the alternative shows that sentence as both | `M43.C2.L-logic.V1.U01` — the lead, next STEP-14 follow-up |
+| 27 | the two writers test money differently; neither knows the graph's value and currency fields | `M43.C4.L-integration.V1.U03` — the lead (one money-evidence function in `contracts/`) |
+| 28 | the internal-field rule refuses honest domains whose first label is a namespace word (loop.so, signal.vc) | `M43.C4.L-contract.V0.U01` — the lead, next STEP-14 follow-up |
+| 29 | F64 is authored outside the prompt's closed sets and never has a card to clear | `M43.C6.L-data.V1.U07` — the golden set's next re-record (the lead) |
+| 30 | replay 02's erased `blocked_on` reasons; m06, m08, m09 without owners | `M43.C6.L-integration.V2.U08` — the lead, with `03` §F.1's notes |
+| 31 | F56's stated cause is stale and its loss has no owner | STEP-18 (B26, the junk filter's prompt) — the lead names it |
