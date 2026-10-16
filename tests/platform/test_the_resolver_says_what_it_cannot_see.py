@@ -489,5 +489,8 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # ⛔ MERGED 16 Oct (the integration line `yc2w27-int16`): STEP-14 + STEP-15 (197 / 199 above) and STEP-16 (196 / 198
     # above, on STEP-14's 195 / 197), re-measured on the merge (`table_coverage`): 198 and 200 — `founder_corrections`
     # is the one table STEP-16 adds; none is shared with STEP-15's two.
-    assert len(TC.table_usage()) == 198
-    assert len(TC._known_tables()) == 200
+    # ⛔ RE-PINNED 198 → 199 and 200 → 201 on 2026-10-17 by migration `0250_expert_review_attempts` (YC-II W27 STEP-13b,
+    # `yc2_w27_s13b/M38.C1.L-contract.V0.U04`): one new table, whose first reference is the tenant reset's `delete` list.
+    # An engine change, not a resolver change; its store (`reason/expert/store`, M38.C2.L-data.V1.U01) is a later unit.
+    assert len(TC.table_usage()) == 199
+    assert len(TC._known_tables()) == 201
