@@ -1,0 +1,5 @@
+{
+ "about": "STEP-13b's live passes (M38.C4.L-integration.V15.U02): the scorecards the lead keeps after M37 and M38, and the targets they must meet. Awaiting the lead's passes (they spend money, 06 D65): `scripts/golden_eval.py --assert-scorecards` exits 3 (not run) until all three are named here, 0 when every target is met, 1 when one is missed - said, never loosened (the ladder then starts at T2, s13b-D2).",
+ "scorecards": {"haiku": null, "sonnet": null, "ladder": null},
+ "targets": {"forbidden": 0, "must_abstain": 13, "held_share_below": 0.5}
+}
