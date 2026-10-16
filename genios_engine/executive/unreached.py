@@ -201,6 +201,11 @@ UNREACHED: dict[str, tuple[str, str]] = {
 #: summary and `_drain_claimed` sends it on the very next line (`outbox.py:1073`, inside `drain`).
 #: It has a route AND a producer, so it is not pull-only — it is simply shipped.
 #:
+#: ⛔ AND IT IS BACK, 16 Oct (STEP-15 `yc2_w27_s15` M45.C3.L-integration.V0.U03; `03` s15-F4): the digest is no longer
+#: that summary. `_current_digest_payload` reads the morning brief the account owner's seat KEPT
+#: (`executive/morning.kept_brief`) — one line and today's five — so the ladder has a route and, once more, no producer:
+#: the entry below. It left on 1 Oct because outbox sent it; it returns because outbox does not.
+#:
 #: ⛔ AND THE ONLY REASON THAT SURVIVED is that this table had no both-directions guard. `UNREACHED`
 #: has one, and `modes.load_preventive` had a BESPOKE one
 #: (`test_the_preventive_surface_records_that_no_card_is_built`) that was never generalised — so
@@ -236,6 +241,15 @@ PULL_ONLY: dict[str, tuple[str, str]] = {
         "Executive memory is WORKING CONTEXT — what was recently decided — not storage. Nothing "
         "carries it into a later decision automatically; a client reads it. Making it push would "
         "mean deciding what 'recently' means per tenant, which nobody has."),
+
+    "summary.build_summary": (
+        "GET /summary",
+        "⛔ BACK SINCE 16 Oct (STEP-15, M45.C3.L-integration.V0.U03; see the note above `PULL_ONLY`). The ladder counts "
+        "signals, and the Slack digest used to send it — which is why this entry left on 1 Oct. The digest is now the "
+        "morning brief the seat kept (`morning.kept_brief`): the morning has ONE surface, whose pull side is "
+        "`GET /v1/executive/morning`. The ladder is asked for, never volunteered; whether it should exist beside the brief "
+        "is a product question — it said *'Nothing needs you right now.'* while a wait rule held and a question was open "
+        "(`03` s15-F2)."),
 
     "explain.why_not": (
         "GET /why-not",

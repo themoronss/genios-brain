@@ -11,6 +11,8 @@ tick runs every six hours from process start, the re-rank's day is UTC.
                  at no cost), kept (`executive/morning_store.keep`) — or, when the seat's brief of
                  that local day is already kept, that one, read back: the row is the claim, so two
                  composers write one brief;
+  `kept_brief`   the account owner's brief of a local day as kept, or None — what the Slack digest sends
+                 (`deliver/outbox`, M45.C3.L-integration.V0.U03): read, never composed;
   `is_due`       the local time in the org's timezone is past the brief's hour, and none is kept for that day;
   `compose_due`  for each org's account owner whose brief is due, compose it — once; a seat that fails is
                  counted and logged, never raised past: one tenant's brief is never the sweep.
@@ -28,7 +30,7 @@ site's own cap already allows for one call.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from datetime import datetime, time
+from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import text
@@ -80,6 +82,19 @@ def compose(engine, org_id: str, seat_id: str, *, now: datetime) -> tuple[Brief,
         return morning_store.keep(conn, brief)
 
 
+def kept_brief(engine, org_id: str, *, now: datetime, local_date: date | None = None) -> Brief | None:
+    """The org's account owner's brief of a local day, as KEPT — or None: the org has no owner seat, or none is kept
+    (yet). `local_date` is the day asked for; without it, the local day of `now` in the org's timezone. What the Slack
+    digest sends (`deliver/outbox`, M45.C3.L-integration.V0.U03; `03` s15-F4): the morning has one surface, and it is
+    this brief — read, never composed, here."""
+    with engine.connect() as conn:
+        owner = conn.execute(_OWNERS, {"orgs": [org_id]}).first()
+        if owner is None:
+            return None
+        day = local_date or now.astimezone(ZoneInfo(zone_of(conn, org_id))).date()
+        return morning_store.read(conn, org_id, owner.seat_id, day)
+
+
 def compose_due(engine, *, now: datetime, orgs: Iterable[str] | None = None) -> dict[str, int]:
     """Compose every account owner's brief that is due — `orgs` limits the tenants asked. Never raises past a seat:
     what failed is counted (`failed`) and logged."""
@@ -105,4 +120,4 @@ def compose_due(engine, *, now: datetime, orgs: Iterable[str] | None = None) -> 
     return counts
 
 
-__all__ = ["BRIEF_HOUR", "compose", "compose_due", "is_due"]
+__all__ = ["BRIEF_HOUR", "compose", "compose_due", "is_due", "kept_brief"]

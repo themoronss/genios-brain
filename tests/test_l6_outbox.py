@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 from genios_engine.deliver.outbox import (BACKOFF_MINUTES, _current_digest_payload, digest_card_id,
                                           next_attempt_delay)
@@ -24,19 +27,33 @@ def test_digest_dedup_key_is_one_per_day():
     assert a == b == "digest:2026-08-06" and a != c
 
 
-def test_digest_payload_is_regenerated_from_current_authority_at_send_time(monkeypatch):
+def test_digest_payload_is_regenerated_from_the_kept_brief_at_send_time(monkeypatch):
+    """The digest is regenerated at send time from current authority — and since STEP-15 (M45.C3.L-integration.V0.U03) that
+    authority is the morning brief the account owner's seat KEPT: its one line and today's five, read for the local day
+    the row was queued for, never rebuilt from signals (`summary.build_summary`, the count it used to send)."""
     now = datetime(2026, 8, 6, 8, 30, tzinfo=timezone.utc)
+    brief = SimpleNamespace(
+        one_line="2 things need you.", local_date=date(2026, 8, 6),
+        section=lambda name: ([SimpleNamespace(words="Bluepeak: Write to Meera."),
+                               SimpleNamespace(words="Fjord: Wait for the milestone.")] if name == "today" else []))
     calls = []
     monkeypatch.setattr(
-        "genios_engine.executive.summary.build_summary",
-        lambda store, org_id, horizon, eval_time: calls.append(
-            (store.engine, org_id, horizon, eval_time)) or {"one_line": "Current"})
+        "genios_engine.executive.morning.kept_brief",
+        lambda engine, org_id, *, now, local_date=None: calls.append((engine, org_id, now, local_date)) or brief)
     monkeypatch.setattr(
         "genios_engine.deliver.outbox.format_digest_message", lambda value: value)
+    monkeypatch.setattr("genios_engine.executive.summary.build_summary",
+                        lambda *a, **k: pytest.fail("the digest is the kept brief, not the signal count"))
     engine = object()
 
-    assert _current_digest_payload(engine, "org_1", now) == {"one_line": "Current"}
-    assert calls == [(engine, "org_1", "one_minute", now)]
+    assert _current_digest_payload(engine, "org_1", now, for_date=date(2026, 8, 6)) == {
+        "one_line": "2 things need you.",
+        "top_items": [{"line": "Bluepeak: Write to Meera."}, {"line": "Fjord: Wait for the milestone."}]}
+    assert calls == [(engine, "org_1", now, date(2026, 8, 6))]
+    # No brief kept for the day: it RAISES — the drain retries on its backoff, and never sends a fallback.
+    monkeypatch.setattr("genios_engine.executive.morning.kept_brief", lambda *a, **k: None)
+    with pytest.raises(LookupError, match="no morning brief"):
+        _current_digest_payload(engine, "org_1", now)
 
 
 def test_feed_shows_every_engine_written_open_state():
