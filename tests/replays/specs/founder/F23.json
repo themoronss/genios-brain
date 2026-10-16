@@ -514,7 +514,7 @@
      "mode": "wait",
      "next_move": null,
      "alternative": "Check the mission's portal for the application's status, so the wait has a known state.",
-     "wait_or_stop": "Wait for the mission's own notice about Nimbus Labs, or a status change on its portal; read each mail from it for that before filing it as a bulletin.",
+     "wait_or_stop": "Wait for the mission's own notice about your company, or a status change on its portal; read each mail from it for that before filing it as a bulletin.",
      "done_when": "The mission's word on your application is on file.",
      "draft": null
     }

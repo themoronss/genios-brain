@@ -43,6 +43,15 @@ beside this unit's commit (`tests/replays/founder_case.py` needed no change: F18
 `blocked_on`; `test_the_gate_deletes_nothing.MOVED_AFTER` gained F08, F14, F20, F21, F22, F23, F30; the atlas specs
 and the expert-off controls name no brief case and did not move; `03` §F.1).
 
+RESTATED 16 OCT, on the merge of STEP-14 (03 s15-F19 to s15-F22). F53 PASSES now and leaves `BLOCKED`: its file's
+shadow line has existed since `yc2_w27_s15` M45.C4.L-logic.V0.U01, and its expectation was restated to the section
+the order seats it in (`today`; that unit's own contract: "F53's line restated and its blocked_on lifted") — the
+eleventh brief-only case to pass; F18 is the one left blocked (`06` D29). STEP-14's F64, a new must-abstain case,
+is judged by test 2 like every other, and its first run on the merge FAILED it: the changed section said
+"Northlake: Introly wrote." about an introduction the expert had closed (s15-F20, fixed in `read_changes`). F22,
+the same: it passed only on a clumsy question wording until STEP-14's plain ask no longer said "seed grant"
+(s15-F19, the question line now carries what its file is about).
+
 Without a scratch database every test below skips, as the rest of this suite does — EXCEPT where
 `GENIOS_GOLDEN_REQUIRED=1` (the `golden-pg` job), which turns the skip into a failure.
 """
@@ -61,8 +70,8 @@ CASES = load_cases()
 #: carries `expected.brief.lines` the marking judges.
 BRIEF_ONLY = tuple(c for c in CASES if c.brief is not None and c.brief.lines)
 MUST_ABSTAIN = tuple(c for c in CASES if c.kind == "must_abstain")
-#: The two of the twelve M44 does not close — each still names the gap in `blocked_on`.
-BLOCKED = frozenset({"F18", "F53"})
+#: The one of the twelve still blocked — it names the gap in `blocked_on`. (M44 left two: F53 left on 16 Oct.)
+BLOCKED = frozenset({"F18"})
 
 
 def _scratch_db() -> None:
@@ -84,11 +93,11 @@ def test_the_twelve_brief_only_cases_are_the_ones_d12d_names():
         assert not case.expressible("cards"), f"{case.case_id}: brief-only, yet its cards are expressible"
     assert {c.case_id for c in BRIEF_ONLY if c.blocked_on} == BLOCKED
     assert {c.case_id for c in BRIEF_ONLY if not c.blocked_on} == {
-        "F08", "F14", "F20", "F21", "F22", "F23", "F30", "F45", "F54", "F55"}
+        "F08", "F14", "F20", "F21", "F22", "F23", "F30", "F45", "F53", "F54", "F55"}
 
 
 # =================================================================================================
-# 1 · ten of the twelve pass on their brief; the other two stay blocked, and say on what
+# 1 · eleven of the twelve pass on their brief (ten at M44, F53 on the 16 Oct merge); F18 stays blocked, and says on what
 # =================================================================================================
 @pytest.mark.pg
 @pytest.mark.golden

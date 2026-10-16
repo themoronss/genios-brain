@@ -389,7 +389,7 @@
      "mode": "nothing",
      "next_move": null,
      "alternative": "None is needed; the file can rest until Pinecrest writes.",
-     "wait_or_stop": "Nothing to wait on from Arjun's side; treat the NDA ask as closed and look again only when Pinecrest writes.",
+     "wait_or_stop": "Nothing to wait on from your side; treat the NDA ask as closed and look again only when Pinecrest writes.",
      "done_when": "The NDA ask is closed with the signed copy sent; the file needs nothing more until Pinecrest moves.",
      "draft": null
     }

@@ -192,7 +192,6 @@
  "not_expressible": {
   "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
  },
- "blocked_on": "the file is decided from its review since STEP-12: the introduction's move, then Nikhil's reply's — two cards where one living card should change: STEP-14 (03 F176)",
  "model": {
   "decider": [
    {
@@ -376,8 +375,8 @@
       "to": "Nikhil",
       "answers": "loop:loop_15045a0e2d2595afc9655cd2"
      },
-     "alternative": "If the founder cannot commit a time today, send a short note saying Thursday is being checked and a time will follow by tomorrow.",
-     "wait_or_stop": "Do not wait: the move is ours. Once a time is set, wait for the call; if Nikhil does not answer the founder's note within a week, nudge once, then stop.",
+     "alternative": "If you cannot commit a time today, send a short note saying Thursday is being checked and a time will follow by tomorrow.",
+     "wait_or_stop": "Do not wait: the move is ours. Once a time is set, wait for the call; if Nikhil does not answer your note within a week, nudge once, then stop.",
      "done_when": "A thirty-minute call with Nikhil Bose is on both calendars.",
      "draft": "Hi Nikhil, thanks for reaching out, and good to meet you. Thursday works for a thirty-minute call. What time suits you? If Thursday fills up on your side, I can do early next week instead. Best, Arjun"
     }

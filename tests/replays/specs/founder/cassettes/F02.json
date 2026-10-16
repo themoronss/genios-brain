@@ -1,7 +1,7 @@
 {
  "case_id": "F02",
  "source": "ideal_reader",
- "recorded_at": "e6b8522e",
+ "recorded_at": "b8b4804d",
  "answers": {
   "154cbc9fb8b7a8e7fa8ec2bf5b5118b63d4f0ce7309e4f813e380c708a18c8b3": {
    "site": "extraction",
@@ -96,6 +96,38 @@
    "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
    "framed": true,
    "input_tokens": 1572,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3984c5370b212912843b284a25b13ea3a6e76257b9f77d19904b59ea0256dbac": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1820,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3a3941e63fadb7604ba3ac16d57e553c96389c743fe82b727d1de6f95959e530": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1589,
    "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
@@ -209,15 +241,15 @@
     },
     "mode": "nothing",
     "next_move": null,
-    "alternative": "If the founder wants certainty, sign in to DigiVault once and check the certificate's details.",
+    "alternative": "If you want certainty, sign in to DigiVault once and check the certificate's details.",
     "wait_or_stop": "Nothing to wait for; reopen this file only when an application asks for the certificate.",
     "done_when": "You know the certificate is in the DigiVault account; nothing else is owed.",
     "draft": null
    },
-   "raw": "{\"facts\": [{\"claim\": \"DigiVault wrote that a Certificate of Incorporation for Nimbus Labs Private Limited has been issued to the founder's DigiVault account, to be viewed by signing in.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The mail came from a no-reply address, asks for nothing, and is the only touch in this file.\", \"evidence\": [\"evt_#1\", \"num:their_reply_time:no-reply@digivault.gov.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time, with no earlier card or outcome.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"inferences\": [{\"claim\": \"The certificate is a record the company now holds, not a request: nobody waits on the founder here.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The certificate may be one of the documents the StartupSetu recognition application rests on, which is why the brief watches this locker.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The certificate was issued to the locker in connection with the recognition application.\", \"needs\": \"A StartupSetu request that names it, or the founder saying why it was issued.\"}], \"unknowns\": [{\"question\": \"Whether the recognition application, or any other application, needs this certificate submitted.\", \"relevance\": \"If one does, the locker is where to fetch it; if none does, this file needs nothing.\"}, {\"question\": \"Whether the certificate's details are correct.\", \"relevance\": \"A wrong detail on an incorporation record is cheaper to correct before an application relies on it.\"}], \"frames\": {\"primary\": \"A government document locker notice: the company's Certificate of Incorporation is now held in its DigiVault account, a record to know about rather than work to do.\", \"rivals\": [\"A document the StartupSetu recognition application will need, so worth knowing where it is.\", \"A routine automated notice with no bearing on any open work.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief: this locker holds the recognition application's documents, and a notice of a document issued asks nothing unless an application needs it.\", \"actual\": \"One automated notice that a certificate was issued; no request, no reply owed, and we have not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the certificate stays in the locker until it is needed.\", \"act\": \"Signing in to view the certificate takes a minute and confirms its details, but changes nothing in any open work.\", \"best\": \"The certificate is on hand the day an application asks for it.\", \"worst\": \"A wrong detail on the certificate goes unnoticed until an application relies on it.\", \"signals_to_watch\": [\"A StartupSetu request for the Certificate of Incorporation\", \"A further DigiVault notice about this or another company document\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The mail informs and asks nothing.\", \"It comes from a no-reply address, so there is no one to answer.\", \"The certificate stays in the locker whatever the founder does now.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If the founder wants certainty, sign in to DigiVault once and check the certificate's details.\", \"wait_or_stop\": \"Nothing to wait for; reopen this file only when an application asks for the certificate.\", \"done_when\": \"You know the certificate is in the DigiVault account; nothing else is owed.\", \"draft\": null}",
+   "raw": "{\"facts\": [{\"claim\": \"DigiVault wrote that a Certificate of Incorporation for Nimbus Labs Private Limited has been issued to the founder's DigiVault account, to be viewed by signing in.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The mail came from a no-reply address, asks for nothing, and is the only touch in this file.\", \"evidence\": [\"evt_#1\", \"num:their_reply_time:no-reply@digivault.gov.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time, with no earlier card or outcome.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"inferences\": [{\"claim\": \"The certificate is a record the company now holds, not a request: nobody waits on the founder here.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The certificate may be one of the documents the StartupSetu recognition application rests on, which is why the brief watches this locker.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The certificate was issued to the locker in connection with the recognition application.\", \"needs\": \"A StartupSetu request that names it, or the founder saying why it was issued.\"}], \"unknowns\": [{\"question\": \"Whether the recognition application, or any other application, needs this certificate submitted.\", \"relevance\": \"If one does, the locker is where to fetch it; if none does, this file needs nothing.\"}, {\"question\": \"Whether the certificate's details are correct.\", \"relevance\": \"A wrong detail on an incorporation record is cheaper to correct before an application relies on it.\"}], \"frames\": {\"primary\": \"A government document locker notice: the company's Certificate of Incorporation is now held in its DigiVault account, a record to know about rather than work to do.\", \"rivals\": [\"A document the StartupSetu recognition application will need, so worth knowing where it is.\", \"A routine automated notice with no bearing on any open work.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief: this locker holds the recognition application's documents, and a notice of a document issued asks nothing unless an application needs it.\", \"actual\": \"One automated notice that a certificate was issued; no request, no reply owed, and we have not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the certificate stays in the locker until it is needed.\", \"act\": \"Signing in to view the certificate takes a minute and confirms its details, but changes nothing in any open work.\", \"best\": \"The certificate is on hand the day an application asks for it.\", \"worst\": \"A wrong detail on the certificate goes unnoticed until an application relies on it.\", \"signals_to_watch\": [\"A StartupSetu request for the Certificate of Incorporation\", \"A further DigiVault notice about this or another company document\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The mail informs and asks nothing.\", \"It comes from a no-reply address, so there is no one to answer.\", \"The certificate stays in the locker whatever the founder does now.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If you want certainty, sign in to DigiVault once and check the certificate's details.\", \"wait_or_stop\": \"Nothing to wait for; reopen this file only when an application asks for the certificate.\", \"done_when\": \"You know the certificate is in the DigiVault account; nothing else is owed.\", \"draft\": null}",
    "framed": true,
    "input_tokens": 3313,
-   "output_tokens": 900,
+   "output_tokens": 898,
    "model": "claude-haiku-4-5-20251001"
   },
   "55e1cdd617265c3317673ab4df37f03de2b49e2346aab692eeaa22e5c7ced4b4": {
@@ -287,22 +319,6 @@
    "framed": true,
    "input_tokens": 5544,
    "output_tokens": 251,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "67f65c5fa389f1cc119fc7d1592b4e32ad3a9c7d5f32bb3747321fc9be13db31": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1820,
-   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
   "760b184aa3fe5e9c6bc009b4c21d81cd754bc51e45114764fdce6812d8b1b9ab": {
@@ -662,22 +678,6 @@
    "framed": true,
    "input_tokens": 3361,
    "output_tokens": 1371,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d1f2d5864ad583991ab15fb7294d5efb66a20d8b19444f335207ded305f9ec88": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1589,
-   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
   "ea1c57fbcf5a898b261626a71ef2c761f54b8b003393f2b4a0e790174adad2f6": {

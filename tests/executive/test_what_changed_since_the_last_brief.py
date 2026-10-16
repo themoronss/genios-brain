@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy import text
@@ -25,7 +26,7 @@ from genios_engine.executive.morning_template import template_brief
 
 pytestmark = pytest.mark.pg
 
-CASES = ("F14", "F21", "F30", "F45", "F54")
+CASES = ("F14", "F21", "F30", "F45", "F54", "F64")
 
 
 @pytest.fixture(scope="module")
@@ -140,6 +141,27 @@ def test_a_file_moved_to_the_shadow_lane_is_still_a_labelled_change(world):
         with engine.begin() as c:
             c.execute(text("update reasoning_fingerprints set outcome = 'emitted' where org_id = :o "
                            "and subject_key like '%|expert.file_review'"), {"o": org})
+
+
+def test_a_file_the_review_found_nothing_owed_in_is_no_change_though_its_trigger_can_be_said(world):
+    """03 provisional s15-F20, found on the STEP-14 + STEP-15 merge (16 Oct) when STEP-14's F64 reached this brief:
+    Zara declined an introduction the day it was made, and the connector's nudge a week later is new evidence — it
+    triggers a review, and the review reads "nothing for you to do in this file" (mode `nothing`). Its trigger is
+    still sayable — "Introly wrote" — and the brief said it: a changed line about a closed introduction, on the
+    case whose whole point is that old activity reopens nothing. A review that found nothing owed has no line in
+    the day, so it has no change line either — the desk reads the same judgment (`_resolved_nothing`, s15-F17)."""
+    engine, cases, runs = world
+    org, now = runs["F64"].org_id, cases["F64"].sweeps[-1]
+    assert _changes(_day(world, "F64")) == []
+    with engine.connect() as c:
+        (file_id,) = {r.file_id for r in c.execute(
+            text("select file_id from expert_reviews where org_id = :o and status = 'valid'"), {"o": org})}
+        ask = dict(now=now, items=[], last=None, file_names={file_id: "Northlake"}, founder=("Arjun Rao",),
+                   zone=ZoneInfo(M.zone_of(c, org)))
+        said = M.read_changes(c, org, resolved=frozenset(), **ask)
+        silent = M.read_changes(c, org, resolved=frozenset({file_id}), **ask)
+    assert [i.material.word("what") for i in said] == ["Introly wrote"]        # the control: it is sayable
+    assert silent == []
 
 
 def test_who_wrote_is_never_you_by_name(world):

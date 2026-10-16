@@ -459,7 +459,7 @@
       ]
      },
      "mode": "act",
-     "alternative": "If Arjun cannot make that time, propose two other slots the same week in the same reply.",
+     "alternative": "If you cannot make that time, propose two other slots the same week in the same reply.",
      "wait_or_stop": "No waiting on our side — the question is ours to answer; once answered, wait for Neha to confirm the time.",
      "done_when": "A call with Neha is confirmed on both calendars."
     }

@@ -382,17 +382,17 @@
  "F07": {
   "card:card_d88c89f38cb07752eb747cd8": [
    [
-    "- [#] a card “Needs a decision — Accept Leela's invite if it is not yet”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
+    "- [#] a card “Accept Leela's invite if it is not yet accepted”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
     0
    ],
    [
-    "- [#] a card “Needs a decision — Accept Leela's invite if it is not yet”, expired; what happened to it: card.created (rule3_admin_queue), card.surfaced (push), card.expired (rule_cleared)",
+    "- [#] a card “Can you tell us whether the call took place as booked?”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
     0
    ]
   ],
   "evt_64ef93e8cfdaf91361d9ff65": [
    [
-    "Booked: [#] a meeting at 2026-08-13 09:30 UTC",
+    "Booked: [#] a meeting at 2026-08-13 09:30 UTC, the calendar calls it “Ferngrove x Nimbus Labs”",
     0
    ],
    [
@@ -758,7 +758,7 @@
   ],
   "evt_6c481b4979f8f62bd38e86aa": [
    [
-    "Booked: [#] a meeting at 2026-10-08 09:00 UTC",
+    "Booked: [#] a meeting at 2026-10-08 09:00 UTC, the calendar calls it “Harbor Point x Nimbus Labs”",
     0
    ]
   ],
@@ -1662,7 +1662,7 @@
  "F27": {
   "evt_5cf10818ee5e3a851a602996": [
    [
-    "Booked: [#] a meeting at 2026-10-09 10:30 UTC",
+    "Booked: [#] a meeting at 2026-10-09 10:30 UTC, the calendar calls it “Cleanwave x Nimbus Labs”",
     0
    ]
   ],
@@ -1700,7 +1700,7 @@
  "F28": {
   "evt_0e547359e31864611d4d4363": [
    [
-    "Booked: [#] a meeting at 2026-10-08 08:30 UTC",
+    "Booked: [#] a meeting at 2026-10-08 08:30 UTC, the calendar calls it “Novacore x Nimbus Labs”",
     0
    ]
   ],
@@ -1738,7 +1738,7 @@
  "F29": {
   "card:card_57ae9a1e1a933d0d3565bd7a": [
    [
-    "- [#] a card “Send Aman our API pricing sheet before the pricing call on”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
+    "- [#] a card “Send Aman our API pricing sheet before the pricing call”, surfaced; what happened to it: card.created (rule3_admin_queue), card.surfaced (push)",
     0
    ]
   ],
@@ -1750,7 +1750,7 @@
   ],
   "evt_b715c09c1dad67711567b551": [
    [
-    "Booked: [#] a meeting at 2026-10-05 10:30 UTC",
+    "Booked: [#] a meeting at 2026-10-05 10:30 UTC, the calendar calls it “Memloop x Nimbus - pricing”",
     0
    ],
    [
@@ -1760,7 +1760,7 @@
   ],
   "evt_f4f199251d9e3c63af1f3b55": [
    [
-    "Booked: [#] a meeting at 2026-10-05 05:30 UTC",
+    "Booked: [#] a meeting at 2026-10-05 05:30 UTC, the calendar calls it “Memloop x Nimbus - product”",
     0
    ],
    [
@@ -2068,7 +2068,7 @@
  "F40": {
   "evt_547adcf31568fedadb1f9552": [
    [
-    "Booked: [#] a meeting at 2026-08-13 10:00 UTC",
+    "Booked: [#] a meeting at 2026-08-13 10:00 UTC, the calendar calls it “Tallgrass x Nimbus Labs”",
     0
    ],
    [
@@ -2762,7 +2762,7 @@
  "F54": {
   "evt_ead5136fdca87480ed161644": [
    [
-    "Booked: [#] a meeting at 2026-08-20 12:30 UTC",
+    "Booked: [#] a meeting at 2026-08-20 12:30 UTC, the calendar calls it “Fintech founders mixer - Bluebay”",
     0
    ],
    [
@@ -3127,6 +3127,402 @@
   "sit:sit_27ebb7c2b2fc1fc9707211ec": [
    [
     "- [#] account_admin (admin) · active · seen 2026-09-01 05:00 UTC → 2026-09-01 05:00 UTC (0 days) · quiet 1.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F59": {
+  "evt_0a90f786e5fc800af03025d2": [
+   [
+    "- [#] 2026-08-06 06:20 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_81d483dded42426ed100d6f7": [
+   [
+    "- [#] 2026-08-07 11:15 UTC · they wrote · Anaya Kulkarni",
+    0
+   ]
+  ],
+  "evt_8a99f9bc28a608ff23965a00": [
+   [
+    "- [#] 2026-08-06 06:40 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_a3710106d738482888f79a36": [
+   [
+    "- [#] 2026-08-06 10:05 UTC · they wrote · Tara Sethi",
+    0
+   ]
+  ],
+  "evt_c1c73e835fd1ae9d75dfdb0e": [
+   [
+    "- [#] 2026-08-06 06:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_c9a3eea3020f626daa53af26": [
+   [
+    "- [#] 2026-08-07 08:30 UTC · they wrote · Dev Malhotra",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "loop:loop_02cfb85910f36726cc823b99": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-06 10:05 UTC",
+    0
+   ]
+  ],
+  "loop:loop_205830d97ab5b3e74215fd62": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-07 11:15 UTC",
+    0
+   ]
+  ],
+  "loop:loop_6a582d301e59a75ac73e5581": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-07 08:30 UTC",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: once: 0.17 days [#]; longest closed gap: 0.17 days [#]; quiet now: 0.33 days [#] — longer than any gap it closed before",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.47 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.49 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: once: 1.19 days [#]; longest closed gap: 1.19 days [#]; quiet now: 0.28 days [#] — within the gaps it closed before",
+    2
+   ],
+   [
+    "Usual gap between touches: once: 1.09 days [#]; longest closed gap: 1.09 days [#]; quiet now: 0.4 days [#] — within the gaps it closed before",
+    2
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: once: 0.17 days [#]; longest closed gap: 0.17 days [#]; quiet now: 0.33 days [#] — longer than any gap it closed before",
+    0
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.47 days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.49 days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: once: 1.19 days [#]; longest closed gap: 1.19 days [#]; quiet now: 0.28 days [#] — within the gaps it closed before",
+    0
+   ],
+   [
+    "Usual gap between touches: once: 1.09 days [#]; longest closed gap: 1.09 days [#]; quiet now: 0.4 days [#] — within the gaps it closed before",
+    0
+   ]
+  ],
+  "sit:sit_60711e4b8c9ab22bef71f4b7": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-06 06:20 UTC → 2026-08-06 06:20 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-06 06:20 UTC → 2026-08-07 08:30 UTC (1.1 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_ddb38e02755aa6e0f86cadd7": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-06 06:40 UTC → 2026-08-06 06:40 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-06 06:40 UTC → 2026-08-07 11:15 UTC (1.2 days) · quiet 0.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_fdda05a8047951588d5a6176": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-06 06:00 UTC → 2026-08-06 10:05 UTC (0.2 days) · quiet 0.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F60": {
+  "evt_ba329d257d39c140362d15db": [
+   [
+    "- [#] 2026-08-08 07:30 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.44 days [#]",
+    2
+   ]
+  ],
+  "sit:sit_5faaf392643da969952ccb65": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-08 07:30 UTC → 2026-08-08 07:30 UTC (0 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_8b57d07ccf5f31961edd975e": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-08 07:30 UTC → 2026-08-08 07:30 UTC (0 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_d95de3fcddfefe8e1d6b3e51": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-08 07:30 UTC → 2026-08-08 07:30 UTC (0 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F61": {
+  "evt_24c461a9f9a649f3e868af79": [
+   [
+    "- [#] 2026-08-04 06:20 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_476be1965ddd2db5809415c0": [
+   [
+    "- [#] 2026-08-05 09:10 UTC · they wrote · Sana Qadri",
+    0
+   ]
+  ],
+  "evt_aab75a1890def4564a259b93": [
+   [
+    "- [#] 2026-08-04 06:40 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_cf6405caeae59c71c9092a28": [
+   [
+    "- [#] 2026-08-04 06:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@fundraising": [
+   [
+    "- [#] derived.history.times_seen@fundraising = 1",
+    0
+   ]
+  ],
+  "loop:loop_0c717e4a656fad42b9ea5e44": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-05 09:10 UTC",
+    0
+   ]
+  ],
+  "num:days_quiet": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.47 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.49 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.5 days [#]",
+    2
+   ],
+   [
+    "Usual gap between touches: once: 1.13 days [#]; longest closed gap: 1.13 days [#]; quiet now: 0.37 days [#] — within the gaps it closed before",
+    2
+   ]
+  ],
+  "num:usual_gap": [
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.47 days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.49 days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 0.5 days [#]",
+    0
+   ],
+   [
+    "Usual gap between touches: once: 1.13 days [#]; longest closed gap: 1.13 days [#]; quiet now: 0.37 days [#] — within the gaps it closed before",
+    0
+   ]
+  ],
+  "sit:sit_2888289867bf9990df056d43": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-04 06:40 UTC → 2026-08-04 06:40 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_4ccbb0045747c4cf6ba247d4": [
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-04 06:00 UTC → 2026-08-04 06:00 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] investor_relationship (fundraising) · active · seen 2026-08-04 06:00 UTC → 2026-08-05 09:10 UTC (1.1 days) · quiet 0.4 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_fa72c0ef76df24612f80d2cb": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-04 06:20 UTC → 2026-08-04 06:20 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F62": {
+  "evt_00bec3f68d30dc9e4f0f08c5": [
+   [
+    "- [#] 2026-08-11 06:20 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_0922a95db2a6c9f48007a3ee": [
+   [
+    "- [#] 2026-08-11 11:30 UTC · they wrote · Ira Menon",
+    0
+   ]
+  ],
+  "evt_5f983c58fadf579a7680f246": [
+   [
+    "- [#] 2026-08-11 06:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_9f87e9fcf19a0763f032f078": [
+   [
+    "- [#] 2026-08-11 09:00 UTC · they wrote · Farhan Ali",
+    0
+   ]
+  ],
+  "evt_fc7250e640c88874fd5c9ff6": [
+   [
+    "Booked: [#] a meeting at 2026-08-14 10:30 UTC, the calendar calls it “Nimbus Labs demo — Farhan Ali (Bluewater Studio)”",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "loop:loop_d0b16a736069e70b677cac82": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-11 11:30 UTC",
+    0
+   ]
+  ],
+  "sit:sit_bfe1fd8616d638a514f580dc": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-11 06:20 UTC → 2026-08-11 11:30 UTC (0.2 days) · quiet 0.3 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ],
+  "sit:sit_f86e6a00652a0b0470fbc926": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-11 06:00 UTC → 2026-08-14 10:30 UTC (3.2 days) · last seen at a booking 2.7 days ahead, so no quiet yet of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F63": {
+  "evt_7bdc3b26715e17ae17f500fd": [
+   [
+    "- [#] 2026-08-12 06:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "loop:loop_3491e85cd38e4f73bc62a5d9": [
+   [
+    "- [#] question, they wait on us, open since 2026-08-12 06:00 UTC",
+    0
+   ]
+  ],
+  "sit:sit_5ad442ca27911e44388397f9": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-12 06:00 UTC → 2026-08-12 06:00 UTC (0 days) · quiet 0.5 days of a 45-day window (the engine's default)",
+    0
+   ]
+  ]
+ },
+ "F64": {
+  "evt_644a1ed352de6d5d4df10a1f": [
+   [
+    "- [#] 2026-08-05 06:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "evt_82176891046b60ffedfd14e2": [
+   [
+    "- [#] 2026-08-05 12:40 UTC · they wrote · Zara Hussain",
+    0
+   ]
+  ],
+  "evt_f57098a13db33849acbcc6e4": [
+   [
+    "- [#] 2026-08-12 06:00 UTC · they wrote · Introly",
+    0
+   ]
+  ],
+  "hist:derived.history.times_seen@admin": [
+   [
+    "- [#] derived.history.times_seen@admin = 1",
+    0
+   ]
+  ],
+  "sit:sit_daa79845cb07cfdf0b7243d5": [
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-05 06:00 UTC → 2026-08-05 12:40 UTC (0.3 days) · quiet 0.2 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] account_admin (admin) · active · seen 2026-08-05 06:00 UTC → 2026-08-12 06:00 UTC (7 days) · quiet 0.5 days of a 45-day window (the engine's default)",
     0
    ]
   ]

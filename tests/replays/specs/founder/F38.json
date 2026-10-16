@@ -445,8 +445,8 @@
      },
      "mode": "nothing",
      "next_move": null,
-     "alternative": "If the founder wants the date on record in mail, a one-line thank-you to Pooja is enough — it is not required.",
-     "wait_or_stop": "Stop here: nothing is owed. Reopen the file only if Greenleaf writes again about the pilot.",
+     "alternative": "If you want the date on record in mail, a one-line thank-you to Pooja is enough — it is not required.",
+     "wait_or_stop": "Stop here: nothing is owed. If Greenleaf writes again about the pilot, the file is read again then.",
      "done_when": "The pilot starts on the agreed date — the answer Pooja asked for is already given.",
      "draft": null
     }

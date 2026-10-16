@@ -43,6 +43,15 @@ QUESTION = _item(B.QUESTION, "node_cell", subject="University Startup Cell",
                  words=(("name", "University Startup Cell"),
                         ("question", "Find out whether you count as a startup incubated on the campus")),
                  dates=(("by", "2026-09-30"), ("asked", "2026-09-07")), at=NOW - timedelta(days=23))
+#: The same question, as the day now reads it when the review holds a situation: what it is about, then what it asks
+#: (03 s15-F19 — STEP-14 reworded F22's question to the plain ask, which no longer says "seed grant").
+QUESTION_ABOUT = _item(B.QUESTION, "node_cell_about", subject="University Startup Cell",
+                       words=(("name", "University Startup Cell"),
+                              ("situation", "A university cell's notice of a seed grant closing on the thirtieth, open "
+                                            "to startups incubated on its campus"),
+                              ("question", "Can you tell us whether you are a startup incubated on the university's "
+                                           "campus?")),
+                       dates=(("by", "2026-09-30"), ("asked", "2026-09-07")), at=NOW - timedelta(days=23))
 WATCHED = _item(B.WATCHED, "node_fjord", subject="Fjord Venture Partners",
                 words=(("name", "Fjord Venture Partners"), ("headline", "A conditional deferral, wait for the milestone"),
                        ("wait_rule", "Stop the weekly updates to Tara and wait for a real milestone")),
@@ -77,6 +86,9 @@ CHANGE = _item(B.CHANGE, "node_ssm:change", subject="State Startup Mission",
                         "You usually answer Meera Shah in 1.5 days (n=6). Quiet for 15 days."),
     (QUESTION, B.ASKED, "University Startup Cell: Find out whether you count as a startup incubated on the campus. "
                         "By 30 Sep."),
+    (QUESTION_ABOUT, B.TODAY, "University Startup Cell: A university cell's notice of a seed grant closing on the "
+                              "thirtieth, open to startups incubated on its campus. Can you tell us whether you are a "
+                              "startup incubated on the university's campus? By 30 Sep."),
     (WATCHED, B.WATCHING, "Fjord Venture Partners: A conditional deferral, wait for the milestone. Stop the weekly "
                           "updates to Tara and wait for a real milestone. Quiet for 25 days."),
     (PROMISE, B.PROMISES, "You promised Gaurav: send the pilot proposal (Stackfield) — due 4 Oct."),

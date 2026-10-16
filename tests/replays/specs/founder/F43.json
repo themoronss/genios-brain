@@ -230,8 +230,8 @@
      },
      "mode": "wait",
      "next_move": null,
-     "alternative": "If the founder finds the deck was not attached, send it at once with one line — that is a fix, not a chase.",
-     "wait_or_stop": "Wait out the week the founder named. If nothing comes, send one short note that carries something new; if that draws nothing, stop and treat Northwind as a no for this round.",
+     "alternative": "If you find the deck was not attached, send it at once with one line — that is a fix, not a chase.",
+     "wait_or_stop": "Wait out the week you named. If nothing comes, send one short note that carries something new; if that draws nothing, stop and treat Northwind as a no for this round.",
      "done_when": "Ira answers — a call booked, a question, or a pass.",
      "draft": null
     }

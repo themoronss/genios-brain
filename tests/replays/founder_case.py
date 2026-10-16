@@ -94,6 +94,8 @@ REAL_NAMES: frozenset[str] = frozenset({
     "actual.ai",
     # vendors the real mailbox carries
     "Composio", "Stripe", "Notion", "Apple", "Google",
+    # STEP-14 (s14-F17): the narrator's old headline examples, the founder's real contacts
+    "Divyanshu", "Leslie",
 })
 
 _REAL = re.compile(r"(?<![0-9A-Za-z])(?:" + "|".join(
@@ -375,6 +377,21 @@ class CardView:
     #: expert_check`): the mails a move rests on and their QUOTES. Evidence, not what the card says — so
     #: kept apart from `text`: a card that quotes "Introly connected us" is not a card about Introly (F37).
     sources: tuple = ()
+    #: STEP-14 (`yc2_w27_s14` M42.C4.L-integration.V1.U02, s14-D4). The sweeps after which the APP queue showed it —
+    #: read at the sweep's instant by the queue's own predicate; a subset of `sweeps`. Must-detect counts these.
+    app_sweeps: tuple[int, ...] = ()
+    #: …and every version's words, oldest first (s14-F14): a card rewritten in place — a refresh, a version of a
+    #: file's card — is judged on each, never on its last alone. Empty for a card that kept none.
+    versions: tuple[str, ...] = ()
+    #: STEP-14 (`yc2_w27_s14` M42.C4.L-integration.V4.U05): the file the card is (`cards.file_id`, 0220) — None on a card
+    #: that is no file's — and its history in order: each `card.created`, `card.versioned`, `card.surfaced` and
+    #: `card.expired` event as (kind, cause, change, material, kept the words before).
+    file_id: str | None = None
+    events: tuple[tuple[str, str | None, str | None, bool | None, bool], ...] = ()
+    #: STEP-14 (`yc2_w27_s14` M43.C6.L-integration.V4.U10): the gold card's columns as the card holds them — headline,
+    #: business_subject, relationship_role, why_now, unresolved_item, recommended, alternative, wait_or_stop,
+    #: outcome_window_days, the window receipt (`why`, source card_lines), capability_key, builder_version.
+    gold: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

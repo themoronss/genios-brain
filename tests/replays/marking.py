@@ -17,6 +17,14 @@ Four verdicts:
                    reached the stage says nothing about a decision to stay silent;
   NOT_EXPRESSIBLE  every card expectation of the case is declared not expressible — counted apart.
 
+⛔ WHAT YOU SEE (STEP-14, `yc2_w27_s14` M42.C4.L-logic.V2.U03, s14-D4, s14-F2, s14-F14). A must-detect case counts a
+card only once the APP showed it — the queue at a sweep's instant (`CardView.app_sweeps`, read by the runner): 6 of
+the 21 passes were cards that sat in `cards` and reached no surface the founder opens. What a shown card is ABOUT is
+read on every version it showed (a living card that was about the unit economics sheet and then about the review
+deck was a card about each — F24); its `mentions` on its final words. Forbidden names and phrases, `forbidden:us` and a must-abstain case read EVERY card, shown
+or not, and every version's words (`CardView.versions`) — a word a card once showed was shown. A case reports the
+cards about its subject the app never showed (`unshown`), beside the verdict and deciding nothing.
+
 THE MORNING BRIEF (STEP-15, `yc2_w27_s15` M44.C5.L-integration.V1.U04) is judged as the cards are: each line a case
 expects present, in its section, about whom it says, saying what it must; every forbidden name and phrase absent from
 every line; a must-abstain case's subjects — what its `max: 0` cards are about — absent from every line, as a line
@@ -74,11 +82,15 @@ def judge(case: FounderCase, run: CaseRun) -> Mark:
     checks += stages
 
     # ── what the founder sees ─────────────────────────────────────────────────────────────────
-    card_checks = [_card_check(i, exp, run) for i, exp in enumerate(case.cards)
+    card_checks = [_card_check(i, exp, run, case.kind) for i, exp in enumerate(case.cards)
                    if case.expressible("cards")]
     checks += card_checks
     brief_checks = _brief_checks(case, run)
     checks += brief_checks
+    if case.kind == "must_detect" and case.expressible("cards"):
+        unshown = _unshown(case, run)
+        if unshown:
+            checks.append(Check("unshown", PASS, "the app never showed " + ", ".join(unshown)))
     hits = tuple(sorted(_forbidden(case, run)))
     if hits:
         checks.append(Check("forbidden", FAIL,
@@ -119,13 +131,30 @@ def says(text: str, term: str) -> bool:
     return re.search(rf"(?<![0-9A-Za-z]){pattern}(?![0-9A-Za-z])", text, re.IGNORECASE) is not None
 
 
-def cards_about(run: CaseRun, about: tuple[str, ...]):
-    return [c for c in run.cards if any(says(c.text, t) for t in about)]
+def every_word(card) -> str:
+    """Everything a card ever said: its final words and every version's (STEP-14, s14-F14)."""
+    return "\n".join((card.text, *getattr(card, "versions", ())))
 
 
-def _card_check(index: int, exp: CardExpectation, run: CaseRun) -> Check:
+def cards_about(run: CaseRun, about: tuple[str, ...], *, shown: bool = False, ever: bool = False):
+    """The cards about any of `about` — on their final words, or (`ever`) on every version's; and only those the
+    app showed (`shown`, STEP-14)."""
+    return [c for c in run.cards
+            if (not shown or c.app_sweeps)
+            and any(says(every_word(c) if ever else c.text, t) for t in about)]
+
+
+def _unshown(case: FounderCase, run: CaseRun) -> list[str]:
+    """The cards about a must-detect case's subjects that existed and the app never showed."""
+    about = tuple(t for exp in case.cards for t in exp.about)
+    return [c.card_id for c in cards_about(run, about) if not c.app_sweeps]
+
+
+def _card_check(index: int, exp: CardExpectation, run: CaseRun, kind: str = "must_detect") -> Check:
     name = f"cards[{index}]"
-    matched = cards_about(run, exp.about)
+    # STEP-14 (s14-D4): a must-detect card counts once the app showed it; silence is judged over every card.
+    matched = (cards_about(run, exp.about, shown=True, ever=True) if kind == "must_detect"
+               else cards_about(run, exp.about, ever=True))
     n = len(matched)
     subject = "/".join(exp.about)
     if not exp.min <= n <= exp.max:
@@ -204,13 +233,14 @@ def _brief_checks(case: FounderCase, run: CaseRun) -> list[Check]:
 
 def _forbidden(case: FounderCase, run: CaseRun):
     for card in run.cards:
+        said = every_word(card)                # STEP-14: every card, every version's words
         for name in case.forbidden_names:
-            if says(card.text, name):
+            if says(said, name):
                 yield card.card_id, name
         # STEP-01 follow-up c (`yc2_w27_align` M34.C1.L-logic.V1.U05): a phrase is the CLAIM it names —
         # whole words, either case — as a name is. A substring match failed "ARR" on "arrived".
         for phrase in case.forbidden_phrases:
-            if says(card.text, phrase):
+            if says(said, phrase):
                 yield card.card_id, phrase
 
 
@@ -276,7 +306,7 @@ def _witness_check(case: FounderCase, run: CaseRun) -> Check:
                  for s in run.situations)
         what = f"a situation about {list(w.about)}"
     else:
-        ok, what = bool(cards_about(run, w.about)), f"a card about {list(w.about)}"
+        ok, what = bool(cards_about(run, w.about, ever=True)), f"a card about {list(w.about)}"
     return Check("witness", PASS if ok else NOT_EXERCISED,
                  f"witness at {w.stage}: {what}" if not ok else f"witness held at {w.stage}")
 

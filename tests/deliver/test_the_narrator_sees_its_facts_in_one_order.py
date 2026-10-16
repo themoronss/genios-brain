@@ -32,3 +32,35 @@ def test_every_fact_is_still_shown():
     prompt = _prompt("account_admin", TEMPLATE, dict(FACTS), dict(SLOTS))
     for key in FACTS:
         assert f'"{key}"' in prompt, key
+
+
+# ── STEP-14 · the narrator writes as the founder's chief of staff (`yc2_w27_s14` M43.C5.L-interface.V0.U01, s14-F17) ──
+#
+# Only a card no review wrote is narrated (an expert's card speaks its review, `render.review_copy`). The narrator was
+# told it wrote *"for a salesperson"*, and its headline examples were the founder's real investors and contacts —
+# Titan Capital, Divyanshu, Leslie — in a prompt sent for every tenant. It writes to the founder, as "you", and its
+# examples are the golden set's invented names.
+
+def _narrator_prompt(absence: bool = False) -> str:
+    template = {"artifact_kind": "draft", "fallback": {"states_absence": absence}}
+    return _prompt("account_admin", template, dict(FACTS), dict(SLOTS))
+
+
+def test_the_narrator_is_the_founders_chief_of_staff_writing_to_you():
+    prompt = _narrator_prompt()
+    assert prompt.startswith("You are the founder's chief of staff, writing ONE card"), prompt[:80]
+    assert 'as "you"' in prompt
+    assert "salesperson" not in prompt.lower()
+
+
+def test_no_real_name_reaches_the_narrator():
+    from tests.replays.founder_case import real_names_in
+    for absence in (False, True):
+        assert real_names_in(_narrator_prompt(absence)) == [], absence
+
+
+def test_its_examples_are_the_golden_sets_invented_names():
+    prompt = _narrator_prompt()
+    for example in ("Send Kestrel Capital the data-room link", "Answer Meera Shah's question on the pilot fee",
+                    "Get Divya Raman's free slots for Thursday"):
+        assert example in prompt, example

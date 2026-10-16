@@ -59,6 +59,21 @@ def days():
             out["F22/suppressed"] = M.read_day(c, "org_golden_f22", "seat_owner", now=at["F22"])
             out["F45/suppressed"] = M.read_day(c, "org_golden_f45", "seat_owner", now=at["F45"])
             out["F55/unsaid"] = M.read_day(c, "org_golden_f55", "seat_owner", now=at["F55"])
+        # A third world, for the wait rule that names you: STEP-14 reworded F55's authored Meadow rule from "stop if
+        # Arjun decides…" to "stop if you decide…" (M43.C2.L-data.V2.U05, the 16 Oct merge), so the golden tenant no
+        # longer holds the rule that speaks of the founder — this puts the founder's name back in the stored review.
+        with engine.begin() as c:
+            c.execute(text("update expert_reviews set review = jsonb_set(review, '{wait_or_stop}', "
+                           "to_jsonb(replace(review->>'wait_or_stop', 'you decide', 'Arjun decides'))) "
+                           "where org_id = 'org_golden_f55' and review->>'wait_or_stop' like '%you decide Meadow%'"))
+        with engine.connect() as c:
+            out["F55/named"] = M.read_day(c, "org_golden_f55", "seat_owner", now=at["F55"])
+        # A fourth: F54's two find-out files whose questions were never stored — the day then asks them in the check's
+        # own words (`read_day`'s second branch), and says what each is about the same way.
+        with engine.begin() as c:
+            c.execute(text("delete from founder_questions where org_id = 'org_golden_f54'"))
+        with engine.connect() as c:
+            out["F54/unasked"] = M.read_day(c, "org_golden_f54", "seat_owner", now=at["F54"])
         yield out
     finally:
         for org in orgs:
@@ -95,6 +110,24 @@ def test_f22_the_question_your_file_asks_with_the_card_that_asks_it(days):
     assert "incubated on the university's campus" in q.material.word("question")
     assert q.material.date("by") == "2026-09-30" and q.card_id
     assert {B.SOURCE_QUESTION, B.SOURCE_CARD, B.SOURCE_REVIEW} <= {s.kind for s in q.sources}
+
+
+def test_a_question_says_what_the_file_is_about_and_not_only_what_it_asks(days):
+    """03 s15-F19, found on the STEP-14 + STEP-15 merge (16 Oct): STEP-14 made F22's question the plain ask — "Can you
+    tell us whether you are a startup incubated on the university's campus?" — and a question line that is only the
+    ask no longer says it is about a seed grant. The review's situation is what the file is about (the card's own
+    second line, STEP-14): the item carries it beside the question."""
+    (q,) = _of(days["F22"], B.QUESTION)
+    assert q.material.word("situation").startswith("A university cell's notice of a seed grant closing on the thirtieth")
+    assert "seed grant" not in q.material.word("question")            # the ask alone does not say it: the reason for this
+    for question in _of(days["F54"], B.QUESTION):                      # every question of a reviewed file carries one
+        assert question.material.word("situation")
+    # …and a file whose question was never stored is asked in the check's own words, with the same sentence beside it
+    unasked = _of(days["F54/unasked"], B.QUESTION)
+    assert sorted(q.subject for q in unasked) == ["Kavya", "Rhea"]
+    assert all(q.material.word("situation") and q.material.word("question") for q in unasked)
+    assert {q.material.word("situation") for q in unasked} == {q.material.word("situation") for q
+                                                               in _of(days["F54"], B.QUESTION)}
 
 
 def test_f54_two_questions_and_the_mixer_nobody_followed_up(days):
@@ -145,8 +178,12 @@ def test_a_reply_time_too_sparse_to_be_normal_is_not_said_and_a_wait_rule_naming
     day = days["F55"]
     assert all(d.material.number("your_reply_time") is None for d in _of(day, B.DECISION))
     (meadow,) = _of(day, B.WATCHED)
-    assert meadow.material.word("wait_rule") is None                 # "…stop if Arjun decides…": speaks of you
+    # Said to you as "you" the rule stands (STEP-14 reworded it from "stop if Arjun decides…", M43.C2.L-data.V2.U05)…
+    assert meadow.material.word("wait_rule").endswith("stop if you decide Meadow VC is not part of this round.")
     assert meadow.material.word("headline")
+    (named,) = _of(days["F55/named"], B.WATCHED)
+    assert named.material.word("wait_rule") is None                  # …and the same rule naming the founder is unsaid
+    assert named.material.word("headline")
     assert not _of(days["F14"], B.DESK)                               # nobody waits on you: no desk line
 
 
@@ -160,6 +197,17 @@ def test_every_item_names_its_sources_and_no_address(days):
 
 
 # ── the day's own rules, pure ────────────────────────────────────────────────────────────────────
+def test_what_a_question_is_about_is_the_checked_situation_unless_it_speaks_of_you():
+    from types import SimpleNamespace
+    checked = lambda said: SimpleNamespace(words=SimpleNamespace(situation=said))        # noqa: E731
+    founder = ("Arjun Rao",)
+    assert M._about(checked("A grant closes on the thirtieth."), founder) == "A grant closes on the thirtieth."
+    assert M._about(checked("Arjun Rao has not answered."), founder) is None            # your name
+    assert M._about(checked("The founder has not answered."), founder) is None          # "the founder"
+    assert M._about(checked("  "), founder) is None and M._about(checked(None), founder) is None
+    assert M._about(None, founder) is None                                              # no check, nothing to say
+
+
 def test_words_speak_of_you_as_you():
     assert M.speaks_of_you("the founder should write", ("Arjun Rao",))
     assert M.speaks_of_you("a sign from Arjun that he wants it", ("Arjun Rao",))

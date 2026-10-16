@@ -23,8 +23,9 @@ its cassette (`harness.RecordedLLM`, no spend), and three things are measured:
       `expert_check` sources among them), actions, artifact, do_nothing_consequence, success_signal,
       abstained_because — may say what the mutation would have made the founder read (`reads`). A
       correction must keep what is right beside it (`keeps`: X08, a time in the draft is never rewritten).
-      Then the same with QUESTION cards included, and the words the mutation wrote into a fact (`echo`):
-      where the held question repeats them, that is xfail-strict, with its finding.
+      Then the same with QUESTION cards included, and the words the mutation wrote into a fact (`echo`): a
+      held question never repeats them (M36.C2.L-logic.V2.U10 fix, the second crosscheck G2 — until it, three
+      of them were xfail-strict on X10).
 
   3 · THE NEGATIVE CONTROL. The same mutation with the check switched off — every line passed as written
       (`tests/reason/expert/checks.as_written`) — must put what it `reads` on a card. A mutation that reaches no
@@ -76,12 +77,6 @@ DECLARED_DROPS: dict[tuple[str, str], frozenset[tuple[str, str, str]]] = {
     ("F15", "latticecap.test"): frozenset({("fact:6", UNSUPPORTED, "name:Capital")}),
 }
 
-#: The finding a held question's echo is xfail-strict on (crosscheck X10, `03`): a move held because a fact it
-#: rests on fell, or its own words failed, asks "Is it so: “<the words>”?" — the fact's claim, or the move,
-#: as the model wrote them (`reason/expert/verify.check_review`); M36.C2.L-logic.V2.U10 put the recipient
-#: questions and `why` in checked words, and left these two in the model's.
-X10_ECHO = ("X10: the held question repeats the words that failed — verify.check_review asks “Is it so: "
-            "<the fell fact's claim / the move as written>?”, so the mutated words reach the question card")
 
 
 # ── the mutations ──────────────────────────────────────────────────────────────────────────────────────────
@@ -286,7 +281,10 @@ MUTATIONS: tuple[Mutation, ...] = (
              _set_quote(4, "Neha has waited nine days for our answer", rest_on=True),
              "quote:4", DROPPED, MISQUOTED, "Neha has waited", SHOWN,
              reads=("Neha has waited nine days for our answer",)),
-    Mutation("a_quote_on_an_unworded_meeting", "F28", "novacore.test", 1,
+    # ⛔ RESTATED by `yc2_w27_s14` (M42, the living card): served to the file's SECOND review. F28's second review
+    # versions the one card its first made, so what the first review's card said is a version the card no longer
+    # shows — the negative control reads the card's current words, and the second review is the one they are.
+    Mutation("a_quote_on_an_unworded_meeting", "F28", "novacore.test", 2,
              _set_quote(2, "Ishita confirmed the call for the eighth"),
              "quote:2", DROPPED, MISQUOTED, "Ishita confirmed", SHOWN,
              reads=("Ishita confirmed the call for the eighth",)),
@@ -296,20 +294,19 @@ MUTATIONS: tuple[Mutation, ...] = (
     # ── names ──
     Mutation("a_misattributed_speaker", "F19", "ditincubator.test", 2, _misattributed,
              "fact:1", DROPPED, UNSUPPORTED, "name:Ritika", HELD,
-             reads=("Hi Ritika and Ekta",), echo=("Ritika Sharma of the Incubation Cell asked",),
-             finding=X10_ECHO),
+             reads=("Hi Ritika and Ekta",), echo=("Ritika Sharma of the Incubation Cell asked",)),
     Mutation("a_name_inside_a_company", "F05", "altavia.test", 2, _draft_says("Hi Marco,", "Hi Avi,"),
              "draft", DROPPED, UNSUPPORTED, "name:Avi", SHOWN, reads=("Hi Avi",)),
     # ── numbers ──
     Mutation("a_wrong_number_in_the_headline", "F26", "orbitly.test", 1, _move_says("11 am IST", "10 am IST"),
              "move", DROPPED, WRONG_NUMBER, "number:10:00", HELD,
-             reads=("confirm Tuesday 30 Sep at 10 am IST",), finding=X10_ECHO),
+             reads=("confirm Tuesday 30 Sep at 10 am IST",)),
     Mutation("a_wrong_number_in_a_fact", "F26", "orbitly.test", 1,
              _claim_says(2, "Tuesday the thirtieth of September at eleven in the morning IST",
                          "Tuesday 30 Sep at 10 am IST"),
              "fact:2", DROPPED, WRONG_NUMBER, "number:10:00", HELD,
              reads=("Reply to Neha to confirm Tuesday 30 Sep at 11 am IST",), also=_FELL_F26,
-             echo=("Tuesday 30 Sep at 10 am IST",), finding=X10_ECHO),
+             echo=("Tuesday 30 Sep at 10 am IST",)),
     Mutation("a_sibling_calculators_number", "F49", "sparkreach.test", 1, _sibling,
              "fact:3", CORRECTED, BY_CALCULATOR, "number:0.06 -> 14.06 (num:days_quiet)", SHOWN,
              reads=("quiet for 0.06 days",), also=(("do_nothing", CORRECTED, BY_CALCULATOR),),
@@ -461,6 +458,11 @@ def _ran(case_id: str, mutation: Mutation | None, *, checked: bool = True) -> Ra
         if not checked:
             # One seam: the review run and the sweep's re-check both call `review.check`, which calls this.
             mp.setattr(expert_review, "check_review", _as_written)
+            # ⛔ RESTATED by `yc2_w27_s14` M43.C4.L-integration.V1.U02: since STEP-14 the card contract stands behind
+            # the check at both card writers (`contracts/card_contract`) — a draft to us is refused there too. The
+            # negative control asks what the CHECK alone stops, so with the check off the contract is off as well.
+            from genios_engine.deliver import pipeline
+            mp.setattr(pipeline, "_contract_refusals", lambda *_a, **_k: ())
         run = run_case(case, llm, keep=True)
     engine = routes._graph.engine
     try:

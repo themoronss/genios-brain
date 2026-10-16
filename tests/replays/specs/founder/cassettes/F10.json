@@ -1,7 +1,7 @@
 {
  "case_id": "F10",
  "source": "ideal_reader",
- "recorded_at": "e6b8522e",
+ "recorded_at": "b8b4804d",
  "answers": {
   "08ed957f72519c2f233b5e7403717be61e8a50bb1a9be04c064187b0f2532a6c": {
    "site": "resolution",
@@ -18,22 +18,6 @@
    "framed": true,
    "input_tokens": 1556,
    "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "2fde69ad4073f49550d248afcc79a9a4bc3c1b4df7520d809941f3bd5989bdd2": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1767,
-   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
   "5a41c1e43ab39948fe839b9dada179ccab25e969f66a5226543d4249b62d290e": {
@@ -132,6 +116,22 @@
    "framed": true,
    "input_tokens": 5549,
    "output_tokens": 362,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6e3754a0f0c5c812468d8b039747839e69bd7d7db7447d1245a0e6780409ec24": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1767,
+   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
   "7de0ca4454db0729ac58d46f0e3d6010208cf7de0abdd0c44bad5a129a7d2f40": {
@@ -324,7 +324,7 @@
    "output_tokens": 1796,
    "model": "claude-haiku-4-5-20251001"
   },
-  "d3e59b2cb37990da00193a95bec257e17b5636c8c3b8da42558f0c26abe7b14e": {
+  "d3aed5d11a8bd54ca5f47c0f8e5a86b6f9abfcf1a6ca01b2f40aaf0aac62679a": {
    "site": "bundle_narrator",
    "parsed": {
     "headline": "Next move",
@@ -336,7 +336,7 @@
    },
    "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
    "framed": true,
-   "input_tokens": 1561,
+   "input_tokens": 1562,
    "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   }

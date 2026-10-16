@@ -461,6 +461,87 @@ def _the_floor_was_productions(run, routes, text, DEFAULT_FLOOR_BP, PostgresFloo
 
 
 # =================================================================================================
+# STEP-14 · the runner records what the APP showed, and every version's words (`yc2_w27_s14` M42.C4.L-integration.V1.U02)
+# =================================================================================================
+@pytest.mark.pg
+def test_the_card_reader_says_when_the_app_showed_it_and_every_versions_words(pg_store):
+    """s14-D4, s14-F2, s14-F14: a card counts once the APP showed it — the sweeps it was in the queue at the sweep's
+    instant (`app_sweeps`), apart from the sweeps it merely existed (`sweeps`) — and a card rewritten in place is
+    judged on every version's words, not its last (`versions`, from its `card.created` / `card.rebuilt` /
+    `card.versioned` events)."""
+    import json
+    from datetime import datetime, timedelta, timezone
+
+    from sqlalchemy import text
+    org = "org_golden_versions"
+    at = datetime(2026, 9, 18, 12, tzinfo=timezone.utc)
+    v1 = {"headline": "Reply to Kavya", "situation": "Kavya asked for the deck", "move": None, "draft": None,
+          "lane": "decision", "mode": "act", "ask": None, "recipient": None, "by_when": None}
+    v2 = {**v1, "headline": "Send Kavya the deck by Friday", "by_when": "2026-09-19",
+          "move": "Send Kavya the deck by Friday and tell Ritika"}       # no card shows the move whole yet
+    with pg_store.engine.begin() as c:
+        c.execute(text("insert into orgs (id, name) values (:o, 'versions') on conflict do nothing"), {"o": org})
+        c.execute(text("delete from card_events where org_id = :o"), {"o": org})
+        c.execute(text("delete from cards where org_id = :o"), {"o": org})
+        c.execute(text(
+            "insert into cards (card_id, signal_id, org_id, level, urgency_band, headline, situation, score, why, "
+            " actions, artifact, state, expires_at, version) values ('card_v', 'sig_v', :o, 'prescriptive', 'high', "
+            " :h, :s, 80, '[]', '[]', '{}', 'queued', :exp, 2)"),
+            {"o": org, "h": v2["headline"], "s": v2["situation"], "exp": at + timedelta(days=3)})
+        for n, (kind, words) in enumerate((("card.created", v1), ("card.versioned", v2))):
+            detail = {"version": n + 1, "words": words} if kind == "card.created" else {
+                "version": 2, "words": words, "before": v1}
+            c.execute(text("insert into card_events (id, card_id, org_id, kind, detail, occurred_at) values "
+                           "(:i, 'card_v', :o, :k, cast(:d as jsonb), :at)"),
+                      {"i": f"cev_v{n}", "o": org, "k": kind, "d": json.dumps(detail), "at": at + timedelta(hours=n)})
+    try:
+        (card,) = er._cards(pg_store.engine, org, [{"card_v"}, {"card_v"}], [set(), {"card_v"}])
+        assert (card.sweeps, card.app_sweeps) == ((0, 1), (1,))
+        assert card.versions == ("Reply to Kavya\nKavya asked for the deck",
+                                 "Send Kavya the deck by Friday\nKavya asked for the deck")
+        (unshown,) = er._cards(pg_store.engine, org, [{"card_v"}])
+        assert unshown.app_sweeps == (), "nobody asked the app: nothing was shown"
+        with pg_store.engine.begin() as c:     # a card created before its first words were kept…
+            c.execute(text("update card_events set detail = '{}' where id = 'cev_v0'"))
+        assert er._cards(pg_store.engine, org, [{"card_v"}])[0].versions == card.versions, \
+            "…its first words are the ones its first version kept as before"
+        with pg_store.engine.begin() as c:     # a card never versioned, refreshed in place once
+            c.execute(text("delete from card_events where id = 'cev_v1'"))
+            c.execute(text("update card_events set detail = cast(:d as jsonb) where id = 'cev_v0'"),
+                      {"d": json.dumps({"version": 1, "words": v1})})
+            c.execute(text("insert into card_events (id, card_id, org_id, kind, detail, occurred_at) values "
+                           "('cev_r', 'card_v', :o, 'card.rebuilt', cast(:d as jsonb), :at)"),
+                      {"o": org, "d": json.dumps({"words": {**v1, "headline": "Reply to Kavya today"}}),
+                       "at": at + timedelta(hours=3)})
+        assert er._cards(pg_store.engine, org, [{"card_v"}])[0].versions == (
+            "Reply to Kavya\nKavya asked for the deck", "Reply to Kavya today\nKavya asked for the deck")
+    finally:
+        with pg_store.engine.begin() as c:
+            c.execute(text("delete from card_events where org_id = :o"), {"o": org})
+            c.execute(text("delete from cards where org_id = :o"), {"o": org})
+            c.execute(text("delete from orgs where id = :o"), {"o": org})
+
+
+@needs_db
+def test_a_run_asks_the_app_queue_at_each_sweeps_instant_and_leaves_no_impression(monkeypatch):
+    from genios_engine.api import routes
+    from genios_engine.deliver.store import CardStore
+    asked: list = []
+    original = CardStore.queue
+
+    def _spy(self, org_id, **kw):
+        asked.append((org_id, kw.get("admin"), kw.get("record_impressions"), kw.get("eval_time")))
+        return original(self, org_id, **kw)
+    monkeypatch.setattr(CardStore, "queue", _spy)
+    case = _parse(CASE)
+    _recorder, run = _record(case)
+    assert [(a[1], a[2], a[3]) for a in asked if a[0] == run.org_id] == [
+        (True, False, at) for at in case.sweeps], "once per sweep, the admin's whole queue, at its instant"
+    assert all(set(c.app_sweeps) <= set(c.sweeps) for c in run.cards)
+    assert routes._card_store is not None
+
+
+# =================================================================================================
 # STEP-15 · the runner composes the founder's brief after the last sweep (`yc2_w27_s15` M44.C5.L-integration.V0.U03)
 # =================================================================================================
 @pytest.mark.pg

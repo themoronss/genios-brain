@@ -855,7 +855,7 @@
       "to": "Meera"
      },
      "alternative": "If the details already went another way, write one line confirming the leads expect her call, and ask for Bluepeak's next step and timing.",
-     "wait_or_stop": "Do not wait: the next move is the founder's. Once the details have gone, give Bluepeak a week for the calls; if nothing comes, ask Meera Shah directly where Bluepeak stands, then stop.",
+     "wait_or_stop": "Do not wait: the next move is yours. Once the details have gone, give Bluepeak a week for the calls; if nothing comes, ask Meera Shah directly where Bluepeak stands, then stop.",
      "done_when": "Meera Shah has the two pilot leads' details and the reference calls are booked.",
      "draft": "Hi Meera, here are the two pilot leads who agreed to take a reference call with you — I've copied them both so you can find a time directly. Once you've spoken, could we talk about Bluepeak's next step? Arjun"
     }

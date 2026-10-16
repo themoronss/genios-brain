@@ -32,6 +32,10 @@ never around it.
                 A consult that never reached the question — the feature off, the force-fail switch, no
                 model configured — writes no row: nothing was judged and nothing refused, and the
                 receipt says why.
+  ON ITS DOSSIER (`06` D48, STEP-13 `yc2_w27_s13` M35.C3.L-integration.V1.U06, X13): every row keeps the
+                dossier it was written against (0202), and a review checked again under a newer check
+                version is checked on THAT dossier (`recheck`) — never today's, which may no longer print
+                a line its facts cite. A row from before 0202 is checked on the dossier it is handed.
 """
 from __future__ import annotations
 
@@ -51,7 +55,9 @@ from genios_engine.reason.bundle.sites import (OUTCOME_FAILED_GENERATION, OUTCOM
 from genios_engine.reason.llm_sites import SiteReceipt, SiteRejection, run_site, tier_model
 
 from . import store
-from .dossier import Dossier, FilePeople, Person
+from .card_lines import CardLines
+from .card_lines import card_lines
+from .dossier import Dossier, DossierParts, FilePeople, Person
 from .prompt import PROMPT_VERSION, build_prompt
 from .verify import STRUCTURAL, check_review
 
@@ -79,6 +85,7 @@ class ReviewResult:
     receipt: SiteReceipt | None     # None when a standing row answered with no consult
     written: bool                   # whether this call wrote the row
     checked: CheckedReview | None = None    # a valid review's check (STEP-13)
+    card_lines: CardLines | None = None     # what code wrote for its card (STEP-14, 0221) — a valid review's
 
 
 def _status(outcome: str, codes: tuple[str, ...]) -> str | None:
@@ -95,25 +102,45 @@ def check(review: ExpertReview, dossier: Dossier, people: FilePeople | None) -> 
                         evidence_ids=dossier.catalogue.evidence_ids)
 
 
+def kept(dossier: Dossier) -> dict[str, Any]:
+    """What a row keeps of the dossier its review was written against (0202): the text the check reads, and
+    the ids it printed — the only ids a fact may cite."""
+    return {"text": dossier.text, "evidence_ids": sorted(dossier.catalogue.evidence_ids)}
+
+
+def recheck(row: store.StoredReview, people: FilePeople | None, *, today: Dossier) -> CheckedReview:
+    """A standing valid review checked again — on the dossier it was written against (`06` D48, X13), or, on a
+    row from before 0202 that kept none, on `today`'s."""
+    if row.dossier is None:
+        return check(row.review, today, people)
+    return check_review(row.review, row.dossier["text"], people or NOBODY,
+                        evidence_ids=frozenset(row.dossier["evidence_ids"]))
+
+
 def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inputs: Mapping[str, Any],
                 triggers: Iterable[Any], gate: RSiteGate, at: datetime,
-                people: FilePeople | None = None) -> ReviewResult:
+                people: FilePeople | None = None, parts: DossierParts | None = None) -> ReviewResult:
     """Review one file once for this fingerprint, check it, and keep what came of it. A standing valid
     row checked under an older check version — or before checks — is checked again, against this same
-    dossier (the fingerprint is the dossier's inputs), and the check written onto it."""
+    dossier (the fingerprint is the dossier's inputs), and the check written onto it.
+
+    STEP-14 (`yc2_w27_s14` M43.C2.L-integration.V2.U03): handed the dossier's `parts`, a valid review keeps beside
+    its check the lines code writes for its card (`card_lines`, 0221) — from this dossier, with these triggers.
+    A row written before 0221, or with no parts, keeps none: its card shows the review's own words."""
+    triggers = tuple(triggers)
     file_id = dossier.file_id
     with engine.connect() as conn:
         standing = store.read_review(conn, org_id, file_id, fingerprint)
     if standing is not None and standing.status in store.STANDING:
         checked = standing.checked
         if standing.status == store.VALID and (checked is None or checked.version != CHECK_VERSION):
-            checked = check(standing.review, dossier, people)
+            checked = recheck(standing, people, today=dossier)
             with engine.begin() as conn:
                 store.write_check(conn, org_id=org_id, file_id=file_id, fingerprint=fingerprint,
-                                  checked=checked)
+                                  checked=checked, at=at)
         return ReviewResult(file_id=file_id, fingerprint=fingerprint, status=standing.status,
                             reason=standing.reason, review=standing.review, receipt=None,
-                            written=False, checked=checked)
+                            written=False, checked=checked, card_lines=standing.card_lines)
 
     last: dict[str, Any] = {}
 
@@ -155,6 +182,7 @@ def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inpu
         reason = "; ".join([last["reason"], *receipt.reason_codes[1:]])     # and why no repair, if any
     else:
         reason = ", ".join(receipt.reason_codes) or receipt.outcome
+    lines = card_lines(parts, review, triggers) if status == store.VALID and parts is not None else None
     with engine.begin() as conn:
         written = store.write_review(
             conn, org_id=org_id, file_id=file_id, fingerprint=fingerprint,
@@ -163,10 +191,11 @@ def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inpu
             review=review if status == store.VALID else last.get("raw"),
             input_tokens=receipt.input_tokens, output_tokens=receipt.output_tokens,
             cost_micro_usd=receipt.cost_micro_usd, at=at, inputs=inputs, triggers=triggers,
-            checked=last.get("checked") if status == store.VALID else None)
+            checked=last.get("checked") if status == store.VALID else None, dossier=kept(dossier),
+            card_lines=lines)
     return ReviewResult(file_id=file_id, fingerprint=fingerprint, status=status, reason=reason,
                         review=review, receipt=receipt, written=written,
-                        checked=last.get("checked") if status == store.VALID else None)
+                        checked=last.get("checked") if status == store.VALID else None, card_lines=lines)
 
 
-__all__ = ["NOBODY", "ReviewResult", "STATUS_OF", "check", "review_file"]
+__all__ = ["NOBODY", "ReviewResult", "STATUS_OF", "check", "kept", "recheck", "review_file"]

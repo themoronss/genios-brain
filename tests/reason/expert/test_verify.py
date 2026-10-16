@@ -36,7 +36,10 @@ def test_the_faithful_review_is_shown_in_its_own_words():
         headline=W.ANSWER["next_move"]["what"], situation=W.ANSWER["frames"]["primary"],
         done_when=W.ANSWER["done_when"], draft=W.ANSWER["draft"], to="Marco",
         evidence=(W.ASK, W.ASK_DECK), quotes=(W.ANSWER["facts"][0]["quote"],),
-        do_nothing=W.ANSWER["scenarios"]["do_nothing"]), \
+        do_nothing=W.ANSWER["scenarios"]["do_nothing"],
+        # ⛔ RESTATED by `yc2_w27_s14` M43.C2.L-logic.V1.U01: the gold card shows the alternative and when to wait or
+        # stop (0221), so the check holds them and carries them, checked, as it carries the situation.
+        alternative=W.ANSWER["alternative"], wait_or_stop=W.ANSWER["wait_or_stop"]), \
         "the headline carries the mails and asks its move rests on, and their quotes"
     assert checked.cited == tuple(sorted({W.ASK, W.ASK_DECK, W.REPLY_TIME, W.INTRO}))
     assert all(v.verdict == C.KEPT for v in checked.verdicts), checked.verdicts
@@ -49,8 +52,12 @@ def test_a_move_whose_ground_fell_is_held_and_asks_about_it():
     # founder reads on the question card — the model's quote stays in the verdict, never on the card.
     assert checked.because == C.HELD_BECAUSE[C.MISQUOTED]
     assert _verdict_of(checked, "fact:1").detail == "could you send your financials before we set up a call"
-    assert checked.question == ("Is it so: “Marco asked for a short deck before setting up a call”? "
-                                "It is not in what it cites.")
+    # ⛔ RESTATED by M36.C2.L-logic.V2.U10 (fix, the second crosscheck G2, `03` X10): the question asked
+    # "Is it so: “<the fell fact's claim>”? It is not in what it cites." — the words the check dropped, on the
+    # question card. It asks what the next step is, and says truly why the one found is held.
+    assert checked.question == ("What is the next step with Marco Ruiz? We held the one we found: "
+                                f"{C.HELD_BECAUSE[C.MISQUOTED]}.")
+    assert "short deck" not in checked.question
     assert checked.words.headline is None and checked.words.draft is None and checked.words.to is None
     assert checked.words.situation, "why it matters is still the expert's reading"
     assert W.ASK not in checked.cited, "a dropped fact's mail is not counted"
@@ -72,7 +79,9 @@ def test_a_find_out_review_is_shown_asking_its_own_move():
 def test_a_find_out_review_whose_ground_fell_asks_about_the_fact_instead():
     checked = _check(mode="find_out", move={"what": "Find out whether Marco wants the deck first"},
                      draft=None, fact1={"quote": None})
-    assert checked.fate == C.HELD and checked.question.startswith("Is it so: “Marco asked")
+    # ⛔ RESTATED by M36.C2.L-logic.V2.U10 (fix, G2): asked about the next step, never in the fell claim's words.
+    assert checked.fate == C.HELD and checked.question.startswith("What is the next step with Marco Ruiz?")
+    assert "Marco asked" not in checked.question
 
 
 @pytest.mark.parametrize("mode", ["wait", "nothing", "blocked"])
@@ -115,3 +124,54 @@ def test_the_same_review_and_dossier_are_the_same_check_and_it_reads_back_as_sto
 def test_only_the_reviews_structure_is_refused_whole_by_the_contract():
     from genios_engine.contracts.expert_review import (NO_NEXT_MOVE, UNGROUNDED_MOVE, UNKNOWN_STAGE)
     assert STRUCTURAL == {NO_NEXT_MOVE, UNGROUNDED_MOVE, UNKNOWN_STAGE}
+
+
+# ── STEP-14 · the alternative and the stop rule are card words, held as the situation is (M43.C2.L-logic.V1.U01) ──
+#
+# s14-F8: the gold card shows the alternative and when to wait or stop (0221). They were PROSE ("no founder is shown"):
+# a number nothing holds was only noted, a name nothing holds passed. Now each stands on the standing facts' lines by
+# the card validator's own rule, as the situation does — and a line that fails is WITHHELD, never the review.
+
+
+@pytest.mark.parametrize("line, said, reason, detail", [
+    ("alternative", "Write to Priya at Lattice Capital instead", C.UNSUPPORTED, "Priya"),
+    ("wait_or_stop", "if he has not answered in 73 days, ask once", C.WRONG_NUMBER, "number:73"),
+])
+def test_a_gold_line_its_facts_do_not_hold_is_withheld_never_the_review(line, said, reason, detail):
+    checked = _check(**{line: said})
+    assert checked.fate == C.SHOWN and checked.words.headline == W.ANSWER["next_move"]["what"]
+    assert getattr(checked.words, line) is None, "withheld"
+    other = "wait_or_stop" if line == "alternative" else "alternative"
+    assert getattr(checked.words, other) == W.ANSWER[other], "the other line stands on its own"
+    found = _verdict_of(checked, line)
+    assert (found.verdict, found.reason) == (C.DROPPED, reason) and detail in found.detail
+    assert not any(v.line == "prose" for v in checked.verdicts), "card words now, never prose"
+
+
+def test_a_gold_line_holds_numbers_and_names_its_facts_hold():
+    checked = _check(alternative="If the deck is not ready, write to Marco Ruiz within 6 days with two times for a call",
+                     wait_or_stop="Wait for his answer; if 6 days pass with none, ask once")
+    # "6 days" is fact 3's (his reply time) — a standing fact the move does not rest on: the situation's ground.
+    assert checked.words.alternative.startswith("If the deck is not ready")
+    assert checked.words.wait_or_stop == "Wait for his answer; if 6 days pass with none, ask once"
+    assert _verdict_of(checked, "alternative").verdict == C.KEPT
+    assert _verdict_of(checked, "wait_or_stop").verdict == C.KEPT
+
+
+def test_a_gold_line_that_calls_you_the_founder_is_noted():
+    checked = _check(wait_or_stop="Wait until the founder hears back from Marco, then stop")
+    noted = [v for v in checked.verdicts if v.line == "wait_or_stop" and v.verdict == C.NOTED]
+    assert [(v.reason, v.detail) for v in noted] == [(C.SPEAKS_OF_YOU, "the founder")]
+
+
+def test_a_review_that_offers_no_alternative_carries_none():
+    """The contract asks every review when to wait or stop; an alternative it may leave out."""
+    checked = _check(alternative="")
+    assert checked.words.alternative is None and checked.words.wait_or_stop == W.ANSWER["wait_or_stop"]
+    assert not any(v.line == "alternative" for v in checked.verdicts)
+
+
+def test_the_check_is_check_v3():
+    """The check's behaviour changed again — STEP-13's second fix wave (B1, B2, G2, F2/F3) and these card lines —
+    so a review an older check checked is checked again on read (`06` D48)."""
+    assert C.CHECK_VERSION == "check.v3"

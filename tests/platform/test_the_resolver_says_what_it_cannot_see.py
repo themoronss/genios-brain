@@ -467,10 +467,19 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # (YC-II W27 STEP-13, `yc2_w27_s13/M36.C2.L-contract.V0.U01`): one new table, whose first reference is
     # the tenant reset's `delete` list. An engine change, not a resolver change; its store and readers
     # (`context/founder_questions.py`, M36.C2.L-data.V1.U02) are later units.
+    # ⛔ RE-PINNED 194 → 195 and 196 → 197 on 2026-10-13 by migration `0222_card_refusals` (YC-II W27 STEP-14,
+    # `yc2_w27_s14/M43.C4.L-integration.V2.U05`): one new table, written by its one writer
+    # (`platform/card_refusals.record`, called by `deliver/pipeline` and `reason/team/emit`), read by
+    # `scripts/pipeline_health.py`, deleted by the tenant reset — measured: `table_usage()["card_refusals"]` is
+    # `{"insert", "read", "delete"}`. An engine change, not a resolver change; read as well as written, so the
+    # nine write-only members above did not move.
     # ⛔ RE-PINNED 194 → 196 and 196 → 198 on 2026-10-12 by migration `0230_morning_briefs` (STEP-15,
     # `yc2_w27_s15/M44.C1.L-contract.V1.U02`): two new tables, `morning_briefs` and `morning_brief_marks`, whose
     # first reference is the tenant reset's `delete` list — measured: `table_usage()` holds each as
     # `{"delete": {"genios_engine/api/account_routes.py"}}`. An engine change, not a resolver change; the store
     # that reads and writes them (`executive/morning_store.py`, M44.C4.L-data.V0.U01) is a later unit.
-    assert len(TC.table_usage()) == 196
-    assert len(TC._known_tables()) == 198
+    # ⛔ MERGED 16 Oct: STEP-14 (194 → 195, 196 → 197 above) and STEP-15 (194 → 196, 196 → 198 above) each on the
+    # integration line's 194 and 196, re-measured on the merge (`table_coverage`): 197 and 199 — the three tables
+    # the two steps add between them (`card_refusals`, `morning_briefs`, `morning_brief_marks`), none shared.
+    assert len(TC.table_usage()) == 197
+    assert len(TC._known_tables()) == 199

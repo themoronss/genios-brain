@@ -71,8 +71,9 @@ no card either side), F30 (a "promises" line — its `not_expressible` keeps the
 F20 and F23 (the one card STEP-12 found stands; the brief's "today" line now passes too), and F21 and F22
 (STEP-13's question card stands; the brief's "today" line names it too). The gate's own promise did not move on
 any case: nothing dropped, every archive the same. (F18, F45, F53, F54 and F55 are brief-only too; F18 stays
-blocked at the gate — `06` D29 — and F45/F54/F55 are `ADDED_AFTER`, outside this file's board; F53 stays
-blocked on s15-D2. `tests/replays/test_the_morning_brief_is_judged.py` is where the brief is judged whole.)
+blocked at the gate — `06` D29 — and F45/F54/F55 are `ADDED_AFTER`, outside this file's board; F53 stayed
+blocked on s15-D2 then, and passes since 16 Oct — s15-F22, also `ADDED_AFTER`, so no row here moves for it.
+`tests/replays/test_the_morning_brief_is_judged.py` is where the brief is judged whole.)
 """
 from __future__ import annotations
 
@@ -144,7 +145,10 @@ ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-
                                "F52": "yc2_w27_align", "F53": "yc2_w27_align",
                                "F54": "yc2_w27_align", "F55": "yc2_w27_align",
                                "F56": "yc2_w27_align", "F57": "yc2_w27_align",
-                               "F58": "yc2_w27_align"}
+                               "F58": "yc2_w27_align",
+                               # STEP-14 (`yc2_w27_s14` M43.C6, s14-D5): the Atlas's replay 02 introductions.
+                               "F59": "STEP-14", "F60": "STEP-14", "F61": "STEP-14", "F62": "STEP-14",
+                               "F63": "STEP-14", "F64": "STEP-14"}
 
 #: A case added after STEP-03 whose mail today's gate ARCHIVES — held to that code, as the dropped mail
 #: of the cases before it is. F56: a vendor's renewal notice, which the junk filter's own prompt drops
@@ -155,12 +159,12 @@ ARCHIVED_IN_ADDED: dict[str, dict[str, str]] = {"F56": {"f56-renewal": "llm_junk
 #: STEP-05: a mail below the floor, the founder's own sent mail and an archive now enter memory.
 MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     "F04": ("STEP-05", ("must_detect", "pass", None, 1)),
-    "F05": ("STEP-12", ("must_detect", "fail", "reasoning", 2)),
-    "F06": ("STEP-12", ("must_detect", "fail", "reasoning", 2)),
+    "F05": ("STEP-14", ("must_detect", "pass", None, 1)),
+    "F06": ("STEP-14", ("must_detect", "pass", None, 1)),
     "F10": ("STEP-05", ("must_detect", "pass", None, 1)),
     "F11": ("STEP-12", ("must_detect", "pass", None, 1)),
-    "F19": ("STEP-05", ("must_detect", "fail", "reasoning", 2)),
-    "F24": ("STEP-12", ("must_detect", "fail", "reasoning", 3)),
+    "F19": ("STEP-14", ("must_detect", "pass", None, 1)),
+    "F24": ("STEP-14", ("must_detect", "pass", None, 1)),
     "F26": ("STEP-05", ("must_detect", "pass", None, 1)),
     "F31": ("STEP-05", ("must_abstain", "pass", None, 1)),
     "F36": ("STEP-05", ("must_abstain", "pass", None, 0)),
@@ -168,7 +172,7 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     "F39": ("STEP-05", ("must_abstain", "pass", None, 0)),
     # STEP-07: the brief keeps the locker's and the intro agent's mail (and the portal's — F01, moved
     # again by STEP-13 below), and it is read — but no situation it forms reaches a card yet.
-    "F02": ("STEP-12", ("must_detect", "fail", "reasoning", 2)),
+    "F02": ("STEP-14", ("must_detect", "pass", None, 1)),
     "F09": ("STEP-12", ("must_detect", "pass", None, 1)),
     # STEP-09 (`yc2_w27_s09 · M27.C5`): the introduction and its two nudges are Rahul's file, never
     # the connector's, and one card is about him.
@@ -179,22 +183,20 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     # STEP-12 (`yc2_w27_s12 · M33`): each covered file decided once from its review, everything it
     # explains standing down — one card about a file where there were two or three, a second card where
     # the review's advice changed as the file moved (`03` F176), a must-abstain case's recap gone.
-    "F12": ("STEP-12", ("must_detect", "fail", "reasoning", 2)),
     "F17": ("STEP-12", ("must_detect", "pass", None, 1)),
     # STEP-15 (`yc2_w27_s15 · M44.C5`, `06` D12d): a brief-only case's answer is judged on the morning brief the
     # runner now composes after the last sweep, never a card — F20 and F23 keep the one card STEP-12 found (a
     # small move still makes one today, s15-D3 unbuilt) and now pass on their brief's "today" line too.
     "F20": ("STEP-15", ("must_detect", "pass", None, 1)),
     "F23": ("STEP-15", ("must_detect", "pass", None, 1)),
-    "F25": ("STEP-12", ("must_detect", "fail", None, 2)),
     "F27": ("STEP-12", ("must_detect", "pass", None, 1)),
-    "F29": ("STEP-12", ("must_detect", "pass", None, 2)),
+    "F29": ("STEP-14", ("must_detect", "pass", None, 1)),
     "F40": ("STEP-12", ("must_abstain", "pass", None, 0)),
     # STEP-13 (`yc2_w27_s13 · M36.C2`, D60): a held file asks its one question on its own card — F01's
     # portal application (is it still under review?) is that card; F07's review asks what was promised on
     # the call after its move's card: a second card about the file (F176, STEP-14's living card).
     "F01": ("STEP-13", ("must_detect", "pass", None, 1)),
-    "F07": ("STEP-13", ("must_detect", "fail", "reasoning", 2)),
+    "F07": ("STEP-14", ("must_detect", "pass", None, 1)),
     # F21's file asks once — since the question is the review's first unknown (M36.C2.L-logic.V2.U10), its two
     # reviews ask the same question and the second re-binds the first card — F22's once; their question card is
     # kept (STEP-13's), and STEP-15's brief now has a "today" line naming it too — both pass.
@@ -210,6 +212,10 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     # STEP-15: F18 stays blocked (`06` D29 — the round's notice is archived `not_business`, as it was; no file,
     # no review, nothing a brief could read) — not_expressible → a named fail, never silently passing.
     "F18": ("STEP-15", ("must_detect", "fail", None, 0)),
+    # STEP-14 (`yc2_w27_s14 · M42`, M43, s14-D4): ONE FILE, ONE LIVING CARD — a file's next decision or question versions
+    # its card, never a second card (F176). F02, F05, F06, F07, F19, F24 and F29 are one card each, its versions the
+    # advice as the file moved (F19: the move whole names the three people, `06` D58); F12 and F25 are back at their
+    # marks before STEP-03 — one card, passing — and leave this table.
 }
 
 #: The same measurement: (kind, verdict, lost_at, cards over every sweep) per case.

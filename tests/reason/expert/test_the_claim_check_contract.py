@@ -125,3 +125,21 @@ def test_a_checked_review_is_frozen():
 def test_a_stored_check_that_is_not_an_object_is_a_value_error():
     with pytest.raises(ValueError, match="an object"):
         C.CheckedReview.from_mapping(["shown"])
+
+
+# ── STEP-14 · the alternative and the stop rule are card words (`yc2_w27_s14` M43.C1.L-contract.V0.U02) ─────────
+def test_the_alternative_and_the_stop_rule_are_card_words_kept_as_checked():
+    """The gold card shows the review's alternative and when to wait or stop (0221), so the check holds them like the
+    situation (s14-F8): `CardWords` carries them — None withheld — and a verdict may name them."""
+    words = C.CardWords(**{**{k: v for k, v in WORDS.as_mapping().items() if k not in ("evidence", "quotes")},
+                           "evidence": WORDS.evidence, "quotes": WORDS.quotes,
+                           "alternative": "Offer Neel a short call instead", "wait_or_stop": "If no reply by Friday, ask once"})
+    again = C.CardWords.from_mapping(words.as_mapping())
+    assert (again.alternative, again.wait_or_stop) == ("Offer Neel a short call instead", "If no reply by Friday, ask once")
+    assert again == words
+    assert (WORDS.alternative, WORDS.wait_or_stop) == (None, None), "a check that held none withholds them"
+    assert {"alternative", "wait_or_stop", "do_nothing"} <= set(C.CARD_LINES)
+    for line in ("alternative", "wait_or_stop"):
+        assert C.LineVerdict(line, C.DROPPED, C.UNSUPPORTED, "name:Kunal").line == line
+    old = {k: v for k, v in WORDS.as_mapping().items() if k not in ("alternative", "wait_or_stop")}
+    assert C.CardWords.from_mapping(old).alternative is None, "a check stored before them reads back withheld"

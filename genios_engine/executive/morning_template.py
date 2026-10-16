@@ -63,7 +63,8 @@ def words_for(item: B.Item, section: str, *, local_date: date | None = None) -> 
             out += f" Quiet for {quiet.says}."
         return out
     if item.kind == B.QUESTION:
-        out = f"{name}: {_sentence(m.word('question'))}"
+        about = m.word("situation")                     # what the file is about, then what it asks of you
+        out = f"{name}: {_sentence(about) + ' ' if about else ''}{_sentence(m.word('question'))}"
         return out + (f" By {_day(m.date('by'))}." if m.date("by") else "")
     if item.kind == B.WATCHED:
         out = f"{name}: {_sentence(m.word('headline'))}"

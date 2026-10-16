@@ -478,8 +478,8 @@
        "fact:2"
       ]
      },
-     "alternative": "If Arjun did not speak with her, close the file with no note.",
-     "wait_or_stop": "Do not wait for Kavya to write first; stop if Arjun did not meet her or nothing came of it.",
+     "alternative": "If you did not speak with her, close the file with no note.",
+     "wait_or_stop": "Do not wait for Kavya to write first; stop if you did not meet her or nothing came of it.",
      "done_when": "You have said whether you met, and either a note to Kavya is in the file or the file is closed.",
      "draft": null
     }
@@ -742,8 +742,8 @@
        "fact:2"
       ]
      },
-     "alternative": "If Arjun did not speak with her, close the file with no note.",
-     "wait_or_stop": "Do not wait for Rhea to write first; stop if Arjun did not meet her or nothing came of it.",
+     "alternative": "If you did not speak with her, close the file with no note.",
+     "wait_or_stop": "Do not wait for Rhea to write first; stop if you did not meet her or nothing came of it.",
      "done_when": "You have said whether you met, and either a note to Rhea is in the file or the file is closed.",
      "draft": null
     }
@@ -962,8 +962,8 @@
      },
      "mode": "nothing",
      "next_move": null,
-     "alternative": "If Arjun wants to stay close to Bluebay as a host, a line in the brief naming it, rather than a note to its mailbox.",
-     "wait_or_stop": "Nothing to wait for here; stop treating this mailbox as a person, and look for any follow-up in the files of the people the meeting brings Arjun together with.",
+     "alternative": "If you want to stay close to Bluebay as a host, a line in the brief naming it, rather than a note to its mailbox.",
+     "wait_or_stop": "Nothing to wait for here; stop treating this mailbox as a person, and look for any follow-up in the files of the people the meeting brings you together with.",
      "done_when": "Nothing is needed; the file is done as it stands.",
      "draft": null
     }

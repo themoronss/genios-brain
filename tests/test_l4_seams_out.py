@@ -154,9 +154,23 @@ def seeded():
         ACT.activate(engine, org, feature=feature, by="tests")
 
     now = datetime.now(timezone.utc)
-    counts = seed_admin_pilot(store, org, eval_time=now)
+    # ⛔ STEP-14 (`yc2_w27_s14` M43.C4.L-integration.V1.U02, s14-F11): the seed's account card says *"a payment
+    # obligation with a date and no recorded settlement"* of an email that names no money — the authored money
+    # situation gates on any dated commitment — and the card contract now refuses it, as it refused production's
+    # *"nsrcel — a dated payment obligation is open"*. These seams need two cards on two accounts, so on THIS tenant
+    # the registry's email names a real fee: the money card is true, and is written.
+    from tests.reason.adapters import l3_pilot_seed as seed
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(seed, "_ACCOUNT_CONTENT", seed._ACCOUNT_CONTENT.replace(
+            "the signed authorisation form by 27 August", "the signed authorisation form and the ₹2,000 filing fee "
+            "by 27 August"))
+        mp.setattr(seed, "_ACCOUNT_CANNED", {**seed._ACCOUNT_CANNED, "commitments": [
+            {**seed._ACCOUNT_CANNED["commitments"][0],
+             "action": "send the signed authorisation form and the ₹2,000 filing fee"}]})
+        counts = seed_admin_pilot(store, org, eval_time=now)
     assert counts["compile"]["emitted"] >= 2, counts
     assert counts["delivery"]["built"] >= 2, counts
+    assert counts["delivery"]["refused_contract:money"] == 0, counts
     _persist_deal_run(engine, org, now)
     yield {"org": org, "engine": engine, "store": store, "url": url, "now": now}
     with engine.begin() as conn:

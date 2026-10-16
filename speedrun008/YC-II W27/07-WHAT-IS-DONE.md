@@ -1,8 +1,10 @@
 # 07 · What is done — each finished step, its proof, and what is still owed
 
-**Written for:** Rohit, Harsh, and whoever picks this folder up next. **As of:** 2026-10-13,
-after Claude's pushes of 11–12 Oct (§2d) — STEP-12 built (§6l); STEP-13, STEP-17 and STEP-18 built and crosschecked
-on the integration line, their QA and push next (§6m–§6o). A step is listed here once everything that is Claude's in it is done. It
+**Written for:** Rohit, Harsh, and whoever picks this folder up next. **As of:** 2026-10-14,
+after Claude's pushes of 11–12 Oct (§2d), STEP-13's second crosscheck and fix wave (`884f0ea4`), the 13 Oct
+thinking fix (`yc2_w27_s18` M50, `a514fe3a`) and QA (13–14 Oct) — all on the integration line at `7c559236` —
+STEP-12 built (§6l); STEP-13, STEP-17 and STEP-18 built, crosschecked (twice for STEP-13), QA'd, and their push
+next (§6m–§6o). A step is listed here once everything that is Claude's in it is done. It
 becomes **DONE** only when its number moves on production (`00-START-HERE.md`, "How we work
 through it" §3), and this page says, step by step, what is still owed before that.
 
@@ -451,9 +453,32 @@ and F239 (STEP-13b, `06` D63, D64), F223 (the acceptance by mutation, not built)
 F226, F232, F240 (no unit — the lead, at STEP-13's close-out). **Refuted: none** — X53 and X54 were refuted by one
 verifier each and kept with their corrected claims (F239, F240).
 
-**QA:** the lead's run, after this page — recorded in §7
+**The second crosscheck** (13 Oct, `be27bffe..2ac0b41e`; `03` F284–F301): **fix first** — of the 54 ids the first
+crosscheck closed or left, 37 were claimed by a commit (23 closed in full, 13 partly, 1 not closed — X49) and 17
+named by no commit (1 closed, 2 partly, 13 not closed, 1 n/a); three of the first wave's own fixes created new
+defects (X14 → B1, X20 → F1, X25 → F2). 18 new findings verified, none fully refuted, 6 claims corrected in part:
+2 blocking (B1, B2), 4 fragile (F1–F4), 11 gap (G1–G11), 1 info (I1/X11, downgraded from gap). **Fixed by the fix
+wave** (`yc2w27-s13-fixD`, `a07230b8..4a094d83`, merged at `884f0ea4`): **13** — B1, B2, F1–F4, G1, G2, G4, G6, G8,
+G10, G11. **Declared, not fixed: 1** — G5 (a bound pinned in verify's docstring and a test; also `03` s13-F23, F304).
+**Open: 4** — G3 (Rohit's call — widen the reading to the move's own words, or require `answers`), G7 (folds I1 and
+I2; the lead's own re-check unit `M35.C3.L-integration.V1.U06`, not in `tree.yaml`), G9 (`STEP-14`'s living card),
+I1/X11 (the same unit as G7). **The acceptance by mutation** (`a07230b8`; `03` F306–F307): verify's mutants 9/9
+killed, 53 authored cases stand whole with one declared drop (F15's "Capital" — Rohit's/the lead's call) and the
+acceptance's three former strict xfails removed by G2's fix; an untraced engine behaviour keeps an earlier
+serving's draft and quotes when a re-review keeps the headline — left to `STEP-14`. **New findings from the wave**
+(STEP-13 §8.8; `03` F302–F305): s13-F21 (a confirmed answer is no source event, DEFERs with no card — Rohit's
+call), s13-F22 (an answered file re-decides every sweep with no model spent), s13-F23/F24 (G5's and G4's measured,
+declared bounds).
 
-**Still owed:** the lead's QA, then the push — 104 commits past `origin/speedrun008` (`7766a06a`, which holds
+**QA** (13–14 Oct; `03` F321–F322): **qa1** at `10e49d16` (hermetic, then the whole suite, fresh pg2) — hermetic
+18,458 passed; whole suite 21,641 passed, 1 failed (`test_nothing_ends_silently[F45]`: a relevance cassette miss;
+passes alone 61/61, in the golden lane, and after either half of the folders that run before it — likely
+load-timing; open, `03` F321). **qa3** at `884f0ea4` (whole suite, fresh pg2, awake) — 21,881 passed, 1 failed
+(`test_admin_analytics`: the session-scoped pg fixture's own org count, a test defect, not the route's; ✅ fixed
+`7c559236` with a reproduction, `03` F322) — F45 passed again. **qa2**, the night run, voided: the Mac slept on
+battery.
+
+**Still owed:** the push — 104+ commits past `origin/speedrun008` (`7766a06a`, which holds
 STEP-13's first part); the deploy, as `08` §0c lists it for STEP-13 (12 Oct): migrations `0200` and `0201`, which the
 boot log must name; nothing runs until the expert is on for your org (`08` §3.11); the needs queue's fetchers when
 Harsh can (`08` §3.12); the front end renders the question card and its Answer box, each sentence's source, and the
@@ -522,7 +547,32 @@ partly; one blocking, S18-X01, the same defect as STEP-17's S17X-B2 (one row, F2
 STEP-18 built: the lead, at STEP-18's merge), F262 (no unit), F263 (Rohit's call on the Indian mail hosts; Harsh's
 count of the company nodes already minted). **Refuted: none.**
 
-**QA:** the lead's run, after this page — recorded in §7
+**13 Oct — Claude 5 thinks by default** (STEP-18 §9; tree `yc2_w27_s18` M50, 20 units, on branch
+`yc2w27-s18-thinking`; `03` F308–F320): Claude Sonnet 5 thinks unless the request turns it off, and the tokens it
+thinks are billed as output and count toward `max_tokens` with the answer; Opus 5.5 and Fable cannot turn it off
+at all. 38 model call paths were mapped, the 9 at risk each verified by two skeptics. One live production defect,
+graded *likely*: R-2 (`l4_bundle`) on `harsh/mvp`, Sonnet 5 at a 2,400 ceiling with no thinking control, cut and
+retried once at the same ceiling. Two defects graded *certain* once deployed, not yet live: the R-7 expert (203 of
+203 live calls cut at 4,000 on 12 Oct) and the company-brief drafter. **Built**, M50.C1–C5: a model-aware thinking
+table in the shared client (`THINKING_FAMILIES`, longest id first, never a bare prefix) and `LLMClient.call
+(thinking=)`; thinking off by default on every site sized for a model that does not think (`06` D71) — R-7 off at
+6,000 with its own 120 s timeout, the drafter off at 4,000 with a 90 s timeout; the gate sends each R-site's mode
+and timeout; a cut answer is recorded a failure wherever it is metered (the gate, the drafter's weekly review,
+`l5_render`), and `pipeline_health` now counts it whatever `success` says and fails a day more than half cut; the
+four raw-SDK moment lanes send `temperature` only where it is honoured, thinking off; Opus 5.5 priced at its own
+$4/$20 ahead of `"opus"`; a read-only production probe (`baseline/production_state.sql`) for Rohit to run first;
+the `harsh/mvp` R-2 hotfix — a one-file diff, proved on an extract of `84f00a40` — for Harsh to apply, with the
+deploy note (`08` §0d); the live golden harness now sums every call the pass paid for (a cut one included) and
+stops at a `--max-usd` cap, for `06` D72's comparison. **Decisions** (`06` D71–D73): **D71**, taken 13 Oct by the
+lead to build (Rohit may override) — thinking off everywhere sized for a model that does not think. **D72**, open
+(Rohit) — whether R-7 keeps thinking: off at 6,000 against adaptive at 12,000 on 20 golden cases (≈ $4.5 expected,
+$8.3 worst, a $7 hard stop); the harness it needs is built. **D73**, open (Rohit) — the drafter's ceiling and mode:
+adaptive at 8,000/150 s against D71's default, compared first on 3 operator-script dry runs (≈ $0.35). **Still
+open** (`03` F314, F318): s5t-F7 — deep analyze's paid-for explanation sentence is never returned to the caller, a
+product question for Rohit; the Opus rung's own tier price (STEP-13b, s13b-D1) — a T2 site still charges and
+budgets it at Sonnet 5's rate.
+
+**QA:** the lead's run of 13–14 Oct (see §6m)
 
 **Still owed:** the push; the deploy, as `08` §0c lists it for STEP-18 — **before** it, Harsh reads `GET /config` and
 sets `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` together (an unset env now refuses to boot on a public secret, `06`

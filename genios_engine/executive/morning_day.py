@@ -11,7 +11,9 @@ with no model:
     A file decided on the shadow lane — its domain not switched on — is a line too, on s15-D2 = yes (`yc2_w27_s15`
     M45.C4.L-logic.V0.U01): its headline or question carries "outside your switched-on work", and it never carries a
     card — `06` D2 still governs what a CARD shows, never a line (F53: "Larkspur went quiet after four exchanges in
-    March — six months", restated here, in `stuck`);
+    March — six months", which `executive/morning_order` seats among today's five, 03 s15-F22). A QUESTION carries
+    what its file is about — the review's situation, beside the ask (03 s15-F19) — and a file whose review found
+    nothing owed has no change line either (03 s15-F20);
   * every open QUESTION a file asks (`context/your_desk.open_questions`, STEP-13's questions), with the card that
     asks it when one is open (STEP-13's question card — where the brief's line leads, `06` D60);
   * the open DECISION cards, ranked by the book re-rank already on for the tenant (`reason/brief_ranking`), so the
@@ -148,6 +150,15 @@ def _asked_as_you(question: str | None, headline: str | None, founder: Iterable[
         if str(words or "").strip() and not speaks_of_you(words, founder):
             return words
     return ASKED_ON_ITS_CARD if str(question or headline or "").strip() else None
+
+
+def _about(checked, founder: Iterable[str | None]) -> str | None:
+    """What the file is about, in the review's own checked words — the situation, the sentence the file's card carries
+    beside its question (STEP-14) — unless it speaks of you as anyone but you. A question line that is only the ask
+    does not say what the ask is for: STEP-14 made F22's the plain "Can you tell us whether you are a startup
+    incubated on the university's campus?", which no longer says it is about a seed grant (03 s15-F19)."""
+    said = checked.words.situation if checked is not None else None
+    return said if str(said or "").strip() and not speaks_of_you(said, founder) else None
 
 
 def _answered_since(conn, org_id: str, file_id: str, reviewed_at: datetime) -> bool:
@@ -291,7 +302,8 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
                 asked_wording += f" — {SHADOW_LABEL}"
             items.append(B.Item(
                 item_id=B.item_id_for(B.QUESTION, f.file_id), kind=B.QUESTION, about=f.file_id, subject=name,
-                material=B.Material(words=(("name", name), ("question", asked_wording)),
+                material=B.Material(words=(("name", name), ("situation", _about(checked, founder)),
+                                           ("question", asked_wording)),
                                     dates=(("asked", _local(q.asked_at, zone)), ("by", _local(by, zone))),
                                     names=names),
                 sources=tuple(sources + base_sources), mode=review.mode if review else None,
@@ -320,7 +332,8 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
             if wording and not _answered_since(conn, org_id, f.file_id, j.stored.reviewed_at):
                 items.append(B.Item(
                     item_id=B.item_id_for(B.QUESTION, f.file_id), kind=B.QUESTION,
-                    material=B.Material(words=(("name", name), ("question", wording)),
+                    material=B.Material(words=(("name", name), ("situation", _about(checked, founder)),
+                                               ("question", wording)),
                                         dates=(("by", _local(by, zone)),), names=names),
                     sources=tuple(sources + base_sources), our_move=True, at=j.stored.reviewed_at, **common))
             continue
@@ -353,7 +366,8 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
                                     dates=(("last_touch", _local(f.last_touch, zone)),), names=names),
                 sources=tuple(sources + base_sources), our_move=False, **common))
 
-    items += _desk(conn, org_id, [f for f in files if f.file_id not in _resolved_nothing(judgments)], now, zone)
+    resolved = _resolved_nothing(judgments)
+    items += _desk(conn, org_id, [f for f in files if f.file_id not in resolved], now, zone)
     items += _meetings(conn, org_id, seat_id, emails, now, tz, zone)
     items += _promises(conn, org_id, files, file_names, now, zone)
     items += screen_items(conn, org_id=org_id, seat_id=seat_id, file_by_person=_file_by_person(files, said),
@@ -361,7 +375,7 @@ def read_day(conn, org_id: str, seat_id: str, *, now: datetime) -> Day:
     local = now.astimezone(zone).date()
     last = last_before(conn, org_id, seat_id, local)
     items += read_changes(conn, org_id, now=now, items=items, last=last, file_names=shown, founder=founder,
-                          zone=zone)
+                          zone=zone, resolved=resolved)
     return Day(org_id=org_id, seat_id=seat_id, now=now, tz=tz, local_date=local, items=tuple(items))
 
 
@@ -536,9 +550,15 @@ def _said_triggers(triggers, actors: dict[str, str], us) -> str | None:
 
 
 def read_changes(conn, org_id: str, *, now: datetime, items: Iterable[B.Item], last: B.Brief | None,
-                 file_names: dict[str, str], founder: Iterable[str | None], zone: ZoneInfo) -> list[B.Item]:
+                 file_names: dict[str, str], founder: Iterable[str | None], zone: ZoneInfo,
+                 resolved: frozenset[str]) -> list[B.Item]:
     """What changed since the seat's last brief (or since the day before, for a first brief): each review since,
-    with what triggered it, in words; and each item of the last brief that is gone today, with why."""
+    with what triggered it, in words; and each item of the last brief that is gone today, with why.
+
+    `resolved` is the files whose current judgment found nothing owed (`_resolved_nothing`): a review that reads
+    "nothing for you to do in this file" has no line in the day, so it has no change line either, however sayable
+    its trigger — a connector's nudge about an introduction that was declined is old activity (03 s15-F20, F64).
+    Required, not defaulted: a caller that forgets it would silently reopen every closed file as a change."""
     items = list(items)
     since = last.as_of if last is not None else now - FIRST_BRIEF_LOOKBACK
     us = identity_for(conn, org_id)
@@ -556,6 +576,8 @@ def read_changes(conn, org_id: str, *, now: datetime, items: Iterable[B.Item], l
         name = file_names.get(file_id)
         if name is None:
             continue                                            # a file not in this brief (the shadow lane's)
+        if file_id in resolved:
+            continue                                            # the review found nothing owed: nothing changed for you
         what = _said_triggers([(t.get("kind"), t.get("says")) for t in (r.triggers or ())], actors, us)
         if not what or speaks_of_you(what, founder):
             continue

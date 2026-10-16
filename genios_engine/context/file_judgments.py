@@ -20,6 +20,14 @@ dossier that silently dropped the oldest cards would read as a file with no hist
 
 AN ORG-LEVEL READER. A fact a seat captured privately is not read (`visibility_scope`), as
 `context/workstreams` reads none.
+
+A CARD'S VERSIONS (STEP-14, `yc2_w27_s14` M42.C2.L-data.V2.U03). A file's card lives (`migrations/0220`): the
+file's next decision or question versions it (`platform/card_lifecycle.version_card`) where it used to be a new
+card beside a replaced one. Each card carries its versions, read from its `card.versioned` events
+(`contracts/card_version`) — each version's headline, when, what changed and whether it was material, the first
+version's words from the event that replaced them — so the expert still sees the advice it gave before. Newest
+kept, the cut counted (`versions`); an event that is no version is counted out, never shown as advice; and a
+version is said once, as a version — not again among what happened to the card.
 """
 from __future__ import annotations
 
@@ -32,7 +40,11 @@ from sqlalchemy import text
 
 #: How much of each part the dossier carries — newest first; the rest is counted in `cut`.
 LIMITS: Mapping[str, int] = {"reviews": 3, "cards": 10, "events": 5, "situations": 10,
-                             "history": 24}
+                             "history": 24, "versions": 5}
+
+#: The event a card's version writes (`platform/card_lifecycle.VERSIONED`) — a literal here: context reads
+#: delivery's table and may not import the platform's writer for a word.
+VERSIONED = "card.versioned"
 
 _REVIEWS = text(
     "select fingerprint, status, reason, review ->> 'mode' as mode, model, prompt_version, "
@@ -41,10 +53,11 @@ _REVIEWS = text(
     " order by reviewed_at desc, fingerprint limit :n")
 
 _CARDS = text(
-    "select c.card_id, s.subject_node_id, c.headline, c.level, c.state, c.created_at, "
+    "select c.card_id, s.subject_node_id, s.rule_id, c.headline, c.level, c.state, c.created_at, "
     "       c.resolved_at, count(*) over () as total, "
     "       (select coalesce(json_agg(json_build_object('kind', e.kind, 'cause', e.cause, "
-    "                                                  'at', e.occurred_at) "
+    "                                                  'at', e.occurred_at, 'detail', "
+    "                                                  case when e.kind = :versioned then e.detail end) "
     "                                 order by e.occurred_at, e.id), '[]'::json) "
     "          from card_events e where e.org_id = c.org_id and e.card_id = c.card_id) as events, "
     "       (select coalesce(json_agg(json_build_object('cause', v.cause, 'reason', v.reason, "
@@ -126,6 +139,21 @@ class Verdict:
 
 
 @dataclass(frozen=True, slots=True)
+class PriorVersion:
+    """One version of a file's card (`contracts/card_version`): the advice it showed, when, and what changed."""
+    version: int
+    headline: str
+    change: str
+    material: bool
+    changed: tuple[str, ...]
+    at: datetime | None
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"version": self.version, "headline": self.headline, "change": self.change,
+                "material": self.material, "changed": list(self.changed), "at": _iso(self.at)}
+
+
+@dataclass(frozen=True, slots=True)
 class PriorCard:
     card_id: str
     subject_node_id: str
@@ -136,13 +164,18 @@ class PriorCard:
     resolved_at: datetime | None
     events: tuple[CardEvent, ...]
     verdicts: tuple[Verdict, ...]
+    versions: tuple[PriorVersion, ...] = ()
+    #: The rule its signal fired under — `founder_question` for a question card (STEP-13
+    #: M36.C2.L-logic.V2.U12: its headline is OUR question, never a ground for the claim it asked about).
+    rule_id: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {"card_id": self.card_id, "subject_node_id": self.subject_node_id,
                 "headline": self.headline, "level": self.level, "state": self.state,
                 "created_at": _iso(self.created_at), "resolved_at": _iso(self.resolved_at),
                 "events": [e.as_dict() for e in self.events],
-                "verdicts": [v.as_dict() for v in self.verdicts]}
+                "verdicts": [v.as_dict() for v in self.verdicts],
+                "versions": [v.as_dict() for v in self.versions]}
 
 
 @dataclass(frozen=True, slots=True)
@@ -211,6 +244,27 @@ def _json_list(value: Any) -> list:
     return list(value or ())
 
 
+def _versions(created_at: datetime | None, raw: list[dict]) -> tuple[list[PriorVersion], int]:
+    """A card's versions, oldest first, from its version events — and how many events were no version."""
+    from genios_engine.contracts.card_version import CardVersion
+
+    out: list[PriorVersion] = []
+    unread = 0
+    for event in raw:
+        try:
+            v = CardVersion.from_mapping(event.get("detail") or {})
+        except (TypeError, ValueError):
+            unread += 1
+            continue
+        if not out and v.before is not None:
+            # The first version's words are the ones its first replacement kept.
+            out.append(PriorVersion(version=v.version - 1, headline=v.before.headline, change="created",
+                                    material=True, changed=(), at=created_at))
+        out.append(PriorVersion(version=v.version, headline=v.words.headline, change=v.change,
+                                material=v.material, changed=v.changed, at=_utc(event.get("at"))))
+    return out, unread
+
+
 def judgments_for(conn, org_id: str, file_id: str, *, people: Iterable[str] = (),
                   limits: Mapping[str, int] = LIMITS) -> FileJudgments:
     """What was judged before about ONE file: its anchor `file_id` and its `people` (node ids — the
@@ -224,21 +278,26 @@ def judgments_for(conn, org_id: str, file_id: str, *, people: Iterable[str] = ()
                                 mode=r.mode, model=r.model, prompt_version=r.prompt_version,
                                 reviewed_at=_utc(r.reviewed_at)) for r in rows)
 
-    rows = conn.execute(_CARDS, {"o": org_id, "subjects": subjects,
+    rows = conn.execute(_CARDS, {"o": org_id, "subjects": subjects, "versioned": VERSIONED,
                                  "n": limits["cards"]}).fetchall()
     cut["cards"] = _left_out(rows, limits["cards"])
     cards = []
     for r in rows:
+        raw = _json_list(r.events)
         events = [CardEvent(kind=e["kind"], cause=e.get("cause"), at=_utc(e.get("at")))
-                  for e in _json_list(r.events)]
+                  for e in raw if e["kind"] != VERSIONED]
         kept = events[-limits["events"]:] if limits["events"] else []
         cut["events"] += len(events) - len(kept)
+        versions, unread = _versions(_utc(r.created_at), [e for e in raw if e["kind"] == VERSIONED])
+        shown = versions[-limits["versions"]:] if limits["versions"] else []
+        cut["versions"] += len(versions) - len(shown) + unread
         cards.append(PriorCard(
             card_id=r.card_id, subject_node_id=r.subject_node_id, headline=r.headline,
             level=r.level, state=r.state, created_at=_utc(r.created_at),
             resolved_at=_utc(r.resolved_at), events=tuple(kept),
             verdicts=tuple(Verdict(cause=v["cause"], reason=v.get("reason"), at=_utc(v.get("at")))
-                           for v in _json_list(r.verdicts))))
+                           for v in _json_list(r.verdicts)),
+            versions=tuple(shown), rule_id=r.rule_id))
 
     rows = conn.execute(_SITUATIONS, {"o": org_id, "f": file_id,
                                       "n": limits["situations"]}).fetchall()
@@ -258,5 +317,5 @@ def judgments_for(conn, org_id: str, file_id: str, *, people: Iterable[str] = ()
                          situations=situations, history=history, cut=cut)
 
 
-__all__ = ["CardEvent", "FileJudgments", "LIMITS", "PastFact", "PriorCard", "PriorReview",
-           "SituationEnd", "Verdict", "judgments_for"]
+__all__ = ["CardEvent", "FileJudgments", "LIMITS", "PastFact", "PriorCard", "PriorReview", "PriorVersion",
+           "SituationEnd", "VERSIONED", "Verdict", "judgments_for"]

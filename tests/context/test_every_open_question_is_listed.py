@@ -89,7 +89,10 @@ def test_the_card_that_asks_it_on_a_golden_tenant(pg):
         assert {q.file_id: q.card_id for q in got} == cards and all(q.card_id for q in got)
         # Cards that are NOT a question's — each sorts before the real one, so a looser read would take it: a
         # decision card on the file from the asking run (0a), and the other file's question card moved onto this
-        # file (0c): on this file from another run, and that run's card on another file.
+        # file (0c): on this file from another run, and that run's card on another file. ⛔ Restated on the 16 Oct merge
+        # with STEP-14 (0220, one open card per file): a decoy cannot be a second open card OF the file, so each is a
+        # card that is no file's (`file_id` null — the legacy and compiled lanes' cards), which is what the reader's
+        # join on signals must still tell apart from the question's.
         a, b = got
         with engine.begin() as c:
             def clone(card, signal_from, *, file=None, lane=None):
@@ -103,7 +106,7 @@ def test_the_card_that_asks_it_on_a_golden_tenant(pg):
                     {"sid": f"sig_{card}", "file": file, "lane": lane, "o": run_org, "from": signal_from})
                 c.execute(text(
                     "insert into cards select (jsonb_populate_record(k, jsonb_build_object('card_id', "
-                    "cast(:card as text), 'signal_id', cast(:sid as text)))).* from cards k "
+                    "cast(:card as text), 'signal_id', cast(:sid as text), 'file_id', null))).* from cards k "
                     "where k.org_id = :o and k.card_id = :from"),
                     {"card": card, "sid": f"sig_{card}", "o": run_org, "from": signal_from})
             run_org = run.org_id

@@ -49,6 +49,8 @@ def _touches(*, ask_words: str) -> tuple[Touch, ...]:
 
 
 MEETING = "evt_meeting"
+#: Marco's mail asking for the deck again (`parts(asked_again_at=…)`).
+ASKED_AGAIN = "evt_marco_again"
 
 
 def parts(*, ask_words: str = ("Thanks Arjun — could you send a short deck before we set up a call? "
@@ -56,7 +58,8 @@ def parts(*, ask_words: str = ("Thanks Arjun — could you send a short deck bef
           kind: str = "intro", introduced_by: str | None = INTROLY, asks_a_call: bool = False,
           meeting_at: datetime | None = None, older: int = 0, asks_the_deck: bool = True,
           meeting_booked_at: datetime | None = None, meeting_by: str = MARCO,
-          replied_at: datetime | None = None, replied_in: str = "t_intro") -> D.DossierParts:
+          replied_at: datetime | None = None, replied_in: str = "t_intro",
+          asked_again_at: datetime | None = None) -> D.DossierParts:
     """The file's parts. `asks_a_call`: Marco's mail also asks for a call (`loop:ask_meet`, a
     `meeting_request` that waits on us). `meeting_at`: a meeting on the file — held, before `NOW`, or
     booked ahead, after it. `older`: that many earlier mails from Marco, one a day from 1 Jul
@@ -64,7 +67,8 @@ def parts(*, ask_words: str = ("Thanks Arjun — could you send a short deck bef
     `asks_the_deck`: Marco's deck ask is open (`loop:ask_deck`). `meeting_booked_at` / `meeting_by`: when the
     meeting was first booked (by default 12 Aug, after his ask, or at the meeting when it is earlier) and
     who set it up (Marco). `replied_at` / `replied_in`: our mail `evt_reply` sending the deck, in that
-    thread (Marco's is `t_intro`)."""
+    thread (Marco's is `t_intro`). `asked_again_at`: Marco asks for the deck AGAIN then (`evt_marco_again`, in
+    `t_intro`) — the ledger's `last_seen_at` on `loop:ask_deck` moves to it (`context/open_loops.record_ask`)."""
     touches = tuple(Touch(at=datetime(2026, 7, 1 + i, 10, 0, tzinfo=timezone.utc), kind="mail",
                           direction="in", who=MARCO, who_name="Marco Ruiz", event_id=f"evt_old_{i}",
                           thread="t_old", words=f"An earlier note from Marco, number {i + 1}.")
@@ -74,6 +78,12 @@ def parts(*, ask_words: str = ("Thanks Arjun — could you send a short deck bef
         touches = tuple(sorted((*touches, Touch(
             at=replied_at, kind="mail", direction="out", who="arjun@nimbuslabs.test", who_name="Arjun Rao",
             event_id="evt_reply", thread=replied_in, words="Here is the short deck, as promised.")),
+            key=lambda t: t.at))
+    if asked_again_at is not None:
+        touches = tuple(sorted((*touches, Touch(
+            at=asked_again_at, kind="mail", direction="in", who=MARCO, who_name="Marco Ruiz",
+            event_id=ASKED_AGAIN, thread="t_intro",
+            words="Hi Arjun, still waiting on the short deck. Could you send it this week?")),
             key=lambda t: t.at))
     if meeting_at is not None:
         booked = meeting_booked_at or min(meeting_at, datetime(2026, 8, 12, 10, 0, tzinfo=timezone.utc))
@@ -94,7 +104,8 @@ def parts(*, ask_words: str = ("Thanks Arjun — could you send a short deck bef
     asked, we_asked = datetime(2026, 8, 11, 9, 20, tzinfo=timezone.utc), datetime(2026, 8, 5, 12, 0,
                                                                                   tzinfo=timezone.utc)
     asks = ((Ask(loop_id="ask_deck", kind="question", asked_by=FILE, owed_by="us",
-                 thread_id="t_intro", opened_at=asked),) if asks_the_deck else ()) \
+                 thread_id="t_intro", opened_at=asked, last_seen_at=asked_again_at or asked),)
+            if asks_the_deck else ()) \
         + (Ask(loop_id="ask_call", kind="meeting_request", asked_by="node_tenant", owed_by="them",
                thread_id="t_intro", opened_at=we_asked),)
     if asks_a_call:
@@ -197,5 +208,5 @@ def review(**over) -> ExpertReview:
     return ExpertReview.from_mapping(answer(**over))
 
 
-__all__ = ["ANSWER", "ASK", "ASK_CALL", "ASK_DECK", "ASK_MEET", "MEETING", "FILE", "INTRO", "INTROLY", "MARCO", "NOW", "OURS",
+__all__ = ["ANSWER", "ASK", "ASKED_AGAIN", "ASK_CALL", "ASK_DECK", "ASK_MEET", "MEETING", "FILE", "INTRO", "INTROLY", "MARCO", "NOW", "OURS",
            "OUR_NAMES", "REPLY_TIME", "US", "answer", "parts", "review", "world"]

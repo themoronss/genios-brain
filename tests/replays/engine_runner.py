@@ -333,6 +333,7 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
     chain_ok: list[bool] = []
     funnel: list[dict[str, int]] = []
     open_after: list[set[str]] = []
+    shown_after: list[set[str]] = []
     finished = False
     try:
         with production_switches(llm, platform_domains=case.platform_domains), \
@@ -358,13 +359,14 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
                 chain_ok.append(bool(routes._run_l2_chain(org, eval_time=at)))
                 funnel.append(_funnel(engine, org, at))
                 open_after.append(_open_cards(engine, org))
+                shown_after.append(_shown_cards(routes._card_store, org, at))
             lines = compose_brief(engine, org, at=case.sweeps[-1]) if brief else None
         calls = tuple(getattr(llm, "calls", ()) or ())
         misses = tuple(getattr(llm, "misses", ()) or ())
         report = CaseRun(case_id=case.case_id, org_id=org, landed=tuple(landed),
                          memory=_memory(engine, org, case, landed),
                          situations=_situations(engine, org),
-                         cards=_cards(engine, org, open_after), funnel=tuple(funnel),
+                         cards=_cards(engine, org, open_after, shown_after), funnel=tuple(funnel),
                          chain_ok=tuple(chain_ok), model_calls=calls, misses=misses, brief=lines)
         finished = True
     finally:
@@ -607,8 +609,39 @@ def _open_cards(engine: Any, org: str) -> set[str]:
                                 {"o": org, "s": list(CardStore.OPEN_STATES)}).scalars())
 
 
-def _cards(engine: Any, org: str, open_after: list[set[str]]) -> tuple[CardView, ...]:
-    """Every card the founder could see after at least one sweep, with what it says."""
+def _shown_cards(card_store: Any, org: str, at: datetime) -> set[str]:
+    """STEP-14 (`yc2_w27_s14` M42.C4.L-integration.V1.U02, s14-D4): what the APP queue showed at the sweep's instant —
+    the admin's whole queue, read by the queue's own predicate (`CardStore.queue(eval_time=)`), leaving no
+    impression. A card that existed and was never shown is no card the founder saw."""
+    return {r["card_id"] for r in card_store.queue(org, admin=True, record_impressions=False, eval_time=at)}
+
+
+#: Every version of a card, oldest first: the words its `card.created`, `card.rebuilt` and `card.versioned` events
+#: kept (STEP-14, s14-F14 — a card rewritten in place is judged on every version's words, not its last).
+_VERSIONS = (
+    "select card_id, detail from card_events where org_id = :o and card_id = any(:ids) "
+    "   and kind in ('card.created', 'card.rebuilt', 'card.versioned') and detail ? 'words' "
+    " order by card_id, coalesce((detail ->> 'version')::int, 1), occurred_at, id")
+
+
+#: A card's history, in order (STEP-14 M42.C4.L-integration.V4.U05): what made it, versioned it, pushed it, ended it.
+_HISTORY = (
+    "select card_id, kind, cause, detail from card_events where org_id = :o and card_id = any(:ids) "
+    "   and kind in ('card.created', 'card.versioned', 'card.surfaced', 'card.expired') "
+    " order by card_id, occurred_at, id")
+
+
+def _said(words: Any) -> str:
+    """One version's words as the founder read them: headline, situation, the draft. Not the move whole — no card
+    shows it yet (STEP-14 M43 puts it under *recommended*, and then it is read here)."""
+    words = words if isinstance(words, dict) else {}
+    return "\n".join(str(words[k]) for k in ("headline", "situation", "draft") if words.get(k))
+
+
+def _cards(engine: Any, org: str, open_after: list[set[str]],
+           shown_after: list[set[str]] | None = None) -> tuple[CardView, ...]:
+    """Every card the founder could see after at least one sweep, with what it says — the sweeps the APP showed it
+    (`app_sweeps`, STEP-14: never asked, none) and every version's words."""
     from sqlalchemy import text
     seen = set().union(*open_after) if open_after else set()
     if not seen:
@@ -616,9 +649,23 @@ def _cards(engine: Any, org: str, open_after: list[set[str]]) -> tuple[CardView,
     with engine.connect() as conn:
         rows = conn.execute(text(
             "select card_id, state, level, headline, situation, why, actions, artifact, "
-            "business_subject, unresolved_item, why_now, output_lane from cards "
+            "business_subject, unresolved_item, why_now, output_lane, file_id, relationship_role, recommended, "
+            "alternative, wait_or_stop, outcome_window_days, capability_key, builder_version, confidence_vector "
+            "from cards "
             "where org_id = :o and card_id = any(:ids) order by card_id"),
             {"o": org, "ids": sorted(seen)}).fetchall()
+        versions: dict[str, list[str]] = {}
+        for v in conn.execute(text(_VERSIONS), {"o": org, "ids": sorted(seen)}):
+            detail = v.detail if isinstance(v.detail, dict) else json.loads(v.detail or "{}")
+            if not versions.get(v.card_id) and isinstance(detail.get("before"), dict):
+                versions.setdefault(v.card_id, []).append(_said(detail["before"]))   # its first, unrecorded
+            versions.setdefault(v.card_id, []).append(_said(detail.get("words")))
+        history: dict[str, list[tuple]] = {}
+        for h in conn.execute(text(_HISTORY), {"o": org, "ids": sorted(seen)}):
+            detail = h.detail if isinstance(h.detail, dict) else json.loads(h.detail or "{}")
+            history.setdefault(h.card_id, []).append(
+                (h.kind, h.cause, detail.get("change"), detail.get("material"), isinstance(detail.get("before"), dict)))
+    shown_after = shown_after or []
     out = []
     for r in rows:
         # One line per thing the founder reads — each WHY item and each action on its own, so a
@@ -636,7 +683,18 @@ def _cards(engine: Any, org: str, open_after: list[set[str]]) -> tuple[CardView,
                             subject=r.business_subject,
                             output_lane=r.output_lane,
                             sweeps=tuple(i for i, ids in enumerate(open_after) if r.card_id in ids),
-                            sources=sources))
+                            sources=sources,
+                            app_sweeps=tuple(i for i, ids in enumerate(shown_after) if r.card_id in ids),
+                            versions=tuple(versions.get(r.card_id, ())),
+                            file_id=r.file_id, events=tuple(history.get(r.card_id, ())),
+                            gold={"headline": r.headline, "subject": r.business_subject, "role": r.relationship_role,
+                                  "why_now": r.why_now, "what_remains": r.unresolved_item,
+                                  "recommended": r.recommended, "alternative": r.alternative,
+                                  "wait_or_stop": r.wait_or_stop, "window_days": r.outcome_window_days,
+                                  "window": next((w for w in why if isinstance(w, dict)
+                                                  and w.get("source") == "card_lines"), None),
+                                  "capability_key": r.capability_key, "builder_version": r.builder_version,
+                                  "confidence": r.confidence_vector}))
     return tuple(out)
 
 

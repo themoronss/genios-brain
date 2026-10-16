@@ -499,8 +499,8 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
         "what is missing and who must look — this card declines to instruct, so do NOT write a "
         "command" if absence else
         "A DIRECT ORDER, AND IT MUST NAME THE THING. Verb + who + WHAT. "
-        "'Send Titan Capital your traction metrics', 'Answer Divyanshu's pricing question', "
-        "'Get Leslie's calendar availability'. "
+        "'Send Kestrel Capital the data-room link', 'Answer Meera Shah's question on the pilot fee', "
+        "'Get Divya Raman's free slots for Thursday'. "
         "A bare 'Reply to X today' is REJECTED — it names who and not what, which the reader's "
         "own inbox already tells them. The specific is in the quotes and the draft below; if you "
         "can write the draft you can name the thing in the headline. "
@@ -519,8 +519,13 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
     unknown = sorted(k for k in slots if k not in known)
     unknown_line = (f"NOT KNOWN — never state or imply these: {', '.join(unknown)}\n"
                     if unknown else "")
+    # STEP-14 (`yc2_w27_s14` M43.C5.L-interface.V0.U01, s14-F17): only a card no review wrote is narrated, and its
+    # reader is the founder — written to as "you", by their chief of staff. It said "for a salesperson", and its
+    # headline examples above were the founder's real investors and contacts, sent in every tenant's prompt; they are
+    # the golden set's invented names (`tests/replays/founder_case.REAL_NAMES` is the deny-list).
     return (
-        "You are GeniOS, writing ONE decision card for a salesperson. Use ONLY the facts and "
+        "You are the founder's chief of staff, writing ONE card for them to act on. Write to the founder "
+        "as \"you\". Use ONLY the facts and "
         "quotes below — never invent a name, number, company or date that is not present.\n\n"
         f"Situation type: {reason_code}\n"
         f"Facts (typed, from the graph):\n{json.dumps({k: (v.get('value') if isinstance(v, dict) else v) for k, v in facts.items()}, default=str, indent=0, sort_keys=True)}\n"
