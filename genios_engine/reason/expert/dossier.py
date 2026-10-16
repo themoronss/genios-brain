@@ -156,6 +156,16 @@ class DossierParts:
     outcomes: tuple = ()
     asks_closed: tuple = ()
     kind_numbers: Any = None
+    #: STEP-13b (`yc2_w27_s13b` M37.C2.L-integration.V3.U05): the GeniOS Engine read for this file
+    #: (`reason/expert/file_engine`). The route key is every file's — cheap, for its fingerprint; the read itself is made
+    #: for a file DUE for review only: `engine` is the Domain Expertise of its situations and kind with what the
+    #: brains learned, `units` the reasoning units' readings in shadow, `company` the company's own record (`06` D63,
+    #: one read a sweep). A read that could not be made is `engine_error` — counted, never a failed review.
+    route_key: str | None = None
+    engine: Any = None
+    units: Any = None
+    engine_error: str | None = None
+    company: Any = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -757,10 +767,16 @@ def read_asks_closed(conn, org_id: str, people: Iterable[str], *, since: datetim
 
 
 def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
-               kind_numbers: Mapping[str, Any] | None = None) -> DossierParts | None:
+               kind_numbers: Mapping[str, Any] | None = None, engine: bool = False,
+               domains_on: frozenset[str] | None = None, company_record: Any = None) -> DossierParts | None:
     """Every part of one file's dossier, read on one connection — None for a file it does not hold.
     `kind_numbers`: your numbers by kind of work (`context/kind_numbers`), when the caller measured them once for
-    every file of a pass (the sweep) — a kind it did not measure is measured here."""
+    every file of a pass (the sweep) — a kind it did not measure is measured here.
+
+    STEP-13b: the file's engine ROUTE KEY is always computed (cheap: no predicate, no unit — the fingerprint names it).
+    With `engine=True` — a file DUE for review, at most `MAX_PER_PASS` a pass — the engine itself is read beside the
+    playbook (`file_engine.read_file_engine`, over the tenant's switched-on corpora `domains_on`, None: every authored
+    one) and the company's record (`company_record`, read once a sweep by the caller; read here if not handed)."""
     from genios_engine.context.file_judgments import judgments_for
     from genios_engine.context.file_outcomes import ended_for_cards
     from genios_engine.context.founder_corrections import standing_for
@@ -773,6 +789,7 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
     from genios_engine.platform.company_brief import brief_for
     from genios_engine.platform.self_identity import identity_for
     from genios_engine.reason.simulation import what_if_nothing
+    from . import file_engine
 
     brief = brief_for(conn, org_id)
     work = file_for(conn, org_id, file_id, now=now, company_brief=brief)
@@ -787,6 +804,12 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
                                            us=identity_for(conn, org_id))
     standing = standing_for(conn, org_id, str(file_id), people=work.people, kind=work.work_kind)
     judgments = judgments_for(conn, org_id, file_id, people=work.people)
+    read = file_engine.read_file_engine(conn, org_id, work, lifecycle, now=now, domains_on=domains_on) \
+        if engine else None
+    record = None
+    if engine:
+        from genios_engine.context.company_record import read_company_record
+        record = company_record if company_record is not None else read_company_record(conn, org_id, now=now)
     return DossierParts(
         org_id=org_id, file_id=str(file_id), as_of=now, brief=brief, file=work, timeline=timeline,
         numbers=numbers_for(conn, org_id, work, timeline, now=now), playbook=playbook,
@@ -807,7 +830,11 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
         asks_closed=(read_asks_closed(conn, org_id, work.people or (str(file_id),),
                                       since=judgments.reviews[0].reviewed_at) if judgments.reviews else ()),
         kind_numbers=(((kind_numbers or {}).get(work.work_kind)
-                       or numbers_for_kind(conn, org_id, work.work_kind, now=now)) if work.work_kind else None))
+                       or numbers_for_kind(conn, org_id, work.work_kind, now=now)) if work.work_kind else None),
+        route_key=(read.route_key if read is not None
+                   else file_engine.route_key_of(work, lifecycle, domains_on=domains_on)),
+        engine=None if read is None else read.engine, units=None if read is None else read.units,
+        engine_error=None if read is None else read.error, company=record)
 
 
 # ── reading it back (STEP-13) ──────────────────────────────────────────────────────────────────
