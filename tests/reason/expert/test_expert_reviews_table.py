@@ -88,6 +88,9 @@ def test_the_table_has_the_columns_the_readers_need(engine):
         "checked_at": ("timestamp with time zone", "YES"), "dossier": ("jsonb", "YES"),
         # ⛔ MOVED by STEP-14 M43.C1.L-contract.V0.U01 (0221), deliberately: the lines code wrote for the card.
         "card_lines": ("jsonb", "YES"),
+        # ⛔ MOVED by STEP-13b M38.C1.L-contract.V0.U04 (0250), deliberately: the rung of the model ladder whose review
+        # stands — null on a row from before 0250, which reads as rung one.
+        "rung": ("integer", "YES"),
     }
 
 
