@@ -193,16 +193,20 @@ def parse_description(parsed: object) -> ResolutionDescription | None:
     if not isinstance(quote, str) or not quote.strip():
         return None
     try:
+        # S18-X05/F-3 (`yc2_w27_s1718` M48.C2.L-logic.V2.U20): `int(float("inf"))` raises
+        # OverflowError, not ValueError — Infinity, -Infinity and 1e999 (which `float()` reads as
+        # inf with no error) are a SHAPE FAILURE here, same as any other unusable offset, never an
+        # exception that reaches `detect_resolutions` and aborts the rest of the org's sweep.
         start = int(parsed.get("start_offset"))
         end = int(parsed.get("end_offset"))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
     if start < 0 or end <= start:
         return None
     raw_bp = parsed.get("confidence_bp", parsed.get("confidence"))
     try:
         raw_confidence_bp = int(raw_bp) if raw_bp is not None else None
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         raw_confidence_bp = None
     said = parsed.get("speaker_role_said")
     return ResolutionDescription(

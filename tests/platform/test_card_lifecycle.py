@@ -158,6 +158,9 @@ def test_nothing_named_is_nothing_done(engine):
 
 def test_the_vocabulary_is_closed_and_every_cause_is_named_once():
     from genios_engine.platform import card_lifecycle as cl
+    # ⛔ +2 by `yc2_w27_s14` M43.C4.L-integration.V2.U08 (the STEP-14 crosscheck, finding 13): a file's question card
+    # closed by design says why — settled, or its file left coverage — never REPLACED.
     assert cl.CAUSES == {cl.REPLACED, cl.RULE_CLEARED, cl.BUDGET_HELD, cl.NOT_AUTHORIZED,
-                         cl.PLAN_GONE, cl.RULE_MUTED, cl.LAPSED, cl.EXTENSION, cl.SUBJECT_IS_US}
+                         cl.PLAN_GONE, cl.RULE_MUTED, cl.LAPSED, cl.EXTENSION, cl.SUBJECT_IS_US,
+                         cl.QUESTION_SETTLED, cl.LEFT_COVERAGE}
     assert cl.KINDS == {cl.EXPIRED, cl.LAPSED_KIND, cl.DISMISSED, cl.RETIRED}

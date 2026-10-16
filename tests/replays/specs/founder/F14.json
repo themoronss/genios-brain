@@ -226,7 +226,21 @@
     "max": 1
    }
   ],
-  "brief": "a wait line: send only on a material milestone"
+  "brief": {
+   "says": "a wait line: send only on a material milestone",
+   "lines": [
+    {
+     "section": "watching",
+     "about": [
+      "Tara",
+      "Fjord"
+     ],
+     "mentions": [
+      "milestone"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -238,8 +252,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 — there is no morning brief to appear in"
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)"
  },
  "model": {
   "decider": [
@@ -485,7 +498,7 @@
      },
      "mode": "wait",
      "next_move": null,
-     "alternative": "If Arjun wants Fjord to follow progress, ask Tara once whether she wants a periodic update, and send one a month only if she says yes.",
+     "alternative": "If you want Fjord to follow progress, ask Tara once whether she wants a periodic update, and send one a month only if she says yes.",
      "wait_or_stop": "Stop the weekly updates to Tara and wait for a real milestone; then write to her once, about that milestone and nothing else.",
      "done_when": "The routine notes have stopped, and the next note to Tara carries a real milestone, or Fjord stays parked on its condition.",
      "draft": null
@@ -642,7 +655,7 @@
      },
      "mode": "wait",
      "next_move": null,
-     "alternative": "If Arjun wants to stay visible, one short thank-you that confirms her condition back in her words, then nothing until the milestone.",
+     "alternative": "If you want to stay visible, one short thank-you that confirms her condition back in her words, then nothing until the milestone.",
      "wait_or_stop": "Wait for a real milestone, then write to Tara once, about that milestone and nothing else. Send no routine updates in between, and do not expect her to reopen the conversation on her own.",
      "done_when": "A real milestone has gone to Tara in a note of its own, or Fjord stays parked on its condition with nothing routine sent in between.",
      "draft": null

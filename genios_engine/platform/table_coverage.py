@@ -158,8 +158,9 @@ UNREAD_WRITES: dict[str, tuple[str, str, str]] = {
         "MOVES WHEN outcome reconciliation (Atlas L7 #3) needs a human-action timeline, or the "
         "second writer is removed"),
     "card_feedback_revisions": (
-        "api/intelligence_routes.py",
-        "⛔ A revision history for card feedback, written by the API and read by nothing — while "
+        "deliver/verdicts.py",
+        "⛔ A revision history for card feedback, written by the verdict's one writer (STEP-16 "
+        "M46.C2) and read by nothing — while "
         "`card_feedback_verdicts`, the table beside it, is read by every weekly learning batch. "
         "⛔ So the verdict is consumed and its REVISIONS are not: a human who corrects their own "
         "correction is recorded and never heard",

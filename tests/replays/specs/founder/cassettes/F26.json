@@ -1,139 +1,9 @@
 {
  "case_id": "F26",
  "source": "ideal_reader",
- "recorded_at": "e6b8522e",
+ "recorded_at": "417c10fb",
  "answers": {
-  "4c5417aca46dd85a5a64e0c39b08c3a4ca460b8e135bd93aa17e9a3948941892": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "schedule",
-    "stance": "positive",
-    "topics": [
-     "integration call"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Neha",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Neha",
-        "start_offset": 113,
-        "end_offset": 117
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Does Tuesday 30 Sep, 11 am IST work for a call?",
-      "asked_by": "Neha Kapoor",
-      "asked_of": "Arjun Rao",
-      "evidence": [
-       {
-        "quote": "Would Tuesday 30 Sep, 11 am IST work for you?",
-        "start_offset": 66,
-        "end_offset": 111
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "scheduling_proposals": [
-     {
-      "proposer": "Neha Kapoor",
-      "text": "a call on Tuesday 30 Sep, 11 am IST",
-      "evidence_text": "Would Tuesday 30 Sep, 11 am IST work for you?"
-     }
-    ],
-    "dates_mentioned": [
-     {
-      "as_written": "Tuesday 30 Sep, 11 am IST",
-      "earliest": "2026-09-30T05:30:00Z",
-      "latest": "2026-09-30T05:30:00Z",
-      "certainty": "exact",
-      "resolved_against": "2026-09-22T07:00:00Z",
-      "evidence": [
-       {
-        "quote": "Tuesday 30 Sep, 11 am IST",
-        "start_offset": 72,
-        "end_offset": 97
-       }
-      ]
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "book the call"
-    },
-    "implied_actions": [
-     "confirm or decline Tuesday 30 Sep, 11 am IST"
-    ]
-   },
-   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"integration call\"], \"entity_mentions\": [{\"surface_form\": \"Neha\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Neha\", \"start_offset\": 113, \"end_offset\": 117}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Does Tuesday 30 Sep, 11 am IST work for a call?\", \"asked_by\": \"Neha Kapoor\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Would Tuesday 30 Sep, 11 am IST work for you?\", \"start_offset\": 66, \"end_offset\": 111}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Neha Kapoor\", \"text\": \"a call on Tuesday 30 Sep, 11 am IST\", \"evidence_text\": \"Would Tuesday 30 Sep, 11 am IST work for you?\"}], \"dates_mentioned\": [{\"as_written\": \"Tuesday 30 Sep, 11 am IST\", \"earliest\": \"2026-09-30T05:30:00Z\", \"latest\": \"2026-09-30T05:30:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-09-22T07:00:00Z\", \"evidence\": [{\"quote\": \"Tuesday 30 Sep, 11 am IST\", \"start_offset\": 72, \"end_offset\": 97}]}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"book the call\"}, \"implied_actions\": [\"confirm or decline Tuesday 30 Sep, 11 am IST\"]}",
-   "framed": true,
-   "input_tokens": 5502,
-   "output_tokens": 315,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "5d650a94b284641d8ae089d4c19c0300e4067079a2dd99e0a4359b67b843581d": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "introduce",
-    "stance": "positive",
-    "topics": [
-     "integration"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Neha Kapoor",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Neha Kapoor",
-        "start_offset": 150,
-        "end_offset": 161
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Orbitly",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Orbitly",
-        "start_offset": 0,
-        "end_offset": 7
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"integration\"], \"entity_mentions\": [{\"surface_form\": \"Neha Kapoor\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Neha Kapoor\", \"start_offset\": 150, \"end_offset\": 161}], \"confidence_bp\": 9000}, {\"surface_form\": \"Orbitly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Orbitly\", \"start_offset\": 0, \"end_offset\": 7}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "framed": true,
-   "input_tokens": 5515,
-   "output_tokens": 150,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "84d17bb1653c27c33a4f9887d6b6f9f2dff76ac06633aca7b57a189ae814cf33": {
+  "088df144c30fb2a7082bdf0513adc3ff8c79a8d1b4acc7ff43d5acb8f3a0b11c": {
    "site": "bundle_narrator",
    "parsed": {
     "headline": "Next move",
@@ -149,40 +19,7 @@
    "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
-  "a76164d5d5937eebba08bde92a96f5b33616c53be5cbc7ec788331c72fd84008": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Can we do a call next week?",
-    "start_offset": 38,
-    "end_offset": 65,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Can we do a call next week?\", \"start_offset\": 38, \"end_offset\": 65, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1510,
-   "output_tokens": 44,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c5030970e3ccfca6b57819b27e8df7ae59a6800160050a61cd9c69bab79b3ef4": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1743,
-   "output_tokens": 143,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "efcc68b5c5d14c2d8f80b656cfd448e1e32aa4ef294bcabc6bece71a138490dd": {
+  "0908cd748ea8dabdb37301a7b6818d07b389dff3509deb0d45306af188621c09": {
    "site": "expert",
    "parsed": {
     "proposed_kind": null,
@@ -322,14 +159,209 @@
      ]
     },
     "mode": "act",
-    "alternative": "If Arjun cannot make that time, propose two other slots the same week in the same reply.",
+    "alternative": "If you cannot make that time, propose two other slots the same week in the same reply.",
     "wait_or_stop": "No waiting on our side — the question is ours to answer; once answered, wait for Neha to confirm the time.",
     "done_when": "A call with Neha is confirmed on both calendars."
    },
-   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Neha, thanks for following up — Tuesday 30 Sep at 11 am IST works for me. Looking forward to talking about the integration. Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Reply to Neha to confirm Tuesday 30 Sep at 11 am IST, or offer another time if it does not suit.\", \"for_whom\": \"Neha Kapoor at Orbitly\", \"by_when\": \"2026-09-30\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Neha\", \"answers\": \"loop:loop_#1\"}, \"facts\": [{\"claim\": \"Neha Kapoor, CEO of Orbitly, wrote that Orbitly builds scheduling infrastructure and would like to explore an integration with Nimbus Labs.\", \"evidence\": [\"evt_#2\"], \"quote\": \"scheduling infrastructure and would like to explore an integration. Neha Kapoor CEO, Orbitly\"}, {\"claim\": \"Neha then asked for a call and proposed Tuesday the thirtieth of September at eleven in the morning IST.\", \"evidence\": [\"evt_#1\"], \"quote\": \"call next week? Would Tuesday 30 Sep, 11 am IST work for you? Neha\"}, {\"claim\": \"Her question is open and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"No answer of ours to Neha is measured in the file.\", \"evidence\": [\"num:your_reply_time:neha@orbitly.test\"]}], \"inferences\": [{\"claim\": \"Until Arjun answers, no call is booked: the time Neha proposed needs his yes, or another time.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"A partner who writes first to explore and then asks for a time is warm, and a slow answer is the easiest way to cool it.\", \"based_on\": [\"fact:1\", \"fact:2\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"The one gap this file has closed ran over a month, between Neha's two notes, with nothing from us in between.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\", \"fact:1\", \"fact:2\"]}, {\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of how Orbitly takes a slow answer.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Neha may be holding the slot for us.\", \"needs\": \"Her confirmation once we answer.\"}, {\"proposition\": \"The integration Orbitly has in mind may make it a design partner rather than a vendor.\", \"needs\": \"The call itself.\"}], \"unknowns\": [{\"question\": \"Is Arjun free at the time Neha proposed?\", \"relevance\": \"It decides whether the reply confirms her time or offers another.\"}, {\"question\": \"What integration does Orbitly have in mind, and who should join the call?\", \"relevance\": \"It shapes what to prepare, and whether this is a design partner the brief wants.\"}, {\"question\": \"Did Arjun answer Neha outside this mailbox?\", \"relevance\": \"If he did, the question is closed and the move is to put the call on the calendar.\"}], \"frames\": {\"primary\": \"A warm design-partner lead with a question waiting on us: Neha proposed a time for a call and needs a yes, or another time, from you.\", \"rivals\": [\"An exploratory integration chat that may never become a design partnership, where a slow answer costs little.\", \"A vendor's pitch dressed as a partnership: scheduling infrastructure looking for a customer.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From the brief's goal of landing design partners: a proposed time answered promptly and the call booked.\", \"actual\": \"Neha's proposal is unanswered in the file, and no call is booked.\"}, \"scenarios\": {\"do_nothing\": \"The proposed time passes with no call confirmed, and Orbitly's interest — more than a month in the making — cools.\", \"act\": \"A short yes, or another time, books the call and keeps the design-partner talks moving.\", \"best\": \"The call is held as proposed and Orbitly becomes a design partner.\", \"worst\": \"The silence reads as a no, and a design partner the brief wants walks away.\", \"signals_to_watch\": [\"A call with Neha booked on the calendar\", \"Neha writing again to chase, or to withdraw the time\", \"The thirtieth passing with nothing booked\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Orbitly is one of the brief's design partner talks.\", \"Neha's question waits on us, and the time she proposed is fixed and close.\", \"A late answer can be mended with an apology and a new time, so a wrong move is cheap to reverse.\"]}, \"mode\": \"act\", \"alternative\": \"If Arjun cannot make that time, propose two other slots the same week in the same reply.\", \"wait_or_stop\": \"No waiting on our side — the question is ours to answer; once answered, wait for Neha to confirm the time.\", \"done_when\": \"A call with Neha is confirmed on both calendars.\"}",
+   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Neha, thanks for following up — Tuesday 30 Sep at 11 am IST works for me. Looking forward to talking about the integration. Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Reply to Neha to confirm Tuesday 30 Sep at 11 am IST, or offer another time if it does not suit.\", \"for_whom\": \"Neha Kapoor at Orbitly\", \"by_when\": \"2026-09-30\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Neha\", \"answers\": \"loop:loop_#1\"}, \"facts\": [{\"claim\": \"Neha Kapoor, CEO of Orbitly, wrote that Orbitly builds scheduling infrastructure and would like to explore an integration with Nimbus Labs.\", \"evidence\": [\"evt_#2\"], \"quote\": \"scheduling infrastructure and would like to explore an integration. Neha Kapoor CEO, Orbitly\"}, {\"claim\": \"Neha then asked for a call and proposed Tuesday the thirtieth of September at eleven in the morning IST.\", \"evidence\": [\"evt_#1\"], \"quote\": \"call next week? Would Tuesday 30 Sep, 11 am IST work for you? Neha\"}, {\"claim\": \"Her question is open and waits on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"No answer of ours to Neha is measured in the file.\", \"evidence\": [\"num:your_reply_time:neha@orbitly.test\"]}], \"inferences\": [{\"claim\": \"Until Arjun answers, no call is booked: the time Neha proposed needs his yes, or another time.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"A partner who writes first to explore and then asks for a time is warm, and a slow answer is the easiest way to cool it.\", \"based_on\": [\"fact:1\", \"fact:2\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"The one gap this file has closed ran over a month, between Neha's two notes, with nothing from us in between.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\", \"fact:1\", \"fact:2\"]}, {\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once, with no earlier card or outcome — so there is no record of how Orbitly takes a slow answer.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"Neha may be holding the slot for us.\", \"needs\": \"Her confirmation once we answer.\"}, {\"proposition\": \"The integration Orbitly has in mind may make it a design partner rather than a vendor.\", \"needs\": \"The call itself.\"}], \"unknowns\": [{\"question\": \"Is Arjun free at the time Neha proposed?\", \"relevance\": \"It decides whether the reply confirms her time or offers another.\"}, {\"question\": \"What integration does Orbitly have in mind, and who should join the call?\", \"relevance\": \"It shapes what to prepare, and whether this is a design partner the brief wants.\"}, {\"question\": \"Did Arjun answer Neha outside this mailbox?\", \"relevance\": \"If he did, the question is closed and the move is to put the call on the calendar.\"}], \"frames\": {\"primary\": \"A warm design-partner lead with a question waiting on us: Neha proposed a time for a call and needs a yes, or another time, from you.\", \"rivals\": [\"An exploratory integration chat that may never become a design partnership, where a slow answer costs little.\", \"A vendor's pitch dressed as a partnership: scheduling infrastructure looking for a customer.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From the brief's goal of landing design partners: a proposed time answered promptly and the call booked.\", \"actual\": \"Neha's proposal is unanswered in the file, and no call is booked.\"}, \"scenarios\": {\"do_nothing\": \"The proposed time passes with no call confirmed, and Orbitly's interest — more than a month in the making — cools.\", \"act\": \"A short yes, or another time, books the call and keeps the design-partner talks moving.\", \"best\": \"The call is held as proposed and Orbitly becomes a design partner.\", \"worst\": \"The silence reads as a no, and a design partner the brief wants walks away.\", \"signals_to_watch\": [\"A call with Neha booked on the calendar\", \"Neha writing again to chase, or to withdraw the time\", \"The thirtieth passing with nothing booked\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Orbitly is one of the brief's design partner talks.\", \"Neha's question waits on us, and the time she proposed is fixed and close.\", \"A late answer can be mended with an apology and a new time, so a wrong move is cheap to reverse.\"]}, \"mode\": \"act\", \"alternative\": \"If you cannot make that time, propose two other slots the same week in the same reply.\", \"wait_or_stop\": \"No waiting on our side — the question is ours to answer; once answered, wait for Neha to confirm the time.\", \"done_when\": \"A call with Neha is confirmed on both calendars.\"}",
    "framed": true,
-   "input_tokens": 3373,
+   "input_tokens": 3489,
    "output_tokens": 1180,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4c5417aca46dd85a5a64e0c39b08c3a4ca460b8e135bd93aa17e9a3948941892": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "schedule",
+    "stance": "positive",
+    "topics": [
+     "integration call"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Neha",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Neha",
+        "start_offset": 113,
+        "end_offset": 117
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Does Tuesday 30 Sep, 11 am IST work for a call?",
+      "asked_by": "Neha Kapoor",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Would Tuesday 30 Sep, 11 am IST work for you?",
+        "start_offset": 66,
+        "end_offset": 111
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Neha Kapoor",
+      "text": "a call on Tuesday 30 Sep, 11 am IST",
+      "evidence_text": "Would Tuesday 30 Sep, 11 am IST work for you?"
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "Tuesday 30 Sep, 11 am IST",
+      "earliest": "2026-09-30T05:30:00Z",
+      "latest": "2026-09-30T05:30:00Z",
+      "certainty": "exact",
+      "resolved_against": "2026-09-22T07:00:00Z",
+      "evidence": [
+       {
+        "quote": "Tuesday 30 Sep, 11 am IST",
+        "start_offset": 72,
+        "end_offset": 97
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "book the call"
+    },
+    "implied_actions": [
+     "confirm or decline Tuesday 30 Sep, 11 am IST"
+    ]
+   },
+   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"integration call\"], \"entity_mentions\": [{\"surface_form\": \"Neha\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Neha\", \"start_offset\": 113, \"end_offset\": 117}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Does Tuesday 30 Sep, 11 am IST work for a call?\", \"asked_by\": \"Neha Kapoor\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Would Tuesday 30 Sep, 11 am IST work for you?\", \"start_offset\": 66, \"end_offset\": 111}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Neha Kapoor\", \"text\": \"a call on Tuesday 30 Sep, 11 am IST\", \"evidence_text\": \"Would Tuesday 30 Sep, 11 am IST work for you?\"}], \"dates_mentioned\": [{\"as_written\": \"Tuesday 30 Sep, 11 am IST\", \"earliest\": \"2026-09-30T05:30:00Z\", \"latest\": \"2026-09-30T05:30:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-09-22T07:00:00Z\", \"evidence\": [{\"quote\": \"Tuesday 30 Sep, 11 am IST\", \"start_offset\": 72, \"end_offset\": 97}]}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"book the call\"}, \"implied_actions\": [\"confirm or decline Tuesday 30 Sep, 11 am IST\"]}",
+   "framed": true,
+   "input_tokens": 5502,
+   "output_tokens": 315,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5d650a94b284641d8ae089d4c19c0300e4067079a2dd99e0a4359b67b843581d": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "integration"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Neha Kapoor",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Neha Kapoor",
+        "start_offset": 150,
+        "end_offset": 161
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Orbitly",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Orbitly",
+        "start_offset": 0,
+        "end_offset": 7
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"integration\"], \"entity_mentions\": [{\"surface_form\": \"Neha Kapoor\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Neha Kapoor\", \"start_offset\": 150, \"end_offset\": 161}], \"confidence_bp\": 9000}, {\"surface_form\": \"Orbitly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Orbitly\", \"start_offset\": 0, \"end_offset\": 7}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "framed": true,
+   "input_tokens": 5515,
+   "output_tokens": 150,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "816b8163c73574c34b08089237b9efb354b61d34b55ce6ca799a0fa9a0e27549": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1743,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "84d17bb1653c27c33a4f9887d6b6f9f2dff76ac06633aca7b57a189ae814cf33": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1543,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a76164d5d5937eebba08bde92a96f5b33616c53be5cbc7ec788331c72fd84008": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Can we do a call next week?",
+    "start_offset": 38,
+    "end_offset": 65,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Can we do a call next week?\", \"start_offset\": 38, \"end_offset\": 65, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1510,
+   "output_tokens": 44,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c5030970e3ccfca6b57819b27e8df7ae59a6800160050a61cd9c69bab79b3ef4": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1743,
+   "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   }
  }

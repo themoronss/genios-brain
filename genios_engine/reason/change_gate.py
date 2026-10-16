@@ -42,6 +42,16 @@ RENEW_MARGIN = timedelta(0)
 #: move with it — so a margin re-decides it once in its last day, never on every sweep of it, and the question
 #: card the founder may be about to answer never lapses under them.
 QUESTION_RENEW_MARGIN = timedelta(days=1)
+#: How often the chain sweeps a tenant — the 6-hourly heartbeat (`api/routes`' sweep, `capture/acquire/scheduler`).
+#: A margin shorter than this can fall between two sweeps.
+SWEEP_EVERY = timedelta(hours=6)
+#: …and a FILE's decision (STEP-14 `yc2_w27_s14` M42.C2.L-logic.V0.U01, `03` F52, F53, s14-F5) is decided again in
+#: the last twelve hours of its window — more than one sweep, so a sweep always lands inside it before the window
+#: closes. Unlike the compiled lane's, a file's re-run inside its margin RENEWS: the file branch re-emits the same
+#: advice and the file's card is VERSIONED, quietly (`reason/domain_shadow`, M42.C2.L-integration.V2.U02;
+#: `contracts/card_version` RENEWED) — where the card used to lapse, and the same advice came back as a new card.
+#: `RENEW_MARGIN` stays zero for the compiled lane, whose re-run inside the window still renews nothing.
+FILE_RENEW_MARGIN = 2 * SWEEP_EVERY
 
 NEW = "new"                    # never decided
 CHANGED = "changed"            # what the decision depends on moved

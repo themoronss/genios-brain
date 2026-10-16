@@ -577,6 +577,24 @@ def conn(live_db_url):
         tx.rollback(); c.close()
 
 
+def _keep_the_brief(c, org, at=NOW):
+    """STEP-15 (M45.C3.L-integration.V0.U03): the digest IS the kept brief, so a slot is claimed only on a day whose brief is
+    kept. The account owner's seat and a brief of `at`'s local day, inside the test's own (rolled-back) transaction —
+    returned: the local day the digest is claimed for."""
+    from sqlalchemy import text
+
+    from genios_engine.executive import morning_store
+    from genios_engine.executive.morning_day import zone_of
+    from genios_engine.executive.morning_template import template_brief
+    from genios_engine.platform.seats import ensure_owner_seat
+    c.execute(text("update orgs set email = coalesce(email, 'owner@scratch.test') where id=:o"), {"o": org})
+    seat = ensure_owner_seat(c, org)["seat_id"]
+    assert seat, "the scratch org needs an owner seat for its brief to be anyone's"
+    brief = template_brief(org_id=org, seat_id=seat, items=(), now=at, tz=zone_of(c, org))
+    morning_store.keep(c, brief)
+    return brief.local_date
+
+
 def _register(c, org, channel, config="{}"):
     from sqlalchemy import text
     c.execute(text("insert into org_channels (org_id, channel, config, active) "
@@ -651,26 +669,45 @@ def test_pg_the_digest_returns_zero_when_the_channel_row_does_not_exist(conn):
     from sqlalchemy import text
     c, org = conn
     _register(c, org, "in_app")
+    _keep_the_brief(c, org)          # STEP-15: with the brief kept, the only reason left for the 0 is the channel row
 
     assert outbox.enqueue_digest(_TxEngine(c), org, "slack", eval_time=NOW) == 0
     assert c.execute(text("select count(*) from delivery_outbox where org_id=:o and card_id like "
                           "'digest:%'"), {"o": org}).scalar() == 0
 
 
-def test_pg_the_digest_is_claimed_once_a_day_on_a_channel_that_exists(conn):
+def test_pg_the_digest_is_not_claimed_until_the_brief_is_kept(conn):
+    """STEP-15 (M45.C3.L-integration.V0.U03): the digest is the brief, so until it is kept there is nothing to send — and
+    the day's slot is NOT taken, so the pass that follows the brief claims it."""
     from sqlalchemy import text
     c, org = conn
     _register(c, org, "slack", '{"webhook_url": "https://hooks.slack.com/services/T/B/x"}')
     engine = _TxEngine(c)
 
+    assert outbox.enqueue_digest(engine, org, "slack", eval_time=NOW) == 0
+    assert c.execute(text("select last_digest_date from org_channels where org_id=:o and channel='slack'"),
+                     {"o": org}).scalar() is None
+    local = _keep_the_brief(c, org)
     assert outbox.enqueue_digest(engine, org, "slack", eval_time=NOW) == 1
-    assert outbox.enqueue_digest(engine, org, "slack", eval_time=NOW) == 0, "once per UTC day"
+    assert c.execute(text("select card_id from delivery_outbox where org_id=:o and card_id like 'digest:%'"),
+                     {"o": org}).scalar() == f"digest:{local.isoformat()}"
+
+
+def test_pg_the_digest_is_claimed_once_a_day_on_a_channel_that_exists(conn):
+    from sqlalchemy import text
+    c, org = conn
+    _register(c, org, "slack", '{"webhook_url": "https://hooks.slack.com/services/T/B/x"}')
+    local = _keep_the_brief(c, org)          # STEP-15: a slot is claimed on the brief's LOCAL day, once it is kept
+    engine = _TxEngine(c)
+
+    assert outbox.enqueue_digest(engine, org, "slack", eval_time=NOW) == 1
+    assert outbox.enqueue_digest(engine, org, "slack", eval_time=NOW) == 0, "once per local day"
 
     row = c.execute(text("select card_id, channel from delivery_outbox where org_id=:o "
                          "and card_id like 'digest:%'"), {"o": org}).one()
-    assert row.card_id == f"digest:{NOW.date().isoformat()}" and row.channel == "slack"
+    assert row.card_id == f"digest:{local.isoformat()}" and row.channel == "slack"
     assert c.execute(text("select last_digest_date from org_channels where org_id=:o "
-                          "and channel='slack'"), {"o": org}).scalar() == NOW.date()
+                          "and channel='slack'"), {"o": org}).scalar() == local
 
 
 def test_pg_the_daily_marker_is_per_channel_so_a_second_channel_is_not_suppressed(conn):
@@ -684,6 +721,7 @@ def test_pg_the_daily_marker_is_per_channel_so_a_second_channel_is_not_suppresse
     c, org = conn
     _register(c, org, "slack", '{"webhook_url": "https://hooks.slack.com/services/T/B/x"}')
     _register(c, org, "teams", "{}")
+    _keep_the_brief(c, org)                  # STEP-15: the digest is the kept brief
     engine = _TxEngine(c)
 
     assert outbox.enqueue_digest(engine, org, "slack", eval_time=NOW) == 1

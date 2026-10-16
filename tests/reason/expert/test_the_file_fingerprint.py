@@ -189,3 +189,34 @@ def test_the_inputs_are_readable_and_carry_no_instant():
                                      "dossier_version": "dossier.v1"}
     assert "as_of" not in inputs and "reviews" not in inputs
     assert F.HOURS_UNTIL[:3] == (0, 48, 72)
+
+
+# =================================================================================================
+# STEP-16 · your correction moves the file (`yc2_w27_s16` M46.C4.L-logic.V3.U04)
+# =================================================================================================
+def _corrected(parts, *ids, scope="file"):
+    from genios_engine.context.founder_corrections import Correction
+    return dataclasses.replace(parts, corrections=tuple(Correction(
+        correction_id=i, file_id="node_meridian", card_id=None, feedback_id=None, reason=None,
+        words="news only on milestones", scope=scope, kind="investor" if scope == "kind" else None,
+        brief_line_id=None, corrected_by="user_arjun", corrected_at=NOW, state="standing") for i in ids))
+
+
+def test_a_file_with_no_correction_is_fingerprinted_as_before():
+    parts = _parts()
+    assert "corrections" not in F.fingerprint_inputs(parts, model=MODEL, prompt_version=PROMPT)
+    assert _fp(_corrected(parts)) == _fp(parts)
+
+
+@pytest.mark.parametrize("scope", ["file", "kind"])
+def test_your_correction_of_the_file_or_its_kind_moves_it(scope):
+    parts = _parts()
+    one = _corrected(parts, "fc_a", scope=scope)
+    assert _fp(one) != _fp(parts)
+    assert F.fingerprint_inputs(one, model=MODEL, prompt_version=PROMPT)["corrections"] == ["corr:fc_a"]
+    assert _fp(_corrected(parts, "fc_a", "fc_b", scope=scope)) != _fp(one), "another correction moves it again"
+
+
+def test_the_same_corrections_in_another_order_are_the_same_file():
+    parts = _parts()
+    assert _fp(_corrected(parts, "fc_a", "fc_b")) == _fp(_corrected(parts, "fc_b", "fc_a"))

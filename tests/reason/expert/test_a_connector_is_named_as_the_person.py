@@ -8,6 +8,11 @@ the check (`reason/expert/verify`, unedited, its own `matches`) then found "Pank
 "Send Pankaj the short deck to forward to Marco" went out to the very person who introduced Marco. A connector
 is named as the person: by the name its own mail in the file signs, else by its address's own words. Run on
 the check itself, over a real dossier (`tests/reason/expert/check_world`).
+
+⛔ AND BY THE FIRM (M35.C2.L-logic.V0.U13 fix, the second crosscheck G1). Named as the person only, the firm case
+regressed: `to='Saka'` — the label of pankaj@saka.vc — was `recipient_is_connector` at be27bffe and was then
+SHOWN (`recipient_not_on_file`, only the draft withheld). The connector is matched by person AND by firm:
+`verify.the_connector` — the person's name or address, or their host's first label (never a public mail host's).
 """
 from __future__ import annotations
 
@@ -87,3 +92,38 @@ def test_the_name_is_the_one_his_latest_mail_signs():
     later = replace(p.timeline.touches[1], who=PANKAJ, who_name="Pankaj Mehta", direction="in")
     p = replace(p, timeline=replace(p.timeline, touches=(p.timeline.touches[0], later, *p.timeline.touches[2:])))
     assert D.connector_of(p) == D.Person(name="Pankaj Mehta", key=PANKAJ)
+
+
+# ── G1 · the connector matched by person AND by firm ─────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("introduced_by, to", [(PANKAJ, "Saka"), (PANKAJ, "Saka Ventures"),
+                                               ("pankaj.mehta@saka.vc", "Pankaj Mehta"),
+                                               ("pankaj.mehta@saka.vc", "Saka")])
+def test_g1_a_move_to_the_connector_s_firm_is_a_move_to_the_connector(introduced_by, to):
+    dossier, people = _world(introduced_by=introduced_by)
+    checked = check_review(W.review(move={"to": to, "what": "Send Saka the short deck to forward to Marco"}),
+                           dossier.text, people)
+    assert _verdict(checked, "to") == C.LineVerdict("to", C.DROPPED, C.RECIPIENT_IS_CONNECTOR, to)
+    assert checked.words.draft is None and checked.words.headline == W.ANSWER["alternative"]
+
+
+def test_g1_with_no_to_a_headline_naming_the_firm_first_goes_to_the_connector():
+    dossier, people = _world()
+    checked = check_review(W.review(move={"to": None, "what": "Send Saka the short deck to forward to Marco"},
+                                    draft=None), dossier.text, people)
+    assert _verdict(checked, "to") == C.LineVerdict("to", C.DROPPED, C.RECIPIENT_IS_CONNECTOR, "Saka")
+
+
+def test_a_public_mail_host_is_no_firm():
+    """pankaj@gmail.com is Pankaj — "Gmail" names no connector."""
+    dossier, people = _world(introduced_by="pankaj@gmail.com")
+    checked = check_review(W.review(move={"to": "Gmail", "what": "Send Marco the short deck"}), dossier.text,
+                           people)
+    assert _verdict(checked, "to").reason == C.RECIPIENT_NOT_ON_FILE
+
+
+def test_the_counterparty_is_no_connector_by_firm():
+    """⛔ THE NEGATIVE CONTROL: Marco at Altavia — the faithful review, to "Marco", keeps its draft."""
+    dossier, people = _world()
+    checked = check_review(W.review(), dossier.text, people)
+    assert _verdict(checked, "to").verdict == C.KEPT and checked.words.draft

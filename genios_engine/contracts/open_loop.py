@@ -21,10 +21,17 @@ import hashlib
 #: Observation kinds that constitute a REQUEST — something a counterparty is waiting on.
 #: Mirrors the ask-signal vocabulary the actionability gate and the unanswered_email rule
 #: already use; a kind outside this set is information, not an open loop.
+#:
+#: ⛔ STEP-16 (`yc2_w27_s16`, s16-F23): `information_requested` — a requested document or piece of information — is an
+#: ask. `context/observations/kinds.yaml` always said so (`is_ask: true`), and its `discharges` table closes it ANSWERED
+#: when `document_sent` arrives; but no loop was ever opened for it here, so a document you sent closed nothing but a
+#: plain question, `replied`, and a file decision could never end `verified` on it (F57). `approval_requested` and
+#: `intro_requested` disagree the same way and stay out: the first is one of L1's fifteen signal types, so admitting it
+#: opens a loop on every approval mail the golden set and production carry — its own decision (s16-F23).
 ASK_KINDS: frozenset[str] = frozenset({
     "question", "meeting_request", "proposal_sent", "demo_requested",
     "contract_requested", "next_step_agreed", "objection", "pricing_objection",
-    "introduction",
+    "introduction", "information_requested",
 })
 
 

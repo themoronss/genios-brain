@@ -57,17 +57,26 @@ FETCHES = ("refused", "ok")
 
 #: What the engine cannot express yet, and why. A case that expects one of these MUST declare it
 #: in its own `not_expressible`, so the board counts it apart. When a capability lands, its row is
-#: deleted here, and every case that declared it is then judged on it.
+#: deleted here, and every case that declared it is then judged on it. `brief` left on 12 Oct (STEP-15,
+#: `yc2_w27_s15` M44.C5.L-contract.V0.U01): the morning brief is composed after each case's last sweep.
 NOT_EXPRESSIBLE_TODAY: dict[str, str] = {
     "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
     "stage": "STEP-09 — no stage is derived for a workstream",
     "lane": "F10 — cards.output_lane is written NULL on the decided path",
-    "brief": "STEP-15 — there is no morning brief to appear in",
-    "outcome": "STEP-16 — no card's end records the evidence that closed it",
 }
 #: Expectation keys the runner can check today.
-EXPRESSIBLE_KEYS = ("gate", "memory", "cards")
-EXPECTATION_KEYS = EXPRESSIBLE_KEYS + tuple(NOT_EXPRESSIBLE_TODAY)
+EXPRESSIBLE_KEYS = ("gate", "memory", "cards", "brief")
+#: ⛔ STEP-16 (`yc2_w27_s16` M47.C4.L-contract.V0.U01): `outcome` LEFT `NOT_EXPRESSIBLE_TODAY` — a card's end is read
+#: (`context/file_outcomes`). The prose stays, as written, and is judged through a card expectation's `ended`/`by`:
+#: a case that writes one carries the other.
+DESCRIBED_KEYS = ("outcome",)
+EXPECTATION_KEYS = EXPRESSIBLE_KEYS + DESCRIBED_KEYS + tuple(NOT_EXPRESSIBLE_TODAY)
+#: How a card can end, as `context/file_outcomes` reads it — every end but still open and unrecorded.
+CARD_ENDS = ("verified", "replied", "taken", "called_wrong", "lapsed", "dismissed", "replaced", "cleared")
+#: The ends whose proof is an event — the object of the case that closed the ask (`by`).
+ENDS_BY_AN_EVENT = ("verified", "replied")
+#: What a correction reaches (`context/founder_corrections.SCOPES`).
+ACT_SCOPES = ("file", "kind", "company")
 
 #: People and organisations from the founder's real mailbox (`04-NOW-VS-SHOULD-VS-EXPECTED.md` §2,
 #: `STEP-01` §4). Matched whole-word and case-insensitively on every string of a case, so `Sal` is
@@ -94,6 +103,8 @@ REAL_NAMES: frozenset[str] = frozenset({
     "actual.ai",
     # vendors the real mailbox carries
     "Composio", "Stripe", "Notion", "Apple", "Google",
+    # STEP-14 (s14-F17): the narrator's old headline examples, the founder's real contacts
+    "Divyanshu", "Leslie",
 })
 
 _REAL = re.compile(r"(?<![0-9A-Za-z])(?:" + "|".join(
@@ -249,10 +260,56 @@ class CardExpectation:
     min: int
     max: int
     mentions: tuple[str, ...] = ()
+    #: STEP-14 fix (the crosscheck's finding 10, `yc2_w27_s14` M43.C6.L-integration.V2.U12): what the card's HEADLINE —
+    #: the move it advises, the question it asks — says. `mentions` reads every line, so F63 passed on "address" in
+    #: its situation while its card asked whether Ishaan would write first.
+    headline_says: tuple[str, ...] = ()
     #: `09` G6 (`yc2_w27_align` M34.C1.L-data.V0.U03) — from this sweep on (an index into the case's
     #: sweeps) no card about the subject is open: the work was done, and done means never raised
     #: again. None: not judged.
     closed_from: int | None = None
+    #: STEP-16 (`yc2_w27_s16` M47.C4.L-contract.V0.U01) — how the card about the subject ends (`CARD_ENDS`), and for
+    #: an end an event proves (`ENDS_BY_AN_EVENT`), the object of the case whose event closed its ask. None: not judged.
+    ended: str | None = None
+    by: str | None = None
+
+
+@dataclass(frozen=True)
+class Act:
+    """STEP-16 (`yc2_w27_s16` M47.C4.L-contract.V0.U01) · something you do between sweeps, played through the real
+    doors at the sweep's instant: on the card about `on` (a card the case expects), `wrong` with one of the eleven
+    reasons — and optionally your words and their scope, a correction of the card's file — or `correct`, your words
+    alone, a correction of that card's file."""
+    after_sweep: int
+    on: tuple[str, ...]
+    wrong: str | None = None
+    correct: str | None = None
+    words: str | None = None
+    scope: str | None = None
+
+
+@dataclass(frozen=True)
+class BriefLineExpectation:
+    """A line the founder must — or must never — read in the morning brief (STEP-15).
+
+    A line is ABOUT this expectation when any `about` term appears in its words (whole word, any case) — its
+    quotes read apart, never as its words — and it stands in `section` (`contracts/morning_brief.SECTIONS`).
+    `min`/`max` bound how many such lines the brief holds; every matched line says each of `mentions`."""
+
+    section: str
+    about: tuple[str, ...]
+    min: int = 1
+    max: int = 1
+    mentions: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class BriefExpectation:
+    """The case's morning brief, composed after its last sweep: what the label says (`says`), and the lines the
+    marking judges. No lines: prose only — declared not expressible, with its reason."""
+
+    says: str
+    lines: tuple[BriefLineExpectation, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -278,7 +335,7 @@ class FounderCase:
     expected_gate: Mapping[str, str]
     expected_memory: Mapping[str, bool]
     cards: tuple[CardExpectation, ...]
-    expected_other: Mapping[str, str]            # workstream / stage / lane / brief, as written
+    expected_other: Mapping[str, str]            # workstream / stage / lane / outcome, as written
     forbidden_names: tuple[str, ...]
     forbidden_phrases: tuple[str, ...]
     witness: Witness | None
@@ -296,6 +353,10 @@ class FounderCase:
     #: case (`settings.platform_domains`), when the founder's company domain is also the product's,
     #: as the design partner's is. Empty: production's default stands.
     platform_domains: tuple[str, ...] = ()
+    #: STEP-15 (`yc2_w27_s15` M44.C5.L-contract.V0.U01) · the morning brief after the last sweep — or None.
+    brief: BriefExpectation | None = None
+    #: STEP-16 · your acts between sweeps (`Act`), in the order played.
+    acts: tuple[Act, ...] = ()
 
     def expressible(self, key: str) -> bool:
         return key not in self.not_expressible
@@ -349,6 +410,60 @@ class CardView:
     #: expert_check`): the mails a move rests on and their QUOTES. Evidence, not what the card says — so
     #: kept apart from `text`: a card that quotes "Introly connected us" is not a card about Introly (F37).
     sources: tuple = ()
+    #: STEP-14 (`yc2_w27_s14` M42.C4.L-integration.V1.U02, s14-D4). The sweeps after which the APP queue showed it —
+    #: read at the sweep's instant by the queue's own predicate; a subset of `sweeps`. Must-detect counts these.
+    app_sweeps: tuple[int, ...] = ()
+    #: …and every version's words, oldest first (s14-F14): a card rewritten in place — a refresh, a version of a
+    #: file's card — is judged on each, never on its last alone. Empty for a card that kept none.
+    versions: tuple[str, ...] = ()
+    #: STEP-14 (`yc2_w27_s14` M42.C4.L-integration.V4.U05): the file the card is (`cards.file_id`, 0220) — None on a card
+    #: that is no file's — and its history in order: each `card.created`, `card.versioned`, `card.surfaced` and
+    #: `card.expired` event as (kind, cause, change, material, kept the words before).
+    file_id: str | None = None
+    events: tuple[tuple[str, str | None, str | None, bool | None, bool], ...] = ()
+    #: STEP-14 (`yc2_w27_s14` M43.C6.L-integration.V4.U10): the gold card's columns as the card holds them — headline,
+    #: business_subject, relationship_role, why_now, unresolved_item, recommended, alternative, wait_or_stop,
+    #: outcome_window_days, the window receipt (`why`, source card_lines), capability_key, builder_version.
+    gold: Mapping[str, Any] = field(default_factory=dict)
+    #: STEP-14 fix (the crosscheck's finding 9, `yc2_w27_s14` M43.C6.L-integration.V3.U11): every other line the founder
+    #: is shown — the move whole (who, what, for whom, to), its alternative, when to stop, what done looks like, what
+    #: doing nothing costs, the role, and each version's move, alternative and stop rule. The forbidden judge reads
+    #: them; which cards a case is ABOUT is still matched on `text` and `versions`.
+    shown_lines: tuple[str, ...] = ()
+    #: STEP-16 (`yc2_w27_s16` M47.C4.L-integration.V4.U02): how the card ended (`context/file_outcomes`) — None while it
+    #: is open, or ended with nothing written — and the object of the case whose event proved it (verified, replied).
+    ended: str | None = None
+    ended_by: str | None = None
+
+
+@dataclass(frozen=True)
+class BriefLineView:
+    """One line of the brief composed after a case's last sweep, as the founder reads it (STEP-15)."""
+
+    line_id: str
+    section: str
+    kind: str
+    text: str                                   # the line's words
+    subject: str | None = None
+    #: What the line QUOTES of others' words — evidence, read apart from what it says, as a card's sources are
+    #: (STEP-13, F37: a line that quotes "Introly connected us" is not a line about Introly). The template quotes
+    #: nothing; a writer's line may.
+    quotes: tuple[str, ...] = ()
+    #: M44's acceptance (`yc2_w27_s15` M44.C5.L-integration.V2.U05): the open card this line's item sources
+    #: (`contracts.morning_brief.SOURCE_CARD`) — a decision card from the book re-rank, or a question's own card
+    #: (STEP-13) — when one is open; None when the line names no card. So the brief and the card queue can be read
+    #: against each other: no open card this run produced is missing from both.
+    card_id: str | None = None
+
+
+@dataclass(frozen=True)
+class ActPlayed:
+    """STEP-16 · one of the case's acts, as the runner played it: on which card, and whether the door took it."""
+    index: int
+    after_sweep: int
+    card_id: str | None
+    ok: bool
+    said: str
 
 
 @dataclass(frozen=True)
@@ -363,6 +478,11 @@ class CaseRun:
     chain_ok: tuple[bool, ...]                  # per sweep: `_run_l2_chain`'s own answer
     model_calls: tuple[tuple[str, str], ...]    # (site, cassette key), in call order
     misses: tuple[tuple[str, str], ...]
+    #: STEP-15 · the brief composed after the last sweep, its lines in order — None when none was composed (the
+    #: runner asked with `brief=False`: the negative control, which reads the brief not expressible).
+    brief: tuple[BriefLineView, ...] | None = None
+    #: STEP-16 · the case's acts, as played after their sweeps.
+    acts: tuple[ActPlayed, ...] = ()
 
 
 # =================================================================================================
@@ -370,13 +490,16 @@ class CaseRun:
 # =================================================================================================
 _CASE_KEYS = {"case_id", "title", "kind", "label_row", "labelled_by", "replays", "founder",
               "sweeps", "objects", "expected", "forbidden", "witness", "not_expressible",
-              "model", "notes", "blocked_on", "platform_domains"}
+              "model", "notes", "blocked_on", "platform_domains", "acts"}
 _GMAIL_KEYS = {"id", "source", "sweep", "occurred_at", "from", "to", "cc", "thread", "subject",
                "body", "labels", "headers", "attachments", "read", "mailbox"}
 _MAILBOX = re.compile(r"^[a-z][a-z0-9]{0,15}$")
 _GCAL_KEYS = {"id", "source", "sweep", "occurred_at", "summary", "start", "end", "organizer",
               "attendees", "status", "description", "location", "recurringEventId", "read"}
-_CARD_KEYS = {"about", "min", "max", "mentions", "closed_from"}
+_CARD_KEYS = {"about", "min", "max", "mentions", "headline_says", "closed_from", "ended", "by"}
+_BRIEF_KEYS = {"says", "lines"}
+_BRIEF_LINE_KEYS = {"section", "about", "min", "max", "mentions"}
+_ACT_KEYS = {"after_sweep", "on", "wrong", "correct", "words", "scope"}
 _ID = re.compile(r"^F\d{2}$")
 
 
@@ -459,7 +582,15 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
     if kind == "must_abstain" and not any(c.max == 0 for c in cards):
         raise CaseError(f"{where}: a must_abstain case names the card that must not exist "
                         "(max 0)")
-    other = {k: str(expected[k]) for k in NOT_EXPRESSIBLE_TODAY if k in expected}
+    for c in cards:
+        if c.by is not None:
+            _known_object(c.by, ids, where, "expected.cards[].by")
+    other = {k: str(expected[k]) for k in (*DESCRIBED_KEYS, *NOT_EXPRESSIBLE_TODAY) if k in expected}
+    if "outcome" in other and not any(c.ended for c in cards) \
+            and "outcome" not in (raw.get("not_expressible") or {}):
+        raise CaseError(f"{where}: expects an outcome in words, and no card expectation says how its card ends "
+                        "(`ended`) — the prose is judged through one, or declared not expressible with why")
+    brief = _brief(expected["brief"], f"{where}.expected.brief") if "brief" in expected else None
 
     not_expressible = {str(k): str(v) for k, v in (raw.get("not_expressible") or {}).items()}
     for key, reason in not_expressible.items():
@@ -467,7 +598,12 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
             raise CaseError(f"{where}: not_expressible names {key!r}, which is no expectation")
         if not reason.strip():
             raise CaseError(f"{where}: not_expressible[{key!r}] gives no reason")
+    if brief is not None and not brief.lines and "brief" not in not_expressible:
+        raise CaseError(f"{where}: a brief expectation with no lines is prose the marking cannot judge — give it "
+                        "lines, or declare `brief` in not_expressible with the reason")
     for key in other:
+        if key in DESCRIBED_KEYS:
+            continue
         if key not in not_expressible:
             raise CaseError(
                 f"{where}: expects {key!r}, which the engine cannot express today "
@@ -509,14 +645,17 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
         raise CaseError(f"{where}: blocked_on names the finding or step that blocks the case, in "
                         "a sentence")
 
+    acts = tuple(_act(a, len(sweeps), cards, f"{where}.acts[{i}]") for i, a in enumerate(raw.get("acts") or ()))
+
     return FounderCase(
+        acts=acts,
         case_id=case_id, title=title, kind=kind, label_row=label_row, labelled_by=labelled_by,
         replays=tuple(str(r) for r in raw.get("replays") or ()), founder=founder, sweeps=sweeps,
         objects=objects, expected_gate=gate, expected_memory=memory, cards=cards,
         expected_other=other, forbidden_names=tuple(forbidden.get("names") or ()),
         forbidden_phrases=tuple(forbidden.get("phrases") or ()), witness=witness,
         not_expressible=not_expressible, model=model, blocked_on=blocked_on, source=source,
-        platform_domains=platform_domains)
+        platform_domains=platform_domains, brief=brief)
 
 
 def load_cases(folder: Path = FOUNDER_DIR) -> tuple[FounderCase, ...]:
@@ -618,9 +757,75 @@ def _card(raw: Any, where: str) -> CardExpectation:
     closed_from = raw.get("closed_from")
     if closed_from is not None and (not isinstance(closed_from, int) or isinstance(closed_from, bool)):
         raise CaseError(f"{where}: closed_from must be a sweep index")
+    ended, by = raw.get("ended"), raw.get("by")
+    if ended is not None and ended not in CARD_ENDS:
+        raise CaseError(f"{where}: ended {ended!r} is not one of {CARD_ENDS}")
+    if by is not None and ended is None:
+        raise CaseError(f"{where}: `by` names what proved an end — the expectation names how it ended (`ended`)")
+    if by is not None and ended not in ENDS_BY_AN_EVENT:
+        raise CaseError(f"{where}: only an end an event proves — verified or replied — names an object by which")
     return CardExpectation(about=about, min=lo, max=hi,
                            mentions=tuple(str(t) for t in raw.get("mentions") or ()),
-                           closed_from=closed_from)
+                           headline_says=tuple(str(t) for t in raw.get("headline_says") or ()),
+                           closed_from=closed_from, ended=ended, by=None if by is None else str(by))
+
+
+def _act(raw: Any, n_sweeps: int, cards: tuple[CardExpectation, ...], where: str) -> Act:
+    """One act, every rule checked: a sweep that exists, a card the case expects, one of the eleven reasons, one of
+    three scopes, words that say something."""
+    from genios_engine.contracts.learning_attribution import ALL_REASONS
+    if not isinstance(raw, dict):
+        raise CaseError(f"{where}: an act must be a mapping")
+    _no_unknown(raw, _ACT_KEYS, where)
+    after = raw.get("after_sweep")
+    if not isinstance(after, int) or isinstance(after, bool) or not 0 <= after < n_sweeps:
+        raise CaseError(f"{where}: after_sweep {after!r} is not a sweep of the case")
+    on = tuple(str(t) for t in raw.get("on") or ())
+    if not on or not any(set(on) <= set(c.about) or set(c.about) <= set(on) for c in cards):
+        raise CaseError(f"{where}: on {list(on)} is not about a card the case expects — an act is played on a card")
+    wrong, correct = raw.get("wrong"), raw.get("correct")
+    if (wrong is None) == (correct is None):
+        raise CaseError(f"{where}: an act is a wrong or correct, exactly one")
+    if wrong is not None and wrong not in ALL_REASONS:
+        raise CaseError(f"{where}: {wrong!r} is not one of the eleven reasons {sorted(ALL_REASONS)}")
+    words = raw.get("words") if wrong is not None else correct
+    if words is not None and not str(words).strip():
+        raise CaseError(f"{where}: your words say nothing")
+    scope = raw.get("scope")
+    if scope is not None and scope not in ACT_SCOPES:
+        raise CaseError(f"{where}: scope {scope!r} is not one of {ACT_SCOPES}")
+    if scope is not None and words is None:
+        raise CaseError(f"{where}: a scope is what your words reach — an act with a scope carries words")
+    return Act(after_sweep=after, on=on, wrong=wrong, correct=None if correct is None else str(correct),
+               words=None if words is None or correct is not None else str(words), scope=scope)
+
+
+def _brief(raw: Any, where: str) -> BriefExpectation:
+    """A brief expectation: the label's prose alone (a string), or `{says, lines}`."""
+    if isinstance(raw, str):
+        if not raw.strip():
+            raise CaseError(f"{where}: a brief expectation says something")
+        return BriefExpectation(says=raw.strip())
+    _no_unknown(raw, _BRIEF_KEYS, where)
+    says = str(raw.get("says") or "").strip()
+    if not says:
+        raise CaseError(f"{where}: a brief expectation keeps what its label says (`says`)")
+    from genios_engine.contracts.morning_brief import SECTIONS
+    lines = []
+    for i, line in enumerate(raw.get("lines") or ()):
+        at = f"{where}.lines[{i}]"
+        _no_unknown(line, _BRIEF_LINE_KEYS, at)
+        if line.get("section") not in SECTIONS:
+            raise CaseError(f"{at}: section {line.get('section')!r} is not one of {SECTIONS}")
+        about = tuple(str(t) for t in line.get("about") or ())
+        if not about:
+            raise CaseError(f"{at}: a brief line expectation names its subject in `about`")
+        lo, hi = line.get("min", 1), line.get("max", 1)
+        if not (isinstance(lo, int) and isinstance(hi, int) and 0 <= lo <= hi):
+            raise CaseError(f"{at}: min and max must be integers with 0 <= min <= max")
+        lines.append(BriefLineExpectation(section=line["section"], about=about, min=lo, max=hi,
+                                          mentions=tuple(str(t) for t in line.get("mentions") or ())))
+    return BriefExpectation(says=says, lines=tuple(lines))
 
 
 def _instant(value: Any, where: str) -> datetime:

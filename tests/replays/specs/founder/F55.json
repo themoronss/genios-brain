@@ -243,7 +243,25 @@
     "max": 1
    }
   ],
-  "brief": "you have sent nothing for 28 days while three people wait"
+  "brief": {
+   "says": "you have sent nothing for 28 days while three people wait",
+   "lines": [
+    {
+     "section": "desk",
+     "about": [
+      "Dev",
+      "Rhea",
+      "Kabir"
+     ],
+     "mentions": [
+      "28 days",
+      "Dev",
+      "Rhea",
+      "Kabir"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -254,8 +272,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only - a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 - there is no morning brief to appear in"
+  "cards": "brief only - a line in the morning brief, not a card (D12d)"
  },
  "model": {
   "decider": [
@@ -470,8 +487,8 @@
       "to": "Kabir",
       "answers": "loop:loop_f06f6011811c658935b08009"
      },
-     "alternative": "If Arjun is no longer keen, a short, courteous no that leaves the door open.",
-     "wait_or_stop": "Do not wait: the ask is Arjun's to answer. Stop once Kabir has a clear answer.",
+     "alternative": "If you are no longer keen, a short, courteous no that leaves the door open.",
+     "wait_or_stop": "Do not wait: the ask is yours to answer. Stop once Kabir has a clear answer.",
      "done_when": "Kabir has your answer on the pilot in writing, and the open ask is closed.",
      "draft": "Hi Kabir, sorry for the slow reply. On the pilot, could we speak this week so I can give you a clear answer? Arjun"
     }
@@ -850,7 +867,7 @@
      "mode": "wait",
      "next_move": null,
      "alternative": "If the round is open now, a short note to Ishaan rather than waiting for the next update.",
-     "wait_or_stop": "Wait for the next update or the round's opening, whichever comes first, and tell Ishaan then; stop if Arjun decides Meadow VC is not part of this round.",
+     "wait_or_stop": "Wait for the next update or the round's opening, whichever comes first, and tell Ishaan then; stop if you decide Meadow VC is not part of this round.",
      "done_when": "Ishaan has heard from you whether the round is open.",
      "draft": null
     }

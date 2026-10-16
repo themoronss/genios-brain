@@ -22,7 +22,9 @@ pytestmark = pytest.mark.unit
 
 def test_the_expert_is_a_site_in_the_closed_list():
     assert S.SITE_EXPERT == "R-7"
-    assert S.SITE_EXPERT in S.R_SITES and S.R_SITES[-1] == S.SITE_EXPERT
+    # STEP-15 registered R-8/R-8E after it (`tests/reason/test_the_brief_sites.py`) — this file's
+    # own claim is only that the seventh is registered at all, never that it is last forever.
+    assert S.SITE_EXPERT in S.R_SITES
     assert S.require_site(S.SITE_EXPERT) == S.SITE_EXPERT
     assert len(set(S.R_SITES)) == len(S.R_SITES)
 
@@ -39,7 +41,9 @@ def test_the_ceiling_holds_a_whole_review():
     ceiling is set above every other site's, and a truncated answer is a recorded refusal
     (`03` F140), never a parse."""
     ceiling = S.max_output_tokens(S.SITE_EXPERT)
-    assert ceiling == 4000
+    # 4,000 → 6,000 (`yc2_w27_s18` M50.C2.L-contract.V1.U02): Haiku's reviews measured p90 3,509, max
+    # 3,990, six cut at 4,000 — and Sonnet 5 asked with thinking off (`06` D71).
+    assert ceiling == 6000
     assert ceiling > max(v for k, v in S.SITE_MAX_OUTPUT_TOKENS.items() if k != S.SITE_EXPERT)
     assert set(S.SITE_MAX_OUTPUT_TOKENS) == set(S.SITE_TIERS) == set(S.R_SITES)
 
@@ -47,7 +51,9 @@ def test_the_ceiling_holds_a_whole_review():
 def test_the_switch_is_a_named_feature_with_its_wave_and_effect():
     assert ACT.FEATURE_EXPERT_REVIEW == "expert_review"
     assert ACT.require_feature("expert_review") == "expert_review"
-    assert ACT.L4_FEATURES[-1] == ACT.FEATURE_EXPERT_REVIEW
+    # STEP-15 added `morning_brief` after it (tests/test_l4_pilot_activation.py pins the full,
+    # ordered tuple) — this file's own claim is only that the ninth is registered at all.
+    assert ACT.FEATURE_EXPERT_REVIEW in ACT.L4_FEATURES
     assert ACT.FEATURE_WAVES[ACT.FEATURE_EXPERT_REVIEW] == "STEP-12"
     assert ACT.PRECONDITIONS[ACT.FEATURE_EXPERT_REVIEW] == ()
     assert ACT.FEATURE_EXPERT_REVIEW not in ACT.CROSS_LAYER_PRECONDITIONS

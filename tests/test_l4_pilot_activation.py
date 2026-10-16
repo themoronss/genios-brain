@@ -130,10 +130,16 @@ def test_the_five_features_are_the_plans_five_in_wave_order():
     switch for the expert's review of each changed file (R-7). It landed with its site, its wave,
     its effect and no precondition, and it is never default-on — it spends a strong-model call per
     file.
+
+    ⛔ THE TENTH ARRIVED ON PURPOSE, 2026-10-13: `morning_brief` (STEP-15, yc2_w27_s15/M45), the
+    switch for the brief's writer (R-8 Haiku-class, R-8E Sonnet-class once on a failed check —
+    never Opus, s15-D1). It landed with its wave and its effect, no precondition, and it is never
+    default-on — it spends a model call every morning; its own site registration in
+    `reason/bundle/sites.py` is a later unit's, waiting on the Claude 5 thinking fix's merge.
     """
     assert ACT.L4_FEATURES[:5] == ("roster_v2", "ranking_v2", "bundle", "critique", "brief")
     assert ACT.L4_FEATURES[5:] == ("situation_reasoner", "cards_from_situations",
-                                   "calibration_apply", "expert_review")
+                                   "calibration_apply", "expert_review", "morning_brief")
     assert set(ACT.EFFECTS) == set(ACT.L4_FEATURES) == set(ACT.FEATURE_WAVES)
     assert set(ACT.PRECONDITIONS) == set(ACT.L4_FEATURES)
     assert ACT.FEATURE_WAVES["bundle"] == "Z4"

@@ -85,7 +85,20 @@
     "max": 1
    }
   ],
-  "brief": "one line: a meetup on 27 Sep"
+  "brief": {
+   "says": "one line: a meetup on 27 Sep",
+   "lines": [
+    {
+     "section": "today",
+     "about": [
+      "TechBridge"
+     ],
+     "mentions": [
+      "27 Sep"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -96,8 +109,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 — there is no morning brief to appear in"
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)"
  },
  "model": {
   "decider": [
@@ -394,7 +406,7 @@
       ]
      },
      "alternative": "Let it pass and keep an eye on the application's own dates instead.",
-     "wait_or_stop": "Nothing to wait for; the decision is the founder's. Once the twenty-seventh has passed, the invitation is done.",
+     "wait_or_stop": "Nothing to wait for; the decision is yours. Once the twenty-seventh has passed, the invitation is done.",
      "done_when": "You have decided, and the meetup is on the calendar or set aside.",
      "draft": null
     }

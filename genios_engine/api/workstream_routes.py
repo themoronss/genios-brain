@@ -33,15 +33,30 @@ not refuse it — and `check`, the check itself: its fate, why, the question it 
 review's raw words are never served: unchecked they are what "nothing reaches the founder unchecked" forbids, and
 a re-check that refused them leaves them data, as a refused answer's always were.
 
+AND WHAT YOU CORRECTED (STEP-16, `yc2_w27_s16 · M46.C3.L-interface.V2.U03`; S16-D1). The one-file read lists
+the file's standing corrections — its own and its kind of work's, newest first, the cut counted
+(`context/founder_corrections.standing_for`) — and your door on a file is here: `POST
+/v1/workstreams/{file_id}/corrections` keeps your words with their scope (`file`, `kind` or `company`) and,
+optionally, the card they are about; `POST …/corrections/{id}/withdraw` takes one back. Nothing is deleted.
+
 WHO READS. Anyone the dashboard already lets read the tenant (`get_current_org`), as the company
 brief's own read is (`api/company_brief_routes`). A scoped key is refused there, as everywhere.
+
+WHO CORRECTS (`06` D27's rule). A correction for a kind of work or for the company steers every file it
+reaches, so it is the account OWNER's alone (`require_account_owner`'s test). A correction of one file is
+the owner's, or the seat a card of that file is routed to — by assignment or declared responsibility
+(`deliver/seat_access.card_reaches_seat`) — through that card. A `kind` correction on a file the brief
+names no kind of work for is refused, saying so: there is no kind for it to reach.
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy import text
 
+from genios_engine.context import founder_corrections as corrections
 from genios_engine.contracts import claim_check
 from genios_engine.context.workstream_numbers import as_dict as numbers_as_dict
 from genios_engine.context.workstream_numbers import numbers_for
@@ -49,7 +64,8 @@ from genios_engine.context.workstream_timeline import as_dict as timeline_as_dic
 from genios_engine.context.workstream_timeline import timeline_for
 from genios_engine.context.workstreams import as_dict, file_as_dict, file_for, files_for
 from genios_engine.packs.compiler.playbook_reader import playbook_for
-from genios_engine.platform.auth import get_current_org
+from genios_engine.deliver.seat_access import card_reaches_seat
+from genios_engine.platform.auth import ROLE_OWNER, AuthCtx, get_current_org, require_workspace_user
 from genios_engine.platform.wiring import make_graph_store
 from genios_engine.reason.expert import store as reviews
 
@@ -84,6 +100,48 @@ def _review_as_dict(row: reviews.StoredReview | None) -> dict | None:
             "reviewed_at": row.reviewed_at.isoformat()}
 
 
+class CorrectionIn(BaseModel):
+    words: str
+    scope: str = corrections.FILE
+    card_id: str | None = None
+
+
+def _correction_as_dict(item: corrections.Correction) -> dict:
+    return {"correction_id": item.correction_id, "file_id": item.file_id, "card_id": item.card_id,
+            "feedback_id": item.feedback_id, "reason": item.reason, "words": item.words, "scope": item.scope,
+            "kind": item.kind, "brief_line_id": item.brief_line_id, "corrected_by": item.corrected_by,
+            "corrected_at": item.corrected_at.isoformat(), "state": item.state,
+            "withdrawn_by": item.withdrawn_by,
+            "withdrawn_at": item.withdrawn_at.isoformat() if item.withdrawn_at else None}
+
+
+def _standing_as_dict(standing: corrections.Standing) -> dict:
+    return {"standing": [_correction_as_dict(item) for item in standing.corrections], "cut": standing.cut}
+
+
+def _is_owner(ctx: AuthCtx) -> bool:
+    """The account's owner — `require_account_owner`'s own test: no scope list, and the owner's role (or an
+    owner-level key, which has no seat)."""
+    return ctx.scopes is None and ctx.role in (None, ROLE_OWNER)
+
+
+#: The card a seat corrects a file through: this tenant's, about the file (its anchor or one of its people).
+_CARD_OF_THE_FILE = text(
+    "select k.card_id from cards k join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+    "where k.org_id = :o and k.card_id = :c and s.subject_node_id = any(:ids)")
+
+
+def _may_correct(conn, ctx: AuthCtx, file, scope: str, card_id: str | None) -> bool:
+    if _is_owner(ctx):
+        return True
+    if scope != corrections.FILE or not card_id:
+        return False
+    ids = sorted({str(file.file_id), *(str(p) for p in file.people)})
+    if conn.execute(_CARD_OF_THE_FILE, {"o": ctx.org_id, "c": card_id, "ids": ids}).first() is None:
+        return False
+    return card_reaches_seat(conn, ctx.org_id, card_id, ctx.seat_id)
+
+
 @router.get("/v1/workstreams")
 def list_workstreams(org_id: str = Depends(get_current_org)) -> dict:
     """Every file of the tenant, most recently touched first, with what the founder's brief names."""
@@ -106,4 +164,54 @@ def read_workstream(file_id: str, org_id: str = Depends(get_current_org)) -> dic
                 "numbers": numbers_as_dict(numbers_for(conn, org_id, file, timeline, now=now)),
                 "playbook": playbook_for(file.work_kind).as_dict(),
                 "review": {"latest": _review_as_dict(reviews.latest_standing(conn, org_id, file_id)),
-                           "valid": _review_as_dict(reviews.latest_valid(conn, org_id, file_id))}}
+                           "valid": _review_as_dict(reviews.latest_valid(conn, org_id, file_id))},
+                "corrections": _standing_as_dict(corrections.standing_for(
+                    conn, org_id, file_id, people=file.people, kind=file.work_kind))}
+
+
+@router.post("/v1/workstreams/{file_id}/corrections")
+def correct_workstream(file_id: str, body: CorrectionIn, ctx: AuthCtx = Depends(require_workspace_user)) -> dict:
+    """Your correction of the file, in your words, with its scope — kept once (the same words again are the
+    same correction). 404 for a file this tenant does not hold; 403 for a correction this seat may not make;
+    422 for words or a scope the store refuses, or a `kind` on a file the brief names no kind of work for."""
+    now = _now()
+    with _engine().begin() as conn:
+        file = file_for(conn, ctx.org_id, file_id, now=now)
+        if file is None:
+            raise HTTPException(404, "no such file")
+        if not _may_correct(conn, ctx, file, body.scope, body.card_id):
+            raise HTTPException(403, "a correction of every file of a kind, or of the company, is the owner's; "
+                                     "a seat corrects a file through a card of it routed to them")
+        if body.scope == corrections.KIND and not file.work_kind:
+            raise HTTPException(422, "the brief names no kind of work for this file — say which in the brief, "
+                                     "or correct this file alone")
+        try:
+            kept = corrections.correct(
+                conn, org_id=ctx.org_id, file_id=file_id, words=body.words, scope=body.scope,
+                by=ctx.actor_id or ctx.org_id, at=now, card_id=body.card_id,
+                kind=file.work_kind if body.scope == corrections.KIND else None)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        return {"correction": _correction_as_dict(kept)}
+
+
+@router.post("/v1/workstreams/{file_id}/corrections/{correction_id}/withdraw")
+def withdraw_workstream_correction(file_id: str, correction_id: str,
+                                   ctx: AuthCtx = Depends(require_workspace_user)) -> dict:
+    """Take a correction of this file back — kept, withdrawn. The owner may withdraw any; a seat, a correction
+    of one file it wrote. 404 for a correction this file does not hold; 409 for one already withdrawn."""
+    now = _now()
+    with _engine().begin() as conn:
+        file = file_for(conn, ctx.org_id, file_id, now=now)
+        item = corrections.by_id(conn, ctx.org_id, correction_id)
+        if file is None or item is None or item.file_id not in {str(file.file_id), *file.people}:
+            raise HTTPException(404, "no such correction of this file")
+        mine = item.scope == corrections.FILE and item.corrected_by == (ctx.actor_id or ctx.org_id)
+        if not (_is_owner(ctx) or mine):
+            raise HTTPException(403, "only the owner, or the seat that wrote it, takes a correction back")
+        try:
+            gone = corrections.withdraw(conn, org_id=ctx.org_id, correction_id=correction_id,
+                                        by=ctx.actor_id or ctx.org_id, at=now)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        return {"correction": _correction_as_dict(gone)}

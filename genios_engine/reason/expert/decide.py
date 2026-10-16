@@ -126,12 +126,19 @@ from genios_engine.reason.reasoners import ConstraintReasoner
 from genios_engine.reason.registry import ReasonerRegistry
 
 from . import store
+from .card_lines import CardLines
+from .card_lines import DEFAULT as WINDOW_DEFAULT
+from .card_lines import MOVE_DATE as WINDOW_MOVE_DATE
+from .card_lines import WINDOW_SAID
 
 #: The expert's capability — its last segment is the signal's rule (`domain_shadow`), so no pack rule
 #: may be named `file_review`.
 CAPABILITY_ID = "expert.file_review"
 READER_ID = "expert.review"
-DECIDE_VERSION = "1.1.0"           # 1.1.0: decided through the review's check (STEP-13)
+#: 1.1.0: decided through the review's check (STEP-13). 1.2.0: the decision carries the gold card's lines on its
+#: render block and its play's window is the file's (STEP-14, `yc2_w27_s14` M43.C2.L-integration.V3.U04) — so each
+#: covered file is decided once more, from its stored review, with no model.
+DECIDE_VERSION = "1.2.0"
 TRIGGER_KIND = "expert.review"
 SELECTOR_VERSION = "expert.decide@1"
 #: The lane name the confidence floor is resolved for (`decision_maker.LANE_KEY`) — undeclared in
@@ -198,6 +205,31 @@ READER_SPEC = ReasonerSpec(READER_ID, DECIDE_VERSION, required_fields=(F_MODE,),
                            failure_policy=FailurePolicy.REQUIRED, gating=True)
 
 
+#: THE DECISION'S KEY (STEP-13 `yc2_w27_s13` M35.C3.L-integration.V1.U06, crosscheck X12; `06` D48): the run's
+#: `trigger_ref` names the review AND the check it was decided through — `<fingerprint>@<check version>` — so a
+#: review checked again under a newer check is a new decision of the file (`reason/domain_shadow`'s file branch
+#: replaces or clears the older check's), never "this same review" standing beside it.
+DECISION_REF_SEPARATOR = "@"
+
+
+def decision_ref(fingerprint: str, check_version: str) -> str:
+    """The key a file's decision is made on: the review's fingerprint and the version of its check."""
+    return f"{fingerprint}{DECISION_REF_SEPARATOR}{check_version}"
+
+
+def fingerprint_of(ref: Any) -> str | None:
+    """The review a decision's key names — a run from before the key named the fingerprint alone."""
+    if not ref:
+        return None
+    return str(ref).split(DECISION_REF_SEPARATOR, 1)[0]
+
+
+def check_version_of(ref: Any) -> str | None:
+    """The check version a decision's key names — None on a run from before the key."""
+    _fp, sep, version = str(ref or "").partition(DECISION_REF_SEPARATOR)
+    return version if sep else None
+
+
 def is_expert(capability_id: Any) -> bool:
     """Was this decision the expert's — a covered file's, decided from its review?"""
     return str(capability_id or "") == CAPABILITY_ID
@@ -219,6 +251,18 @@ def _window_days(by_when: date | None, eval_time: datetime) -> int:
     return max(1, min(365, (by_when - eval_time.date()).days))
 
 
+def _window(review: ExpertReview, lines: CardLines | None, eval_time: datetime) -> tuple[int, str]:
+    """The file's window and where it came from (`03` F179): the move's own date, from now — else the window the
+    card lines measured for the file (the playbook stage's prior, the file's reply time), else a default week,
+    said to be one. A review stored before 0221 has no lines: its move's date, or the default."""
+    move = review.next_move
+    if move is not None and move.by_when is not None:
+        return _window_days(move.by_when, eval_time), WINDOW_MOVE_DATE
+    if lines is not None:
+        return lines.window_days, lines.window_from
+    return DEFAULT_WINDOW_DAYS, WINDOW_DEFAULT
+
+
 def _done(review: ExpertReview, checked: CheckedReview) -> str:
     """What done looks like, as the check let it stand — or, withheld, the move itself made."""
     words = checked.words
@@ -227,42 +271,66 @@ def _done(review: ExpertReview, checked: CheckedReview) -> str:
     return f"{words.headline} — done" if words.headline else review.wait_or_stop
 
 
-def _play(review: ExpertReview, checked: CheckedReview, eval_time: datetime) -> PlayDefinition:
-    """The next move the check let stand — or, when there is none to show, the watch the review keeps."""
+def _play(review: ExpertReview, checked: CheckedReview, eval_time: datetime,
+          lines: CardLines | None = None) -> PlayDefinition:
+    """The next move the check let stand — or, when there is none to show, the watch the review keeps. Its window
+    is the file's (`_window`); its alternative and stop rule as the check held them (check.v3)."""
     move, words, done = review.next_move, checked.words, _done(review, checked)
+    days, _source = _window(review, lines, eval_time)
     if move is None or checked.fate != SHOWN or not words.headline:
         return PlayDefinition(
-            WATCH_PLAY, DECIDE_VERSION, "Watch the file", (review.wait_or_stop,), read_only=True,
-            window_days=DEFAULT_WINDOW_DAYS, success_events=(done,),
-            metadata={"wait_or_stop": review.wait_or_stop, "done_when": done,
+            WATCH_PLAY, DECIDE_VERSION, "Watch the file", (words.wait_or_stop or "Watch the file",),
+            read_only=True, window_days=days, success_events=(done,),
+            metadata={"wait_or_stop": words.wait_or_stop, "done_when": done,
                       "external_recipient_required": False})
     return PlayDefinition(
         MOVE_PLAY, DECIDE_VERSION, words.headline, (words.headline,), read_only=True,
-        window_days=_window_days(move.by_when, eval_time),
+        window_days=days,
         # WHAT DONE LOOKS LIKE is the review's own `done_when` (M33.C1.L-logic.V1.U16), as checked: the
         # card's success signal (`deliver/card_builder._play_success` reads the audited play's events),
         # never NULL on a card the expert's decision raised (STEP-11's founder-card clause).
         success_events=(done,),
         metadata={"who": move.who, "what": words.headline, "for_whom": move.for_whom, "to": words.to,
                   "by_when": move.by_when.isoformat() if move.by_when else None,
-                  "alternative": review.alternative, "wait_or_stop": review.wait_or_stop,
+                  # STEP-14 (s14-D1): the open ask the move answers — what a version of the file's card names as
+                  # its ask, so another ask is told from the same ask in other words.
+                  "answers": move.answers if checked.stands("answers") else None,
+                  "alternative": words.alternative, "wait_or_stop": words.wait_or_stop,
                   "done_when": done,
                   # ⛔ READ-ONLY, AND NO RECIPIENT IS REACHED: the move is the founder's to make.
                   # Nothing in this play sends anything — permissions are never the model's (D1).
                   "external_recipient_required": False})
 
 
-def _render(review: ExpertReview, checked: CheckedReview) -> dict[str, Any]:
+def _render(review: ExpertReview, checked: CheckedReview, *, eval_time: datetime,
+            lines: CardLines | None = None) -> dict[str, Any]:
     """The card's words — the review's own as the check let them stand (`deliver/pipeline` renders an
     expert decision from these without a narrator call — M33.C1.L-interface.V1.U08): the move as the
     headline (a held file's question in its place), the expert's reading of the file as the situation,
-    the draft as the artifact. A withheld line is empty, never the unchecked words."""
+    the draft as the artifact. A withheld line is empty, never the unchecked words.
+
+    THE GOLD LINES (STEP-14, `yc2_w27_s14` M43.C2.L-integration.V3.U04, s14-F6–F9): beside them, `gold` — the file's
+    subject, company, kind of work and role, why now and what remains (the card lines code wrote at review time,
+    0221; none on a review stored before), the move WHOLE as recommended (who, what, for whom, by when, to — a
+    shown move only), the alternative and the stop rule as the check held them, and the window with where it
+    came from."""
     words = checked.words
     headline = words.headline or (checked.question if checked.fate == HELD else None) \
         or review.frames.primary
+    move = review.next_move
+    shown = move is not None and checked.fate == SHOWN and bool(words.headline)
+    days, source = _window(review, lines, eval_time)
+    gold = {"subject": lines.subject if lines else None, "company": lines.company if lines else None,
+            "kind_of_work": lines.kind_of_work if lines else None, "role": lines.role if lines else None,
+            "why_now": lines.why_now if lines else None, "what_remains": list(lines.what_remains) if lines else [],
+            "recommended": {"who": move.who, "what": words.headline, "for_whom": move.for_whom,
+                            "by_when": move.by_when.isoformat() if move.by_when else None,
+                            "to": words.to} if shown else None,
+            "alternative": words.alternative, "wait_or_stop": words.wait_or_stop,
+            "window": {"days": days, "from": source, "said": WINDOW_SAID[source]}}
     return {"artifact_kind": "draft_message" if words.draft else "none",
             "fallback": {"headline": _braces(headline), "situation": _braces(words.situation or "")},
-            "draft": words.draft, "sources": sources_of(checked)}
+            "draft": words.draft, "sources": sources_of(checked), "gold": gold}
 
 
 #: What a card says its situation is: the expert's reading of the file — an inference, said so.
@@ -299,7 +367,8 @@ def sources_of(checked: CheckedReview) -> dict[str, Any]:
 
 
 def capability_for(review: ExpertReview, checked: CheckedReview, *, root_entity_type: str, domain: str,
-                   eval_time: datetime, live_delivery_enabled: bool = False) -> CapabilityManifest:
+                   eval_time: datetime, live_delivery_enabled: bool = False,
+                   card_lines: CardLines | None = None) -> CapabilityManifest:
     """The expert's capability for one review — one reader, the constraint gate, one play — its version
     the manifest's own content address (see the module docstring)."""
     constraint = ReasonerSpec("core.constraint", "1.0.0", dependencies=(READER_ID,),
@@ -311,7 +380,7 @@ def capability_for(review: ExpertReview, checked: CheckedReview, *, root_entity_
         goal=Goal(CAPABILITY_ID, "What this file needs next, as its review judged it",
                   success_criteria=(_done(review, checked),)),
         reasoners=(READER_SPEC, constraint),
-        plays=(_play(review, checked, eval_time),),
+        plays=(_play(review, checked, eval_time, card_lines),),
         ranking_weights=RANKING_WEIGHTS_V2,
         policies=("read_only",),
         live_delivery_enabled=live_delivery_enabled,
@@ -325,7 +394,7 @@ def capability_for(review: ExpertReview, checked: CheckedReview, *, root_entity_
             SITUATION_IMPORTANCE_KEY: {"importance_bp": LEVEL_BP[review.appraisal.stakes],
                                        "fallback": False, "source": "expert_appraisal"},
             "situation_type": "file_review",
-            "render": _render(review, checked),
+            "render": _render(review, checked, lines=card_lines, eval_time=eval_time),
         })
     content = {key: value for key, value in manifest.to_semantic_dict().items() if key != "version"}
     return replace(manifest, version=f"{DECIDE_VERSION}.{semantic_hash(content)[:16]}")
@@ -382,10 +451,11 @@ def request_for(row: store.StoredReview, *, org_id: str, root_entity_type: str, 
         org_id=org_id,
         capability=capability_for(row.review, row.checked, root_entity_type=root_entity_type,
                                   domain=domain, eval_time=eval_time,
-                                  live_delivery_enabled=live_delivery_enabled),
+                                  live_delivery_enabled=live_delivery_enabled, card_lines=row.card_lines),
         context=context_for(row, org_id=org_id, root_entity_type=root_entity_type,
                             eval_time=eval_time, graph_version=graph_version),
-        evaluation_time=eval_time, trigger_kind=TRIGGER_KIND, trigger_ref=row.fingerprint,
+        evaluation_time=eval_time, trigger_kind=TRIGGER_KIND,
+        trigger_ref=decision_ref(row.fingerprint, row.checked.version),
         mode=mode, config_snapshot_id=config_snapshot_id)
 
 
@@ -528,6 +598,7 @@ __all__ = ["ADAPTER", "CAPABILITY_ID", "DECIDE_VERSION", "DONE_WHEN_IS", "DO_NOT
            "ExpertDecisionMaker", "LEVEL_BP", "MODE_MARKER", "MOVE_PLAY", "NO_EVENT_BP",
            "ONE_EVENT_BP", "OUTCOME_OF", "READER_ID", "READER_SPEC", "ReviewReader", "TRIGGER_KIND",
            "WATCH_PLAY",
-           "capability_for", "cited_ids", "context_for", "decide", "is_event", "is_expert",
+           "DECISION_REF_SEPARATOR", "capability_for", "check_version_of", "cited_ids", "context_for",
+           "decide", "decision_ref", "fingerprint_of", "is_event", "is_expert",
            "mode_of", "orchestrator", "sources_of",
            "request_for"]

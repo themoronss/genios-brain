@@ -1,0 +1,916 @@
+{
+ "case_id": "F61",
+ "source": "ideal_reader",
+ "recorded_at": "417c10fb",
+ "answers": {
+  "1212c33936374d9200236248976eb1306ac5b3f943be2c676f28a8fc3f585b90": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 254,
+    "end_offset": 289,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 254, \"end_offset\": 289, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1555,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "21eb40c16adbf1284edff637e4a8989bad9037fe4ac09112b986a1a401fa184c": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "introduction"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Sana Qadri",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Sana Qadri",
+        "start_offset": 9,
+        "end_offset": 19
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Driftwood",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Driftwood",
+        "start_offset": 21,
+        "end_offset": 30
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "relationships": [
+     {
+      "party": "Sana Qadri",
+      "nature": "introduced contact",
+      "direction": "inbound",
+      "evidence_text": "Arjun, meet Sana Qadri"
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "medium",
+     "motive": "introduce a contact"
+    }
+   },
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Sana Qadri\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Sana Qadri\", \"start_offset\": 9, \"end_offset\": 19}], \"confidence_bp\": 9000}, {\"surface_form\": \"Driftwood\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Driftwood\", \"start_offset\": 21, \"end_offset\": 30}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Sana Qadri\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Sana Qadri\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
+   "framed": true,
+   "input_tokens": 5559,
+   "output_tokens": 195,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2ec8a43ec10cbc98355c7cea647b92dccf69bee9cb432ab82bb2a561f2ee88d2": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "introduction"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Tanvi Shah",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Tanvi Shah",
+        "start_offset": 9,
+        "end_offset": 19
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Copperleaf",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Copperleaf",
+        "start_offset": 21,
+        "end_offset": 31
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "relationships": [
+     {
+      "party": "Tanvi Shah",
+      "nature": "introduced contact",
+      "direction": "inbound",
+      "evidence_text": "Arjun, meet Tanvi Shah"
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "medium",
+     "motive": "introduce a contact"
+    }
+   },
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Tanvi Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tanvi Shah\", \"start_offset\": 9, \"end_offset\": 19}], \"confidence_bp\": 9000}, {\"surface_form\": \"Copperleaf\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Copperleaf\", \"start_offset\": 21, \"end_offset\": 31}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Tanvi Shah\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Tanvi Shah\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
+   "framed": true,
+   "input_tokens": 5559,
+   "output_tokens": 196,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "41b70f482f80c43cbc3e6fc93f3ee2014ed36bcc5293cf19a7715aeacbd6c305": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Sana Qadri (Driftwood)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Sana Qadri (Driftwood)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1188,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6218dcf89c3772e28e225cb624d3228701808ce1d53fb177d09de00014ec878e": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Sana Qadri, who runs finance at Driftwood and asked to see how you keep investor updates on time, and left the two of you to take it from there.",
+      "evidence": [
+       "evt_#2"
+      ],
+      "quote": "who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time"
+     },
+     {
+      "claim": "Sana replied asking for a short call on Wednesday at 2 pm, to see how you handle the monthly investor update.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Could we do a short call on Wednesday at 2 pm? I'd like to see how you handle the monthly investor update."
+     },
+     {
+      "claim": "She signs as Head of Finance at Driftwood.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Sana Qadri Head of Finance, Driftwood"
+     },
+     {
+      "claim": "The ask is open in this file and waits on you.",
+      "evidence": [
+       "loop:loop_#1"
+      ]
+     },
+     {
+      "claim": "The file sits under a situation seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@fundraising"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The move is yours: one reply answers Sana's ask.",
+      "based_on": [
+       "fact:2",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "Introly has done its part; the reply goes to Sana, never to the connector.",
+      "based_on": [
+       "fact:1"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "In this file the other side moves within a day, and the silence since is yours.",
+      "based_on": [
+       "num:usual_gap",
+       "num:days_quiet"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Driftwood may be a customer for the way you handle investor updates.",
+      "needs": "The call, and what Sana asks for."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether Wednesday at 2 pm is free on your calendar.",
+      "relevance": "It decides whether you confirm or counter."
+     }
+    ],
+    "frames": {
+     "primary": "The introduced finance lead wrote back first and proposed Wednesday at 2 pm; the confirmation is yours.",
+     "rivals": [
+      "A prospective customer for the way you handle investor updates.",
+      "A peer comparing notes, where the call is goodwill only."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "intro",
+     "why": "Sana Qadri came to you through the connector's introduction and asked for a call to see how you handle the monthly investor update.",
+     "evidence": [
+      "evt_#2",
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, from the brief and the file: a contact who proposes a time gets a confirmation or a counter promptly.",
+     "actual": "Sana proposed Wednesday at 2 pm the day after the introduction; nothing from you is in the file."
+    },
+    "scenarios": {
+     "do_nothing": "Wednesday passes unconfirmed, and a contact who proposed a time reads the silence as no.",
+     "act": "A short confirmation now books the call she proposed.",
+     "best": "The call happens on Wednesday and Driftwood becomes a customer.",
+     "worst": "No confirmation goes before Wednesday, or one goes to the connector, and the call is lost.",
+     "signals_to_watch": [
+      "Sana accepting the invite",
+      "Wednesday drawing near with nothing confirmed"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "reversible",
+     "reasons": [
+      "Sana proposed a time and waits on your answer.",
+      "Her proposed day is this week.",
+      "A missed call can be offered again, so a wrong move is reversible."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "You",
+     "what": "Confirm the call with Sana Qadri on Wednesday at 2 pm, to show her how you handle the monthly investor update",
+     "for_whom": "Sana Qadri at Driftwood",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "fact:4"
+     ],
+     "to": "Sana Qadri",
+     "answers": "loop:loop_#1"
+    },
+    "alternative": "If Wednesday at 2 pm does not work, reply to Sana with two other times this week.",
+    "wait_or_stop": "Do not wait: the move is yours. Once you have answered, wait for Sana; if no answer comes within a week, nudge once, then stop.",
+    "done_when": "The call with Sana Qadri on Wednesday at 2 pm is on both calendars.",
+    "draft": "Hi Sana, lovely to meet you. Wednesday at 2 pm works for me. I'll send an invite and show you how we handle the monthly investor update. Best"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Sana Qadri, who runs finance at Driftwood and asked to see how you keep investor updates on time, and left the two of you to take it from there.\", \"evidence\": [\"evt_#2\"], \"quote\": \"who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time\"}, {\"claim\": \"Sana replied asking for a short call on Wednesday at 2 pm, to see how you handle the monthly investor update.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Could we do a short call on Wednesday at 2 pm? I'd like to see how you handle the monthly investor update.\"}, {\"claim\": \"She signs as Head of Finance at Driftwood.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Sana Qadri Head of Finance, Driftwood\"}, {\"claim\": \"The ask is open in this file and waits on you.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@fundraising\"]}], \"inferences\": [{\"claim\": \"The move is yours: one reply answers Sana's ask.\", \"based_on\": [\"fact:2\", \"fact:4\"]}, {\"claim\": \"Introly has done its part; the reply goes to Sana, never to the connector.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"In this file the other side moves within a day, and the silence since is yours.\", \"based_on\": [\"num:usual_gap\", \"num:days_quiet\"]}], \"hypotheses\": [{\"proposition\": \"Driftwood may be a customer for the way you handle investor updates.\", \"needs\": \"The call, and what Sana asks for.\"}], \"unknowns\": [{\"question\": \"Whether Wednesday at 2 pm is free on your calendar.\", \"relevance\": \"It decides whether you confirm or counter.\"}], \"frames\": {\"primary\": \"The introduced finance lead wrote back first and proposed Wednesday at 2 pm; the confirmation is yours.\", \"rivals\": [\"A prospective customer for the way you handle investor updates.\", \"A peer comparing notes, where the call is goodwill only.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Sana Qadri came to you through the connector's introduction and asked for a call to see how you handle the monthly investor update.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: a contact who proposes a time gets a confirmation or a counter promptly.\", \"actual\": \"Sana proposed Wednesday at 2 pm the day after the introduction; nothing from you is in the file.\"}, \"scenarios\": {\"do_nothing\": \"Wednesday passes unconfirmed, and a contact who proposed a time reads the silence as no.\", \"act\": \"A short confirmation now books the call she proposed.\", \"best\": \"The call happens on Wednesday and Driftwood becomes a customer.\", \"worst\": \"No confirmation goes before Wednesday, or one goes to the connector, and the call is lost.\", \"signals_to_watch\": [\"Sana accepting the invite\", \"Wednesday drawing near with nothing confirmed\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Sana proposed a time and waits on your answer.\", \"Her proposed day is this week.\", \"A missed call can be offered again, so a wrong move is reversible.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"You\", \"what\": \"Confirm the call with Sana Qadri on Wednesday at 2 pm, to show her how you handle the monthly investor update\", \"for_whom\": \"Sana Qadri at Driftwood\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"], \"to\": \"Sana Qadri\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If Wednesday at 2 pm does not work, reply to Sana with two other times this week.\", \"wait_or_stop\": \"Do not wait: the move is yours. Once you have answered, wait for Sana; if no answer comes within a week, nudge once, then stop.\", \"done_when\": \"The call with Sana Qadri on Wednesday at 2 pm is on both calendars.\", \"draft\": \"Hi Sana, lovely to meet you. Wednesday at 2 pm works for me. I'll send an invite and show you how we handle the monthly investor update. Best\"}",
+   "framed": true,
+   "input_tokens": 3658,
+   "output_tokens": 1028,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "871cc342a5d2dfeeca2b0d0f905d006a80cc99d6e92831ecf266bf9268285830": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Tanvi Shah, who leads the founder programme at Copperleaf and asked whether you would apply.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "who leads the founder programme at Copperleaf and asked whether Nimbus Labs would apply"
+     },
+     {
+      "claim": "The introduction hands the first move to you.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Arjun, over to you. I'll let you two take it from here"
+     },
+     {
+      "claim": "Nothing from Tanvi or from you is in the file since.",
+      "evidence": [
+       "evt_#1",
+       "num:days_quiet"
+      ]
+     },
+     {
+      "claim": "The file sits under a situation seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@fundraising"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The first move is yours: the connector handed it to you, and Tanvi is waiting to hear.",
+      "based_on": [
+       "fact:2",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "Introly has done its part; anything further goes to Tanvi, never to the connector.",
+      "based_on": [
+       "fact:2"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+      "based_on": [
+       "hist:derived.history.times_seen@fundraising"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Copperleaf's programme may suit you.",
+      "needs": "What it involves, from Tanvi."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "What the programme involves and when it closes.",
+      "relevance": "It decides whether applying is worth it."
+     }
+    ],
+    "frames": {
+     "primary": "Your connector introduced the lead of a founder programme who asked whether you would apply, and handed you the first move.",
+     "rivals": [
+      "An opening into a programme that could help the round.",
+      "An invitation sent widely, where applying is optional."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "program",
+     "why": "Tanvi Shah leads the founder programme at Copperleaf and asked whether you would apply.",
+     "evidence": [
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, from the brief and the file: when a connector hands you the first move, you write to the person within days.",
+     "actual": "The connector handed you the first move; nothing from you or from Tanvi is in the file."
+    },
+    "scenarios": {
+     "do_nothing": "Tanvi's question goes unanswered and the programme's next intake passes you by.",
+     "act": "A short note now keeps the door to the programme open.",
+     "best": "You learn what the programme offers and apply if it fits.",
+     "worst": "You never answer, or answer the connector, and the invitation lapses.",
+     "signals_to_watch": [
+      "A mail from Tanvi in the file",
+      "A week passing with nothing from you"
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The connector handed you the first move.",
+      "A note sent later can still land, so a wrong move is reversible."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "You",
+     "what": "Tell Tanvi Shah whether you will apply to Copperleaf's founder programme, and ask what it takes",
+     "for_whom": "Tanvi Shah at Copperleaf",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "to": "Tanvi Shah",
+     "answers": null
+    },
+    "alternative": "If the programme is not for you, write to Tanvi thanking her and saying so.",
+    "wait_or_stop": "Do not wait: the first move is yours. Once you have written, wait for Tanvi; if no answer comes within a week, nudge once, then stop.",
+    "done_when": "Tanvi Shah has your answer on the programme.",
+    "draft": "Hi Tanvi, good to meet you through Introly, and thank you for thinking of us. We'd like to hear more about the founder programme before we apply. Could you send me what it involves? Best"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Tanvi Shah, who leads the founder programme at Copperleaf and asked whether you would apply.\", \"evidence\": [\"evt_#1\"], \"quote\": \"who leads the founder programme at Copperleaf and asked whether Nimbus Labs would apply\"}, {\"claim\": \"The introduction hands the first move to you.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Arjun, over to you. I'll let you two take it from here\"}, {\"claim\": \"Nothing from Tanvi or from you is in the file since.\", \"evidence\": [\"evt_#1\", \"num:days_quiet\"]}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@fundraising\"]}], \"inferences\": [{\"claim\": \"The first move is yours: the connector handed it to you, and Tanvi is waiting to hear.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"Introly has done its part; anything further goes to Tanvi, never to the connector.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.\", \"based_on\": [\"hist:derived.history.times_seen@fundraising\"]}], \"hypotheses\": [{\"proposition\": \"Copperleaf's programme may suit you.\", \"needs\": \"What it involves, from Tanvi.\"}], \"unknowns\": [{\"question\": \"What the programme involves and when it closes.\", \"relevance\": \"It decides whether applying is worth it.\"}], \"frames\": {\"primary\": \"Your connector introduced the lead of a founder programme who asked whether you would apply, and handed you the first move.\", \"rivals\": [\"An opening into a programme that could help the round.\", \"An invitation sent widely, where applying is optional.\"]}, \"proposed_kind\": {\"kind\": \"program\", \"why\": \"Tanvi Shah leads the founder programme at Copperleaf and asked whether you would apply.\", \"evidence\": [\"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: when a connector hands you the first move, you write to the person within days.\", \"actual\": \"The connector handed you the first move; nothing from you or from Tanvi is in the file.\"}, \"scenarios\": {\"do_nothing\": \"Tanvi's question goes unanswered and the programme's next intake passes you by.\", \"act\": \"A short note now keeps the door to the programme open.\", \"best\": \"You learn what the programme offers and apply if it fits.\", \"worst\": \"You never answer, or answer the connector, and the invitation lapses.\", \"signals_to_watch\": [\"A mail from Tanvi in the file\", \"A week passing with nothing from you\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The connector handed you the first move.\", \"A note sent later can still land, so a wrong move is reversible.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"You\", \"what\": \"Tell Tanvi Shah whether you will apply to Copperleaf's founder programme, and ask what it takes\", \"for_whom\": \"Tanvi Shah at Copperleaf\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Tanvi Shah\", \"answers\": null}, \"alternative\": \"If the programme is not for you, write to Tanvi thanking her and saying so.\", \"wait_or_stop\": \"Do not wait: the first move is yours. Once you have written, wait for Tanvi; if no answer comes within a week, nudge once, then stop.\", \"done_when\": \"Tanvi Shah has your answer on the programme.\", \"draft\": \"Hi Tanvi, good to meet you through Introly, and thank you for thinking of us. We'd like to hear more about the founder programme before we apply. Could you send me what it involves? Best\"}",
+   "framed": true,
+   "input_tokens": 3491,
+   "output_tokens": 914,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8f5e9cd8f4226b3992a4c5f39dccddfc50f668f54cac2f1cb009701572c00db8": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 273,
+    "end_offset": 308,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 273, \"end_offset\": 308, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1560,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a4c24a6f58953ae6133c43ea8ac30b01294b14127af56e5adcde7c7115d5149e": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1057,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ab9d66f55d00e46019df63468c809daf1c73b1d2c6334f627ac67225ad88ab9b": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Sana Qadri, who runs finance at Driftwood and asked to see how you keep investor updates on time.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time"
+     },
+     {
+      "claim": "The introduction hands the first move to you.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Arjun, over to you. I'll let you two take it from here"
+     },
+     {
+      "claim": "Nothing from Sana or from you is in the file since.",
+      "evidence": [
+       "evt_#1",
+       "num:days_quiet"
+      ]
+     },
+     {
+      "claim": "The file sits under a situation seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@fundraising"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The first move is yours: the connector handed it to you, and Sana is waiting to hear.",
+      "based_on": [
+       "fact:2",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "Introly has done its part; anything further goes to Sana, never to the connector.",
+      "based_on": [
+       "fact:2"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+      "based_on": [
+       "hist:derived.history.times_seen@fundraising"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Driftwood may be a customer.",
+      "needs": "A first call with Sana."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "What Sana wants to see first.",
+      "relevance": "It shapes what you offer in the note."
+     }
+    ],
+    "frames": {
+     "primary": "Your connector introduced a finance lead who wants to see how you keep investor updates on time, and handed you the first move.",
+     "rivals": [
+      "A prospective customer for the way you handle investor updates.",
+      "A peer comparing notes."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "intro",
+     "why": "Introly introduced you to Sana Qadri of Driftwood, who asked to see how you keep investor updates on time.",
+     "evidence": [
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, from the brief and the file: when a connector hands you the first move, you write to the person within days.",
+     "actual": "The connector handed you the first move; nothing from you or from Sana is in the file."
+    },
+    "scenarios": {
+     "do_nothing": "The introduction goes cold before you have written, and the connector's handover is wasted.",
+     "act": "A short note now starts the conversation while the introduction is warm.",
+     "best": "Sana takes a call and Driftwood becomes a customer.",
+     "worst": "You never write, or write to the connector, and the introduction lapses.",
+     "signals_to_watch": [
+      "A mail from Sana in the file",
+      "A week passing with nothing from you"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "medium",
+     "reversibility": "reversible",
+     "reasons": [
+      "The connector handed you the first move.",
+      "A note sent later can still land, so a wrong move is reversible."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "You",
+     "what": "Write to Sana Qadri offering to show her how you keep investor updates on time",
+     "for_whom": "Sana Qadri at Driftwood",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "to": "Sana Qadri",
+     "answers": null
+    },
+    "alternative": "If a call is too early, write to Sana with a short note on how you handle investor updates and offer the call later.",
+    "wait_or_stop": "Do not wait: the first move is yours. Once you have written, wait for Sana; if no answer comes within a week, nudge once, then stop.",
+    "done_when": "Sana Qadri has your note and a call with her is proposed.",
+    "draft": "Hi Sana, good to meet you through Introly. I'd be glad to show you how we keep investor updates on time. Would a short call this week suit you? Send me a time and I'll send an invite. Best"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Sana Qadri, who runs finance at Driftwood and asked to see how you keep investor updates on time.\", \"evidence\": [\"evt_#1\"], \"quote\": \"who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time\"}, {\"claim\": \"The introduction hands the first move to you.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Arjun, over to you. I'll let you two take it from here\"}, {\"claim\": \"Nothing from Sana or from you is in the file since.\", \"evidence\": [\"evt_#1\", \"num:days_quiet\"]}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@fundraising\"]}], \"inferences\": [{\"claim\": \"The first move is yours: the connector handed it to you, and Sana is waiting to hear.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"Introly has done its part; anything further goes to Sana, never to the connector.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.\", \"based_on\": [\"hist:derived.history.times_seen@fundraising\"]}], \"hypotheses\": [{\"proposition\": \"Driftwood may be a customer.\", \"needs\": \"A first call with Sana.\"}], \"unknowns\": [{\"question\": \"What Sana wants to see first.\", \"relevance\": \"It shapes what you offer in the note.\"}], \"frames\": {\"primary\": \"Your connector introduced a finance lead who wants to see how you keep investor updates on time, and handed you the first move.\", \"rivals\": [\"A prospective customer for the way you handle investor updates.\", \"A peer comparing notes.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Introly introduced you to Sana Qadri of Driftwood, who asked to see how you keep investor updates on time.\", \"evidence\": [\"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: when a connector hands you the first move, you write to the person within days.\", \"actual\": \"The connector handed you the first move; nothing from you or from Sana is in the file.\"}, \"scenarios\": {\"do_nothing\": \"The introduction goes cold before you have written, and the connector's handover is wasted.\", \"act\": \"A short note now starts the conversation while the introduction is warm.\", \"best\": \"Sana takes a call and Driftwood becomes a customer.\", \"worst\": \"You never write, or write to the connector, and the introduction lapses.\", \"signals_to_watch\": [\"A mail from Sana in the file\", \"A week passing with nothing from you\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"The connector handed you the first move.\", \"A note sent later can still land, so a wrong move is reversible.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"You\", \"what\": \"Write to Sana Qadri offering to show her how you keep investor updates on time\", \"for_whom\": \"Sana Qadri at Driftwood\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Sana Qadri\", \"answers\": null}, \"alternative\": \"If a call is too early, write to Sana with a short note on how you handle investor updates and offer the call later.\", \"wait_or_stop\": \"Do not wait: the first move is yours. Once you have written, wait for Sana; if no answer comes within a week, nudge once, then stop.\", \"done_when\": \"Sana Qadri has your note and a call with her is proposed.\", \"draft\": \"Hi Sana, good to meet you through Introly. I'd be glad to show you how we keep investor updates on time. Would a short call this week suit you? Send me a time and I'll send an invite. Best\"}",
+   "framed": true,
+   "input_tokens": 3489,
+   "output_tokens": 924,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b21d3b6b58abb57e38150442123828a77236ac09b510fe196a1bab9d347486e8": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "product demo",
+     "investor updates"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Sana Qadri",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Sana Qadri",
+        "start_offset": 13,
+        "end_offset": 23
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Driftwood",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Driftwood",
+        "start_offset": 25,
+        "end_offset": 34
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Sana Qadri",
+      "value": "Head of Finance",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Head of Finance, Driftwood",
+        "start_offset": 193,
+        "end_offset": 219
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "see the investor update flow"
+    },
+    "questions": [
+     {
+      "text": "Can Arjun take a short call with Sana on Wednesday at 2 pm?",
+      "asked_by": "Sana Qadri",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Could we do a short call on Wednesday at 2 pm?",
+        "start_offset": 66,
+        "end_offset": 112
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Sana Qadri",
+      "text": "Wednesday at 2 pm",
+      "evidence_text": "on Wednesday at 2 pm?"
+     }
+    ],
+    "implied_actions": [
+     "confirm Wednesday at 2 pm with Sana"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"product demo\", \"investor updates\"], \"entity_mentions\": [{\"surface_form\": \"Sana Qadri\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Sana Qadri\", \"start_offset\": 13, \"end_offset\": 23}], \"confidence_bp\": 9000}, {\"surface_form\": \"Driftwood\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Driftwood\", \"start_offset\": 25, \"end_offset\": 34}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Sana Qadri\", \"value\": \"Head of Finance\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Head of Finance, Driftwood\", \"start_offset\": 193, \"end_offset\": 219}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"see the investor update flow\"}, \"questions\": [{\"text\": \"Can Arjun take a short call with Sana on Wednesday at 2 pm?\", \"asked_by\": \"Sana Qadri\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could we do a short call on Wednesday at 2 pm?\", \"start_offset\": 66, \"end_offset\": 112}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Sana Qadri\", \"text\": \"Wednesday at 2 pm\", \"evidence_text\": \"on Wednesday at 2 pm?\"}], \"implied_actions\": [\"confirm Wednesday at 2 pm with Sana\"]}",
+   "framed": true,
+   "input_tokens": 5530,
+   "output_tokens": 341,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e4cc04bc5c1c18d8cb9629bc83faefb09048ea0efbadbcbe736635353fe5a591": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "introduction"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Omkar Joshi",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Omkar Joshi",
+        "start_offset": 9,
+        "end_offset": 20
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Redfern Labs",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Redfern Labs",
+        "start_offset": 22,
+        "end_offset": 34
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "relationships": [
+     {
+      "party": "Omkar Joshi",
+      "nature": "introduced contact",
+      "direction": "inbound",
+      "evidence_text": "Arjun, meet Omkar Joshi"
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "medium",
+     "motive": "introduce a contact"
+    }
+   },
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Omkar Joshi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Omkar Joshi\", \"start_offset\": 9, \"end_offset\": 20}], \"confidence_bp\": 9000}, {\"surface_form\": \"Redfern Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Redfern Labs\", \"start_offset\": 22, \"end_offset\": 34}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Omkar Joshi\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Omkar Joshi\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
+   "framed": true,
+   "input_tokens": 5556,
+   "output_tokens": 198,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ef8837495d55aa6d12419d3b03356a9f8c069ed8778ed335f73aded25c0575a9": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could we do a short call on Wednesday at 2 pm?",
+    "start_offset": 66,
+    "end_offset": 112,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could we do a short call on Wednesday at 2 pm?\", \"start_offset\": 66, \"end_offset\": 112, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1535,
+   "output_tokens": 49,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fb69727f8eba9e45f59d72d11a4c61e395f5cfd9f7e41664f5d777898734c098": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 269,
+    "end_offset": 304,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 269, \"end_offset\": 304, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1559,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ff719f5333c7d9a6c2a43475fdd522b0c395dd3aa855cd55df23340085b471c1": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Omkar Joshi, the CTO of Redfern Labs, who asked to compare notes on agent tooling.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "the CTO of Redfern Labs, who asked to compare notes on agent tooling"
+     },
+     {
+      "claim": "The introduction hands the first move to you.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Arjun, over to you. I'll let you two take it from here"
+     },
+     {
+      "claim": "Nothing from Omkar or from you is in the file since.",
+      "evidence": [
+       "evt_#1",
+       "num:days_quiet"
+      ]
+     },
+     {
+      "claim": "The file sits under a situation seen for the first time.",
+      "evidence": [
+       "sit:sit_#1",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The first move is yours: the connector handed it to you, and Omkar is waiting to hear.",
+      "based_on": [
+       "fact:2",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "Introly has done its part; anything further goes to Omkar, never to the connector.",
+      "based_on": [
+       "fact:2"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.",
+      "based_on": [
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Redfern Labs may become a partner.",
+      "needs": "A first call with Omkar."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "What Omkar wants to compare notes on.",
+      "relevance": "It shapes what you bring to the call."
+     }
+    ],
+    "frames": {
+     "primary": "Your connector introduced a CTO who wants to compare notes on agent tooling, and handed you the first move.",
+     "rivals": [
+      "A peer exchange that could become a partnership.",
+      "A courtesy introduction with nothing behind it."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "intro",
+     "why": "Introly introduced you to Omkar Joshi, the CTO of Redfern Labs, who asked to compare notes on agent tooling.",
+     "evidence": [
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, from the brief and the file: when a connector hands you the first move, you write to the person within days.",
+     "actual": "The connector handed you the first move; nothing from you or from Omkar is in the file."
+    },
+    "scenarios": {
+     "do_nothing": "The introduction goes cold before you have written.",
+     "act": "A short note now starts the exchange while the introduction is warm.",
+     "best": "A useful exchange with a CTO building in the same space.",
+     "worst": "You never write, or write to the connector, and the introduction lapses.",
+     "signals_to_watch": [
+      "A mail from Omkar in the file",
+      "A week passing with nothing from you"
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The connector handed you the first move.",
+      "A note sent later can still land, so a wrong move is reversible."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "You",
+     "what": "Write to Omkar Joshi offering a call to compare notes on agent tooling",
+     "for_whom": "Omkar Joshi at Redfern Labs",
+     "by_when": null,
+     "rests_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "to": "Omkar Joshi",
+     "answers": null
+    },
+    "alternative": "If a call is not worth it now, write to Omkar with two lines on what you are building and leave the door open.",
+    "wait_or_stop": "Do not wait: the first move is yours. Once you have written, wait for Omkar; if no answer comes within a week, nudge once, then stop.",
+    "done_when": "Omkar Joshi has your note and a call with him is proposed.",
+    "draft": "Hi Omkar, good to meet you through Introly. I'd be glad to compare notes on agent tooling. Would a call next week suit you? Send me a time and I'll send an invite. Best"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Omkar Joshi, the CTO of Redfern Labs, who asked to compare notes on agent tooling.\", \"evidence\": [\"evt_#1\"], \"quote\": \"the CTO of Redfern Labs, who asked to compare notes on agent tooling\"}, {\"claim\": \"The introduction hands the first move to you.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Arjun, over to you. I'll let you two take it from here\"}, {\"claim\": \"Nothing from Omkar or from you is in the file since.\", \"evidence\": [\"evt_#1\", \"num:days_quiet\"]}, {\"claim\": \"The file sits under a situation seen for the first time.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The first move is yours: the connector handed it to you, and Omkar is waiting to hear.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"Introly has done its part; anything further goes to Omkar, never to the connector.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: the file is seen for the first time and no playbook speaks for it.\", \"based_on\": [\"hist:derived.history.times_seen@admin\"]}], \"hypotheses\": [{\"proposition\": \"Redfern Labs may become a partner.\", \"needs\": \"A first call with Omkar.\"}], \"unknowns\": [{\"question\": \"What Omkar wants to compare notes on.\", \"relevance\": \"It shapes what you bring to the call.\"}], \"frames\": {\"primary\": \"Your connector introduced a CTO who wants to compare notes on agent tooling, and handed you the first move.\", \"rivals\": [\"A peer exchange that could become a partnership.\", \"A courtesy introduction with nothing behind it.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Introly introduced you to Omkar Joshi, the CTO of Redfern Labs, who asked to compare notes on agent tooling.\", \"evidence\": [\"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, from the brief and the file: when a connector hands you the first move, you write to the person within days.\", \"actual\": \"The connector handed you the first move; nothing from you or from Omkar is in the file.\"}, \"scenarios\": {\"do_nothing\": \"The introduction goes cold before you have written.\", \"act\": \"A short note now starts the exchange while the introduction is warm.\", \"best\": \"A useful exchange with a CTO building in the same space.\", \"worst\": \"You never write, or write to the connector, and the introduction lapses.\", \"signals_to_watch\": [\"A mail from Omkar in the file\", \"A week passing with nothing from you\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The connector handed you the first move.\", \"A note sent later can still land, so a wrong move is reversible.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"You\", \"what\": \"Write to Omkar Joshi offering a call to compare notes on agent tooling\", \"for_whom\": \"Omkar Joshi at Redfern Labs\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Omkar Joshi\", \"answers\": null}, \"alternative\": \"If a call is not worth it now, write to Omkar with two lines on what you are building and leave the door open.\", \"wait_or_stop\": \"Do not wait: the first move is yours. Once you have written, wait for Omkar; if no answer comes within a week, nudge once, then stop.\", \"done_when\": \"Omkar Joshi has your note and a call with him is proposed.\", \"draft\": \"Hi Omkar, good to meet you through Introly. I'd be glad to compare notes on agent tooling. Would a call next week suit you? Send me a time and I'll send an invite. Best\"}",
+   "framed": true,
+   "input_tokens": 3473,
+   "output_tokens": 896,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

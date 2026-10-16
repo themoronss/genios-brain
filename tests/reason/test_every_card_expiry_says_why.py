@@ -48,11 +48,21 @@ SITES: dict[tuple[str, str], list[tuple[str, str | None, str | None]]] = {
         ("expire_cards", "REPLACED", None)],
     # STEP-12 M33.C1.L-integration.V2.U12: a file's new review that names no move now clears what an
     # earlier review decided — its cards RULE_CLEARED, by the one writer (added deliberately).
+    # ⛔ RESTATED by STEP-16 (`yc2_w27_s16` M47.C1.L-integration.V1.U02, deliberately): a card whose ask closed
+    # ANSWERED is resolved VERIFIED, one closed only replied is cleared with its closing event, the rest as before.
     ("genios_engine/reason/domain_shadow.py", "_clear_file_decision"): [
+        ("resolve_cards", "VERIFIED", None), ("expire_cards", "RULE_CLEARED", None),
         ("expire_cards", "RULE_CLEARED", None)],
     ("genios_engine/feedback/calibrate.py", "run_calibration"): [
         ("expire_cards", "RULE_MUTED", None)],
     ("genios_engine/deliver/store.py", "sweep_lifecycle"): [("expire_lapsed", None, None)],
+    # STEP-14 (`yc2_w27_s14` M42.C3): the card store asks the one writer which card a file's next version goes to,
+    # and versions it there — no expiry, but this module's calls of the writer, so named (added deliberately).
+    ("genios_engine/deliver/store.py", "file_card"): [("file_card", None, None)],
+    ("genios_engine/deliver/store.py", "version_card"): [("version_card", None, None)],
+    # STEP-14 M42.C3.L-integration.V2.U03: a file card whose signal closed and that no version reached is
+    # REPLACED at the end of the pipeline's pass, by the one writer (added deliberately).
+    ("genios_engine/deliver/pipeline.py", "_close_the_files_pass"): [("expire_cards", "REPLACED", None)],
     ("genios_engine/api/intelligence_routes.py", "dismiss_insight"): [
         ("expire_cards", "EXTENSION", "DISMISSED")],
     ("scripts/repair_self_identity.py", "apply"): [("expire_cards", "SUBJECT_IS_US", "RETIRED")],
@@ -86,7 +96,7 @@ def _site(rel: str, function: str):
 #: The `-k` word of each site's tree unit (`yc2_w27_s06 · M24.C1`).
 _UNIT_WORD = {"runner": "runner", "composer": "composer", "publication": "publication",
               "domain_shadow": "domain_shadow", "calibrate": "calibrate", "store": "lapse",
-              "intelligence_routes": "dismiss", "repair_self_identity": "repair"}
+              "intelligence_routes": "dismiss", "repair_self_identity": "repair", "pipeline": "pipeline"}
 
 
 @pytest.mark.parametrize("site", sorted(SITES),
@@ -104,8 +114,10 @@ def test_no_other_function_in_these_files_calls_the_writer():
 def test_every_cause_a_site_names_is_in_the_closed_vocabulary():
     from genios_engine.platform import card_lifecycle as cl
     for calls in SITES.values():
-        for _helper, cause, kind in calls:
-            assert cause is None or getattr(cl, cause) in cl.CAUSES
+        for helper, cause, kind in calls:
+            # STEP-16: a resolution's cause is in the resolution's own closed list (`card_lifecycle.RESOLVE_CAUSES`).
+            closed = cl.RESOLVE_CAUSES if helper == "resolve_cards" else cl.CAUSES
+            assert cause is None or getattr(cl, cause) in closed
             assert kind is None or getattr(cl, kind) in cl.KINDS
 
 

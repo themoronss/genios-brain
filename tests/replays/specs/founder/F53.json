@@ -232,7 +232,20 @@
     "max": 1
    }
   ],
-  "brief": "Larkspur went quiet after four exchanges in March - six months"
+  "brief": {
+   "says": "Larkspur went quiet after four exchanges in March - six months",
+   "lines": [
+    {
+     "section": "today",
+     "about": [
+      "Larkspur"
+     ],
+     "mentions": [
+      "outside your switched-on work"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -243,8 +256,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only - a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 - there is no morning brief to appear in"
+  "cards": "brief only - a line in the morning brief, not a card (D12d)"
  },
  "model": {
   "expert": [
@@ -614,7 +626,7 @@
        "fact:4"
       ]
      },
-     "alternative": "If Ira asks Arjun to join the meeting, prepare the walk-through of the design partners he offered.",
+     "alternative": "If Ira asks you to join the meeting, prepare the walk-through of the design partners you offered.",
      "wait_or_stop": "Wait until the Monday meeting has passed and a week more; then ask Ira once. If that also goes unanswered, stop chasing and keep Larkspur for a later update with news.",
      "done_when": "Larkspur's answer from the Monday meeting is known, and the next step, a call, more material or a pass, is in the file.",
      "draft": null
@@ -622,6 +634,5 @@
    }
   ]
  },
- "notes": "09 G1, the benchmark's March exchanges: four real exchanges, both ways, then six months of nothing. A line in the brief, not a card.",
- "blocked_on": null
+ "notes": "09 G1, the benchmark's March exchanges: four real exchanges, both ways, then six months of nothing. A line in the brief, not a card. Its file is decided on the shadow lane (Sales off, 06 D2), so since STEP-15 M45.C4.L-logic.V0.U01 (s15-D2) the line is there, labelled \"outside your switched-on work\". RESTATED 16 Oct (that unit's own contract: \"F53's line restated and its blocked_on lifted\"): the line was authored as `stuck` from the plan's table before any line existed to measure; `executive/morning_order` seats a lone decision among today's five and keeps `stuck` for the overflow (03 s15-F22) — so it reads in `today`, the same words and the same label. Whether a decision quiet six months should leave today's five is a product call (s15-D5), not this case's."
 }

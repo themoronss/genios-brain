@@ -1,0 +1,626 @@
+{
+ "case_id": "F66",
+ "title": "A correction for a whole kind of work — two investor files, both re-thought, both wait",
+ "kind": "must_detect",
+ "label_row": 66,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-21T12:00:00Z",
+  "2026-09-24T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "ines",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-21T04:00:00Z",
+   "from": "Ines Duarte <ines@northfieldvc.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Our call",
+   "body": "Hi Arjun,\n\nGood to meet on Tuesday. Keep me posted on how the first paid pilot goes — that is the milestone we would look at.\n\nInes Duarte\nPrincipal, Northfield Ventures",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-northfield",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ines Duarte",
+       "entity_type": "person",
+       "quote": "Ines Duarte"
+      },
+      {
+       "surface_form": "Northfield Ventures",
+       "entity_type": "organization",
+       "quote": "Northfield Ventures"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Ines Duarte",
+       "value": "Principal",
+       "standing": "observed",
+       "quote": "Principal, Northfield Ventures"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "marcus",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-21T06:00:00Z",
+   "from": "Marcus Bell <marcus@harborpoint.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Thanks for the call",
+   "body": "Hi Arjun,\n\nThanks for walking me through Nimbus Labs on Wednesday. When the round opens with a lead, send me a note and we will take a proper look.\n\nMarcus Bell\nPartner, Harbor Point Partners",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-harbor",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Marcus Bell",
+       "entity_type": "person",
+       "quote": "Marcus Bell"
+      },
+      {
+       "surface_form": "Harbor Point Partners",
+       "entity_type": "organization",
+       "quote": "Harbor Point Partners"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Marcus Bell",
+       "value": "Partner",
+       "standing": "observed",
+       "quote": "Partner, Harbor Point Partners"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "ines": "emitted",
+   "marcus": "emitted"
+  },
+  "memory": {
+   "ines": true,
+   "marcus": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Ines",
+     "Northfield"
+    ],
+    "min": 1,
+    "max": 1,
+    "closed_from": 1,
+    "ended": "cleared"
+   },
+   {
+    "about": [
+     "Marcus",
+     "Harbor Point"
+    ],
+    "min": 1,
+    "max": 1,
+    "closed_from": 1,
+    "ended": "cleared"
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "checking in",
+   "just checking",
+   "touch base"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {},
+ "acts": [
+  {
+   "after_sweep": 0,
+   "on": [
+    "Ines",
+    "Northfield"
+   ],
+   "correct": "Investors who asked for news only on a milestone get nothing from us before that milestone lands.",
+   "scope": "kind"
+  }
+ ],
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<northfieldvc.test>",
+     "## what you corrected"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Ines asked to be kept posted on how the first paid pilot goes, the milestone her fund would look at.",
+       "evidence": [
+        "evt_5da10a353635341e37a86723"
+       ],
+       "quote": "Keep me posted on how the first paid pilot goes"
+      },
+      {
+       "claim": "Our reply time to Ines is not measured: the file holds no mail from Arjun to them.",
+       "evidence": [
+        "num:your_reply_time:ines@northfieldvc.test"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "You told us investors who asked for news only on a milestone get nothing before it lands, and Ines's milestone has not happened.",
+       "based_on": [
+        "corr:fc_60e17aed2aa4e402ebae7ef6",
+        "fact:1"
+       ]
+      },
+      {
+       "claim": "A note to Ines now would be news without the milestone; the file waits.",
+       "based_on": [
+        "corr:fc_60e17aed2aa4e402ebae7ef6"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "A conversation an investor parked on a milestone is reopened by the milestone, not by a note.",
+       "based_on": [
+        "corr:fc_60e17aed2aa4e402ebae7ef6"
+       ]
+      }
+     ],
+     "frames": {
+      "primary": "an investor waiting on a named milestone",
+      "rivals": [
+       "a conversation already lost"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": "first_call",
+      "expected": "news when the first paid pilot signs",
+      "actual": "no the first paid pilot signs yet"
+     },
+     "unknowns": [
+      {
+       "question": "when the first paid pilot signs",
+       "relevance": "that is the news Ines asked for"
+      }
+     ],
+     "scenarios": {
+      "do_nothing": "Ines hears nothing until there is real news, as asked",
+      "act": "a note now spends the conversation for nothing",
+      "best": "the next note is the first paid pilot signs",
+      "worst": "the milestone never comes",
+      "signals_to_watch": [
+       "the first paid pilot signs",
+       "a note from Ines"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "your correction for every investor file",
+       "no milestone yet"
+      ]
+     },
+     "mode": "wait",
+     "next_move": null,
+     "alternative": null,
+     "wait_or_stop": "wait until the first paid pilot signs, then write to Ines with it",
+     "done_when": "Ines hears from us with the first paid pilot signs",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<harborpoint.test>",
+     "## what you corrected"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Marcus asked for a note when the round opens with a lead.",
+       "evidence": [
+        "evt_a9f46486b3ada1219699201b"
+       ],
+       "quote": "When the round opens with a lead, send me a note"
+      },
+      {
+       "claim": "Our reply time to Marcus is not measured: the file holds no mail from Arjun to them.",
+       "evidence": [
+        "num:your_reply_time:marcus@harborpoint.test"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "You told us investors who asked for news only on a milestone get nothing before it lands, and Marcus's milestone has not happened.",
+       "based_on": [
+        "corr:fc_60e17aed2aa4e402ebae7ef6",
+        "fact:1"
+       ]
+      },
+      {
+       "claim": "A note to Marcus now would be news without the milestone; the file waits.",
+       "based_on": [
+        "corr:fc_60e17aed2aa4e402ebae7ef6"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "A conversation an investor parked on a milestone is reopened by the milestone, not by a note.",
+       "based_on": [
+        "corr:fc_60e17aed2aa4e402ebae7ef6"
+       ]
+      }
+     ],
+     "frames": {
+      "primary": "an investor waiting on a named milestone",
+      "rivals": [
+       "a conversation already lost"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": "first_call",
+      "expected": "news when the round opens with a lead",
+      "actual": "no the round opens with a lead yet"
+     },
+     "unknowns": [
+      {
+       "question": "when the round opens with a lead",
+       "relevance": "that is the news Marcus asked for"
+      }
+     ],
+     "scenarios": {
+      "do_nothing": "Marcus hears nothing until there is real news, as asked",
+      "act": "a note now spends the conversation for nothing",
+      "best": "the next note is the round opens with a lead",
+      "worst": "the milestone never comes",
+      "signals_to_watch": [
+       "the round opens with a lead",
+       "a note from Marcus"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "your correction for every investor file",
+       "no milestone yet"
+      ]
+     },
+     "mode": "wait",
+     "next_move": null,
+     "alternative": null,
+     "wait_or_stop": "wait until the round opens with a lead, then write to Marcus with it",
+     "done_when": "Marcus hears from us with the round opens with a lead",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<northfieldvc.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Ines Duarte, a principal at Northfield Ventures, wrote that it was good to meet on Tuesday.",
+       "evidence": [
+        "evt_5da10a353635341e37a86723"
+       ],
+       "quote": "Good to meet on Tuesday"
+      },
+      {
+       "claim": "She asked to be kept posted on how the first paid pilot goes, the milestone her fund would look at.",
+       "evidence": [
+        "evt_5da10a353635341e37a86723"
+       ],
+       "quote": "Keep me posted on how the first paid pilot goes"
+      },
+      {
+       "claim": "Our reply time to Ines is not measured: the file holds no mail from Arjun to them.",
+       "evidence": [
+        "num:your_reply_time:ines@northfieldvc.test"
+       ]
+      },
+      {
+       "claim": "The playbook, not yet reviewed, says that after a first call that named no next step, silence is usually a soft no.",
+       "evidence": [
+        "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The first call with Ines has been held, and the next move is ours.",
+       "based_on": [
+        "fact:1",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "A short note to Ines while the call is fresh keeps the conversation from decaying.",
+       "based_on": [
+        "fact:2",
+        "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "After a first call that named no next step, an investor's silence is usually a soft no.",
+       "based_on": [
+        "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+       ]
+      }
+     ],
+     "frames": {
+      "primary": "an investor after a first call, warm, the next move ours",
+      "rivals": [
+       "a polite close of the conversation"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": "first_call",
+      "expected": "a next step named after the call",
+      "actual": "a warm note, and the next move ours"
+     },
+     "unknowns": [
+      {
+       "question": "whether Ines wants to hear from us before the milestone",
+       "relevance": "it decides whether a note now helps or pushes"
+      }
+     ],
+     "scenarios": {
+      "do_nothing": "the conversation decays into a no nobody sends",
+      "act": "Ines hears where we stand while the call is fresh",
+      "best": "a second meeting",
+      "worst": "the note reads as pressure",
+      "signals_to_watch": [
+       "a reply from Ines"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "Northfield Ventures is in the brief's raise",
+       "the call is fresh"
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Ines a short note on where the first paid pilot stands",
+      "for_whom": "Ines at Northfield Ventures",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Ines",
+      "answers": null
+     },
+     "alternative": "wait for the milestone and write then",
+     "wait_or_stop": "if there is no reply, write next only with real news",
+     "done_when": "Ines has a short note on where we stand",
+     "draft": "Hi Ines, thank you for Tuesday. A short note on the first paid pilot: we are close and I will tell you the day it signs. Arjun"
+    }
+   },
+   {
+    "when": [
+     "<harborpoint.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Marcus Bell, a partner at Harbor Point Partners, thanked Arjun for walking him through Nimbus Labs on Wednesday.",
+       "evidence": [
+        "evt_a9f46486b3ada1219699201b"
+       ],
+       "quote": "Thanks for walking me through Nimbus Labs on Wednesday"
+      },
+      {
+       "claim": "He asked for a note when the round opens with a lead, and said his fund would then take a proper look.",
+       "evidence": [
+        "evt_a9f46486b3ada1219699201b"
+       ],
+       "quote": "When the round opens with a lead, send me a note"
+      },
+      {
+       "claim": "Our reply time to Marcus is not measured: the file holds no mail from Arjun to them.",
+       "evidence": [
+        "num:your_reply_time:marcus@harborpoint.test"
+       ]
+      },
+      {
+       "claim": "The playbook, not yet reviewed, says that after a first call that named no next step, silence is usually a soft no.",
+       "evidence": [
+        "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The first call with Marcus has been held, and the next move is ours.",
+       "based_on": [
+        "fact:1",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "A short note to Marcus while the call is fresh keeps the conversation from decaying.",
+       "based_on": [
+        "fact:2",
+        "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "After a first call that named no next step, an investor's silence is usually a soft no.",
+       "based_on": [
+        "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+       ]
+      }
+     ],
+     "frames": {
+      "primary": "an investor after a first call, warm, the next move ours",
+      "rivals": [
+       "a polite close of the conversation"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": "first_call",
+      "expected": "a next step named after the call",
+      "actual": "a warm note, and the next move ours"
+     },
+     "unknowns": [
+      {
+       "question": "whether Marcus wants to hear from us before the milestone",
+       "relevance": "it decides whether a note now helps or pushes"
+      }
+     ],
+     "scenarios": {
+      "do_nothing": "the conversation decays into a no nobody sends",
+      "act": "Marcus hears where we stand while the call is fresh",
+      "best": "a second meeting",
+      "worst": "the note reads as pressure",
+      "signals_to_watch": [
+       "a reply from Marcus"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "Harbor Point Partners is in the brief's raise",
+       "the call is fresh"
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Marcus a short note on where the round stands",
+      "for_whom": "Marcus at Harbor Point Partners",
+      "by_when": null,
+      "rests_on": [
+       "fact:1",
+       "fact:2"
+      ],
+      "to": "Marcus",
+      "answers": null
+     },
+     "alternative": "wait for the milestone and write then",
+     "wait_or_stop": "if there is no reply, write next only with real news",
+     "done_when": "Marcus has a short note on where we stand",
+     "draft": "Hi Marcus, thank you for Wednesday. A short note on the round: we are lining up a lead and I will write the day it opens. Arjun"
+    }
+   }
+  ],
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Ines Duarte"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Ines's note asks nothing of us today; the file's own review judges it.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "Marcus Bell"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Marcus's note asks nothing of us today; the file's own review judges it.",
+     "missing": []
+    }
+   }
+  ]
+ },
+ "notes": "STEP-16 (yc2_w27_s16 M47.C4.L-data.V1.U05). Both funds named the milestone they wait for. The first reviews advise a note to each; you write one correction for every investor file; the next sweep reviews both (founder_corrected), each cites it, and both wait — their cards cleared."
+}

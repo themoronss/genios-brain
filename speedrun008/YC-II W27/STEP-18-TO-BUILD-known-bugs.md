@@ -213,7 +213,81 @@ SQL removed) → 3,077 (U05) → 3,078 (U06) → 3,079 (U11): net 0, each move n
 read-only probe of s18-F9 (published behaviour entries of the counterparty's latency) and s18-F3's
 `learning_objects` state count. Nothing here arms calibration or changes a model prompt.
 
-## 9 · Verify
+## 9 · 13 Oct — Claude 5 thinks by default
+
+**Found** on the Sonnet golden pass of 12 Oct (`scratchpad/live/sonnet_facts.md`) and audited on 13 Oct —
+38 model call paths mapped, the 9 at risk each verified by two skeptics (the audit's report). Claude
+Sonnet 5 thinks unless the request turns it off, and the tokens it thinks are billed as output and count
+toward `max_tokens` with the answer; Opus 5.5 and Fable cannot turn it off at all. Every site in the
+engine was sized for a model that does not think, and the shared client sent no thinking control.
+**Built** as `yc2_w27_s18` M50 (20 units) on branch `yc2w27-s18-thinking`; the R-2 part also as a
+one-file hotfix for `harsh/mvp` (`08` §0d). Verify moved to §10 (`03` F248 names it §9).
+
+### 9.1 · The findings (provisional `s5t-` ids — the lead mints `03` numbers)
+
+| Id | Finding | Where | Closed by |
+|---|---|---|---|
+| s5t-F1 | `LLMClient` sends no thinking control; the fix lived only in `DecisionClient` | `context/llm/client.py`, `reason/llm_decision_maker.py` | M50.C1.L-contract.V0.U01 |
+| s5t-F2 | R-7 cannot produce a review on Sonnet 5 at 4,000 — 203 of 203 calls cut, thinking ~2,600–3,500; even without thinking 4,000 is Haiku's measured maximum (3,990) | `reason/bundle/sites.py` | M50.C2.L-contract.V1.U02 (off at 6,000, `06` D71) |
+| s5t-F3 | R-2 is probably cut at 2,400 in production, and `harsh/mvp` retries each cut once at the same ceiling | `harsh/mvp` `reason/bundle/gate.py` | the hotfix (M50.C5.L-integration.V0.U18, `08` §0d); the probe (U17) measures it |
+| s5t-F4 | R-2's "measured" 737–1,400 counted thinking tokens as prose; R-7's sizing comment (800–1,600) was wrong | `reason/bundle/sites.py` | M50.C2.L-contract.V1.U02 |
+| s5t-F5 | The drafter's visible answer alone fills 57–100% of 2,400; it never read `truncated`, a failed week counted `reviewed` | `reason/brief_drafter.py`, `reason/brief_review.py` | M50.C3.L-logic.V1.U06, V2.U07 |
+| s5t-F6 | A cut the lenient parser closed was a success on every R-site and in the drafter, and `l5_render` recorded every call a success; both health checks filter on `not success` | `context/llm/client.py`, `reason/bundle/gate.py`, `deliver/render.py`, `scripts/pipeline_health.py` | U01 (the error names the cut), U04, U06, U15, U11 |
+| s5t-F7 | Deep analyze pays Sonnet for an explanation the response never returns | `api/intelligence_routes.py` | thinking off (M50.C3.L-logic.V1.U05); the unreturned sentence is a product question — **open**, Rohit |
+| s5t-F8 | The prefix match sent Opus 5's `disabled` to `claude-opus-5-5` (a 400 on every decision) and `claude-sonnet-5-5` | `reason/llm_decision_maker.py` | U01's table (longest id first, never a bare prefix), M50.C1.L-logic.V1.U10 |
+| s5t-F9 | Four raw-SDK moment lanes sent `temperature` with no model check (a 400 under a Claude 5 override) | `reason/moments/` | M50.C3.L-logic.V1.U12, U13, U14 |
+| s5t-F10 | Option (b) meets two hidden bounds: the per-call cap (R-7 ≤ ~8,900 tokens, R-2 ≤ ~4,100) and the client's 60 s timeout (4,000 tokens took 37–45 s) | `reason/bundle/budget.py`, `context/llm/client.py` | R-7's 120 s timeout (U02, sent by U03); the cap is `06` D72's arm B (`--per-call-usd`, U09) |
+| s5t-F11 | T1 sites under an override are charged at Haiku prices; `metrics.LLM_PRICE` priced Opus 5.5 at Opus 5's rates | `capture/semantic/batch.py`, `platform/metrics.py` | M50.C4.L-data.V0.U16 (the price row); the tier price for an Opus rung is STEP-13b's (said beside `LLM_PRICE`) — **open** |
+| s5t-F12 | The live harness raised on a cut answer, the gate retried it uncharged, and the scorecard counted $0.35 of ≈ $10.4 | `tests/replays/harness.py`, `scripts/golden_eval.py` | M50.C4.L-integration.V0.U08, M50.C4.L-interface.V1.U09 |
+| s5t-F13 | Correction to the brief-and-deep group: the R-3 and R-4 lanes are `l4_r3` and `l4_r4` | the audit | recorded here |
+
+### 9.2 · The units — tree `yc2_w27_s18` M50
+
+| Unit | T5 | Artifact | Commit |
+|---|---|---|---|
+| `M50.C1.L-contract.V0.U01` | T5-1 | `genios_engine/context/llm/client.py` | `60cff9a1` |
+| `M50.C2.L-contract.V1.U02` | T5-3 | `genios_engine/reason/bundle/sites.py` | `2a65e36f` |
+| `M50.C2.L-logic.V2.U03` | T5-4 | `genios_engine/reason/bundle/gate.py` | `16948c58` |
+| `M50.C2.L-logic.V3.U04` | T5-5 | `genios_engine/reason/bundle/gate.py` | `f4cb5ac8` |
+| `M50.C3.L-logic.V1.U05` | T5-6 | `genios_engine/reason/intelligence.py` | `d7cb2434` |
+| `M50.C3.L-logic.V1.U06` | T5-7 | `genios_engine/reason/brief_drafter.py` | `c776dfd3` |
+| `M50.C3.L-logic.V2.U07` | T5-7b | `genios_engine/reason/brief_review.py` | `197bf53e` |
+| `M50.C4.L-integration.V0.U08` | T5-9 | `tests/replays/harness.py` | `25cf573b` |
+| `M50.C4.L-interface.V1.U09` | T5-10 | `scripts/golden_eval.py` | `7f7b5429` |
+| `M50.C1.L-logic.V1.U10` | T5-2 | `genios_engine/reason/llm_decision_maker.py` | `8eaec20f` |
+| `M50.C4.L-interface.V1.U11` | T5-8 | `scripts/pipeline_health.py` | `d0cd1fca` |
+| `M50.C3.L-logic.V1.U12` | T5-12 | `genios_engine/reason/moments/seat_profile.py` | `6b6fa723` |
+| `M50.C3.L-logic.V1.U13` | T5-12b | `genios_engine/reason/moments/draft_review.py` | `3299bf7f` |
+| `M50.C3.L-logic.V1.U14` | T5-12c | `genios_engine/reason/moments/screen_memory_batch.py` | `6b55a66a` |
+| `M50.C3.L-logic.V1.U15` | T5-13 | `genios_engine/deliver/render.py` | `987a0ae7` |
+| `M50.C4.L-data.V0.U16` | T5-14 | `genios_engine/platform/metrics.py` | `a5d9d1e6` |
+| `M50.C5.L-data.V0.U17` | — | `speedrun008/YC-II W27/baseline/production_state.sql` | `870712ce` |
+| `M50.C5.L-integration.V0.U18` | — | `speedrun008/YC-II W27/baseline/thinking/harsh-mvp-r2-thinking-off.diff` | `20e35041` |
+| `M50.C5.L-interface.V1.U19` | — | `speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md` | `d573663a` |
+| `M50.C5.L-interface.V2.U20` | — | `speedrun008/YC-II W27/STEP-18-TO-BUILD-known-bugs.md` | this commit |
+
+### 9.3 · Decisions — `06` D71–D73
+
+* **D71** — taken 13 Oct by the lead to build, Rohit may override: thinking OFF on every site sized for a
+  model that does not think; R-7 off at 6,000, the drafter off at 4,000, until a measurement says otherwise.
+* **D72** — open, Rohit's call: the R-7 comparison, off at 6,000 against adaptive at 12,000 on 20 golden
+  cases (≈ $4.5 expected, $8.3 worst, a hard stop at $7). The harness it needs is built (U08, U09); the run
+  is the lead's on Rohit's yes.
+* **D73** — open, Rohit's call: the drafter adaptive at 8,000 with a 150 s timeout against D71's default,
+  ≈ $0.35 on his org with the operator script's dry runs (the script has no switch for the mode yet).
+
+### 9.4 · What is left, and why
+
+* **The production measurement** — the `@thinking_*` probe blocks are Rohit's to run (`08` §0d); nothing
+  here reads production.
+* **`06` D72 and D73** — the runs spend money and wait for Rohit.
+* **s5t-F7** — deep analyze's sentence is paid for and never returned: a product question.
+* **The Opus rung's price** (STEP-13b s13b-D1): the gate prices a call by tier, and T2 is Sonnet 5's price.
+* **A cut render is still used** — `l5_render` now records a cut as a failure (U15), but `render_copy` still
+  renders from a cut answer that parsed; whether it should fall back is its own unit.
+* **The decision client** (`l4_llm_decision`) still does not read `stop_reason`; its answers are small (900).
+
+## 10 · Verify
 
 Added 12 Oct with the crosscheck's follow-ups (`yc2_w27_s17` M40.C5.L-logic.V0.U02, S17X-G2): STEP-18
 is `status: built` in `tree.yaml`, so the plan-folder guard holds it as built, and a built step says
@@ -241,6 +315,13 @@ export GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:
 .venv/bin/python -m pytest -q tests/capture/test_a_calendar_event_buys_no_relevance_call.py tests/capture/test_a_company_brief_sender_is_kept_and_read.py tests/capture/connectors/test_a_bounce_is_read_whole_on_the_fast_path.py
 .venv/bin/python -m pytest -q tests/packs/brains/test_behavior_distill.py tests/platform/test_a_brief_read_in_a_transaction_sees_it.py tests/context/test_one_list_of_public_mail_hosts.py tests/test_activate_tenant_names_every_effect.py
 .venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py tests/test_migrate_read_only.py
+
+# M50 — Claude 5 thinks by default (§9): the client, the R-sites, every other lane, the harness, the probe
+.venv/bin/python -m pytest -q tests/context/test_thinking_is_sent_where_it_is_honoured.py tests/context/test_sampling_is_omitted_where_it_is_refused.py tests/context/test_a_truncated_call_is_not_bad_json.py tests/reason/test_llm_decision_maker.py
+.venv/bin/python -m pytest -q tests/reason/test_every_site_says_whether_it_thinks.py tests/reason/test_the_gate_sends_the_sites_thinking.py tests/reason/test_a_truncated_answer_is_refused.py tests/reason/expert/test_the_expert_site_and_feature.py tests/reason/expert/test_tiers_and_the_cache_key.py
+.venv/bin/python -m pytest -q tests/reason/test_run_query_asks_without_thinking.py tests/reason/test_brief_drafter.py tests/reason/test_a_failed_draft_is_not_a_review.py tests/reason/moments/test_the_raw_lanes_ask_without_thinking.py tests/test_render_records_how_the_call_ended.py tests/test_admin_analytics.py
+.venv/bin/python -m pytest -q tests/replays/test_the_recorder_keeps_every_call.py tests/scripts/test_the_live_pass_counts_every_call.py tests/scripts/test_golden_eval.py tests/scripts/test_pipeline_health_sees_a_cut_that_parsed.py tests/test_production_probes_are_read_only.py
+bash 'speedrun008/YC-II W27/baseline/thinking/check-harsh-mvp-hotfix.sh'
 
 # and the whole database suite, as CI's database job runs it
 .venv/bin/python -m pytest -q -m "not golden" -rfEs > pytest.log 2>&1; python scripts/qa/database_skips.py pytest.log

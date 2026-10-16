@@ -163,7 +163,25 @@
     "max": 1
    }
   ],
-  "brief": "a monitor line, then closed with a reason after two weeks of silence"
+  "brief": {
+   "says": "a monitor line, then closed with a reason after two weeks of silence",
+   "lines": [
+    {
+     "section": "watching",
+     "about": [
+      "Simon",
+      "Lumenpath"
+     ]
+    },
+    {
+     "section": "watching",
+     "about": [
+      "Omar",
+      "Tidewell"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -174,8 +192,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 — there is no morning brief to appear in"
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)"
  },
  "model": {
   "decider": [
@@ -344,8 +361,8 @@
      },
      "mode": "wait",
      "next_move": null,
-     "alternative": "If Arjun wants the conversation, a two-line note from him straight to Simon proposing a short call, with the connector left out of it.",
-     "wait_or_stop": "Wait for a word from Simon or a sign from Arjun that he wants the conversation. Once two weeks have passed since the introduction with nothing from either side in mail read through that time, close the file with that reason; the connector is never the one to write to.",
+     "alternative": "If you want the conversation, a two-line note from you straight to Simon proposing a short call, with the connector left out of it.",
+     "wait_or_stop": "Wait for a word from Simon or a sign from you that you want the conversation. Once two weeks have passed since the introduction with nothing from either side in mail read through that time, close the file with that reason; the connector is never the one to write to.",
      "done_when": "The file holds either a first exchange between you and Simon, or a close with its reason.",
      "draft": null
     }
@@ -497,8 +514,8 @@
      },
      "mode": "wait",
      "next_move": null,
-     "alternative": "If Arjun wants the conversation, a two-line note from him straight to Omar proposing a short call, with the connector left out of it.",
-     "wait_or_stop": "Wait for a word from Omar or a sign from Arjun that he wants the conversation. Once two weeks have passed since the introduction with nothing from either side in mail read through that time, close the file with that reason; the connector is never the one to write to.",
+     "alternative": "If you want the conversation, a two-line note from you straight to Omar proposing a short call, with the connector left out of it.",
+     "wait_or_stop": "Wait for a word from Omar or a sign from you that you want the conversation. Once two weeks have passed since the introduction with nothing from either side in mail read through that time, close the file with that reason; the connector is never the one to write to.",
      "done_when": "The file holds either a first exchange between you and Omar, or a close with its reason.",
      "draft": null
     }

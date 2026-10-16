@@ -209,7 +209,29 @@
     "max": 1
    }
   ],
-  "brief": "one line: your registration is complete (SSM-2026-3381)"
+  "brief": {
+   "says": "one line: your registration is complete (SSM-2026-3381)",
+   "lines": [
+    {
+     "section": "today",
+     "about": [
+      "State Startup Mission"
+     ],
+     "mentions": [
+      "registration number"
+     ]
+    },
+    {
+     "section": "changed",
+     "about": [
+      "State Startup Mission"
+     ],
+     "mentions": [
+      "wrote"
+     ]
+    }
+   ]
+  }
  },
  "forbidden": {
   "names": [],
@@ -220,8 +242,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
-  "brief": "STEP-15 — there is no morning brief to appear in"
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)"
  },
  "model": {
   "expert": [
@@ -493,7 +514,7 @@
      "mode": "wait",
      "next_move": null,
      "alternative": "Check the mission's portal for the application's status, so the wait has a known state.",
-     "wait_or_stop": "Wait for the mission's own notice about Nimbus Labs, or a status change on its portal; read each mail from it for that before filing it as a bulletin.",
+     "wait_or_stop": "Wait for the mission's own notice about your company, or a status change on its portal; read each mail from it for that before filing it as a bulletin.",
      "done_when": "The mission's word on your application is on file.",
      "draft": null
     }

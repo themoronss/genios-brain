@@ -60,9 +60,10 @@ Watching               Theresa (Antler) — waiting for a real milestone before 
 ## 6 · Verify
 
 ```
-.venv/bin/python -m pytest tests/executive/test_morning_brief.py -q
+GENIOS_TEST_DATABASE_URL=postgresql+psycopg://… .venv/bin/python -m pytest tests/executive tests/deliver/test_the_digest_is_the_brief.py tests/reason/expert/test_a_small_move_is_a_brief_line.py tests/replays/test_the_morning_brief_is_judged.py -q
 #   a deadline within 48 h is always present; a file with no validated result is never present;
 #   numbers equal the calculators; an empty day renders "nothing needs you"
+#   (restated 16 Oct: the one file this plan named became the files above — the build's tests)
 ```
 
 ---
@@ -178,6 +179,8 @@ Proposed for `03`. The ids are provisional; the lead gives them their numbers.
 | s15-F14 | **Four morning surfaces exist and none reads a file:** `GET /digest` (the card queue's one line), `GET /v1/executive/summary`, the Slack digest, `GET /v1/intelligence/brief` (carded decisions only) | `deliver/digest.py:8-24`; `api/routes.py:5536-5547`; `api/executive_routes.py:40-55`; `api/l4_seam_routes.py:183-215` | `STEP-15` (one brief; the digest sends it) |
 | s15-F15 | **"You have sent nothing for N days" has no calculator** — only each person's `thread.last_outbound`; F55 needs your last mail across every mailbox, with the receipt that proves the silence | `context/waiting.py:133-190`; `context/coverage_receipt.py` | `STEP-15` (M44.C2) |
 | s15-F16 | **The decision brief has no alternatives, and for an expert file it speaks codes** | `executive/brief.py:45-148`; `executive/unreached.py:210-216` | `STEP-18`, or retire it once the brief stands |
+| s15-F17 | **Your desk read a file's raw open ask, never the expert's own judgment of it.** F38 (must-abstain, *"a question answered on another channel is not owed again"*) failed M44's acceptance on its first run: the brief's desk line named Pooja Iyer as still waiting, two days — the case forbids it. The review's own facts and `wait_or_stop` already read her WhatsApp reply and say nothing is owed; the raw loop stays open regardless | `[TEST]` `tests/replays/test_the_morning_brief_is_judged.py::test_a_must_abstain_brief_names_nothing_its_case_forbids[F38]`, first run; `context/your_desk.py:128-137` | ✅ `STEP-15` (M44.C5) — `executive/morning_day._resolved_nothing`, read-only of `reason/expert/decide.mode_of` |
+| s15-F18 | **`run_case`'s own default (`brief=True`, M44.C5.L-integration.V0.U03, `06fbb2c8`) silently composes and keeps a brief for every `keep=True` call** — two tests written before that default existed then read back their own kept-already brief instead of writing one: `test_one_brief_a_day.py::test_compose_reads_the_day_of_a_golden_tenant` (F45, `wrote` false) and `test_what_changed_since_the_last_brief.py` (its whole `world` fixture, F21's "first brief" case saw 0 changes, not 1) | `[TEST]` the M44.C5-closing repo-wide guard on `tests/executive`, first run (2 failed, 230 passed); both call `run_case(..., keep=True)` with no `brief=` | ✅ `STEP-15` (M44.C5) — both calls now pass `brief=False`, restoring each test's own compose/read_day as the day's only composer |
 
 ### 8.4 · What changes in the design
 
@@ -302,3 +305,55 @@ pipeline.
   judgments to show — only your promises, your meetings and your desk.
 - **The wrong hour.** `orgs.timezone` is inferred from your send hours when unset; set it once at deploy.
 - **A neighbour's plan.** STEP-16's plan may draw the same store for a line's mark; one of the two stands.
+
+### 8.8 · Built — 16 Oct (`yc2_w27_s15`, branch `yc2w27-s15`, merged with STEP-14's `yc2w27-int14` 9d469efb)
+
+**What was built — 34 units (20 in M44, 14 in M45), every code unit mutation-tested.** The brief is read, ordered and
+worded by code from the expert's own judgment of each file: `contracts/morning_brief` (items, sections, lines, frozen),
+`0230_morning_briefs` (one brief per seat per local day; your mark on a line), `executive/morning_day` (the day: files,
+questions, desk, meetings, promises, screen reminders, what changed), `morning_order`, `morning_template` (code's words;
+the fallback), `morning_prompt` / `morning_check` / `morning_writer` (R-8 Haiku-class, R-8E Sonnet-class once, then the
+template; never Opus; its own budget $0.25/day and $0.03/call each; behind the feature `morning_brief`, off), `morning`
+(compose once per seat per local day at 08:00 in the org's timezone; `compose_due` ends every sweep), `GET
+/v1/executive/morning[/{day}]`, `POST /v1/executive/morning/lines/{line_id}/mark`, and `scripts/golden_eval.py --site
+brief` (the live look). The last two units: **the Slack digest is the kept brief** (its one line and today's five, claimed
+once the brief is kept, for the org's LOCAL day, read at the drain by the day it was queued for; a pull-only tenant reads
+the same brief on the dashboard) and **a small move is a line, never a card** (s15-D3).
+
+**The board** (merged with STEP-14, a new measurement): must-detect **47/50** (36 STEP-14 + F08 F14 F20 F21 F22 F23 F30 F45
+F53 F54 F55), must-abstain 14/14, forbidden 0, Atlas 12/80; the three left are F15 (`06` D57), F18 (`06` D29, the gate)
+and F56 (the gate). `--assert-recorded` exits 0. Guard round on fresh databases: root, platform, replays and every other
+folder exit 0 (03 §F.1 has the numbers).
+
+**What you see** — a brief, in code's words (golden tenants, no model):
+
+    F55   Today   Pinegrove: Reply to Rhea with an apology for the delay and new times for the call.
+                  Tanglewood: Send Dev the pricing sheet with a short apology for the delay. — outside your switched-on work.
+          Desk    You have sent nothing for 28 days while 3 people wait on you: Dev Malhotra (26 days), Rhea Thomas (22 …).
+    F45   Today   Bluepeak: Introduce Meera Shah to the two pilot leads … You usually answer Meera Shah in 1.5 days (n=6).
+          Changed Bluepeak: Meera Shah wrote; their move, quiet 15 days — past the file's usual gap of 4 days.
+    F22   Today   University Startup Cell: A university cell's notice of a seed grant closing on the thirtieth … Can you
+                  tell us whether you are a startup incubated on the university's campus? By 30 Sep.
+    F23   Today   State Startup Mission: File the registration number … (a line; no card — a small move)
+
+**What was found** (provisional numbers, for 03): s15-F19 a question line that is only the ask no longer says what it is
+for (STEP-14 reworded F22's) — it now carries the review's situation; s15-F20 F64 — the changed section reopened a closed
+introduction — a file whose review found nothing owed has no change line; s15-F21 `store._CURRENT` drifted from `_stored`
+in a textually clean merge (a pure guard now joins them); s15-F22 F53's `stuck` was authored before any line existed —
+restated to `today`; s15-F23 pins on authored words moved with STEP-14's rewording (F55's Meadow rule); s15-F24 D66's words
+alone would have taken STEP-14's F61 (low/low introductions labelled a card each) — the small move is narrowed to a move
+that writes to no one. Also: the digest was a count of signals at the heavy tick's UTC day (s15-F4) — and `summary.
+build_summary` is pull-only again (`unreached.PULL_ONLY`).
+
+**What waits.** *Rohit / the lead:* **s15-D5** — should a decision outside your switched-on work, quiet six months (F53),
+leave today's five for `stuck`? (today: it stays, `morning_order`); **s15-D6** — did D66 mean "writes to no one"? (built
+so; F61 forces it); `06` D29 (F18). *Before arming the writer:* run `scripts/golden_eval.py --site brief --dry-run`, then
+the live look with a key and `--spend-ok` on Haiku and Sonnet (≈ $1) and read it; only then switch `morning_brief` on.
+*The digest rides the heavy tick* (every six hours), so it leaves up to six hours after the brief is kept; calling the
+distribution pass from `routes._compose_due_briefs` would land it at 08:00 — a one-line follow-up in `api/routes.py`, not
+made. *Front-end:* the Today view reads the route; the mark control. *Later:* e-mail and WhatsApp channels (`06` D9).
+
+**For Harsh — deploy** (`08` §0c, §1.15): apply `0230_morning_briefs` (two new tables; additive); **set `orgs.timezone`
+for Rohit's org** (08:00 is read from it, else inferred from his send hours); `morning_brief` stays off until the live look;
+nothing else changes at boot. A Slack tenant's digest changes from the signal count to the brief.
+

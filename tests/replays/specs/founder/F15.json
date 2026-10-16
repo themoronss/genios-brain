@@ -771,7 +771,7 @@
       ]
      },
      "alternative": "Find a warm introduction to a partner at Cobalt Peak and use it in place of a cold follow-up.",
-     "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
+     "wait_or_stop": "Wait until the two weeks you asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
      "done_when": "Cobalt Peak has replied and a meeting is set, or the file is closed with its reason after one follow-up.",
      "draft": null
     }
@@ -1238,7 +1238,7 @@
       ]
      },
      "alternative": "Find a warm introduction to a partner at Juniper Ridge and use it in place of a cold follow-up.",
-     "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
+     "wait_or_stop": "Wait until the two weeks you asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
      "done_when": "Juniper Ridge has replied and a meeting is set, or the file is closed with its reason after one follow-up.",
      "draft": null
     }
@@ -1705,7 +1705,7 @@
       ]
      },
      "alternative": "Find a warm introduction to a partner at Lattice Capital and use it in place of a cold follow-up.",
-     "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
+     "wait_or_stop": "Wait until the two weeks you asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
      "done_when": "Lattice Capital has replied and a meeting is set, or the file is closed with its reason after one follow-up.",
      "draft": null
     }
@@ -2172,7 +2172,7 @@
       ]
      },
      "alternative": "Find a warm introduction to a partner at Meridian Seed and use it in place of a cold follow-up.",
-     "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
+     "wait_or_stop": "Wait until the two weeks you asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
      "done_when": "Meridian Seed has replied and a meeting is set, or the file is closed with its reason after one follow-up.",
      "draft": null
     }
@@ -2639,7 +2639,7 @@
       ]
      },
      "alternative": "Find a warm introduction to a partner at Northstar Angels and use it in place of a cold follow-up.",
-     "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
+     "wait_or_stop": "Wait until the two weeks you asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
      "done_when": "Northstar Angels has replied and a meeting is set, or the file is closed with its reason after one follow-up.",
      "draft": null
     }

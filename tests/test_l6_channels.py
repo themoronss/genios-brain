@@ -38,6 +38,22 @@ def test_digest_message_counts_never_estimates():
     assert "Nothing needs you" in str(empty)
 
 
+def test_a_briefs_digest_says_its_lines_as_kept_and_escapes_what_slack_reads_as_markup():
+    """STEP-15 (M45.C3.L-integration.V0.U03): the digest is the kept brief — an item carrying a `line` is that line's words
+    verbatim (not "entity: reason (S score)"), and Slack's three control characters are escaped everywhere in it: a
+    brief's lines name people and files from mail, and `<!channel>` in a sender's display name must not page a
+    workspace."""
+    msg = format_digest_message({"one_line": "2 things need you; a meeting today: Q&A <live>.",
+                                 "top_items": [{"line": "A & B <!channel>: reply to <mailto:x|y>."},
+                                               {"line": "Bluepeak: Write to Meera."}]})
+    said = msg["blocks"][0]["text"]["text"].split("\n")
+    assert said == ["☀️ *Morning brief* — 2 things need you; a meeting today: Q&amp;A &lt;live&gt;.",
+                    "• A &amp; B &lt;!channel&gt;: reply to &lt;mailto:x|y&gt;.", "• Bluepeak: Write to Meera."]
+    assert msg["text"] == said[0]
+    old = format_digest_message({"one_line": "1 open item(s).", "top_items": [{"entity": "A <b>", "reason": "x_y"}]})
+    assert old["blocks"][0]["text"]["text"].split("\n")[1] == "• A &lt;b&gt;: x y"      # the count's shape, escaped too
+
+
 def test_webhook_url_validation():
     assert valid_webhook_url("https://hooks.slack.com/services/T/B/x")
     assert not valid_webhook_url("https://evil.example.com/hook")   # SSRF guard

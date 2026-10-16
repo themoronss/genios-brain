@@ -37,8 +37,11 @@ def _status(store, org, signal_id) -> str:
 
 
 def _runs(store, org) -> list[str]:
+    """The reviews the file's decisions were made from. ⛔ RESTATED by yc2_w27_s13/M35.C3.L-integration.V1.U06
+    (X12): a run's key names the review AND its check (`decide.decision_ref`); its review is read off it."""
+    from genios_engine.reason.expert.decide import fingerprint_of
     with store.engine.connect() as c:
-        return [r.trigger_ref for r in c.execute(text(
+        return [fingerprint_of(r.trigger_ref) for r in c.execute(text(
             "select trigger_ref from reasoning_runs where org_id = :o "
             "   and capability_id = 'expert.file_review' order by evaluation_time, run_id"), {"o": org})]
 
@@ -95,7 +98,10 @@ def test_other_advice_replaces_the_files_decision(world, expiries, change):
     [second] = _open_signals(store, org, anchor)
     assert counts.get("expert_emitted") == 1 and second.signal_id != first.signal_id, counts
     assert _status(store, org, first.signal_id) == "expired"
-    assert ("replaced", (first.signal_id,)) in expiries
+    # ⛔ RESTATED by yc2_w27_s14/M42.C2.L-integration.V2.U02 (`03` F176): the old decision's card is no longer
+    # expired REPLACED — it is left to be versioned onto the new decision (tests/reason/expert/test_a_file_hands_
+    # its_card_on.py).
+    assert expiries == []
 
 
 def test_the_same_advice_past_its_window_is_renewed(world):
@@ -131,7 +137,9 @@ def test_a_review_that_names_no_move_now_clears_the_files_decision(world, expiri
     asking = ["founder_question"] if mode == "find_out" else []
     assert [s.rule_id for s in _open_signals(store, org, anchor)] == asking
     assert _status(store, org, first.signal_id) == "expired"
-    assert expiries == [("rule_cleared", (first.signal_id,))]
+    # ⛔ RESTATED by yc2_w27_s14/M42.C2.L-integration.V2.U02: a file that ASKS leaves its card to the question — its
+    # next version — so only a review that names no move and asks nothing clears the card.
+    assert expiries == ([] if mode == "find_out" else [("rule_cleared", (first.signal_id,))])
     assert counts["decided"] == {anchor: SECOND}, "a review that decides no move still decided its file"
 
 

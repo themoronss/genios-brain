@@ -34,6 +34,13 @@ first draft in the golden world's names (`specs/founder/brief/company_brief.json
 `_fresh_tenant` as the founder's own lines — so every judging and reading prompt carries it, and the
 gate keeps what it names (W-07), as in a tenant whose founder has confirmed the draft.
 
+**The founder's morning brief** (STEP-15, `yc2_w27_s15` M44.C5.L-integration.V0.U03). After the last sweep the
+runner composes the brief at that instant, as the tick would — the owner's seat, the org's timezone — with NO
+model: the template's words. The brief's CONTENT (what is in it, in which section, in what order, with which
+numbers and names) is code's, and the golden set judges it; its WORDS are the writer's, judged by the line check and
+the live look (STEP-12 §8.3 N8's split). `run_case(brief=False)` composes none — the negative control, which reads
+every brief-only case not expressible again.
+
 **The scratch database, pinned first.** `api.routes` binds its stores at import, so the database
 is pinned BEFORE it is imported, and the runner refuses to start without a scratch URL or with a
 production host — a golden set that skipped would be "a pass over an empty table" again.
@@ -49,8 +56,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from tests.replays.founder_case import (FOUNDER_DIR, CardView, CaseObject, CaseRun, FounderCase,
-                                        Landed, SituationView)
+from tests.replays.founder_case import (FOUNDER_DIR, ActPlayed, BriefLineView, CardView, CaseObject, CaseRun,
+                                        FounderCase, Landed, SituationView)
 
 SCRATCH_ENV = "GENIOS_TEST_DATABASE_URL"
 #: Set as the model key for a golden run so every factory takes its production branch. It never
@@ -298,7 +305,7 @@ def _connectors():
 # the run
 # =================================================================================================
 def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
-             keep: bool = False, expert: bool | None = None) -> CaseRun:
+             keep: bool = False, expert: bool | None = None, brief: bool = True) -> CaseRun:
     """Run every sweep of `case` through the real chain with `llm` as the model; report it.
 
     The tenant is REMOVED once the report is read, unless `keep`: the scratch database is shared
@@ -326,6 +333,9 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
     chain_ok: list[bool] = []
     funnel: list[dict[str, int]] = []
     open_after: list[set[str]] = []
+    shown_after: list[set[str]] = []
+    events_after: list[set[str]] = []
+    played: list[ActPlayed] = []
     finished = False
     try:
         with production_switches(llm, platform_domains=case.platform_domains), \
@@ -351,13 +361,20 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
                 chain_ok.append(bool(routes._run_l2_chain(org, eval_time=at)))
                 funnel.append(_funnel(engine, org, at))
                 open_after.append(_open_cards(engine, org))
+                shown_after.append(_shown_cards(routes._card_store, org, at))
+                events_after.append(_event_ids(engine, org))
+                # STEP-16 (`yc2_w27_s16` M47.C4.L-integration.V4.U02): your acts after this sweep, through the real
+                # doors, at its instant — what the next sweep's expert then reads.
+                played += play_acts(engine, routes._graph, case, org, sweep, at)
+            lines = compose_brief(engine, org, at=case.sweeps[-1]) if brief else None
         calls = tuple(getattr(llm, "calls", ()) or ())
         misses = tuple(getattr(llm, "misses", ()) or ())
         report = CaseRun(case_id=case.case_id, org_id=org, landed=tuple(landed),
                          memory=_memory(engine, org, case, landed),
                          situations=_situations(engine, org),
-                         cards=_cards(engine, org, open_after), funnel=tuple(funnel),
-                         chain_ok=tuple(chain_ok), model_calls=calls, misses=misses)
+                         cards=_cards(engine, org, open_after, shown_after, events_after, landed=landed),
+                         funnel=tuple(funnel), chain_ok=tuple(chain_ok), model_calls=calls, misses=misses,
+                         brief=lines, acts=tuple(played))
         finished = True
     finally:
         # On EVERY exit — a cassette miss included — or the tenant stays switched on. `keep` is for
@@ -402,6 +419,19 @@ def switch_on_the_expert(engine: Any, org: str) -> None:
     from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW, activate
     activate(engine, org, feature=FEATURE_EXPERT_REVIEW, by="golden_runner",
              notes="the golden founder's files reviewed by the expert, in shadow (STEP-12)")
+
+
+def compose_brief(engine: Any, org: str, *, at: datetime) -> tuple[BriefLineView, ...]:
+    """The founder's morning brief after the last sweep, composed at its instant for the owner's seat
+    (`executive/morning.compose`, in the template's words — no model), as lines the marking reads."""
+    from genios_engine.contracts.morning_brief import SOURCE_CARD
+    from genios_engine.executive.morning import compose
+    from genios_engine.platform.seats import OWNER_SEAT_ID
+    kept, _wrote = compose(engine, org, OWNER_SEAT_ID, now=at)
+    return tuple(BriefLineView(
+        line_id=line.line_id, section=line.section, kind=line.kind, text=line.words, subject=line.subject,
+        card_id=next((s.ref for s in line.sources if s.kind == SOURCE_CARD), None))
+        for line in kept.lines)
 
 
 def remove_tenant(engine: Any, org: str) -> None:
@@ -586,8 +616,137 @@ def _open_cards(engine: Any, org: str) -> set[str]:
                                 {"o": org, "s": list(CardStore.OPEN_STATES)}).scalars())
 
 
-def _cards(engine: Any, org: str, open_after: list[set[str]]) -> tuple[CardView, ...]:
-    """Every card the founder could see after at least one sweep, with what it says."""
+def _shown_cards(card_store: Any, org: str, at: datetime) -> set[str]:
+    """STEP-14 (`yc2_w27_s14` M42.C4.L-integration.V1.U02, s14-D4): what the APP queue showed at the sweep's instant —
+    the admin's whole queue, read by the queue's own predicate (`CardStore.queue(eval_time=)`), leaving no
+    impression. A card that existed and was never shown is no card the founder saw."""
+    return {r["card_id"] for r in card_store.queue(org, admin=True, record_impressions=False, eval_time=at)}
+
+
+#: Every version of a card, oldest first: the words its `card.created`, `card.rebuilt` and `card.versioned` events
+#: kept (STEP-14, s14-F14 — a card rewritten in place is judged on every version's words, not its last).
+_VERSIONS = (
+    "select card_id, detail from card_events where org_id = :o and card_id = any(:ids) "
+    "   and kind in ('card.created', 'card.rebuilt', 'card.versioned') and detail ? 'words' "
+    " order by card_id, coalesce((detail ->> 'version')::int, 1), occurred_at, id")
+
+
+#: A card's history (STEP-14 M42.C4.L-integration.V4.U05): what made it, versioned it, pushed it, ended it — put in
+#: order by `_in_order`.
+_HISTORY = (
+    "select id, card_id, kind, cause, detail, occurred_at from card_events where org_id = :o and card_id = any(:ids) "
+    "   and kind in ('card.created', 'card.versioned', 'card.surfaced', 'card.expired') "
+    " order by card_id, occurred_at, id")
+#: Within one sweep, the order a pass writes a card's history: made or versioned, then pushed, then ended.
+_PASS_ORDER = {"card.created": 0, "card.versioned": 1, "card.surfaced": 2, "card.expired": 3}
+
+
+def _event_ids(engine: Any, org: str) -> set[str]:
+    """Every card event of the tenant so far — read after each sweep, so each event is placed in the sweep that
+    wrote it (`_in_order`)."""
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        return {r[0] for r in conn.execute(text("select id from card_events where org_id = :o"), {"o": org})}
+
+
+def _in_order(rows, events_after: list[set[str]] | None) -> list:
+    """A card's history in the order it happened. ⛔ NEVER BY `occurred_at` ALONE (STEP-14 fix, the crosscheck's
+    finding 8, M42.C4.L-integration.V4.U06): a version is dated by the sweep's pinned instant, a creation and a push by
+    the database's clock — the wall clock, weeks after every pinned instant — so every version sorted before its
+    card's creation, `card.created` reset what was last material, and the "pushed after a quiet version" check could
+    not fail (the mutant that pushes quiet renewals passed F12 and F50). The sweep that first saw an event orders it;
+    within a sweep, a pass makes or versions a card (by its version number), then pushes it, then ends it."""
+    def sweep(row) -> int:
+        return next((i for i, ids in enumerate(events_after or ()) if row.id in ids), len(events_after or ()))
+
+    def version(row) -> int:
+        detail = row.detail if isinstance(row.detail, dict) else json.loads(row.detail or "{}")
+        return int(detail.get("version") or 0)
+    return sorted(rows, key=lambda r: (sweep(r), _PASS_ORDER.get(r.kind, 9), version(r), r.occurred_at, r.id))
+
+
+def _said(words: Any) -> str:
+    """One version's words as the founder read them: headline, situation, the draft — what a case is matched ABOUT.
+    The move whole, its alternative and its stop rule are read apart (`_said_beyond`)."""
+    words = words if isinstance(words, dict) else {}
+    return "\n".join(str(words[k]) for k in ("headline", "situation", "draft") if words.get(k))
+
+
+def _said_beyond(words: Any) -> tuple[str, ...]:
+    """A version's other shown lines (STEP-14 fix, the crosscheck's finding 9): the move whole, its alternative, when to
+    stop — for the forbidden judge (`CardView.shown_lines`), never for what a card is about."""
+    words = words if isinstance(words, dict) else {}
+    return tuple(str(words[k]) for k in ("move", "alternative", "wait_or_stop") if words.get(k))
+
+
+def _gold_lines(row: Any) -> tuple[str, ...]:
+    """The card's shown lines `CardView.text` does not hold (STEP-14 fix, finding 9): the move whole — who, what, for
+    whom, to — its alternative, when to stop, what done looks like, what doing nothing costs, the role."""
+    move = row.recommended if isinstance(row.recommended, dict) else {}
+    return tuple(str(v) for v in (*(move.get(k) for k in ("who", "what", "for_whom", "to")), row.alternative,
+                                  row.wait_or_stop, row.success_signal, row.do_nothing_consequence,
+                                  row.relationship_role) if v)
+
+
+def play_acts(engine: Any, graph: Any, case: FounderCase, org: str, sweep: int, at: datetime) -> list[ActPlayed]:
+    """STEP-16 (`yc2_w27_s16` M47.C4.L-integration.V4.U02) · the case's acts after `sweep`, played through the real
+    doors at the sweep's instant: on the newest open card about the act's subject, `wrong` through
+    `deliver/actions.ingest_action` (the dashboard's door — with your words and scope, a correction of the card's
+    file), or `correct` through `context/founder_corrections.correct` on the card's file. An act with no open card
+    to play on, or one the door refuses, is reported as not played — the marking fails the case on it."""
+    from tests.replays.marking import every_word, says
+    out: list[ActPlayed] = []
+    for index, act in enumerate(case.acts):
+        if act.after_sweep != sweep:
+            continue
+        cards = [c for c in _cards(engine, org, [_open_cards(engine, org)])
+                 if any(says(every_word(c), t) for t in act.on)]
+        if not cards:
+            out.append(ActPlayed(index, sweep, None, False, f"no open card about {'/'.join(act.on)}"))
+            continue
+        card = max(cards, key=lambda c: c.card_id)
+        if act.wrong is not None:
+            from genios_engine.deliver.actions import ingest_action
+            result = ingest_action(card_store=None, graph=graph, org_id=org, card_id=card.card_id,
+                                   actor=case.founder.email, action="wrong", reason=act.wrong, words=act.words,
+                                   scope=act.scope, eval_time=at, allow_any_assignee=True)
+            out.append(ActPlayed(index, sweep, card.card_id, bool(result.get("ok")),
+                                 str(result.get("error") or result.get("state"))))
+            continue
+        from genios_engine.context import founder_corrections as fc
+        from genios_engine.context.workstreams import file_for
+        scope = act.scope or fc.FILE
+        try:
+            with engine.begin() as conn:
+                file_id = fc.file_of_card(conn, org_id=org, card_id=card.card_id)
+                kind = None
+                if scope == fc.KIND:
+                    work = file_for(conn, org, file_id, now=at) if file_id else None
+                    kind = work.work_kind if work is not None else None
+                kept = fc.correct(conn, org_id=org, file_id=file_id, words=act.correct, scope=scope,
+                                  by=case.founder.email, at=at, card_id=card.card_id, kind=kind)
+            out.append(ActPlayed(index, sweep, card.card_id, True, kept.correction_id))
+        except ValueError as exc:
+            out.append(ActPlayed(index, sweep, card.card_id, False, str(exc)))
+    return out
+
+
+def _ends(engine: Any, org: str, ids: list[str], landed: list[Landed] | None) -> dict[str, tuple[str, str | None]]:
+    """STEP-16 · how each card ended (`context/file_outcomes`), the proving event mapped back to the case's object."""
+    from genios_engine.context.file_outcomes import OPEN, UNRECORDED, ended_for_cards
+    objects = {item.event_id: item.object_id for item in (landed or ()) if item.event_id}
+    with engine.connect() as conn:
+        ends = ended_for_cards(conn, org, ids)
+    return {e.card_id: (e.ended, objects.get(e.by) if e.by else None) for e in ends
+            if e.ended not in (OPEN, UNRECORDED)}
+
+
+def _cards(engine: Any, org: str, open_after: list[set[str]],
+           shown_after: list[set[str]] | None = None,
+           events_after: list[set[str]] | None = None,
+           landed: list[Landed] | None = None) -> tuple[CardView, ...]:
+    """Every card the founder could see after at least one sweep, with what it says — the sweeps the APP showed it
+    (`app_sweeps`, STEP-14: never asked, none), every version's words, and (STEP-16) how it ended."""
     from sqlalchemy import text
     seen = set().union(*open_after) if open_after else set()
     if not seen:
@@ -595,9 +754,28 @@ def _cards(engine: Any, org: str, open_after: list[set[str]]) -> tuple[CardView,
     with engine.connect() as conn:
         rows = conn.execute(text(
             "select card_id, state, level, headline, situation, why, actions, artifact, "
-            "business_subject, unresolved_item, why_now, output_lane from cards "
+            "business_subject, unresolved_item, why_now, output_lane, file_id, relationship_role, recommended, "
+            "alternative, wait_or_stop, outcome_window_days, capability_key, builder_version, confidence_vector, "
+            "success_signal, do_nothing_consequence "
+            "from cards "
             "where org_id = :o and card_id = any(:ids) order by card_id"),
             {"o": org, "ids": sorted(seen)}).fetchall()
+        versions: dict[str, list[str]] = {}
+        beyond: dict[str, list[str]] = {}
+        for v in conn.execute(text(_VERSIONS), {"o": org, "ids": sorted(seen)}):
+            detail = v.detail if isinstance(v.detail, dict) else json.loads(v.detail or "{}")
+            if not versions.get(v.card_id) and isinstance(detail.get("before"), dict):
+                versions.setdefault(v.card_id, []).append(_said(detail["before"]))   # its first, unrecorded
+                beyond.setdefault(v.card_id, []).extend(_said_beyond(detail["before"]))
+            versions.setdefault(v.card_id, []).append(_said(detail.get("words")))
+            beyond.setdefault(v.card_id, []).extend(_said_beyond(detail.get("words")))
+        history: dict[str, list[tuple]] = {}
+        for h in _in_order(conn.execute(text(_HISTORY), {"o": org, "ids": sorted(seen)}).fetchall(), events_after):
+            detail = h.detail if isinstance(h.detail, dict) else json.loads(h.detail or "{}")
+            history.setdefault(h.card_id, []).append(
+                (h.kind, h.cause, detail.get("change"), detail.get("material"), isinstance(detail.get("before"), dict)))
+    shown_after = shown_after or []
+    ends = _ends(engine, org, sorted(seen), landed)
     out = []
     for r in rows:
         # One line per thing the founder reads — each WHY item and each action on its own, so a
@@ -615,7 +793,20 @@ def _cards(engine: Any, org: str, open_after: list[set[str]]) -> tuple[CardView,
                             subject=r.business_subject,
                             output_lane=r.output_lane,
                             sweeps=tuple(i for i, ids in enumerate(open_after) if r.card_id in ids),
-                            sources=sources))
+                            sources=sources,
+                            app_sweeps=tuple(i for i, ids in enumerate(shown_after) if r.card_id in ids),
+                            versions=tuple(versions.get(r.card_id, ())),
+                            file_id=r.file_id, events=tuple(history.get(r.card_id, ())),
+                            shown_lines=tuple(dict.fromkeys((*_gold_lines(r), *beyond.get(r.card_id, ())))),
+                            ended=ends.get(r.card_id, (None, None))[0], ended_by=ends.get(r.card_id, (None, None))[1],
+                            gold={"headline": r.headline, "subject": r.business_subject, "role": r.relationship_role,
+                                  "why_now": r.why_now, "what_remains": r.unresolved_item,
+                                  "recommended": r.recommended, "alternative": r.alternative,
+                                  "wait_or_stop": r.wait_or_stop, "window_days": r.outcome_window_days,
+                                  "window": next((w for w in why if isinstance(w, dict)
+                                                  and w.get("source") == "card_lines"), None),
+                                  "capability_key": r.capability_key, "builder_version": r.builder_version,
+                                  "confidence": r.confidence_vector}))
     return tuple(out)
 
 

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
 from genios_engine.packs.wiring import ensure_default, make_registry
-from genios_engine.platform.self_identity import identity_for
+from genios_engine.contracts import card_contract
+from genios_engine.contracts.card_version import MOVE_ASK
+from genios_engine.platform.self_identity import SelfIdentity, identity_for
 from .lane_display import TALLY_KEYS, tally_lane
 from .lane_recall import recall_verdict
 from genios_engine.reason.authority import (
@@ -24,7 +26,7 @@ from genios_engine.contracts.abstention import downgrade_to_observation, is_acti
 from genios_engine.contracts.outcomes import interrupts, project
 from genios_engine.deliver.render import state_not_command
 from .card_builder import BUILDER_VERSION, SubjectIsUs, build_draft, load_evidence_quotes
-from .render import render_copy, review_copy
+from .render import _corpus, render_copy, review_copy
 from genios_engine.reason.expert.decide import is_expert
 from .router import budget_full
 
@@ -86,6 +88,9 @@ def _open_signals_without_cards(graph, org_id: str,
             # so no compiled card could ever name one (M30.C3.L-data.V1.U03); the review state is
             # what D3's "playbook not yet reviewed" is decided on.
             "authority_play.declared_play->'success_events' as play_success_events, "
+            # STEP-14 · THE MOVE WHOLE, off the same audited play (`reason/expert/decide._play`): who, what, for
+            # whom, by when, to whom — what a file card's version names as its ask, recipient and date (s14-D1).
+            "authority_play.declared_play->'metadata' as play_metadata, "
             "authority_play.declared_play->'metadata'->>'review_state' as play_review_state, "
             "rcap.manifest->>'domain' as capability_domain, "
             # The DecisionObject's own content (0070). Reading it here is what retires the API
@@ -135,12 +140,12 @@ def _open_signals_without_cards(graph, org_id: str,
     for r in rows:
         d = dict(r)
         for jf in ("score_inputs", "evidence", "composite_members", "capability_render",
-                   "play_success_events"):
+                   "play_success_events", "play_metadata"):
             if isinstance(d.get(jf), str):
                 try:
                     d[jf] = json.loads(d[jf])
                 except (ValueError, TypeError):
-                    d[jf] = {} if jf in ("score_inputs", "capability_render") else []
+                    d[jf] = {} if jf in ("score_inputs", "capability_render", "play_metadata") else []
         out.append(d)
     return out
 
@@ -218,7 +223,15 @@ _QUESTIONS_WITHOUT_CARDS = (
 
 #: What a question card offers: your answer, or later. A question is not an instruction, so there is
 #: nothing to run and nothing to do yourself; `wrong` waits for STEP-16, which learns from it.
-QUESTION_ACTIONS = ("answer", "snooze")
+QUESTION_ACTIONS = ("answer", "snooze", "wrong")
+#: ⛔ STEP-16 · *DON'T ASK ME THIS* (`yc2_w27_s16` M46.C3.L-interface.V5.U07; S16-D4, S16-D10). Left for this step by
+#: STEP-13: beside answer and later, the question card may be called wrong — the eleven reasons under the FOUR groups
+#: the decision card already carries (`deliver/card_builder._WRONG_REASON_GROUPS`), and your words, optional: with
+#: them, a correction of the file (`deliver/actions.ingest_action`). The question is then retired and never asked
+#: again in its words.
+QUESTION_WRONG_LABEL = "Don't ask me this"
+#: What the words of a question card's `wrong` are.
+QUESTION_WRONG_WORDS = "optional — your words are a correction of this file"
 #: What answering does, and what waiting on the question costs (STEP-11's founder-card clause: every founder
 #: card says both). OURS, CLOSED (STEP-13 M36.C2.L-logic.V2.U10): a question carries no playbook outcome and
 #: no model prose may stand in for one — and no play window either, so its `outcome_window_days` stays None.
@@ -247,10 +260,11 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
 
     from genios_engine.reason.expert import store as reviews
     from genios_engine.reason.expert.asks import WHY_FIND_OUT, WHYS
-    from genios_engine.reason.expert.decide import SITUATION_IS
+    from genios_engine.contracts.card_version import QUESTION_MODE
+    from genios_engine.reason.expert.decide import SITUATION_IS, fingerprint_of
 
     from .bands import band
-    from .card_builder import EXPIRY_DAYS, _group_memberships, load_node
+    from .card_builder import _WRONG_REASON_GROUPS, _WRONG_REASONS, EXPIRY_DAYS, _group_memberships, load_node
     from .lane_display import describe
     from .router import resolve_assignee
 
@@ -263,8 +277,14 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
     # review re-bind the question to the run asking now, whose trigger is that review (`reason/expert/decide`);
     # the question's own fingerprint is the review that asked it FIRST.
     with graph.engine.connect() as c:
-        review = reviews.read_review(c, org_id, node, str(row.get("asking_review") or row["fingerprint"]))
+        # The asking run's key names the review and its check (`decide.decision_ref`, STEP-13 X12); the review is
+        # read by its fingerprint.
+        asking = fingerprint_of(row.get("asking_review"))
+        review = reviews.read_review(c, org_id, node, str(asking or row["fingerprint"]))
     checked = review.checked if review is not None else None
+    # STEP-14 (`yc2_w27_s14` M43.C3.L-interface.V3.U03): the gold shape too — the file's person, role, why now and what
+    # remains, from the lines its review kept (0221); none on a review stored before, and the card is as built.
+    lines = getattr(review, "card_lines", None) if review is not None else None
     reading = checked.words.situation if checked is not None and checked.words.situation else None
     because = row["why"] if row["why"] in WHYS else WHY_FIND_OUT
     why = [{"sentence": "headline", "question": row["question"], "because": because,
@@ -284,18 +304,29 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
         "level": "review", "abstained_because": because,
         "urgency_band": band(score, None), "assignee": assignee, "resolved_rule": rule, "co_recipients": [],
         "score": score, "score_block": {"S": score},
-        "business_subject": name, "unresolved_item": row["question"],
+        "business_subject": (lines.subject if lines else None) or name,
+        "relationship_role": lines.role if lines else None,
+        "why_now": lines.why_now if lines else None,
+        "unresolved_item": ("; ".join(lines.what_remains) if lines else "") or row["question"],
         "capability_key": row.get("capability_id"), "capability_version": row.get("capability_version"),
         "capability_review_state": str(row.get("capability_review_state") or "unreviewed"),
         "output_lane": lane.lane, "lane_reason": lane.reason,
         "success_signal": QUESTION_SUCCESS_SIGNAL, "do_nothing_consequence": QUESTION_DO_NOTHING,
         "outcome_window_days": None,
         "actions": [{"type": "answer", "label": "Answer", "question_id": row["question_id"]},
-                    {"type": "snooze", "options": ["4h", "tomorrow_09", "3d", "custom"]}],
+                    {"type": "snooze", "options": ["4h", "tomorrow_09", "3d", "custom"]},
+                    {"type": "wrong", "label": QUESTION_WRONG_LABEL, "question_id": row["question_id"],
+                     "reasons": list(_WRONG_REASONS),
+                     "reason_groups": {group: list(reasons) for group, reasons in _WRONG_REASON_GROUPS.items()},
+                     "words": QUESTION_WRONG_WORDS}],
         "why": why,
         # The app and the API; never an agent's to answer for you.
         "surfaces": ["app", "api"], "context_tags": [],
         "config_snapshot_id": row.get("config_snapshot_id"), "builder_version": QUESTION_CARD_BUILDER,
+        # STEP-14: the file's card, asking — a version of the file's one card, its ask the question (s14-D1).
+        "file_id": node,
+        "_words": {"headline": row["question"], "situation": reading or because, "lane": lane.lane,
+                   "mode": QUESTION_MODE, "ask": row["question_id"]},
         "expires_at": expires, "_authority_time": eval_time,
         "_question_authority": {"reasoning_run_id": row["reasoning_run_id"],
                                 "reasoning_decision_hash": row["reasoning_decision_hash"],
@@ -306,7 +337,9 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
     return card, copy
 
 
-def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: datetime, out: dict) -> None:
+def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: datetime, out: dict, *,
+                          us=None, our_names: tuple[str, ...] = (), identities: tuple[str, ...] = (),
+                          refused_files: set[str] | None = None, refused_recently: frozenset[str] = frozenset()) -> None:
     """Each open question with no live card gets one — counted where it is written, its lane tallied as
     every card's is. ⛔ A pass that could not read its questions says so (`questions_unread`) and keeps
     the decisions' cards: a read refused here must never cost a card the founder was owed elsewhere."""
@@ -319,6 +352,9 @@ def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: 
         out["questions_unread"] = 1
         return
     for row in questions:
+        if row["signal_id"] in (refused_recently or ()):
+            out["skipped_refused_recently"] += 1          # tried again a day after its refusal (`REFUSAL_RETRY`)
+            continue
         token = card_store.claim_build(org_id, row["signal_id"], eval_time=eval_time,
                                        builder_version=QUESTION_CARD_BUILDER)
         if token is None:
@@ -326,6 +362,19 @@ def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: 
             continue
         try:
             card, copy = question_card(graph, org_id, row, eval_time)
+            # STEP-14 · the card contract first (M43.C4.L-integration.V1.U02): a question is the expert's checked words.
+            if _refused(out, org_id, card, _contract_refusals(card, copy, us=us, our_names=our_names,
+                                                              identities=identities, expert=True, question=True),
+                        engine=getattr(graph, "engine", None), at=eval_time):
+                if refused_files is not None and card.get("file_id"):
+                    refused_files.add(str(card["file_id"]))      # its card stays as it was (`_close_the_files_pass`)
+                continue
+            # STEP-14: the file's card, asking — a VERSION of the file's one card when it has one.
+            versioned = _version_file_card(card_store, card, copy, token, out)
+            if versioned is not None:
+                if versioned:
+                    tally_lane(out, lane=card["output_lane"])
+                continue
             card_id, created, refreshed = card_store.insert_card(card, copy, build_claim_token=token)
             if created:
                 out["built"] += 1
@@ -338,6 +387,267 @@ def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: 
                 out["already_built"] += 1
         finally:
             card_store.release_build(org_id, row["signal_id"], token)
+
+
+# ── STEP-14 · ONE FILE, ONE CARD (`yc2_w27_s14` M42.C3.L-integration.V2.U03; STEP-14 §8.4 items 1-3, s14-D1) ──────────
+#
+# Both builders — the decision loop and the question cards — VERSION the file's card onto the file's new signal
+# (`CardStore.version_card`) where they used to insert a second card. A version that is MATERIAL (another ask,
+# recipient, date, lane or mode) goes through the decision's push gate; a reworded or renewed one is never pushed. A
+# card an agent holds makes the file's next version wait. At the end of the pass a file card whose signal closed and
+# that no version reached is expired REPLACED, counted — a card from before 0220 among them, once — and
+# `files_with_two_open_cards` is measured.
+
+#: The decision's mode, as its run recorded it on the signal (`reason/expert/decide.MODE_MARKER`).
+_MODE_MARK = "expert_mode:"
+
+
+def _decision_words(sig: dict, draft: dict) -> dict:
+    """What an expert decision's card shows, as a version names it: its move whole (the audited play's metadata),
+    the ask it answers — the open ask it names (`answers`), else the move itself, so a move to another end is
+    another ask — whom its draft goes to, by when, its lane, and the mode its run decided. The same move in other
+    words is told from another ask only where the review names the ask it answers."""
+    move = sig.get("play_metadata") if isinstance(sig.get("play_metadata"), dict) else {}
+    mode = next((str(u)[len(_MODE_MARK):] for u in (sig.get("uncertainty") or ())
+                 if str(u).startswith(_MODE_MARK)), None)
+    what = " ".join(str(move.get("what") or "").lower().split())
+    ask = move.get("answers") or (f"{MOVE_ASK}{what}" if what else None)     # `card_version.one_ask` reads it
+    return {"headline": ".", "situation": ".", "move": move.get("what"), "lane": draft.get("output_lane"),
+            "mode": mode, "ask": ask, "recipient": move.get("to"), "by_when": move.get("by_when")}
+
+
+def _version_file_card(card_store, card: dict, copy: dict, token: str, out: dict):
+    """Version the file's card onto this card's signal. None: the card names no file, or its file has no card to
+    version (insert it); False: the file's card waits on an agent, or refused this version; True: versioned."""
+    file_id = card.get("file_id")
+    if not file_id:
+        return None
+    current = card_store.file_card(card["org_id"], file_id)
+    if current is None or current.signal_id == card["signal_id"]:
+        return None                                   # no card yet — or this signal's own: a refresh
+    if current.held:
+        out["version_waits"] += 1
+        return False
+    done = card_store.version_card(card, copy, build_claim_token=token, file_card=current)
+    if done is None:
+        out["version_refused"] += 1
+        return False
+    _card_id, _version, material, change = done
+    out["versioned"] += 1
+    if not material:
+        out["renewed" if change == "renewed" else "reworded"] += 1
+    card["_versioned"] = {"card_id": _card_id, "material": material, "change": change}
+    return True
+
+
+#: The file cards whose signal closed and that no version reached: open, not held by an agent — a file's card, or
+#: an expert or question card from before 0220 that names no file.
+_ORPHANED_FILE_CARDS = (
+    "select k.card_id, k.file_id, exists (select 1 from signals n join card_refusals r on r.org_id = n.org_id "
+    "        and r.ref = n.signal_id and r.writer = 'pipeline' where n.org_id = k.org_id "
+    "        and n.subject_node_id = k.file_id and n.status = 'open') as waits "
+    "  from cards k join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+    # ⛔ `claimed` included (STEP-14 fix, the crosscheck's finding 6): a claim is held by a LIVE claim (below), never
+    # by the state a late result left behind.
+    " where k.org_id = :o and k.state = any(:open) and s.status <> 'open' "
+    "   and (k.file_id is not null or k.capability_key = :expert or k.builder_version = :question_builder) "
+    "   and not exists (select 1 from agent_claims ac where ac.org_id = k.org_id and ac.card_id = k.card_id "
+    "                   and ac.released_at is null and ac.result is null)")
+
+#: Files with more than one open card: by the file a card names — or, an expert or question card from before 0220,
+#: by its signal's subject.
+_FILES_WITH_TWO_OPEN_CARDS = (
+    "select count(*) from (select coalesce(k.file_id, s.subject_node_id) as file from cards k "
+    "  join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+    " where k.org_id = :o and k.state = any(:open) "
+    "   and (k.file_id is not null or k.capability_key = :expert or k.builder_version = :question_builder) "
+    " group by 1 having count(*) > 1) twice")
+
+
+def _close_the_files_pass(graph, org_id: str, out: dict, refused_files=frozenset()) -> None:
+    """End of pass: the orphaned file cards expired REPLACED, counted, and the files with two open cards measured.
+    ⛔ A measurement may never kill what it measures: unreadable, it says so (`file_cards_unmeasured`).
+
+    ⛔ NEVER A FILE WHOSE NEXT VERSION THE CONTRACT REFUSED THIS PASS (STEP-14 fix, the crosscheck's finding 3,
+    `yc2_w27_s14` M43.C4.L-integration.V1.U06). The reason side retired the file's old signal and handed the file on;
+    the refused version wrote nothing — and this sweep then expired the card REPLACED, with nothing in its place and
+    History saying "replaced". Its card is left as it was — its words, state and history — counted
+    `file_cards_kept_on_refusal`, said by the health check that names the contract, and lapsing by its own window as
+    any card does; the file's next version that passes the contract versions it."""
+    from genios_engine.platform import card_lifecycle
+    from genios_engine.reason.expert.decide import CAPABILITY_ID
+
+    params = {"o": org_id, "open": list(card_lifecycle.OPEN_STATES), "expert": CAPABILITY_ID,
+              "question_builder": QUESTION_CARD_BUILDER}
+    try:
+        with graph.engine.begin() as c:
+            orphans, kept = [], 0
+            for r in c.execute(text(_ORPHANED_FILE_CARDS), params):
+                # Refused this pass, or an open signal of the file refused before (skipped since: finding 14).
+                if r.file_id is not None and (str(r.file_id) in refused_files or r.waits):
+                    kept += 1
+                else:
+                    orphans.append(r.card_id)
+            out["file_cards_kept_on_refusal"] += kept
+            if orphans:
+                out["file_cards_replaced"] += len(card_lifecycle.expire_cards(
+                    c, org_id=org_id, cause=card_lifecycle.REPLACED, card_ids=orphans))
+            out["files_with_two_open_cards"] = int(c.execute(text(_FILES_WITH_TWO_OPEN_CARDS), params).scalar() or 0)
+    except Exception as exc:      # noqa: BLE001 — see the docstring
+        import logging
+
+        logging.getLogger(__name__).warning("could not close the files' pass for org=%s: %s", org_id, exc)
+        out["file_cards_unmeasured"] = 1
+
+
+# ── STEP-14 · THE CARD CONTRACT, BEFORE EVERY CARD THIS PIPELINE WRITES (`yc2_w27_s14` M43.C4.L-integration.V1.U02) ──
+#
+# A decision's card or a question's, new or a version: its words pass `contracts/card_contract` against what they were
+# made from — refused, it is not written (a refused version leaves the file's card as it was), counted
+# `refused_contract:<rule>` and logged. Production's *"nsrcel — a dated payment obligation is open"* (a template's
+# money claim, no money in the evidence) and *"Which is right? Maria Exconde: party.role"* are its cases.
+
+#: A fact or quote that holds money: a key naming an amount, or a currency in its value.
+_MONEY_KEYS = ("amount", "price", "invoice", "payment", "fee", "revenue", "budget", "cost", "valuation")
+_CURRENCY = ("₹", "$", "€", "£", " inr", " usd", "lakh", "crore")
+
+
+def _holds_money(facts: dict, quotes) -> bool:
+    if any(any(k in str(name).lower() for k in _MONEY_KEYS) for name in (facts or {})):
+        return True
+    said = " ".join(str(q.get("quote") or "") for q in quotes or () if isinstance(q, dict)).lower()
+    values = json.dumps({k: (v.get("value") if isinstance(v, dict) else v) for k, v in (facts or {}).items()},
+                        default=str, ensure_ascii=False).lower()
+    return any(c in said or c in values for c in _CURRENCY)
+
+
+def _cited_texts(graph, org_id: str, sources) -> list[str]:
+    """The words of the mails and meetings an expert card's move rests on (`decide.sources_of`: the headline's and
+    the draft's evidence ids) — the retained text of each (`prepared_content`), as the quote loader verifies a quote.
+    ⛔ An enrichment of the contract's evidence, never a hard failure: unreadable, nothing is added."""
+    ids = sorted({str(e) for part in (sources or {}).values() if isinstance(part, dict)
+                  for e in (part.get("evidence") or ())})          # a reading's id (`loop:`, `num:`) holds no mail
+    engine = getattr(graph, "engine", None)
+    if not ids or engine is None:
+        return []
+    from .card_builder import _quote_source_texts
+    try:
+        with engine.connect() as c:
+            return [t for _id, t in sorted(_quote_source_texts(c, org_id, ids).items()) if t]
+    except Exception:      # noqa: BLE001 — see the docstring
+        return []
+
+
+def _contract_refusals(card: dict, copy: dict, *, us, our_names, identities, expert: bool,
+                       question: bool = False):
+    """What the card contract refuses in this card (see above). Every card's corpus is what it was made from: the
+    facts, slots, quotes and our names (`render._corpus`); a narrated card's outcome lines are its template's.
+
+    ⛔ AN EXPERT DECISION'S CARD IS HELD TO THE EVIDENCE ITS MOVE RESTS ON (STEP-14 fix, the crosscheck's finding 4,
+    `yc2_w27_s14` M43.C4.L-integration.V1.U07). Its own words — the headline, the reading, the draft, the move whole,
+    the alternative, the stop rule, what done looks like and what doing nothing costs — were its corpus, so money, a
+    quote and a number were held by themselves and only `us` and `internal` could ever fire on it; the check holds
+    figures and names, never a money word nor a quoted span. Its evidence is the quotes its check matched
+    (`_checked_quotes`), the mails and meetings those are from (`_cited_texts`), the file's facts and quotes — and the
+    lines CODE wrote from the dossier at review time (why now, what remains: `reason/expert/card_lines`, no model
+    writes them; without them 19 golden cards were refused for a day or a title the dossier printed, s14-F21). Money is
+    allowed only where that evidence holds money. A QUESTION card's words are ours — the check's own question, or our
+    closed phrases — and stay its corpus, as before."""
+    quotes = card.get("_quotes") or []
+    draft = (copy.get("artifact") or {}).get("body") or None
+    recommended = card.get("recommended") if isinstance(card.get("recommended"), dict) else {}
+    text_ = card_contract.CardText(
+        headline=str(copy.get("headline") or ""), situation=str(copy.get("situation") or ""),
+        subject=card.get("business_subject"), recipient=card.get("_recipient"), draft=draft,
+        why_now=card.get("why_now"),
+        what_remains=tuple(x for x in (card.get("unresolved_item"),) if x),
+        # STEP-14 (0221): the gold card's lines are shown, so the contract reads them too — and what done looks like
+        # and what doing nothing costs, which GET /cards/{id} serves (the crosscheck's finding 4).
+        recommended=recommended.get("what") or None, alternative=card.get("alternative"),
+        wait_or_stop=card.get("wait_or_stop"), success=card.get("success_signal"),
+        do_nothing=card.get("do_nothing_consequence"))
+    corpus = [_corpus(card.get("_facts") or {}, card.get("_slots") or {}, identities, quotes)[0]]
+    evidence = [*(card.get("_checked_quotes") or ()), *(card.get("_cited_texts") or ())]
+    if not expert:
+        corpus += [card.get("success_signal") or "", card.get("do_nothing_consequence") or ""]
+        money = _holds_money(card.get("_facts") or {}, quotes)
+    elif question:
+        corpus += [text_.headline, text_.situation, draft or "", text_.success or "", text_.do_nothing or "",
+                   *evidence, *(x for x in (text_.why_now, *text_.what_remains) if x)]
+        money = True
+    else:
+        corpus += [*evidence, *(x for x in (text_.why_now, *text_.what_remains) if x)]
+        money = _holds_money(card.get("_facts") or {}, quotes) or card_contract.holds_money(evidence)
+    return card_contract.check(text_, us=us or SelfIdentity(), our_names=our_names,
+                               quotes=[*(str(q.get("quote") or "") for q in quotes if isinstance(q, dict)),
+                                       *evidence],
+                               corpus=corpus, money_evidence=money,
+                               figures=_checked_figures(card) if expert and not question else ())
+
+
+def _checked_figures(card: dict) -> list[str]:
+    """The words an expert decision's check let stand, as the decision recorded them (`reason/expert/decide._render`,
+    the card's `_template`): its headline, reading, draft, gold lines, done-when and do-nothing. The check held every
+    FIGURE of them against
+    the dossier — a calculator's "14.06 days", a draft's "4 Aug at 3pm" — so their numbers are held; never their money
+    words nor their quoted spans (amended after the golden lane, the crosscheck's finding 4)."""
+    render = card.get("_template") if isinstance(card.get("_template"), dict) else {}
+    said = render.get("fallback") if isinstance(render.get("fallback"), dict) else {}
+    gold = render.get("gold") if isinstance(render.get("gold"), dict) else {}
+    move = gold.get("recommended") if isinstance(gold.get("recommended"), dict) else {}
+    # …and what done looks like and what doing nothing costs, which the decision carries as the check held them.
+    return [str(t) for t in (said.get("headline"), said.get("situation"), render.get("draft"), move.get("what"),
+                             gold.get("alternative"), gold.get("wait_or_stop"), card.get("success_signal"),
+                             card.get("do_nothing_consequence")) if t]
+
+
+#: How long a signal the card contract refused waits before it is built again (STEP-14 fix, the crosscheck's finding 14):
+#: a refused signal stays open with no card, and every pass rebuilt it — and NARRATED it, a model call on a card no
+#: review wrote, `render_copy` running before the contract — to refuse it again. Once a day, by the pass's clock.
+REFUSAL_RETRY = timedelta(days=1)
+
+_REFUSED_RECENTLY = (
+    "select distinct ref from card_refusals where org_id = :o and writer = 'pipeline' "
+    "   and refused_at > :since")
+
+
+def _refused_recently(graph, org_id: str, eval_time: datetime) -> frozenset[str]:
+    """The signals the pipeline refused within `REFUSAL_RETRY` of this pass. ⛔ A read that fails skips nothing."""
+    engine = getattr(graph, "engine", None)
+    if engine is None:
+        return frozenset()
+    try:
+        with engine.connect() as c:
+            return frozenset(r.ref for r in c.execute(text(_REFUSED_RECENTLY), {
+                "o": org_id, "since": eval_time - REFUSAL_RETRY}))
+    except Exception:      # noqa: BLE001 — see the docstring
+        return frozenset()
+
+
+def _refused(out: dict, org_id: str, card: dict, refusals, *, engine=None, at=None) -> bool:
+    """Count, log and keep what the contract refused (`platform/card_refusals`, 0222 — a refused card is never
+    written, so it is kept where `scripts/pipeline_health` reads it); True when the card must not be written.
+    ⛔ Keeping it may never cost the pass: unkept, it is counted `refusals_unkept` and logged."""
+    if not refusals:
+        return False
+    import logging
+
+    for r in refusals:
+        out[f"refused_contract:{r.rule}"] = out.get(f"refused_contract:{r.rule}", 0) + 1
+    log = logging.getLogger(__name__)
+    log.warning("card refused by the card contract org=%s signal=%s: %s", org_id, card.get("signal_id"),
+                "; ".join(f"{r.rule}: {r.found}" for r in refusals))
+    if engine is not None:
+        from genios_engine.platform import card_refusals
+
+        try:
+            with engine.begin() as c:
+                card_refusals.record(c, org_id=org_id, writer=card_refusals.PIPELINE,
+                                     ref=str(card.get("signal_id") or "-"), refusals=refusals, at=at)
+        except Exception as exc:      # noqa: BLE001 — see the docstring
+            out["refusals_unkept"] = out.get("refusals_unkept", 0) + 1
+            log.warning("could not keep the card contract's refusal org=%s: %s", org_id, exc)
+    return True
 
 
 def _apply_abstention(signal: dict, effective: dict) -> dict:
@@ -510,6 +820,14 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
            # STEP-13 · the cards a held file asks its question on (`_build_question_cards`), zeroed so a
            # pass that asked nothing says so.
            "question_cards": 0,
+           # STEP-14 · one file, one card: the versions written (and of them the quiet ones, never pushed), a file's
+           # next version waiting on an agent or refused, the file cards no version reached, and the measurement.
+           "versioned": 0, "renewed": 0, "reworded": 0, "quiet_version_not_pushed": 0, "version_waits": 0,
+           "version_refused": 0, "file_cards_replaced": 0, "files_with_two_open_cards": 0,
+           # STEP-14 fix (the crosscheck's finding 3): a file's card left as it was, its next version refused.
+           "file_cards_kept_on_refusal": 0, "skipped_refused_recently": 0,
+           # STEP-14 · the card contract — each rule counted from zero (M43.C4.L-integration.V1.U02).
+           **{f"refused_contract:{rule}": 0 for rule in card_contract.RULES},
            # ⛔ THE LANE MIX. Zeroed for the same reason as the three above — "a key that appears
            # only when it fires is a key nobody knows exists" — and ALL SIX are zeroed, including
            # `unrouted`, because today every production signal is unrouted and a mix that hid that
@@ -529,6 +847,9 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
     except Exception:      # noqa: BLE001 — unreadable: nothing is refused, as before STEP-04
         us = None
     our_names = tuple(i for i in identities if "@" not in i)
+    # The files whose next version the card contract refused this pass: their cards stay as they were.
+    refused_files: set[str] = set()
+    refused_recently = _refused_recently(graph, org_id, eval_time)
     signals = _open_signals_without_cards(graph, org_id, eval_time)
 
     # ⛔ L2-7 · THE COLLAPSE RATIO, READ ON EVERY SWEEP. One extra grouped SELECT, no writes, and
@@ -562,6 +883,9 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
 
     absorbed = _cohort_absorbed(graph, org_id, signals)
     for sig in signals:
+        if sig["signal_id"] in refused_recently:
+            out["skipped_refused_recently"] += 1          # tried again a day after its refusal (`REFUSAL_RETRY`)
+            continue
         if sig["signal_id"] in absorbed:
             # Counted, never silent. A suppressed card is a decision this layer made about what
             # the user sees, and a suppression nobody can see the size of is indistinguishable
@@ -693,9 +1017,38 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             over_budget = budget_full(card_store, org_id, draft["assignee"], eval_time, budget)
             if over_budget:
                 out["over_budget_no_push"] += 1
-            card_id, created, refreshed = card_store.insert_card(
-                draft, copy, build_claim_token=claim_token)
-            if card_id is None or not created:
+            # STEP-14 · THE CARD CONTRACT FIRST: refused, nothing is written — not a card, not a version.
+            if from_review:
+                draft["_recipient"] = (sig.get("play_metadata") or {}).get("to") \
+                    if isinstance(sig.get("play_metadata"), dict) else None
+                draft["_checked_quotes"] = [q for part in ((sig.get("capability_render") or {}).get("sources")
+                                                           or {}).values() if isinstance(part, dict)
+                                            for q in (part.get("quotes") or ())]
+                draft["_cited_texts"] = _cited_texts(graph, org_id,
+                                                     (sig.get("capability_render") or {}).get("sources"))
+            if _refused(out, org_id, draft, _contract_refusals(draft, copy, us=us, our_names=our_names,
+                                                               identities=identities, expert=from_review),
+                        engine=getattr(graph, "engine", None), at=eval_time):
+                if draft.get("file_id"):
+                    refused_files.add(str(draft["file_id"]))      # its card stays as it was (`_close_the_files_pass`)
+                continue
+            # STEP-14: an expert card is its FILE's — the file's next decision VERSIONS it, never a second card.
+            if draft.get("file_id"):
+                draft["_words"] = _decision_words(sig, draft)
+            versioned = _version_file_card(card_store, draft, copy, claim_token, out)
+            if versioned is not None:
+                if not versioned:
+                    continue
+                tally_lane(out, lane=draft.get("output_lane"))
+                card_id = draft["_versioned"]["card_id"]
+                if not draft["_versioned"]["material"]:
+                    # A rewording or a renewal is a quiet version — kept in its history, pushed to nobody (s14-D1).
+                    out["quiet_version_not_pushed"] += 1
+                    continue
+            else:
+                card_id, created, refreshed = card_store.insert_card(
+                    draft, copy, build_claim_token=claim_token)
+            if versioned is None and (card_id is None or not created):
                 if refreshed:
                     # The words on an existing card improved. Counted apart from `already_built`
                     # because they mean opposite things — one is work done, the other is work
@@ -707,7 +1060,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 elif card_id is not None:
                     out["already_built"] += 1
                 continue
-            out["built"] += 1
+            if versioned is None:
+                out["built"] += 1
             # ⛔ WHICH KIND OF OUTPUT, COUNTED — INCLUDING `suppress` AND INCLUDING `unrouted`.
             #
             # AT THE TWO SITES WHERE A CARD IS WRITTEN, not where a draft is composed. A draft can
@@ -721,7 +1075,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             # The lane the DRAFT resolved, never the raw column: `build_draft` already read the
             # pair through `lane_display.describe`, and resolving it twice is how a count and a
             # label come to give two answers to one question.
-            tally_lane(out, lane=draft.get("output_lane"))
+            if versioned is None:
+                tally_lane(out, lane=draft.get("output_lane"))
             out["llm" if copy["render_mode"] == "llm" else "raw_slot"] += 1
             try:
                 # ENQUEUED, not POSTed. The inline send from inside this build loop was the
@@ -784,7 +1139,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                     and draft["assignee"] and not over_budget
                     and card_store.transition(
                         card_id, org_id, "surfaced", "card.surfaced", cause="push",
-                        allowed_from=("queued",))):
+                        # A material VERSION may interrupt again, from where it sits (STEP-14, s14-D1).
+                        allowed_from=("queued", "surfaced") if versioned else ("queued",))):
                 out["pushed"] += 1
                 # Counted under its canonical name as well as the mechanical one, so an operator
                 # asking "how many decision requests did we surface" has an answer that is not
@@ -797,7 +1153,10 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
 
     # STEP-13 · the questions held files ask, each on its own card (M36.C2.L-interface.V3.U05) — after the
     # decisions, inside the recall guard below: a question card is a card, its lane tallied.
-    _build_question_cards(graph, card_store, org_id, eval_time, out)
+    _build_question_cards(graph, card_store, org_id, eval_time, out, us=us, our_names=our_names,
+                          identities=identities, refused_files=refused_files, refused_recently=refused_recently)
+    # STEP-14 · the file cards no version reached, and the files with two open cards (see `_close_the_files_pass`).
+    _close_the_files_pass(graph, org_id, out, refused_files)
 
     # ⛔ THE RECALL GUARD, RUN — and until 2026-10-01 it was written, tested and never invoked.
     #

@@ -140,6 +140,13 @@ session's guard on report files written by a worker; the table is here.)
 | s14-F15 | **`06` D34's premise has moved**: every replayed card is the expert's; a pack rule on a covered file stands down (STEP-12) | `reason/runner.py:900-993` | D34 answered for covered files |
 | s14-F16 | **D8 is STEP-15's**: screen items are one seat's and never reach a file's card | `reason/moments/guards.py:86-87`; `reason/moments/followups.py` | STEP-15 (s14-D6) |
 | s14-F17 | **The narrator still writes for a salesperson with real names** — now only on cards no review wrote | `deliver/render.py:496-521` | M43.C5 |
+| s14-F18 | **The compiled lane's replacement expiry has no behavioural test**: when a compiled decision past its window is replaced, `_emit_capability_signal` expires the old signal's cards REPLACED — and a mutant that skips it survives tests/reason/expert, tests/reason/adapters, `tests/test_admin_support_packs.py` and the situation-card test (found by M42.C2.L-integration.V2.U02's mutation run, 12 Oct; the branch was only moved, not changed) | `reason/domain_shadow.py` (`replace_unless_from is None` branch) | the lead (a guard unit) |
+| s14-F19 | **No card ever reaches the agent surface**: `card_builder._surfaces` grants `agent` when an action's `action` is `run_play`, but `build_draft` writes its actions as `{"type": "run_play"}` — and its one test (`tests/test_open_loops.py:455`) feeds `{"action": "run_play"}`, the shape no card has. Found reading the expert grade (M42.C3.L-logic.V0.U01, 12 Oct); not changed — granting it would start agent pushes (`deliver/outbox.enqueue_agent_push`) on every Run Play card | `deliver/card_builder.py` `_surfaces`; `tests/test_open_loops.py:441-455` | the lead / Rohit (a behaviour to switch on deliberately) |
+| s14-F20 | **The team writer's card contract refused every meeting follow-up** (our own regression, M43.C4.L-integration.V1.U03 at `a3be2ec2`): a follow-up's evidence names its facts (node, field) and holds none of their values, and *"— 1 for you"* is a count code computed — so the number rule refused *"Follow-ups from ISO audit — 1 for you"* and *"(due 20 Sep)"*. A readiness card's *"1 away"* was held only when the milestone's id happened to carry the digit. Found by the root guard (`tests/test_meetings_pg.py`), 13 Oct; fixed the same day: the writer hands the contract what its words were composed from (`emit_situation(corpus=…)`; `meetings/passes.compose_followup` returns the facts' values and the count, never its words), and the readiness evidence carries its away count | `reason/team/emit.py` `refusals`; `reason/meetings/passes.py` `compose_followup`; `reason/team/readiness.py` | M43.C4.L-integration.V1.U03 (fix) |
+| s14-F21 | **The card contract refused 19 golden expert cards for their gold lines** (our regression, found re-recording 14 Oct): why now and what remains are code's lines from the dossier (a meeting's title in quotes, its days away), the move whole, the alternative and the stop rule the check's — none were in an expert card's corpus, so *"number: 12"*, *"quote: Ferngrove x Nimbus Labs"*. F01, F02, F48, F52, F63 lost their card; that re-record was discarded | `deliver/pipeline._contract_refusals` | M43.C4.L-integration.V1.U02 (fix, `dfb2e169`) |
+| s14-F22 | **The connector became the subject of the file it introduced**: its nudges sit on the person's file, and the card lines took the last of the file's people to write — Introly — as its person (F03) | `reason/expert/card_lines._person` | M43.C2.L-logic.V0.U02 (fix, `836f17f1`) |
+| s14-F23 | **A titled meeting lost "(memory holds no words for it)"**: the dossier printed the title in its place, so F54's find-out reviews (authored on that line) were never served and the held file asked nothing; the second fix wave's unworded-meeting mutation stopped reaching a card | `reason/expert/dossier._timeline` | M42.C2.L-interface.V3.U04 (fix, `b8b4804d`) |
+| s14-F24 | **The statement census counts a bare string literal that opens on a SQL word**: `FUNCTION_WORDS`' "with" moved the pin 3,183 → 3,184 with no SQL added (the instrument's over-count, `03` F100's kind) | `platform/table_coverage._statements`; `deliver/card_builder.FUNCTION_WORDS` | left — the literal is one string now (`fc9ab5d5`); the census rule is the lead's |
 
 ### 8.4 · What changes in the design
 
@@ -242,3 +249,86 @@ two open cards; must-abstain 13/13; forbidden outputs 0 over every version.
 - **STEP-13's question card is planned against, not read** — its door's key (the builder stamp) is the lead's
   description; M42.C3.U04 adapts to what lands.
 - **Two re-records** on a load-sensitive machine, each restating the board in its five places.
+
+### 8.8 · Built — 12 to 14 Oct, branch `yc2w27-s14` (worktree `s14-build`)
+
+All 45 units of `yc2_w27_s14` (M42, M43), one commit each with its evidence, every code unit mutation-tested (each
+mutant run against a baseline that exited 0, survivors closed with tests); s14-D1…D8 taken at their recommended
+answers and recorded in `06` (Rohit took them, D66). Merged the integration line twice (`360766a3`, `8c89fe3c` — STEP-13's
+second fix wave and STEP-18's Claude 5 thinking fix), each conflict resolved keeping both intents.
+
+**The board** (`03` §F.1, `073da2ad`; `scripts/golden_score.py --assert-recorded` exits 0): must-detect 22/45 → **36/50**,
+must-abstain 13/13 → **14/14**, forbidden outputs 0, Atlas passing 6/80 → **12/80**. F176's eight cases pass — one
+card each, versioned as its file moved; replay 02 has six founder cases (F59–F64). Lost: F15 (`06` D57, the outreach
+wave) and F56 (a vendor's notice at the gate).
+
+**What changed in what you see.** A file has one card; its next decision or question versions it, saying what changed
+and keeping the words before; a renewal or a rewording is quiet. Answering a question keeps the card (s14-D3). The
+card says who and what the file is, why now, what remains, the move whole, its alternative and when to stop, and its
+window with where it came from; its headline is the move cut at a clause. Neither card writer writes a card that names
+us, prints a field's name, claims money with none in its evidence, quotes words nobody said or a number nothing
+holds — and what it refused is kept (`card_refusals`, 0222) and said by the health check.
+
+**Defects found in our own build and fixed in it**: s14-F20 (the team writer refused every meeting follow-up), F21 (the
+contract refused the gold lines), F22 (the connector as a file's subject), F23 (a titled meeting lost its "no words"
+line); and the merge's own (`531e1ec3`: the contract pulled `capture` into `contracts/`).
+
+**Waits for others**: the push and the merge to the integration line (the lead); s14-F18 and F19 (the lead, Rohit);
+F24 (the statement census counting a bare SQL word, the lead); `08`'s deploy notes for 0220–0222 and the one-time
+churn at switch-on (§8.7, Harsh's list).
+
+### 8.9 · The crosscheck of 16 Oct, and its fix wave — branch `yc2w27-s14-fix` (from `9d469efb`)
+
+The crosscheck (`.yc2w27-helpers/reports/step14-crosscheck.md`; five lenses, 70 rows) said **fix first**: two blocking
+defects reached the founder. Both are fixed, with the fragile findings the brief named, one unit and one commit each
+(failing test first, a mutation run against a baseline that exited 0, guards per group of two or three units).
+
+| Finding | Unit | What it is now |
+|---|---|---|
+| 1 ⛔ B2 survived versioning | M42.C2.L-interface.V3.U06 (+ its fix) | a card whose ANY version asked you is ours to blank: each version line that asked, and the card's own line while it asks — a decision version still grounds what it says (golden F07); the dossier text unchanged |
+| 2 ⛔ the answered card vanished | M42.C3.L-interface.V4.U06 | the question's door admits the answered version (`store.QUESTION_CARD_SQL`, the Monitor lane the answer writes); it offers snooze and requeue only; `doors()` is the health check *every open file card passes one door* |
+| 3 a refused version expired the card REPLACED | M43.C4.L-integration.V1.U06 | the file's card is left as it was (`file_cards_kept_on_refusal`); a refusal is kept once per writer, card and rule; the refusals check names the cards waiting behind one. Bound: such a card is on no door while it waits |
+| 4 money, quote, number vacuous on an expert card | M43.C4.L-integration.V1.U07 (+ its fix) | an expert decision's card is held to the evidence its move rests on — the check's quotes, the whole retained mails they come from, the facts, code's own lines — for money and quotes; its numbers to the words its check let stand (the check holds every figure); success and do-nothing are read |
+| 6 a claimed card held forever | M42.C1.L-data.V1.U04 | held only by a live claim; a card claimed by nobody comes back surfaced; health check *no card is claimed by nobody* |
+| 7 a rewording was pushed | M42.C3.L-integration.V2.U07 | `card_version.one_ask`: the same recipient, date, lane and mode and ≥ 0.8 of the shorter move's content stems — one ask, `reworded`, quiet. Bound measured: F25 0.89, F21 0.88 one ask; F24 0.73 another |
+| 8 the quiet-push acceptance could not fail | M42.C4.L-integration.V4.U06 | the runner orders a card's history by the sweep that wrote each event; the pushing mutant is its negative control |
+| 9 the board's judge skipped the gold lines | M43.C6.L-integration.V3.U11 | `CardView.shown_lines`, read by the forbidden judge (never for what a card is about); P4 events keep their words |
+| 10 F63 / m05 passed on the wrong question | M43.C6.L-integration.V2.U12 | `headline_says`: F63 and m05 need the address in the card's headline — blocked (strict xfail): asking a noun-phrase unknown reverses STEP-13 G8's pinned design, a decision for STEP-13b (M37) |
+| 11 a renewal spent the day's cap | M42.C2.L-integration.V2.U07 | a renewal is not held to the cap and spends none of the pass's allowance. Bound: its signal still counts in `_budget_used` |
+| 13 the health gate red by design | M43.C4.L-integration.V2.U08 | `question_settled`, `left_coverage` (the closed vocabulary +2); REPLACED counted over 7 days |
+| 12 a version push spent no budget | M42.C3.L-integration.V2.U08 | a material version pushed today counts in the seat's daily push budget. Bound: no push CHANNEL carries a version (the outbox's key; latent, in-app only) — STEP-15 |
+| 14 a refused card rebuilt every pass | M43.C4.L-integration.V1.U09 | a signal refused within a day is skipped (`skipped_refused_recently`), its file's card kept; the refusal's one row says when it last was |
+| 7 + 13 | M43.C6.L-integration.V3.U13 | ONE re-record (ideal reader, house order): only F25's answers moved; the board restated |
+| docs | — | `08` §0c, §1.15, §3.15 (finding 23); `06` s14-D6, s14-D7; `03` §F.1's mechanisms for F12, F50, F19 corrected |
+
+**The board** (`03` §F.1; `golden_score.py --assert-recorded` exits 0): must-detect 36/50 → **35/50** (F63 now judged on
+what its card asks — blocked, STEP-13b), must-abstain **14/14**, forbidden outputs **0**, Atlas passing 12/80 → **11/80**,
+blocked 1 → 2 (replay 02 m05, the same card).
+
+**§8.8 restated.** *"A rewording is quiet"* holds now (F25 `reworded`; M42's acceptance requires it). *"Answering a question
+keeps the card"* holds now — on the queue, its detail and its one action. *"Neither card writer … claims money with none in
+its evidence, quotes words nobody said or a number nothing holds"* holds now for an expert card too. *"A refused version
+leaves the card as it was"* holds — as it was, and on no door while it waits (declared).
+
+**Not built in the fix wave — each with its owner** (the crosscheck's findings 15–31; `report_full.md` §4 has the
+evidence and the proposed fix of each):
+
+| # | Finding | Owner |
+|---|---|---|
+| 15 | check.v3 withholds honest alternatives and stop rules that open with an ordinary word (Instead, Rather, Only, Pause… 19 of 42 openers) | STEP-13b `s13b-F4` → M37.C4.L-logic.V8.U02 |
+| 16 | a discrepancy on a field outside the 20-entry map is no longer asked (`compose` → None), counted only in its test | STEP-15 (the brief reads `/v1/discrepancies`), with `M43.C4.L-logic.V0.U04`'s map — the lead |
+| 17 | gold headlines that are only a condition (F15, F53) or end on a dangling verb or possessive (F05, F06, F61) | `M43.C3.L-interface.V3.U01` (s14-D8) — the lead, next STEP-14 follow-up |
+| 18 | a decision's co-recipients carry over into the file's question version (`_stamp_recipients` returns early on an empty set) | `M42.C3.L-data.V1.U02` — the lead, next STEP-14 follow-up |
+| 19 | the daily brief counts a living card's versions as staleness (500 bp per version) | STEP-15 (`reason/brief_ranking`) |
+| 20 | a version keeps no draft and never names a draft change (the drafts survive in `expert_reviews`) | STEP-16 (learning reads a judgment by its version) |
+| 21 | a card the founder called wrong through the feedback route is versioned onto new advice, its verdict printed beside the new headline | STEP-16 — Rohit's decision: does a *wrong* decide the card? |
+| 22 | live cards the contract would refuse survive the deploy unchanged | Rohit: a read-only contract probe of production's open cards (`08` §3.15) |
+| 23 | `08` said nothing Harsh needs for STEP-14 | **done here** — `08` §0c, §1.15, §3.15 |
+| 24 | *what the card contract refused* says NO DATA on zero refusals, so `--require-data` exits 2 on a healthy tenant | `M43.C4.L-integration.V2.U05` follow-up — the lead (said to Harsh in `08` §1.15) |
+| 25 | role is the file-kind enum; the file's company and kind of work never reach a card | `M43.C2.L-logic.V0.U02` — STEP-15 with the brief's kind of work |
+| 26 | a connector's move replaced by the alternative shows that sentence as both | `M43.C2.L-logic.V1.U01` — the lead, next STEP-14 follow-up |
+| 27 | the two writers test money differently; neither knows the graph's value and currency fields | `M43.C4.L-integration.V1.U03` — the lead (one money-evidence function in `contracts/`) |
+| 28 | the internal-field rule refuses honest domains whose first label is a namespace word (loop.so, signal.vc) | `M43.C4.L-contract.V0.U01` — the lead, next STEP-14 follow-up |
+| 29 | F64 is authored outside the prompt's closed sets and never has a card to clear | `M43.C6.L-data.V1.U07` — the golden set's next re-record (the lead) |
+| 30 | replay 02's erased `blocked_on` reasons; m06, m08, m09 without owners | `M43.C6.L-integration.V2.U08` — the lead, with `03` §F.1's notes |
+| 31 | F56's stated cause is stale and its loss has no owner | STEP-18 (B26, the junk filter's prompt) — the lead names it |

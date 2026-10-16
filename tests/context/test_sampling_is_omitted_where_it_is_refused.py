@@ -91,11 +91,14 @@ def test_temperature_is_still_sent_to_haiku():
 
 
 def test_the_model_and_max_tokens_still_cross():
-    """The omission is surgical: nothing else about the request changed."""
+    """The omission is surgical: nothing else about the request changed — beside it only the thinking
+    control (`yc2_w27_s18` M50.C1.L-contract.V0.U01), off, because Opus 5 thinks when nothing is sent."""
     kwargs = _sent_kwargs("claude-opus-5")
     assert kwargs["model"] == "claude-opus-5"
     assert kwargs["max_tokens"] == 16
     assert kwargs["messages"][0]["role"] == "user"
+    assert set(kwargs) == {"model", "max_tokens", "messages", "thinking"}
+    assert kwargs["thinking"] == {"type": "disabled"}
 
 
 # =================================================================================================

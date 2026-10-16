@@ -15,10 +15,20 @@ Predicates, all over one case's run:
 
   card_about / min / max   cards whose text names any of the terms, counted over every sweep
   mentions                 …and each of those cards says these words
+  headline_says            …and each of those cards says these in its headline — what it advises or asks
+                           (STEP-14 fix, the crosscheck's finding 10)
   level_in                 …and each of those cards is at one of these levels
   memory                   these objects reached memory — the WITNESS that keeps "no card" from
                            passing on a chain that never reached the stage
   no_phrase                no card carries these phrases
+
+STEP-14 (`yc2_w27_s14` M43.C6.L-integration.V2.U08, s14-D5) — replay 02 is about several contacts at once, which one
+`card_about` cannot say:
+
+  each                     term groups, one per contact: exactly one card the app showed about each, and no card
+                           about two of them — the Atlas's target precision
+  open_at_end              …and each of those cards is still open after the last sweep: none closed by another's reply
+  versioned                the card about these terms has two versions or more — it moved on, never a second card
 """
 from __future__ import annotations
 
@@ -32,9 +42,35 @@ EXPRESSED: dict[tuple[str, int], dict] = {
                 "level_in": ["wait", "observation"], "mentions": ["milestone"],
                 "memory": ["tara"], "no_phrase": ["last chance", "checking in"],
                 "why": "Tara asked for real news only; nothing material happened since"},
+    # 02 · STEP-14 (`yc2_w27_s14` M43.C6.L-integration.V2.U08, s14-D5): the connector's introductions, one file each.
+    # m00 — three introductions in three threads: three distinct files, a decision each naming one contact.
+    ("02", 0): {"case": "F59", "each": [["Tara", "Quillstone"], ["Malhotra", "Ferncrest"], ["Anaya", "Harborline"]],
+                "memory": ["tara", "dev", "anaya"], "no_phrase": ["Reply to Introly", "write to Introly"],
+                "why": "Introly introduced Tara, Dev and Anaya in three threads; each replied with an ask of their own"},
+    # m01 — the three in ONE forwarded thread: split per contact, never the whole body as one ask.
+    ("02", 1): {"case": "F60", "each": [["Kiran", "Pinewood"], ["Rhea", "Saltmarsh"], ["Vikram", "Brightwell"]],
+                "memory": ["forward"], "no_phrase": ["three introductions", "Reply to Introly"],
+                "why": "one Introly mail copies Kiran, Rhea and Vikram, each with an ask in the one body"},
+    # m02 — one contact replied, two silent: the replied one moves on, the two stand, none closed.
+    ("02", 2): {"case": "F61", "each": [["Sana", "Driftwood"], ["Omkar", "Redfern"], ["Tanvi", "Copperleaf"]],
+                "open_at_end": True, "versioned": ["Sana", "Driftwood"], "memory": ["sana"],
+                "why": "Sana proposed Wednesday at 2 pm; Omkar and Tanvi stayed silent"},
+    # m03 — one contact's call booked, another's time proposed: no cross-contact calendar fact on a card.
+    ("02", 3): {"case": "F62", "card_about": ["Ira", "Lanternfish"], "min": 1, "max": 1, "mentions": ["Tuesday"],
+                "memory": ["farhan", "ira"], "no_phrase": ["14 August", "4 pm"],
+                "why": "Farhan booked Thursday 14 August himself; Ira only proposed Tuesday 12 August"},
     # 02 · m04 — the connector itself makes a bounded ask: its own item.
     ("02", 4): {"case": "F09", "card_about": ["Introly"], "min": 1,
                 "why": "the connector asks which stage the founder is raising at"},
+    # m05 — the introduced address is missing: one discriminating question, no action, never a guessed address.
+    ("02", 5): {"case": "F63", "card_about": ["Ishaan", "Corvane"], "min": 1, "max": 1, "level_in": ["review"],
+                "mentions": ["address"], "headline_says": ["address"], "memory": ["intro"],
+                "no_phrase": ["ishaan@", "Reply to Introly"],
+                "why": "the introduction names Ishaan and Corvane and carries no address of his"},
+    # m07 — a declined introduction: stopped, and the connector's later nudge reopens nothing; its history kept.
+    ("02", 7): {"case": "F64", "card_about": ["Zara", "Northlake"], "max": 0, "memory": ["decline", "nudge"],
+                "no_phrase": ["last chance", "checking in"],
+                "why": "Zara declined the day of the introduction; Introly asked a week later whether you connected"},
     # 03 · m00 — a counterparty proposes a time; the founder accepts or declines.
     ("03", 0): {"case": "F26", "card_about": ["Neha", "Orbitly"], "min": 1, "mentions": ["30 Sep"],
                 "no_phrase": ["You promised", "Deliver"],
@@ -64,8 +100,13 @@ NOT_EXPRESSIBLE: dict[str, str] = {
     "01": f"{_NO_CASE}: consent labels, update-history conflicts, identity collisions, an "
           "uncovered investor capability made visible, and delivery receipts are not inputs any "
           "case carries",
-    "02": f"{_NO_CASE}: three concurrent introductions, a forwarded group intro, a declined "
-          "intro, a shared display name and delivery reconciliation are each a case to write",
+    # STEP-14 (s14-D5): m00, m01, m02, m03, m05 and m07 are driven by F59–F64 (above); three stay declared.
+    "02": f"{_NO_CASE}: m06, one display name for two anchored people — identity's first claim still wins an "
+          "alias (the replay's own blocked_on), and no step of YC-II W27 plans the candidate set; m08, a "
+          "connector thread's private facts kept from another contact's file — seat-private items reach no "
+          "file's card yet (STEP-15 shows them in the brief, s14-D6) and no per-fact use scope is planned; m09, "
+          "a direct send with an unknown provider result — no card action reaches the execution subsystem, so "
+          "there is no attempt to reconcile (no step owns it yet)",
     "03": f"{_NO_CASE}: acceptance, counter-proposal, cancellation, a disconnected calendar, two "
           "parallel meetings, an ambiguous time zone, a delegate and a provider timeout",
     "04": f"{_NO_CASE}: an in-thread reply, parallel asks, a vague 'done', partial sync, a revoked "
@@ -98,9 +139,34 @@ def check(spec: dict, run) -> list[str]:
         missing = [t for t in spec.get("mentions") or [] if not says(card.text, t)]
         if missing:
             problems.append(f"card {card.card_id} does not say {missing}")
+        headline = str((getattr(card, "gold", None) or {}).get("headline") or "")
+        unsaid = [t for t in spec.get("headline_says") or [] if not says(headline, t)]
+        if unsaid:
+            problems.append(f"card {card.card_id} does not say {unsaid} in its headline")
         levels = spec.get("level_in")
         if levels and card.level not in levels:
             problems.append(f"card {card.card_id} is {card.level!r}, not one of {levels}")
+    groups = [tuple(g) for g in spec.get("each") or ()]
+    last = len(run.chain_ok) - 1
+    for group in groups:
+        shown = cards_about(run, group, shown=True)
+        if len(shown) != 1:
+            problems.append(f"{len(shown)} card(s) about {'/'.join(group)} the app showed; exactly 1 expected")
+        if spec.get("open_at_end"):
+            problems += [f"card {c.card_id} about {'/'.join(group)} is not open after the last sweep"
+                         for c in shown if last not in c.sweeps]
+    for card in run.cards:
+        named = [g for g in groups if any(says(card.text, t) for t in g)]
+        if len(named) > 1:
+            problems.append(f"card {card.card_id} names more than one contact: "
+                            + ", ".join("/".join(g) for g in named))
+    versioned = tuple(spec.get("versioned") or ())
+    if versioned:
+        moved = cards_about(run, versioned)
+        if not moved:
+            problems.append(f"no card about {'/'.join(versioned)} to have moved on")
+        problems += [f"card {c.card_id} about {'/'.join(versioned)} has {len(c.versions)} version(s); "
+                     "it moved on, so two or more" for c in moved if len(c.versions) < 2]
     for oid in spec.get("memory") or []:
         if int(run.memory.get(oid, 0)) == 0:
             problems.append(f"{oid} never reached memory — the check would pass on nothing")

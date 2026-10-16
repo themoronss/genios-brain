@@ -151,30 +151,37 @@ def test_the_same_question_asked_again_keeps_its_card(world, cards):
     assert _queued(cards, org, later) == [card.card_id], "re-bound, still read through its door"
 
 
-def test_a_new_question_replaces_the_old_card(world, cards):
+# ⛔ RESTATED by yc2_w27_s14/M42.C2.L-integration.V2.U05 (`03` F176, s14-F13, s14-D3): a new question and a decision
+# after a question are VERSIONS of the file's one card — the old card is no longer expired REPLACED and a second one
+# built. Green since delivery versions it (M42.C3.L-integration.V2.U03 removed the markers).
+def test_a_new_question_is_the_cards_next_version(world, cards):
     store, org, registry, anchor, events = _asked(world)
     _build(store, cards, org)
+    [first] = _cards(store, org)
     _find_out(store, org, anchor, "ffp-fund-findout-review-001", events, question="Who at the fund decides?")
     later = NOW + timedelta(hours=1)
     _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
-    assert _build(store, cards, org, at=later)["question_cards"] == 1
-    old, new = _cards(store, org)
-    assert old.state == "expired" and (new.state, new.headline) == ("queued", "Who at the fund decides?")
-    assert _queued(cards, org, later) == [new.card_id]
+    _build(store, cards, org, at=later)
+    built = _cards(store, org)
+    assert len(built) == 1, "one file, one card"
+    card = built[0]
+    assert (card.card_id, card.state, card.headline) == (first.card_id, "queued", "Who at the fund decides?")
+    assert _queued(cards, org, later) == [card.card_id]
 
 
-def test_a_decision_retires_the_question_card(world, cards):
+def test_a_decision_after_the_question_is_the_cards_next_version(world, cards):
     from tests.reason.expert.test_a_covered_file_decides_once import _write as _write_act
     store, org, registry, anchor, events = _asked(world)
     _build(store, cards, org)
+    [first] = _cards(store, org)
     _write_act(store, org, anchor, "ffp-fund-act-review-000000", events)
     later = NOW + timedelta(hours=1)
     _compile(store, org, registry, covered={anchor: "ffp-fund-act-review-000000"}, at=later)
     counts = _build(store, cards, org, at=later)
     assert counts["question_cards"] == 0
-    question_card, *rest = _cards(store, org)
-    assert (question_card.builder_version, question_card.state) == (QUESTION_CARD_BUILDER, "expired")
-    assert all(c.builder_version != QUESTION_CARD_BUILDER for c in rest)
+    built = _cards(store, org)
+    assert len(built) == 1, "one file, one card"
+    assert built[0].card_id == first.card_id and built[0].builder_version != QUESTION_CARD_BUILDER
 
 
 def test_a_question_goes_where_the_files_decision_would(world, cards, monkeypatch):
@@ -362,3 +369,30 @@ def test_a_rebound_question_card_reads_the_review_asking_it_now(world, cards):
     _build(store, cards, org, at=later)
     [card] = _cards(store, org)
     assert (card.headline, card.situation) == (FIND_OUT, later_reading)
+
+
+def test_a_question_card_offers_dont_ask_me_this(world, cards):
+    """STEP-16 (`yc2_w27_s16` M46.C3.L-interface.V5.U07; S16-D4, S16-D10): beside answer and later, *don't ask me
+    this* — the eleven reasons under the decision card's four groups, and your words, optional — and pressing it
+    retires the question the card asks."""
+    from genios_engine.contracts.learning_attribution import ALL_REASONS
+    from genios_engine.context import founder_questions as Q
+    from genios_engine.deliver import actions
+    from genios_engine.deliver.card_builder import _WRONG_REASON_GROUPS
+    store, org, _registry, anchor, _events = _asked(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    [question] = _questions(store, org, anchor)
+    [wrong] = [a for a in card.actions if a["type"] == "wrong"]
+    assert wrong == {"type": "wrong", "label": "Don't ask me this", "question_id": question.question_id,
+                     "reasons": list(ALL_REASONS), "reason_groups": _WRONG_REASON_GROUPS,
+                     "words": pipeline.QUESTION_WRONG_WORDS}
+    assert len(wrong["reason_groups"]) == 4 and sorted(r for rs in wrong["reason_groups"].values() for r in rs) \
+        == sorted(ALL_REASONS)
+    reason = wrong["reason_groups"]["the conclusion is wrong"][0]
+    out = actions.ingest_action(card_store=cards, graph=store, org_id=org, card_id=card.card_id,
+                                actor="founder@meridian.test", action="wrong", reason=reason,
+                                eval_time=NOW + timedelta(minutes=5), allow_any_assignee=True)
+    assert out["ok"] is True, out
+    [retired] = _questions(store, org, anchor)
+    assert (retired.state, retired.retired_why) == (Q.RETIRED, Q.CALLED_WRONG)

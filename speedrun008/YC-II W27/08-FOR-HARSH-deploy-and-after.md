@@ -96,10 +96,67 @@ here when the step lands. Nothing in this table switches anything on by itself.
 |---|---|---|---|---|
 | STEP-13, check every claim | first part **pushed** (`7766a06a`); the check's and the question's fixes from its crosscheck are merged and being re-recorded; next push | `0200_expert_review_checks` (one nullable column on `expert_reviews`: the check), `0201_founder_questions` (one table; `/reset` wipes it) | §1.14, §3.12, §4.10 — nothing runs until the expert is on (§3.11); wire the needs queue's fetchers when you can (§3.12) | the **question card** and its **Answer** box; each card sentence's **source**; the workstream page reads `says` and `check` (§1.14) |
 | STEP-17, real tests | **built**, merged on the integration branch | none | CI gains a `database` job (Postgres 17) and every job runs Python **3.11**, the Dockerfile's; after each deploy keep the health gate's output (`scripts/pipeline_health.py … --json <release record>/health.json`) and run it again the next day with `--require-data` — STEP-17's follow-up adds the exact step to §2/§3 | — |
-| STEP-18, the known bugs | **built**, merged on the integration branch | `0210_every_wrong_reason_is_kept`, `0211_a_followup_names_its_observation` | **before the deploy:** set `GENIOS_JWT_SECRET` in production (a non-dev boot with the default secret refuses to start, exit 3). If you also set `GENIOS_ENV` to a non-dev value: a rotated secret signs every user and paired desktop app out (they sign in again), and unsigned Composio webhooks get 403 unless `GENIOS_COMPOSIO_WEBHOOK_SECRET` is set — read `GET /config` first — and since `06` D62 an UNSET `GENIOS_ENV` counts as not dev too, so the image refuses to boot on a public secret until both are set (§3.14). **After:** the s18-F9 and s18-F3 probes and the backfill of review objects stuck at `governed`, dry run first (§4.11) | — |
-| STEP-14, the card | **being built** | `0220_the_living_card`, `0221_the_gold_card` (planned) | read the board as the app showed it (s14-D4) | one **living card per file**: a card has versions, and its history shows them; a question card stays open after your answer (*"your answer is in; the file is read again"*, s14-D3); the headline is cut by code, the move whole under *recommended* |
-| STEP-15, the morning brief | **being built** | `0230_morning_briefs` (planned) | at deploy, **set `orgs.timezone` for Rohit's org** (otherwise it is inferred from his send hours); a Slack tenant gets the brief as its digest | the **Today view** (Atlas A.10 has the wireframe) reads the brief's route at 08:00 in the org's timezone; e-mail and WhatsApp come later |
-| STEP-16, learning from you | **being built** | `0241_founder_corrections`, `0242_company_brief_corrections` (planned; `0240` is not needed — STEP-18's `0210` already keeps every reason) | do **not** arm calibration (D13 stays shadow) | the card's *wrong* shows four groups and a words box; a question card can be called *wrong* (*"don't ask me this"*); your corrections show on the file |
+| STEP-18, the known bugs | **built**, merged on the integration branch | `0210_every_wrong_reason_is_kept`, `0211_a_followup_names_its_observation` | **before the deploy:** set `GENIOS_JWT_SECRET` in production (a non-dev boot with the default secret refuses to start, exit 3). If you also set `GENIOS_ENV` to a non-dev value: a rotated secret signs every user and paired desktop app out (they sign in again), and unsigned Composio webhooks get 403 unless `GENIOS_COMPOSIO_WEBHOOK_SECRET` is set — read `GET /config` first — and since `06` D62 an UNSET `GENIOS_ENV` counts as not dev too, so the image refuses to boot on a public secret unless a REAL secret is set — `GENIOS_ENV` decides the webhook behaviour above, not the boot itself (second crosscheck I1; §3.14). **After:** the s18-F9 and s18-F3 probes and the backfill of review objects stuck at `governed`, dry run first (§4.11) | — |
+| STEP-14, the card | **built** (16 Oct: merged on the integration line `9d469efb`, its crosscheck's fix wave on `yc2w27-s14-fix`); next push | `0220_the_living_card`, `0221_the_gold_card`, `0222_card_refusals` (and STEP-13's `0202_expert_review_checked_at`, which this table missed) | §1.15, §3.15 — the boot log names all four; the first pass after the deploy re-drafts every open card (builder v6 → v7) and replaces each open legacy or compiled card on a covered file once (§3.15); keep the health gate's output (§3.13) and read its six card lines | one **living card per file**: `card_id` stays, `signal_id` moves under it, its versions are `card.versioned` events; an answered question card STAYS on `GET /cards` and `/cards/{id}` (*"your answer is in; the file is read again"*, s14-D3) offering snooze only; the headline is cut by code, the move whole under `recommended`; the fields and response shapes that changed are §1.15's |
+| STEP-15, the morning brief | **built** (16 Oct, on the integration line `yc2w27-int16` with STEP-14 and STEP-16), not yet pushed | `0230_morning_briefs` (two tables, additive) | §1.16 — at deploy, **set `orgs.timezone` for Rohit's org** (otherwise it is inferred from his send hours); a Slack tenant gets the brief as its digest | the **Today view** (Atlas A.10 has the wireframe) reads the brief's route at 08:00 in the org's timezone; e-mail and WhatsApp come later |
+| STEP-16, learning from you | **built** (16 Oct, every unit — the last, the brief's door, on the integration line `yc2w27-int16` with STEP-14 and STEP-15), not yet pushed | `0241_founder_corrections`, `0242_company_brief_corrections` (additive; `0240` is not needed — STEP-18's `0210` already keeps every reason) | do **not** arm calibration (D13 stays shadow); the first pass after the deploy reviews every live file once more (`expert-review.v4`, about 2¢ a file, ten a pass) | the card's *wrong* shows four groups and a words box; a question card can be called *wrong* (*"don't ask me this"*); your corrections show on the file; a brief line's *not useful because ___* is a correction of its file — `POST /v1/executive/morning/lines/{line_id}/mark` now also returns `correction_id` and `file_id` (both null when the line names no file), and a Watching line says *"(you said so on 12 Oct)"* when its review cites your correction |
+
+## 0d · ⛔ Claude 5 thinks by default — R-2 is probably cut in production today (13 Oct)
+
+**The defect** (STEP-18 §9; `06` D71). Claude Sonnet 5 thinks unless the request turns it off, and the
+tokens it spends thinking count toward `max_tokens` with the answer. Every model site here was sized for a
+model that does not think, and `context/llm/client.LLMClient` — the one client R-1, R-2 and deep analyze
+use — sends no thinking control. On `harsh/mvp` the R-2 narrator (`l4_bundle`) runs `claude-sonnet-5` at a
+2,400-token ceiling: its answer is ~450 tokens, and a call whose thinking fills the rest is cut, retried
+once at the same ceiling, and ends as the template — two charged calls for no narrative. Measured on the
+golden set on 12 Oct: the R-7 expert on Sonnet 5 at 4,000 was cut on **203 of 203** calls (R-7 is not
+on `harsh/mvp`).
+
+**1 · Rohit runs this first** — read-only, the four `@thinking_*` blocks of the probe file (§4):
+
+```
+PGOPTIONS='-c default_transaction_read_only=on' psql "$URL" -f "speedrun008/YC-II W27/baseline/production_state.sql"
+```
+
+| Block | Confirms the defect | Refutes it |
+|---|---|---|
+| `@thinking_lanes` | `l4_bundle` × `claude-sonnet-5`: ≥ 10% of calls at 2,400 (`failures_at_ceiling` + `parsed_but_cut`) | every call since 4 Oct under 2,400 — the patch then only saves ~40% of R-2's output spend |
+| `@thinking_r_sites` | R-2 `failed_generation` with `every_attempt_at_ceiling` (2 attempts, 4,800 tokens) | none |
+| `@thinking_sonnet_by_day` | the Sonnet 5 lanes still at a ceiling after 4 Oct | — |
+| `@thinking_models_in_use` | a T1 lane on a model other than Haiku (an override: the shared client would then think there too) | Haiku plus the two Sonnet 5 lanes only |
+
+The blocks read Rohit's org only (the probe file's rule); `@thinking_expert_after_deploy` and
+`@thinking_brief_after_deploy` read tables that come with the speedrun008 deploy (`0195`, `0197`) and
+error before it — run them after.
+
+**2 · The hotfix for `harsh/mvp`** — one file and its test, nothing else:
+`speedrun008/YC-II W27/baseline/thinking/harsh-mvp-r2-thinking-off.diff`. It sends
+`thinking: {"type": "disabled"}` to `claude-sonnet-5` — its own id or a dated snapshot, never a longer id
+(Opus 5.5 and Fable cannot turn thinking off; `disabled` is a 400 there) — from `context/llm/client.py`,
+and adds two tests to `tests/context/test_sampling_is_omitted_where_it_is_refused.py`. Haiku's requests do
+not change by a byte.
+
+```
+git switch harsh/mvp && git pull --ff-only
+git apply --check "speedrun008/YC-II W27/baseline/thinking/harsh-mvp-r2-thinking-off.diff"   # from a speedrun008 checkout, or copy the file
+git apply "speedrun008/YC-II W27/baseline/thinking/harsh-mvp-r2-thinking-off.diff"
+.venv/bin/python -m pytest -q tests/context/test_sampling_is_omitted_where_it_is_refused.py tests/context/test_a_truncated_call_is_not_bad_json.py
+git commit -am "R-2: Sonnet 5 asked with thinking off (STEP-18 §9 hotfix)" && git push   # then deploy as you do
+```
+
+Proved on an extract of `origin/harsh/mvp` @ `84f00a40` (never a checkout):
+`bash 'speedrun008/YC-II W27/baseline/thinking/check-harsh-mvp-hotfix.sh'` — it applies, harsh/mvp's two
+client test files pass (25), and so do its `tests/context` and the R-site gauntlet and doctrine tests.
+A day after, `@thinking_lanes` should show `l4_bundle` with no call at 2,400.
+
+**3 · The speedrun008 deploy carries the whole fix** (`yc2_w27_s18` M50): a thinking control per model
+family in the shared client, OFF by default; every R-site asks with thinking off (R-7 at 6,000 with a 120 s
+timeout); deep analyze, the brief drafter (4,000) and the four moment lanes the same; a cut answer is a
+failure on every ledger; `scripts/pipeline_health.py` sees a cut that parsed and fails an expert day more
+than half cut. No migration. ⛔ Once the hotfix is committed on `harsh/mvp`, `harsh/mvp` is one commit
+ahead of `speedrun008` and §2's `--ff-only` refuses: the lead merges that commit back into `speedrun008`
+first, taking `speedrun008`'s side in `context/llm/client.py` and the test file (its table already sends
+Sonnet 5 `disabled`), so the deploy fast-forwards again.
 
 ## 1 · What the deploy changes in production
 
@@ -279,6 +336,32 @@ it** (`03` F62), or that company reads as a counterparty in those three places.
 | the lanes | every writer of signals and cards now writes `output_lane` and `lane_reason` (the team and verify cards included); a new health check counts the last day's signals with no lane |
 | what does NOT change | no new environment variable; nothing for a tenant without `expert_review`. When it is switched on (§3.11) every file is reviewed once more under the new prompt (`expert-review.v3`): about 46 reviews a day inside the $2 day, so a 150-file tenant is fully covered in 3–4 days |
 
+### 1.15 · STEP-14, the card — in the next push
+
+| | What changes at runtime |
+|---|---|
+| migrations `0220`, `0221`, `0222` (+ STEP-13's `0202`) | `cards.file_id` and `cards.version` (1 at creation) with a partial unique index — at most one undecided card per (org, file); `cards.recommended`, `alternative`, `wait_or_stop`, `card_lines` (the gold card's lines; `expert_reviews` keeps the card lines too); `card_refusals` — what the card contract refused, one row per writer, card and rule. All additive and idempotent. `/reset` now deletes `card_refusals` with the tenant's cards. ⛔ Every card insert names `file_id` and the gold columns, so a boot that skipped these migrations fails EVERY card write — read the boot log before the first pass |
+| one card per file | a file's next decision or question VERSIONS its card: the same `card_id`, its `signal_id` re-pointed, `version` + 1, one `card.versioned` event (`detail`: the words before and after, what changed, `material`, `change` — created, updated, reworded, renewed, asked, answered, reopened). Only a MATERIAL version (another ask, recipient, date, lane or mode) is pushed; a rewording or a renewal is quiet. A card closed by the clock or a clearing is reopened by the file's next version (s14-D2); one the founder decided stays decided |
+| your answer | `POST /cards/{id}/action` `{"action": "answer", "words": …}` now returns `{ok, state, action, question_id, version}` — `state` is where the card already sat (`queued`, `surfaced`, `snoozed`), **never `resolved`** any more. The card stays on `GET /cards` and `GET /cards/{id}`, headline *"Your answer is in; the file is read again"*, lane `monitor`, actions `[snooze]`; pressing `answer` again (or `run_play`) returns `not_offered` with `offered: ["requeue", "snooze"]`. The file's next review versions it again |
+| the gold card | `GET /cards/{id}` (it selects `k.*`) now carries `recommended` (`who`, `what`, `for_whom`, `by_when`, `to`), `alternative`, `wait_or_stop`, `why_now`, `unresolved_item` (what remains), `business_subject` / `relationship_role`, `version`, `file_id`; the window's receipt is a `why` entry with `"source": "card_lines"`. `GET /cards` (the queue) still lists neither `version` nor `file_id`. An expert card's `confidence_vector` no longer has `R` (it was a default, s14-F9). The headline is the move cut at a clause (≤ 60 characters); show the move whole from `recommended.what` |
+| the card contract | both card writers refuse a card that names us, shows a field's name (`party.role`) or an empty slot, claims money with none in its evidence, quotes words nobody said, or says a number nothing holds — refused cards are never written and are kept in `card_refusals`. An expert card is held to the mails its move rests on (16 Oct, the crosscheck's finding 4). A refused VERSION leaves the file's card as it was (counted `file_cards_kept_on_refusal`) |
+| refused cards and the push budget | a signal the contract refused is tried again once a day, not every pass (`skipped_refused_recently` in the pass's counts); a material version pushed today counts in the seat's daily push budget. ⛔ A push CHANNEL (Slack, e-mail) never carries a version — the outbox keys a delivery by (card, channel, recipient); latent while production registers the in-app surface only (STEP-15 owns it) |
+| card endings | two new causes on `card.expired` (History shows them): `question_settled` (a question answered or no longer asked, and no move after it) and `left_coverage` (the file is no longer the expert's). A card left `claimed` by an agent's late result comes back `surfaced` when its file moves |
+| the health gate | six card checks now: *one file, one open card*; *no file card is replaced* (REPLACED in the last 7 days); *what the card contract refused* (with the file cards waiting behind a refused version); *every expert card reaches the app*; *every open file card passes one door*; *no card is claimed by nobody*. ⛔ *What the card contract refused* says NO DATA when nothing was refused — the next day's `--require-data` run then exits 2 on a healthy tenant (the crosscheck's finding 24, open): read its name before treating exit 2 as a finding |
+| what does NOT change | nothing switches on; no environment variable. The narrator writes for "a founder's chief of staff" with the golden set's invented names as its examples |
+
+### 1.16 · STEP-15, the morning brief — in the next push
+
+What it changes: one brief per account owner per local day, composed at 08:00 in the org's timezone (every sweep ends by
+composing the briefs that are due), served at `GET /v1/executive/morning`, marked at `POST …/lines/{line_id}/mark`; a Slack
+tenant's daily digest is now that brief (one line and today's five) instead of the signal count, claimed once the brief is
+kept — it leaves on the first heavy tick (≤ 6 h) after. A small move (act, low stakes, low urgency, writing to no one) is a
+line in the brief and no card. **You do:** (1) the boot log must name `0230_morning_briefs`; (2) **set `orgs.timezone`
+for Rohit's org** — otherwise 08:00 is inferred from his send hours; (3) leave the feature `morning_brief` OFF: the template
+writes the brief at no cost. To arm the Haiku/Sonnet writer, first `scripts/golden_eval.py --site brief --dry-run`, then the
+live look (key + `--spend-ok`, ≈ $1), read it, then switch `morning_brief` on for the org (its own budget: $0.25/day and
+$0.03/call per site). Nothing is spent otherwise. `/reset` wipes both tables.
+
 ### 1.3 · How it was tested before the push
 
 `baseline/yc2w27-qa/qa_record.txt`, at `83dd87f3`, every check on an **empty** scratch Postgres 17:
@@ -336,7 +419,7 @@ files; the deploy is not done until the boot log names each.
 ⛔ **STEP-13 (12 Oct) adds `0200_expert_review_checks.sql`** (one nullable column on `expert_reviews`, written by
 the review store) **and `0201_founder_questions.sql`** (one table; `/reset` fails until it is applied) — the boot
 log names eleven files from `0191`.
-⛔ **STEP-18 (12 Oct) adds `0210_every_wrong_reason_is_kept.sql` and `0211_a_followup_names_its_observation.sql`** (both additive), and BEFORE the deploy needs `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` in the deployment's environment, or the new image refuses to boot — §3.14.
+⛔ **STEP-18 (12 Oct) adds `0210_every_wrong_reason_is_kept.sql` and `0211_a_followup_names_its_observation.sql`** (both additive), and BEFORE the deploy needs a real `GENIOS_JWT_SECRET` in the deployment's environment — the new image refuses to boot on an unset or default secret unless `GENIOS_ENV` already names `dev`/`development`/`test`/`local` (second crosscheck I1: a real secret alone is enough; `GENIOS_ENV` is a separate decision, with its own webhook consequence) — §3.14.
 No new environment variable. One value we need from the
 deploy's environment:
 **`GENIOS_L4_LLM_DECISION_MAKER`** — on or off? The golden set runs the LLM decider on, as
@@ -663,6 +746,23 @@ not a pass. Exit 1: as above. Exit 0: every check judged something, and none fai
 Where a section above says a check *must pass*, NO DATA on the deploy day is not a breach of it; on
 the next day's `--require-data` run it is.
 
+### 3.15 · STEP-14 — the first pass after the deploy
+
+1. **The boot log names `0202`, `0220`, `0221`, `0222`.** If one is missing, stop: every card write fails (§1.15).
+2. **The first pass re-drafts every open card** (the builder's version moved v6 → v7, `card-builder.v7-the-gold-shape`):
+   each untouched open card is rebuilt in the gold shape. A rebuilt card the contract now refuses writes nothing and
+   stays as it was — so an open card that already says what no card may (production's *"Confirm party.role with
+   Arjun"* shape) survives the deploy unchanged (the crosscheck's finding 22). Rohit runs a read-only probe of the
+   open cards' words through `contracts/card_contract` (production reads are his) and decides which to retire.
+3. **The one-time churn when the expert is switched on** (§3.11): every open legacy or compiled card on a covered
+   file is replaced ONCE by the file's own card, not carried over — a snooze on it is lost, at most three pushes a
+   pass, and the day's budget is spent on them. Tell Rohit before §3.11.
+4. **Read the six card lines of the health gate** (§1.15) in the release record (§3.13). *No file card is replaced*
+   FAILS only on a file's card expired REPLACED in the last 7 days (the version path's failure); *every open file card
+   passes one door* and *no card is claimed by nobody* must PASS.
+5. **Front-end:** §1.15's rows — the answer's response, the answered card on the queue, `recommended` and the gold
+   lines on the detail, the two new endings in History.
+
 ### 3.14 · STEP-18 — before and after the deploy
 
 STEP-18 (`yc2_w27_s18`, its 20 units and the crosscheck's follow-ups) ships two migrations and one
@@ -684,9 +784,13 @@ does.
    ```
 2. In the deployment's environment (DigitalOcean), read — do not print — whether `GENIOS_ENV`,
    `GENIOS_JWT_SECRET` and `GENIOS_COMPOSIO_WEBHOOK_SECRET` are set.
-3. **If production does not set `GENIOS_ENV`, or sets it outside dev, the new image will not boot
-   until `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` are set.** Set them together, in one change,
-   before the deploy, knowing what each does:
+3. **If production carries the default (or no) `GENIOS_JWT_SECRET`, the new image will not boot
+   until a real one is set — whatever `GENIOS_ENV` says.** (Second crosscheck I1: a real secret
+   alone boots in every `GENIOS_ENV` state, including unset; only an unset-or-non-dev `GENIOS_ENV`
+   WITH a default/empty secret refuses — the rule the intro above states correctly.) If production
+   already carries a secret of its own, the boot needs nothing new here; still decide `GENIOS_ENV`
+   below for its own reason, the webhook one. Set whichever of the two actually need to change, in
+   one change, before the deploy, knowing what each does:
    * **A new `GENIOS_JWT_SECRET` signs every user and every paired desktop app out.** Every session
      and device token is signed and checked with it (`platform/sessions.py`, `platform/auth.py`,
      `platform/devices.py`), and the dashboard, the desktop app and the extension do not call
@@ -947,6 +1051,34 @@ GENIOS_ALLOW_PROD_WRITE=1 python scripts/rest_stuck_reviews.py --database-url "$
 It moves exactly the rows whose state is `governed` and whose latest transition goes to
 `human_review`, in one transaction, and writes no transition (the ledger already holds that edge).
 Run the probe again after: the `governed` / `human_review` row reads 0.
+
+**3 · B13's pre-0211 duplicate screen observations** (the second crosscheck's G-2;
+`scripts/retire_duplicate_screen_observations.py`, `yc2_w27_s1718` M48.C2.L-data.V2.U21). A
+follow-up rewritten more than once before `0211` landed can still hold several `active` graph
+observations — nothing retires the earlier ones retroactively. The probe (read-only, run on a
+scratch database or via `production_state.sql`'s `@b13_duplicate_screen_observations`):
+
+```
+select count(*) from (
+  select r.evidence->>'followup_id' as followup_id
+    from graph_observations o
+    join graph_source_refs r on r.observation_id = o.observation_id and r.org_id = o.org_id
+   where o.org_id = :org and r.source = 'screen_insight' and o.status = 'active'
+   group by 1 having count(*) > 1
+) d;
+```
+
+Dry run first; send its output (org, follow-up id, how many active) to Rohit; `--apply` after he reads it:
+
+```
+GENIOS_ALLOW_PROD_WRITE=1 PGOPTIONS='-c default_transaction_read_only=on' \
+    python scripts/retire_duplicate_screen_observations.py --database-url "$URL"          # dry run
+GENIOS_ALLOW_PROD_WRITE=1 python scripts/retire_duplicate_screen_observations.py --database-url "$URL" --apply
+```
+
+It keeps the LATEST active observation per follow-up, supersedes the rest (never deletes), and
+writes the survivor's id into `screen_followups.observation_id` so an ordinary rewrite retires it
+from here on. Run the probe again after: it reads 0.
 
 ## 5 · Do not
 

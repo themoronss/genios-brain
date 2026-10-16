@@ -69,12 +69,13 @@ def engine():
 
 
 def _write(c, fp: str, *, status=R.VALID, reason=None, review=REVIEW, at=AT, org=ORG, cost=26_100,
-           inputs=INPUTS, triggers=None, checked=None):
+           inputs=INPUTS, triggers=None, checked=None, dossier=None, card_lines=None):
     said = [{"kind": k, "says": s} for k, s in TRIGGERS] if triggers is None else list(triggers)
     return R.write_review(c, org_id=org, file_id=FILE, fingerprint=fp, model="claude-sonnet-5",
                           prompt_version="expert-review.v1", dossier_digest="sha256:d", status=status,
                           reason=reason, review=review, input_tokens=9000, output_tokens=900,
-                          cost_micro_usd=cost, at=at, inputs=inputs, triggers=said, checked=checked)
+                          cost_micro_usd=cost, at=at, inputs=inputs, triggers=said, checked=checked,
+                          dossier=dossier, card_lines=card_lines)
 
 
 def test_a_valid_review_reads_back_as_the_review_that_was_written(engine):
@@ -277,14 +278,34 @@ def test_a_check_is_written_onto_the_standing_valid_row_alone(engine):
         _write(c, "ffp-2", status=R.REFUSED, reason="nothing_stands: fact:1 uncited", review=None)
     with engine.begin() as c:
         assert R.write_check(c, org_id=ORG, file_id=FILE, fingerprint="ffp-1",
-                             checked=_checked(headline="share the room")) is True
-        assert R.write_check(c, org_id=ORG, file_id=FILE, fingerprint="ffp-2", checked=_checked()) is False, \
-            "a refusal has no review to check"
-        assert R.write_check(c, org_id=ORG, file_id=FILE, fingerprint="ffp-none", checked=_checked()) is False
+                             checked=_checked(headline="share the room"), at=AT + timedelta(hours=2)) is True
+        assert R.write_check(c, org_id=ORG, file_id=FILE, fingerprint="ffp-2", checked=_checked(),
+                             at=AT) is False, "a refusal has no review to check"
+        assert R.write_check(c, org_id=ORG, file_id=FILE, fingerprint="ffp-none", checked=_checked(),
+                             at=AT) is False
     with engine.connect() as c:
         one, two = R.read_review(c, ORG, FILE, "ffp-1"), R.read_review(c, ORG, FILE, "ffp-2")
     assert one.checked.words.headline == "share the room" and one.review == REVIEW
     assert two.checked is None
+    # X36 (yc2_w27_s13 M35.C3.L-integration.V1.U06): a re-check says when it ran; the review's time stays its own.
+    assert (one.checked_at, one.reviewed_at, two.checked_at) == (AT + timedelta(hours=2), AT, None)
+
+
+def test_a_check_written_with_its_review_is_dated_by_it_and_a_row_keeps_its_dossier(engine):
+    with engine.begin() as c:
+        assert _write(c, "ffp-1", checked=_checked(), dossier={"text": "DOSSIER", "evidence_ids": ["evt_1"]})
+        assert _write(c, "ffp-2", status=R.REFUSED, reason="nothing_stands: fact:1 uncited", review=None,
+                      dossier={"text": "DOSSIER 2", "evidence_ids": []})
+        assert _write(c, "ffp-3")
+    with engine.connect() as c:
+        one, two, three = (R.read_review(c, ORG, FILE, fp) for fp in ("ffp-1", "ffp-2", "ffp-3"))
+    assert (one.checked_at, two.checked_at, three.checked_at) == (AT, None, None)
+    assert one.dossier == {"text": "DOSSIER", "evidence_ids": ["evt_1"]}
+    assert two.dossier == {"text": "DOSSIER 2", "evidence_ids": []}, "what a refusal was refused on, kept"
+    assert three.dossier is None, "a row written before 0202 — or by a caller that kept none"
+    with pytest.raises(ValueError):
+        with engine.begin() as c:
+            _write(c, "ffp-4", dossier={"text": "DOSSIER"})          # a dossier names what it may cite
 
 
 def test_a_check_rides_only_on_a_valid_row(engine):
@@ -309,3 +330,37 @@ def test_a_retried_review_that_succeeds_keeps_its_check(engine):
         assert _write(c, "ffp-1", checked=_checked()) is True
     with engine.connect() as c:
         assert R.read_review(c, ORG, FILE, "ffp-1").checked == _checked()
+
+
+# ── STEP-14 · the card lines ride on a valid row (0221, `yc2_w27_s14` M43.C2.L-integration.V2.U03) ──
+
+def test_card_lines_ride_on_a_valid_row_and_read_back(engine):
+    from genios_engine.reason.expert.card_lines import CardLines, DEFAULT
+    lines = CardLines(why_now="Kunal wrote on 3 Oct", what_remains=("Kunal asked for a call, since 3 Oct",),
+                      subject="Kunal Shah", company="kestrelcap.test", kind_of_work="investor", role="lead",
+                      window_days=7, window_from=DEFAULT)
+    with engine.begin() as c:
+        assert _write(c, "fp_lines", card_lines=lines)
+        assert _write(c, "fp_none")
+    with engine.connect() as c:
+        assert R.read_review(c, ORG, FILE, "fp_lines").card_lines == lines
+        assert R.read_review(c, ORG, FILE, "fp_none").card_lines is None, "a row before 0221 keeps none"
+
+
+def test_card_lines_never_ride_on_a_row_with_no_review(engine):
+    from genios_engine.reason.expert.card_lines import CardLines, DEFAULT
+    lines = CardLines(why_now=None, what_remains=(), subject="Kunal Shah", company=None, kind_of_work=None,
+                      role=None, window_days=7, window_from=DEFAULT)
+    with engine.begin() as c, pytest.raises(ValueError, match="no review"):
+        _write(c, "fp_refused", status=R.REFUSED, reason="nothing_stands: fact:1", review=None, card_lines=lines)
+
+
+def test_a_retried_review_that_succeeds_keeps_its_card_lines(engine):
+    from genios_engine.reason.expert.card_lines import CardLines, REPLY_TIME
+    lines = CardLines(why_now="Rahul wrote on 10 Oct", what_remains=(), subject="Rahul", company="kestrelcap.test",
+                      kind_of_work=None, role=None, window_days=3, window_from=REPLY_TIME)
+    with engine.begin() as c:
+        assert _write(c, "ffp-retry", status=R.FAILED, reason="model_call_raised", review=None)
+        assert _write(c, "ffp-retry", card_lines=lines), "the retry replaces the failed row"
+    with engine.connect() as c:
+        assert R.read_review(c, ORG, FILE, "ffp-retry").card_lines == lines

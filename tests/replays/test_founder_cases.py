@@ -71,8 +71,11 @@ def test_a_case_is_the_kind_its_row_answers(case):
     else:
         assert case.kind == "must_detect", f"row {row['number']} says {said}; {case.case_id} abstains"
     if said == "brief only":
-        assert not case.expressible("cards") and not case.expressible("brief"), (
-            f"{case.case_id}: a brief-only answer is scored not expressible until STEP-15 (D12d)")
+        # STEP-15 (M44.C5.L-contract.V0.U01): a brief-only answer is judged on the brief, never on a card — its cards
+        # stay declared not expressible (D12d), and its brief is expected: as lines, or declared with its reason.
+        assert not case.expressible("cards"), f"{case.case_id}: a brief-only answer is never judged on a card"
+        assert case.brief is not None and (case.brief.lines or not case.expressible("brief")), (
+            f"{case.case_id}: a brief-only answer expects its brief — lines the marking judges, or declared")
     if said == "yes":
         assert case.expressible("cards"), (
             f"{case.case_id}: row {row['number']} says yes — its cards must be judged")

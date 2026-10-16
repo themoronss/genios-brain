@@ -10,7 +10,9 @@ CHECK on `card_feedback_verdicts` admits three. A founder who says *misread the 
 their answer is lost — and every hermetic test is green, because none of them runs the INSERT.
 
 This runs the route's OWN two statements — read out of the route by the statement census, so a
-change to the route's columns is a change to this test — for every reason it accepts. The three the
+change to the route's columns is a change to this test — for every reason it accepts. ⛔ RESTATED by
+STEP-16 (`yc2_w27_s16` M46.C2.L-data.V1.U02): the two statements moved byte for byte into the ledger's one
+writer, `deliver/verdicts.record`, which both doors now call — so they are read from there. The three the
 CHECK admits pass. The eight it refuses are STRICT expected failures naming the step that widens the
 schema (`STEP-16` §3.1), so the day it does, each one XPASSes, fails, and its marker must come off.
 """
@@ -27,7 +29,8 @@ from genios_engine.platform import statement_plans as sp
 
 ORG = "org_s17_feedback_reasons"
 AT = datetime(2026, 10, 12, 9, 0, tzinfo=timezone.utc)
-ROUTE = "genios_engine/api/intelligence_routes.py"
+#: ⛔ The ledger's one writer since STEP-16 M46.C2.L-data.V1.U02 — the route's two statements, moved there.
+ROUTE = "genios_engine/deliver/verdicts.py"
 
 #: STEP-18 B3 (`yc2_w27_s18` M48.C1.L-contract.V0.U01, migration 0210): 0034's CHECK admitted three reasons
 #: while the route accepts eleven; 0210 admits every reason the route accepts, so each must now be stored —
@@ -35,7 +38,7 @@ ROUTE = "genios_engine/api/intelligence_routes.py"
 
 
 def _route_statement(prefix: str) -> str:
-    """The route's own INSERT, as the census reads it — exactly one."""
+    """The ledger's INSERT, as the census reads it from its one writer — exactly one."""
     found = [s for s in sp.statements() if s.path == ROUTE and s.sql.startswith(prefix)]
     assert len(found) == 1 and not found[0].holes, [(s.line, s.holes) for s in found]
     return found[0].sql

@@ -44,9 +44,13 @@ from .dossier import Dossier
 
 #: ⛔ v2 since M32.C1.L-contract.V0.U09 (2026-10-11): the frame step asks for a proposed kind of work.
 #: No review was ever written under v1 — the pass was not yet wired. ⛔ v3 since STEP-13 (2026-10-12): the
-#: quote, `rests_on`, `to`, `answers`, and "you". Every file is reviewed once more under it (the
-#: fingerprint names the prompt) — in production, the first pass after the deploy.
-PROMPT_VERSION = "expert-review.v3"
+#: quote, `rests_on`, `to`, `answers`, and "you". ⛔ CORRECTED 12 Oct (`06` D48, crosscheck X11): a version
+#: change alone reviews no file again. The fingerprint names the prompt, so every fingerprint moves — and each
+#: standing review is checked again on the dossier it was reviewed on, its file reviewed again only when the
+#: file itself moved (`reason/expert/sweep`). ⛔ v4 since STEP-16 (`yc2_w27_s16` M46.C4.L-interface.V0.U02, 16 Oct): the
+#: rules say what a correction is — the founder's word on the file, followed or outweighed in an inference citing it;
+#: for a kind of work, over the playbook's prior; and a card called wrong is not advised again in its words uncited.
+PROMPT_VERSION = "expert-review.v4"
 
 
 def _or(words) -> str:
@@ -91,8 +95,14 @@ _NO_REPLY = "Say that nobody replied only where WHAT WAS CHECKED says it may be 
 _UNKNOWN = "What would change your answer and is not in the dossier is an unknown — named, never guessed."
 _YOU = ("Speak to the founder as you, and of the company as yours: never write the founder, and never their "
         "name or the company's as a party.")
+# STEP-16 · your correction changes the next judgment, and never silently (`reason/expert/verify` holds a move made
+# over a correction the review does not cite, and a move in the words of a card called wrong, as ONE question).
+_CORRECTION = ("A correction under WHAT YOU CORRECTED is the founder's word on this file: follow it, or say why "
+               "the file now outweighs it, in an inference that cites its corr: id. A correction for the kind of "
+               "work outweighs the playbook's prior for this company. A card the founder called wrong is not "
+               "advised again in its words unless you cite it and their verdict.")
 RULES: tuple[str, ...] = (_ONLY, _CITE, _QUOTE, _GROUND, _NUMBERS, _STAGE, _LEVELS, _MODE, _MOVE, _PRIOR,
-                          _SOON, _NO_REPLY, _UNKNOWN, _YOU)
+                          _SOON, _NO_REPLY, _UNKNOWN, _YOU, _CORRECTION)
 
 #: For every refusal `validate` can make, the rule that tells the model how not to earn it — a
 #: refusal the prompt never warned of would be the model's fault on paper and the prompt's in fact.
@@ -168,7 +178,8 @@ CHECKLIST: tuple[Step, ...] = (
     Step("next_move", "THE NEXT MOVE",
          "The best next move — who makes it, what it is, for whom, and by when; the facts it rests on; "
          "whom its draft goes to; the ask it answers, if it answers one; an alternative, if the best one "
-         "is refused; when to wait, and when to stop; and what done looks like.",
+         "is refused; when to wait, and when to stop; and what done looks like. Where the founder "
+         "corrected the file, the move follows the correction — or an inference citing it says why not.",
          ("next_move", "alternative", "wait_or_stop", "done_when")),
     Step("draft", "THE DRAFT",
          "When the move is a message, the draft: the words the founder could send as they are — short, "

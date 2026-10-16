@@ -11,16 +11,21 @@ when something in it changed:
                    take to reply in this file;
   past_normal      since the last review a number crossed what is normal for the file: the quiet has
                    passed the longest gap it ever had — or, our move, the time we usually take;
-  founder_asked    the founder asked about it.
+  founder_asked    the founder asked about it;
+  founder_corrected  you said something about it the last review did not see (STEP-16, `05` §5's "you ask about
+                   it" given its door): a correction of the file or of its kind of work — so a correction for a
+                   kind brings EVERY file of the kind back, nearest deadline first under the day's cap and
+                   `MAX_PER_PASS` (S16-D3) — or a `wrong` you pressed on a card of the file (S16-D2), that file only.
 
 SINCE THE LAST REVIEW is a diff against what that review SAW — the fingerprint's inputs it kept
 (`expert_reviews.inputs`, 0198) on the file's latest STANDING row (`store.latest_standing`) — never a
 cut by time: mail that arrives late, or joins the file after it was read, is new to the expert all the
 same. A crossing is read on the file's own clock: the quiet then is the quiet now less the time since.
 
-WHAT IS NOT A TRIGGER. The brief's and the playbook's versions, the verdicts on its people's cards and
-who decides are in the fingerprint — what a review stood on — and moving one of them ALONE re-thinks
-nothing: it rides along with the next trigger. That is `06` D48's default for the prompt (the decision
+WHAT IS NOT A TRIGGER. The brief's and the playbook's versions, the verdicts on its people's cards — but a
+`wrong` (STEP-16, above) — and who decides are in the fingerprint — what a review stood on — and moving one of
+them ALONE re-thinks nothing: it rides along with the next trigger. Taking a card (`run_play`, `do_it_myself`)
+is no trigger: the work you then do reaches the file as evidence. That is `06` D48's default for the prompt (the decision
 is open; its default "waits for inputs"), applied alike to all four; a founder who wants a file looked
 at again asks. Time passing is no trigger either, unless it crosses one of the file's own patterns.
 
@@ -41,8 +46,9 @@ DATE_CLOSING_IN = "date_closing_in"
 REPLY_OVERDUE = "reply_overdue"
 PAST_NORMAL = "past_normal"
 FOUNDER_ASKED = "founder_asked"
+FOUNDER_CORRECTED = "founder_corrected"
 KINDS: tuple[str, ...] = (FIRST_LOOK, NEW_EVIDENCE, DATE_CLOSING_IN, REPLY_OVERDUE, PAST_NORMAL,
-                          FOUNDER_ASKED)
+                          FOUNDER_ASKED, FOUNDER_CORRECTED)
 
 #: The dates that close in — the fingerprint's rungs — and how a trigger names each.
 DATES: Mapping[str, str] = {"next_meeting": "the next meeting", "due": "the nearest promised date"}
@@ -87,6 +93,23 @@ def _new_evidence(now: Mapping[str, Any], then: Mapping[str, Any]) -> list[Trigg
         more = len(fresh) - LISTED
         out.append(Trigger(NEW_EVIDENCE, "new since the last review: " + ", ".join(fresh[:LISTED])
                            + (f" and {more} more" if more > 0 else "")))
+    return out
+
+
+def _corrected(now: Mapping[str, Any], then: Mapping[str, Any]) -> list[Trigger]:
+    """What you said since the last review (STEP-16, `yc2_w27_s16` M46.C4.L-logic.V4.U05): a correction it did not see
+    — the file's own or its kind's, by the id the dossier prints — and a `wrong` on a card of the file."""
+    out = []
+    fresh = sorted(_ids(now.get("corrections")) - _ids(then.get("corrections")))
+    if fresh:
+        more = len(fresh) - LISTED
+        out.append(Trigger(FOUNDER_CORRECTED, "you corrected it since the last review: " + ", ".join(fresh[:LISTED])
+                           + (f" and {more} more" if more > 0 else "")))
+    seen = {tuple(v) for v in (then.get("verdicts") or ())}
+    wrong = sorted(f"card:{v[0]} ({v[2]})" if v[2] else f"card:{v[0]}" for v in (now.get("verdicts") or ())
+                   if tuple(v) not in seen and len(v) == 3 and v[1] == "wrong")
+    if wrong:
+        out.append(Trigger(FOUNDER_CORRECTED, "you called its card wrong: " + ", ".join(wrong)))
     return out
 
 
@@ -164,6 +187,7 @@ def triggers_for(parts: DossierParts, inputs: Mapping[str, Any], *, last: Any = 
     else:
         since = (parts.as_of - last.reviewed_at).total_seconds() / 86400
         out += _new_evidence(inputs, then)
+        out += _corrected(inputs, then)
         out += _closing_in(inputs, then)
         out += _crossings(parts, inputs, then, since)
     if asked:
@@ -171,5 +195,6 @@ def triggers_for(parts: DossierParts, inputs: Mapping[str, Any], *, last: Any = 
     return tuple(out)
 
 
-__all__ = ["DATE_CLOSING_IN", "DATES", "FIRST_LOOK", "FOUNDER_ASKED", "KINDS", "LISTED", "NEW_EVIDENCE",
+__all__ = ["DATE_CLOSING_IN", "DATES", "FIRST_LOOK", "FOUNDER_ASKED", "FOUNDER_CORRECTED", "KINDS", "LISTED",
+           "NEW_EVIDENCE",
            "PAST_NORMAL", "REPLY_OVERDUE", "Trigger", "our_usual", "their_usual", "triggers_for"]

@@ -20,8 +20,21 @@ database by its wording (`GENIOS_TEST_DATABASE_URL`, "database", "Postgres"), an
 `pytest.skip` calls in 27 files use other words — "0043 not applied", "no org", "graph store not
 configured", "no scratch org seeded". Now the database job allows exactly the skips measured on a
 real database run for a reason that is not a database (`ALLOWED`: python-docx missing, an empty
-parameter set, the declared rollback exception 0080, the internal-auth 403), each by its file AND its
-reason; every other skip fails the job, named.
+parameter set, the declared rollback exception 0080), each by its file AND its reason; every other
+skip fails the job, named.
+
+`M40.C4.L-contract.V0.U07` (F-4, second crosscheck): a fourth entry, `tests/test_health_memory.py`'s
+"internal auth not wired in this harness (403)", came off ALLOWED — that 403 was the test's own
+bug (it patched `platform.config.get_settings`, not `platform.auth.get_settings`, which is where
+`require_internal` actually reads it), fixed at the test. A real database run no longer skips it.
+
+`M40.C4.L-contract.V0.U06` (F-2, second crosscheck): `PASSED_FLOOR` sat about 750 passes above the
+hermetic count it exists to exceed, as a bare literal nobody's upkeep touched (the hermetic count
+itself grew from 18,013 to 18,674 between STEP-17 and the STEP-17/18 merge, +661, and nothing read
+that growth). The floor is now checked against its own named, re-measurable constants
+(`RECORDED_HERMETIC_PASSED`, `RECORDED_DATABASE_SUITE_PASSED`), never a literal in the test; and
+`narrowing_conftest_hooks` guards the scan's own blind spot — it reads only a pytest summary LINE,
+so a `conftest.py` that narrowed collection upstream would never show up in it.
 """
 from __future__ import annotations
 
@@ -35,6 +48,7 @@ import pytest
 pytestmark = pytest.mark.unit
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "qa" / "database_skips.py"
+REPO_ROOT = SCRIPT.parents[2]
 
 
 def _module():
@@ -49,15 +63,15 @@ FLOOR = _module().PASSED_FLOOR
 #: A number a finished database run clears.
 RUN = FLOOR + 1
 
-#: The four skips of a real database run, as pytest printed them — s13f4's whole suite on Postgres
-#: at `ae24ee22` (20,868 passed, 4 skipped), the only skips it had.
+#: The three skips of a real database run, as pytest printed them — s13f4's whole suite on
+#: Postgres at `ae24ee22` (20,868 passed, 4 skipped the day this was measured — the fourth,
+#: test_health_memory.py's 403, was its own bug (F-4): fixed, it no longer skips at all).
 MEASURED = (
     "SKIPPED [1] tests/capture/transcripts/test_transcript_units.py:68: could not import 'docx': "
     "No module named 'docx'\n"
     "SKIPPED [1] tests/contracts/test_l1_contracts.py:630: got empty parameter set for (lane)\n"
     "SKIPPED [1] tests/platform/test_the_code_can_always_be_rolled_back.py:72: "
-    "0080_l1_extraction_results.sql is a declared exception — see DECLARED_EXCEPTIONS\n"
-    "SKIPPED [1] tests/test_health_memory.py:97: internal auth not wired in this harness (403)\n")
+    "0080_l1_extraction_results.sql is a declared exception — see DECLARED_EXCEPTIONS\n")
 
 GREEN = f"........ [100%]\n{RUN} passed in 3.21s\n"
 DB_SKIPS = (".s.s [100%]\n"
@@ -67,7 +81,7 @@ DB_SKIPS = (".s.s [100%]\n"
             "SKIPPED [1] tests/capture/transcripts/test_transcript_units.py:68: could not import "
             "'docx': No module named 'docx'\n"
             f"{RUN} passed, 7 skipped in 2.00s\n")
-OTHER_SKIPS = (".s [100%]\n" + MEASURED + f"{RUN} passed, 4 skipped in 1.00s\n")
+OTHER_SKIPS = (".s [100%]\n" + MEASURED + f"{RUN} passed, 3 skipped in 1.00s\n")
 #: The crosscheck's own examples: database-gated skips in words the old scan did not know.
 IN_OTHER_WORDS = (".s [100%]\n"
                   "SKIPPED [1] tests/test_delivery_facts.py:53: 0043 not applied\n"
@@ -104,7 +118,7 @@ def test_the_skips_a_real_database_run_has_are_allowed(tmp_path):
     r = _scan(tmp_path, OTHER_SKIPS)
     assert r.returncode == 0, r.stdout + r.stderr
     assert "0 tests skipped for a reason the database job does not allow" in r.stdout
-    assert "4 allowed" in r.stdout, r.stdout
+    assert "3 allowed" in r.stdout, r.stdout
 
 
 def test_a_database_skip_in_other_words_fails_and_is_named(tmp_path):
@@ -121,7 +135,8 @@ def test_a_database_skip_in_other_words_fails_and_is_named(tmp_path):
     # an allowed reason, in a file the allow-list does not name
     "SKIPPED [1] tests/test_moments_pg.py:41: got empty parameter set for (lane)",
     "SKIPPED [1] tests/test_x.py:9: could not import 'docx': No module named 'docx'",
-    # an allowed file, for a reason it does not name
+    # F-4: ALLOWED until the second crosscheck, and for a reason it never named (500, not 403) —
+    # now not a file the list names at all; either way, still refused
     "SKIPPED [1] tests/test_health_memory.py:97: internal auth not wired in this harness (500)",
     "SKIPPED [1] tests/contracts/test_l1_contracts.py:40: GENIOS_TEST_DATABASE_URL not set",
     "SKIPPED [1] tests/contracts/test_l1_contracts.py:640: got empty parameter set for (field)",
@@ -136,16 +151,19 @@ def test_a_skip_is_allowed_only_by_its_file_and_its_reason_together(tmp_path, li
     assert line.split("] ", 1)[1].split(": ", 1)[0] in r.stdout
 
 
-def test_the_allow_list_is_the_four_measured_and_each_says_why():
-    """Adding a fifth is a decision — measured on a real database run, its reason not a database —
-    and made here on purpose. Each entry names a file that exists and says why it may skip."""
+def test_the_allow_list_is_the_three_measured_and_each_says_why():
+    """Adding a fourth is a decision — measured on a real database run, its reason not a database
+    — and made here on purpose. Each entry names a file that exists and says why it may skip.
+
+    F-4 (second crosscheck): `tests/test_health_memory.py` is NOT here any more — its 403 was the
+    test's own bug (it patched the wrong module's `get_settings`), fixed at the test, not declared
+    away."""
     allowed = _module().ALLOWED
     root = SCRIPT.parents[2]
     assert [entry[0] for entry in allowed] == [
         "tests/capture/transcripts/test_transcript_units.py",
         "tests/contracts/test_l1_contracts.py",
         "tests/platform/test_the_code_can_always_be_rolled_back.py",
-        "tests/test_health_memory.py",
     ]
     for path, _reason, why in allowed:
         assert (root / path).is_file(), path
@@ -208,8 +226,44 @@ def test_a_red_run_over_the_floor_still_reads_its_skips(tmp_path):
     assert r.returncode == 1 and "tests/test_moments_pg.py:41" in r.stdout, r.stdout + r.stderr
 
 
-def test_the_floor_sits_between_the_hermetic_suite_and_the_database_suite():
-    """Measured: the hermetic suite — no database test runs — passed 18,013 at `7766a06a`; the
-    database suite 20,569 at `c97155cd` (STEP-17 §2) and the whole suite 20,868 at `ae24ee22`. A
-    database run that ran none of its database tests cannot clear the floor; a real one does."""
-    assert 18_013 < FLOOR < 20_569, FLOOR
+def test_the_floor_exceeds_the_recorded_hermetic_count():
+    """F-2 (`yc2_w27_s1718` M40.C4.L-contract.V0.U06, second crosscheck): no literal here — the
+    floor is read against the module's OWN recorded counts, so a floor that falls behind a
+    re-measured (grown) hermetic count fails this test rather than silently passing a run that
+    collected almost nothing. A database run that ran none of its database tests cannot clear the
+    floor; a real one does."""
+    module = _module()
+    assert module.PASSED_FLOOR > module.RECORDED_HERMETIC_PASSED > 0
+    assert module.PASSED_FLOOR <= module.RECORDED_DATABASE_SUITE_PASSED
+
+
+def test_no_conftest_in_this_repo_narrows_collection():
+    """F-2: `scan` only ever reads a pytest SUMMARY LINE — a `conftest.py` that narrowed
+    collection upstream (`collect_ignore`, `pytest_collection_modifyitems`, …) would turn the
+    database job green over fewer tests than it thinks it ran, and this scan would never see it.
+    Measured 14 Oct: none of the repo's 9 `conftest.py` files defines one."""
+    found = _module().narrowing_conftest_hooks(REPO_ROOT)
+    assert found == [], f"{len(found)} conftest hook(s) could narrow collection: {found}"
+
+
+def test_the_guard_catches_a_conftest_that_narrows_collection(tmp_path):
+    """The rule, proven on synthetic files: a narrowing hook or assignment — plain or annotated —
+    is caught; an ordinary fixture-only conftest is not."""
+    (tmp_path / "conftest.py").write_text(
+        "import pytest\n"
+        "collect_ignore = ['test_slow.py']\n"
+        "def pytest_collection_modifyitems(config, items):\n    pass\n"
+        "@pytest.fixture\ndef clean():\n    return None\n")
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    (sub / "conftest.py").write_text(
+        "import pytest\n@pytest.fixture(autouse=True)\ndef db():\n    yield\n")
+    annotated = tmp_path / "annotated"
+    annotated.mkdir()
+    (annotated / "conftest.py").write_text("collect_ignore_glob: list[str] = ['test_*_slow.py']\n")
+    found = _module().narrowing_conftest_hooks(tmp_path)
+    assert sorted(n.split(": ", 1)[1] for n in found) == [
+        "collect_ignore", "collect_ignore_glob", "pytest_collection_modifyitems"]
+    assert _module().narrowing_conftest_hooks(sub) == []
+    assert [n.split(": ", 1)[1] for n in _module().narrowing_conftest_hooks(annotated)] == [
+        "collect_ignore_glob"]

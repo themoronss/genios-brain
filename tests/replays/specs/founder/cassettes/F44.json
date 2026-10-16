@@ -1,7 +1,7 @@
 {
  "case_id": "F44",
  "source": "ideal_reader",
- "recorded_at": "e6b8522e",
+ "recorded_at": "417c10fb",
  "answers": {
   "147e323813a069b5b44fcd4e3821aa7941f146988d287b24202526ee3aebedf0": {
    "site": "extraction",
@@ -58,23 +58,7 @@
    "output_tokens": 190,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3732d4bf5d1abaf59d737ec29d169deaa409a2a9d3185a8da422116cf4557a6f": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1053,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6c560257cad8b7d8647239c8195403d2602daba79c8b32abf89084e254798bca": {
+  "1cf31650359c77a0d56943d2ebd075938ab096beefdf62a71027bf9772db41ef": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -217,8 +201,24 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Kavita Rao wrote on the eighteenth of September that she is an angel investor in health tech and loved Kitebird's clinic scheduling demo.\", \"evidence\": [\"evt_#1\"], \"quote\": \"angel investor in health tech and loved your clinic scheduling demo.\"}, {\"claim\": \"She asked for the deck and a time to talk this week.\", \"evidence\": [\"evt_#1\"], \"quote\": \"deck and a time to talk this week?\"}, {\"claim\": \"Her ask is open and waits on us, and the file names the move as ours.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"She writes from a personal Gmail address, not a firm's.\", \"evidence\": [\"num:their_reply_time:kavita.rao.vc@gmail.com\"]}, {\"claim\": \"The brief names no kind of work for her; the engine filed her as an investor contact under fundraising.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"An angel who saw the demo and asked for the deck is a warm investor for the seed round, and she is waiting on us.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, {\"claim\": \"She named this week; the longer the deck takes, the cooler her interest.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"Writing from Gmail, as the founder also does, does not make her one of us: she is a counterparty waiting on an answer.\", \"based_on\": [\"fact:3\", \"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Kavita invests on her own account, so a call could lead straight to a decision.\", \"needs\": \"The call itself, or her saying how she invests.\"}], \"unknowns\": [{\"question\": \"Whether the founder has already answered her on another channel.\", \"relevance\": \"A reply the file cannot see would make this one a duplicate.\"}, {\"question\": \"How Kavita saw the demo — at an event, through an introduction, or a recording.\", \"relevance\": \"If someone introduced her, they should hear what came of it.\"}, {\"question\": \"Her usual cheque size, and whether she leads or follows.\", \"relevance\": \"It decides how much of the founder's time the round can give her.\"}], \"frames\": {\"primary\": \"A warm inbound angel investor asking for the deck and a call this week; the move is ours.\", \"rivals\": [\"A health-tech angel collecting decks across the sector, where the call is a first look rather than a decision.\", \"Someone not yet a serious investor — the file holds only her own description.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Kavita introduces herself as an angel investor in health tech and asks for the deck and a call, and the engine already treats her as an investor contact.\", \"evidence\": [\"evt_#1\", \"sit:sit_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, her own ask sets it: the deck and a time to talk, this week.\", \"actual\": \"Her mail of the eighteenth waits on us; nothing has gone back yet.\"}, \"scenarios\": {\"do_nothing\": \"The week she named passes, her interest cools, and an investor who came to you unasked is lost quietly.\", \"act\": \"The deck and a time reach her while the demo is fresh, and a first call goes in the calendar.\", \"best\": \"A first call leads to a cheque in the seed round.\", \"worst\": \"A late answer reads as a company not raising in earnest, and she moves on.\", \"signals_to_watch\": [\"Her answer to the deck, and a time agreed.\", \"Questions from her after reading the deck.\", \"Silence from her after the deck goes.\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and she came to the founder unasked.\", \"She asked for this week, and the move is ours.\", \"Interest from a demo cools quickly; a late answer cannot be taken back.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Meera, the founder\", \"what\": \"Reply to Kavita with your deck and ask her to pick a time to talk.\", \"for_whom\": \"Kavita Rao, angel investor\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Kavita\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If the deck is not ready to share, reply now with an offer to talk and say the deck follows after the call.\", \"wait_or_stop\": \"Do not wait: she asked for this week. After the deck goes, give her a few days; if nothing comes, one short note with something new, then stop.\", \"done_when\": \"Kavita has the deck and a call with her is on the calendar.\", \"draft\": \"Hi Kavita, thank you — I'm glad the clinic scheduling demo landed. Here is the Kitebird deck. I'd love to talk: which time suits you? I'll send an invite. Best, Meera\"}",
    "framed": true,
-   "input_tokens": 3342,
+   "input_tokens": 3459,
    "output_tokens": 1145,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3732d4bf5d1abaf59d737ec29d169deaa409a2a9d3185a8da422116cf4557a6f": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1053,
+   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
   "87223ddc5d16e87570be5ef74264410276e1fc473e7b99ed021174d3d09a0e10": {

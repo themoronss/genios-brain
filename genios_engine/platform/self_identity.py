@@ -20,6 +20,7 @@ never is.
 """
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
@@ -119,6 +120,127 @@ def names_us(text: str | None, us: SelfIdentity, names: Iterable[str | None] = (
         elif value == name:
             return True
     return False
+
+
+#: Words that open a name and are no first name of anyone ("The Genios Company" is not "The").
+_NOT_A_FIRST_NAME = frozenset({"the", "a", "an", "team", "and", "of"})
+
+
+def speaks_of_us(text: str | None, us: SelfIdentity, names: Iterable[str | None] = ()) -> str | None:
+    """Whether PROSE — a question to the founder, a card's sentence — names one of us, and how: the first
+    thing it names us by, as written — or None (STEP-13 M36.C2.L-logic.V2.U19, second crosscheck F3).
+
+    `names_us` reads a SUBJECT, where a one-word name must be the whole of it and a first name claims nothing
+    ("Rohit Sharma" is somebody else). Prose is another matter: "whether GeniOS is incubated" and "whether
+    Rohit went to the event" both speak of us. So here a name of ours matches as whole words AT ANY LENGTH —
+    a one-word company name too — written as a name (its first letter a capital), and a PERSON's first name
+    as well: the first word of a name of ours of two words or more, a title or an article aside. An address
+    or a domain of ours, anywhere in it, is us (`names_us`'s own reading)."""
+    import re
+
+    value = " ".join(str(text or "").split())
+    if not value:
+        return None
+    for m in re.finditer(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+|[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+", value):
+        token = m.group(0).lower()
+        if (us.is_us(token) if "@" in token else us.is_us_domain(token)):
+            return m.group(0)
+    found: list[tuple[int, str]] = []
+    for raw in names:
+        words = " ".join(str(raw or "").split()).split()
+        while len(words) > 2 and words[0].lower().rstrip(".") in _HONORIFICS:
+            words = words[1:]
+        name = " ".join(words)
+        if len(name) < 3 or "@" in name:
+            continue
+        candidates = [name]
+        if len(words) >= 2 and words[0].lower() not in _NOT_A_FIRST_NAME and len(words[0]) >= 3:
+            candidates.append(words[0])
+        for candidate in candidates:
+            for hit in re.finditer(rf"(?<![\w]){re.escape(candidate)}(?![\w])", value, re.I):
+                if hit.group(0)[0].isupper():
+                    found.append((hit.start(), hit.group(0)))
+                    break
+    return min(found, key=lambda f: (f[0], -len(f[1])))[1] if found else None   # the longest where two begin
+
+
+#: A verb left agreeing with the third person once a name of ours is "you" — and how "you" says it.
+_YOU_AGREE: dict[str, str] = {"is": "are", "was": "were", "has": "have", "does": "do", "isn't": "aren't",
+                              "wasn't": "weren't", "hasn't": "haven't", "doesn't": "don't"}
+
+
+def to_you(text: str | None, us: SelfIdentity, names: Iterable[str | None] = ()) -> str | None:
+    """`text` with every name or address of ours it speaks of (`speaks_of_us`) said as "you" — "<name>'s" as
+    "your", "is"/"was"/"has"/"does" after it as "are"/"were"/"have"/"do" — or None when it cannot be said so: a
+    domain of ours, or a verb left in the third person ("Rohit wants" — "you wants"). STEP-13
+    M36.C2.L-logic.V2.U19: the second-person rephrase of a question to you; None, and the closed question is
+    asked instead."""
+    import re
+
+    out = " ".join(str(text or "").split())
+    for _ in range(8):
+        hit = speaks_of_us(out, us, names)
+        if hit is None:
+            break
+        if "@" not in hit and "." in hit:
+            return None                                # a domain of ours: no "you" says it
+        m = re.search(rf"(?<![\w]){re.escape(hit)}(?![\w])('s|’s)?", out)
+        if m is None:
+            return None
+        said = "your" if m.group(1) else "you"
+        if m.start() == 0 or re.search(r"[.!?]\s*$", out[:m.start()]):
+            said = said.capitalize()
+        out = out[:m.start()] + said + out[m.end():]
+    else:
+        return None
+    out = re.sub(r"\b([Tt])he (your)\b", lambda m: "Your" if m.group(1) == "T" else "your", out)
+    out = re.sub(r"\b([Yy]ou) (is|was|has|does|isn't|wasn't|hasn't|doesn't)\b",
+                 lambda m: f"{m.group(1)} {_YOU_AGREE[m.group(2)]}", out)
+    def asked(m: re.Match[str]) -> str:                # "Does Arjun want" → "Do you want"
+        verb = _YOU_AGREE[m.group(1).lower()]
+        return f"{verb.capitalize() if m.group(1)[0].isupper() else verb} you"
+    out = re.sub(r"\b(Is|is|Was|was|Has|has|Does|does) you\b", asked, out)
+    if re.search(r"\b[Yy]ou (?!are\b|were\b|have\b|do\b)[a-z]*[^siu]s\b", out):   # "you wants", never "you discuss"
+        return None
+    return out
+
+
+#: STEP-15 · mailboxes that are a ROLE, not a person — a name spelled from one would name nobody: "Events" did not
+#: meet you at the mixer, its organiser's mailbox sent the invitation (F54). Matched against the whole local part.
+ROLE_MAILBOXES: frozenset[str] = frozenset({
+    "accounts", "admin", "apply", "applications", "billing", "careers", "community", "contact", "deals",
+    "events", "founders", "hello", "help", "hi", "hr", "info", "invest", "investors", "jobs", "mail", "media",
+    "news", "newsletter", "noreply", "notifications", "office", "partners", "partnerships", "press",
+    "program", "programme", "programs", "sales", "startups", "support", "team", "updates"})
+
+_SPOKEN_PART = re.compile(r"^[a-z]{2,}$")
+
+
+def spoken_name(display_name: str | None, key: str | None = None) -> str | None:
+    """How the brief says who someone is (STEP-15, `yc2_w27_s15` M44.C2.L-data.V0.U03): their display name when it
+    is a name; else the word their address or domain spells — `gaurav@stackfield.test` "Gaurav",
+    `kavitha.nair@…` "Kavitha Nair", `bluepeak.test` "Bluepeak" — and None when there is no such word: a role
+    mailbox (`events@`, `no-reply@`), a local part with digits, a public mail host. Never an address."""
+    name = " ".join(str(display_name or "").split())
+    if name and "@" not in name and not re.fullmatch(r"[\w-]+(?:\.[\w-]+)+", name):
+        return name
+    raw = str(key or (name if name else "")).strip().lower()
+    if not raw:
+        return None
+    if "@" in raw:
+        local = raw.rsplit("@", 1)[0].split("+", 1)[0]
+        if local.replace("-", "").replace("_", "").replace(".", "") in ROLE_MAILBOXES:
+            return None
+        parts = [p for p in re.split(r"[._-]", local) if p]
+        if not parts or len(parts) > 3 or not all(_SPOKEN_PART.match(p) for p in parts) \
+                or any(p in ROLE_MAILBOXES for p in parts):
+            return None
+        return " ".join(p.capitalize() for p in parts)
+    domain = norm_domain(raw)
+    if domain is None or domain in PUBLIC_MAIL_DOMAINS:
+        return None
+    label = domain.split(".", 1)[0]
+    return label.capitalize() if _SPOKEN_PART.match(label) else None
 
 
 def identity_sql(org: str = ":o") -> str:

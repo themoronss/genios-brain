@@ -641,6 +641,8 @@ RETAINED_AFTER_ERASURE: frozenset[str] = frozenset({
 })
 
 _ORG_SCOPED_TABLES = [
+    # STEP-14 (0222): what the card contract refused — the tenant's card words, as refused.
+    "card_refusals",
     # migrations 0147-0149 (P3 hot lane): moments name the tenant's counterparties; feedback
     # before moments (FK). The slice versions go too, so every device re-pulls in full.
     "moment_feedback", "moment_cache", "moments", "realtime_events", "seat_slice_versions",
@@ -661,6 +663,13 @@ _ORG_SCOPED_TABLES = [
     # migration 0201: the one question each file asks the founder, and the founder's answer (STEP-13).
     # Questions ABOUT the tenant's counterparties, and answers in the founder's own words.
     "founder_questions",
+    # migration 0230: each seat's morning brief and the marks on its lines (STEP-15). Lines ABOUT the
+    # tenant's counterparties, in the expert's checked words, and marks in the founder's own words. Marks
+    # first: each belongs to its brief.
+    "morning_brief_marks", "morning_briefs",
+    # migration 0241: your corrections of a file, in your own words (STEP-16). Words ABOUT the tenant's
+    # counterparties; a `company` correction's line of the brief is the brief's, which the reset keeps.
+    "founder_corrections",
     # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
     # config; context references capability. Payloads are explicit as defense in depth even though
     # the context FK also cascades them.

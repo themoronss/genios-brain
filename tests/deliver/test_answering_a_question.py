@@ -4,8 +4,10 @@
 
 Tree `yc2_w27_s13` M36.C2.L-interface.V4.U06 (`deliver/actions.ingest_action`, `answer`; `POST /cards/{id}/action`
 with `words`; `06` D60). `answer` with your words answers the question the card asks — kept once on the file
-(`context/founder_questions`), the card resolved, its signal acted, the press recorded without your words —
-and the file's next dossier shows it. An answer that says nothing is refused; a question card offers only
+(`context/founder_questions`), the press recorded without your words — and the file's next dossier shows it.
+⛔ RESTATED by `yc2_w27_s14` M42.C3.L-interface.V4.U05 (s14-D3): the card is no longer resolved nor its signal
+acted — it is VERSIONED, "your answer is in; the file is read again" (`tests/deliver/test_an_answer_keeps_the_files_
+card.py`), and the file's next review versions it again. An answer that says nothing is refused; a question card offers only
 `answer` and the deferrals; no other card is a question; an answered question cannot be answered again.
 """
 from __future__ import annotations
@@ -49,11 +51,12 @@ def _card(world, cards):
     return store, org, registry, anchor, card
 
 
-def test_your_answer_answers_the_files_question_and_resolves_its_card(world, cards):
+def test_your_answer_answers_the_files_question_and_keeps_its_card(world, cards):
     store, org, _registry, anchor, card = _card(world, cards)
     [asked] = _questions(store, org, anchor)
     out = _press(store, cards, org, card.card_id, "answer", words=f"  {WORDS}  ", surface="web")
-    assert out == {"ok": True, "state": "resolved", "action": "answer", "question_id": asked.question_id}
+    assert out == {"ok": True, "state": "queued", "action": "answer", "question_id": asked.question_id,
+                   "version": 2}
     [kept] = _questions(store, org, anchor)
     assert kept.state == Q.ANSWERED
     with store.engine.connect() as c:
@@ -67,10 +70,12 @@ def test_your_answer_answers_the_files_question_and_resolves_its_card(world, car
                                 "card_id = :k and kind = 'human.card_action'"),
                            {"o": org, "k": card.card_id}).one()
     assert (answered.answer, answered.answered_by, answered.answered_at) == (WORDS, "founder@meridian.test", AT)
-    assert (row.state, row.resolved_at, row.status) == ("resolved", AT, "acted")
+    assert (row.state, row.resolved_at, row.status) == ("queued", None, "open"), "s14-D3: kept, versioned"
     assert pressed.detail == {"question_id": asked.question_id, "surface": "web"}
     assert logged.cause == "answer" and WORDS not in str(logged.detail) and WORDS not in str(pressed.detail)
-    assert _queued(cards, org, AT) == [], "answered, it leaves the queue"
+    # ⛔ RESTATED by `yc2_w27_s14` M42.C3.L-interface.V4.U06 (the STEP-14 crosscheck, finding 2): this pinned the
+    # answered card on no route until the file's next version, against s14-D3. It stays on the queue.
+    assert _queued(cards, org, AT) == [card.card_id], "answered, the card stays where you see it"
 
 
 def test_the_files_next_dossier_shows_your_answer(world, cards):
@@ -162,9 +167,17 @@ def test_a_card_whose_question_is_no_longer_open_takes_no_press(world, cards, ac
 
 
 def test_a_question_you_answered_is_never_carded_again(world, cards):
-    """⛔ `03` X25 (M36.C2.L-data.V2.U12). Your answer moves the file; a later review asks another question, on its
-    own card; a later one still asks the words you answered. Nothing is asked: the open question it no longer
-    asks retires, its card REPLACED, and no card asks you again what you told us."""
+    """⛔ `03` X25 (M36.C2.L-data.V2.U12). Your answer moves the file; a later review asks another question; a later
+    one still asks the words you answered. Those words are not asked: the open question it no longer asks retires,
+    and no card asks you again what you told us.
+
+    ⛔ RESTATED by M36.C2.L-data.V2.U14 (the second crosscheck F2): this pinned that NOTHING was asked then — no
+    question card at all, the file silent after your answer. It asks what should happen next, quoting your
+    words — never the words you answered.
+
+    ⛔ RESTATED by `yc2_w27_s14` M42.C3.L-interface.V4.U05 (s14-D3, `03` F176) and at the merge of the two (13 Oct):
+    each question after your answer is the SAME card's next version — the other question, then what should happen
+    next — so the one card is what asks, never a second card beside it, and no version asks the words you answered."""
     from genios_engine.platform import card_lifecycle
     from tests.reason.expert.test_a_covered_file_decides_once import _fund
     from tests.reason.expert.test_a_held_file_asks import _find_out
@@ -174,24 +187,27 @@ def test_a_question_you_answered_is_never_carded_again(world, cards):
     later = AT + timedelta(hours=1)
     _find_out(store, org, anchor, "ffp-fund-findout-review-001", events, question="Who at the fund decides?")
     _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
-    assert _build(store, cards, org, at=later)["question_cards"] == 1
+    asked_again = _build(store, cards, org, at=later)
+    assert (asked_again["question_cards"], asked_again["versioned"]) == (0, 1), asked_again
     last = later + timedelta(hours=1)
     _find_out(store, org, anchor, "ffp-fund-findout-review-002", events)
     counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-002"}, at=last)
-    assert counts.get("expert_question_answered_already") == 1, counts
-    assert _build(store, cards, org, at=last)["question_cards"] == 0
-    answered, other = _cards(store, org)
-    assert (answered.card_id, answered.state) == (card.card_id, "resolved")
-    assert other.state == "expired"
+    assert counts.get("expert_question_asked") == 1 and not counts.get("expert_question_answered_already"), counts
+    built = _build(store, cards, org, at=last)
+    assert (built["question_cards"], built["versioned"]) == (0, 1), built
+    [one] = _cards(store, org)
+    assert (one.card_id, one.state) == (card.card_id, "queued"), "one card, question to question"
+    assert one.headline == f"You answered: “{WORDS}”. What should happen next on this file?"
     with store.engine.connect() as c:
-        cause = c.execute(text("select cause from card_events where org_id = :o and card_id = :k "
-                               "and kind = :kind"), {"o": org, "k": other.card_id,
-                                                     "kind": card_lifecycle.EXPIRED}).scalar()
-    assert cause == card_lifecycle.REPLACED
+        expired = c.execute(text("select count(*) from card_events where org_id = :o and card_id = :k "
+                                 "and kind = :kind"), {"o": org, "k": card.card_id,
+                                                       "kind": card_lifecycle.EXPIRED}).scalar()
+    assert expired == 0, "versioned, never replaced"
     states = sorted((q.question, q.state, q.retired_why) for q in _questions(store, org, anchor))
     assert states == sorted([("Did Arjun ask for last quarter's metrics or this quarter's?", Q.ANSWERED, None),
-                             ("Who at the fund decides?", Q.RETIRED, Q.NO_LONGER_ASKED)])
-    assert _queued(cards, org, last) == []
+                             ("Who at the fund decides?", Q.RETIRED, Q.NO_LONGER_ASKED),
+                             (f"You answered: “{WORDS}”. What should happen next on this file?", Q.OPEN, None)])
+    assert _queued(cards, org, last) == [card.card_id]
 
 
 def test_the_answer_button_says_what_it_does():
@@ -254,3 +270,107 @@ def test_an_answer_pressed_while_the_question_is_rebound_is_kept(world, cards):
     assert out.get("ok") is True, out
     [kept] = _questions(store, org, anchor)
     assert (kept.state, kept.run_id) == (Q.ANSWERED, two.reasoning_run_id)
+
+
+# ── M36.C2.L-interface.V4.U07 · the press and the sweep lock in ONE order (the second crosscheck G11) ─────────────
+#
+# 886e16c5 noticed and left it: the press locked card → signal → question in one statement, the sweep question →
+# signal → card. Both now take the file's question lock (`context/founder_questions.lock_file`, an advisory lock)
+# BEFORE any row. Proven on two connections: one holds the file's lock; the other — the press, the sweep — waits on
+# that advisory lock (pg_locks) holding no row of the card, its signal or its question (each lockable NOWAIT).
+
+def _waits_on_the_file_lock(store) -> int:
+    """How many backends of this database wait on an advisory lock — read afresh each time: `pg_stat_activity` is
+    a snapshot per TRANSACTION, so one held across the loop never sees a backend that connected after it."""
+    import time
+    for _ in range(1200):                       # up to a minute: a sweep reaches its question after its reads
+        with store.engine.connect() as c:
+            n = c.execute(text(
+                "select count(*) from pg_locks l join pg_stat_activity a on a.pid = l.pid "
+                "where a.datname = current_database() and l.locktype = 'advisory' and not l.granted")).scalar()
+        if n:
+            return n
+        time.sleep(0.05)
+    return 0
+
+
+def _rows_are_free(store, org, card_id, signal_id, question_id) -> None:
+    with store.engine.connect() as c, c.begin():
+        c.execute(text("set local lock_timeout = '2s'"))
+        for sql, k in (("select 1 from cards where org_id = :o and card_id = :k for update nowait", card_id),
+                       ("select 1 from signals where org_id = :o and signal_id = :k for update nowait", signal_id),
+                       ("select 1 from founder_questions where org_id = :o and question_id = :k for update nowait",
+                        question_id)):
+            assert c.execute(text(sql), {"o": org, "k": k}).scalar() == 1
+
+
+def _holding_the_file(store, org, anchor):
+    """The file's question lock, held on a connection of its own — by its documented key, not by the function
+    under test, so the red is the right one (the other side never waits)."""
+    holder = store.engine.connect()
+    tx = holder.begin()
+    holder.execute(text("select pg_advisory_xact_lock(hashtextextended(:k, 0))"),
+                   {"k": f"founder_question\x1f{org}\x1f{anchor}"})
+    return holder, tx
+
+
+def test_g11_the_press_takes_the_files_question_lock_before_any_row(world, cards):
+    import threading
+    store, org, _registry, anchor, card = _card(world, cards)
+    [asked] = _questions(store, org, anchor)
+    holder, tx = _holding_the_file(store, org, anchor)          # the sweep, asking on this file
+    out: dict = {}
+    press = threading.Thread(target=lambda: out.update(_press(store, cards, org, card.card_id, "answer",
+                                                              words=WORDS)))
+    press.start()
+    try:
+        assert _waits_on_the_file_lock(store) == 1, "the press never waited on the file's question lock"
+        _rows_are_free(store, org, card.card_id, card.signal_id, asked.question_id)
+    finally:
+        tx.rollback()
+        holder.close()
+        press.join(timeout=30)
+    assert out.get("ok") is True, out
+
+
+def test_g11_the_sweep_takes_the_files_question_lock_before_any_row(world, cards):
+    import threading
+
+    from genios_engine.reason.expert import asks
+    store, org, _registry, anchor, card = _card(world, cards)
+    [asked] = _questions(store, org, anchor)
+    holder, tx = _holding_the_file(store, org, anchor)          # the press, pressing on this file
+    sweep = threading.Thread(target=lambda: asks.retire_question(store, org_id=org, file_id=anchor,
+                                                                eval_time=AT))
+    sweep.start()
+    try:
+        assert _waits_on_the_file_lock(store) == 1, "the sweep never waited on the file's question lock"
+        _rows_are_free(store, org, card.card_id, card.signal_id, asked.question_id)
+    finally:
+        tx.rollback()
+        holder.close()
+        sweep.join(timeout=30)
+    assert _questions(store, org, anchor)[0].state == Q.RETIRED
+
+
+def test_g11_the_sweep_asking_takes_the_files_question_lock_before_any_row(world, cards):
+    """The asking side too (`asks.ask_the_founder`): a re-decided file re-binds its question — after the file's
+    lock, never before it."""
+    import threading
+    store, org, registry, anchor, card = _card(world, cards)
+    [asked] = _questions(store, org, anchor)
+    with store.engine.begin() as c:            # the gate has no memory of it: decided again, re-bound
+        c.execute(text("delete from reasoning_fingerprints where org_id = :o"), {"o": org})
+    holder, tx = _holding_the_file(store, org, anchor)          # the press, pressing on this file
+    counts: dict = {}
+    sweep = threading.Thread(target=lambda: counts.update(_compile(
+        store, org, registry, covered={anchor: "ffp-fund-findout-review-000"}, at=NOW + timedelta(minutes=1))))
+    sweep.start()
+    try:
+        assert _waits_on_the_file_lock(store) == 1, "the asking sweep never waited on the file's question lock"
+        _rows_are_free(store, org, card.card_id, card.signal_id, asked.question_id)
+    finally:
+        tx.rollback()
+        holder.close()
+        sweep.join(timeout=60)
+    assert counts.get("expert_question_standing") == 1, counts

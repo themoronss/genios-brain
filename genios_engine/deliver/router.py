@@ -69,13 +69,20 @@ def co_recipients_for(store, org_id: str, node_facts: dict, node_attrs: dict,
 
 def budget_full(store, org_id: str, assignee: str | None, eval_time, budget_per_day: int) -> bool:
     """Per-assignee daily push budget. Unrouted cards are parked in the admin queue, not pushed,
-    so they never consume budget — return False (they always land, just without a push)."""
+    so they never consume budget — return False (they always land, just without a push).
+
+    ⛔ A MATERIAL VERSION IS ONE OF THE DAY'S (STEP-14 fix, the crosscheck's finding 12, `yc2_w27_s14`
+    M42.C3.L-integration.V2.U08): a file's card is created once and versioned after, so counting the cards CREATED
+    today let every material version pushed today through for free. A card versioned materially today counts, beside
+    the cards created today — each card once. A quiet version is never pushed and counts nothing."""
     if assignee is None:
         return False
     with store.engine.connect() as c:
         n = c.execute(text(
-            "select count(*) from cards where org_id=:o and assignee=:a "
-            "and state in ('queued','surfaced','snoozed','claimed','acted') "
-            "and created_at::date = :d"),
+            "select count(*) from cards k where k.org_id=:o and k.assignee=:a "
+            "and k.state in ('queued','surfaced','snoozed','claimed','acted') "
+            "and (k.created_at::date = :d or exists (select 1 from card_events e where e.org_id = k.org_id "
+            "     and e.card_id = k.card_id and e.kind = 'card.versioned' and e.occurred_at::date = :d "
+            "     and (e.detail ->> 'material') = 'true'))"),
             {"o": org_id, "a": assignee, "d": eval_time.date()}).scalar()
     return int(n or 0) >= int(budget_per_day)

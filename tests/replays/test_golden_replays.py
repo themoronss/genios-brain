@@ -35,8 +35,9 @@ SPECS = load_specs()
 CASES = {c.case_id: c for c in load_cases()}
 #: The replays the founder set drives. 08–12 follow when their cases exist.
 DRIVEN = {f"{n:02d}" for n in range(1, 8)}
-_PREDICATES = {"case", "card_about", "min", "max", "mentions", "level_in", "memory", "no_phrase",
-               "why"}
+#: ⛔ +headline_says by `yc2_w27_s14` M43.C6.L-integration.V2.U12 (the STEP-14 crosscheck, finding 10): what a card ASKS.
+_PREDICATES = {"case", "card_about", "min", "max", "mentions", "headline_says", "level_in", "memory", "no_phrase",
+               "why", "each", "open_at_end", "versioned"}
 
 
 def _scratch_db() -> None:

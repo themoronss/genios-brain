@@ -9,7 +9,8 @@ whose review must find out first, asks the founder ONE question:
     that answer, whatever review asks them (M36.C2.L-data.V2.U12);
   * `answer` keeps the founder's words, once;
   * `retire` closes a file's open question the review no longer asks (`NO_LONGER_ASKED`), or one whose
-    file is no longer the expert's to decide (`LEFT_COVERAGE`, M36.C2.L-integration.V2.U11);
+    file is no longer the expert's to decide (`LEFT_COVERAGE`, M36.C2.L-integration.V2.U11), or one you
+    called wrong (`CALLED_WRONG`, STEP-16 M46.C3.L-data.V0.U05) — always with one of the closed whys;
   * `open_question` and `answers_for` read a file's open question and the answers it holds; `by_id` one.
 
 A question's id is its content's — the tenant, the file, the review that asks it, the words — so asking
@@ -32,6 +33,11 @@ RETIRED = "retired"
 REPLACED = "a newer question of the file replaced it"
 NO_LONGER_ASKED = "the file's latest review no longer asks it"
 LEFT_COVERAGE = "the file is no longer the expert's to decide"
+#: ⛔ STEP-16 (`yc2_w27_s16` M46.C3.L-data.V0.U05; S16-D10, `s16-F13`): *"don't ask me this"*. A question you
+#: call wrong is retired with this why, and its words are never asked of the file again (`ask`).
+CALLED_WRONG = "you called the question wrong"
+#: The closed whys — `retire` refuses any other, so every retirement is counted by kind.
+RETIRED_WHYS = (REPLACED, NO_LONGER_ASKED, LEFT_COVERAGE, CALLED_WRONG)
 
 
 
@@ -50,6 +56,20 @@ class Question:
     answered_at: datetime | None = None
     retired_at: datetime | None = None
     retired_why: str | None = None
+
+
+#: ⛔ ONE LOCK ORDER (M36.C2.L-interface.V4.U07, the second crosscheck G11; 886e16c5 "NOT FIXED, NOTICED"): the
+#: Answer press locked card → signal → question in one statement, the sweep question → signal → card — two
+#: orders, a deadlock when they meet. Both take the FILE'S QUESTION LOCK first — a transaction-scoped advisory
+#: lock on (tenant, file) — and only then any row: the press before its door (`deliver/actions.ingest_action`),
+#: the sweep before it asks or retires (`reason/expert/asks.ask_the_founder`, `retire_question`).
+_FILE_LOCK = "select pg_advisory_xact_lock(hashtextextended(:k, 0))"
+
+
+def lock_file(conn, org_id: str, file_id: str) -> None:
+    """Take the file's question lock, held to the end of the transaction — before any row of its question, its
+    signal or its card (see above)."""
+    conn.execute(text(_FILE_LOCK), {"k": f"founder_question\x1f{org_id}\x1f{file_id}"})
 
 
 def question_id_for(org_id: str, file_id: str, fingerprint: str, question: str) -> str:
@@ -88,8 +108,20 @@ def answers_for(conn, org_id: str, file_id: str) -> tuple[Question, ...]:
         "order by answered_at desc, question_id"), {"o": org_id, "f": file_id}))
 
 
+def called_wrong_for(conn, org_id: str, file_id: str) -> tuple[Question, ...]:
+    """The questions of this file you called wrong, newest first — their words are not asked again."""
+    return tuple(_row(r) for r in conn.execute(text(
+        "select question_id, file_id, fingerprint, run_id, question, why, asked_at, state, answer, "
+        "answered_by, answered_at, retired_at, retired_why from founder_questions "
+        "where org_id = :o and file_id = :f and state = 'retired' and retired_why = :why "
+        "order by retired_at desc, question_id"), {"o": org_id, "f": file_id, "why": CALLED_WRONG}))
+
+
 def retire(conn, *, org_id: str, file_id: str, why: str, at: datetime) -> bool:
-    """Close the file's open question, saying why. False when the file has none open."""
+    """Close the file's open question, saying why — one of `RETIRED_WHYS` (ValueError for any other).
+    False when the file has none open."""
+    if why not in RETIRED_WHYS:
+        raise ValueError(f"a question retires for one of the closed whys, not {why!r}")
     return conn.execute(text(
         "update founder_questions set state = 'retired', retired_at = :at, retired_why = :why "
         "where org_id = :o and file_id = :f and state = 'open' returning question_id"),
@@ -106,12 +138,22 @@ def ask(conn, *, org_id: str, file_id: str, fingerprint: str, run_id: str | None
     fingerprint (`reason/expert/fingerprint`), so the review that asks the same words again is never the
     review that asked them first — a dedupe on the asking review's id could never fire. The file's answers
     are matched on their words, and an open question this review no longer asks retires
-    (`NO_LONGER_ASKED`). Only an ANSWER closes the words: a question retired unanswered may be asked
-    again, by a later review, as its own row (the record of what each review asked stays whole)."""
+    (`NO_LONGER_ASKED`). Only an ANSWER — or your *wrong* — closes the words: a question retired for any
+    other reason may be asked again, by a later review, as its own row (the record of what each review
+    asked stays whole).
+
+    ⛔ WORDS YOU CALLED WRONG (STEP-16 M46.C3.L-data.V0.U05, S16-D10) are not filed again on this file,
+    whatever review asks them: the question you called wrong is returned, RETIRED `CALLED_WRONG`, and the
+    caller counts the file held with no card. The open question this review no longer asks retires, as
+    for an answered one."""
     answered = next((a for a in answers_for(conn, org_id, file_id) if a.question == question), None)
     if answered is not None:
         retire(conn, org_id=org_id, file_id=file_id, why=NO_LONGER_ASKED, at=at)
         return answered
+    refused = next((q for q in called_wrong_for(conn, org_id, file_id) if q.question == question), None)
+    if refused is not None:
+        retire(conn, org_id=org_id, file_id=file_id, why=NO_LONGER_ASKED, at=at)
+        return refused
     standing = open_question(conn, org_id, file_id)
     if standing is not None and standing.question == question:
         if run_id is not None and run_id != standing.run_id:
@@ -151,5 +193,6 @@ def answer(conn, *, org_id: str, question_id: str, words: str, by: str, at: date
     return _row(r)
 
 
-__all__ = ["ANSWERED", "LEFT_COVERAGE", "NO_LONGER_ASKED", "OPEN", "Question", "REPLACED", "RETIRED", "answer",
-           "answers_for", "ask", "by_id", "open_question", "question_id_for", "retire"]
+__all__ = ["ANSWERED", "CALLED_WRONG", "LEFT_COVERAGE", "NO_LONGER_ASKED", "OPEN", "Question", "REPLACED",
+           "RETIRED", "RETIRED_WHYS", "answer", "answers_for", "ask", "by_id", "called_wrong_for", "lock_file",
+           "open_question", "question_id_for", "retire"]

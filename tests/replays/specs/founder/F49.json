@@ -336,7 +336,7 @@
       "to": "Kunal"
      },
      "alternative": "If no slot on the link suits, write to Kunal with two times that do, and apologise for the delay.",
-     "wait_or_stop": "Do not wait: the move is the founder's and it is late. Once the call is booked, nothing more is needed unless Kunal moves it.",
+     "wait_or_stop": "Do not wait: the move is yours and it is late. Once the call is booked, nothing more is needed unless Kunal moves it.",
      "done_when": "A call with Kunal is on both calendars.",
      "draft": "Hi Kunal, sorry this took me a while — I've booked a time on your calendar through the link you sent. Looking forward to it. Arjun"
     }

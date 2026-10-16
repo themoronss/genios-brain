@@ -86,7 +86,14 @@
       "asks_for_reply": true,
       "engagement": "high",
       "motive": "the signed NDA, to share the pilot data"
-     }
+     },
+     "unclassified_observations": [
+      {
+       "proposed_kind": "documents_requested",
+       "description": "Zoya asks for the signed mutual NDA, a document, by Thursday",
+       "quote": "Could you send the signed mutual NDA by Thursday"
+      }
+     ]
     }
    }
   },
@@ -130,7 +137,14 @@
       "asks_for_reply": false,
       "engagement": "medium",
       "motive": "the signed NDA she asked for"
-     }
+     },
+     "unclassified_observations": [
+      {
+       "proposed_kind": "document_sent",
+       "description": "Arjun sends Zoya the signed NDA as an attachment",
+       "quote": "Signed NDA attached"
+      }
+     ]
     }
    },
    "attachments": [
@@ -163,7 +177,9 @@
     "mentions": [
      "NDA"
     ],
-    "closed_from": 1
+    "closed_from": 1,
+    "ended": "verified",
+    "by": "signed"
    }
   ],
   "workstream": "partner - asked 1 Sep, answered with the signed NDA 3 Sep, closed",
@@ -179,8 +195,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "workstream": "a closed file's last line is STEP-13 and STEP-16's",
-  "outcome": "STEP-16 - no card's end records the evidence that closed it"
+  "workstream": "a closed file's last line is STEP-13 and STEP-16's"
  },
  "model": {
   "resolution": [
@@ -262,20 +277,20 @@
       {
        "claim": "On the third of September, the Thursday she named, Arjun wrote back to Zoya with the signed NDA attached.",
        "evidence": [
-        "evt_896d238855ecfb2a99b39e33"
+        "evt_e3a4811ede5260e0b163bef2"
        ]
       },
       {
        "claim": "That answer came about two days after her ask, his one measured reply time in the file.",
        "evidence": [
         "num:your_reply_time:zoya@pinecrest.test",
-        "evt_896d238855ecfb2a99b39e33"
+        "evt_e3a4811ede5260e0b163bef2"
        ]
       },
       {
        "claim": "His mail is the last in the file, and no reply from Pinecrest is on file since.",
        "evidence": [
-        "evt_896d238855ecfb2a99b39e33",
+        "evt_e3a4811ede5260e0b163bef2",
         "num:days_quiet"
        ]
       },
@@ -288,7 +303,7 @@
       {
        "claim": "The file's situation was last active on the third of September, the day of Arjun's answer.",
        "evidence": [
-        "sit:sit_66365f9b06bf1d479a7ce8b3"
+        "sit:sit_047f8a2b53f810d6339c9efb"
        ]
       }
      ],
@@ -389,7 +404,7 @@
      "mode": "nothing",
      "next_move": null,
      "alternative": "None is needed; the file can rest until Pinecrest writes.",
-     "wait_or_stop": "Nothing to wait on from Arjun's side; treat the NDA ask as closed and look again only when Pinecrest writes.",
+     "wait_or_stop": "Nothing to wait on from your side; treat the NDA ask as closed and look again only when Pinecrest writes.",
      "done_when": "The NDA ask is closed with the signed copy sent; the file needs nothing more until Pinecrest moves.",
      "draft": null
     }
@@ -424,7 +439,7 @@
       {
        "claim": "The engine files it as an admin account, seen for the first time.",
        "evidence": [
-        "sit:sit_66365f9b06bf1d479a7ce8b3",
+        "sit:sit_047f8a2b53f810d6339c9efb",
         "hist:derived.history.times_seen@admin"
        ]
       }
@@ -505,7 +520,7 @@
        "fact:2"
       ],
       "to": "Zoya",
-      "answers": "loop:loop_12328b0430c548e3efb3eaa8"
+      "answers": "loop:loop_ac83e8a67fa4487320c26bb5"
      },
      "alternative": "If the terms need review, write to Zoya today and name the day she will have it.",
      "wait_or_stop": "Do not wait past Thursday; stop once the signed NDA is with Zoya.",

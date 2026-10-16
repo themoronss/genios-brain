@@ -23,6 +23,18 @@ the guard knew only the owners `datetime`, `date`, `time`, `dt` by name. Now it 
 at import into the module's own function (or named lambda), and on from there; it resolves the
 module's imports (`import time as t`, `from datetime import datetime as DT`); and it sees a bare
 `time()`, `monotonic()` or `perf_counter()`.
+
+`M41.C1.L-integration.V1.U05` (S17X-F1, second crosscheck): a third shape, not a read at import at
+all — a module borrows a HELPER from a sibling test module (`from tests.test_moments_pg import
+_seed`), and that helper falls back to the sibling's own `NOW: datetime = None`, which only the
+sibling's own `autouse` fixture ever sets. Run together, file order saves it (the sibling's tests
+run first and leave a live-enough instant behind — `test_moments_pg.py` < `test_p10_nudges.py`); run
+alone, `NOW` is still `None` and the helper raises. The fix is `_seed(ws, *, now=None)`, falling back
+to `NOW` only when the caller passes none — so the guard now follows a cross-module import to a
+sibling that defines a `None`-initialised `datetime` global set only by an autouse fixture, and
+flags it unless either the caller also imports that fixture (pytest finds an autouse fixture through
+any name in the module's namespace, imported or not — `client` already rides in this way) or every
+call the caller makes passes the parameter that shadows the fallback.
 """
 from __future__ import annotations
 
@@ -161,6 +173,113 @@ def _clock_reads_at_import(source: str) -> list[int]:
                   if isinstance(node, ast.Call) and _reads_the_clock(node, names, local, set()))
 
 
+# ── S17X-F1: a helper borrowed from a sibling that falls back to the sibling's own stale clock ──
+def _now_globals(tree: ast.Module, names: dict[str, set[str]]) -> set[str]:
+    """Module-level names declared `X: datetime = None` — a clock an autouse fixture, and nothing
+    else, can ever set."""
+    found = set()
+    for node in tree.body:
+        if (isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)
+                and isinstance(node.value, ast.Constant) and node.value.value is None):
+            resolved = _dotted(node.annotation, names)
+            if resolved and "datetime.datetime" in resolved[0]:
+                found.add(node.target.id)
+    return found
+
+
+def _is_autouse_fixture(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    for dec in node.decorator_list:
+        if (isinstance(dec, ast.Call) and isinstance(dec.func, ast.Attribute)
+                and dec.func.attr == "fixture"
+                and isinstance(dec.func.value, ast.Name) and dec.func.value.id == "pytest"):
+            if any(kw.arg == "autouse" and isinstance(kw.value, ast.Constant) and kw.value.value
+                   for kw in dec.keywords):
+                return True
+    return False
+
+
+def _autouse_setters(tree: ast.Module, now_globals: set[str]) -> set[str]:
+    """Fixture names that `global`-declare and assign one of `now_globals` — the only way one is
+    ever set to a live instant."""
+    found = set()
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and _is_autouse_fixture(node):
+            if any(isinstance(n, ast.Global) and set(n.names) & now_globals
+                   for n in ast.walk(node)):
+                found.add(node.name)
+    return found
+
+
+def _reads_global(func: ast.FunctionDef | ast.AsyncFunctionDef, now_globals: set[str]) -> bool:
+    """Whether this function's body reads one of `now_globals` at all — the ROOT risk (S17X-F1's
+    original shape: `_seed` read `NOW` straight, with no parameter and so no way to override it)."""
+    return any(isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load) and n.id in now_globals
+               for n in ast.walk(func))
+
+
+def _fallback_param(func: ast.FunctionDef | ast.AsyncFunctionDef, now_globals: set[str]) -> str | None:
+    """The parameter this function falls back FROM, onto one of `now_globals` — the idiom
+    `x = p if p is not None else NOW` — or None if the function has no such fallback."""
+    for node in ast.walk(func):
+        if (isinstance(node, ast.IfExp) and isinstance(node.test, ast.Compare)
+                and isinstance(node.test.left, ast.Name) and len(node.test.ops) == 1
+                and isinstance(node.test.ops[0], ast.IsNot) and len(node.test.comparators) == 1
+                and isinstance(node.test.comparators[0], ast.Constant)
+                and node.test.comparators[0].value is None
+                and isinstance(node.body, ast.Name) and node.body.id == node.test.left.id
+                and isinstance(node.orelse, ast.Name) and node.orelse.id in now_globals):
+            return node.test.left.id
+    return None
+
+
+def _module_for(dotted: str, root: Path, prefix: str) -> Path | None:
+    if not dotted.startswith(prefix):
+        return None
+    candidate = root / (dotted.replace(".", "/") + ".py")
+    return candidate if candidate.is_file() else None
+
+
+def _calls_override(tree: ast.Module, local_name: str, param: str) -> bool:
+    """Whether EVERY call to `local_name` in `tree` passes `param` as a keyword — the one way a
+    caller can shadow the fallback this guard found. No call at all is not yet a risk."""
+    calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+             and n.func.id == local_name]
+    return not calls or all(any(kw.arg == param for kw in c.keywords) for c in calls)
+
+
+def _stale_clock_imports(path: Path, root: Path, prefix: str = "tests.") -> list[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    names = _imports(tree)
+    offenders = []
+    for node in ast.walk(tree):   # an ImportFrom guarded by `if URL:` is not in tree.body itself
+        if not (isinstance(node, ast.ImportFrom) and node.module and not node.level):
+            continue
+        target = _module_for(node.module, root, prefix)
+        if target is None or target.resolve() == path.resolve():
+            continue
+        t_tree = ast.parse(target.read_text(encoding="utf-8"))
+        now_globals = _now_globals(t_tree, _imports(t_tree))
+        if not now_globals:
+            continue
+        imported = {(a.asname or a.name): a.name for a in node.names}
+        if _autouse_setters(t_tree, now_globals) & set(imported):
+            continue   # the sibling's own fixture rides along — pytest will pick it up
+        funcs = {n.name: n for n in t_tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+        for local_name, orig_name in imported.items():
+            func = funcs.get(orig_name)
+            if func is None or not _reads_global(func, now_globals):
+                continue
+            param = _fallback_param(func, now_globals)
+            if param and _calls_override(tree, local_name, param):
+                continue   # every call supplies its own instant — the fallback is never taken
+            offenders.append(
+                f"{path}:{node.lineno} imports `{local_name}` from {node.module}, which reads its "
+                f"stale `{'/'.join(sorted(now_globals))}`" +
+                (f" unless `{param}=` is passed at every call" if param else
+                 " and has no parameter to override it with"))
+    return offenders
+
+
 def test_the_reader_sees_every_shape_a_test_has_used():
     """The guard's own test: each shape found on 2026-10-12, and the reads that are fine."""
     sample = (
@@ -229,3 +348,55 @@ def test_no_test_module_reads_the_clock_at_import():
         f"{len(offenders)} clock read(s) at import — a long run moves the wall clock past them "
         "(03 F142). Read the clock in the test or a fixture, or pin a fixed instant:\n  "
         + "\n  ".join(offenders))
+
+
+def test_the_guard_catches_a_helper_borrowed_without_its_fixture(tmp_path):
+    """S17X-F1's own shape, built fresh so the rule is proven apart from the real tree: a sibling
+    with a `NOW` only its own autouse fixture sets, a helper with no way to override it at all (the
+    original `_seed`, always caught when borrowed bare) and one with a fallback parameter (caught
+    only when a call forgets it) — against three borrowers: never overrides, brings the fixture
+    along, overrides at every call."""
+    pkg = tmp_path / "faketests"
+    pkg.mkdir()
+    (pkg / "owner.py").write_text(
+        "from __future__ import annotations\n"
+        "from datetime import datetime, timezone\n"
+        "import pytest\n"
+        "NOW: datetime = None\n"
+        "@pytest.fixture(autouse=True)\n"
+        "def _clock():\n"
+        "    global NOW\n"
+        "    NOW = datetime.now(timezone.utc)\n"
+        "def _seed_bare(ws):\n"            # the original shape: no parameter at all
+        "    return NOW\n"
+        "def _seed(ws, *, now: datetime | None = None):\n"
+        "    now = now if now is not None else NOW\n"
+        "    return now\n")
+    (pkg / "user_bad_bare.py").write_text(
+        "from faketests.owner import _seed_bare\ndef test_x():\n    _seed_bare({})\n")
+    (pkg / "user_bad.py").write_text("from faketests.owner import _seed\ndef test_x():\n    _seed({})\n")
+    (pkg / "user_with_fixture.py").write_text(
+        "from faketests.owner import _clock, _seed  # noqa: F401\ndef test_x():\n    _seed({})\n")
+    (pkg / "user_overrides.py").write_text(
+        "from faketests.owner import _seed\nimport datetime as dt\n"
+        "def test_x():\n    _seed({}, now=dt.datetime.now(dt.timezone.utc))\n")
+
+    def _scan(name):
+        return _stale_clock_imports(pkg / name, root=tmp_path, prefix="faketests.")
+
+    bare = _scan("user_bad_bare.py")
+    assert len(bare) == 1 and "`_seed_bare`" in bare[0] and "no parameter" in bare[0]
+    bad = _scan("user_bad.py")
+    assert len(bad) == 1 and "`_seed`" in bad[0] and "`now=`" in bad[0]
+    assert _scan("user_with_fixture.py") == []
+    assert _scan("user_overrides.py") == []
+
+
+def test_no_test_module_borrows_a_helper_without_its_clock():
+    offenders = []
+    for path in sorted(TESTS.rglob("*.py")):
+        offenders += _stale_clock_imports(path, root=TESTS.parent)
+    assert not offenders, (
+        f"{len(offenders)} cross-module import(s) fall back to a sibling's stale clock (S17X-F1) — "
+        "bring the sibling's own autouse fixture along, or pass the parameter that shadows it at "
+        "every call:\n  " + "\n  ".join(offenders))

@@ -57,13 +57,8 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "MOVES WITH `timing_never_grades_accuracy` — the two guard one map from opposite sides and "
         "neither is wanted at runtime"),
 
-    "attribution.route": (
-        "*'Judgment rows to a ranked layer report. Total over any input.'* Eight test callers — the "
-        "most exercised function in this table — and no production caller. ⛔ So the ranking is "
-        "correct, well covered, and asked for by nothing: the report it produces has no renderer, "
-        "the same shape as `capture/intent_rate` and `packs/substrate_demand`.",
-        "MOVES WHEN a precision-by-layer surface exists. ⛔ `calibrate` consumes the RAW judgments "
-        "directly, so the ranked view is for a reader rather than for the loop"),
+    # ⛔ `attribution.route` LEFT THIS TABLE on 16 Oct (STEP-16 `yc2_w27_s16` M47.C3.L-logic.V5.U01): its mover came —
+    # the week's scorecard (`feedback/scorecard`, served at `GET /v1/learning/scorecard`) reads each reason's layer.
 
     # ───────────────────────────────────── the permitted-use guards (`S10`, Atlas L7 #5) (4)
     # ⛔ BUILD-TIME PROPERTY GUARDS over the visibility seam, filed exactly like the four above.
