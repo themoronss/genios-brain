@@ -11673,7 +11673,7 @@ yc2_w27_s16:
 # -15 and -16 ids are those of their own blocks, merged by their own builders.
 # ─────────────────────────────────────────────────────────────────────────────────────────────
 yc2_w27_s13b:
-  status: approved_in_progress   # 2026-10-13: `06` D64 is Rohit's go; s13b-D1…D7 and D9-D11 at the
+  status: built_awaiting_live_passes   # 2026-10-17: every unit built, QA green (all tests/*/ on fresh databases, the golden lane with GENIOS_GOLDEN_REQUIRED=1, CI's hermetic job); only M38.C4.V15.U02 waits for the lead's live passes. (Was approved_in_progress; 2026-10-13: `06` D64 is Rohit's go; s13b-D1…D7 and D9-D11 at the
   # recommended answers (the lead, on Rohit's direction of 12 Oct — Rohit may override), D8 open (Rohit's
   # call). Built first, on the branch yc2w27-s13b: the units on NEW files only (M37.C1.U01, M37.C2.U01-U04);
   # ⛔ M38 HELD until the lead's audit of every model call path (thinking tokens count toward max_tokens);
