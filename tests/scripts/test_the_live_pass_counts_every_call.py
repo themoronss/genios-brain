@@ -82,8 +82,9 @@ def test_the_settings_reach_the_live_pass(monkeypatch):
     monkeypatch.setattr(module, "live", _live)
     assert module.main(["--live", "--site", "expert", "--spend-ok", "--max-usd", "7",
                         "--thinking", "adaptive", "--ceiling", "12000", "--per-call-usd", "0.15"]) == 0
+    # ⛔ RESTATED by STEP-13b M38.C3.L-interface.V13.U03: `live` is also handed the ladder's rungs (none here: one model).
     assert seen["kw"] == {"max_usd": 7.0, "thinking": "adaptive", "ceiling": 12000,
-                          "per_call_usd": "0.15"}
+                          "per_call_usd": "0.15", "ladder": None}
     assert seen["during"] == (THINKING_ADAPTIVE, 12000, 150_000)
     assert (S.thinking_mode(S.SITE_EXPERT), S.max_output_tokens(S.SITE_EXPERT)) == ("off", 6000)
 
