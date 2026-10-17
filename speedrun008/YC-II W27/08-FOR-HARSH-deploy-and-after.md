@@ -1,12 +1,379 @@
 # 08 · For Harsh — deploying the batch, and what to run after
 
-**Written for:** Harsh. **As of:** 2026-10-12 (pushed through `7766a06a`: STEP-12 and STEP-13's first part — §1.14; STEP-14 → STEP-18 are being built and merged step by step — §0c lists what each asks of you). Before that: 2026-10-10 (pushed through `db6328cd` — your merge is in it; the alignment block `yc2_w27_align` came with the next push — §0b). **From:** the `yc2_w27` build (Claude), pushed by
+**Written for:** Harsh. **As of:** 2026-10-17 — `origin/speedrun008` is at `c1df07ac` (STEP-12 → STEP-18, all but STEP-13b); **§0 is the deploy, in order**, every step checked against that commit. Before that: 2026-10-12 (pushed through `7766a06a`: STEP-12 and STEP-13's first part — §1.14; STEP-14 → STEP-18 are being built and merged step by step — §0c lists what each asks of you). Before that: 2026-10-10 (pushed through `db6328cd` — your merge is in it; the alignment block `yc2_w27_align` came with the next push — §0b). **From:** the `yc2_w27` build (Claude), pushed by
 Rohit. Everything here can be checked against the repository; every number below names the file
 or the command it came from.
 
 ---
 
-## 0 · In one screen
+## 0 · The deploy, in order (17 Oct — read this first; the sections below are its detail and its history)
+
+**From** production's `harsh/mvp` at `84f00a40` (10 Oct; schema at `0190_card_lane`) **to** `speedrun008` at
+`c1df07ac` (17 Oct: STEP-12 → STEP-18, everything except STEP-13b). Measured in a checkout:
+`git merge-base --is-ancestor 84f00a40 c1df07ac` → true; `git rev-list --count 84f00a40..c1df07ac` → **815**;
+`git rev-list --count c1df07ac..84f00a40` → **0**. So the deploy is a fast-forward, unless the R-2 hotfix was
+committed on `harsh/mvp` since (step 3).
+
+**How to read each step.** *Do* · *Command* · *You should see* · *It went wrong if* · *Roll back*. A line marked
+**UNVERIFIED — ask the lead** is one this checkout cannot prove; do not guess it. Every write to production in this
+section is listed here; there is no other (§5).
+
+```
+ORG=org_e97e86f858ad48b2bbf64b8a                      # Rohit's org — the only tenant anything is switched on for
+URL=<production database URL>                         # never written into a file
+API=<production API base URL>
+REL="$HOME/genios-releases/$(date +%F)-c1df07ac"; mkdir -p "$REL/before"
+```
+
+### 0.1 · Before the deploy — read only, nothing changes
+
+**Step 1 · The "before" probes.**
+- *Do:* run the probe file, read only, and keep its output.
+- *Command:*
+  `PGOPTIONS='-c default_transaction_read_only=on' psql "$URL" -f "speedrun008/YC-II W27/baseline/production_state.sql" > "$REL/before/production_state.txt" 2>&1`
+  and the three read-only queries of `STEP-06` §8.6 (§4.4 here) into `$REL/before/step06.txt`.
+- *You should see:* `@latest_migration` = `0190_card_lane.sql`. The four `@thinking_*` blocks answer the R-2 question
+  (§0d). `@thinking_expert_after_deploy` and `@thinking_brief_after_deploy` **error** (`relation "expert_reviews" /
+  "company_brief_reviews" does not exist`) — expected: their tables come with `0197` and `0195`
+  (`production_state.sql:246-266`); psql goes on to the next block.
+- *It went wrong if:* any other block errors, or `@latest_migration` is not `0190_card_lane.sql` — stop and send the
+  output to the lead. A write error means `PGOPTIONS` was not applied: stop.
+- *Roll back:* nothing to roll back.
+
+**Step 2 · The account owner's seat, and the org's timezone** (STEP-15 needs both).
+- *Command (read only):*
+  ```
+  select o.timezone, s.seat_id, s.email from orgs o
+    left join org_seats s on s.org_id = o.id and s.active and lower(s.email) = lower(o.email)
+   where o.id = 'org_e97e86f858ad48b2bbf64b8a';
+  ```
+- *You should see:* one row with a `seat_id`. The brief is composed for the active seat whose address is the org's own
+  (`executive/morning.py:58-62`); with none, the sweep composes no brief. (The route composes on read for the signed-in
+  seat, and answers 404 only for an owner key when the org has no such seat — `api/executive_routes.py:92-103`.) `timezone` may already be set: the heavy tick fills an empty one from the
+  founder's send hours and never overwrites a set one (`api/routes.py:1449-1462`, `deliver/timezone_infer.py:194-205`).
+  Empty, the brief is composed at 08:00 **UTC** (`executive/morning_day.py:186-193`) — 13:30 in Kolkata.
+- *It went wrong if:* no `seat_id` — tell the lead before the deploy (the 08:00 brief is not composed for Rohit).
+- *Roll back:* nothing.
+
+**Step 3 · The branch — is the R-2 hotfix on `harsh/mvp`?**
+- *Do:* `git fetch origin`, then count.
+- *Command:* `git rev-list --count origin/speedrun008..origin/harsh/mvp` and `git rev-parse origin/speedrun008`.
+- *You should see:* `0`, and `c1df07ac…` (or a later commit the lead names). `0` → go to step 4.
+- *If it is `1` (you committed §0d's hotfix):* the lead merges it back first, on `speedrun008`, taking
+  `speedrun008`'s side in **both** files:
+  ```
+  git switch speedrun008 && git pull --ff-only && git merge origin/harsh/mvp   # CONFLICT in genios_engine/context/llm/client.py
+  git checkout --ours genios_engine/context/llm/client.py tests/context/test_sampling_is_omitted_where_it_is_refused.py
+  git add genios_engine/context/llm/client.py tests/context/test_sampling_is_omitted_where_it_is_refused.py
+  git commit --no-edit
+  git diff --stat c1df07ac HEAD                                  # must print NOTHING
+  ```
+  Proved here on 17 Oct without a checkout (`git apply --cached` of the hotfix onto `84f00a40`, then
+  `git merge-tree --write-tree c1df07ac <that commit>`): the merge conflicts in `client.py` only, and the test file
+  auto-merges — but the auto-merged test file **fails** one test on `speedrun008`'s client
+  (`test_no_other_model_is_sent_a_thinking_control[claude-opus-5]`: 1 failed, 19 passed), because `speedrun008`
+  sends Opus 5 a thinking control (`context/llm/client.py:93`). Hence `--ours` on the test file too. With both
+  files taken from `speedrun008`, the merged tree is `c1df07ac`'s tree exactly — the last command proves it.
+- *If you have not applied the hotfix:* do not apply it now. `c1df07ac` carries the whole fix (§0d.3: every R-site
+  asks with thinking off — `reason/bundle/sites.py:109` R-2 at 2,400, `:124` R-7 at 6,000, `:159` R-7's 120 s).
+- *It went wrong if:* the count is more than 1, or `git diff --stat c1df07ac HEAD` prints anything — stop, ask the lead.
+- *Roll back:* the merge is local until pushed: `git reset --hard origin/speedrun008`.
+
+**Step 4 · What production's environment says** (STEP-18 B7, `06` D62; detail in §3.14).
+- *Command:* `curl -s "$API/config"` → `{"env": …, "composio": …, "database": …, "l1_relevance": …}`
+  (`api/routes.py:278-283`). `env` reads `"dev"` when `GENIOS_ENV` is **unset** (`platform/config.py:43`), so
+  `"dev"` means: look in the host's settings. Then, in the host's settings, **read (do not print)** whether
+  `GENIOS_ENV`, `GENIOS_JWT_SECRET` and `GENIOS_COMPOSIO_WEBHOOK_SECRET` are set.
+- *The boot rule at `c1df07ac`* (`platform/config.py:280-307`, called first in `main.py:73-75`): the new image
+  **refuses to boot** when `GENIOS_ENV` is unset or not one of `dev`, `development`, `test`, `local`
+  (`config.py:21-31`) **and** `GENIOS_JWT_SECRET` is empty, `genios-dev-secret-change-in-prod` or
+  `change-me-in-prod` (`config.py:10-13`). A real secret of production's own boots in every case.
+- *Where is the host?* The code is written for **DigitalOcean App Platform** (`Dockerfile:17`,
+  `api/device_routes.py:79` reads `do-connecting-ip`); this book's brief says Railway. **UNVERIFIED — ask the lead**
+  which host serves `harsh/mvp` and where its environment is edited. Every "host" below means that one.
+- *Roll back:* nothing changed yet.
+
+**Step 5 · Decide the environment, with Rohit, before the deploy.** Write the decisions down; send them to Rohit.
+
+| Variable | At `84f00a40` | At `c1df07ac` | What you do |
+|---|---|---|---|
+| `GENIOS_JWT_SECRET` | optional (default secret served) | **required outside dev** — `config.py:280` | If production has a secret of its own: keep it, nobody is signed out. If it has none or the default: set one (`python -c "import secrets; print(secrets.token_urlsafe(48))"`), in the host's secret store only. ⛔ A new secret signs **every user and paired desktop app out** (`platform/sessions.py`, `platform/auth.py`, `platform/devices.py`) — tell Rohit and the design partner first |
+| `GENIOS_ENV` | read `dev` when unset | unset now counts as **not dev** for the boot (`config.py:24-31`) — but the webhook still reads the raw value | Optional. Any value but exactly `dev` makes every **unsigned** Composio webhook a **403** (`api/routes.py:4084-4085` — the same rule was already at `84f00a40`, `api/routes.py:3904`) — set it only together with `GENIOS_COMPOSIO_WEBHOOK_SECRET` |
+| `GENIOS_COMPOSIO_WEBHOOK_SECRET` | optional | optional (`config.py:133`) | Composio's signing secret, if you set `GENIOS_ENV` |
+| `GENIOS_COMPANY_BRIEF_MODEL` | did not exist | **new** (STEP-07), default `claude-sonnet-5` (`config.py:117`, read at `platform/wiring.py:297`) | Leave unset |
+| `GENIOS_L4_LLM_DECISION_MAKER` | — | unchanged | Read it; tell Rohit its value (§2's open question) |
+
+Nothing else: `git diff 84f00a40 c1df07ac -- genios_engine/platform/config.py` adds only `company_brief_model` and the
+boot rule, and no `os.environ` / `os.getenv` read was added anywhere in `genios_engine/` (grep of the diff's `+` lines:
+only the names above, in comments and the boot rule). The expert (R-7) and the brief's writer (R-8 / R-8E) name their
+models in code — T2 is `claude-sonnet-5` (`reason/llm_sites.py:290-299`), T1 the engine's `GENIOS_ANTHROPIC_MODEL`
+(default `claude-haiku-4-5-20251001`, `config.py:154`) — so they need no new variable, only the existing
+`GENIOS_ANTHROPIC_API_KEY`.
+
+- *Do:* change only what the table says to change, in **one** change, before the deploy. Changing the host's
+  environment restarts the **old** image (`84f00a40`), which does not read the boot rule — so production keeps serving.
+- *It went wrong if:* after the change the log shows `webhook secret not configured` (403) — you set `GENIOS_ENV`
+  without the webhook secret: add it, or unset `GENIOS_ENV`. Users cannot sign in at all (not just signed out once):
+  the secret differs between instances — **UNVERIFIED — ask the lead** how many instances production runs.
+- *Roll back:* restore the previous values in the host (keep a note of which variables you changed, never their values).
+
+**Step 6 · The database can take the migrations.**
+- *Command (read only):* `psql "$URL" -c 'show default_transaction_read_only;'` → `off`.
+- *Why:* `main.py:84-99` applies pending migrations at boot. On a read-only database it does **not** crash: it logs
+  `DEGRADED BOOT — database is read-only, migrations NOT applied` and serves — and this code then fails **every card
+  write** (each card insert names `file_id` and the gold columns — §1.15).
+- *Backup point:* the code's rollback is the previous image (step 8); a rollback of **data** is the database's own
+  backup (`tests/platform/test_the_code_can_always_be_rolled_back.py:1-25`). Note the time just before the deploy.
+  **UNVERIFIED — ask the lead** whether production's Supabase project has point-in-time recovery on.
+- *It went wrong if:* `on` — do not deploy; the lead lifts the write lock first.
+
+### 0.2 · The deploy
+
+**Step 7 · Fast-forward `harsh/mvp` and push it.**
+- *Command:*
+  ```
+  git fetch origin
+  git switch harsh/mvp && git merge --ff-only origin/speedrun008
+  git rev-parse HEAD                  # c1df07ac… (or the lead's merge commit from step 3)
+  git push origin harsh/mvp           # the host builds and deploys from it — UNVERIFIED — ask the lead if a deploy needs a click
+  ```
+- *It went wrong if:* `--ff-only` refuses (`Not possible to fast-forward`) — `harsh/mvp` has a commit `speedrun008` does
+  not: go back to step 3. Nothing was pushed.
+- *Roll back:* before the push, `git reset --hard origin/harsh/mvp`.
+
+**Step 8 · Read the boot log.** In order, the first lines from the `genios.boot` logger:
+
+1. No `refusing to boot: …` line. If there is one, it is the last line of the log and uvicorn exits (code 3); the line
+   says which variable (`config.py:299-307`). Fix it in the host (step 5) and redeploy. Nothing was migrated: the
+   refusal comes before the migrations (`main.py:73-75`).
+2. **One** line naming all twenty migrations, in this order (`platform/migrate.py:135-180`, logged at `main.py:94`):
+
+   `migrations applied at boot: ['0191_reasoning_fingerprints.sql', '0192_attention_and_archive.sql', '0193_org_self_identities.sql', '0194_situation_outcomes.sql', '0195_company_brief.sql', '0196_company_brief_line_kind.sql', '0197_expert_reviews.sql', '0198_expert_review_inputs.sql', '0199_expert_review_triggers.sql', '0200_expert_review_checks.sql', '0201_founder_questions.sql', '0202_expert_review_checked_at.sql', '0210_every_wrong_reason_is_kept.sql', '0211_a_followup_names_its_observation.sql', '0220_the_living_card.sql', '0221_the_gold_card.sql', '0222_card_refusals.sql', '0230_morning_briefs.sql', '0241_founder_corrections.sql', '0242_company_brief_corrections.sql']`
+
+   (the list is `ls migrations/` after `0190` at `c1df07ac`; `0203`–`0209`, `0212`–`0219`, `0223`–`0229`, `0231`–`0240`
+   do not exist — a gap is not a missing file).
+3. No `DEGRADED BOOT` line.
+
+The twenty, one line each — every one is additive (no `drop table`, `drop column`, `rename` or `alter … type`;
+`tests/platform/test_the_code_can_always_be_rolled_back.py` checks all migrations) and re-runnable (`if not exists`,
+or `drop constraint if exists` before each `add constraint`):
+
+| File | What it does | Re-run |
+|---|---|---|
+| `0191_reasoning_fingerprints` | new table: what each subject's last decision was made on (the change gate) | `create table if not exists` |
+| `0192_attention_and_archive` | `source_events.attention`, `attention_reason` (nullable, one check); `l1_sync_runs.archived integer not null default 0`; a column comment | `add column if not exists`; check dropped then added |
+| `0193_org_self_identities` | new table: the tenant's declared addresses and domains | `if not exists` |
+| `0194_situation_outcomes` | new table + index: what came of each admitted situation | `if not exists` |
+| `0195_company_brief` | two new tables: `company_brief_lines`, `company_brief_reviews` (+ index) | `if not exists` |
+| `0196_company_brief_line_kind` | `company_brief_lines.kind` (nullable text) | `if not exists` |
+| `0197_expert_reviews` | new table + two indexes: one expert review per file per fingerprint | `if not exists` |
+| `0198_expert_review_inputs` | `expert_reviews.inputs` jsonb + check | yes |
+| `0199_expert_review_triggers` | `expert_reviews.triggers` jsonb + check | yes |
+| `0200_expert_review_checks` | `expert_reviews.checked` jsonb + check | yes |
+| `0201_founder_questions` | new table: the one open question a file asks; a partial unique index (one open per file) | `if not exists` |
+| `0202_expert_review_checked_at` | `expert_reviews.checked_at`, `dossier` + check | yes |
+| `0210_every_wrong_reason_is_kept` | on `card_feedback_verdicts` and `card_feedback_revisions`: drops `0034`'s 3-reason check (found by its text, in a `do $$` block) and adds a named 11-reason check — looser, so existing rows pass | yes (the block finds nothing the second time) |
+| `0211_a_followup_names_its_observation` | `screen_followups.observation_id` (nullable) | yes |
+| `0220_the_living_card` | `cards.file_id` (nullable), `cards.version integer not null default 1` + check `version >= 1`; partial unique index `cards_one_open_card_per_file` (only rows with a `file_id`, which no existing row has) | yes |
+| `0221_the_gold_card` | `cards.recommended` jsonb (+ check), `alternative`, `wait_or_stop`; `expert_reviews.card_lines` jsonb (+ check) | yes |
+| `0222_card_refusals` | new table + two checks + index: what the card contract refused | yes |
+| `0230_morning_briefs` | two new tables: `morning_briefs`, `morning_brief_marks` (+ indexes) | `if not exists` |
+| `0241_founder_corrections` | new table + two indexes: the founder's corrections of a file | `if not exists` |
+| `0242_company_brief_corrections` | `company_brief_lines.proposed_kind`, `replaces` (nullable) | yes |
+
+Read with `grep -niE 'create|alter|drop|comment on|do \$\$' migrations/0191*.sql … migrations/0242*.sql` on 17 Oct.
+No migration before `0191` changed between the two commits (`git diff --stat 84f00a40 c1df07ac -- migrations` lists
+the twenty new files only), so the ledger's checksum check (`migrate.py:138-140`) cannot fail on an old file.
+
+- *It went wrong if:* there is no `migrations applied at boot` line but a traceback naming a migration file — one
+  failed (the line is logged only after all of them ran, `main.py:92-94`). Each file and its
+  ledger row are one transaction (`migrate.py:170-179`), so the files before it are applied and kept; the app
+  crash-loops (fail fast). Send the traceback to the lead.
+- *Roll back (any failure in steps 8–10):* redeploy the previous deployment (`84f00a40`) from the host's deploy
+  history — **UNVERIFIED — ask the lead** for the host's button. Do **not** force-push `harsh/mvp`. The schema stays as
+  far as it got: the previous image runs on it, because every one of the twenty only adds (the rollback guard above).
+  New tables simply go unread.
+
+**Step 9 · Right after the boot — read only.**
+- *Commands:*
+  ```
+  curl -s "$API/health"                       # {"status": "ok", …}; "degraded" means the read-only boot (api/routes.py:138-150)
+  curl -s "$API/config"                       # the env you decided in step 5
+  PGOPTIONS='-c default_transaction_read_only=on' psql "$URL" -c \
+    "select filename, applied_at from schema_migrations order by applied_at desc limit 1;"   # 0242_company_brief_corrections.sql
+  ```
+  and `GET /health/readiness` with Rohit's owner token (`api/routes.py:154-208`): it now returns `passing`,
+  `failing`, `not_exercised` and `total`, and `ready` is **false** while any receipt is failing or not exercised
+  (R24) — expected on the deploy day.
+- *Then the release record:* `GENIOS_ALLOW_PROD_WRITE=1 python scripts/pipeline_health.py --org $ORG --database-url "$URL" --json "$REL/health.json"`
+  (§3.13; the flag only passes `scripts/_db.py`'s production lock — the gate reads through a read-only connection,
+  `scripts/pipeline_health.py:1257-1258`). It runs **27** checks — 25 in `CHECKS` and two LLM checks (`scripts/pipeline_health.py:1202-1235`).
+  Exit 0 = nothing failed; 1 = a check FAILED; with `--require-data`, 2 = nothing failed but a check judged nothing
+  (`:1281-1285`).
+- *What red is expected today* (each is the check doing its job; each turns green with its own step below):
+  *we are never a card's subject or a thread's name* (until step 13's repair, §4.2); *the company brief exists and is
+  current* (until Rohit accepts a line, §4.5); *every Gmail message in the window has its content* (until step 16's
+  re-sync, §4.6); *memory reaches back as far as the Gmail connection's window* and *every piece of work the brief
+  names in motion has one file* (§0b, until steps 16–17); *nothing captured was deleted at the gate* on the deploy
+  day before the first archive (§4.1). Any **other** FAIL: read its `fix:` line and send the file to the lead.
+- *Roll back:* as step 8, if `/health` says `degraded` or card writes fail in the log (`column "file_id"` /
+  `card_refusals` errors mean the migrations did not run).
+
+**Step 10 · Set the org's timezone — the one hand-written SQL write of this book** (STEP-15, `06` D9; `STEP-15` §8 says set it at
+deploy, do not leave it inferred).
+- *Do:* ask Rohit for his IANA zone — **UNVERIFIED — ask Rohit**; the likely one is `Asia/Kolkata`, one of the zones the
+  inference knows (`deliver/timezone_infer.py:30-34`). If step 2 already showed that value, write nothing.
+- *Command:*
+  ```
+  GENIOS_ALLOW_PROD_WRITE=1 psql "$URL" -c "update orgs set timezone = '<Rohit's zone>' where id = 'org_e97e86f858ad48b2bbf64b8a' returning id, timezone;"
+  ```
+  There is no route or script that sets it (grep of `genios_engine/` and `scripts/` for `set timezone`: only the
+  inference, `timezone_infer.py:203`).
+- *You should see:* one row. `GET /v1/executive/morning` then says `"timezone": "<zone>"`.
+- *Roll back:* the same `update` with step 2's old value (or `null`).
+
+### 0.3 · The first passes — nothing to run, watch them
+
+**Step 11 · The first chain pass after the boot is heavy, once.** Expect, in this order, and do not treat any as a
+fault:
+- STEP-05: every archive, every mail below the floor and every calendar event drains at once — hundreds of L2 runs
+  (`stage=l2.process_pending … processed=<n>`), then the re-read ladder, 200 a pass; one larger `message_read`
+  billing row (§1.7, §3.5).
+- STEP-10 / STEP-11: the first sweep re-decides each compiled-lane subject once (every compiled manifest changed) —
+  a one-day jump in `l4_llm_decision` calls; the pack registers as `general_v1` 1.5.1 (§1.11, §1.12, §3.9).
+- STEP-14: every open card is re-drafted once in the gold shape (builder `card-builder.v7-the-gold-shape`,
+  `deliver/card_builder.py:42`; it was `v6-lane-and-eleven-reasons` at `84f00a40`). An open card the contract now
+  refuses stays as it was and is counted (§3.15.2).
+- STEP-15: from 08:00 in the org's timezone, each sweep composes the day's brief once, from the template — no model is
+  asked while `morning_brief` is off (`platform/l4_activation.py:105-112`).
+- *It went wrong if:* the log shows an exception naming a column or table from the twenty — the boot skipped a
+  migration: roll back (step 8).
+
+### 0.4 · After the deploy — the data steps, in this order (each is a section below, unchanged)
+
+Every command here needs `GENIOS_ALLOW_PROD_WRITE=1` — the dry runs and `pipeline_health.py` too
+(`scripts/_db.py:116-140`). Every `--apply` writes; every dry run writes nothing.
+
+| Step | What | Where | Wait for |
+|---|---|---|---|
+| 12 | re-queue the attachments the `file_name` refusal dead-lettered — dry run, then `--apply`; read the first error that comes back | §3.1, §3.2 | the deploy |
+| 13 | declare who the design partner is (dry run, `--apply`), then the repair — **dry run only**, its whole output to Rohit; `--apply` after he reads it; then §4.2 | §3.4 | Rohit (D14) |
+| 14 | Boardy's archived introductions — dry run only, to Rohit (skip if he accepts Boardy's connector line in step 15) | §3.5 | Rohit (D23) |
+| 15 | draft the company brief (`--patterns`, dry run = one Sonnet call ≈ $0.05, `--apply` as proposals); Rohit decides every line; you apply exactly his words; then §4.5 | §3.6 | Rohit (D27) |
+| 16 | the stored dates first (`reframe_stored_dates.py`, dry run → count to Rohit → `--apply`), then the re-sync of the mail the old gate deleted (5 sub-steps; the window is Rohit's) — then §4.6 | §3.8 (first part), §3.7 | the brief accepted (D26), the window named (D5 / D16) |
+| 17 | re-file history if the STEP-09 health check names anything (graph first, then files); §4.7 | §3.8 | step 16 |
+| 18 | STEP-18's two read-only probes, then the stuck-review backfill and the duplicate screen observations — each dry run to Rohit, `--apply` after | §4.11 | the deploy |
+| 19 | a day after: §4.3 (memory), §4.4 (situation ends), §4.8 (normals after one sweep) | §4 | one day |
+
+*Roll back:* each script's own section says what its `--apply` wrote. All of them are dry-run first; none deletes.
+
+### 0.5 · The switches — Rohit's org only, in this order
+
+`scripts/activate_tenant.py` always walks the whole ladder: L1 semantic, L2 analytic, L2 patterns, the `--domains`
+(default `admin`) and the `--features` (default `roster_v2,ranking_v2`), and flips only what is not live yet
+(`scripts/activate_tenant.py:155-176, 188-192, 214-215`). So **the dry run is the check**: it must list exactly the one
+switch you mean. If it lists anything else — `L1 semantic` spends a model call on every message — stop and send it to
+Rohit. A switch is turned off by the staff route `DELETE /admin/l4-activation/{org}?feature=<name>` or
+`DELETE /admin/l3-activation/{org}?domain=<name>` (`api/admin_routes.py:1287, 1460`; a staff owner JWT whose address is
+in `GENIOS_SUPERADMIN_EMAILS`, `platform/auth.py:443-452`) — that is each switch's roll back.
+
+| Step | Switch | When | Command | Detail |
+|---|---|---|---|---|
+| 20 | L3 `founder_office` | after the deploy | `activate_tenant.py --org $ORG --database-url "$URL" --domains admin,founder_office --by harsh --notes "06 D2: …"` — dry run, then `--apply` | §3.10; a day after, §4.9 |
+| 21 | L4 `expert_review` | only after Rohit's yes on the live golden pass (`06` D50) — its estimate, run 17 Oct: `scripts/golden_eval.py --dry-run --site expert` → **123 expert calls, ≈ $2.69** (no database, no model) | `… --features expert_review --by harsh --notes "06 D1, D7: …"` — dry run (ONE switch), then `--apply` | §3.11. Tell Rohit first about the one-time churn (§3.15.3): every open legacy or compiled card on a covered file is replaced once by the file's own card, a snooze on it is lost. The first sweeps review every file once more under `expert-review.v4` (`reason/expert/prompt.py:53`), at most 10 a pass (`reason/expert/sweep.py:92`), $2.00 a day and $0.10 a call (`reason/bundle/budget.py:63-67`). A day later: §3.12, §4.10 |
+| 22 | L4 `morning_brief` (the brief's **writer**) | optional, Rohit's call, after the live look | `… --features morning_brief …` — dry run, then `--apply` | §1.16. Off, the brief is the template's words and costs nothing. The estimate, run 17 Oct on a scratch database: `GENIOS_TEST_DATABASE_URL=<scratch> scripts/golden_eval.py --dry-run --site brief` → **67 cases, $0.57 if every R-8 draft holds, $1.71 upper bound** with one R-8E each. ⛔ It needs a scratch database (without one it raises `RunnerRefused`) — never production. Its own budget: $0.25 a day, $0.03 a call per site (`budget.py:65-66`) |
+
+**Stays OFF — never switch these on:**
+- `calibration_apply` — Rohit's decision `06` D13, and not before STEP-18 B22–B24: armed, an applied mute or nudge
+  hides every open card of its pack (`platform/l4_activation.py:92-99`; §5).
+- **The Opus rung** — it does not exist at `c1df07ac`. The model ladder is STEP-13b (not in this deploy: no
+  `contracts/model_ladder`, no migration `0250`); the R-sites have two tiers, T1 and T2, and no Opus tier
+  (`reason/bundle/sites.py:69-70`). When STEP-13b ships, its Opus rung stays off until Rohit's `s13b-D1`.
+- `situation_reasoner` — retired (`06` D51); `activate` refuses it (`l4_activation.py:145-149, 539-540`).
+- Any switch for any tenant other than Rohit's org (`06` D2).
+
+### 0.6 · The next day
+
+**Step 23 ·** `GENIOS_ALLOW_PROD_WRITE=1 python scripts/pipeline_health.py --org $ORG --database-url "$URL" --json "$REL/health-next-day.json" --require-data`
+(§3.13). Exit 0: every check judged something, none failed. Exit 2: a lane is silent — send the NO DATA names.
+⛔ *What the card contract refused* says NO DATA on a healthy tenant that refused nothing, so exit 2 from that check
+alone is not a finding (§1.15, the crosscheck's finding 24). And the thinking probe: `@thinking_lanes` should show
+`l4_bundle` with no call at 2,400 (§0d).
+
+### 0.7 · The API the dashboard must handle (`genios-dashboard`)
+
+Every route added since `84f00a40`, and every response that changed shape: `git diff 84f00a40 c1df07ac --stat --
+genios_engine/api genios_engine/main.py` (13 files) and the `@router` lines of that diff. All need a signed-in token;
+the dependency named is who may call.
+
+**New routes**
+
+| Route | Who | Request → response |
+|---|---|---|
+| `GET /v1/executive/morning` | any workspace user (`api/executive_routes.py:129`) | → before 08:00 local: `{"state": "before_the_hour", "arrives_at", "timezone", "last": <brief>\|null}`; after: `{"state": "today", "local_date", "timezone", "as_of", "one_line", "sections": [{"section", "title", "lines": [{"line_id", "item_id", "section", "words", "kind", "subject", "sources": [{"kind", "ref"}], "by", "verdict", "reason", "marks": [{"by", "mark", "words", "at"}]}]}], "cut": [{"section", "n"}], "flexed", "words", "written_by", "why", "model", "tier", "cost_micro_usd"}` (`:106-126`). Sections, in order: `today` "Today", `desk` "Your desk", `changed`, `stuck`, `asked` "Your files ask you", `promises`, `meetings`, `watching` (`contracts/morning_brief.py:62-76`); an empty section is left out. `written_by`: `template` · `written` · `escalated` |
+| `GET /v1/executive/morning/{day}` | workspace user (`:157`) | `day` = `YYYY-MM-DD` → `{"state": "kept", …}` as above; 404 when none was kept |
+| `POST /v1/executive/morning/lines/{line_id}/mark` | workspace user (`:170`) | `{"mark": "useful"}` or `{"mark": "not_useful", "words": "not useful because …"}` (`executive/morning_store.py:29-31`; `useful` takes no words, `not_useful` needs them, `:115-117`) → `{"line_id", "marked_by", "mark", "words", "marked_at", "correction_id", "file_id"}` — the last two null unless the line names a file (STEP-16). 422 for words that are no correction; 404 for an unknown line |
+| `GET /v1/company-brief` | any reader of the tenant (`api/company_brief_routes.py:96`) | → `{"version", "text", "truncated", "lines": [{"line_id", "section", "text", "address", "domain", "kind", "proposed_by", "proposed_text", "accepted_at"}], "proposals", "last_review"}` |
+| `POST /v1/company-brief/lines` | account owner (`:109`) | `{"section", "text", "address"?, "domain"?, "kind"?}` → 201 `{"line_id", "status": "accepted", "promoted"}` |
+| `POST /v1/company-brief/proposals/{line_id}/decide` | account owner (`:127`) | `{"decision": "accept"\|"reject", "text"?, "kind"?, "address"?, "domain"?}` → `{"line_id", "status", "promoted"}`; 404 / 409 (`not_pending`, `kind_differs` …) |
+| `DELETE /v1/company-brief/lines/{line_id}` | account owner (`:153`) | → `{"line_id", "status": "removed"}` |
+| `GET /v1/workstreams` | any reader of the tenant (`api/workstream_routes.py:145`) | → the tenant's files, most recently touched first |
+| `GET /v1/workstreams/{file_id}` | any reader (`:153`) | → `{"as_of", "file", "timeline", "numbers", "playbook", "review": {"latest", "valid"}, "corrections": {"standing": [...], "cut"}}`; a review shows `says` (what the check let stand) and `check`, never the raw words (`:85-99`); 404 for an unknown file |
+| `POST /v1/workstreams/{file_id}/corrections` | workspace user (`:172`) | `{"words", "scope": "file"\|"kind"\|"company", "card_id"?}` → `{"correction": {"correction_id", "file_id", "card_id", "feedback_id", "reason", "words", "scope", "kind", "brief_line_id", "corrected_by", "corrected_at", "state", "withdrawn_by", "withdrawn_at"}}`; 403 when a seat corrects a kind or the company (owner only) or a file through no card routed to it; 422 for refused words or `kind` on a file with no kind |
+| `POST /v1/workstreams/{file_id}/corrections/{correction_id}/withdraw` | workspace user (`:198`) | → `{"correction": …}` with `state` withdrawn; 403 / 404 / 409 (already withdrawn) |
+| `GET /v1/learning/scorecard?week=YYYY-Www` | account owner (`api/learning_routes.py:325`) | → the week: useful, held back and why, read, ended verified, what each correction changed; 400 `invalid_week` |
+
+**Changed responses**
+
+| Route | What changed |
+|---|---|
+| `POST /cards/{card_id}/action` (`api/routes.py:5520-5550`, `deliver/actions.py`) | new action **`answer`** on a question card: `{"action": "answer", "words": "…"}` (≤ 4,000 characters, `actions.py:66`) → `{"ok": true, "state": <where the card sat>, "action": "answer", "question_id", "version"}` — never `resolved` (`:325-329`). Errors (422): `answer_says_nothing`, `answer_too_long` (+ `max_chars`), `not_offered` (+ `offered`), `not_a_question`, `stale_or_unauthorized_card` (`V-09`), `card_not_actionable` (`:105-110, 194-211`). **`wrong`** now takes `"words"` and `"scope"` (`file` · `kind` · `company`): with words it is also a correction of the card's file → the response adds `correction_id`; `kind`/`company` by anyone but the owner → **403** `owner_only` (`routes.py:5530-5536`); refused words → 422 `invalid_correction`; `kind` on a file with no kind → 422 `no_kind_of_work`. **`wrong` on a question card** = *"don't ask me this"*: the question is retired, the response carries `question_id`. A question card offers `answer`, `snooze`, `wrong` (`actions.py:43`); an answered one offers only `snooze` (`not_offered` for anything else) |
+| `GET /cards` (the queue) | a question card is listed (the third door, `deliver/store.py:785-788`), and an **answered** one stays listed with headline *"Your answer is in; the file is read again"*. The queue still selects no `version` and no `file_id` (`store.py:772-788`) |
+| `GET /cards/{card_id}` | selects `k.*` (`store.py:658`), so it now carries `file_id`, `version`, `recommended` (`who`, `what`, `for_whom`, `by_when`, `to`), `alternative`, `wait_or_stop`, `why_now`, `unresolved_item`; an expert card's `why` leads with entries `"source": "expert_check"` (one per sentence) and the window's receipt `"source": "card_lines"` (`deliver/card_builder.py:855, 925, 1333-1338`). Show the move whole from `recommended.what`; the headline is cut (§1.15) |
+| `GET /cards/history` | two new endings on `card.expired`: `question_settled`, `left_coverage` (§1.15) |
+| `GET /health/readiness` | adds `failing` and `not_exercised`; `ready` needs every receipt exercised (`api/routes.py:154-208`) |
+| `GET /v1/benchmarks/scorecard` (`api/benchmarks_routes.py:145`) | the acted rate is now `{"value", "n", "taken", "called_wrong", "lapsed", "dismissed", "moved_on", "open", "unattributed", "method": "taken_of_ended_by_you_v3"}` (cache key `benchmarks:scorecard:v3`) |
+| `GET /v1/insights/stats` | `value_state` is `unavailable_macv_ledger_has_no_writer` (was `unavailable_no_counterfactual_ledger`) |
+| `POST /v1/intelligence/feedback` | all eleven `wrong` reasons now save (eight returned 500 before `0210`) |
+| `PUT /api/org/{org_id}/channels/slack` (`api/channel_routes.py:61`) | the response adds `revived` — cards parked for want of a channel |
+| `GET /api/org/{org_id}/delivery/results/{delivery_id}` (`api/delivery_routes.py:361-380`) | each event adds `detail` |
+| `GET /events/{id}/journey` | adds `memory` and `end` (§1.8) |
+| sync responses, `/ingest/all` | totals carry `archived` (§1.5) |
+
+### 0.8 · What changed for the founder — test it by hand after the deploy
+
+Do it **with Rohit, in his session**. ⛔ **Rohit presses; you read the responses.** Never press a card action, answer a
+question, call a card wrong or mark a brief line yourself: each is kept as Rohit's own word and steers what the engine
+learns (§5). The reads (`GET`) are safe. The Today view is not built in `genios-dashboard` yet (§1.16): read the brief
+with `curl -s -H "Authorization: Bearer $TOKEN" "$API/v1/executive/morning"` on his token.
+
+| Step | What Rohit now sees | How to test it | Expected |
+|---|---|---|---|
+| STEP-12, the expert pass | nothing until `expert_review` is on (step 21); then a covered file's card speaks the review's words, one card per file | after step 21 and one sweep: `GET /v1/workstreams/{file_id}` for an investor file | `review.latest` is not null, with `fingerprint`, `status`, `says`, `check`; `select status, count(*) from expert_reviews where org_id = :org group by 1` grows by at most 10 a pass |
+| STEP-13, check every claim | a **question card** when a move's ground fell; each card sentence's source | Rohit opens a card whose actions are `answer` + `snooze` and answers it in his words | `{"ok": true, "action": "answer", "question_id": …, "version": …}`; the card stays on the queue, headline *"Your answer is in; the file is read again"*, actions `[snooze]`; pressing Answer again → 422 `not_offered`. `GET /cards/{id}` `why` entries carry `"source": "expert_check"` |
+| STEP-14, the card | one living card per file: the same `card_id`, a growing `version` | `GET /cards/{id}` on an expert card; press nothing; wait for the file to move | `file_id`, `version` ≥ 1, `recommended.what` the whole move; a later sweep changes `version`, not `card_id`. Health: *one file, one open card* PASS |
+| STEP-15, the morning brief | one brief a day at 08:00 his time | `GET /v1/executive/morning` before and after 08:00 local | before: `"state": "before_the_hour"` with `arrives_at` at 08:00 in his zone; after: `"state": "today"`, sections in the order above, `"written_by": "template"` while `morning_brief` is off |
+| STEP-16, learning from you | *wrong* with four groups and a words box; corrections on the file; a brief line's *not useful because ___* | when Rohit next calls a card wrong with words, or marks a brief line `not_useful` with words: read the response, then `GET /v1/workstreams/{file_id}` | the action returns `correction_id`; the mark returns `correction_id` and `file_id` (null when the line names no file); the file's `corrections.standing` lists both. *Wrong* on a question card → its `question_id`, and that question is never asked again in those words |
+| STEP-17, real tests | nothing on screen | — | the health gate prints NO DATA instead of PASS for an empty lane |
+| STEP-18, the known bugs | a *wrong* with any of the eleven reasons is saved; R-2's narrative is not cut | the next time Rohit calls a card wrong with a reason outside the old three (`not_relevant`, `wrong_facts`, `bad_timing`) — e.g. `misread_source` | 200, not 500; a day after, `@thinking_lanes`: no `l4_bundle` call at 2,400. Sign-in works (with the new secret, once, if you rotated it) |
+
+### 0.9 · Never (from §5 and `06`)
+
+No production write outside this section. Never switch `calibration_apply` on, for anyone (`06` D13). Nothing switched
+on for any tenant but Rohit's (`06` D2). No `--apply` before its dry run went to Rohit where the step says so (D14,
+D23, D26, D27). Never accept, add or remove a brief line Rohit did not say (`06` D27); never answer a founder question
+or call one wrong on Rohit's behalf. Never drain the re-sync through `/integrations/gmail/sync`. Never run
+`golden_eval.py` against production. Never force-push `harsh/mvp`; never print a secret. A finding goes to
+`03-FINDINGS.md` §E, never a silent fix.
+
+---
+
+## 0a · In one screen — what each push asked, 4–12 Oct (history)
+
+⛔ **17 Oct:** this was §0 until today. It is kept as it was written; where it disagrees with §0 (the runbook,
+checked against `c1df07ac`), §0 is right. Item 1's migration list stops at `0199` — the deploy now carries twenty,
+`0191` → `0242` (§0 step 8).
+
 
 1. **Deploy `speedrun008`**, at `77aba10e` or later. `origin/harsh/mvp` (`2c42722d`, 4 Oct) is
    **75 commits behind it and 0 ahead** — it fast-forwards, no merge, no conflict. **No migration**:
@@ -101,6 +468,10 @@ here when the step lands. Nothing in this table switches anything on by itself.
 | STEP-15, the morning brief | **built** (16 Oct, on the integration line `yc2w27-int16` with STEP-14 and STEP-16), not yet pushed | `0230_morning_briefs` (two tables, additive) | §1.16 — at deploy, **set `orgs.timezone` for Rohit's org** (otherwise it is inferred from his send hours); a Slack tenant gets the brief as its digest | the **Today view** (Atlas A.10 has the wireframe) reads the brief's route at 08:00 in the org's timezone; e-mail and WhatsApp come later |
 | STEP-16, learning from you | **built** (16 Oct, every unit — the last, the brief's door, on the integration line `yc2w27-int16` with STEP-14 and STEP-15), not yet pushed | `0241_founder_corrections`, `0242_company_brief_corrections` (additive; `0240` is not needed — STEP-18's `0210` already keeps every reason) | do **not** arm calibration (D13 stays shadow); the first pass after the deploy reviews every live file once more (`expert-review.v4`, about 2¢ a file, ten a pass) | the card's *wrong* shows four groups and a words box; a question card can be called *wrong* (*"don't ask me this"*); your corrections show on the file; a brief line's *not useful because ___* is a correction of its file — `POST /v1/executive/morning/lines/{line_id}/mark` now also returns `correction_id` and `file_id` (both null when the line names no file), and a Watching line says *"(you said so on 12 Oct)"* when its review cites your correction |
 
+⛔ **17 Oct — the states above are history.** STEP-14, STEP-15, STEP-16, STEP-17 and STEP-18 are all on
+`origin/speedrun008` at `c1df07ac` (with STEP-12 and STEP-13); only STEP-13b is not. STEP-17's "exact step" is
+§3.13, and §0 steps 9 and 23. The migrations of every row are in §0 step 8's one line.
+
 ## 0d · ⛔ Claude 5 thinks by default — R-2 is probably cut in production today (13 Oct)
 
 **The defect** (STEP-18 §9; `06` D71). Claude Sonnet 5 thinks unless the request turns it off, and the
@@ -156,11 +527,15 @@ failure on every ledger; `scripts/pipeline_health.py` sees a cut that parsed and
 than half cut. No migration. ⛔ Once the hotfix is committed on `harsh/mvp`, `harsh/mvp` is one commit
 ahead of `speedrun008` and §2's `--ff-only` refuses: the lead merges that commit back into `speedrun008`
 first, taking `speedrun008`'s side in `context/llm/client.py` and the test file (its table already sends
-Sonnet 5 `disabled`), so the deploy fast-forwards again.
+Sonnet 5 `disabled`), so the deploy fast-forwards again. ⛔ **Checked 17 Oct (§0 step 3):** the merge conflicts in
+`client.py` only; the test file auto-merges but then fails one test on `speedrun008`, so take `speedrun008`'s side
+of both files — the merged tree is then `c1df07ac`'s exactly.
 
 ## 1 · What the deploy changes in production
 
 33 commits in the push touch `genios_engine/`. Two groups.
+
+⛔ **17 Oct:** every `/readiness` in this section is `GET /health/readiness` (`api/routes.py:154`).
 
 ### 1.1 · Fixes from this block — each with a test that fails without it
 
@@ -334,7 +709,7 @@ it** (`03` F62), or that company reads as a counterparty in those three places.
 | a card's sources | an expert card's `why` now LEADS with one entry per sentence (`"source": "expert_check"`): the headline with the mails and asks it rests on and their quotes, the situation labelled *the expert's reading — an inference*, the draft with what it stands on, *what doing nothing costs* checked too — show them as "where this came from" |
 | the workstream page | `GET /v1/workstreams/{id}` → `review.latest` / `review.valid` no longer carry the review's raw words: `says` is what the check let stand (the card words), `check` is the check (fate, why, the question, each line's verdict) |
 | the lanes | every writer of signals and cards now writes `output_lane` and `lane_reason` (the team and verify cards included); a new health check counts the last day's signals with no lane |
-| what does NOT change | no new environment variable; nothing for a tenant without `expert_review`. When it is switched on (§3.11) every file is reviewed once more under the new prompt (`expert-review.v3`): about 46 reviews a day inside the $2 day, so a 150-file tenant is fully covered in 3–4 days |
+| what does NOT change | no new environment variable; nothing for a tenant without `expert_review`. When it is switched on (§3.11) every file is reviewed once more under the new prompt (`expert-review.v3` — ⛔ **17 Oct: `expert-review.v4`** at `c1df07ac`, `reason/expert/prompt.py:53`, STEP-16's): about 46 reviews a day inside the $2 day, so a 150-file tenant is fully covered in 3–4 days |
 
 ### 1.15 · STEP-14, the card — in the next push
 
@@ -359,7 +734,9 @@ kept — it leaves on the first heavy tick (≤ 6 h) after. A small move (act, l
 line in the brief and no card. **You do:** (1) the boot log must name `0230_morning_briefs`; (2) **set `orgs.timezone`
 for Rohit's org** — otherwise 08:00 is inferred from his send hours; (3) leave the feature `morning_brief` OFF: the template
 writes the brief at no cost. To arm the Haiku/Sonnet writer, first `scripts/golden_eval.py --site brief --dry-run`, then the
-live look (key + `--spend-ok`, ≈ $1), read it, then switch `morning_brief` on for the org (its own budget: $0.25/day and
+live look (key + `--spend-ok`, ≈ $1 — ⛔ **measured 17 Oct:** the dry run needs a SCRATCH database in
+`GENIOS_TEST_DATABASE_URL`, never production — without one it raises `RunnerRefused` — and it prints 67 cases, $0.57 if
+every R-8 draft holds, $1.71 at most; §0 step 22), read it, then switch `morning_brief` on for the org (its own budget: $0.25/day and
 $0.03/call per site). Nothing is spent otherwise. `/reset` wipes both tables.
 
 ### 1.3 · How it was tested before the push
@@ -411,7 +788,8 @@ the reset now wipes `reasoning_fingerprints` — ⛔ and, from STEP-06, until `0
 reset wipes `expert_reviews`) — ⛔ **and `0198_expert_review_inputs.sql` and
 `0199_expert_review_triggers.sql`** (11 Oct): one nullable column on it each, which the review store
 writes, so the boot log must name them too.
-⛔ **All of them, in one line** (11 Oct — the latest is `0199`): `migrations applied at boot:
+⛔ **17 Oct: the line is now twenty files, `0191` → `0242` — §0 step 8 has it whole.** The paragraphs here are
+kept as written. **All of them, in one line** (11 Oct — the latest is `0199`): `migrations applied at boot:
 ['0191_reasoning_fingerprints.sql', '0192_attention_and_archive.sql', '0193_org_self_identities.sql',
 '0194_situation_outcomes.sql', '0195_company_brief.sql', '0196_company_brief_line_kind.sql',
 '0197_expert_reviews.sql', '0198_expert_review_inputs.sql', '0199_expert_review_triggers.sql']` — nine
@@ -420,7 +798,9 @@ files; the deploy is not done until the boot log names each.
 the review store) **and `0201_founder_questions.sql`** (one table; `/reset` fails until it is applied) — the boot
 log names eleven files from `0191`.
 ⛔ **STEP-18 (12 Oct) adds `0210_every_wrong_reason_is_kept.sql` and `0211_a_followup_names_its_observation.sql`** (both additive), and BEFORE the deploy needs a real `GENIOS_JWT_SECRET` in the deployment's environment — the new image refuses to boot on an unset or default secret unless `GENIOS_ENV` already names `dev`/`development`/`test`/`local` (second crosscheck I1: a real secret alone is enough; `GENIOS_ENV` is a separate decision, with its own webhook consequence) — §3.14.
-No new environment variable. One value we need from the
+No new environment variable. ⛔ **CORRECTED 2026-10-17:** one new, optional one — `GENIOS_COMPANY_BRIEF_MODEL`
+(STEP-07, default `claude-sonnet-5`, `platform/config.py:117`; leave it unset) — and an old one that is now
+required outside dev, `GENIOS_JWT_SECRET` (STEP-18, `config.py:280`). §0 steps 4–5 have the table. One value we need from the
 deploy's environment:
 **`GENIOS_L4_LLM_DECISION_MAKER`** — on or off? The golden set runs the LLM decider on, as
 `speedrun008/YCW27/STATUS.md` records production; `YCW27` decision R1 recommended off. Tell
@@ -681,7 +1061,8 @@ admitted corpus ships with a later push.
 ### 3.11 · STEP-12 — switch the expert on for Rohit's org, after the live pass
 
 Only after Rohit's yes on the live golden pass (`06` D50 — `scripts/golden_eval.py --dry-run --site expert`
-counts it: 97 expert calls, ≈ $2.08). Then, as §3.10, with `GENIOS_ALLOW_PROD_WRITE=1`:
+counts it: 97 expert calls, ≈ $2.08 — ⛔ **17 Oct, re-run at `c1df07ac`: 123 expert calls, ≈ $2.69**, no database and no
+model asked). Then, as §3.10, with `GENIOS_ALLOW_PROD_WRITE=1`:
 
 ```
 python scripts/activate_tenant.py --org $ORG --database-url "$URL" --status
@@ -713,7 +1094,8 @@ Switch it on for no other tenant. A day later run the expert's health check
 The last step of every deploy (`06` D69, STEP-17 S17-D3). `scripts/pipeline_health.py` has three
 verdicts since STEP-17 (`yc2_w27_s17` M40.C3): **PASS**, **FAIL** and **NO DATA** — a check whose
 population was empty in its window judged nothing, and says so instead of PASS (measured on a tenant
-with no data: 17 of 19 checks used to print PASS). NO DATA is never a failure and never a pass: it is
+with no data: 17 of 19 checks used to print PASS; ⛔ **17 Oct:** the gate now runs 27 checks — 25 in `CHECKS` and the
+two LLM checks, `scripts/pipeline_health.py:1202-1235`). NO DATA is never a failure and never a pass: it is
 counted apart in the last line, `N/M checks passed, K with no data, F failed`.
 
 **1 · Right after the deploy** — the record of the release. Keep the file with the deploy's log; send
@@ -782,7 +1164,8 @@ does.
    ```
    curl -s "$API/config"        # {"env": "...", "composio": "real", "database": "postgres", ...}
    ```
-2. In the deployment's environment (DigitalOcean), read — do not print — whether `GENIOS_ENV`,
+2. In the deployment's environment (DigitalOcean — ⛔ **17 Oct:** the code says DigitalOcean App Platform,
+   `Dockerfile:17`; this book's brief says Railway; **UNVERIFIED — ask the lead**, §0 step 4), read — do not print — whether `GENIOS_ENV`,
    `GENIOS_JWT_SECRET` and `GENIOS_COMPOSIO_WEBHOOK_SECRET` are set.
 3. **If production carries the default (or no) `GENIOS_JWT_SECRET`, the new image will not boot
    until a real one is set — whatever `GENIOS_ENV` says.** (Second crosscheck I1: a real secret
@@ -826,7 +1209,7 @@ PGOPTIONS='-c default_transaction_read_only=on' psql "$URL" -f "speedrun008/YC-I
 | B18 | `@park_queue` | 2 mails `extraction_parse_failed`, pending since 3 Oct 11:17 UTC, 0 attempts, no next attempt | attempted, with a next attempt or an end state |
 | B19 | `@attachment_refetch_errors` | 88 of 88 the `file_name` refusal | no new refusal; re-queued rows fetched or failing with a named shape |
 | B2 | `@l2_processing_runs` | 30 runs, 0 edge errors (latent) | still 0 |
-| — | `@latest_migration` | `0190` | ⛔ **corrected 2026-10-11:** `0199_expert_review_triggers` after the deploy (it said `0193` on 7 Oct, `0196` until STEP-12's migration, `0197` and `0198` on 11 Oct) |
+| — | `@latest_migration` | `0190` | ⛔⛔ **corrected 2026-10-17: `0242_company_brief_corrections`** after the deploy (§0 step 8). ⛔ **corrected 2026-10-11:** `0199_expert_review_triggers` after the deploy (it said `0193` on 7 Oct, `0196` until STEP-12's migration, `0197` and `0198` on 11 Oct) |
 | STEP-02 | `@cards_expired_while_deferred` | measured in STEP-01 only | **0** — a DEFER keeps its card |
 | STEP-02 | `@gate_redecided_unchanged` | — (the gate is new) | `decided_today_never_skipped` small and falling; `skips` growing |
 | `03` F148 | `@dates_framed_late`, `@promises_framed_late` | — | the count `scripts/reframe_stored_dates.py` re-frames (§3.8); 0 after it |
@@ -1115,6 +1498,7 @@ it is still red after that push, the log is yours to open.
 
 | | |
 |---|---|
+| the deploy, in order — every step, its command, its roll back | §0 of this file |
 | what is done and owed, step by step | `07-WHAT-IS-DONE.md` |
 | the step table | `00-START-HERE.md` |
 | the bugs, with seams and probes | `STEP-18-TO-BUILD-known-bugs.md` |
