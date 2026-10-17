@@ -175,7 +175,12 @@ def test_a_card_naming_the_founder_by_first_name_is_noted():
     ("done", "Done means Marco has the deck"),
     ("by", "By the end of the week send Marco the short deck"),
     ("silence", "Silence since August: send Marco the short deck"),
-    ("log", "Log the call and send Marco the short deck")])
+    ("log", "Log the call and send Marco the short deck"),
+    # golden F13, F42 ("About half the companies reviewed at a partners' meeting go on to diligence") and F17
+    # ("Interview rounds typically run two to four weeks"): authored patterns citing a playbook line, now held to its
+    # words by the card validator's rule (V7.U01) — an opening ordinary word, read as a name.
+    ("about", "About half the companies Marco sees go on, so send the short deck"),
+    ("interview", "Interview rounds run long, so send Marco the short deck")])
 def test_a_word_haikus_pass_dropped_is_ordinary_where_it_opens_a_sentence(word, text):
     from genios_engine.reason.expert.verify import EARNED
     assert word in EARNED

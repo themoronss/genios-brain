@@ -2666,6 +2666,10 @@
    [
     "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 8.17 days [#]",
     2
+   ],
+   [
+    "Usual gap between touches: not measured [#]; longest closed gap: unknown days [#]; quiet now: 171.12 days [#]",
+    2
    ]
   ],
   "num:their_reply_time:gautam@ridgelinecap.test": [
@@ -2683,6 +2687,10 @@
   "sit:sit_099f4cdf7e3ddf8cd2965611": [
    [
     "- [#] investor_relationship (fundraising) · active · seen 2026-04-02 09:00 UTC → 2026-04-02 09:00 UTC (0 days) · quiet 1.1 days of a 45-day window (the engine's default)",
+    0
+   ],
+   [
+    "- [#] investor_relationship (fundraising) · dormant · seen 2026-04-02 09:00 UTC → 2026-04-02 09:00 UTC (0 days) · quiet 171.1 days of a 45-day window (the engine's default)",
     0
    ]
   ],

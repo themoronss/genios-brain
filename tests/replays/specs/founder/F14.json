@@ -375,18 +375,6 @@
         "evt_2e227c5f998d4be2dc0f081c",
         "evt_b21b6fea4e74b70cbbb19bb5"
        ]
-      },
-      {
-       "claim": "The investor playbook's conditional deferral says to take the conversation out of the round's count, record the condition in the investor's own words, write about the condition and nothing else when it is met, and stop expecting the investor to reopen it if updates draw no reply.",
-       "evidence": [
-        "pb:founder_office.pb.investor_relations.the_conditional_deferral"
-       ]
-      },
-      {
-       "claim": "The playbook holds that most passes are about timing, stage or a metric and carry a date on which they stop being true.",
-       "evidence": [
-        "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
-       ]
       }
      ],
      "inferences": [
@@ -395,21 +383,21 @@
        "based_on": [
         "fact:1",
         "fact:2",
-        "fact:4"
+        "pb:founder_office.pb.investor_relations.the_conditional_deferral"
        ]
       },
       {
        "claim": "Her quiet after the updates is the parked state of a deferral, not a cue to write again.",
        "based_on": [
         "fact:3",
-        "fact:4"
+        "pb:founder_office.pb.investor_relations.the_conditional_deferral"
        ]
       },
       {
        "claim": "This is a deferral on timing with an open door, not a verdict on the company.",
        "based_on": [
         "fact:1",
-        "fact:5"
+        "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
        ]
       }
      ],
@@ -524,24 +512,6 @@
        ]
       },
       {
-       "claim": "The investor playbook's conditional deferral says to take the conversation out of the round's count, record the condition in the investor's own words, and write when the condition is met, about that and nothing else.",
-       "evidence": [
-        "pb:founder_office.pb.investor_relations.the_conditional_deferral"
-       ]
-      },
-      {
-       "claim": "The playbook holds that most passes are about timing, stage or a metric and carry a date on which they stop being true.",
-       "evidence": [
-        "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
-       ]
-      },
-      {
-       "claim": "The playbook's passed stage treats quiet as the resting state, left alone until the condition is met.",
-       "evidence": [
-        "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
-       ]
-      },
-      {
        "claim": "The file's history records no earlier verdict or outcome.",
        "evidence": [
         "hist:derived.history.prior_card_verdict@fundraising",
@@ -554,20 +524,20 @@
        "claim": "This is a deferral on timing with a condition, not a verdict on the company: Fjord leaves the door open and asks for nothing now.",
        "based_on": [
         "fact:1",
-        "fact:4"
+        "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
        ]
       },
       {
        "claim": "The only note that reopens it is one about a real milestone; a routine update is the conversation she has deferred.",
        "based_on": [
         "fact:1",
-        "fact:3"
+        "pb:founder_office.pb.investor_relations.the_conditional_deferral"
        ]
       },
       {
        "claim": "Fjord is out of the round's count until the condition is met.",
        "based_on": [
-        "fact:3"
+        "pb:founder_office.pb.investor_relations.the_conditional_deferral"
        ]
       }
      ],
@@ -592,6 +562,13 @@
        "based_on": [
         "pb:founder_office.pb.investor_relations.the_conditional_deferral",
         "pb:founder_office.pb.investor_relations.reopen_after_a_pass"
+       ]
+      },
+      {
+       "kind": "pattern",
+       "claim": "The playbook's passed stage treats quiet as the resting state, left alone until the condition is met.",
+       "based_on": [
+        "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
        ]
       }
      ],

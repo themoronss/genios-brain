@@ -182,9 +182,12 @@ FUNCTION_WORDS: frozenset[str] = frozenset(
 #: ⛔ STEP-13b (`yc2_w27_s13b` M37.C4.L-logic.V8.U02), earned the same way — Haiku's pass, 12 Oct, dropped 38 facts, 19
 #: done-whens and 12 moves `unsupported` on ordinary words read as invented names: "Two" ("Two weeks is long"), "Done"
 #: ("Done means the deck is sent"), "By" ("By the end of the week"), "Silence" ("Silence since August"), "Log" ("Log the
-#: call"). Each opens a sentence; mid-sentence it is read as written, so a company called Log still drops.
-EARNED: frozenset[str] = frozenset({"accept", "ahead", "attaching", "beside", "block", "by", "done", "download",
-                                    "file", "finish", "log", "memory", "nothing", "say", "sign", "silence", "two"})
+#: call"), and — once the card validator's rule reached the authored patterns that cite a playbook line — "About" ("About half
+#: the companies reviewed at a partners' meeting go on to diligence", golden F13, F42) and "Interview" ("Interview rounds
+#: typically run two to four weeks", F17). Each opens a sentence; mid-sentence it is read as written, so a company called Log still drops.
+EARNED: frozenset[str] = frozenset({"about", "accept", "ahead", "attaching", "beside", "block", "by", "done", "download",
+                                    "file", "finish", "interview", "log", "memory", "nothing", "say", "sign", "silence",
+                                    "two"})
 #: Acronyms of the trade the same pass read as names ("an API", "10:00 UTC") — words anywhere in a sentence, since an
 #: acronym is not a person or a company; the same acronym the file holds is grounded anyway, and any other capitalised
 #: token still drops.

@@ -274,12 +274,6 @@
        "evidence": [
         "num:your_reply_time:leah@lumenvc.test"
        ]
-      },
-      {
-       "claim": "The investor playbook, not yet reviewed, says that after a first call that named no next step, silence is usually a soft no.",
-       "evidence": [
-        "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
-       ]
       }
      ],
      "inferences": [

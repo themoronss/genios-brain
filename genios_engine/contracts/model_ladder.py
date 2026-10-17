@@ -147,6 +147,11 @@ def next_step(consults: Sequence[Consult], *, rung: int, rungs: int) -> Step:
     return Step(CLIMB if rung < rungs else EXHAUSTED, fault)
 
 
+#: How a repair's complaint opens when it hands back the check's verdicts (`complaint`) — the words a reader that
+#: answers a recorded ladder (`tests/replays/ideal_reader`) tells a repair for a failed CHECK from one for a misshapen answer by.
+CHECKED_COMPLAINT = "Your previous answer was checked against the dossier and these lines did not stand"
+
+
 def complaint(status: str, checked: C.CheckedReview | None) -> str:
     """The prompt's complaint for a repair: the check's verdicts — the lines dropped and why — handed back (X32)."""
     if checked is None:
@@ -156,7 +161,7 @@ def complaint(status: str, checked: C.CheckedReview | None) -> str:
         return f"Your previous answer {said}. Answer again with one JSON object in exactly that shape."
     lines = "; ".join(f"{v.line} ({v.reason}{': ' + v.detail if v.detail else ''})"
                       for v in checked.verdicts if v.verdict == C.DROPPED)
-    return ("Your previous answer was checked against the dossier and these lines did not stand: "
+    return (f"{CHECKED_COMPLAINT}: "
             f"{lines or 'the move did not hold'}. Answer again: cite only ids the dossier prints, quote the mail's "
             "own words, and keep every name and number to what the dossier holds.")
 
@@ -174,7 +179,7 @@ def best_of(attempts: Sequence[tuple[int, C.CheckedReview | None]]) -> int | Non
     return None if best is None else best[2]
 
 
-__all__ = ["CARRIED", "CLIMB", "CLIMB_REASONS", "Consult", "EXHAUSTED", "FACT_FAULTS", "FATE_ORDER", "FINAL",
+__all__ = ["CARRIED", "CLIMB", "CLIMB_REASONS", "Consult", "CHECKED_COMPLAINT", "EXHAUSTED", "FACT_FAULTS", "FATE_ORDER", "FINAL",
            "HEADLINE_FAILED", "LADDER_VERSION", "MALFORMED", "NOTHING_STANDS", "RECIPIENT_IS_CONNECTOR",
            "RECIPIENT_IS_US", "REPAIR", "STATE_REASONS", "STATUSES", "STEPS", "Step", "TRUNCATED", "best_of",
            "complaint", "next_step", "writer_fault"]
