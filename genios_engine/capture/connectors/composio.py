@@ -35,6 +35,7 @@ from genios_engine.capture.gate.rules import is_a_delivery_report
 from .backfill import DEFAULT_BACKFILL_DAYS, BackfillWindow
 from .composio_base import raise_if_refused
 from .thread_position import thread_place_from_references
+from .base import InferredInstant
 from .base import RawObject, SourceBatch
 
 # Composio sits BEHIND this interface — auth + Gmail data delivery only. Our contract,
@@ -224,7 +225,7 @@ def _parse_ts(m: dict) -> datetime:
                 return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
         except Exception:
             pass
-    return datetime.now(timezone.utc)
+    return InferredInstant.now_utc()      # no readable time: say so (GeniOS-008 L1 A3)
 
 
 #: What `GMAIL_GET_ATTACHMENT` is told to call the download when the caller has no filename.

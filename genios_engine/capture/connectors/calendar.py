@@ -5,6 +5,7 @@ from typing import Any, Mapping
 
 from .backfill import DEFAULT_BACKFILL_DAYS, BackfillWindow
 from .attendees import attendee_emails, read_attendees, read_meeting_kind
+from .base import InferredInstant
 from .base import RawObject, SourceBatch
 from .composio_base import ComposioExec
 
@@ -27,7 +28,7 @@ def _parse_start(ev: dict) -> datetime:
             return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
         except ValueError:
             pass
-    return datetime.now(timezone.utc)
+    return InferredInstant.now_utc()      # no readable time: say so (GeniOS-008 L1 A3)
 
 
 def _parse_updated(ev: dict) -> datetime | None:

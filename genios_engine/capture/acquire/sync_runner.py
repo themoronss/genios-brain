@@ -329,6 +329,10 @@ class SyncSummary:
     #: A rising count here and a flat `intent_unread` is a prompt that changed its mind, not one
     #: that went quiet — and the two need different fixes.
     intent_disagreements: int = 0
+    #: GeniOS-008 L1 A3 · objects whose source gave no readable time, so `occurred_at` is the
+    #: moment we read them (`RawObject.occurred_at_inferred`). They are captured, never dropped,
+    #: and never move the cursor. A non-zero count is a connector whose time field changed shape.
+    time_inferred: int = 0
 
     @property
     def intent_unknown_rate_bp(self) -> int:
@@ -841,6 +845,12 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                         parked_store.add(parked_from_trace(org_id, res.event.event_id,
                                                            res.event.source, reason or "unknown",
                                                            res.trace))
+                if getattr(raw, "occurred_at_inferred", False):
+                    # A time we made up is not a place the cursor may move to: "now" would skip
+                    # everything the provider has not handed us yet.
+                    summary.time_inferred += 1
+                    if raw.synced_at is None:
+                        continue
                 if watermark is None or raw.watermark_at > watermark:
                     watermark = raw.watermark_at
             page_cursor = batch.next_cursor
@@ -867,6 +877,10 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
         if pool is not None:
             pool.shutdown(wait=False)
 
+    if summary.time_inferred:
+        _log.warning("time inferred: org=%s conn=%s source=%s — %d object(s) had no readable "
+                     "time and were captured at the moment read", org_id, connection_id, source,
+                     summary.time_inferred)
     # recovery is a pure safety re-scan — never regress/advance the primary watermark
     if cursor_store is not None and mode != "recovery":
         # Fail-closed clamp: a watermark in the future asks the provider for changes "since" a
@@ -943,7 +957,8 @@ def backfill_drain(connector: SourceConnector, *, org_id: str, connection_id: st
                            cursor_store=None, max_pages=take, **kw)
         for f in ("scanned", "emitted", "dropped", "parked", "archived", "duplicate", "quarantined",
                   "domain_tagged", "domain_fallback_only",
-                  "intent_unread", "intent_read_attempts", "intent_disagreements"):
+                  "intent_unread", "intent_read_attempts", "intent_disagreements",
+                  "time_inferred"):
             setattr(total, f, getattr(total, f) + getattr(summary, f))
         # The drain's completeness is the LAST round's, not a sum: each round is a slice of one
         # sweep, and only the final one can say whether the provider ran out. Carried rather than

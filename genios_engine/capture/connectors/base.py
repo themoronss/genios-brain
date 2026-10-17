@@ -1,8 +1,24 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional, Protocol, runtime_checkable
+
+
+class InferredInstant(datetime):
+    """A `datetime` the source did NOT give us — "now", standing in for a time we could not read.
+
+    A connector that cannot parse a message's own time still has to put something in
+    `occurred_at` (the field is required, and dropping the mail would lose it). Until 17 Oct nine
+    connectors put a bare `datetime.now()` there, which is indistinguishable from a mail that
+    really arrived now: an old thread read as today's, and the cursor jumped forward on it. A
+    connector's fallback returns THIS instead; `RawObject` records it as `occurred_at_inferred`
+    and stores a plain `datetime`, so nothing downstream ever sees the subclass.
+    """
+
+    @classmethod
+    def now_utc(cls) -> "InferredInstant":
+        return cls.now(timezone.utc)
 
 
 @dataclass
@@ -78,6 +94,19 @@ class RawObject:
     #: The mail was KEPT already, so the gate reads it and never judges it out again (STEP-05).
     #: None (every connector) = a first read, judged exactly as before.
     rereading: str | None = None
+    #: True when the source gave no readable time and `occurred_at` is the moment we read it
+    #: (GeniOS-008 L1 A3). Set from an `InferredInstant`, and recorded in `raw` so it survives
+    #: into the stored payload. Such an object never moves the sync cursor.
+    occurred_at_inferred: bool = False
+
+    def __post_init__(self) -> None:
+        if isinstance(self.occurred_at, InferredInstant):
+            self.occurred_at_inferred = True
+            o = self.occurred_at
+            self.occurred_at = datetime(o.year, o.month, o.day, o.hour, o.minute, o.second,
+                                        o.microsecond, tzinfo=o.tzinfo)
+        if self.occurred_at_inferred:
+            self.raw = {**(self.raw or {}), "occurred_at_inferred": True}
 
     @property
     def watermark_at(self) -> datetime:

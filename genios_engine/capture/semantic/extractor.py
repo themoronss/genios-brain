@@ -1017,10 +1017,23 @@ def _has_fraction(value: Any) -> bool:
     return False
 
 
-def _open_lane_entries(value: Any, tally: _Tally) -> list[dict[str, Any]]:
-    """`roles` / `relationships` / `scheduling_proposals` — untyped by design, fraction-free."""
+def _squash(text: str) -> str:
+    """Case- and whitespace-blind form of a text, for asking "is this quote in that content"."""
+    return " ".join(text.casefold().split())
+
+
+def _open_lane_entries(value: Any, tally: _Tally, content: str | None = None) -> list[dict[str, Any]]:
+    """`roles` / `relationships` / `scheduling_proposals` — untyped by design, fraction-free.
+
+    GeniOS-008 L1 C3 · an `evidence_text` the content does not contain is CLEARED, never kept.
+    These lanes carry no span, so their quote is the only receipt they have — and L3 stores it as
+    the fact's evidence (`context/pipeline.py`, `relationship.nature`). A quote the model wrote
+    rather than read would be filed as something the counterparty said. The entry itself stays:
+    its judgement is ranked lowest already, and losing it would change what L3 knows.
+    """
     if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
         return []
+    haystack = _squash(content) if content else None
     kept: list[dict[str, Any]] = []
     for entry in value:
         if not isinstance(entry, Mapping):
@@ -1030,7 +1043,13 @@ def _open_lane_entries(value: Any, tally: _Tally) -> list[dict[str, Any]]:
             tally.fractional_rejects += 1
             log.warning("dropping an open-lane entry containing a float: %r", entry)
             continue
-        kept.append({str(key): item for key, item in entry.items()})
+        out = {str(key): item for key, item in entry.items()}
+        quote = out.get("evidence_text")
+        if haystack is not None and isinstance(quote, str) and quote.strip():
+            if _squash(quote.strip().strip('"\'“”')) not in haystack:
+                log.warning("clearing an open-lane quote the content does not contain: %r", quote)
+                out["evidence_text"] = None
+        kept.append(out)
     return kept
 
 
@@ -1626,8 +1645,10 @@ def parse_response(payload: Any, *, request: ExtractionRequest, call: AssembledC
         "implied_actions": _string_list(payload.get("implied_actions")),
         "questions": claims["questions"],
         "roles": claims["roles"],
-        "relationships": _open_lane_entries(payload.get("relationships"), tally),
-        "scheduling_proposals": _open_lane_entries(payload.get("scheduling_proposals"), tally),
+        "relationships": _open_lane_entries(payload.get("relationships"), tally,
+                                          request.content),
+        "scheduling_proposals": _open_lane_entries(payload.get("scheduling_proposals"), tally,
+                                          request.content),
         "availability": claims["availability"],
         "unclassified_observations": claims["unclassified_observations"],
         "field_confidence": _field_confidence(payload.get("field_confidence"), tally),
