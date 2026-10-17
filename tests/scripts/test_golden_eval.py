@@ -215,7 +215,10 @@ def test_the_live_pass_counts_a_held_review_its_drop_and_its_note(monkeypatch, t
 
         def call(self, prompt, **kw):
             result = self._reader.call(prompt, **kw)
-            if identify_site(prompt) != "expert" or self.served:
+            # ⛔ RESTATED (STEP-13b M38.C3): the expert's review is asked through the ladder now - repaired once with the
+            # check's verdicts, then the stronger rung - so a model that errs ONCE is put right and the review is shown. A
+            # HELD review is one whose model keeps the error through the repair and the climb: every expert ask is wrong.
+            if identify_site(prompt) != "expert":
                 return result
             self.served += 1
             answer = copy.deepcopy(result.parsed)
