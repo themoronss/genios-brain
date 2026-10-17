@@ -1,7 +1,7 @@
 {
  "case_id": "F38",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "9ff24d47",
  "answers": {
   "1e6f6bd5d06d97084111b349587de19aa67ffd1f0e688b5e2e38cffdfea442fc": {
    "site": "extraction",
@@ -105,7 +105,26 @@
    "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
-  "888028b3f3ac4112f19f0aeb421c71082c81fad82319b03b0af6b9328709885f": {
+  "ad1ad355807436520121b267611702dc4a3ae2648fea7f9b6bee9d62475ffc17": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "RESOLVED",
+    "certainty": "EXPLICIT_COMPLETION",
+    "scope": [
+     "situation"
+    ],
+    "quote": "Thanks for confirming on WhatsApp yesterday",
+    "start_offset": 22,
+    "end_offset": 65,
+    "speaker_role_said": "external"
+   },
+   "raw": "{\"verdict\": \"RESOLVED\", \"certainty\": \"EXPLICIT_COMPLETION\", \"scope\": [\"situation\"], \"quote\": \"Thanks for confirming on WhatsApp yesterday\", \"start_offset\": 22, \"end_offset\": 65, \"speaker_role_said\": \"external\"}",
+   "framed": true,
+   "input_tokens": 1505,
+   "output_tokens": 52,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b8cda28c125a2254345be01301f7ca986762a7c3e7c9a840dd71f2f12c30bc76": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -223,27 +242,8 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Pooja Iyer of Greenleaf wrote on the second of September asking Arjun to settle the pilot's start date by the fourth.\", \"evidence\": [\"evt_#2\"]}, {\"claim\": \"On the fourth she wrote again, thanking him for confirming on WhatsApp the day before and saying Greenleaf is all set for the fifteenth of September.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Both mails in the file are hers; none from Arjun is in it.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, {\"claim\": \"The file still lists her question as an open ask that waits on us, and names the move as ours.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The admin situation the engine opened on this file ended as deferred.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Her question was answered on another channel: the answer she asked for is given, and nothing is owed by mail.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"The open ask and the move marked ours are stale — the mail record cannot see the WhatsApp answer, and her own thanks closes it.\", \"based_on\": [\"fact:2\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"counter_pattern\", \"claim\": \"A question that waits on us usually needs a reply; here the asker's own thanks shows it was answered elsewhere, so a reply would only repeat what she has.\", \"based_on\": [\"fact:2\", \"fact:4\"]}], \"hypotheses\": [{\"proposition\": \"Greenleaf is piloting Nimbus Labs' product, which would make it the design-partner work the brief names as a goal.\", \"needs\": \"The founder's word on what the pilot is, or a mail that names its terms.\"}], \"unknowns\": [{\"question\": \"What the pilot is and who Greenleaf is to Nimbus Labs — the brief names no kind of work for it.\", \"relevance\": \"If Greenleaf is a design partner, the pilot's start serves a goal of the brief and may want preparing for; the file shows no such ask yet.\"}, {\"question\": \"Whether the WhatsApp exchange left anything else to settle before the start.\", \"relevance\": \"What was agreed there is invisible to this file; a loose end would surface only as a new question from Greenleaf.\"}], \"frames\": {\"primary\": \"A question already answered on another channel: Pooja's own thanks says the start date was settled on WhatsApp, and Greenleaf is set for the fifteenth of September. Nothing is owed.\", \"rivals\": [\"The question is still owed by mail, as the open ask says — but her thanks of the fourth contradicts that.\", \"The pilot needs preparation before it starts — but nothing in the file asks for any.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the file's own history sets it: she asked for the start date by the fourth, so an answer was owed by then.\", \"actual\": \"The answer went by WhatsApp before her deadline, as her mail of the fourth says, and Greenleaf is set for the fifteenth of September.\"}, \"scenarios\": {\"do_nothing\": \"The pilot starts on the agreed date; nothing in the file is lost.\", \"act\": \"Another mail restating the date would repeat what she already has and add nothing.\", \"best\": \"The pilot starts as agreed, and the next mail in the file is about the pilot itself.\", \"worst\": \"A detail settled loosely on WhatsApp surfaces late, as a new question from Greenleaf close to the start.\", \"signals_to_watch\": [\"A new mail from Greenleaf about the pilot or its start.\", \"Any change to the agreed start date.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"Her own mail says the answer was given and Greenleaf is set for the fifteenth of September.\", \"Nothing in the file waits on the founder except an open ask her thanks has already closed.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If you want the date on record in mail, a one-line thank-you to Pooja is enough — it is not required.\", \"wait_or_stop\": \"Stop here: nothing is owed. If Greenleaf writes again about the pilot, the file is read again then.\", \"done_when\": \"The pilot starts on the agreed date — the answer Pooja asked for is already given.\", \"draft\": null}",
    "framed": true,
-   "input_tokens": 3471,
+   "input_tokens": 5884,
    "output_tokens": 1034,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ad1ad355807436520121b267611702dc4a3ae2648fea7f9b6bee9d62475ffc17": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "RESOLVED",
-    "certainty": "EXPLICIT_COMPLETION",
-    "scope": [
-     "situation"
-    ],
-    "quote": "Thanks for confirming on WhatsApp yesterday",
-    "start_offset": 22,
-    "end_offset": 65,
-    "speaker_role_said": "external"
-   },
-   "raw": "{\"verdict\": \"RESOLVED\", \"certainty\": \"EXPLICIT_COMPLETION\", \"scope\": [\"situation\"], \"quote\": \"Thanks for confirming on WhatsApp yesterday\", \"start_offset\": 22, \"end_offset\": 65, \"speaker_role_said\": \"external\"}",
-   "framed": true,
-   "input_tokens": 1505,
-   "output_tokens": 52,
    "model": "claude-haiku-4-5-20251001"
   },
   "c520e9c565c73a3fe3e8c5c52452c38cc13ebe00d43a186823734c41b3746dca": {
