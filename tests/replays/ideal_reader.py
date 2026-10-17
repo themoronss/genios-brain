@@ -153,7 +153,9 @@ class IdealReader:
                 raise IdealReaderError(f"{self.case.case_id}: the bundle narration was refused by "
                                        f"the gauntlet — {_excerpt(prompt[-1500:])}")
             return authored if authored is not None else narrate_decision(prompt)
-        if site == "expert" and _EXPERT_REPAIR in prompt:
+        # A ladder's repair with the check's VERDICTS (`contracts/model_ladder.CHECKED_COMPLAINT`) is a second ask of an
+        # answer that FAILED the check, not a misshapen one: a faithful reader says what it said (STEP-13b).
+        if site == "expert" and _EXPERT_REPAIR in prompt and CHECKED_COMPLAINT not in prompt:
             raise IdealReaderError(f"{self.case.case_id}: the expert's authored answer was refused as "
                                    f"misshapen — {prompt[prompt.find(_EXPERT_REPAIR):][:400]!r}")
         if _REFUSED in prompt:
@@ -356,6 +358,8 @@ _PLAY = re.compile(r"^- play_id=([^ |]+) \|.*formula utility (\d+)", re.M)
 #: other set): the ELIGIBLE ones, which can be fewer than the plays the prompt lists.
 _TEMPLATE_SCORES = re.compile(r'"scores": \{(.*?)\}, "confidence_bp"', re.S)
 _TEMPLATE_KEY = re.compile(r'"([^"]+)": "<int 0-10000>"')
+from genios_engine.contracts.model_ladder import CHECKED_COMPLAINT  # noqa: E402
+
 #: How every situation-level site asks again after refusing an answer.
 _REFUSED = "CORRECTION — your previous answer was refused"
 #: The heading the expert's prompt carries on its one repair (`reason/expert/prompt.REPAIR_HEADING`).

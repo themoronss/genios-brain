@@ -392,12 +392,6 @@
        "evidence": [
         "num:your_reply_time:ines@northfieldvc.test"
        ]
-      },
-      {
-       "claim": "The playbook, not yet reviewed, says that after a first call that named no next step, silence is usually a soft no.",
-       "evidence": [
-        "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
-       ]
       }
      ],
      "inferences": [
@@ -504,12 +498,6 @@
        "claim": "Our reply time to Marcus is not measured: the file holds no mail from Arjun to them.",
        "evidence": [
         "num:your_reply_time:marcus@harborpoint.test"
-       ]
-      },
-      {
-       "claim": "The playbook, not yet reviewed, says that after a first call that named no next step, silence is usually a soft no.",
-       "evidence": [
-        "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
        ]
       }
      ],

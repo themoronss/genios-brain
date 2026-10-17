@@ -69,9 +69,9 @@ class _Priced(NarrativeBudget):
         super().__init__(**kw)
         self.estimates: list[int] = []
 
-    def check(self, estimate):
+    def check(self, estimate, tier=None):
         self.estimates.append(estimate)
-        return super().check(estimate)
+        return super().check(estimate, tier)
 
 
 def _consult(client, site=S.SITE_EXPERT, budget=None):

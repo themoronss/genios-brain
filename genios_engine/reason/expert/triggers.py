@@ -17,6 +17,14 @@ when something in it changed:
                    kind brings EVERY file of the kind back, nearest deadline first under the day's cap and
                    `MAX_PER_PASS` (S16-D3) — or a `wrong` you pressed on a card of the file (S16-D2), that file only.
 
+  engine_moved     the engine the file reads moved since the last review (STEP-13b, `06` D48 as Rohit answered it —
+                   the dossier changed, so the file is thought again; only the files whose engine lines moved): its
+                   route key, the learned brains' snapshot for its subjects, or the units' roster. A review stored
+                   before the engine was named saw none, and a file that reads one now has moved;
+  self_moved       a file whose last review ASKED a question (held, or a find-out review that asked its own) and the
+                   company's record has a line since it was asked (F52) — what the company has said of itself
+                   elsewhere may answer it.
+
 SINCE THE LAST REVIEW is a diff against what that review SAW — the fingerprint's inputs it kept
 (`expert_reviews.inputs`, 0198) on the file's latest STANDING row (`store.latest_standing`) — never a
 cut by time: mail that arrives late, or joins the file after it was read, is new to the expert all the
@@ -38,6 +46,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from genios_engine.contracts.claim_check import HELD
+
 from .dossier import DossierParts
 
 FIRST_LOOK = "first_look"
@@ -47,8 +57,13 @@ REPLY_OVERDUE = "reply_overdue"
 PAST_NORMAL = "past_normal"
 FOUNDER_ASKED = "founder_asked"
 FOUNDER_CORRECTED = "founder_corrected"
+ENGINE_MOVED = "engine_moved"
+SELF_MOVED = "self_moved"
 KINDS: tuple[str, ...] = (FIRST_LOOK, NEW_EVIDENCE, DATE_CLOSING_IN, REPLY_OVERDUE, PAST_NORMAL,
-                          FOUNDER_ASKED, FOUNDER_CORRECTED)
+                          FOUNDER_ASKED, FOUNDER_CORRECTED, ENGINE_MOVED, SELF_MOVED)
+#: What a fingerprint names when a file reads no engine line and the company's record has none for it
+#: (`reason/expert/fingerprint.NONE`) — and what a review stored before they were named is read as having seen.
+NONE = "none"
 
 #: The dates that close in — the fingerprint's rungs — and how a trigger names each.
 DATES: Mapping[str, str] = {"next_meeting": "the next meeting", "due": "the nearest promised date"}
@@ -111,6 +126,39 @@ def _corrected(now: Mapping[str, Any], then: Mapping[str, Any]) -> list[Trigger]
     if wrong:
         out.append(Trigger(FOUNDER_CORRECTED, "you called its card wrong: " + ", ".join(wrong)))
     return out
+
+
+def _engine_parts(value: Any) -> dict[str, str]:
+    """The engine a fingerprint names, as route · learned · units — `none` for a file that read no engine line."""
+    seen = value if isinstance(value, Mapping) else {}
+    return {key: str(seen.get(key) or NONE) for key in ("route", "learned", "units")}
+
+
+def _engine_moved(now: Mapping[str, Any], then: Mapping[str, Any]) -> list[Trigger]:
+    """The engine the file reads moved (STEP-13b): what changed, from what to what."""
+    after, before = _engine_parts(now.get("engine")), _engine_parts(then.get("engine"))
+    moved = [f"{key} {before[key]} → {after[key]}" for key in ("route", "learned", "units")
+             if after[key] != before[key]]
+    return [Trigger(ENGINE_MOVED, "the engine it reads moved since the last review: " + "; ".join(moved))] \
+        if moved else []
+
+
+def _asked(last: Any) -> bool:
+    """Did the last review ask a question — held, or a find-out review that asked its own?"""
+    checked = getattr(last, "checked", None)
+    if checked is None:
+        return False
+    review = getattr(last, "review", None)
+    return checked.fate == HELD or (getattr(review, "mode", None) == "find_out" and bool(checked.question))
+
+
+def _self_moved(now: Mapping[str, Any], then: Mapping[str, Any], last: Any) -> list[Trigger]:
+    """The company has spoken since a question was asked (STEP-13b, F52): a line of its record the last review did
+    not see, on a file that asked."""
+    said = str(now.get("self") or NONE)
+    if said == NONE or said == str(then.get("self") or NONE) or not _asked(last):
+        return []
+    return [Trigger(SELF_MOVED, f"the company has spoken since it asked: {said}")]
 
 
 def _closing_in(now: Mapping[str, Any], then: Mapping[str, Any]) -> list[Trigger]:
@@ -190,11 +238,13 @@ def triggers_for(parts: DossierParts, inputs: Mapping[str, Any], *, last: Any = 
         out += _corrected(inputs, then)
         out += _closing_in(inputs, then)
         out += _crossings(parts, inputs, then, since)
+        out += _engine_moved(inputs, then)
+        out += _self_moved(inputs, then, last)
     if asked:
         out.append(Trigger(FOUNDER_ASKED, "the founder asked about it"))
     return tuple(out)
 
 
-__all__ = ["DATE_CLOSING_IN", "DATES", "FIRST_LOOK", "FOUNDER_ASKED", "FOUNDER_CORRECTED", "KINDS", "LISTED",
+__all__ = ["DATE_CLOSING_IN", "DATES", "ENGINE_MOVED", "FIRST_LOOK", "NONE", "SELF_MOVED", "FOUNDER_ASKED", "FOUNDER_CORRECTED", "KINDS", "LISTED",
            "NEW_EVIDENCE",
            "PAST_NORMAL", "REPLY_OVERDUE", "Trigger", "our_usual", "their_usual", "triggers_for"]

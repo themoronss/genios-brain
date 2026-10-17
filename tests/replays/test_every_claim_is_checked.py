@@ -386,9 +386,18 @@ class _Mutating(RecordedLLM):
         self.servings = 0
         self.narrated = 0
         self.mutated: Answer | None = None
+        #: STEP-13b (M38.C4.L-integration.V14.U01): what the ladder asks AFTER the mutated serving — the same ask again on
+        #: its rung with the check's verdicts (a repair), and the stronger rung's fresh ask — is answered with the same
+        #: mutated answer: a model that keeps making the one error. `_ask` is the mutated prompt up to its last word.
+        self._ask: str | None = None
+        self._again: Any = None
         self._reader = IdealReader(CASES[mutation.case]) if mutation is not None else None
 
     def call(self, prompt: str, **kw: Any):
+        if self._ask is not None and identify_site(prompt) == "expert" and prompt.startswith(self._ask):
+            with self._lock:
+                self.calls.append(("expert", "again"))
+            return self._again
         try:
             result = super().call(prompt, **kw)
         except CassetteMiss:
@@ -410,7 +419,10 @@ class _Mutating(RecordedLLM):
             return result
         answer = m.mutate(copy.deepcopy(result.parsed), prompt)
         self.mutated = answer
-        return dataclasses.replace(result, parsed=answer, raw=json.dumps(answer))
+        from genios_engine.reason.expert.prompt import LAST_WORD
+        self._ask = prompt[:prompt.rindex(LAST_WORD)]
+        self._again = dataclasses.replace(result, parsed=answer, raw=json.dumps(answer))
+        return self._again
 
 
 def _as_written(review, _dossier_text, _people, *, evidence_ids=None) -> CheckedReview:

@@ -660,6 +660,8 @@ _ORG_SCOPED_TABLES = [
     # migration 0197: the expert's review of each file per fingerprint (STEP-12). Judgment ABOUT the
     # tenant's own counterparties, quoting their material; and a reset tenant is reviewed afresh.
     "expert_reviews",
+    # migration 0250: every rung's consult of a file beside the review that stands (STEP-13b).
+    "expert_review_attempts",
     # migration 0201: the one question each file asks the founder, and the founder's answer (STEP-13).
     # Questions ABOUT the tenant's counterparties, and answers in the founder's own words.
     "founder_questions",

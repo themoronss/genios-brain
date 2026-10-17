@@ -1,7 +1,7 @@
 {
  "case_id": "F67",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "9ff24d47",
  "answers": {
   "21a5c8930108a32cfde3ac6f9d59cac5f4efd70ca43cdbb18b0f48583c11141e": {
    "site": "bundle_narrator",
@@ -118,7 +118,23 @@
    "output_tokens": 222,
    "model": "claude-haiku-4-5-20251001"
   },
-  "6221c83f6a00e59654e910b20b894d801b0ac5f1986f0c76d1a06c9c818c21f1": {
+  "6cd60676339eae6ce623275e669cb8b6465ccc05d3ca5287b1ad2af0e0483f9e": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1508,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7e3d2c4f48591e78d795b31f42b9115798c632e78485b3338aeac9489b9a633b": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -222,100 +238,8 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Vikram Sole, coordinator at Awadh Enterprise Centre, wrote that the application has moved to the interview round.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Your application has moved to the interview round\"}, {\"claim\": \"He asked Arjun to pick an interview slot on the calendar link by Friday.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Please pick an interview slot on the calendar link by Friday\"}, {\"claim\": \"Our reply time to Vikram is not measured: the file holds no mail from Arjun to them.\", \"evidence\": [\"num:your_reply_time:vikram@awadhec.test\"]}], \"inferences\": [{\"claim\": \"Awadh Enterprise Centre is waiting on our answer.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"An interview slot not picked by the deadline is a place lost; the deadline is the fixed point.\", \"based_on\": [\"fact:1\", \"pb:founder_office.pb.program_applications.follow_an_application\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"A programme keeps its own record; the founder's answer is what moves it.\", \"based_on\": [\"pb:founder_office.pb.program_applications.follow_an_application\"]}], \"frames\": {\"primary\": \"a programme waiting on our answer\", \"rivals\": [\"a mass mail to many founders\"]}, \"expected_vs_actual\": {\"stage\": \"interview\", \"expected\": \"our answer to the programme\", \"actual\": \"their ask, unanswered\"}, \"unknowns\": [{\"question\": \"whether the founder wants this\", \"relevance\": \"it decides whether to answer yes\"}], \"scenarios\": {\"do_nothing\": \"the programme moves on without us\", \"act\": \"Awadh Enterprise Centre has our answer\", \"best\": \"a yes that helps the raise\", \"worst\": \"time spent on something that does not help\", \"signals_to_watch\": [\"a reply from Vikram\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Awadh Enterprise Centre is in the brief\", \"their ask waits on us\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Pick an interview slot on Awadh Enterprise Centre's calendar link before Friday\", \"for_whom\": \"Vikram at Awadh Enterprise Centre\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Vikram\", \"answers\": null}, \"alternative\": \"decline politely\", \"wait_or_stop\": \"answer once; do not chase\", \"done_when\": \"Vikram has our answer\", \"draft\": \"Hi Vikram, thank you, I have picked an interview slot on the calendar link. Arjun\"}",
    "framed": true,
-   "input_tokens": 9337,
+   "input_tokens": 12512,
    "output_tokens": 589,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6cd60676339eae6ce623275e669cb8b6465ccc05d3ca5287b1ad2af0e0483f9e": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1508,
-   "output_tokens": 143,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "76b9961d76c8fd1bee9e4e6fd804436ec2c5dc69f8226bb52fec889fc8d7be71": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "Nadia Qureshi, programme lead at TechBridge Foundation, wrote that they are putting together a founder showcase for their community next month.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "We are putting together a founder showcase for our community next month"
-     },
-     {
-      "claim": "She asked whether Arjun would like to present Nimbus Labs there.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "Would you like to present Nimbus Labs?"
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "You called the card about the showcase wrong: not relevant. The showcase is not where your time goes now.",
-      "based_on": [
-       "fact:2",
-       "hist:derived.history.prior_card_verdict@fundraising"
-      ]
-     }
-    ],
-    "patterns": [],
-    "frames": {
-     "primary": "a programme's invitation you said is not relevant",
-     "rivals": [
-      "an invitation worth a short no"
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": "applied",
-     "expected": "our answer to the invitation",
-     "actual": "you called the card about it not relevant"
-    },
-    "unknowns": [
-     {
-      "question": "whether a short no is owed",
-      "relevance": "it decides whether to write at all"
-     }
-    ],
-    "scenarios": {
-     "do_nothing": "the invitation lapses, as you chose",
-     "act": "a no nobody asked for",
-     "best": "nothing is lost",
-     "worst": "Nadia asks again",
-     "signals_to_watch": [
-      "a second note from Nadia"
-     ]
-    },
-    "appraisal": {
-     "stakes": "low",
-     "urgency": "low",
-     "reversibility": "reversible",
-     "reasons": [
-      "you called it not relevant"
-     ]
-    },
-    "mode": "nothing",
-    "next_move": null,
-    "alternative": null,
-    "wait_or_stop": "leave it unless Nadia writes again",
-    "done_when": "nothing is owed on the showcase",
-    "draft": null
-   },
-   "raw": "{\"facts\": [{\"claim\": \"Nadia Qureshi, programme lead at TechBridge Foundation, wrote that they are putting together a founder showcase for their community next month.\", \"evidence\": [\"evt_#1\"], \"quote\": \"We are putting together a founder showcase for our community next month\"}, {\"claim\": \"She asked whether Arjun would like to present Nimbus Labs there.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Would you like to present Nimbus Labs?\"}], \"inferences\": [{\"claim\": \"You called the card about the showcase wrong: not relevant. The showcase is not where your time goes now.\", \"based_on\": [\"fact:2\", \"hist:derived.history.prior_card_verdict@fundraising\"]}], \"patterns\": [], \"frames\": {\"primary\": \"a programme's invitation you said is not relevant\", \"rivals\": [\"an invitation worth a short no\"]}, \"expected_vs_actual\": {\"stage\": \"applied\", \"expected\": \"our answer to the invitation\", \"actual\": \"you called the card about it not relevant\"}, \"unknowns\": [{\"question\": \"whether a short no is owed\", \"relevance\": \"it decides whether to write at all\"}], \"scenarios\": {\"do_nothing\": \"the invitation lapses, as you chose\", \"act\": \"a no nobody asked for\", \"best\": \"nothing is lost\", \"worst\": \"Nadia asks again\", \"signals_to_watch\": [\"a second note from Nadia\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"you called it not relevant\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": null, \"wait_or_stop\": \"leave it unless Nadia writes again\", \"done_when\": \"nothing is owed on the showcase\", \"draft\": null}",
-   "framed": true,
-   "input_tokens": 9501,
-   "output_tokens": 396,
    "model": "claude-haiku-4-5-20251001"
   },
   "889c251643d0e5c29c0cb517a04baa80b6ec48d5a5438b25824c7c0b36ba30f0": {
@@ -384,23 +308,7 @@
    "output_tokens": 220,
    "model": "claude-haiku-4-5-20251001"
   },
-  "d9058747e793a5e8ebacc09b32597c9e4bf070d621c86ae559a10b980e2c494f": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1593,
-   "output_tokens": 143,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "eb728a0860ac9e08a0da7172152b761dad00d93b59fd099e31b23d8546110313": {
+  "8fc8dbd38174f7f8397e54d05916c44f76f7610cf317e128e49340f81dab0fdb": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -504,8 +412,100 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Nadia Qureshi, programme lead at TechBridge Foundation, wrote that they are putting together a founder showcase for their community next month.\", \"evidence\": [\"evt_#1\"], \"quote\": \"We are putting together a founder showcase for our community next month\"}, {\"claim\": \"She asked whether Arjun would like to present Nimbus Labs there.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Would you like to present Nimbus Labs?\"}, {\"claim\": \"Our reply time to Nadia is not measured: the file holds no mail from Arjun to them.\", \"evidence\": [\"num:your_reply_time:nadia@techbridge.test\"]}], \"inferences\": [{\"claim\": \"TechBridge Foundation is waiting on our answer.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"A community showcase puts Nimbus Labs in front of founders and, through them, the people they know.\", \"based_on\": [\"fact:1\", \"pb:founder_office.pb.program_applications.follow_an_application\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"A programme keeps its own record; the founder's answer is what moves it.\", \"based_on\": [\"pb:founder_office.pb.program_applications.follow_an_application\"]}], \"frames\": {\"primary\": \"a programme waiting on our answer\", \"rivals\": [\"a mass mail to many founders\"]}, \"expected_vs_actual\": {\"stage\": \"applied\", \"expected\": \"our answer to the programme\", \"actual\": \"their ask, unanswered\"}, \"unknowns\": [{\"question\": \"whether the founder wants this\", \"relevance\": \"it decides whether to answer yes\"}], \"scenarios\": {\"do_nothing\": \"the programme moves on without us\", \"act\": \"TechBridge Foundation has our answer\", \"best\": \"a yes that helps the raise\", \"worst\": \"time spent on something that does not help\", \"signals_to_watch\": [\"a reply from Nadia\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"TechBridge Foundation is in the brief\", \"their ask waits on us\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Reply to Nadia that you would like to present at the community showcase\", \"for_whom\": \"Nadia at TechBridge Foundation\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\"], \"to\": \"Nadia\", \"answers\": null}, \"alternative\": \"decline politely\", \"wait_or_stop\": \"answer once; do not chase\", \"done_when\": \"Nadia has our answer\", \"draft\": \"Hi Nadia, thank you for thinking of us. I would be glad to present Nimbus Labs at the founder showcase. Arjun\"}",
    "framed": true,
-   "input_tokens": 9379,
+   "input_tokens": 13576,
    "output_tokens": 597,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d9058747e793a5e8ebacc09b32597c9e4bf070d621c86ae559a10b980e2c494f": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1593,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e1757e3a64317733a16a758e5c2c2ae3a12414ab8072f554507b49fd93b4f674": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Nadia Qureshi, programme lead at TechBridge Foundation, wrote that they are putting together a founder showcase for their community next month.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "We are putting together a founder showcase for our community next month"
+     },
+     {
+      "claim": "She asked whether Arjun would like to present Nimbus Labs there.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Would you like to present Nimbus Labs?"
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "You called the card about the showcase wrong: not relevant. The showcase is not where your time goes now.",
+      "based_on": [
+       "fact:2",
+       "hist:derived.history.prior_card_verdict@fundraising"
+      ]
+     }
+    ],
+    "patterns": [],
+    "frames": {
+     "primary": "a programme's invitation you said is not relevant",
+     "rivals": [
+      "an invitation worth a short no"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": "applied",
+     "expected": "our answer to the invitation",
+     "actual": "you called the card about it not relevant"
+    },
+    "unknowns": [
+     {
+      "question": "whether a short no is owed",
+      "relevance": "it decides whether to write at all"
+     }
+    ],
+    "scenarios": {
+     "do_nothing": "the invitation lapses, as you chose",
+     "act": "a no nobody asked for",
+     "best": "nothing is lost",
+     "worst": "Nadia asks again",
+     "signals_to_watch": [
+      "a second note from Nadia"
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "you called it not relevant"
+     ]
+    },
+    "mode": "nothing",
+    "next_move": null,
+    "alternative": null,
+    "wait_or_stop": "leave it unless Nadia writes again",
+    "done_when": "nothing is owed on the showcase",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Nadia Qureshi, programme lead at TechBridge Foundation, wrote that they are putting together a founder showcase for their community next month.\", \"evidence\": [\"evt_#1\"], \"quote\": \"We are putting together a founder showcase for our community next month\"}, {\"claim\": \"She asked whether Arjun would like to present Nimbus Labs there.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Would you like to present Nimbus Labs?\"}], \"inferences\": [{\"claim\": \"You called the card about the showcase wrong: not relevant. The showcase is not where your time goes now.\", \"based_on\": [\"fact:2\", \"hist:derived.history.prior_card_verdict@fundraising\"]}], \"patterns\": [], \"frames\": {\"primary\": \"a programme's invitation you said is not relevant\", \"rivals\": [\"an invitation worth a short no\"]}, \"expected_vs_actual\": {\"stage\": \"applied\", \"expected\": \"our answer to the invitation\", \"actual\": \"you called the card about it not relevant\"}, \"unknowns\": [{\"question\": \"whether a short no is owed\", \"relevance\": \"it decides whether to write at all\"}], \"scenarios\": {\"do_nothing\": \"the invitation lapses, as you chose\", \"act\": \"a no nobody asked for\", \"best\": \"nothing is lost\", \"worst\": \"Nadia asks again\", \"signals_to_watch\": [\"a second note from Nadia\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"you called it not relevant\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": null, \"wait_or_stop\": \"leave it unless Nadia writes again\", \"done_when\": \"nothing is owed on the showcase\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 13698,
+   "output_tokens": 396,
    "model": "claude-haiku-4-5-20251001"
   },
   "fa16fcce29a43563bba20ee35c94b485255fac3131bf44e4b0ce6d014474c067": {

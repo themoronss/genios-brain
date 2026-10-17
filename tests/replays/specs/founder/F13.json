@@ -228,13 +228,6 @@
        ]
       },
       {
-       "claim": "The investor playbook, not yet reviewed, says a partnership decides in its weekly cycle and that silence more than a week after a partners' meeting usually means no.",
-       "evidence": [
-        "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
-        "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
-       ]
-      },
-      {
        "claim": "The engine files this investor's conversation under an admin account situation, not a fundraising one.",
        "evidence": [
         "sit:sit_aa5ecf1cee7c356fcca5a85a"

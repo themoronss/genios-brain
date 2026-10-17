@@ -1,8 +1,174 @@
 {
  "case_id": "F42",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "9ff24d47",
  "answers": {
+  "123214c2b23b7f8314c48a1ffd8263796709ff6f5be5e890a5581b1ad908a18f": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Manav Rao, a partner at Lumen Ventures, wrote on the eighth of August that it was good to meet Meera the week before.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "Meera Iyer would send a one-pager. Thanks, Manav Rao Partner, Lumen Ventures"
+     },
+     {
+      "claim": "He asked for Kitebird's current traction — clinics live, revenue run-rate and the pilot pipeline — before Lumen's Monday partners' meeting, and told his partners she would send a one-pager.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "current traction metrics - clinics live, revenue run-rate and the pilot pipeline? I told"
+     },
+     {
+      "claim": "The ask is open and waits on us, and the file names the move as ours.",
+      "evidence": [
+       "loop:loop_#1"
+      ]
+     },
+     {
+      "claim": "The engine filed the ask as an admin situation, though the file's kind of work is investor.",
+      "evidence": [
+       "sit:sit_#1"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The first meeting is behind them and Lumen is taking Kitebird to its partners: the conversation has moved past a first call.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Manav has vouched for the one-pager in front of his partners; if it misses Monday, he goes into the room without it.",
+      "based_on": [
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "The numbers he asked for are not in the file, so the one-pager is the founder's to write.",
+      "based_on": [
+       "fact:2"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "When the turn is ours with an investor, the clock runs against us and nobody says so; a late or partial answer reads as lost momentum. A prior, not yet reviewed.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+      ]
+     },
+     {
+      "kind": "base_rate",
+      "claim": "About half the companies reviewed at a partners' meeting go on to diligence, and silence more than a week after the meeting usually means no. A prior, not measured here.",
+      "based_on": [
+       "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+       "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+      ]
+     },
+     {
+      "kind": "counter_pattern",
+      "claim": "A warm partner is not a commitment: only a definite offer in writing counts, however well the meeting went. A prior, not yet reviewed.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.only_an_offer_counts"
+      ]
+     },
+     {
+      "kind": "pattern",
+      "claim": "A round's momentum comes from investors seeing others move, so Lumen's partners' meeting counts for more if the rest of the round is moving too. A prior, not yet reviewed.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Kitebird is on the agenda of Lumen's Monday partners' meeting.",
+      "needs": "Manav's word — his mail implies it without saying so outright."
+     },
+     {
+      "proposition": "A one-pager with these numbers already exists from the founder's other investor conversations.",
+      "needs": "The founder's word; the file holds no such document."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "The current numbers themselves: clinics live, revenue run-rate and the pilot pipeline.",
+      "relevance": "They are not in the file, so the one-pager can only come from the founder."
+     },
+     {
+      "question": "When on Monday the partners meet.",
+      "relevance": "If they meet early, the one-pager has to reach Manav before the weekend is out."
+     },
+     {
+      "question": "What else Manav needs to carry Kitebird into the room — a deck, a memo, a call before the meeting.",
+      "relevance": "A partner who presents a company to the partnership often needs the story as well as the numbers."
+     }
+    ],
+    "frames": {
+     "primary": "An investor carrying you into his partners' meeting: Manav needs the traction one-pager before Monday, he has told his partners it is coming, and the move is ours.",
+     "rivals": [
+      "A routine information request from a fund still taking a first look, where Monday's meeting is the firm's weekly slot rather than a decision on Kitebird.",
+      "Diligence starting early, where the one-pager is the first of several requests for material."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": "partner_meeting",
+     "expected": "At the partner meeting stage the playbook expects the partner who brought the company in to carry it to the firm's weekly meeting with what the partners need; the firm then opens diligence, makes an offer or passes, usually within one weekly cycle.",
+     "actual": "The first meeting took place the week before; Manav has asked for traction numbers before Monday's partners' meeting and promised his partners a one-pager. Nothing has gone back yet."
+    },
+    "scenarios": {
+     "do_nothing": "Manav goes into Monday's meeting without the one-pager he promised his partners; at best you slip a week, at worst you read as a company losing momentum and the fund quietly drops.",
+     "act": "The one-pager reaches Manav before Monday, he carries real numbers into the room, and the partnership can decide on Kitebird in this cycle.",
+     "best": "After Monday the partners ask for diligence material or a meeting with the founder.",
+     "worst": "The one-pager arrives late or thin, the partners pass, and the pass arrives as silence.",
+     "signals_to_watch": [
+      "Manav confirming he has the one-pager before the meeting.",
+      "A request for diligence material or a partner meeting after Monday.",
+      "Silence more than a week after the partners' meeting."
+     ]
+    },
+    "appraisal": {
+     "stakes": "high",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "Raising the seed round is the brief's first goal, and the brief lists Lumen Ventures as engaged.",
+      "The partners meet on Monday and Manav has promised them the one-pager.",
+      "A partners' meeting met with nothing in hand cannot be rerun on demand; the next chance is a later cycle, at the firm's pleasure."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Meera, the founder",
+     "what": "Reply to Manav with a one-page summary of current traction — clinics live, revenue run-rate and the pilot pipeline — before Lumen's Monday partners' meeting, and offer to answer the partners' questions.",
+     "for_whom": "Manav Rao and the Lumen Ventures partners",
+     "by_when": "2026-08-10",
+     "rests_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "to": "Manav",
+     "answers": "loop:loop_#1"
+    },
+    "alternative": "If the one-pager cannot be ready in time, reply now with the numbers he asked for in the body of the mail, and the one-pager to follow.",
+    "wait_or_stop": "Do not wait: the partners meet on Monday. After the meeting, give Lumen its weekly cycle; if a week passes with no word, ask Manav directly what the partners decided.",
+    "done_when": "Manav has the one-pager before the partners' meeting and confirms it reached them.",
+    "draft": "Hi Manav, good to meet you too. Ahead of Monday's partners' meeting, here is our one-pager with Kitebird's current traction: clinics live, revenue run-rate and the pilot pipeline. Happy to answer any questions the partners have, before or after the meeting. Best, Meera"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Manav Rao, a partner at Lumen Ventures, wrote on the eighth of August that it was good to meet Meera the week before.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Meera Iyer would send a one-pager. Thanks, Manav Rao Partner, Lumen Ventures\"}, {\"claim\": \"He asked for Kitebird's current traction — clinics live, revenue run-rate and the pilot pipeline — before Lumen's Monday partners' meeting, and told his partners she would send a one-pager.\", \"evidence\": [\"evt_#1\"], \"quote\": \"current traction metrics - clinics live, revenue run-rate and the pilot pipeline? I told\"}, {\"claim\": \"The ask is open and waits on us, and the file names the move as ours.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The engine filed the ask as an admin situation, though the file's kind of work is investor.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The first meeting is behind them and Lumen is taking Kitebird to its partners: the conversation has moved past a first call.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Manav has vouched for the one-pager in front of his partners; if it misses Monday, he goes into the room without it.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"The numbers he asked for are not in the file, so the one-pager is the founder's to write.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"When the turn is ours with an investor, the clock runs against us and nobody says so; a late or partial answer reads as lost momentum. A prior, not yet reviewed.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.investors_do_not_chase\"]}, {\"kind\": \"base_rate\", \"claim\": \"About half the companies reviewed at a partners' meeting go on to diligence, and silence more than a week after the meeting usually means no. A prior, not measured here.\", \"based_on\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\", \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"A warm partner is not a commitment: only a definite offer in writing counts, however well the meeting went. A prior, not yet reviewed.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.only_an_offer_counts\"]}, {\"kind\": \"pattern\", \"claim\": \"A round's momentum comes from investors seeing others move, so Lumen's partners' meeting counts for more if the rest of the round is moving too. A prior, not yet reviewed.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process\"]}], \"hypotheses\": [{\"proposition\": \"Kitebird is on the agenda of Lumen's Monday partners' meeting.\", \"needs\": \"Manav's word — his mail implies it without saying so outright.\"}, {\"proposition\": \"A one-pager with these numbers already exists from the founder's other investor conversations.\", \"needs\": \"The founder's word; the file holds no such document.\"}], \"unknowns\": [{\"question\": \"The current numbers themselves: clinics live, revenue run-rate and the pilot pipeline.\", \"relevance\": \"They are not in the file, so the one-pager can only come from the founder.\"}, {\"question\": \"When on Monday the partners meet.\", \"relevance\": \"If they meet early, the one-pager has to reach Manav before the weekend is out.\"}, {\"question\": \"What else Manav needs to carry Kitebird into the room — a deck, a memo, a call before the meeting.\", \"relevance\": \"A partner who presents a company to the partnership often needs the story as well as the numbers.\"}], \"frames\": {\"primary\": \"An investor carrying you into his partners' meeting: Manav needs the traction one-pager before Monday, he has told his partners it is coming, and the move is ours.\", \"rivals\": [\"A routine information request from a fund still taking a first look, where Monday's meeting is the firm's weekly slot rather than a decision on Kitebird.\", \"Diligence starting early, where the one-pager is the first of several requests for material.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"partner_meeting\", \"expected\": \"At the partner meeting stage the playbook expects the partner who brought the company in to carry it to the firm's weekly meeting with what the partners need; the firm then opens diligence, makes an offer or passes, usually within one weekly cycle.\", \"actual\": \"The first meeting took place the week before; Manav has asked for traction numbers before Monday's partners' meeting and promised his partners a one-pager. Nothing has gone back yet.\"}, \"scenarios\": {\"do_nothing\": \"Manav goes into Monday's meeting without the one-pager he promised his partners; at best you slip a week, at worst you read as a company losing momentum and the fund quietly drops.\", \"act\": \"The one-pager reaches Manav before Monday, he carries real numbers into the room, and the partnership can decide on Kitebird in this cycle.\", \"best\": \"After Monday the partners ask for diligence material or a meeting with the founder.\", \"worst\": \"The one-pager arrives late or thin, the partners pass, and the pass arrives as silence.\", \"signals_to_watch\": [\"Manav confirming he has the one-pager before the meeting.\", \"A request for diligence material or a partner meeting after Monday.\", \"Silence more than a week after the partners' meeting.\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and the brief lists Lumen Ventures as engaged.\", \"The partners meet on Monday and Manav has promised them the one-pager.\", \"A partners' meeting met with nothing in hand cannot be rerun on demand; the next chance is a later cycle, at the firm's pleasure.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Meera, the founder\", \"what\": \"Reply to Manav with a one-page summary of current traction — clinics live, revenue run-rate and the pilot pipeline — before Lumen's Monday partners' meeting, and offer to answer the partners' questions.\", \"for_whom\": \"Manav Rao and the Lumen Ventures partners\", \"by_when\": \"2026-08-10\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Manav\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If the one-pager cannot be ready in time, reply now with the numbers he asked for in the body of the mail, and the one-pager to follow.\", \"wait_or_stop\": \"Do not wait: the partners meet on Monday. After the meeting, give Lumen its weekly cycle; if a week passes with no word, ask Manav directly what the partners decided.\", \"done_when\": \"Manav has the one-pager before the partners' meeting and confirms it reached them.\", \"draft\": \"Hi Manav, good to meet you too. Ahead of Monday's partners' meeting, here is our one-pager with Kitebird's current traction: clinics live, revenue run-rate and the pilot pipeline. Happy to answer any questions the partners have, before or after the meeting. Best, Meera\"}",
+   "framed": true,
+   "input_tokens": 11375,
+   "output_tokens": 1720,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "4f597293e5064beb567d96c2cd6628688f28744d3ca7b7833cee14e9a578085e": {
    "site": "extraction",
    "parsed": {
@@ -146,178 +312,6 @@
    "framed": true,
    "input_tokens": 1565,
    "output_tokens": 44,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "e5d81ff164988846f6d13f0a1834b5ec681924ea4823f1bd70a801481c749bdc": {
-   "site": "expert",
-   "parsed": {
-    "facts": [
-     {
-      "claim": "Manav Rao, a partner at Lumen Ventures, wrote on the eighth of August that it was good to meet Meera the week before.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "Meera Iyer would send a one-pager. Thanks, Manav Rao Partner, Lumen Ventures"
-     },
-     {
-      "claim": "He asked for Kitebird's current traction — clinics live, revenue run-rate and the pilot pipeline — before Lumen's Monday partners' meeting, and told his partners she would send a one-pager.",
-      "evidence": [
-       "evt_#1"
-      ],
-      "quote": "current traction metrics - clinics live, revenue run-rate and the pilot pipeline? I told"
-     },
-     {
-      "claim": "The ask is open and waits on us, and the file names the move as ours.",
-      "evidence": [
-       "loop:loop_#1"
-      ]
-     },
-     {
-      "claim": "The engine filed the ask as an admin situation, though the file's kind of work is investor.",
-      "evidence": [
-       "sit:sit_#1"
-      ]
-     },
-     {
-      "claim": "The file's playbook is for running an investor conversation to a decision, and it is not yet reviewed.",
-      "evidence": [
-       "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
-      ]
-     }
-    ],
-    "inferences": [
-     {
-      "claim": "The first meeting is behind them and Lumen is taking Kitebird to its partners: the conversation has moved past a first call.",
-      "based_on": [
-       "fact:1",
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "Manav has vouched for the one-pager in front of his partners; if it misses Monday, he goes into the room without it.",
-      "based_on": [
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "The numbers he asked for are not in the file, so the one-pager is the founder's to write.",
-      "based_on": [
-       "fact:2"
-      ]
-     }
-    ],
-    "patterns": [
-     {
-      "kind": "pattern",
-      "claim": "When the turn is ours with an investor, the clock runs against us and nobody says so; a late or partial answer reads as lost momentum. A prior, not yet reviewed.",
-      "based_on": [
-       "pb:founder_office.heu.investor_relations.investors_do_not_chase"
-      ]
-     },
-     {
-      "kind": "base_rate",
-      "claim": "About half the companies reviewed at a partners' meeting go on to diligence, and silence more than a week after the meeting usually means no. A prior, not measured here.",
-      "based_on": [
-       "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
-       "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
-      ]
-     },
-     {
-      "kind": "counter_pattern",
-      "claim": "A warm partner is not a commitment: only a definite offer in writing counts, however well the meeting went. A prior, not yet reviewed.",
-      "based_on": [
-       "pb:founder_office.heu.investor_relations.only_an_offer_counts"
-      ]
-     },
-     {
-      "kind": "pattern",
-      "claim": "A round's momentum comes from investors seeing others move, so Lumen's partners' meeting counts for more if the rest of the round is moving too. A prior, not yet reviewed.",
-      "based_on": [
-       "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process"
-      ]
-     }
-    ],
-    "hypotheses": [
-     {
-      "proposition": "Kitebird is on the agenda of Lumen's Monday partners' meeting.",
-      "needs": "Manav's word — his mail implies it without saying so outright."
-     },
-     {
-      "proposition": "A one-pager with these numbers already exists from the founder's other investor conversations.",
-      "needs": "The founder's word; the file holds no such document."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "The current numbers themselves: clinics live, revenue run-rate and the pilot pipeline.",
-      "relevance": "They are not in the file, so the one-pager can only come from the founder."
-     },
-     {
-      "question": "When on Monday the partners meet.",
-      "relevance": "If they meet early, the one-pager has to reach Manav before the weekend is out."
-     },
-     {
-      "question": "What else Manav needs to carry Kitebird into the room — a deck, a memo, a call before the meeting.",
-      "relevance": "A partner who presents a company to the partnership often needs the story as well as the numbers."
-     }
-    ],
-    "frames": {
-     "primary": "An investor carrying you into his partners' meeting: Manav needs the traction one-pager before Monday, he has told his partners it is coming, and the move is ours.",
-     "rivals": [
-      "A routine information request from a fund still taking a first look, where Monday's meeting is the firm's weekly slot rather than a decision on Kitebird.",
-      "Diligence starting early, where the one-pager is the first of several requests for material."
-     ]
-    },
-    "proposed_kind": null,
-    "expected_vs_actual": {
-     "stage": "partner_meeting",
-     "expected": "At the partner meeting stage the playbook expects the partner who brought the company in to carry it to the firm's weekly meeting with what the partners need; the firm then opens diligence, makes an offer or passes, usually within one weekly cycle.",
-     "actual": "The first meeting took place the week before; Manav has asked for traction numbers before Monday's partners' meeting and promised his partners a one-pager. Nothing has gone back yet."
-    },
-    "scenarios": {
-     "do_nothing": "Manav goes into Monday's meeting without the one-pager he promised his partners; at best you slip a week, at worst you read as a company losing momentum and the fund quietly drops.",
-     "act": "The one-pager reaches Manav before Monday, he carries real numbers into the room, and the partnership can decide on Kitebird in this cycle.",
-     "best": "After Monday the partners ask for diligence material or a meeting with the founder.",
-     "worst": "The one-pager arrives late or thin, the partners pass, and the pass arrives as silence.",
-     "signals_to_watch": [
-      "Manav confirming he has the one-pager before the meeting.",
-      "A request for diligence material or a partner meeting after Monday.",
-      "Silence more than a week after the partners' meeting."
-     ]
-    },
-    "appraisal": {
-     "stakes": "high",
-     "urgency": "high",
-     "reversibility": "costly_to_reverse",
-     "reasons": [
-      "Raising the seed round is the brief's first goal, and the brief lists Lumen Ventures as engaged.",
-      "The partners meet on Monday and Manav has promised them the one-pager.",
-      "A partners' meeting met with nothing in hand cannot be rerun on demand; the next chance is a later cycle, at the firm's pleasure."
-     ]
-    },
-    "mode": "act",
-    "next_move": {
-     "who": "Meera, the founder",
-     "what": "Reply to Manav with a one-page summary of current traction — clinics live, revenue run-rate and the pilot pipeline — before Lumen's Monday partners' meeting, and offer to answer the partners' questions.",
-     "for_whom": "Manav Rao and the Lumen Ventures partners",
-     "by_when": "2026-08-10",
-     "rests_on": [
-      "fact:1",
-      "fact:2",
-      "fact:3"
-     ],
-     "to": "Manav",
-     "answers": "loop:loop_#1"
-    },
-    "alternative": "If the one-pager cannot be ready in time, reply now with the numbers he asked for in the body of the mail, and the one-pager to follow.",
-    "wait_or_stop": "Do not wait: the partners meet on Monday. After the meeting, give Lumen its weekly cycle; if a week passes with no word, ask Manav directly what the partners decided.",
-    "done_when": "Manav has the one-pager before the partners' meeting and confirms it reached them.",
-    "draft": "Hi Manav, good to meet you too. Ahead of Monday's partners' meeting, here is our one-pager with Kitebird's current traction: clinics live, revenue run-rate and the pilot pipeline. Happy to answer any questions the partners have, before or after the meeting. Best, Meera"
-   },
-   "raw": "{\"facts\": [{\"claim\": \"Manav Rao, a partner at Lumen Ventures, wrote on the eighth of August that it was good to meet Meera the week before.\", \"evidence\": [\"evt_#1\"], \"quote\": \"Meera Iyer would send a one-pager. Thanks, Manav Rao Partner, Lumen Ventures\"}, {\"claim\": \"He asked for Kitebird's current traction — clinics live, revenue run-rate and the pilot pipeline — before Lumen's Monday partners' meeting, and told his partners she would send a one-pager.\", \"evidence\": [\"evt_#1\"], \"quote\": \"current traction metrics - clinics live, revenue run-rate and the pilot pipeline? I told\"}, {\"claim\": \"The ask is open and waits on us, and the file names the move as ours.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The engine filed the ask as an admin situation, though the file's kind of work is investor.\", \"evidence\": [\"sit:sit_#1\"]}, {\"claim\": \"The file's playbook is for running an investor conversation to a decision, and it is not yet reviewed.\", \"evidence\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]}], \"inferences\": [{\"claim\": \"The first meeting is behind them and Lumen is taking Kitebird to its partners: the conversation has moved past a first call.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Manav has vouched for the one-pager in front of his partners; if it misses Monday, he goes into the room without it.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"The numbers he asked for are not in the file, so the one-pager is the founder's to write.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"When the turn is ours with an investor, the clock runs against us and nobody says so; a late or partial answer reads as lost momentum. A prior, not yet reviewed.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.investors_do_not_chase\"]}, {\"kind\": \"base_rate\", \"claim\": \"About half the companies reviewed at a partners' meeting go on to diligence, and silence more than a week after the meeting usually means no. A prior, not measured here.\", \"based_on\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\", \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"A warm partner is not a commitment: only a definite offer in writing counts, however well the meeting went. A prior, not yet reviewed.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.only_an_offer_counts\"]}, {\"kind\": \"pattern\", \"claim\": \"A round's momentum comes from investors seeing others move, so Lumen's partners' meeting counts for more if the rest of the round is moving too. A prior, not yet reviewed.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process\"]}], \"hypotheses\": [{\"proposition\": \"Kitebird is on the agenda of Lumen's Monday partners' meeting.\", \"needs\": \"Manav's word — his mail implies it without saying so outright.\"}, {\"proposition\": \"A one-pager with these numbers already exists from the founder's other investor conversations.\", \"needs\": \"The founder's word; the file holds no such document.\"}], \"unknowns\": [{\"question\": \"The current numbers themselves: clinics live, revenue run-rate and the pilot pipeline.\", \"relevance\": \"They are not in the file, so the one-pager can only come from the founder.\"}, {\"question\": \"When on Monday the partners meet.\", \"relevance\": \"If they meet early, the one-pager has to reach Manav before the weekend is out.\"}, {\"question\": \"What else Manav needs to carry Kitebird into the room — a deck, a memo, a call before the meeting.\", \"relevance\": \"A partner who presents a company to the partnership often needs the story as well as the numbers.\"}], \"frames\": {\"primary\": \"An investor carrying you into his partners' meeting: Manav needs the traction one-pager before Monday, he has told his partners it is coming, and the move is ours.\", \"rivals\": [\"A routine information request from a fund still taking a first look, where Monday's meeting is the firm's weekly slot rather than a decision on Kitebird.\", \"Diligence starting early, where the one-pager is the first of several requests for material.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"partner_meeting\", \"expected\": \"At the partner meeting stage the playbook expects the partner who brought the company in to carry it to the firm's weekly meeting with what the partners need; the firm then opens diligence, makes an offer or passes, usually within one weekly cycle.\", \"actual\": \"The first meeting took place the week before; Manav has asked for traction numbers before Monday's partners' meeting and promised his partners a one-pager. Nothing has gone back yet.\"}, \"scenarios\": {\"do_nothing\": \"Manav goes into Monday's meeting without the one-pager he promised his partners; at best you slip a week, at worst you read as a company losing momentum and the fund quietly drops.\", \"act\": \"The one-pager reaches Manav before Monday, he carries real numbers into the room, and the partnership can decide on Kitebird in this cycle.\", \"best\": \"After Monday the partners ask for diligence material or a meeting with the founder.\", \"worst\": \"The one-pager arrives late or thin, the partners pass, and the pass arrives as silence.\", \"signals_to_watch\": [\"Manav confirming he has the one-pager before the meeting.\", \"A request for diligence material or a partner meeting after Monday.\", \"Silence more than a week after the partners' meeting.\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and the brief lists Lumen Ventures as engaged.\", \"The partners meet on Monday and Manav has promised them the one-pager.\", \"A partners' meeting met with nothing in hand cannot be rerun on demand; the next chance is a later cycle, at the firm's pleasure.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Meera, the founder\", \"what\": \"Reply to Manav with a one-page summary of current traction — clinics live, revenue run-rate and the pilot pipeline — before Lumen's Monday partners' meeting, and offer to answer the partners' questions.\", \"for_whom\": \"Manav Rao and the Lumen Ventures partners\", \"by_when\": \"2026-08-10\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Manav\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If the one-pager cannot be ready in time, reply now with the numbers he asked for in the body of the mail, and the one-pager to follow.\", \"wait_or_stop\": \"Do not wait: the partners meet on Monday. After the meeting, give Lumen its weekly cycle; if a week passes with no word, ask Manav directly what the partners decided.\", \"done_when\": \"Manav has the one-pager before the partners' meeting and confirms it reached them.\", \"draft\": \"Hi Manav, good to meet you too. Ahead of Monday's partners' meeting, here is our one-pager with Kitebird's current traction: clinics live, revenue run-rate and the pilot pipeline. Happy to answer any questions the partners have, before or after the meeting. Best, Meera\"}",
-   "framed": true,
-   "input_tokens": 8366,
-   "output_tokens": 1771,
    "model": "claude-haiku-4-5-20251001"
   }
  }

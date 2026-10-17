@@ -32,7 +32,7 @@ MODEL, PROMPT = "claude-sonnet-5", "expert-review.v1"
 
 
 def _inputs(parts, *, prompt=PROMPT):
-    return F.fingerprint_inputs(parts, model=MODEL, prompt_version=prompt)
+    return F.fingerprint_inputs(parts, prompt_version=prompt)
 
 
 def _last(parts, *, hours_ago: float = 1.0, kept: bool = True):
@@ -269,4 +269,5 @@ def test_the_founder_asking_is_a_trigger_of_its_own():
 
 def test_every_kind_is_named_once():
     # ⛔ RESTATED by `yc2_w27_s16` M46.C4.L-logic.V4.U05: seven — `founder_corrected`, your correction's door.
-    assert len(T.KINDS) == len(set(T.KINDS)) == 7
+    # ⛔ RESTATED again by `yc2_w27_s13b` M37.C5.L-logic.V5.U02: nine — `engine_moved` and `self_moved`.
+    assert len(T.KINDS) == len(set(T.KINDS)) == 9

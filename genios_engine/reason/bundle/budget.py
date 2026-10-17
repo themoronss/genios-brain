@@ -27,7 +27,7 @@ from decimal import Decimal
 from genios_engine.capture.semantic.batch import DEFAULT_TIER_PRICES
 from genios_engine.platform.logging import get_logger
 
-from .sites import (R_SITES, SITE_BRIEF, SITE_BRIEF_ESCALATE, SITE_EXPERT, TIER_T1, TIER_T2,
+from .sites import (R_SITES, SITE_BRIEF, SITE_BRIEF_ESCALATE, SITE_EXPERT, TIER_T1, TIER_T2, TIER_T3,
                     require_site, tier_for)
 
 _log = get_logger("genios.reason.bundle.budget")
@@ -67,6 +67,14 @@ OWN_BUDGETS: dict[str, tuple[str, str]] = {
 }
 
 
+#: ⛔ ONE DAY FOR EVERY RUNG (`yc2_w27_s13b` M38.C1.L-contract.V1.U03; STEP-13b §8.4 item 5). The expert's $2 a day
+#: (`06` D7) is spent by every rung of its ladder — the Haiku consult, its repair, the Sonnet consult and the Opus
+#: one all draw on R-7's day — each priced at its OWN rung's tier and held to its rung's per-call ceiling. Measured:
+#: the costliest of Haiku's 110 answers would cost $0.151 at Opus prices, over the $0.10 a Sonnet consult is
+#: held to, so the Opus-class rung (off for every tenant, s13b-D1) has $0.20.
+EXPERT_RUNG_PER_CALL: dict[str, str] = {TIER_T1: "0.10", TIER_T2: "0.10", TIER_T3: "0.20"}
+
+
 def usd_to_micro(value: object) -> int:
     """USD as a human types it into config -> integer micro-dollars, exactly.
 
@@ -104,7 +112,8 @@ def _ceil_div(numerator: int, denominator: int) -> int:
     return -(-numerator // denominator)
 
 
-def estimate_micro_usd(*, site: str, prompt_chars: int, max_output_tokens: int) -> int:
+def estimate_micro_usd(*, site: str, prompt_chars: int, max_output_tokens: int,
+                       tier: str | None = None) -> int:
     """The PRE-FLIGHT cost of a consult, before a token exists to count.
 
     Four characters per token is the crude estimate every provider publishes and it is used here
@@ -112,8 +121,10 @@ def estimate_micro_usd(*, site: str, prompt_chars: int, max_output_tokens: int) 
     computed from a generous estimate refuses slightly early, which is the safe direction. Output
     is priced at its CEILING rather than at an expectation — a budget check that assumed the model
     would be brief would be a budget check that a verbose model walks straight through.
+
+    `tier` is the RUNG the consult is made on (the expert's ladder); none is the site's own.
     """
-    return cost_micro_usd(tier=tier_for(site),
+    return cost_micro_usd(tier=tier or tier_for(site),
                           input_tokens=_ceil_div(max(0, int(prompt_chars)), 4),
                           output_tokens=max(0, int(max_output_tokens)))
 
@@ -251,16 +262,25 @@ class NarrativeBudget:
         """The one site this budget is the own budget of, or None for the narrative's."""
         return self._site
 
-    def check(self, estimate: int) -> BudgetVerdict:
-        """May a consult estimated at `estimate` micro-dollars run right now?"""
+    def per_call_cap_for(self, tier: str | None = None) -> int:
+        """The per-call ceiling of a consult on `tier`: the expert's ladder holds each rung to its own
+        (`EXPERT_RUNG_PER_CALL`); any other budget, or no rung named, its one number."""
+        if tier is not None and self._site == SITE_EXPERT and tier in EXPERT_RUNG_PER_CALL:
+            return usd_to_micro(EXPERT_RUNG_PER_CALL[tier])
+        return self._per_call_cap
+
+    def check(self, estimate: int, tier: str | None = None) -> BudgetVerdict:
+        """May a consult estimated at `estimate` micro-dollars run right now? `tier` is the rung it is
+        made on, for the expert's ladder."""
         estimate = max(0, int(estimate))
+        per_call = self.per_call_cap_for(tier)
         verdict = BudgetVerdict(
             allowed=True, reason=None, spent_micro_usd=self._spent,
             daily_cap_micro_usd=self._daily_cap, estimate_micro_usd=estimate,
-            per_call_cap_micro_usd=self._per_call_cap)
+            per_call_cap_micro_usd=per_call)
         if not self._ledger_readable:
             return _refuse(verdict, REASON_LEDGER_UNREADABLE)
-        if self._per_call_cap and estimate > self._per_call_cap:
+        if per_call and estimate > per_call:
             return _refuse(verdict, REASON_PER_CALL)
         if self._daily_cap and self._spent + estimate > self._daily_cap:
             return _refuse(verdict, REASON_DAILY_EXHAUSTED)
@@ -287,7 +307,7 @@ def _utc():
     return timezone.utc
 
 
-__all__ = ["BudgetVerdict", "DEFAULT_DAILY_USD_CAP", "DEFAULT_PER_DECISION_USD_CAP",
+__all__ = ["EXPERT_RUNG_PER_CALL", "BudgetVerdict", "DEFAULT_DAILY_USD_CAP", "DEFAULT_PER_DECISION_USD_CAP",
            "MICRO_PER_USD", "NarrativeBudget", "OWN_BUDGETS", "REASON_DAILY_EXHAUSTED",
-           "REASON_LEDGER_UNREADABLE", "REASON_PER_CALL", "TIER_T1", "TIER_T2",
+           "REASON_LEDGER_UNREADABLE", "REASON_PER_CALL", "TIER_T1", "TIER_T2", "TIER_T3",
            "cost_micro_usd", "estimate_micro_usd", "usd_to_micro"]

@@ -78,7 +78,12 @@ def test_the_same_figure_in_a_sentence_about_something_else_is_not_rewritten():
 def test_the_fact_s_words_in_another_sentence_do_not_make_this_one_a_restatement():
     checked = _check(fact3=WRONG, move={"rests_on": ALL, "what": "Send Marco the short deck; expect a reply "
                                                                  "within 9 days. He answered our first mail fast."})
-    assert _verdict(checked, "move") == C.LineVerdict("move", C.DROPPED, C.WRONG_NUMBER, "number:9")
+    # ⛔ RESTATED (STEP-13b M37.C4.L-logic.V10.U05): "within 9 days" in the MOVE is the advice's own duration — it was
+    # dropped `wrong_number`; it is now read against the move's `by_when` and corrected to it. What this test holds is
+    # unchanged: the fact's correction (6) did not reach this sentence, which is no restatement of it.
+    assert _verdict(checked, "move").verdict == C.CORRECTED and _verdict(checked, "move").reason == C.BY_WHEN
+    assert "6 days" not in checked.words.headline and "9 days" not in checked.words.headline
+    assert checked.words.headline == "Send Marco the short deck; expect a reply by 2026-08-21. He answered our first mail fast."
 
 
 @pytest.mark.parametrize("fact, done_when", [

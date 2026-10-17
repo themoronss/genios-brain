@@ -69,3 +69,37 @@ def test_no_tenant_gets_the_expert_by_default():
     assert ACT.FEATURE_EXPERT_REVIEW in ONB.NOT_DEFAULT_ON
     assert ACT.FEATURE_EXPERT_REVIEW not in ONB.L4_DEFAULT_FEATURES
     assert "D50" in ONB.NOT_DEFAULT_ON[ACT.FEATURE_EXPERT_REVIEW]
+
+
+# ── STEP-13b · the expert's rungs (`yc2_w27_s13b` M38.C1.L-contract.V0.U02; s13b-D1, `06` D74) ───────────────
+def test_the_expert_ladder_is_haiku_then_sonnet_and_opus_is_a_third_rung_only_when_allowed():
+    assert S.TIER_T3 == "T3" and S.EXPERT_LADDER == (S.TIER_T1, S.TIER_T2)
+    assert S.expert_ladder() == (S.TIER_T1, S.TIER_T2), "the default: no Opus rung, for every tenant"
+    assert S.expert_ladder((S.TIER_T1, S.TIER_T2, S.TIER_T3), allow_opus=True) == (
+        S.TIER_T1, S.TIER_T2, S.TIER_T3)
+    with pytest.raises(ValueError, match="Opus"):
+        S.expert_ladder((S.TIER_T1, S.TIER_T2, S.TIER_T3))            # named, not allowed: refused loudly
+    with pytest.raises(ValueError, match="Opus"):
+        S.expert_ladder((S.TIER_T3,))
+
+
+@pytest.mark.parametrize("rungs", [(), ("T2", "T1"), ("T1", "T1"), ("T1", "T9"), ("T2", "T2", "T3")])
+def test_a_ladder_climbs_one_way_with_no_repeated_or_unknown_rung(rungs):
+    with pytest.raises(ValueError):
+        S.expert_ladder(rungs, allow_opus=True)
+
+
+def test_the_ladder_is_configuration_a_tenant_may_start_at_sonnet():
+    assert S.expert_ladder((S.TIER_T2,)) == (S.TIER_T2,)
+
+
+def test_each_rung_names_its_model_and_no_site_is_on_opus():
+    from genios_engine.reason import llm_sites as L
+    assert L.tier_model(S.TIER_T2) == "claude-sonnet-5" and L.tier_model(S.TIER_T3) == "claude-opus-5-5"
+    assert S.TIER_T3 not in S.SITE_TIERS.values(), "Opus is a rung of the expert's ladder, never a site's tier"
+    assert S.tier_for(S.SITE_EXPERT) == S.TIER_T2
+
+
+def test_an_unknown_rung_is_named_as_one():
+    with pytest.raises(ValueError, match="a rung is one of"):
+        S.expert_ladder(("T1", "T9"), allow_opus=True)

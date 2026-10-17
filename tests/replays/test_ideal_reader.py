@@ -347,3 +347,16 @@ def test_an_expert_answer_refused_as_misshapen_is_an_authoring_error_never_a_sec
     with pytest.raises(IdealReaderError, match="misshapen"):
         _reader(_expert_case(["<meridianvc.test>"])).call(
             _expert_prompt(feedback="Your previous answer was JSON but not in the shape asked for"))
+
+
+def test_a_ladder_repair_with_the_checks_verdicts_is_answered_by_the_same_authored_answer():
+    """STEP-13b M38.C2.L-integration.V1.U04: the ladder asks a file again on its rung with the check's VERDICTS when the
+    answer failed for a writer's fault (s13b-D4). A faithful reader that cannot do better says what it said — the
+    authored answer, citing what the dossier shows — so a recording of a file whose authored answer is held (an id its
+    scenario's dossier no longer shows) holds the repair too. A repair for a MISSHAPEN answer is still an authoring error."""
+    from genios_engine.contracts import model_ladder as M
+    prompt = _expert_prompt(feedback=M.CHECKED_COMPLAINT + ": fact:2 (unknown_evidence: evt_x). Answer again.")
+    answer = _reader(_expert_case(["<meridianvc.test>"])).call(prompt)
+    assert answer.parsed["facts"][0]["evidence"] == ["evt_005"]
+    with pytest.raises(IdealReaderError, match="misshapen"):
+        _reader(_expert_case(["<meridianvc.test>"])).call(_expert_prompt(feedback="Your previous answer was not valid JSON"))

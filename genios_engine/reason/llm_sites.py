@@ -160,17 +160,19 @@ class SiteResult:
 # THE CACHE (migration 0121)
 # =================================================================================================
 
-def cache_key(*, site: str, org_id: str, seed: Mapping[str, Any]) -> str:
+def cache_key(*, site: str, org_id: str, seed: Mapping[str, Any], tier: str | None = None) -> str:
     """The content address of one consult: `decision_hash` for R-3/R-4, the fact digest for R-1.
 
     The prompt version is inside the key by construction, so editing a prompt cannot serve prose the
     new prompt would never have produced; the site id is inside it so two sites reading one decision
     never collide. ⛔ And the MODEL the site calls (`06` D7, STEP-12 §8.3 N4): the key left it out, so
-    an answer cached from one model would have answered for the next one the tier names.
+    an answer cached from one model would have answered for the next one the tier names. And — the expert's ladder
+    (STEP-13b M38.C2.L-logic.V3.U02) — the RUNG a consult is made on: `tier` names the model a rung calls, so two
+    rungs of one file never share a key.
     """
     require_site(site)
     return semantic_hash({"site": site, "org_id": str(org_id), "prompt_version": PROMPT_VERSION,
-                          "model": tier_model(tier_for(site)), "seed": dict(seed)})
+                          "model": tier_model(tier or tier_for(site)), "seed": dict(seed)})
 
 
 @dataclass
@@ -293,6 +295,9 @@ def tier_model(tier: str) -> str:
     what "the stronger model" is instead of drifting apart in two files."""
     if tier == "T2":
         return "claude-sonnet-5"
+    if tier == "T3":
+        # STEP-13b (s13b-D1): the Opus-class third rung of the expert's ladder — never a site's tier.
+        return "claude-opus-5-5"
     try:
         from genios_engine.platform.config import get_settings
         return str(get_settings().anthropic_model or "claude-haiku-4-5")
@@ -318,7 +323,7 @@ def run_site(*, site: str, org_id: str, seed: Mapping[str, Any], precondition: b
              fallback: Callable[[], Mapping[str, Any]],
              gate: RSiteGate | None = None, cache: Any = None,
              subject_ref: str | None = None,
-             feature: str = FEATURE_BUNDLE, repair: str = "any") -> SiteResult:
+             feature: str = FEATURE_BUNDLE, repair: str = "any", tier: str | None = None) -> SiteResult:
     """One site through `RSiteGate.consult`, with this module's cache and refusal shape.
 
     `build_prompt(feedback)` is called lazily — so a site that will not run never pays to compose a
@@ -331,11 +336,13 @@ def run_site(*, site: str, org_id: str, seed: Mapping[str, Any], precondition: b
     `gate=None` means "no gate was wired here", and it is answered the way "no client" is answered:
     the deterministic template, receipted. A missing gate must never read as permission. `repair` is
     the gate's (`reason/bundle/gate.REPAIRS`): `syntax` asks once more only for an answer that was not
-    JSON (STEP-12 §8.4 item 4).
+    JSON (STEP-12 §8.4 item 4). `tier` — the RUNG of the expert's ladder this consult is made on (STEP-13b): priced,
+    ceilinged and keyed at that tier; none is the site's own.
     """
     require_site(site)
-    key = cache_key(site=site, org_id=org_id, seed=seed)
-    tier = tier_for(site)
+    key = cache_key(site=site, org_id=org_id, seed=seed, tier=tier)
+    rung = {"tier": tier} if tier else {}          # a gate is handed a tier only when a ladder names the rung
+    tier = tier or tier_for(site)
 
     def _fallen(outcome: str, *reasons: str, **extra: Any) -> SiteResult:
         return SiteResult(dict(fallback()), SiteReceipt(
@@ -362,7 +369,7 @@ def run_site(*, site: str, org_id: str, seed: Mapping[str, Any], precondition: b
     result = gate.consult(site=site, cache_key=key, build_prompt=build_prompt,
                           validate=_validate, feature=feature, precondition=precondition,
                           precondition_reason="precondition_absent", cached=_cached,
-                          subject_ref=subject_ref, repair=repair)
+                          subject_ref=subject_ref, repair=repair, **rung)
 
     if result.outcome == OUTCOME_CACHED and isinstance(result.value, Mapping):
         payload = {name: value for name, value in result.value.items() if name != "generation"}

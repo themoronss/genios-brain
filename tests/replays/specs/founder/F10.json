@@ -277,18 +277,6 @@
        ]
       },
       {
-       "claim": "The investor playbook, not yet reviewed, says a firm opens diligence with a data-room, reference or customer-call request.",
-       "evidence": [
-        "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
-       ]
-      },
-      {
-       "claim": "The playbook holds that when the turn is ours the clock runs against us, and conversations where we owe the reply come first.",
-       "evidence": [
-        "pb:founder_office.heu.investor_relations.investors_do_not_chase"
-       ]
-      },
-      {
        "claim": "The file's history records no earlier verdict or outcome.",
        "evidence": [
         "hist:derived.history.prior_card_verdict@fundraising",
@@ -301,7 +289,7 @@
        "claim": "Banyan is past a first look: asking for the data room and the cap table means the fund wants to work on Nimbus Labs, not only hear about it.",
        "based_on": [
         "fact:1",
-        "fact:5"
+        "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
        ]
       },
       {
@@ -314,7 +302,7 @@
        "claim": "Every day without an answer reads to the fund as lost momentum, the one thing a raise cannot afford to project.",
        "based_on": [
         "fact:3",
-        "fact:6"
+        "pb:founder_office.heu.investor_relations.investors_do_not_chase"
        ]
       }
      ],

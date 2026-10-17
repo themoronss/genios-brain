@@ -28,7 +28,7 @@ MODEL, PROMPT = "claude-sonnet-5", "expert-review.v1"
 
 
 def _inputs(parts):
-    return F.fingerprint_inputs(parts, model=MODEL, prompt_version=PROMPT)
+    return F.fingerprint_inputs(parts, prompt_version=PROMPT)
 
 
 def _last(parts):

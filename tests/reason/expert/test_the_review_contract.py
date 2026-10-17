@@ -26,7 +26,7 @@ from datetime import date
 import pytest
 
 from genios_engine.contracts.expert_review import (
-    MODES, NO_NEXT_MOVE, NUMBER_NOT_IN_DOSSIER, REFUSALS, UNCITED_FACT, UNGROUNDED_INFERENCE,
+    MODES, NO_NEXT_MOVE, OWN_KINDS, NUMBER_NOT_IN_DOSSIER, REFUSALS, UNCITED_FACT, UNGROUNDED_INFERENCE,
     UNGROUNDED_MOVE, UNGROUNDED_PATTERN, UNKNOWN_EVIDENCE, UNKNOWN_STAGE, DossierCatalogue, ExpertReview,
     number_tokens, validate)
 
@@ -302,7 +302,8 @@ def test_a_first_version_answer_reads_validates_and_is_stored_as_before():
     ({"rests_on": ["fact:3"]}, UNGROUNDED_MOVE),                 # the review has two facts
     ({"rests_on": ["fact:0"]}, UNGROUNDED_MOVE),
     ({"rests_on": ["evt_neel_0927"]}, UNGROUNDED_MOVE),          # a mail is no fact of the review
-    ({"rests_on": ["inference:1"]}, UNGROUNDED_MOVE),
+    ({"rests_on": ["inference:9"]}, UNGROUNDED_MOVE),            # the review has one inference
+    ({"rests_on": ["inference:0"]}, UNGROUNDED_MOVE),
     ({"answers": "loop:never_shown"}, UNKNOWN_EVIDENCE),
     # ⛔ RESTATED by M35.C1.L-contract.V0.U04 (crosscheck X15): an `answers` that is no ask — a mail, a
     # promise — was `ungrounded_move`, which the review run refuses WHOLE (`verify.STRUCTURAL`) over one
@@ -346,3 +347,93 @@ def test_a_malformed_quote_is_a_value_error():
     with pytest.raises(ValueError, match="a fact's quote"):
         ExpertReview.from_mapping(_raw(facts=[{"claim": "Neel wrote", "evidence": ["evt_neel_0927"],
                                                "quote": ["could we"]}]))
+
+
+# ── STEP-13b · the third version: the expert's own, what a move is guided by ─────────────────────
+ENGINE = DossierCatalogue(evidence_ids=ASKED.evidence_ids | {"pb:founder_office.heu.investors_do_not_chase",
+                                                              "cap:founder_office.fundraising.investor_relations#f2"},
+                          numbers=CATALOGUE.numbers, stages=CATALOGUE.stages)
+OWN = [{"kind": "practice", "claim": "A fund that likes a first call and goes quiet has usually decided",
+        "why": "funds say yes quickly and no by silence"},
+       {"kind": "base_rate", "claim": "Most first calls with a fund lead nowhere", "why": "selection"}]
+
+
+def _third(**over) -> dict:
+    raw = _second(**{k: over.pop(k) for k in ("rests_on", "guided_by") if k in over})
+    raw.update({"own": OWN}, **over)
+    return raw
+
+
+def test_an_own_line_is_a_kind_a_claim_and_why():
+    review = ExpertReview.from_mapping(_third())
+    assert [(o.kind, o.claim, o.why) for o in review.own] == [
+        ("practice", OWN[0]["claim"], OWN[0]["why"]), ("base_rate", OWN[1]["claim"], OWN[1]["why"])]
+    assert OWN_KINDS == ("practice", "base_rate", "counter_pattern", "benchmark")
+
+
+@pytest.mark.parametrize("own, says", [
+    ([{"kind": "folklore", "claim": "x", "why": "y"}], "an own line's kind"),
+    ([{"kind": "practice", "claim": "", "why": "y"}], "an own line's claim"),
+    ([{"kind": "practice", "claim": "x", "why": ""}], "why an own line holds"),
+    ("practice", "own"),
+])
+def test_a_malformed_own_line_is_a_value_error_that_says_what(own, says):
+    with pytest.raises(ValueError, match=says):
+        ExpertReview.from_mapping(_third(own=own))
+
+
+def test_an_inference_or_pattern_may_rest_on_an_engine_id_and_an_own_line():
+    over = {"inferences": [{"claim": "a fund goes quiet when it decides",
+                            "based_on": ["fact:1", "own:1", "pb:founder_office.heu.investors_do_not_chase"]}],
+            "patterns": [{"kind": "pattern", "claim": "investors do not chase",
+                          "based_on": ["cap:founder_office.fundraising.investor_relations#f2", "own:2"]}]}
+    assert validate(ExpertReview.from_mapping(_third(**over)), ENGINE).ok
+
+
+@pytest.mark.parametrize("based_on, refusal", [
+    (["own:3"], UNKNOWN_EVIDENCE),                    # the review has two own lines
+    (["own:0"], UNKNOWN_EVIDENCE),
+    (["pb:never_printed"], UNKNOWN_EVIDENCE),         # an engine id the dossier never showed
+    (["cap:x.y.z#q"], UNKNOWN_EVIDENCE),
+])
+def test_an_own_line_past_the_list_and_an_unprinted_engine_id_are_named_as_an_unprinted_id_is(
+        based_on, refusal):
+    over = {"inferences": [{"claim": "a fund goes quiet", "based_on": ["fact:1", *based_on]}]}
+    result = validate(ExpertReview.from_mapping(_third(**over)), ENGINE)
+    assert result.reasons == (refusal,), result.problems
+
+
+def test_a_move_may_rest_on_an_inference_and_is_guided_by_engine_or_own_lines():
+    over = {"inferences": [{"claim": "a fund goes quiet when it decides", "based_on": ["fact:1"]}],
+            "rests_on": ["fact:1", "inference:1"],
+            "guided_by": ["pb:founder_office.heu.investors_do_not_chase", "own:1"]}
+    review = ExpertReview.from_mapping(_third(**over))
+    assert review.next_move.guided_by == ("pb:founder_office.heu.investors_do_not_chase", "own:1")
+    assert validate(review, ENGINE).ok
+    assert ExpertReview.from_mapping(review.as_mapping()) == review
+
+
+@pytest.mark.parametrize("guided_by", [["own:5"], ["pb:never_printed"], ["fact:1"]])
+def test_a_move_guided_by_what_is_not_there_is_named_not_refused_whole(guided_by):
+    result = validate(ExpertReview.from_mapping(_third(guided_by=guided_by)), ENGINE)
+    assert result.reasons == (UNKNOWN_EVIDENCE,), result.problems
+
+
+def test_a_move_resting_only_on_an_inference_that_does_not_exist_is_still_no_move():
+    result = validate(ExpertReview.from_mapping(_third(rests_on=["inference:2"])), ENGINE)
+    assert result.reasons == (UNGROUNDED_MOVE,)
+
+
+def test_what_an_own_line_writes_is_read_for_numbers():
+    own = [{"kind": "base_rate", "claim": "9 in 10 first calls lead nowhere", "why": "selection"}]
+    review = ExpertReview.from_mapping(_third(own=own))
+    assert "9 in 10 first calls lead nowhere" in review.texts() and "selection" in review.texts()
+    assert validate(review, ENGINE).reasons == (NUMBER_NOT_IN_DOSSIER,)
+
+
+def test_a_second_version_answer_reads_validates_and_is_stored_as_before():
+    review = ExpertReview.from_mapping(_second())
+    assert review.own == () and review.next_move.guided_by == ()
+    stored = review.as_mapping()
+    assert "own" not in stored and "guided_by" not in stored["next_move"]
+    assert validate(review, ASKED).ok

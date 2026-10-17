@@ -80,9 +80,9 @@ def _waits_citing_it() -> ExpertReview:
 
 
 def _triggered(before, now) -> list[str]:
-    last = SimpleNamespace(inputs=F.fingerprint_inputs(before, model=MODEL, prompt_version=PROMPT),
+    last = SimpleNamespace(inputs=F.fingerprint_inputs(before, prompt_version=PROMPT),
                            reviewed_at=W.NOW - timedelta(hours=1))
-    return [t.kind for t in T.triggers_for(now, F.fingerprint_inputs(now, model=MODEL, prompt_version=PROMPT),
+    return [t.kind for t in T.triggers_for(now, F.fingerprint_inputs(now, prompt_version=PROMPT),
                                            last=last)]
 
 

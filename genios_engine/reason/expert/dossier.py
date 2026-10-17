@@ -58,10 +58,15 @@ from typing import Any
 
 from sqlalchemy import text
 
+from genios_engine.contracts import engine_read as E
 from genios_engine.contracts.expert_review import DossierCatalogue, number_tokens
 from genios_engine.platform.self_identity import PUBLIC_MAIL_DOMAINS, SelfIdentity
 
-DOSSIER_VERSION = "dossier.v1"
+#: ⛔ dossier.v2 since 16 Oct (`yc2_w27_s13b` M37.C3.L-interface.V4.U01): every line the expert leans on carries an id —
+#: the file's head, each line of the brief, what was checked, each section's "none". Measured on Haiku's 12 Oct pass: it
+#: cited such lines by their words 288 times and 42 of its 68 held reviews fell on one. A review kept under v1 is
+#: reviewed again only if its file moved (`06` D48): the version rides the fingerprint's `who_decides`, not its inputs.
+DOSSIER_VERSION = "dossier.v2"
 
 #: The sections, in the one order a dossier is ever written in.
 SECTIONS: tuple[str, ...] = ("brief", "file", "timeline", "promises", "numbers", "coverage",
@@ -69,12 +74,15 @@ SECTIONS: tuple[str, ...] = ("brief", "file", "timeline", "promises", "numbers",
 #: A section printed only when it has something to say — and the section it follows (or, when that one is not
 #: printed either, the one before it). A file with none of them is printed byte for byte as before (STEP-13: the
 #: founder's answers, M36.C2.L-data.V2.U07; STEP-16: your corrections, M46.C4.L-logic.V2.U03).
-OPTIONAL: Mapping[str, str] = {"answers": "timeline", "corrections": "answers"}
+#: STEP-13b: the engine after the playbook, the units' readings after the numbers — each only when it has something to say.
+OPTIONAL: Mapping[str, str] = {"answers": "timeline", "corrections": "answers", "engine": "playbook",
+                               "units": "numbers", "company": "answers"}
 TITLES: Mapping[str, str] = {
     "brief": "THE COMPANY BRIEF", "file": "THE FILE", "timeline": "WHAT HAPPENED",
-    "answers": "WHAT YOU TOLD US", "corrections": "WHAT YOU CORRECTED",
+    "answers": "WHAT YOU TOLD US", "company": "WHAT YOU SAID OF YOURSELF ELSEWHERE", "corrections": "WHAT YOU CORRECTED",
     "promises": "PROMISES IN ITS MAIL", "numbers": "ITS NUMBERS", "coverage": "WHAT WAS CHECKED",
     "playbook": "WHAT A PROFESSIONAL KNOWS ABOUT THIS WORK", "situations": "ITS SITUATIONS",
+    "engine": "WHAT THE ENGINE KNOWS ABOUT ITS SITUATIONS", "units": "WHAT THE REASONING UNITS MEASURED",
     "judged_before": "WHAT WAS JUDGED BEFORE", "what_if": "IF NOTHING HAPPENS"}
 
 TOUCHES_WHOLE = 8          # the newest touches, shown with their words
@@ -156,6 +164,17 @@ class DossierParts:
     outcomes: tuple = ()
     asks_closed: tuple = ()
     kind_numbers: Any = None
+    #: STEP-13b (`yc2_w27_s13b` M37.C2.L-integration.V3.U05): the GeniOS Engine read for this file
+    #: (`reason/expert/file_engine`). The route key is every file's — cheap, for its fingerprint; the read itself is made
+    #: for a file DUE for review only: `engine` is the Domain Expertise of its situations and kind with what the
+    #: brains learned, `units` the reasoning units' readings in shadow, `company` the company's own record (`06` D63,
+    #: one read a sweep). A read that could not be made is `engine_error` — counted, never a failed review.
+    route_key: str | None = None
+    learned_snapshot: str | None = None     # what the brains hold for the file's subjects, named for its fingerprint
+    engine: Any = None
+    units: Any = None
+    engine_error: str | None = None
+    company: Any = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -216,9 +235,28 @@ class _Ids:
         return f"[{ref}]"
 
 
+def _brief_ids(brief: Any, block: str, cite: _Ids) -> str:
+    """The brief as every judging prompt carries it, each line of it with its id (STEP-13b): the company line
+    `[brief:company]`, every accepted line `[brief:<line id>]`. The block is the brief's own text, untouched — an id is
+    added at the end of the line it names, found by the line's own rendering, once each."""
+    from genios_engine.contracts.company_brief import SECTION_TITLES
+    by_text: dict[str, list[str]] = {}
+    for line in brief.lines:
+        by_text.setdefault(line.rendered(), []).append(line.line_id)
+    company, out = f"{SECTION_TITLES['company']}: ", []
+    for row in block.splitlines():
+        if row.startswith(company):
+            row = f"{row} {cite('brief:company')}"
+        elif by_text.get(row):
+            row = f"{row} {cite('brief:' + by_text[row].pop(0))}"
+        out.append(row)
+    return "\n".join(out)
+
+
 def _brief(p: DossierParts, cite: _Ids) -> Section:
     block = p.brief.prompt_block().strip() if p.brief is not None and p.brief else ""
-    return Section("brief", block or "No company brief is accepted for this tenant.")
+    return Section("brief", _brief_ids(p.brief, block, cite) if block
+                   else "No company brief is accepted for this tenant.")
 
 
 def _again(ask: Any) -> datetime | None:
@@ -232,17 +270,17 @@ def _again(ask: Any) -> datetime | None:
 def _file(p: DossierParts, cite: _Ids) -> Section:
     f = p.file
     lines = [f"Counterparty: {f.counterparty} <{f.counterparty_key}> ({f.counterparty_type})",
-             f"Kind of work: {f.work_kind or 'not named by the brief'}",
+             f"Kind of work: {f.work_kind or 'not named by the brief'} {cite('file:kind')}",
              f"Its role in the brief: {f.kind or 'none'}"
-             + (f" — the brief says: “{f.line}”" if f.line else "")]
+             + (f" — the brief says: “{f.line}”" if f.line else "") + f" {cite('file:role')}"]
     if f.introduced_by:
-        lines.append(f"Introduced by: {f.introduced_by}")
-    lines.append(f"Domains: {', '.join(f.domains) or 'none'}")
+        lines.append(f"Introduced by: {f.introduced_by} {cite('file:introduced_by')}")
+    lines.append(f"Domains: {', '.join(f.domains) or 'none'} {cite('file:domains')}")
     # From the timeline — touches up to the dossier's as-of — never a meeting booked ahead (`03` F159).
     touched = p.timeline.touches
-    lines.append(f"First touch {_when(touched[0].at if touched else None)}; "
-                 f"last touch {_when(touched[-1].at if touched else None)}")
-    lines.append(f"Whose move: {f.whose_move or 'not written'}")
+    lines.append(f"First touch {_when(touched[0].at if touched else None)} {cite('file:first_touch')}; "
+                 f"last touch {_when(touched[-1].at if touched else None)} {cite('file:last_touch')}")
+    lines.append(f"Whose move: {f.whose_move or 'not written'} {cite('file:whose_move')}")
     if f.introductions is not None:
         lines.append(f"People it introduced: {_says(f.introductions)} {cite('num:introductions')}; "
                      f"of them wrote to us: {_says(f.replied)} {cite('num:replied')}; "
@@ -267,7 +305,7 @@ def _timeline(p: DossierParts, cite: _Ids) -> Section:
     newest = list(reversed(tl.touches))
     whole, listed = newest[:TOUCHES_WHOLE], newest[TOUCHES_WHOLE:TOUCHES_WHOLE + TOUCHES_LISTED]
     cut = len(newest) - len(whole) - len(listed)
-    lines = [] if newest else ["No touch yet."]
+    lines = [] if newest else [f"No touch yet. {cite('none:touch')}"]
     for t in whole:
         head = (f"- {cite(t.event_id)} {_when(t.at)} · {_DIRECTION.get(t.direction, t.direction)} · "
                 f"{t.who_name or t.who or 'unknown'}")
@@ -405,9 +443,88 @@ def _kind_corrections(p: DossierParts, cite: _Ids) -> list[str]:
             *(f"- {cite(f'corr:{c.correction_id}')} “{' '.join(str(c.words).split())}”" for c in kind)]
 
 
+#: How the engine's reads say why a situation of the file was not read (`contracts/engine_read.NOT_READ_REASONS`).
+_NOT_READ = {"switched_off": "its corpus is switched off for your company",
+             "no_route": "no corpus routes this kind of situation",
+             "unknown_domain": "no corpus is written for its domain"}
+_ENGINE_FAMILIES = {"capability": "its capability", "signals": "its signals", "playbook": "its playbooks",
+                    "rule": "its rules", "constraint": "its constraints", "frame": "its frames",
+                    "organization": "your organization's rules", "behaviour": "patterns measured on your people",
+                    "adaptive": "preferences learned from you", "unit": "readings"}
+
+
+def _engine_line(line: Any, cite: _Ids) -> str:
+    """One line of the engine: its id, its words, where it is read from — and, where true, that no named human
+    reviewed it (D3, s13b-D6). A learned line is the company's own history; it carries no such label."""
+    label = ", not yet reviewed" if line.label else ""
+    return f"- {cite(line.ref)} {line.words} — {line.source}{label}"
+
+
+def _has_engine(read: Any) -> bool:
+    return read is not None and bool(read.lines or read.may_apply or read.not_read)
+
+
+def _engine(p: DossierParts, cite: _Ids) -> Section:
+    """WHAT THE ENGINE KNOWS ABOUT ITS SITUATIONS (STEP-13b): the Domain Expertise of the file's situations and
+    kind, authored and learned, each line its id and source — a PRIOR about the work, never a fact about this file. The
+    corpus situations whose condition the file's facts could not answer are NAMED as ones that may apply; the file's
+    situations that were not read are named and why; every family's cut is counted."""
+    read = p.engine or E.EngineRead()
+    lines = ["A prior about the work, not a fact about this file. Cite a line by its id only to say what a "
+             "professional knows; it is not evidence."]
+    if p.engine_error:
+        lines.append(f"Not read — {p.engine_error}.")
+    lines.extend(_engine_line(line, cite) for line in read.lines)
+    for m in read.may_apply:
+        lines.append(f"May apply, not shown — {m.situation}" + (f" ({m.capability})" if m.capability else "")
+                     + (f": the file's facts could not say whether its condition holds — not read: "
+                        f"{', '.join(m.missing)}" if m.missing else ""))
+    for n in read.not_read:
+        lines.append(f"Not read — a {n.situation_type} situation ({n.domain}): {_NOT_READ[n.reason]}"
+                     + (f" ({', '.join(n.corpora)})" if n.corpora else ""))
+    cut = 0
+    for family in read.cut:
+        if read.cut[family]:
+            cut += read.cut[family]
+            lines.append(f"… and {read.cut[family]} more of {_ENGINE_FAMILIES[family]}, not shown.")
+    return Section("engine", "\n".join(lines), cut)
+
+
+def _company_lines(p: DossierParts) -> tuple[Any, ...]:
+    """The company's record without THIS file's own mail — that is already its timeline."""
+    if p.company is None:
+        return ()
+    own = {t.event_id for t in (*p.timeline.touches, *p.timeline.upcoming)}
+    return tuple(p.company.excluding(own))
+
+
+def _company(p: DossierParts, cite: _Ids) -> Section:
+    """WHAT YOU SAID OF YOURSELF ELSEWHERE (STEP-13b, `06` D63): what a mail of ours in ANOTHER file said of the company,
+    each statement whole, so a number the company has already given is a number the expert may rest on. Laid out as a
+    touch is — the head line carries the id and the date, the line beneath is the words — so the check resolves a
+    quote of it exactly as it resolves a touch's."""
+    lines: list[str] = []
+    for line in _company_lines(p):
+        lines.append(f"- {cite('self:' + line.event_id)} {_when(line.at)} · written by us, to someone else")
+        lines.append(f"  “{line.said}”" + (f" … ({line.said_cut} characters cut)" if line.said_cut else ""))
+    cut = int(getattr(p.company, "cut", 0) or 0)
+    if cut:
+        lines.append(f"… and {cut} more mail(s) of ours, not shown.")
+    return Section("company", "\n".join(lines), cut)
+
+
+def _units(p: DossierParts, cite: _Ids) -> Section:
+    """WHAT THE REASONING UNITS MEASURED (STEP-13b): each situation-level unit's reading of this file's facts, as a
+    LEVEL (never a score), with its reason codes — or why it has none. Code's reading, run in shadow: nothing was decided
+    by it and no named human reviewed it."""
+    lines = ["Code's reading of this file's facts, as levels. Nothing was decided by it."]
+    lines.extend(f"- {cite(line.ref)} {line.words}" for line in p.units.lines)
+    return Section("units", "\n".join(lines))
+
+
 def _promises(p: DossierParts, cite: _Ids) -> Section:
     if not p.promises:
-        return Section("promises", "No promise was found in its mail.", p.promises_cut)
+        return Section("promises", f"No promise was found in its mail. {cite('none:promises')}", p.promises_cut)
     lines = []
     for pr in p.promises:
         who = {True: "we promised", False: "they promised"}.get(pr.ours, "a promise")
@@ -466,13 +583,14 @@ def _coverage(p: DossierParts, cite: _Ids) -> Section:
              f"{_when(m.window_start)}; last sync "
              + (f"completed {_when(m.last_finished_at)}" if m.last_completed else
                 f"not completed (last finished {_when(m.last_finished_at)})")
+             + f" {cite('cov:' + (m.address or m.connection_id))}"
              for m in nb.mailboxes] or ["No mailbox is shown to have read this file's mail."]
     # Each line says what was read, and only that (`03` F160): no absence without a mailbox that read
     # it, no "no reply" when they wrote after our last mail, and never past what a mailbox finished.
     if nb.no_reply_since is None:
-        lines.append("We have not written in this file." if nb.mailboxes else
+        lines.append(f"We have not written in this file. {cite('none:we_wrote')}" if nb.mailboxes else
                      "Whether we wrote in this file cannot be said: no mailbox is shown to have read its "
-                     "mail.")
+                     f"mail. {cite('cov:last_mail')}")
         return Section("coverage", "\n".join(lines))
     since = nb.no_reply_since
     answered = [t for t in p.timeline.touches if t.direction == "in" and t.at > since]
@@ -480,14 +598,14 @@ def _coverage(p: DossierParts, cite: _Ids) -> Section:
     read_to = min((m.last_finished_at for m in nb.mailboxes
                    if m.last_completed and m.last_finished_at), default=None)
     if answered:
-        lines.append(f"Our last mail in the file: {_when(since)} — they wrote after it "
+        lines.append(f"Our last mail in the file: {_when(since)} {cite('cov:last_mail')} — they wrote after it "
                      f"{cite(answered[0].event_id)}, so “no reply” is not to be said.")
     elif nb.no_reply_can_be_said and read_to is not None:
-        lines.append(f"Our last mail in the file: {_when(since)} — “no reply since then” may be said up to "
+        lines.append(f"Our last mail in the file: {_when(since)} {cite('cov:last_mail')} — “no reply since then” may be said up to "
                      f"{_when(read_to)}: a mailbox has read that far and finished; after it, nothing was "
                      "read.")
     else:
-        lines.append(f"Our last mail in the file: {_when(since)} — “no reply” may NOT be said: no mailbox "
+        lines.append(f"Our last mail in the file: {_when(since)} {cite('cov:last_mail')} — “no reply” may NOT be said: no mailbox "
                      "is shown to have read that far and finished since.")
     return Section("coverage", "\n".join(lines))
 
@@ -498,7 +616,7 @@ def _playbook(p: DossierParts, cite: _Ids) -> tuple[Section, tuple[str, ...]]:
     if pb is None:
         reason = getattr(answer, "reason", None)
         return Section("playbook", "\n".join([
-            "No playbook for this file: " f"{_NO_PLAYBOOK.get(reason, reason or 'none')}.",
+            "No playbook for this file: " f"{_NO_PLAYBOOK.get(reason, reason or 'none')}. {cite('none:playbook')}",
             *_kind_corrections(p, cite)])), ()
     lines = [f"{pb.name} {cite('pb:' + pb.playbook_id)}, version {pb.version} — "
              + ("reviewed by a named human" if pb.reviewed else (pb.review_label or "not reviewed"))]
@@ -638,6 +756,18 @@ def build_dossier(parts: DossierParts) -> Dossier:
         by_name["corrections"] = _corrections(parts, cite)
         follows = OPTIONAL["corrections"] if OPTIONAL["corrections"] in names else OPTIONAL["answers"]
         names.insert(names.index(follows) + 1, "corrections")
+    if _company_lines(parts):
+        # ⛔ ONLY WHEN THERE IS ONE (STEP-13b): after WHAT YOU TOLD US — or, with no answer, after WHAT HAPPENED.
+        by_name["company"] = _company(parts, cite)
+        follows = OPTIONAL["company"] if OPTIONAL["company"] in names else OPTIONAL["answers"]
+        names.insert(names.index(follows) + 1, "company")
+    if _has_engine(parts.engine) or parts.engine_error:
+        # ⛔ ONLY WHEN THERE IS SOMETHING TO SAY (STEP-13b): a file the engine read nothing for is printed as before.
+        by_name["engine"] = _engine(parts, cite)
+        names.insert(names.index(OPTIONAL["engine"]) + 1, "engine")
+    if parts.units is not None and parts.units.lines:
+        by_name["units"] = _units(parts, cite)
+        names.insert(names.index(OPTIONAL["units"]) + 1, "units")
     sections = tuple(by_name[name] for name in names)
     draft = Dossier(org_id=parts.org_id, file_id=parts.file_id, as_of=parts.as_of,
                     sections=sections, catalogue=DossierCatalogue(frozenset(), frozenset()),
@@ -757,10 +887,16 @@ def read_asks_closed(conn, org_id: str, people: Iterable[str], *, since: datetim
 
 
 def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
-               kind_numbers: Mapping[str, Any] | None = None) -> DossierParts | None:
+               kind_numbers: Mapping[str, Any] | None = None, engine: bool = False,
+               domains_on: frozenset[str] | None = None, company_record: Any = None) -> DossierParts | None:
     """Every part of one file's dossier, read on one connection — None for a file it does not hold.
     `kind_numbers`: your numbers by kind of work (`context/kind_numbers`), when the caller measured them once for
-    every file of a pass (the sweep) — a kind it did not measure is measured here."""
+    every file of a pass (the sweep) — a kind it did not measure is measured here.
+
+    STEP-13b: the file's engine ROUTE KEY is always computed (cheap: no predicate, no unit — the fingerprint names it).
+    With `engine=True` — a file DUE for review, at most `MAX_PER_PASS` a pass — the engine itself is read beside the
+    playbook (`file_engine.read_file_engine`, over the tenant's switched-on corpora `domains_on`, None: every authored
+    one) and the company's record (`company_record`, read once a sweep by the caller; read here if not handed)."""
     from genios_engine.context.file_judgments import judgments_for
     from genios_engine.context.file_outcomes import ended_for_cards
     from genios_engine.context.founder_corrections import standing_for
@@ -773,6 +909,7 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
     from genios_engine.platform.company_brief import brief_for
     from genios_engine.platform.self_identity import identity_for
     from genios_engine.reason.simulation import what_if_nothing
+    from . import file_engine
 
     brief = brief_for(conn, org_id)
     work = file_for(conn, org_id, file_id, now=now, company_brief=brief)
@@ -787,6 +924,15 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
                                            us=identity_for(conn, org_id))
     standing = standing_for(conn, org_id, str(file_id), people=work.people, kind=work.work_kind)
     judgments = judgments_for(conn, org_id, file_id, people=work.people)
+    read = file_engine.read_file_engine(conn, org_id, work, lifecycle, now=now, domains_on=domains_on) \
+        if engine else None
+    # What a fingerprint names, for every file (cheap): the route key and the learned snapshot; the read above is for a
+    # file due for review.
+    route_key, learned = file_engine.snapshot_of(conn, org_id, work, lifecycle, domains_on=domains_on)
+    record = company_record
+    if record is None and engine:
+        from genios_engine.context.company_record import read_company_record
+        record = read_company_record(conn, org_id, now=now)
     return DossierParts(
         org_id=org_id, file_id=str(file_id), as_of=now, brief=brief, file=work, timeline=timeline,
         numbers=numbers_for(conn, org_id, work, timeline, now=now), playbook=playbook,
@@ -807,7 +953,10 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime,
         asks_closed=(read_asks_closed(conn, org_id, work.people or (str(file_id),),
                                       since=judgments.reviews[0].reviewed_at) if judgments.reviews else ()),
         kind_numbers=(((kind_numbers or {}).get(work.work_kind)
-                       or numbers_for_kind(conn, org_id, work.work_kind, now=now)) if work.work_kind else None))
+                       or numbers_for_kind(conn, org_id, work.work_kind, now=now)) if work.work_kind else None),
+        route_key=route_key, learned_snapshot=learned,
+        engine=None if read is None else read.engine, units=None if read is None else read.units,
+        engine_error=None if read is None else read.error, company=record)
 
 
 # ── reading it back (STEP-13) ──────────────────────────────────────────────────────────────────

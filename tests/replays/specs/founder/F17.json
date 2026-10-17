@@ -346,24 +346,6 @@
        "quote": "submitted the application form. Arjun"
       },
       {
-       "claim": "The programme playbook, not yet reviewed, says the interview stage is the founders' turn to book, prepare and attend, and that the date an invitation carries is a deadline, not a suggestion.",
-       "evidence": [
-        "pb:founder_office.pb.program_applications.follow_an_application"
-       ]
-      },
-      {
-       "claim": "Its interview move says to book by the date the invitation gives, write the time on both clocks, know the format, and have what changed since the application ready to say in a sentence.",
-       "evidence": [
-        "pb:founder_office.pb.program_applications.prepare_for_the_interview"
-       ]
-      },
-      {
-       "claim": "The playbook holds that a programme is a selection process with a published calendar, not an investor conversation, even when it invests.",
-       "evidence": [
-        "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
-       ]
-      },
-      {
        "claim": "The only situation anchored on this file is typed for an investor in the fundraising domain, and the engine recorded it as a misfiled kind.",
        "evidence": [
         "sit:sit_606ef6e360b4eb90cbc6bdb1"
@@ -375,22 +357,22 @@
        "claim": "The turn is ours, and the tenth of October is the date that will not move.",
        "based_on": [
         "fact:1",
-        "fact:4",
+        "pb:founder_office.pb.program_applications.follow_an_application",
         "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
        ]
       },
       {
        "claim": "Read as an investor's file, the application would draw an investor's moves, and each would be wrong here; the programme's own calendar governs.",
        "based_on": [
-        "fact:6",
-        "fact:7"
+        "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+        "fact:4"
        ]
       },
       {
        "claim": "A short interview rewards a crisp account of what changed since the application went in, over a month ago.",
        "based_on": [
         "fact:3",
-        "fact:5"
+        "pb:founder_office.pb.program_applications.prepare_for_the_interview"
        ]
       }
      ],
@@ -421,6 +403,13 @@
        "claim": "Interview rounds typically run two to four weeks, from a single short interview to several rounds before a committee.",
        "based_on": [
         "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      },
+      {
+       "kind": "pattern",
+       "claim": "Its interview move says to book by the date the invitation gives, write the time on both clocks, know the format, and have what changed since the application ready to say in a sentence.",
+       "based_on": [
+        "pb:founder_office.pb.program_applications.prepare_for_the_interview"
        ]
       }
      ],
@@ -515,30 +504,6 @@
        ]
       },
       {
-       "claim": "The programme playbook, not yet reviewed, says the applied stage owes nothing and that the one thing to check is the receipt: a confirmation mail or the portal's submitted status.",
-       "evidence": [
-        "pb:founder_office.pb.program_applications.follow_an_application"
-       ]
-      },
-      {
-       "claim": "The playbook's deadline move says to file the application's receipt, because without it the application may not have gone in.",
-       "evidence": [
-        "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
-       ]
-      },
-      {
-       "claim": "The playbook holds that a programme reading applications as a batch answers on its own published calendar, and its quiet before that date is not a no.",
-       "evidence": [
-        "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
-       ]
-      },
-      {
-       "claim": "The playbook holds that a programme is a selection process with a published calendar, not an investor conversation.",
-       "evidence": [
-        "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
-       ]
-      },
-      {
        "claim": "The only situation anchored on this file is typed for an investor, in the fundraising domain.",
        "evidence": [
         "sit:sit_606ef6e360b4eb90cbc6bdb1"
@@ -550,21 +515,21 @@
        "claim": "The founder's part is done for now; the programme moves next, on its own calendar.",
        "based_on": [
         "fact:1",
-        "fact:4"
+        "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
        ]
       },
       {
        "claim": "Nothing in the file confirms the programme received the application: Arjun's own word is the only record.",
        "based_on": [
         "fact:1",
-        "fact:3"
+        "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
        ]
       },
       {
        "claim": "Read as an investor's file, the application would draw a chase it should never get.",
        "based_on": [
-        "fact:5",
-        "fact:6"
+        "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+        "fact:2"
        ]
       }
      ],
@@ -581,6 +546,20 @@
        "claim": "A programme is not an investor: no chase and no warm introduction; its calendar and rules decide.",
        "based_on": [
         "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+       ]
+      },
+      {
+       "kind": "pattern",
+       "claim": "The programme playbook, not yet reviewed, says the applied stage owes nothing and that the one thing to check is the receipt: a confirmation mail or the portal's submitted status.",
+       "based_on": [
+        "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      },
+      {
+       "kind": "pattern",
+       "claim": "The playbook's deadline move says to file the application's receipt, because without it the application may not have gone in.",
+       "based_on": [
+        "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
        ]
       }
      ],

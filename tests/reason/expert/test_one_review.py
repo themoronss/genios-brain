@@ -37,8 +37,8 @@ ORG = "org_s12_one_review"
 AT = datetime(2026, 10, 10, 12, 30, tzinfo=timezone.utc)
 PARTS = _parts()
 DOSSIER = D.build_dossier(PARTS)
-INPUTS = F.fingerprint_inputs(PARTS, model="claude-sonnet-5", prompt_version=PROMPT_VERSION)
-FP = F.file_fingerprint(PARTS, model="claude-sonnet-5", prompt_version=PROMPT_VERSION)
+INPUTS = F.fingerprint_inputs(PARTS, prompt_version=PROMPT_VERSION)
+FP = F.file_fingerprint(PARTS, prompt_version=PROMPT_VERSION)
 TRIGGERS = T.triggers_for(PARTS, INPUTS)
 GOOD = _review("evt_005", "Hi Kunal, booking it now.").as_mapping()
 

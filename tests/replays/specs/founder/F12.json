@@ -456,12 +456,6 @@
        ]
       },
       {
-       "claim": "The investor playbook's call preparation says to know what the investor asked for and whether it was sent, to name the next step to ask for, and to confirm it in writing the same day.",
-       "evidence": [
-        "pb:founder_office.pb.investor_relations.before_an_investor_call"
-       ]
-      },
-      {
        "claim": "The engine files this investor's conversation under an admin account situation, not a fundraising one.",
        "evidence": [
         "sit:sit_e9653a6082d1c505b719f702"
@@ -493,7 +487,7 @@
       {
        "claim": "A request met before the call shows the follow-through the playbook's preparation is built on.",
        "based_on": [
-        "fact:5"
+        "pb:founder_office.pb.investor_relations.before_an_investor_call"
        ]
       }
      ],

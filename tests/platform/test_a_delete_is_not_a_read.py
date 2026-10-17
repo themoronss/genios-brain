@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_250, (
+    assert r["statements"] == 3_258, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -664,6 +664,24 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MERGED 16 Oct (the integration line `yc2w27-int16`): STEP-16's line (3,218, on STEP-14's 3,187) into STEP-14's fix
     # wave and STEP-15 (3,219), re-measured on the merge (`table_coverage.resolution()`): 3,250 = 3,219 + STEP-16's 31
     # (3,218 − 3,187); nothing else moved. The run-time ratchet stays 272.
+    # ⛔ MOVED 3,123 → 3,125 by yc2_w27_s13b/M37.C2.L-data.V0.U04 (what the company says of itself,
+    # `06` D63): `context/company_record` — the tenant's own kept mail, read once a sweep (`_OURS`), and
+    # the company's name (`_COMPANY`). Two SELECTs, each a literal at its own `text()`; both plan.
+    # ⛔ MOVED 3,125 → 3,127 by yc2_w27_s13b/M37.C2.L-data.V2.U02 (what the tenant's brains learned,
+    # for a file): `packs/compiler/engine_reader.learned_for` — one SELECT of `learned_brain_entries`
+    # (the Organization/Behaviour/Adaptive values Layer 6 published) and one SELECT of
+    # `temporary_memories` (the Adaptive lease store, gated on the caller's own frozen `eval_time`).
+    # Two SELECTs, each a literal at its own `text()`; both plan — `unresolved_table` stays 8.
+    # ⛔ MERGED 16 Oct: STEP-13b's line (3,127, with the two moves above) onto the integration line's 3,250,
+    # re-measured on the merge (`table_coverage.resolution()`): 3,254 = 3,250 + STEP-13b's 4 (the two SELECTs of
+    # `context/company_record` and the two of `engine_reader.learned_for`); nothing else moved.
+    # ⛔ MOVED 3,254 → 3,256 by yc2_w27_s13b/M38.C2.L-data.V1.U01 (the attempts kept): `reason/expert/store` — the INSERT of one
+    # consult of a file on a fingerprint (`write_attempt`, numbered in the statement) and the SELECT that reads them
+    # back (`attempts_for`). Two literals, each at its own `text()`; both plan.
+    # ⛔ MOVED 3,256 → 3,257 by yc2_w27_s13b/M37.C5.L-logic.V4.U01 (the fingerprint names the engine): `engine_reader.
+    # learned_snapshot` — the one SELECT of the brain, subject and version of what `learned_for` would read, for every file.
+    # ⛔ MOVED 3,257 → 3,258 by yc2_w27_s13b/M38.C3.L-interface.V2.U01 (the per-model scorecard): `scripts/golden_eval._checked` reads a run's
+    # `expert_review_attempts` as well as its `expert_reviews` before the tenant is removed - one more SELECT, read-only.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

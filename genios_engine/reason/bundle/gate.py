@@ -86,6 +86,7 @@ from .sites import (
     OUTCOME_NO_PRECONDITION,
     OUTCOME_RAN,
     OUTCOME_TRUNCATED,
+    EXPERT_RUNGS,
     max_output_tokens,
     require_site,
     thinking_mode,
@@ -226,7 +227,7 @@ class RSiteGate:
                 precondition_reason: str = "precondition_absent",
                 cached: Callable[[], Any] | None = None,
                 purpose: str | None = None, subject_ref: str | None = None,
-                repair: str = REPAIR_ANY) -> ConsultResult:
+                repair: str = REPAIR_ANY, tier: str | None = None) -> ConsultResult:
         """Run one R-site under the policy. Never raises — except for a `site` or a `repair` nobody
         named, which is a programming error and refused before anything is built or spent.
 
@@ -238,7 +239,11 @@ class RSiteGate:
         require_site(site)
         if repair not in REPAIRS:
             raise ValueError(f"unknown repair {repair!r}; expected one of {REPAIRS}")
-        tier = tier_for(site)
+        # The tier is the site's own, or — for the expert's ladder — the RUNG the consult is made on
+        # (STEP-13b M38.C1.L-contract.V1.U03): priced, ceilinged and recorded at that tier.
+        if tier is not None and tier not in EXPERT_RUNGS:
+            raise ValueError(f"unknown rung {tier!r}; expected one of {EXPERT_RUNGS}")
+        tier = tier or tier_for(site)
         base = {"site": site, "tier": tier, "cache_key": cache_key}
 
         # ── 1 · permitted for this org? ──────────────────────────────────────────────────────
@@ -289,7 +294,7 @@ class RSiteGate:
         ceiling = output_ceiling(str(getattr(self._client, "model", "") or ""),
                                  max_output_tokens(site), mode)
         verdict = self._budget.check(estimate_micro_usd(
-            site=site, prompt_chars=len(prompt), max_output_tokens=ceiling))
+            site=site, prompt_chars=len(prompt), max_output_tokens=ceiling, tier=tier), tier=tier)
         if not verdict.allowed:
             return self._record(ConsultResult(
                 outcome=OUTCOME_NO_BUDGET, reason_codes=(verdict.reason or "budget_refused",),
@@ -320,7 +325,8 @@ class RSiteGate:
                 except Exception:      # noqa: BLE001
                     break
                 verdict = self._budget.check(estimate_micro_usd(
-                    site=site, prompt_chars=len(prompt), max_output_tokens=ceiling))
+                    site=site, prompt_chars=len(prompt), max_output_tokens=ceiling, tier=tier),
+                    tier=tier)
                 if not verdict.allowed:
                     # The retry itself is unaffordable. The FIRST attempt's failure is still the
                     # reason there is no narrative, so it keeps its outcome; the budget is added

@@ -15,6 +15,9 @@ each fact a move rests on, `rests_on`, `to`, `answers` — and the rules speak t
 ⛔ "expert-review.v4" since STEP-16 (`yc2_w27_s16` M46.C4.L-interface.V0.U02): the rules and the next move's step say
 what a correction is — the founder's word on the file, followed or outweighed in an inference citing it; for a kind
 of work, over the playbook's prior; a card called wrong not advised again in its words uncited.
+⛔ "expert-review.v5" since STEP-13b (`yc2_w27_s13b` M37.C3.L-interface.V2.U04): `_ONLY` is two rules (a fact is about the
+file; reason from the file, the engine and your own thirty years), the schema gains `own`, `guided_by` and
+`rests_on: inference:N`, and one worked example of the format with ids no dossier prints and no digit.
 """
 from __future__ import annotations
 
@@ -25,6 +28,7 @@ import pytest
 from genios_engine.contracts.company_brief import WORK_KINDS
 from genios_engine.contracts.expert_review import (LEVELS, MODES, PATTERN_KINDS, REFUSALS,
                                                    REVERSIBILITY, ExpertReview, number_tokens)
+from genios_engine.contracts.expert_review import OWN_KINDS
 from genios_engine.reason.bundle.budget import OWN_BUDGETS, estimate_micro_usd, usd_to_micro
 from genios_engine.reason.bundle.sites import SITE_EXPERT, max_output_tokens
 from genios_engine.reason.expert import dossier as D
@@ -53,12 +57,14 @@ FULL = {
     "appraisal": {"stakes": "high", "urgency": "high", "reversibility": "reversible",
                   "reasons": ["our move"]},
     "mode": "act", "next_move": {"who": "you", "what": "book the call", "for_whom": "Kunal",
-                                 "by_when": "2026-10-11", "rests_on": ["fact:1"], "to": "Kunal",
-                                 "answers": "loop:lp_1"},
+                                 "by_when": "2026-10-11", "rests_on": ["fact:1", "inference:1"], "to": "Kunal",
+                                 "answers": "loop:lp_1", "guided_by": ["own:1"]},
     "alternative": "ask Kunal for a slot", "wait_or_stop": "stop if the fund passes",
     "done_when": "the call is on the calendar", "draft": "Hi Kunal, booking it now.",
     "proposed_kind": {"kind": "investor", "why": "the fund asks for a first call",
-                      "evidence": ["evt_003"]}}
+                      "evidence": ["evt_003"]},
+    "own": [{"kind": "practice", "claim": "a first call is booked in the reply that proposes it",
+             "why": "a second round of mail loses the week"}]}
 
 
 def _dossier(**kw) -> D.Dossier:
@@ -75,7 +81,7 @@ def _shape(value):
 
 
 def test_the_prompt_has_a_version():
-    assert P.PROMPT_VERSION == "expert-review.v4"
+    assert P.PROMPT_VERSION == "expert-review.v5"
 
 
 def test_the_rules_say_what_a_correction_is():
@@ -206,3 +212,60 @@ def test_a_maximal_prompt_is_affordable_under_the_experts_own_per_call_ceiling()
     cost = estimate_micro_usd(site=SITE_EXPERT, prompt_chars=D.DOSSIER_CHARS + instructions,
                               max_output_tokens=max_output_tokens(SITE_EXPERT))
     assert cost <= usd_to_micro(OWN_BUDGETS[SITE_EXPERT][1]), cost
+
+
+# ── STEP-13b · v5: three sources, the expert's own, one worked example ─────────────────────────
+
+def test_a_fact_is_about_the_file_and_the_expert_reasons_from_three_sources():
+    prompt = P.build_prompt(_dossier())
+    assert "Use only the dossier" not in prompt, "the one rule is two now"
+    for words in ("A fact is about this file", "never facts about this file",
+                  "Reason from all three: the file's data, the Engine's lines and your own thirty years",
+                  "Write your own knowledge as own lines", "with no number and no name of this file",
+                  "A line of the engine is a prior about the work", "the company's own history",
+                  "Where you disagree with the engine, say so in an inference that cites both"):
+        assert words in prompt, words
+    assert P.RULES[-1].startswith("A correction under WHAT YOU CORRECTED"), "the correction rule stays last"
+
+
+def test_the_schema_gains_own_guided_by_and_rests_on_an_inference():
+    assert set(P.SCHEMA["own"][0]) == {"kind", "claim", "why"}
+    assert P.SCHEMA["own"][0]["kind"] == " | ".join(OWN_KINDS)
+    assert "guided_by" in P.SCHEMA["next_move"]
+    assert "inference:N" in P.SCHEMA["next_move"]["rests_on"][0]
+    prompt = P.build_prompt(_dossier())
+    for words in ("inference:N", "guided_by", "own:N"):
+        assert words in prompt, words
+    assert any("own" in step.fields for step in P.CHECKLIST)
+
+
+def test_the_worked_example_is_the_shape_with_ids_no_dossier_prints_and_no_digit():
+    from genios_engine.reason.expert.dossier import lines_by_id
+    d = _dossier()
+    prompt = P.build_prompt(d)
+    assert P.EXAMPLE_HEADING in prompt and P.EXAMPLE_TEXT in prompt
+    assert prompt.index(P.SCHEMA_HEADING) < prompt.index(P.EXAMPLE_HEADING) < prompt.index(P.LAST_WORD)
+    example = json.loads(P.EXAMPLE_TEXT)
+    assert number_tokens(P.EXAMPLE_TEXT) == frozenset() and not any(c.isdigit() for c in P.EXAMPLE_TEXT)
+    shown = {ref for f in example["facts"] for ref in f["evidence"]} | {
+        ref for p in example["patterns"] for ref in p["based_on"] if not ref.startswith(("fact:", "own:"))}
+    assert shown and not shown & d.catalogue.evidence_ids, "no id of the example is one a dossier prints"
+    assert not shown & set(lines_by_id(d.text)), shown
+    # every object the example shows has the schema's own keys
+    assert set(example["facts"][0]) == set(P.SCHEMA["facts"][0])
+    assert set(example["inferences"][0]) == set(P.SCHEMA["inferences"][0])
+    assert set(example["own"][0]) == set(P.SCHEMA["own"][0])
+    assert set(example["patterns"][0]) == set(P.SCHEMA["patterns"][0])
+    assert set(example["next_move"]) <= set(P.SCHEMA["next_move"]) and "rests_on" in example["next_move"]
+    assert example["own"][0]["kind"] in OWN_KINDS and example["patterns"][0]["kind"] in PATTERN_KINDS
+
+
+def test_no_model_is_named_anywhere_in_the_prompts_words():
+    import ast
+    import re
+    from pathlib import Path
+    tree = ast.parse(Path(P.__file__).read_text())
+    strings = [n.value for n in ast.walk(tree) if isinstance(n, ast.Constant) and isinstance(n.value, str)]
+    named = re.compile(r"haiku|sonnet|opus|claude|gemini|gpt|llama|mistral", re.IGNORECASE)
+    assert strings and not [t for t in strings if named.search(t)]
+    assert not named.search(P.build_prompt(_dossier()).replace(_dossier().text, ""))

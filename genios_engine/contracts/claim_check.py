@@ -26,6 +26,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
+from .engine_read import family_of
+
 #: The check's own version — a review checked under an older one is checked again on read (on the dossier it was
 #: reviewed on, `06` D48). ⛔ check.v2 since 12 Oct (`yc2_w27_s13` M35.C3.L-integration.V1.U06): the check's behaviour
 #: changed in M35.C2.U09-U16 (quotes, numbers, names, recipients, answered asks), so a review v1 checked is checked
@@ -35,7 +37,9 @@ from typing import Any
 #: rule are card lines it holds — so a review v2 checked is checked again.
 #: ⛔ check.v4 since 16 Oct (`yc2_w27_s16` M46.C4.L-logic.V3.U06): never silently — a move over a correction it does not
 #: cite, or in the words of a card you called wrong, is held as one question; a review checked by v3 is checked again.
-CHECK_VERSION = "check.v4"
+#: ⛔ check.v5 since 16 Oct (`yc2_w27_s13b` M37.C1.L-contract.V1.U03): the check reads three sources — the file's data,
+#: the engine's lines and the expert's own — and says which each line rests on; a review checked by v4 is checked again.
+CHECK_VERSION = "check.v5"
 
 # ── what happened to a line ────────────────────────────────────────────────────────────────────
 # One name to a line: `tests/test_no_missing_module_deps` reads what a module defines by its assignments,
@@ -70,20 +74,44 @@ DECLINED_BY_YOU = "declined_by_you"          # …and you did not confirm it
 # an ignored correction.
 CORRECTION_UNHEEDED = "correction_unheeded"  # a move over a correction no fact, inference or pattern cites
 CALLED_WRONG = "called_wrong"                # a move in the words of a card you called wrong, citing neither
+# ⛔ STEP-13b · THREE SOURCES (`yc2_w27_s13b` M37.C1.L-contract.V1.U03). The engine is a prior about the WORK and the
+# expert's own experience a prior about the world: neither is evidence about THIS file. A fact that cites only them
+# drops; an own line that states a number or names the file's person, company or address drops.
+ENGINE_IS_NO_FACT = "engine_is_no_fact"      # a fact citing only engine or own lines
+OWN_STATES_A_NUMBER = "own_states_a_number"  # an own line with a digit: numbers are the calculators' (RULE 08)
+OWN_NAMES_THE_FILE = "own_names_the_file"    # an own line naming a person, company or address of the file
 REASONS: tuple[str, ...] = (UNCITED, UNKNOWN_EVIDENCE, UNQUOTED, MISQUOTED, UNSUPPORTED, WRONG_NUMBER,
                             UNGROUNDED, NO_RECIPIENT, RECIPIENT_NOT_ON_FILE, RECIPIENT_IS_US,
                             RECIPIENT_IS_CONNECTOR, NOT_OURS_TO_ANSWER, ANSWERED, NOTHING_STANDS,
-                            ON_YOUR_ANSWER, DECLINED_BY_YOU, CORRECTION_UNHEEDED, CALLED_WRONG)
+                            ON_YOUR_ANSWER, DECLINED_BY_YOU, CORRECTION_UNHEEDED, CALLED_WRONG,
+                            ENGINE_IS_NO_FACT, OWN_STATES_A_NUMBER, OWN_NAMES_THE_FILE)
 #: How a line is corrected — closed, as a reason is.
 BY_CALCULATOR = "by_calculator"              # a number replaced by the one its calculator line holds
 BY_ALTERNATIVE = "by_alternative"            # a move to a connector replaced by the review's alternative
-CORRECTIONS: tuple[str, ...] = (BY_CALCULATOR, BY_ALTERNATIVE)
+BY_WHEN = "by_when"                          # STEP-13b: a duration in the advice's own words replaced by "by <by_when>"
+CORRECTIONS: tuple[str, ...] = (BY_CALCULATOR, BY_ALTERNATIVE, BY_WHEN)
 #: Kept, and written down — for the live pass to count (`06` D50), never a reason to drop.
 SPEAKS_OF_YOU = "speaks_of_you"              # a card text calling the founder "the founder", or naming us
 UNHELD_NUMBER = "unheld_number"              # a number in prose no founder is shown, not in the dossier
 CONFIRMED_BY_YOU = "confirmed_by_you"        # a move resting only on what you told us, that you confirmed
 UNCITED_CORRECTION = "uncited_correction"    # STEP-16: a review with no move that cites none of your corrections
-NOTES: tuple[str, ...] = (SPEAKS_OF_YOU, UNHELD_NUMBER, CONFIRMED_BY_YOU, UNCITED_CORRECTION)
+OWN_DISAGREES = "own_disagrees"              # STEP-13b: an inference citing an own line against an engine line
+BY_LINE = "by_line"                          # STEP-13b: a line cited by its own words, read as the id the dossier prints on it
+NOTES: tuple[str, ...] = (SPEAKS_OF_YOU, UNHELD_NUMBER, CONFIRMED_BY_YOU, UNCITED_CORRECTION, OWN_DISAGREES, BY_LINE)
+
+# ── where a line's ground comes from — DERIVED by code from what it cites, never asserted ──────
+DATA = "data"                                # the file's own evidence (mails, numbers, loops, promises …)
+ENGINE = "engine"                            # the GeniOS Engine's lines (`contracts/engine_read` prefixes)
+OWN = "own"                                  # the expert's own expertise (`own:<n>`)
+MIXED = "mixed"                              # more than one
+SOURCES: tuple[str, ...] = (DATA, ENGINE, OWN, MIXED)
+
+
+def source_of(refs: Any) -> str:
+    """The source of a line that cites `refs`: data when it cites only the file, engine only the engine, own only the
+    expert's own, mixed otherwise. A line citing nothing is the file's by default — the check drops it elsewhere."""
+    kinds = {OWN if str(r).startswith("own:") else ENGINE if family_of(str(r)) else DATA for r in refs}
+    return next(iter(kinds)) if len(kinds) == 1 else (MIXED if kinds else DATA)
 
 # ── what happens to the move ───────────────────────────────────────────────────────────────────
 SHOWN = "shown"
@@ -97,7 +125,7 @@ FATES: tuple[str, ...] = (SHOWN, HELD, SUPPRESSED, REFUSED)
 #: M35.C2.L-logic.V1.U09); what reaches the founder — the card's words, whom its draft goes to, the ask
 #: the move answers, the kind it proposes; its prose; and the facts the move names as its ground
 #: (`rests_on`: a ref that names no fact of the review drops there, M35.C1.L-contract.V0.U04).
-LINE_KINDS: tuple[str, ...] = ("fact", "inference", "pattern", "quote")
+LINE_KINDS: tuple[str, ...] = ("fact", "inference", "pattern", "quote", "own")
 CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", "answers", "kind", "prose",
                                "rests_on", "do_nothing", "question",
                                # STEP-14 (`yc2_w27_s14` M43.C1.L-contract.V0.U02): the gold card shows them (0221), so
@@ -105,7 +133,9 @@ CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", 
                                "alternative", "wait_or_stop",
                                # STEP-16 (`yc2_w27_s16` M46.C4.L-logic.V3.U06): how the review stands with your
                                # corrections and with the cards you called wrong — never silently.
-                               "correction", "called_wrong")
+                               "correction", "called_wrong",
+                               # STEP-13b (`yc2_w27_s13b` M37.C4.L-logic.V7.U01): the engine or own lines the move follows.
+                               "guided_by")
 #: What a file asks when nothing checked can be asked — ours, closed (`reason/expert/asks`, and a held question
 #: that would name you, M36.C2.L-logic.V2.U19).
 NOTHING_TO_ASK = "Can you tell us where this file stands?"
@@ -125,6 +155,7 @@ HELD_BECAUSE: dict[str, str] = {
     UNSUPPORTED: "a fact your move rests on names someone its lines do not",
     WRONG_NUMBER: "a fact your move rests on has a number its lines do not hold",
     HELD_MOVE: "the move says something the facts it rests on do not hold",
+    ENGINE_IS_NO_FACT: "a fact your move rests on cites only what the engine or experience says, not your file",
     RECIPIENT_IS_US: "the move is addressed to you",
     RECIPIENT_IS_CONNECTOR: "the move goes to whoever made the introduction",
     ANSWERED: "the ask the move answers is already answered",
@@ -175,8 +206,14 @@ class LineVerdict:
     verdict: str                               # one of VERDICTS
     reason: str | None = None                  # a REASON (dropped), a CORRECTION (corrected), a NOTE (noted)
     detail: str = ""                           # what was found: "number:52 -> 48 (num:reply_gap)", "name:Boardy"
+    #: STEP-13b: data · engine · own · mixed — DERIVED by code from what the line cites (`source_of`), never asserted. A
+    #: label, not a verdict: it is not part of what two verdicts are compared by, so a check of one review is the same
+    #: whatever the labels (and a verdict stored before them is the one it was).
+    source: str | None = field(default=None, compare=False)
 
     def __post_init__(self) -> None:
+        if self.source is not None:
+            object.__setattr__(self, "source", _closed(self.source, SOURCES, "a line's source"))
         object.__setattr__(self, "line", _line(self.line))
         object.__setattr__(self, "verdict", _closed(self.verdict, VERDICTS, "a verdict"))
         allowed = {KEPT: (None,), DROPPED: REASONS, CORRECTED: CORRECTIONS, NOTED: NOTES}[self.verdict]
@@ -185,12 +222,13 @@ class LineVerdict:
         object.__setattr__(self, "detail", " ".join(str(self.detail or "").split()))
 
     def as_mapping(self) -> dict[str, Any]:
-        return {"line": self.line, "verdict": self.verdict, "reason": self.reason, "detail": self.detail}
+        return {"line": self.line, "verdict": self.verdict, "reason": self.reason, "detail": self.detail,
+                **({"source": self.source} if self.source else {})}
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "LineVerdict":
         return cls(line=raw.get("line"), verdict=raw.get("verdict"), reason=raw.get("reason"),
-                   detail=raw.get("detail") or "")
+                   detail=raw.get("detail") or "", source=raw.get("source") or None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -233,6 +271,30 @@ class CardWords:
 
 
 @dataclass(frozen=True, slots=True)
+class EngineCited:
+    """An engine line a standing line cites, kept WITH its words and source on the check, so a card and a replay
+    say where each sentence came from without the corpus of that day (STEP-13b)."""
+    ref: str                                   # `cap:…#f2`, `pb:…`, `rule:…` — an engine id (`engine_read.PREFIX`)
+    words: str
+    source: str                                # the corpus artifact, learned entry or unit it is read from
+    reviewed: bool                             # a named human reviewed it (authored and learned lines)
+
+    def __post_init__(self) -> None:
+        if family_of(self.ref) is None:
+            raise ValueError(f"an engine line's id begins with an engine prefix, not {self.ref!r}")
+        object.__setattr__(self, "words", " ".join(str(self.words or "").split()))
+        object.__setattr__(self, "source", " ".join(str(self.source or "").split()))
+
+    def as_mapping(self) -> dict[str, Any]:
+        return {"ref": self.ref, "words": self.words, "source": self.source, "reviewed": self.reviewed}
+
+    @classmethod
+    def from_mapping(cls, raw: Mapping[str, Any]) -> "EngineCited":
+        return cls(ref=raw.get("ref"), words=raw.get("words"), source=raw.get("source"),
+                   reviewed=bool(raw.get("reviewed")))
+
+
+@dataclass(frozen=True, slots=True)
 class CheckedReview:
     """A review once checked: its verdicts, the move's fate, the one question, the card's words, and the
     ids its standing facts cite."""
@@ -243,12 +305,15 @@ class CheckedReview:
     question: str | None = None
     because: str | None = None                 # held, suppressed or refused: the verdict that decided it
     version: str = CHECK_VERSION
+    engine: tuple[EngineCited, ...] = ()       # STEP-13b: the engine lines the standing lines cite
     _dropped: frozenset[str] = field(default=frozenset(), init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "verdicts", tuple(self.verdicts))
         object.__setattr__(self, "fate", _closed(self.fate, FATES, "a move's fate"))
         object.__setattr__(self, "cited", tuple(sorted(set(self.cited))))
+        by_ref = {c.ref: c for c in self.engine}
+        object.__setattr__(self, "engine", tuple(by_ref[r] for r in sorted(by_ref)))
         # One verdict per line — and beside it, any notes, each once.
         lines = [v.line for v in self.verdicts if v.verdict != NOTED]
         notes = [(v.line, v.reason) for v in self.verdicts if v.verdict == NOTED]
@@ -284,7 +349,8 @@ class CheckedReview:
     def as_mapping(self) -> dict[str, Any]:
         return {"version": self.version, "fate": self.fate, "question": self.question,
                 "because": self.because, "cited": list(self.cited), "words": self.words.as_mapping(),
-                "verdicts": [v.as_mapping() for v in self.verdicts]}
+                "verdicts": [v.as_mapping() for v in self.verdicts],
+                **({"engine": [c.as_mapping() for c in self.engine]} if self.engine else {})}
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "CheckedReview":
@@ -294,10 +360,12 @@ class CheckedReview:
                    fate=raw.get("fate"), words=CardWords.from_mapping(raw.get("words") or {}),
                    cited=tuple(str(c) for c in raw.get("cited") or ()),
                    question=raw.get("question") or None, because=raw.get("because") or None,
-                   version=str(raw.get("version") or CHECK_VERSION))
+                   version=str(raw.get("version") or CHECK_VERSION),
+                   engine=tuple(EngineCited.from_mapping(c) for c in raw.get("engine") or ()))
 
 
-__all__ = ["ANSWERED", "BY_ALTERNATIVE", "BY_CALCULATOR", "CALLED_WRONG", "CARD_LINES", "CHECK_VERSION",
+__all__ = ["BY_LINE", "BY_WHEN", "DATA", "ENGINE", "ENGINE_IS_NO_FACT", "EngineCited", "MIXED", "OWN", "OWN_DISAGREES",
+           "OWN_NAMES_THE_FILE", "OWN_STATES_A_NUMBER", "SOURCES", "source_of", "ANSWERED", "BY_ALTERNATIVE", "BY_CALCULATOR", "CALLED_WRONG", "CARD_LINES", "CHECK_VERSION",
            "CORRECTED", "CORRECTION_UNHEEDED", "UNCITED_CORRECTION", "called_wrong_question", "correction_question",
            "HELD_BECAUSE", "HELD_MOVE",
            "CORRECTIONS", "CardWords", "CheckedReview", "DROPPED", "FATES", "HELD", "KEPT", "LINE_KINDS",

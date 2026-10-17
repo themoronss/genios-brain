@@ -1,7 +1,7 @@
 {
  "case_id": "F09",
  "source": "ideal_reader",
- "recorded_at": "417c10fb",
+ "recorded_at": "9ff24d47",
  "answers": {
   "96f0af10861f7527ef9db58831845c58c49f1ad2014309ea5004e01e8afa0e3b": {
    "site": "extraction",
@@ -58,7 +58,147 @@
    "output_tokens": 54,
    "model": "claude-haiku-4-5-20251001"
   },
-  "aff8c27262d58b680c28073622cb5fc4f0043eec5c37e356fc6cdaaf3da5c4b0": {
+  "b8bd14aa9a0785437442667a465d62169c4464c0ad817f72d455fe2fd3800463": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1729,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ba8a4be77f168126017938abeb544769792b3224646742f705905602f84a5156": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1030,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c224ce9aaeebcbb705a353093d376e730d286b06fce2fac04170f54ee3e7ff86": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1535,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c5e4bb072310b46e8fb4afeb3349b84dc7d702c7517dbe2523ce06382c1a2698": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "question",
+    "stance": "positive",
+    "topics": [
+     "fundraising",
+     "introductions"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Introly",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Introly",
+        "start_offset": 154,
+        "end_offset": 161
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Which stage is Nimbus Labs raising at, and how much?",
+      "asked_by": "Introly",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "which stage are you raising at, and how much?",
+        "start_offset": 46,
+        "end_offset": 91
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "match the founder to investors"
+    }
+   },
+   "raw": "{\"intent\": \"question\", \"stance\": \"positive\", \"topics\": [\"fundraising\", \"introductions\"], \"entity_mentions\": [{\"surface_form\": \"Introly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Introly\", \"start_offset\": 154, \"end_offset\": 161}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Which stage is Nimbus Labs raising at, and how much?\", \"asked_by\": \"Introly\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"which stage are you raising at, and how much?\", \"start_offset\": 46, \"end_offset\": 91}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"match the founder to investors\"}}",
+   "framed": true,
+   "input_tokens": 5511,
+   "output_tokens": 193,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f2b7cc02db00400d8732d17d60f159a77ba67d0796aa144bf92789a374eca7bd": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: your intros",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: your intros\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1160,
+   "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f3e5ec36f606696a8b5802e43e18c88fb7b56ba4d3d87a5ff34a201d5ff56f3b": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: your intros",
+    "start_offset": 0,
+    "end_offset": 15,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: your intros\", \"start_offset\": 0, \"end_offset\": 15, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1507,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f5fe29f92965627bbc1a300bcac2cd877cfb05f2256c453ecc62a14c56f08c5b": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -223,148 +363,8 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Arjun wrote to Introly thanking it for the introductions so far and saying he is especially keen on investors in AI tooling.\", \"evidence\": [\"evt_#2\"], \"quote\": \"introductions so far. I'm especially keen on investors in AI tooling. Arjun\"}, {\"claim\": \"Introly answered in the same minute, asking which stage Nimbus Labs is raising at and how much, and said one line back would let it line up the next introductions.\", \"evidence\": [\"evt_#1\", \"num:usual_gap\"], \"quote\": \"much? Reply with one line and I'll line up the next introductions. Introly\"}, {\"claim\": \"The file holds one open ask: Introly's question, waiting on us.\", \"evidence\": [\"loop:loop_#1\"]}, {\"claim\": \"The file counts no people introduced by Introly, although Arjun's mail thanks it for introductions so far.\", \"evidence\": [\"num:introductions\", \"evt_#2\"], \"quote\": \"Thanks for the introductions so far.\"}, {\"claim\": \"The only situation anchored on this file is typed as an investor's, in the fundraising domain.\", \"evidence\": [\"sit:sit_#1\"]}, {\"claim\": \"The file's history records no earlier verdict or outcome.\", \"evidence\": [\"hist:derived.history.prior_card_verdict@fundraising\", \"hist:derived.history.prior_outcome@fundraising\"]}], \"inferences\": [{\"claim\": \"Introly's question is the price of the next introductions: it cannot match Arjun with investors in AI tooling without the stage and size of the raise.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The stage is settled in the brief — the seed round — so only the amount is Arjun's to state.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"This is the connector's own bounded ask, not an investor conversation: answering it hands Introly its matching criteria and opens no conversation with any fund.\", \"based_on\": [\"fact:2\", \"fact:5\"]}, {\"claim\": \"The speed of Introly's answer marks it as an automated agent, so what matters is the content of the one line, not tone or follow-up.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to read a pattern from: this file has no earlier verdict or outcome, and no playbook speaks for a connector's asks.\", \"based_on\": [\"hist:derived.history.prior_outcome@fundraising\", \"hist:derived.history.times_seen@fundraising\"]}], \"hypotheses\": [{\"proposition\": \"Introly will line up introductions to investors in AI tooling once it has the stage and the amount.\", \"needs\": \"Introductions from Introly arriving after Arjun's answer.\"}, {\"proposition\": \"Arjun may prefer not to state a round size to an automated matcher.\", \"needs\": \"Arjun's own word on what he is willing to share with it.\"}], \"unknowns\": [{\"question\": \"How much Nimbus Labs is raising.\", \"relevance\": \"It is the half of Introly's question the dossier cannot answer; the line cannot go without it, and it must come from Arjun, never be guessed.\"}, {\"question\": \"Which introductions Introly made so far, and what came of them.\", \"relevance\": \"If they led nowhere, the criteria Arjun gives now matter more; this file holds none of them.\"}, {\"question\": \"Whether Introly passes what it is told on to the investors it contacts.\", \"relevance\": \"It decides how Arjun words the amount.\"}], \"frames\": {\"primary\": \"Your own intro agent has asked one bounded question — the stage and size of the raise — and holds the next investor introductions until it is answered.\", \"rivals\": [\"An automated nudge that would line up introductions anyway, making the answer optional.\", \"A data-gathering step by a third-party matcher, where what Arjun shares travels beyond his control.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the brief and the file set the expectation: the connector works for Arjun, so its questions get a brief answer and it lines up introductions.\", \"actual\": \"Arjun told Introly what kind of investor he wants; Introly asked at once for the stage and amount, and the file holds no answer from Arjun yet.\"}, \"scenarios\": {\"do_nothing\": \"Introly's question stays open and the next introductions wait on it; the raise loses introductions you asked for.\", \"act\": \"A one-line answer — the seed round and its size — lets Introly line up introductions to investors in AI tooling.\", \"best\": \"Introly matches Arjun with investors in AI tooling who back seed rounds, and the introductions arrive soon after.\", \"worst\": \"The question sits unanswered and the introductions stop, or Arjun states an amount he later wishes he had not.\", \"signals_to_watch\": [\"New introductions from Introly after Arjun's answer\", \"A further question from Introly instead of introductions\", \"Introductions to investors outside AI tooling or outside the seed stage\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Raising the seed round is the brief's first goal, and the connector's next introductions to investors wait on this answer.\", \"The ask is one line and carries no date.\", \"What Arjun tells Introly can be corrected with another line.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Answer Introly's question in one line: the seed round, and the amount you are raising\", \"for_whom\": \"Introly, so it can line up the next introductions to investors in AI tooling\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"], \"to\": \"Introly\", \"answers\": \"loop:loop_#1\"}, \"alternative\": \"If you would rather not state an amount to an automated matcher, give the stage alone and the kind of investor you want, and accept looser matches.\", \"wait_or_stop\": \"Nothing to wait for on our side. After answering, wait for the introductions Introly lines up, and stop feeding it details if what it lines up does not fit the seed round or AI tooling.\", \"done_when\": \"Introly has the stage and the amount from you, and the introductions it lines up next sit on their own files.\", \"draft\": \"Seed round — raising [amount]. As before, I'm most keen on investors in AI tooling. Arjun\"}",
    "framed": true,
-   "input_tokens": 3577,
+   "input_tokens": 7008,
    "output_tokens": 1521,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b8bd14aa9a0785437442667a465d62169c4464c0ad817f72d455fe2fd3800463": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1729,
-   "output_tokens": 143,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ba8a4be77f168126017938abeb544769792b3224646742f705905602f84a5156": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1030,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c224ce9aaeebcbb705a353093d376e730d286b06fce2fac04170f54ee3e7ff86": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1535,
-   "output_tokens": 143,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c5e4bb072310b46e8fb4afeb3349b84dc7d702c7517dbe2523ce06382c1a2698": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "question",
-    "stance": "positive",
-    "topics": [
-     "fundraising",
-     "introductions"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Introly",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Introly",
-        "start_offset": 154,
-        "end_offset": 161
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Which stage is Nimbus Labs raising at, and how much?",
-      "asked_by": "Introly",
-      "asked_of": "Arjun Rao",
-      "evidence": [
-       {
-        "quote": "which stage are you raising at, and how much?",
-        "start_offset": 46,
-        "end_offset": 91
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": false,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "match the founder to investors"
-    }
-   },
-   "raw": "{\"intent\": \"question\", \"stance\": \"positive\", \"topics\": [\"fundraising\", \"introductions\"], \"entity_mentions\": [{\"surface_form\": \"Introly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Introly\", \"start_offset\": 154, \"end_offset\": 161}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Which stage is Nimbus Labs raising at, and how much?\", \"asked_by\": \"Introly\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"which stage are you raising at, and how much?\", \"start_offset\": 46, \"end_offset\": 91}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"match the founder to investors\"}}",
-   "framed": true,
-   "input_tokens": 5511,
-   "output_tokens": 193,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f2b7cc02db00400d8732d17d60f159a77ba67d0796aa144bf92789a374eca7bd": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: your intros",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: your intros\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "framed": true,
-   "input_tokens": 1160,
-   "output_tokens": 37,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f3e5ec36f606696a8b5802e43e18c88fb7b56ba4d3d87a5ff34a201d5ff56f3b": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Re: your intros",
-    "start_offset": 0,
-    "end_offset": 15,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: your intros\", \"start_offset\": 0, \"end_offset\": 15, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1507,
-   "output_tokens": 40,
    "model": "claude-haiku-4-5-20251001"
   }
  }

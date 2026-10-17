@@ -691,3 +691,21 @@ def test_the_card_reader_says_how_each_card_ended_and_by_which_object(pg_store):
         assert (cards["card_open"].ended, cards["card_open"].ended_by) == (None, None), "still open: no end"
     finally:
         _gone(pg_store.engine, org)
+
+
+def test_the_r_sites_door_is_opened_per_rung_of_the_experts_ladder():
+    """STEP-13b M38.C2.L-integration.V1.U04: every tier is the recorded model by default; a scripted reader per tier for
+    the ladder's acceptance; the transport refusal holds for anything else."""
+    from genios_engine.reason import llm_sites
+    from tests.replays.harness import RecordedLLM
+    from tests.replays import engine_runner as er
+    recorded, second = RecordedLLM({}), RecordedLLM({}, model="claude-sonnet-5")
+    with er.production_switches(recorded):
+        assert [llm_sites.make_site_client(t) for t in ("T1", "T2", "T3")] == [recorded] * 3
+    with er.production_switches(recorded, rungs={"T2": second}):
+        assert llm_sites.make_site_client("T1") is recorded
+        assert llm_sites.make_site_client("T2") is second and llm_sites.make_site_client("T3") is recorded
+        import anthropic
+        with pytest.raises(er.UnrecordedModelCall):
+            anthropic.Anthropic(api_key="k")
+    assert llm_sites.make_site_client("T1") is not recorded, "the door was closed again"

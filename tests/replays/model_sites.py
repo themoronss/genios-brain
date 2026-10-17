@@ -31,7 +31,10 @@ DOORS: dict[str, str] = {
     "llm_decision_maker.client": "the decider and R-1 — on in production for every org "
                                  "(GENIOS_L4_LLM_DECISION_MAKER=true, speedrun008/YCW27/STATUS.md)",
     "llm_sites.make_site_client": "the R-site gate — the bundle narrator and the expert (R-7, STEP-12; "
-                                  "the situation reasoner retired, `06` D51)",
+                                  "the situation reasoner retired, `06` D51). STEP-13b: asked PER RUNG of the "
+                                  "expert's ladder (`tier`: T1, T2, and T3 where a tenant allows it) — the "
+                                  "ideal reader on every rung by default, a scripted reader per rung for the "
+                                  "ladder's acceptance (`engine_runner.production_switches(rungs=)`)",
 }
 
 _SCREEN = ("the screen door: the runner drives mail and calendar, and a case that needs the screen "

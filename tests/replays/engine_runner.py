@@ -50,7 +50,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -159,10 +159,15 @@ def _where(url: Any) -> tuple[Any, ...]:
 # the model doors, and the transport refusal
 # =================================================================================================
 @contextmanager
-def production_switches(llm: Any, *, platform_domains: tuple[str, ...] = ()) -> Iterator[None]:
+def production_switches(llm: Any, *, platform_domains: tuple[str, ...] = (),
+                        rungs: Mapping[str, Any] | None = None) -> Iterator[None]:
     """Hand `llm` to every door in `model_sites.DOORS`, refuse the real transport, and set
     production's switches — all restored on exit, whatever happens inside. A case that names the
-    product's own sending domains (`FounderCase.platform_domains`, STEP-04 C5) runs with them."""
+    product's own sending domains (`FounderCase.platform_domains`, STEP-04 C5) runs with them.
+
+    STEP-13b (`yc2_w27_s13b` M38.C2.L-integration.V1.U04): the R-sites' door is opened PER RUNG of the expert's ladder —
+    `llm` by default on every tier (the ideal reader on rung one), a scripted reader per tier in `rungs` for the ladder's
+    acceptance. The transport refusal holds for anything else."""
     try:
         import anthropic
     except ImportError:            # not installed: nothing can build a raw client to refuse
@@ -201,7 +206,7 @@ def production_switches(llm: Any, *, platform_domains: tuple[str, ...] = ()) -> 
         (wiring, "make_relevance_classifier", relevance_classifier),
         (routes, "make_relevance_classifier", relevance_classifier),
         (llm_decision_maker, "client", lambda: llm),
-        (llm_sites, "make_site_client", lambda tier: llm),
+        (llm_sites, "make_site_client", lambda tier: (rungs or {}).get(tier, llm)),
         (llm_client.LLMClient, "call", refuse_call),
         (llm_decision_maker.DecisionClient, "call", refuse_call),
         *(((anthropic, "Anthropic", _RefusedAnthropic),) if anthropic is not None else ()),
@@ -305,7 +310,8 @@ def _connectors():
 # the run
 # =================================================================================================
 def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
-             keep: bool = False, expert: bool | None = None, brief: bool = True) -> CaseRun:
+             keep: bool = False, expert: bool | None = None, brief: bool = True,
+             rungs: Mapping[str, Any] | None = None) -> CaseRun:
     """Run every sweep of `case` through the real chain with `llm` as the model; report it.
 
     The tenant is REMOVED once the report is read, unless `keep`: the scratch database is shared
@@ -338,7 +344,7 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
     played: list[ActPlayed] = []
     finished = False
     try:
-        with production_switches(llm, platform_domains=case.platform_domains), \
+        with production_switches(llm, platform_domains=case.platform_domains, rungs=rungs), \
                 pinned_world(f"golden:{case.case_id}"):
             provision_intelligence(engine, org)
             routes._ensure_tenant_live(org)

@@ -225,12 +225,6 @@
        "evidence": [
         "sit:sit_d560e962f04640ab0f53f330"
        ]
-      },
-      {
-       "claim": "The file's playbook is for running an investor conversation to a decision, and it is not yet reviewed.",
-       "evidence": [
-        "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
-       ]
       }
      ],
      "inferences": [

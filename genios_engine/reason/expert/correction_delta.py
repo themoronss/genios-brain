@@ -33,7 +33,7 @@ from .verify import cited_anywhere
 #: it — every review of those files, so the one before is read beside the one after.
 _REVIEWS = (
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, input_tokens, "
-    "output_tokens, cost_micro_usd, reviewed_at, inputs, triggers, checked, checked_at, dossier, card_lines "
+    "output_tokens, cost_micro_usd, reviewed_at, inputs, triggers, checked, checked_at, dossier, card_lines, rung "
     "from expert_reviews where org_id = :o and status = 'valid' "
     "and (file_id = :f or file_id in (select s.file_id from expert_reviews s where s.org_id = :o "
     "and coalesce(s.inputs -> 'corrections', '[]'::jsonb) @> jsonb_build_array(cast(:ref as text)))) "

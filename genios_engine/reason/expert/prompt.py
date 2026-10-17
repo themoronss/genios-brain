@@ -34,7 +34,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from genios_engine.contracts.company_brief import WORK_KINDS
-from genios_engine.contracts.expert_review import (LEVELS, MODES, MOVING, NO_NEXT_MOVE,
+from genios_engine.contracts.expert_review import (LEVELS, MODES, MOVING, NO_NEXT_MOVE, OWN_KINDS,
                                                    NUMBER_NOT_IN_DOSSIER, PATTERN_KINDS,
                                                    REVERSIBILITY, UNCITED_FACT,
                                                    UNGROUNDED_INFERENCE, UNGROUNDED_MOVE,
@@ -50,7 +50,10 @@ from .dossier import Dossier
 #: file itself moved (`reason/expert/sweep`). ⛔ v4 since STEP-16 (`yc2_w27_s16` M46.C4.L-interface.V0.U02, 16 Oct): the
 #: rules say what a correction is — the founder's word on the file, followed or outweighed in an inference citing it;
 #: for a kind of work, over the playbook's prior; and a card called wrong is not advised again in its words uncited.
-PROMPT_VERSION = "expert-review.v4"
+#: ⛔ v5 since STEP-13b (`yc2_w27_s13b` M37.C3.L-interface.V2.U04, 17 Oct): `_ONLY` is two rules — a fact is about the file;
+#: reason from the file, the Engine and your own thirty years — the schema gains `own`, `guided_by` and
+#: `rests_on: inference:N`, and one worked example of the format rides after it.
+PROMPT_VERSION = "expert-review.v5"
 
 
 def _or(words) -> str:
@@ -62,18 +65,26 @@ ROLE = (
     "You are the founder's chief of staff, thirty years in the work. You keep a file on every piece "
     "of work in motion — each investor, each application, each intro, each hire. Below is ONE file, "
     "as its dossier: the company brief, the file, what happened in it, the promises in its mail, its "
-    "numbers, what was checked, what a professional knows about this kind of work, its situations, "
-    "what was judged before, and what doing nothing does. Read all of it. Then think it through in "
+    "numbers, what was checked, what a professional knows about this kind of work, what the "
+    "Engine knows about its situations, what its reasoning units measured, its situations, what was "
+    "judged before, and what doing nothing does. Read all of it. Then think it through in "
     "the order of the checklist after it, and answer with one JSON object in the schema at the end.")
 
 RULES_HEADING = "## THE RULES"
-_ONLY = "Use only the dossier. What you know of the world is not evidence about this file."
+_FACT = ("A fact is about this file: it cites what the dossier shows of it — the file, its mail, its numbers. "
+         "The Engine's lines and your own expertise are never facts about this file.")
+_THREE = ("Reason from all three: the file's data, the Engine's lines and your own thirty years. Write "
+          "your own knowledge as own lines — a practice, a base rate, a counter-pattern or a benchmark — in "
+          "words, with no number and no name of this file. A line of the engine is a prior about the work; a "
+          "line learned from your company's people is the company's own history. Where you disagree with the "
+          "engine, say so in an inference that cites both.")
 _CITE = ("Every fact, and a proposed kind of work, cites at least one id the dossier prints in square "
          "brackets — the id alone, without the brackets.")
 _QUOTE = ("A fact your next move rests on, that cites a mail whose words the dossier shows, carries those "
           "words in its quote — a whole phrase, copied exactly as the dossier prints it, never reworded.")
 _GROUND = ("An inference or a pattern rests on ids the dossier prints, or on your own facts as fact:N, "
-           "N being the fact's place in your list, counting from one.")
+           "N being the fact's place in your list, counting from one, or on an own line as own:N — which "
+           "grounds it only beside a line of the file's data.")
 _NUMBERS = ("In every sentence you write, the draft included, use no number the dossier does not hold: "
             "no count of days, sum, share or date you worked out yourself. Copy a number from the "
             "dossier, or say it without one (over a week, most of them). The next move's by_when is "
@@ -84,7 +95,9 @@ _LEVELS = (f"Stakes and urgency are {_or(LEVELS)}; reversibility is {_or(REVERSI
            "never a score.")
 _MODE = (f"The mode is {_or(MODES)}; {_or(sorted(MOVING))} always name a next move. Otherwise the next "
          "move may be null.")
-_MOVE = ("The next move lists the facts it rests on in rests_on, as fact:N. A move that sends something "
+_MOVE = ("The next move lists the facts it rests on in rests_on, as fact:N, or an inference of yours that "
+         "rests on facts, as inference:N; guided_by lists the lines of the engine or your own, as own:N, that "
+         "it follows. A move that sends something "
          "says in to whom it goes: someone the file's mail shows — never the founder or the company, and "
          "never the connector who introduced the person this file is about. A move that answers an ask "
          "the founder owes gives that ask's loop id in answers.")
@@ -101,7 +114,7 @@ _CORRECTION = ("A correction under WHAT YOU CORRECTED is the founder's word on t
                "the file now outweighs it, in an inference that cites its corr: id. A correction for the kind of "
                "work outweighs the playbook's prior for this company. A card the founder called wrong is not "
                "advised again in its words unless you cite it and their verdict.")
-RULES: tuple[str, ...] = (_ONLY, _CITE, _QUOTE, _GROUND, _NUMBERS, _STAGE, _LEVELS, _MODE, _MOVE, _PRIOR,
+RULES: tuple[str, ...] = (_FACT, _THREE, _CITE, _QUOTE, _GROUND, _NUMBERS, _STAGE, _LEVELS, _MODE, _MOVE, _PRIOR,
                           _SOON, _NO_REPLY, _UNKNOWN, _YOU, _CORRECTION)
 
 #: For every refusal `validate` can make, the rule that tells the model how not to earn it — a
@@ -155,9 +168,10 @@ CHECKLIST: tuple[Step, ...] = (
     Step("patterns", "PATTERNS AND COUNTER-PATTERNS",
          f"What usually happens in cases like this, and when it does not — each line a {_or(PATTERN_KINDS)}, "
          "with what it rests on, so its provenance can be checked: the founder's own patterns from the "
-         "file's numbers and history, the profession's from the playbook. A pattern the dossier does "
-         "not hold is not written.",
-         ("patterns",)),
+         "file's numbers and history, the profession's from the playbook and the engine. A pattern the "
+         "dossier does not hold is not written. Then, from your own thirty years, what you know of this kind "
+         f"of work that the dossier does not — each a {_or(OWN_KINDS)}, in words, with why it holds.",
+         ("patterns", "own")),
     Step("unknowns", "WHAT IS NOT KNOWN",
          "The facts that would change your answer and that the dossier does not hold, each with why it "
          "matters; and the hypotheses still open, each with what would settle it. Name them; never fill "
@@ -189,7 +203,7 @@ CHECKLIST: tuple[Step, ...] = (
 
 SCHEMA_HEADING = "## THE ANSWER — one JSON object, in this shape"
 _CITED = "an id the dossier prints in square brackets, without them"
-_RESTS_ON = "fact:N, or an id the dossier prints"
+_RESTS_ON = "fact:N, own:N, or an id the dossier prints"
 SCHEMA: dict[str, Any] = {
     "facts": [{"claim": "what is true, in one sentence", "evidence": [_CITED],
                "quote": "the cited mail's own words this fact rests on, copied — or null"}],
@@ -197,6 +211,8 @@ SCHEMA: dict[str, Any] = {
                     "based_on": [_RESTS_ON]}],
     "patterns": [{"kind": " | ".join(PATTERN_KINDS), "claim": "what usually happens, or when it does not",
                   "based_on": [_RESTS_ON]}],
+    "own": [{"kind": " | ".join(OWN_KINDS), "claim": "what you know of this kind of work, in words, with no number",
+             "why": "why it holds"}],
     "hypotheses": [{"proposition": "what might be true", "needs": "what would settle it"}],
     "unknowns": [{"question": "what is not known", "relevance": "why the answer would change the judgment"}],
     "frames": {"primary": "the situation this is", "rivals": ["what else it could be"]},
@@ -211,7 +227,8 @@ SCHEMA: dict[str, Any] = {
                   "reversibility": " | ".join(REVERSIBILITY), "reasons": ["a reason, from the dossier"]},
     "mode": " | ".join(MODES),
     "next_move": {"who": "who makes it", "what": "what it is", "for_whom": "for whom",
-                  "by_when": "a date as YYYY-MM-DD, or null", "rests_on": ["fact:N"],
+                  "by_when": "a date as YYYY-MM-DD, or null", "rests_on": ["fact:N | inference:N"],
+                  "guided_by": ["an engine line's id, or own:N"],
                   "to": "whom its draft goes to, as the dossier names them — or null",
                   "answers": "the loop id of the ask it answers, as the dossier prints it — or null"},
     "alternative": "the next best move",
@@ -220,6 +237,20 @@ SCHEMA: dict[str, Any] = {
     "draft": "the words to send, or null",
 }
 
+EXAMPLE_HEADING = "## THE FORMAT, ONCE — an example of the shape, not of any file"
+#: One worked example of the shape the check reads. Its ids are ones no dossier prints and it holds no digit (this
+#: module's own rule), so a model copies the shape and never a value.
+_EXAMPLE: dict[str, Any] = {
+    "facts": [{"claim": "the person asked for a document", "evidence": ["evt_example"],
+               "quote": "could you send the document"}],
+    "inferences": [{"claim": "the next move is ours", "based_on": ["fact:N"]}],
+    "own": [{"kind": "practice", "claim": "a request answered the same day keeps the thread warm",
+             "why": "a reply that waits loses the person's attention"}],
+    "patterns": [{"kind": PATTERN_KINDS[0], "claim": "a written ask is usually followed up once",
+                  "based_on": ["rule:example", "own:N"]}],
+    "next_move": {"who": "you", "what": "send the document", "for_whom": "the person",
+                  "rests_on": ["fact:N", "inference:N"], "guided_by": ["rule:example", "own:N"]}}
+EXAMPLE_TEXT = json.dumps(_EXAMPLE, indent=2, ensure_ascii=False)
 REPAIR_HEADING = "## YOUR LAST ANSWER"
 LAST_WORD = "Answer with the JSON object only — nothing before it, nothing after it."
 
@@ -235,7 +266,7 @@ def build_prompt(dossier: Dossier, feedback: str | None = None) -> str:
              RULES_HEADING + "\n" + "\n".join(f"- {rule}" for rule in RULES),
              CHECKLIST_HEADING + "\n\n" + "\n\n".join(f"### {step.title}\n{step.asks}"
                                                     for step in CHECKLIST),
-             f"{SCHEMA_HEADING}\n{schema_text()}"]
+             f"{SCHEMA_HEADING}\n{schema_text()}", f"{EXAMPLE_HEADING}\n{EXAMPLE_TEXT}"]
     complaint = " ".join(str(feedback or "").split())
     if complaint:
         parts.append(f"{REPAIR_HEADING}\n{complaint}")
@@ -243,6 +274,6 @@ def build_prompt(dossier: Dossier, feedback: str | None = None) -> str:
     return "\n\n".join(parts)
 
 
-__all__ = ["CHECKLIST", "CHECKLIST_HEADING", "LAST_WORD", "MODE_MEANINGS", "PROMPT_VERSION",
+__all__ = ["CHECKLIST", "CHECKLIST_HEADING", "EXAMPLE_HEADING", "EXAMPLE_TEXT", "LAST_WORD", "MODE_MEANINGS", "PROMPT_VERSION",
            "REPAIR_HEADING", "ROLE", "RULES", "RULES_HEADING", "RULE_FOR_REFUSAL", "SCHEMA",
            "SCHEMA_HEADING", "Step", "build_prompt", "schema_text"]

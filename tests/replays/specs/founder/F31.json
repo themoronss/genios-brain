@@ -398,12 +398,6 @@
        "evidence": [
         "sit:sit_c3fd649aa730962e644c4b74"
        ]
-      },
-      {
-       "claim": "The programme playbook, not yet reviewed, says that once in a programme the file holds the programme's own deadlines — assignments, reviews, demo day — fixed for the whole cohort.",
-       "evidence": [
-        "pb:founder_office.pb.program_applications.follow_an_application"
-       ]
       }
      ],
      "inferences": [
@@ -436,6 +430,13 @@
        "based_on": [
         "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
         "sit:sit_c3fd649aa730962e644c4b74"
+       ]
+      },
+      {
+       "kind": "pattern",
+       "claim": "The programme playbook, not yet reviewed, says that once in a programme the file holds the programme's own deadlines — assignments, reviews, demo day — fixed for the whole cohort.",
+       "based_on": [
+        "pb:founder_office.pb.program_applications.follow_an_application"
        ]
       }
      ],
