@@ -1,0 +1,453 @@
+{
+ "895f3a9f5abb437de8bf11d4fb7bbfec2dad7b4a3ade100a2b824eb4dc68fe5f": {
+  "framed": true,
+  "input_tokens": 6046,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3431,
+  "parsed": {
+   "alternative": "If the scope of the pilot is unclear or you do not have time to write a strong proposal by Thursday, send Gaurav a brief message on Tuesday or Wednesday asking for a call to clarify the scope and timeline. This keeps the commitment alive and buys you time to write a better proposal. However, this risks appearing unprepared and may lower Gaurav's confidence in you.",
+   "appraisal": {
+    "reasons": [
+     "You made a public commitment to Gaurav and set a specific due date. Failing to deliver damages your credibility and closes the door to this opportunity.",
+     "The file is not yet integrated into your brief, so the opportunity's fit and value are unclear. If Stackfield is a design partner or customer, the stakes are higher. If it is a distraction, the stakes are lower.",
+     "The due date is five days away, so there is time to act, but not much. Delay increases the risk of missing the deadline.",
+     "A broken commitment is costly to reverse: rebuilding trust with Gaurav would require significant effort and a strong reason for the delay."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The proposal is sent to Gaurav by Thursday 2026-09-25, and Gaurav acknowledges receipt or replies with questions or feedback within two business days.",
+   "draft": "Hi Gaurav, I want to make sure I send you a pilot proposal that's useful. Before I write it, can we clarify a few things? What's the main problem you'd want Nimbus to solve in the pilot, and what would success look like for you? Also, what's your timeline for getting started? I'll have the proposal to you by end of day Thursday. Thanks, Arjun",
+   "expected_vs_actual": {
+    "actual": "You have made the commitment and set the due date. No reply has been received from Gaurav, but the commitment was made only hours ago, so silence is not yet a signal of disengagement. The proposal has not yet been sent.",
+    "expected": "Without a playbook for this kind of work, expectations come from the brief and the file's history. The brief does not name Stackfield, so there is no stated expectation. The file shows a commitment made and a due date set, so the expectation is that you will deliver the proposal by 2026-09-25 18:29 UTC.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You wrote to Gaurav at Stackfield on 2026-09-20 at 09:00 UTC committing to send a pilot proposal by Friday.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "As I said on WhatsApp, I'll send the pilot proposal by Friday."
+    },
+    {
+     "claim": "A promise exists to send the pilot proposal, due 2026-09-25 18:29 UTC, and it remains open.",
+     "evidence": [
+      "promise:node_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.38 days as of the last mailbox read at 2026-09-20 18:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply has been received from Gaurav since you wrote on 2026-09-20 09:00 UTC.",
+     "evidence": [
+      "cov:last_mail",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Stackfield is not named in the brief as a work item for Nimbus Labs.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is not named by the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found low risk, low urgency, and healthy engagement in this file.",
+     "evidence": [
+      "ru:core.risk",
+      "ru:core.priority",
+      "ru:core.temporal"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time this file has been seen in the sales domain.",
+     "evidence": [
+      "hist:derived.history.times_seen@sales",
+      "hist:derived.history.prior_card_verdict@sales"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "You made a commitment to send a pilot proposal by Friday and must deliver on it. The counterparty is waiting. The work is not yet integrated into your brief, so its priority and fit are unclear.",
+    "rivals": [
+     "This is an inbound sales opportunity that could become a customer or partner, and it deserves higher priority than it currently has.",
+     "This is a distraction from your stated goals of raising, hiring, and landing design partners, and it should be deprioritized or declined.",
+     "This is a design partner conversation that is aligned with your goals but has not yet been logged into the brief."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Clarification from you on what Stackfield does, what the pilot is for, and how it fits your goals of raising, hiring, or landing design partners.",
+     "proposition": "Stackfield is a potential design partner or customer for Nimbus Labs."
+    },
+    {
+     "needs": "Confirmation of the scope, timeline, and success criteria for the pilot, and whether it is a paid engagement or a free trial.",
+     "proposition": "The pilot proposal is a low-effort proof of concept to test Nimbus Labs' AI chief of staff product with a real user."
+    },
+    {
+     "needs": "Information on Gaurav's role, Stackfield's stage and funding, and whether this conversation was initiated by you or by Gaurav.",
+     "proposition": "Gaurav is a decision-maker or influencer at Stackfield who could become a customer, investor, or partner."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The move is yours: you made a commitment and must fulfill it by the due date."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4",
+      "fact:1"
+     ],
+     "claim": "Gaurav has not yet replied, but the commitment was made only hours ago and the due date is five days away, so silence at this stage is not a signal of disengagement."
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "file:role",
+      "fact:5"
+     ],
+     "claim": "The work appears to be a sales or partnership opportunity with Stackfield, but its purpose and fit within your goals are not yet clear from the file."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-25",
+    "for_whom": "Gaurav at Stackfield",
+    "guided_by": [
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1"
+    ],
+    "to": "gaurav@stackfield.test",
+    "what": "Clarify the scope and purpose of the pilot proposal with Gaurav, then write and send the proposal by Thursday 2026-09-25.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A pilot proposal sent on time, even if preliminary, keeps momentum and trust; a proposal sent late, even if polished, signals that you do not manage your own commitments.",
+     "kind": "practice",
+     "why": "In early-stage work, reliability is often valued as highly as the quality of the work itself. A founder who delivers on their word builds optionality; one who does not closes doors."
+    },
+    {
+     "claim": "Inbound sales opportunities from unknown counterparties, when they arrive without a connector or a clear fit to stated goals, are often lower-priority than work already in motion.",
+     "kind": "base_rate",
+     "why": "Your brief names no work with Stackfield, and the file shows no introduction. This suggests either a cold outreach or a conversation that has not yet been logged into the brief. Either way, it competes for time against raising, hiring, and compliance work already underway."
+    },
+    {
+     "claim": "A proposal should be sent before the due date, not on it, to allow the counterparty time to review and ask questions before the weekend or a natural break.",
+     "kind": "practice",
+     "why": "Sending on Friday evening leaves no time for dialogue and may push the conversation into the following week, losing momentum."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A commitment made in conversation and confirmed by mail is usually honored on the stated date; failure to deliver damages credibility with the counterparty.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "When a founder commits to send a proposal by a specific date, the counterparty expects it on that date and interprets delay as a signal of lower priority or capability.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "own:3"
+     ],
+     "claim": "A counterparty who does not reply immediately after a commitment is made may be waiting for the deliverable before engaging further, rather than signaling disinterest.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "evt_#1"
+    ],
+    "kind": "vendor",
+    "why": "The file shows a sales domain and a conversation about a pilot proposal, which suggests Stackfield is either a potential customer or a vendor providing a service. Without more context, vendor is the most neutral classification. If Stackfield is a design partner candidate, the kind should be partner; if it is a potential customer, the kind should be sales or opportunity."
+   },
+   "scenarios": {
+    "act": "If you act now, you will clarify the scope of the pilot proposal, write it, and send it to Gaurav before the due date. This keeps momentum, honors your commitment, and opens the door to a pilot engagement or further conversation.",
+    "best": "You send a well-scoped, clear pilot proposal by Thursday 2026-09-25, Gaurav reviews it over the weekend, and you have a call on Monday to discuss next steps. The pilot becomes a customer or design partner, or it leads to an introduction to someone else at Stackfield who is a better fit.",
+    "do_nothing": "If you do nothing, the due date of 2026-09-25 18:29 UTC will pass without a proposal sent. Gaurav will interpret this as a broken commitment, and the conversation will likely end. Trust will be damaged, and any future opportunity with Stackfield will be harder to pursue.",
+    "signals_to_watch": [
+     "Whether you send the proposal by Thursday 2026-09-25.",
+     "Whether Gaurav replies to the proposal within two business days of receiving it.",
+     "Whether Gaurav asks clarifying questions or requests a call to discuss the pilot.",
+     "Whether the pilot leads to a paid engagement, a design partnership, or an introduction to someone else at Stackfield."
+    ],
+    "worst": "You send the proposal late or not at all. Gaurav loses confidence in you and does not reply. The conversation ends, and any opportunity with Stackfield is lost. If Stackfield is a design partner candidate or a potential customer, this is a missed opportunity."
+   },
+   "unknowns": [
+    {
+     "question": "What is Stackfield, and what does it do?",
+     "relevance": "Understanding Stackfield's business and stage would clarify whether this is a sales opportunity, a partnership, or a distraction from your stated goals."
+    },
+    {
+     "question": "How did this conversation with Gaurav begin, and who initiated it?",
+     "relevance": "If Gaurav reached out, this is inbound interest and may be higher-priority. If you initiated it, it is outbound sales and may be lower-priority relative to raising and hiring."
+    },
+    {
+     "question": "What is the scope and purpose of the pilot proposal you committed to send?",
+     "relevance": "Without clarity on what the pilot is, you cannot write it well or on time. This is the most urgent unknown."
+    },
+    {
+     "question": "Is this work aligned with your stated goals of raising, hiring, and landing design partners?",
+     "relevance": "If Stackfield is a design partner candidate, this is aligned. If it is a customer or a distraction, it may not be. Alignment affects priority."
+    },
+    {
+     "question": "What is your relationship history with Gaurav or Stackfield before this conversation?",
+     "relevance": "A warm introduction or prior relationship would suggest this is higher-priority than a cold outreach. The file shows no connector, which suggests either a cold outreach or a gap in the brief."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The due date is five days away, and you have already made the commitment. If you do not send the proposal by Thursday, the conversation will likely end. Stop only if you decide that Stackfield is not a fit for your goals and you are willing to accept the reputational cost of breaking the commitment."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You wrote to Gaurav at Stackfield on 2026-09-20 at 09:00 UTC committing to send a pilot proposal by Friday.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"As I said on WhatsApp, I'll send the pilot proposal by Friday.\"\n    },\n    {\n      \"claim\": \"A promise exists to send the pilot proposal, due 2026-09-25 18:29 UTC, and it remains open.\",\n      \"evidence\": [\n        \"promise:node_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.38 days as of the last mailbox read at 2026-09-20 18:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply has been received from Gaurav since you wrote on 2026-09-20 09:00 UTC.\",\n      \"evidence\": [\n        \"cov:last_mail\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Stackfield is not named in the brief as a work item for Nimbus Labs.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is not named by the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found low risk, low urgency, and healthy engagement in this file.\",\n      \"evidence\": [\n        \"ru:core.risk\",\n        \"ru:core.priority\",\n        \"ru:core.temporal\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time this file has been seen in the sales domain.\",\n      \"evidence\": [\n        \"hist:derived.history.times_seen@sales\",\n        \"hist:derived.history.prior_card_verdict@sales\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The move is yours: you made a commitment and must fulfill it by the due date.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"Gaurav has not yet replied, but the commitment was made only hours ago and the due date is five days away, so silence at this stage is not a signal of disengagement.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The work appears to be a sales or partnership opportunity with Stackfield, but its purpose and fit within your goals are not yet clear from the file.\",\n      \"based_on\": [\n        \"file:domains\",\n        \"file:role\",\n        \"fact:5\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A commitment made in conversation and confirmed by mail is usually honored on the stated date; failure to deliver damages credibility with the counterparty.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a founder commits to send a proposal by a specific date, the counterparty expects it on that date and interprets delay as a signal of lower priority or capability.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who does not reply immediately after a commitment is made may be waiting for the deliverable before engaging further, rather than signaling disinterest.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"own:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A pilot proposal sent on time, even if preliminary, keeps momentum and trust; a proposal sent late, even if polished, signals that you do not manage your own commitments.\",\n      \"why\": \"In early-stage work, reliability is often valued as highly as the quality of the work itself. A founder who delivers on their word builds optionality; one who does not closes doors.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Inbound sales opportunities from unknown counterparties, when they arrive without a connector or a clear fit to stated goals, are often lower-priority than work already in motion.\",\n      \"why\": \"Your brief names no work with Stackfield, and the file shows no introduction. This suggests either a cold outreach or a conversation that has not yet been logged into the brief. Either way, it competes for time against raising, hiring, and compliance work already underway.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A proposal should be sent before the due date, not on it, to allow the counterparty time to review and ask questions before the weekend or a natural break.\",\n      \"why\": \"Sending on Friday evening leaves no time for dialogue and may push the conversation into the following week, losing momentum.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Stackfield is a potential design partner or customer for Nimbus Labs.\",\n      \"needs\": \"Clarification from you on what Stackfield does, what the pilot is for, and how it fits your goals of raising, hiring, or landing design partners.\"\n    },\n    {\n      \"proposition\": \"The pilot proposal is a low-effort proof of concept to test Nimbus Labs' AI chief of staff product with a real user.\",\n      \"needs\": \"Confirmation of the scope, timeline, and success criteria for the pilot, and whether it is a paid engagement or a free trial.\"\n    },\n    {\n      \"proposition\": \"Gaurav is a decision-maker or influencer at Stackfield who could become a customer, investor, or partner.\",\n      \"needs\": \"Information on Gaurav's role, Stackfield's stage and funding, and whether this conversation was initiated by you or by Gaurav.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Stackfield, and what does it do?\",\n      \"relevance\": \"Understanding Stackfield's business and stage would clarify whether this is a sales opportunity, a partnership, or a distraction from your stated goals.\"\n    },\n    {\n      \"question\": \"How did this conversation with Gaurav begin, and who initiated it?\",\n      \"relevance\": \"If Gaurav reached out, this is inbound interest and may be higher-priority. If you initiated it, it is outbound sales and may be lower-priority relative to raising and hiring.\"\n    },\n    {\n      \"question\": \"What is the scope and purpose of the pilot proposal you committed to send?\",\n      \"relevance\": \"Without clarity on what the pilot is, you cannot write it well or on time. This is the most urgent unknown.\"\n    },\n    {\n      \"question\": \"Is this work aligned with your stated goals of raising, hiring, and landing design partners?\",\n      \"relevance\": \"If Stackfield is a design partner candidate, this is aligned. If it is a customer or a distraction, it may not be. Alignment affects priority.\"\n    },\n    {\n      \"question\": \"What is your relationship history with Gaurav or Stackfield before this conversation?\",\n      \"relevance\": \"A warm introduction or prior relationship would suggest this is higher-priority than a cold outreach. The file shows no connector, which suggests either a cold outreach or a gap in the brief.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"You made a commitment to send a pilot proposal by Friday and must deliver on it. The counterparty is waiting. The work is not yet integrated into your brief, so its priority and fit are unclear.\",\n    \"rivals\": [\n      \"This is an inbound sales opportunity that could become a customer or partner, and it deserves higher priority than it currently has.\",\n      \"This is a distraction from your stated goals of raising, hiring, and landing design partners, and it should be deprioritized or declined.\",\n      \"This is a design partner conversation that is aligned with your goals but has not yet been logged into the brief.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"vendor\",\n    \"why\": \"The file shows a sales domain and a conversation about a pilot proposal, which suggests Stackfield is either a potential customer or a vendor providing a service. Without more context, vendor is the most neutral classification. If Stackfield is a design partner candidate, the kind should be partner; if it is a potential customer, the kind should be sales or opportunity.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook for this kind of work, expectations come from the brief and the file's history. The brief does not name Stackfield, so there is no stated expectation. The file shows a commitment made and a due date set, so the expectation is that you will deliver the proposal by 2026-09-25 18:29 UTC.\",\n    \"actual\": \"You have made the commitment and set the due date. No reply has been received from Gaurav, but the commitment was made only hours ago, so silence is not yet a signal of disengagement. The proposal has not yet been sent.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If you do nothing, the due date of 2026-09-25 18:29 UTC will pass without a proposal sent. Gaurav will interpret this as a broken commitment, and the conversation will likely end. Trust will be damaged, and any future opportunity with Stackfield will be harder to pursue.\",\n    \"act\": \"If you act now, you will clarify the scope of the pilot proposal, write it, and send it to Gaurav before the due date. This keeps momentum, honors your commitment, and opens the door to a pilot engagement or further conversation.\",\n    \"best\": \"You send a well-scoped, clear pilot proposal by Thursday 2026-09-25, Gaurav reviews it over the weekend, and you have a call on Monday to discuss next steps. The pilot becomes a customer or design partner, or it leads to an introduction to someone else at Stackfield who is a better fit.\",\n    \"worst\": \"You send the proposal late or not at all. Gaurav loses confidence in you and does not reply. The conversation ends, and any opportunity with Stackfield is lost. If Stackfield is a design partner candidate or a potential customer, this is a missed opportunity.\",\n    \"signals_to_watch\": [\n      \"Whether you send the proposal by Thursday 2026-09-25.\",\n      \"Whether Gaurav replies to the proposal within two business days of receiving it.\",\n      \"Whether Gaurav asks clarifying questions or requests a call to discuss the pilot.\",\n      \"Whether the pilot leads to a paid engagement, a design partnership, or an introduction to someone else at Stackfield.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"You made a public commitment to Gaurav and set a specific due date. Failing to deliver damages your credibility and closes the door to this opportunity.\",\n      \"The file is not yet integrated into your brief, so the opportunity's fit and value are unclear. If Stackfield is a design partner or customer, the stakes are higher. If it is a distraction, the stakes are lower.\",\n      \"The due date is five days away, so there is time to act, but not much. Delay increases the risk of missing the deadline.\",\n      \"A broken commitment is costly to reverse: rebuilding trust with Gaurav would require significant effort and a strong reason for the delay.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Clarify the scope and purpose of the pilot proposal with Gaurav, then write and send the proposal by Thursday 2026-09-25.\",\n    \"for_whom\": \"Gaurav at Stackfield\",\n    \"by_when\": \"2026-09-25\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"gaurav@stackfield.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If the scope of the pilot is unclear or you do not have time to write a strong proposal by Thursday, send Gaurav a brief message on Tuesday or Wednesday asking for a call to clarify the scope and timeline. This keeps the commitment alive and buys you time to write a better proposal. However, this risks appearing unprepared and may lower Gaurav's confidence in you.\",\n  \"wait_or_stop\": \"Do not wait. The due date is five days away, and you have already made the commitment. If you do not send the proposal by Thursday, the conversation will likely end. Stop only if you decide that Stackfield is not a fit for your goals and you are willing to accept the reputational cost of breaking the commitment.\",\n  \"done_when\": \"The proposal is sent to Gaurav by Thursday 2026-09-25, and Gaurav acknowledges receipt or replies with questions or feedback within two business days.\",\n  \"draft\": \"Hi Gaurav, I want to make sure I send you a pilot proposal that's useful. Before I write it, can we clarify a few things? What's the main problem you'd want Nimbus to solve in the pilot, and what would success look like for you? Also, what's your timeline for getting started? I'll have the proposal to you by end of day Thursday. Thanks, Arjun\"\n}",
+  "site": "expert"
+ },
+ "b86c49dd71a52acab0b5ed834afe3086e08c3d8714c721d20370eb0468a90ea3": {
+  "framed": true,
+  "input_tokens": 6258,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2889,
+  "parsed": {
+   "alternative": "If Arjun confirms he will deliver by the due date, set a reminder to check on 2026-09-24 that the proposal is sent. If he says he will not deliver, draft a note for him to send to Gaurav resetting expectations before the deadline passes.",
+   "appraisal": {
+    "reasons": [
+     "The file is inbound work from an unknown counterparty not named in the brief; if it does not pan out, the cost is a missed opportunity, not a broken goal.",
+     "A promise due in five days is a near-term commitment; if Arjun misses it, the damage is to his credibility with one new contact, not to the company's core work.",
+     "Arjun can reset the deadline with Gaurav, decline the pilot, or deliver it; all are reversible."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "medium"
+   },
+   "done_when": "Arjun has either sent the pilot proposal to Gaurav by 2026-09-25, or written to Gaurav to reset the deadline, or confirmed that the file is closed and not part of the brief's work.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "Arjun has engaged with Gaurav, made a written commitment to send a pilot proposal by a named date, and the file is now open with a promise due in five days.",
+    "expected": "The brief names no playbook for this kind of work. Without a playbook, the expectation is that inbound work from unknown counterparties is triaged quickly: either it aligns with stated goals and is tracked, or it is declined or deferred.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Arjun wrote to Gaurav on 2026-09-20 at 09:00 UTC promising to send a pilot proposal by Friday.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "As I said on WhatsApp, I'll send the pilot proposal by Friday."
+    },
+    {
+     "claim": "A promise to send the pilot proposal is open and due 2026-09-25 18:29 UTC.",
+     "evidence": [
+      "promise:node_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows no prior history with stackfield.test; this is the first touch.",
+     "evidence": [
+      "file:first_touch",
+      "hist:derived.history.times_seen@sales"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.38 days as of the last mailbox read at 2026-09-20 18:00 UTC.",
+     "evidence": [
+      "num:days_quiet",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Stackfield.test is not named in the brief as a connector, investor, program, compliance body, hire, or design partner.",
+     "evidence": [
+      "brief:company"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An inbound sales or partnership inquiry from an unknown vendor, to which Arjun has committed a pilot proposal by a hard deadline, with no stated alignment to the brief's goals.",
+    "rivals": [
+     "A design partner opportunity that Arjun is exploring as part of the stated goal to land design partners.",
+     "A tool or service that Arjun believes will accelerate Nimbus Labs' product and is testing via pilot.",
+     "A distraction from core work that Arjun engaged with on WhatsApp and now owns a commitment to, but has not prioritized."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The content of the pilot proposal, or context from Arjun about why he engaged Gaurav on WhatsApp.",
+     "proposition": "Stackfield.test is a tool or service vendor pitching a pilot to Nimbus Labs."
+    },
+    {
+     "needs": "Arjun's own notes on what Stackfield does and why it matters to Nimbus Labs.",
+     "proposition": "This is a design partner or integration opportunity that Arjun is exploring outside the stated brief."
+    },
+    {
+     "needs": "Whether Arjun has drafted the proposal, and whether he intends to meet the 2026-09-25 deadline.",
+     "proposition": "Arjun committed to a pilot proposal without a clear plan to deliver it by the stated date."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The next move is Arjun's: he made a promise and owns its delivery."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "sit:sit_#1"
+     ],
+     "claim": "This is inbound work \u2014 Gaurav initiated contact, and Arjun responded with a commitment."
+    },
+    {
+     "based_on": [
+      "file:role",
+      "brief:company"
+     ],
+     "claim": "The file's role in the brief is unknown; it does not map to any stated goal or work in motion."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-21",
+    "for_whom": "Arjun",
+    "guided_by": [
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "ask Arjun whether he intends to deliver the pilot proposal by 2026-09-25, and if so, whether he has a draft ready; if not, ask him to clarify the file's role in the brief and whether it should be tracked or closed.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A founder who commits to a date in writing must track it and deliver on time, or explain the slip before the date passes.",
+     "kind": "practice",
+     "why": "A missed deadline without warning damages credibility with a new contact and signals poor execution."
+    },
+    {
+     "claim": "Unsolicited inbound sales work from vendors or service providers, when the founder is in seed stage and raising, often competes for attention with core work.",
+     "kind": "base_rate",
+     "why": "Seed founders have limited bandwidth; work not in the brief should be triaged quickly to preserve focus."
+    },
+    {
+     "claim": "A pilot proposal from an unknown vendor can sometimes unlock a partnership or tool that accelerates the product, but only if it aligns with stated needs.",
+     "kind": "counter_pattern",
+     "why": "Serendipity happens, but it is rare; most unsolicited inbound is noise."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A promise to send a document by a named day is a hard deadline; if it passes without delivery, the thread cools and trust erodes.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "file:role",
+      "sit:sit_#1"
+     ],
+     "claim": "Inbound sales work from an unknown counterparty, when the brief names no such work, often signals either a new opportunity or a distraction from stated goals.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "sit:sit_#1",
+     "evt_#1"
+    ],
+    "kind": "vendor",
+    "why": "The file shows a sales domain, an inbound inquiry, and a pilot proposal \u2014 the hallmarks of a vendor pitch. The brief does not name Stackfield as a partner, program, investor, or hire. Without evidence to the contrary, this is vendor work."
+   },
+   "scenarios": {
+    "act": "Arjun clarifies now whether he intends to deliver the pilot proposal by the due date. If yes, he drafts and sends it by 2026-09-25. If no, he writes to Gaurav before the date to reset expectations. Either way, the file is brought into alignment with the brief's goals or closed.",
+    "best": "The pilot proposal is sent on time, Gaurav replies with interest, and Stackfield becomes a design partner or tool that accelerates Nimbus Labs' product. The file becomes a partner or vendor relationship that supports stated goals.",
+    "do_nothing": "The promise due date of 2026-09-25 18:29 UTC passes. If Arjun does not send the proposal, Gaurav will not reply, the thread will go cold, and Arjun will have broken a commitment to a new contact. If Arjun does send it, Gaurav may reply with interest or indifference; the file will remain open and require follow-up.",
+    "signals_to_watch": [
+     "Whether Arjun has drafted the proposal and is on track to send it by 2026-09-25.",
+     "Whether Gaurav replies to the proposal, and with what tone.",
+     "Whether Arjun clarifies the file's role in the brief \u2014 is it a design partner candidate, a tool evaluation, or a distraction?"
+    ],
+    "worst": "Arjun misses the deadline without notice. Gaurav does not reply. The file goes dormant, and Arjun's credibility with a new contact is damaged. If Stackfield is later relevant, the relationship is harder to revive."
+   },
+   "unknowns": [
+    {
+     "question": "What is Stackfield.test, and what does it do?",
+     "relevance": "The nature of the counterparty determines whether this is a distraction or an opportunity aligned with Nimbus Labs' goals."
+    },
+    {
+     "question": "Why did Arjun initiate contact with Gaurav, and what problem does the pilot proposal solve?",
+     "relevance": "Without this context, it is unclear whether the file should be prioritized or deprioritized relative to stated work in motion."
+    },
+    {
+     "question": "Does Arjun have a draft of the pilot proposal, and is he on track to deliver by 2026-09-25?",
+     "relevance": "If he is not, the promise will break, and the file will become a liability rather than an opportunity."
+    },
+    {
+     "question": "Is this work part of a broader strategy to land design partners, or is it a one-off exploration?",
+     "relevance": "The brief names design partners as a goal; if Stackfield is a design partner candidate, the file should be tracked differently."
+    }
+   ],
+   "wait_or_stop": "Wait until Arjun clarifies his intent. Stop tracking this file if Arjun confirms it is not aligned with the brief's goals and he does not intend to pursue it further."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Arjun wrote to Gaurav on 2026-09-20 at 09:00 UTC promising to send a pilot proposal by Friday.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"As I said on WhatsApp, I'll send the pilot proposal by Friday.\"\n    },\n    {\n      \"claim\": \"A promise to send the pilot proposal is open and due 2026-09-25 18:29 UTC.\",\n      \"evidence\": [\n        \"promise:node_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows no prior history with stackfield.test; this is the first touch.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"hist:derived.history.times_seen@sales\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.38 days as of the last mailbox read at 2026-09-20 18:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Stackfield.test is not named in the brief as a connector, investor, program, compliance body, hire, or design partner.\",\n      \"evidence\": [\n        \"brief:company\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The next move is Arjun's: he made a promise and owns its delivery.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"This is inbound work \u2014 Gaurav initiated contact, and Arjun responded with a commitment.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"sit:sit_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The file's role in the brief is unknown; it does not map to any stated goal or work in motion.\",\n      \"based_on\": [\n        \"file:role\",\n        \"brief:company\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A promise to send a document by a named day is a hard deadline; if it passes without delivery, the thread cools and trust erodes.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Inbound sales work from an unknown counterparty, when the brief names no such work, often signals either a new opportunity or a distraction from stated goals.\",\n      \"based_on\": [\n        \"file:role\",\n        \"sit:sit_#1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A founder who commits to a date in writing must track it and deliver on time, or explain the slip before the date passes.\",\n      \"why\": \"A missed deadline without warning damages credibility with a new contact and signals poor execution.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Unsolicited inbound sales work from vendors or service providers, when the founder is in seed stage and raising, often competes for attention with core work.\",\n      \"why\": \"Seed founders have limited bandwidth; work not in the brief should be triaged quickly to preserve focus.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A pilot proposal from an unknown vendor can sometimes unlock a partnership or tool that accelerates the product, but only if it aligns with stated needs.\",\n      \"why\": \"Serendipity happens, but it is rare; most unsolicited inbound is noise.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Stackfield.test is a tool or service vendor pitching a pilot to Nimbus Labs.\",\n      \"needs\": \"The content of the pilot proposal, or context from Arjun about why he engaged Gaurav on WhatsApp.\"\n    },\n    {\n      \"proposition\": \"This is a design partner or integration opportunity that Arjun is exploring outside the stated brief.\",\n      \"needs\": \"Arjun's own notes on what Stackfield does and why it matters to Nimbus Labs.\"\n    },\n    {\n      \"proposition\": \"Arjun committed to a pilot proposal without a clear plan to deliver it by the stated date.\",\n      \"needs\": \"Whether Arjun has drafted the proposal, and whether he intends to meet the 2026-09-25 deadline.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Stackfield.test, and what does it do?\",\n      \"relevance\": \"The nature of the counterparty determines whether this is a distraction or an opportunity aligned with Nimbus Labs' goals.\"\n    },\n    {\n      \"question\": \"Why did Arjun initiate contact with Gaurav, and what problem does the pilot proposal solve?\",\n      \"relevance\": \"Without this context, it is unclear whether the file should be prioritized or deprioritized relative to stated work in motion.\"\n    },\n    {\n      \"question\": \"Does Arjun have a draft of the pilot proposal, and is he on track to deliver by 2026-09-25?\",\n      \"relevance\": \"If he is not, the promise will break, and the file will become a liability rather than an opportunity.\"\n    },\n    {\n      \"question\": \"Is this work part of a broader strategy to land design partners, or is it a one-off exploration?\",\n      \"relevance\": \"The brief names design partners as a goal; if Stackfield is a design partner candidate, the file should be tracked differently.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An inbound sales or partnership inquiry from an unknown vendor, to which Arjun has committed a pilot proposal by a hard deadline, with no stated alignment to the brief's goals.\",\n    \"rivals\": [\n      \"A design partner opportunity that Arjun is exploring as part of the stated goal to land design partners.\",\n      \"A tool or service that Arjun believes will accelerate Nimbus Labs' product and is testing via pilot.\",\n      \"A distraction from core work that Arjun engaged with on WhatsApp and now owns a commitment to, but has not prioritized.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"vendor\",\n    \"why\": \"The file shows a sales domain, an inbound inquiry, and a pilot proposal \u2014 the hallmarks of a vendor pitch. The brief does not name Stackfield as a partner, program, investor, or hire. Without evidence to the contrary, this is vendor work.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"sit:sit_#1\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this kind of work. Without a playbook, the expectation is that inbound work from unknown counterparties is triaged quickly: either it aligns with stated goals and is tracked, or it is declined or deferred.\",\n    \"actual\": \"Arjun has engaged with Gaurav, made a written commitment to send a pilot proposal by a named date, and the file is now open with a promise due in five days.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The promise due date of 2026-09-25 18:29 UTC passes. If Arjun does not send the proposal, Gaurav will not reply, the thread will go cold, and Arjun will have broken a commitment to a new contact. If Arjun does send it, Gaurav may reply with interest or indifference; the file will remain open and require follow-up.\",\n    \"act\": \"Arjun clarifies now whether he intends to deliver the pilot proposal by the due date. If yes, he drafts and sends it by 2026-09-25. If no, he writes to Gaurav before the date to reset expectations. Either way, the file is brought into alignment with the brief's goals or closed.\",\n    \"best\": \"The pilot proposal is sent on time, Gaurav replies with interest, and Stackfield becomes a design partner or tool that accelerates Nimbus Labs' product. The file becomes a partner or vendor relationship that supports stated goals.\",\n    \"worst\": \"Arjun misses the deadline without notice. Gaurav does not reply. The file goes dormant, and Arjun's credibility with a new contact is damaged. If Stackfield is later relevant, the relationship is harder to revive.\",\n    \"signals_to_watch\": [\n      \"Whether Arjun has drafted the proposal and is on track to send it by 2026-09-25.\",\n      \"Whether Gaurav replies to the proposal, and with what tone.\",\n      \"Whether Arjun clarifies the file's role in the brief \u2014 is it a design partner candidate, a tool evaluation, or a distraction?\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is inbound work from an unknown counterparty not named in the brief; if it does not pan out, the cost is a missed opportunity, not a broken goal.\",\n      \"A promise due in five days is a near-term commitment; if Arjun misses it, the damage is to his credibility with one new contact, not to the company's core work.\",\n      \"Arjun can reset the deadline with Gaurav, decline the pilot, or deliver it; all are reversible.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"ask Arjun whether he intends to deliver the pilot proposal by 2026-09-25, and if so, whether he has a draft ready; if not, ask him to clarify the file's role in the brief and whether it should be tracked or closed.\",\n    \"for_whom\": \"Arjun\",\n    \"by_when\": \"2026-09-21\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If Arjun confirms he will deliver by the due date, set a reminder to check on 2026-09-24 that the proposal is sent. If he says he will not deliver, draft a note for him to send to Gaurav resetting expectations before the deadline passes.\",\n    \"wait_or_stop\": \"Wait until Arjun clarifies his intent. Stop tracking this file if Arjun confirms it is not aligned with the brief's goals and he does not intend to pursue it further.\",\n  \"done_when\": \"Arjun has either sent the pilot proposal to Gaurav by 2026-09-25, or written to Gaurav to reset the deadline, or confirmed that the file is closed and not part of the brief's work.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

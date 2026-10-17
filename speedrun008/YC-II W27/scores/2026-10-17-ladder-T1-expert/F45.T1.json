@@ -1,0 +1,569 @@
+{
+ "5916a501da64ccfef270e4adb5f71ce8468ce97d20f7be5b08ea10c20c10ea04": {
+  "framed": true,
+  "input_tokens": 8402,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4282,
+  "parsed": {
+   "alternative": "If you do not have the pilot customer details ready, or if the pilots have not agreed to the reference call, send a message to Meera Shah today explaining the status and proposing a new timeline. This converts a broken promise into a managed one and preserves the relationship.",
+   "appraisal": {
+    "reasons": [
+     "You made a written commitment to send details and have not delivered; this is a material miss that damages credibility.",
+     "Bluepeak's pattern of engagement suggests they are a serious prospect, not a cold inquiry.",
+     "The silence is now 15 days, longer than any prior gap, and suggests Bluepeak is either waiting or has moved on.",
+     "If Bluepeak is an investor, this is a late-stage moment in due diligence; missing it could cost you the round.",
+     "A broken commitment to an investor or partner is costly to repair; it signals disorganization or evasion.",
+     "The file has been quiet long enough that Bluepeak may have already moved on; waiting longer increases the risk of losing them."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "Done when Bluepeak receives the pilot customer details and confirms the reference calls, or when Bluepeak replies to your status update with a new timeline. If Bluepeak does not reply to two messages over 10 days, the file is closed as dormant.",
+   "draft": "Hi Meera, Apologies for the delay in getting back to you with the pilot customer details. I've confirmed with two of our pilots that they're willing to take a reference call. I'll send their contact information separately and propose some times for the calls to happen next week. Thanks for your patience. Arjun",
+   "expected_vs_actual": {
+    "actual": "You committed to send pilot customer details on 2026-09-15 and have not done so. Bluepeak has not chased you, but the silence is now 15 days, longer than any prior gap in the thread.",
+    "expected": "The brief names no kind of work for this file, so there is no playbook and no stage. However, if Bluepeak is an investor, the expected sequence would be: pitch \u2192 questions \u2192 due diligence \u2192 reference calls \u2192 term sheet. You are at the reference call stage, which is late in the funnel.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Bluepeak asked for pilot customer references on 2026-09-09, and you committed to provide them on 2026-09-15.",
+     "evidence": [
+      "evt_#2",
+      "evt_#1"
+     ],
+     "quote": "Could two of your pilot customers take a short reference call with us?"
+    },
+    {
+     "claim": "You replied on 2026-09-15 that pilot leads had agreed and you would send their details separately.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Yes - two pilot leads have agreed; I will send their details separately."
+    },
+    {
+     "claim": "No mail has been received from Bluepeak or sent to them since 2026-09-15, a gap of 15.12 days as of the file's last read.",
+     "evidence": [
+      "num:days_quiet",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This gap is longer than any prior gap in the thread that was closed; the usual gap between touches is 4 days.",
+     "evidence": [
+      "num:usual_gap",
+      "num:longest_gap",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Bluepeak's Meera Shah asked four substantive questions over six weeks: about hiring, pipeline, competition, and references.",
+     "evidence": [
+      "evt_#8",
+      "evt_#6",
+      "evt_#4",
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "You answered each question within 1.5 days on average, and your reply time to Meera Shah is consistently 1.5 days.",
+     "evidence": [
+      "num:your_reply_time:meera@bluepeak.test",
+      "num:your_normal:meera@bluepeak.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file; Bluepeak is not listed among investors, programs, compliance bodies, hiring targets, or design partners.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's domains are admin and sales; the account_admin situation is active and has been quiet 15.1 days of a 45-day window; the opportunity situation is dormant and has been quiet 48.1 days.",
+     "evidence": [
+      "file:domains",
+      "sit:sit_#1",
+      "sit:sit_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The expert's prior review on 2026-08-31 judged the file valid and set mode to wait; this is the first time the file has been reviewed since.",
+     "evidence": [
+      "review:ffp-bf65c98f2a5dad9d06c3e1f0",
+      "hist:derived.history.prior_card_verdict@admin",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units flagged high risk due to do_nothing_exposure and an unmeasured relationship; they flagged high urgency and high confidence in the completeness of context.",
+     "evidence": [
+      "ru:core.risk",
+      "ru:core.priority",
+      "ru:core.confidence"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A potential investor or partner is waiting for promised pilot customer references; you committed to send them on 2026-09-15 and have not yet done so. The silence since then is unusual for this thread and suggests either that they are waiting for your delivery, or that they have moved on.",
+    "rivals": [
+     "Bluepeak is a vendor or service provider conducting a routine check, and the silence is normal administrative delay.",
+     "Bluepeak has lost interest and the file should be closed.",
+     "You have sent the details but they did not arrive, or Bluepeak did not receive them."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation of Bluepeak's business model, fund size, and investment stage; or a statement from you about what Bluepeak is.",
+     "proposition": "Bluepeak is a potential investor conducting due diligence on your company."
+    },
+    {
+     "needs": "A check of your drafts, notes, or calendar to see whether the details were prepared and what blocked sending them.",
+     "proposition": "You have the pilot customer details ready but have not sent them."
+    },
+    {
+     "needs": "A check with the pilots to confirm their willingness and availability; or a statement from you about the status of the reference calls.",
+     "proposition": "You do not have the pilot customer details ready, or the pilots have not agreed to the reference call."
+    },
+    {
+     "needs": "A reply from Bluepeak to a follow-up message; or a check of their website or LinkedIn to see whether they have announced a new fund or changed focus.",
+     "proposition": "Bluepeak has moved on and is no longer interested."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "You made a commitment to send pilot customer details separately after 2026-09-15, and that commitment has not been discharged."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "inference:1"
+     ],
+     "claim": "The ball is in your court: Bluepeak asked a question, you answered it with a promise to follow up, and the follow-up has not arrived."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "fact:6"
+     ],
+     "claim": "Bluepeak's pattern of engagement\u2014four substantive questions over six weeks, each answered promptly\u2014suggests active interest in your company, not a cold inquiry."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4"
+     ],
+     "claim": "The silence since 2026-09-15 is unusual for this thread and may signal either that Bluepeak is waiting for your promised details, or that they have moved on."
+    },
+    {
+     "based_on": [
+      "fact:7",
+      "fact:5"
+     ],
+     "claim": "Bluepeak's role in your company's work is not named in the brief, but the pattern of questions\u2014hiring, pipeline, competition, references\u2014suggests they are evaluating you as a potential investment or partnership opportunity."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-01",
+    "for_whom": "Meera Shah at Bluepeak",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.heu.commitment_tracking.forgotten_beats_broken_for_damage",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "meera@bluepeak.test",
+    "what": "Send the pilot customer details to Bluepeak, with an apology for the delay and a proposed timeline for the reference calls.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A promise to send details separately, made in writing, is a commitment that must be tracked and discharged; it is not a courtesy or a soft commitment.",
+     "kind": "practice",
+     "why": "The counterparty has relied on it and will measure you by whether it arrives. Silence after such a promise reads as either incompetence or evasion."
+    },
+    {
+     "claim": "When a founder has promised to send something and has not, the first move is to discharge the promise, not to wait for the counterparty to chase.",
+     "kind": "base_rate",
+     "why": "Waiting converts a manageable miss into a broken commitment. The counterparty is tracking your delivery, not your intentions."
+    },
+    {
+     "claim": "A counterparty who goes quiet after you promise to follow up is often waiting, not gone; the silence is not a signal to escalate, but a signal to deliver.",
+     "kind": "counter_pattern",
+     "why": "Chasing before delivering reads as pressure and damages the relationship. Delivering the promised thing restores momentum."
+    },
+    {
+     "claim": "A potential investor's reference call request is a high-signal moment; it means they are past the pitch and into the reference check. Failing to deliver references is a material miss.",
+     "kind": "practice",
+     "why": "References are the last gate before a term sheet. A founder who cannot produce them, or who delays them, signals either that the pilots are not real or that the founder is disorganized."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "When a founder commits to send something and does not, the counterparty's next move is to wait a reasonable time, then either follow up or move on.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "fact:6",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A counterparty who asks four substantive questions in sequence and receives prompt answers is not disinterested; silence after a promised follow-up is more likely to signal waiting than abandonment.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "brief:cbl_#2"
+     ],
+     "claim": "In seed-stage fundraising, a potential investor who asks about hiring, pipeline, and competition is conducting due diligence; reference calls are a standard late-stage signal.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "fact:5",
+     "brief:cbl_#2",
+     "brief:cbl_#7"
+    ],
+    "kind": "investor",
+    "why": "Bluepeak's pattern of questions\u2014about hiring, pipeline, competition, and references\u2014matches the due diligence sequence of a seed-stage investor. The reference call request is a high-signal moment in investor evaluation. The brief lists raising the seed round as a goal, and Bluepeak is not named among the investors being pursued, suggesting they may be an inbound opportunity."
+   },
+   "scenarios": {
+    "act": "You send the pilot customer details immediately, with an apology for the delay and a proposed timeline for the reference calls. Bluepeak either confirms the calls and moves forward, or they do not reply (in which case you know they have lost interest). The file either advances or closes cleanly.",
+    "best": "You send the details today. Bluepeak confirms the reference calls within a few days. The calls happen within a week. Bluepeak moves forward with a term sheet or partnership proposal. The file advances to the next stage of fundraising or partnership.",
+    "do_nothing": "Bluepeak's silence continues. After another week or two, they either follow up (in which case you are now overdue and must explain the delay) or they move on to another company. If they move on, you have lost a potential investor or partner without knowing why. The file remains open and unresolved.",
+    "signals_to_watch": [
+     "Whether Bluepeak replies to your message with the details within 3 days.",
+     "Whether the pilot customers confirm their availability for the reference calls.",
+     "Whether Bluepeak schedules the calls or asks for a different timeline.",
+     "Whether Bluepeak's questions shift from due diligence to term sheet discussion."
+    ],
+    "worst": "You send the details, but Bluepeak does not reply. You follow up once, and they still do not reply. You have now spent time and credibility on a dead lead, and the file remains open and unresolved. Alternatively, you do nothing, Bluepeak moves on, and you never know whether they were a real opportunity."
+   },
+   "unknowns": [
+    {
+     "question": "What is Bluepeak's business model and role in your company's work? Are they an investor, a partner, a customer, or something else?",
+     "relevance": "This determines whether the silence is a red flag or a normal wait, and whether the reference call is a high-stakes moment or a routine check."
+    },
+    {
+     "question": "Have you prepared the pilot customer details, and if so, what has blocked you from sending them?",
+     "relevance": "If the details are ready, the next move is to send them immediately. If they are not ready, the next move is to renegotiate the timeline with Bluepeak before they move on."
+    },
+    {
+     "question": "Have the pilot customers agreed to the reference call, and are they available?",
+     "relevance": "If they have not agreed, you cannot deliver on your promise. If they have agreed but are not available, you need to renegotiate the timeline."
+    },
+    {
+     "question": "Is Bluepeak's silence a normal wait, or a signal that they have lost interest?",
+     "relevance": "If it is a normal wait, you should deliver the promised details and move forward. If they have lost interest, you may need to re-engage or close the file."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The commitment was made on 2026-09-15, and it is now 15 days later. Waiting longer increases the risk that Bluepeak has moved on. Send the details or a status update by 2026-10-01. If Bluepeak does not reply within 3 days of your message, follow up once. If they still do not reply after 7 days, close the file and mark it as dormant."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Bluepeak asked for pilot customer references on 2026-09-09, and you committed to provide them on 2026-09-15.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could two of your pilot customers take a short reference call with us?\"\n    },\n    {\n      \"claim\": \"You replied on 2026-09-15 that pilot leads had agreed and you would send their details separately.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Yes - two pilot leads have agreed; I will send their details separately.\"\n    },\n    {\n      \"claim\": \"No mail has been received from Bluepeak or sent to them since 2026-09-15, a gap of 15.12 days as of the file's last read.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This gap is longer than any prior gap in the thread that was closed; the usual gap between touches is 4 days.\",\n      \"evidence\": [\n        \"num:usual_gap\",\n        \"num:longest_gap\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Bluepeak's Meera Shah asked four substantive questions over six weeks: about hiring, pipeline, competition, and references.\",\n      \"evidence\": [\n        \"evt_#8\",\n        \"evt_#6\",\n        \"evt_#4\",\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"You answered each question within 1.5 days on average, and your reply time to Meera Shah is consistently 1.5 days.\",\n      \"evidence\": [\n        \"num:your_reply_time:meera@bluepeak.test\",\n        \"num:your_normal:meera@bluepeak.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file; Bluepeak is not listed among investors, programs, compliance bodies, hiring targets, or design partners.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's domains are admin and sales; the account_admin situation is active and has been quiet 15.1 days of a 45-day window; the opportunity situation is dormant and has been quiet 48.1 days.\",\n      \"evidence\": [\n        \"file:domains\",\n        \"sit:sit_#1\",\n        \"sit:sit_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The expert's prior review on 2026-08-31 judged the file valid and set mode to wait; this is the first time the file has been reviewed since.\",\n      \"evidence\": [\n        \"review:ffp-bf65c98f2a5dad9d06c3e1f0\",\n        \"hist:derived.history.prior_card_verdict@admin\",\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units flagged high risk due to do_nothing_exposure and an unmeasured relationship; they flagged high urgency and high confidence in the completeness of context.\",\n      \"evidence\": [\n        \"ru:core.risk\",\n        \"ru:core.priority\",\n        \"ru:core.confidence\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"You made a commitment to send pilot customer details separately after 2026-09-15, and that commitment has not been discharged.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in your court: Bluepeak asked a question, you answered it with a promise to follow up, and the follow-up has not arrived.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"Bluepeak's pattern of engagement\u2014four substantive questions over six weeks, each answered promptly\u2014suggests active interest in your company, not a cold inquiry.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"claim\": \"The silence since 2026-09-15 is unusual for this thread and may signal either that Bluepeak is waiting for your promised details, or that they have moved on.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"Bluepeak's role in your company's work is not named in the brief, but the pattern of questions\u2014hiring, pipeline, competition, references\u2014suggests they are evaluating you as a potential investment or partnership opportunity.\",\n      \"based_on\": [\n        \"fact:7\",\n        \"fact:5\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a founder commits to send something and does not, the counterparty's next move is to wait a reasonable time, then either follow up or move on.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who asks four substantive questions in sequence and receives prompt answers is not disinterested; silence after a promised follow-up is more likely to signal waiting than abandonment.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"fact:6\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"In seed-stage fundraising, a potential investor who asks about hiring, pipeline, and competition is conducting due diligence; reference calls are a standard late-stage signal.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"brief:cbl_#2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A promise to send details separately, made in writing, is a commitment that must be tracked and discharged; it is not a courtesy or a soft commitment.\",\n      \"why\": \"The counterparty has relied on it and will measure you by whether it arrives. Silence after such a promise reads as either incompetence or evasion.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a founder has promised to send something and has not, the first move is to discharge the promise, not to wait for the counterparty to chase.\",\n      \"why\": \"Waiting converts a manageable miss into a broken commitment. The counterparty is tracking your delivery, not your intentions.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who goes quiet after you promise to follow up is often waiting, not gone; the silence is not a signal to escalate, but a signal to deliver.\",\n      \"why\": \"Chasing before delivering reads as pressure and damages the relationship. Delivering the promised thing restores momentum.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A potential investor's reference call request is a high-signal moment; it means they are past the pitch and into the reference check. Failing to deliver references is a material miss.\",\n      \"why\": \"References are the last gate before a term sheet. A founder who cannot produce them, or who delays them, signals either that the pilots are not real or that the founder is disorganized.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Bluepeak is a potential investor conducting due diligence on your company.\",\n      \"needs\": \"Confirmation of Bluepeak's business model, fund size, and investment stage; or a statement from you about what Bluepeak is.\"\n    },\n    {\n      \"proposition\": \"You have the pilot customer details ready but have not sent them.\",\n      \"needs\": \"A check of your drafts, notes, or calendar to see whether the details were prepared and what blocked sending them.\"\n    },\n    {\n      \"proposition\": \"You do not have the pilot customer details ready, or the pilots have not agreed to the reference call.\",\n      \"needs\": \"A check with the pilots to confirm their willingness and availability; or a statement from you about the status of the reference calls.\"\n    },\n    {\n      \"proposition\": \"Bluepeak has moved on and is no longer interested.\",\n      \"needs\": \"A reply from Bluepeak to a follow-up message; or a check of their website or LinkedIn to see whether they have announced a new fund or changed focus.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Bluepeak's business model and role in your company's work? Are they an investor, a partner, a customer, or something else?\",\n      \"relevance\": \"This determines whether the silence is a red flag or a normal wait, and whether the reference call is a high-stakes moment or a routine check.\"\n    },\n    {\n      \"question\": \"Have you prepared the pilot customer details, and if so, what has blocked you from sending them?\",\n      \"relevance\": \"If the details are ready, the next move is to send them immediately. If they are not ready, the next move is to renegotiate the timeline with Bluepeak before they move on.\"\n    },\n    {\n      \"question\": \"Have the pilot customers agreed to the reference call, and are they available?\",\n      \"relevance\": \"If they have not agreed, you cannot deliver on your promise. If they have agreed but are not available, you need to renegotiate the timeline.\"\n    },\n    {\n      \"question\": \"Is Bluepeak's silence a normal wait, or a signal that they have lost interest?\",\n      \"relevance\": \"If it is a normal wait, you should deliver the promised details and move forward. If they have lost interest, you may need to re-engage or close the file.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A potential investor or partner is waiting for promised pilot customer references; you committed to send them on 2026-09-15 and have not yet done so. The silence since then is unusual for this thread and suggests either that they are waiting for your delivery, or that they have moved on.\",\n    \"rivals\": [\n      \"Bluepeak is a vendor or service provider conducting a routine check, and the silence is normal administrative delay.\",\n      \"Bluepeak has lost interest and the file should be closed.\",\n      \"You have sent the details but they did not arrive, or Bluepeak did not receive them.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Bluepeak's pattern of questions\u2014about hiring, pipeline, competition, and references\u2014matches the due diligence sequence of a seed-stage investor. The reference call request is a high-signal moment in investor evaluation. The brief lists raising the seed round as a goal, and Bluepeak is not named among the investors being pursued, suggesting they may be an inbound opportunity.\",\n    \"evidence\": [\n      \"fact:5\",\n      \"brief:cbl_#2\",\n      \"brief:cbl_#7\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no kind of work for this file, so there is no playbook and no stage. However, if Bluepeak is an investor, the expected sequence would be: pitch \u2192 questions \u2192 due diligence \u2192 reference calls \u2192 term sheet. You are at the reference call stage, which is late in the funnel.\",\n    \"actual\": \"You committed to send pilot customer details on 2026-09-15 and have not done so. Bluepeak has not chased you, but the silence is now 15 days, longer than any prior gap in the thread.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Bluepeak's silence continues. After another week or two, they either follow up (in which case you are now overdue and must explain the delay) or they move on to another company. If they move on, you have lost a potential investor or partner without knowing why. The file remains open and unresolved.\",\n    \"act\": \"You send the pilot customer details immediately, with an apology for the delay and a proposed timeline for the reference calls. Bluepeak either confirms the calls and moves forward, or they do not reply (in which case you know they have lost interest). The file either advances or closes cleanly.\",\n    \"best\": \"You send the details today. Bluepeak confirms the reference calls within a few days. The calls happen within a week. Bluepeak moves forward with a term sheet or partnership proposal. The file advances to the next stage of fundraising or partnership.\",\n    \"worst\": \"You send the details, but Bluepeak does not reply. You follow up once, and they still do not reply. You have now spent time and credibility on a dead lead, and the file remains open and unresolved. Alternatively, you do nothing, Bluepeak moves on, and you never know whether they were a real opportunity.\",\n    \"signals_to_watch\": [\n      \"Whether Bluepeak replies to your message with the details within 3 days.\",\n      \"Whether the pilot customers confirm their availability for the reference calls.\",\n      \"Whether Bluepeak schedules the calls or asks for a different timeline.\",\n      \"Whether Bluepeak's questions shift from due diligence to term sheet discussion.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"You made a written commitment to send details and have not delivered; this is a material miss that damages credibility.\",\n      \"Bluepeak's pattern of engagement suggests they are a serious prospect, not a cold inquiry.\",\n      \"The silence is now 15 days, longer than any prior gap, and suggests Bluepeak is either waiting or has moved on.\",\n      \"If Bluepeak is an investor, this is a late-stage moment in due diligence; missing it could cost you the round.\",\n      \"A broken commitment to an investor or partner is costly to repair; it signals disorganization or evasion.\",\n      \"The file has been quiet long enough that Bluepeak may have already moved on; waiting longer increases the risk of losing them.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send the pilot customer details to Bluepeak, with an apology for the delay and a proposed timeline for the reference calls.\",\n    \"for_whom\": \"Meera Shah at Bluepeak\",\n    \"by_when\": \"2026-10-01\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.heu.commitment_tracking.forgotten_beats_broken_for_damage\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"meera@bluepeak.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If you do not have the pilot customer details ready, or if the pilots have not agreed to the reference call, send a message to Meera Shah today explaining the status and proposing a new timeline. This converts a broken promise into a managed one and preserves the relationship.\",\n  \"wait_or_stop\": \"Do not wait. The commitment was made on 2026-09-15, and it is now 15 days later. Waiting longer increases the risk that Bluepeak has moved on. Send the details or a status update by 2026-10-01. If Bluepeak does not reply within 3 days of your message, follow up once. If they still do not reply after 7 days, close the file and mark it as dormant.\",\n  \"done_when\": \"Done when Bluepeak receives the pilot customer details and confirms the reference calls, or when Bluepeak replies to your status update with a new timeline. If Bluepeak does not reply to two messages over 10 days, the file is closed as dormant.\",\n  \"draft\": \"Hi Meera, Apologies for the delay in getting back to you with the pilot customer details. I've confirmed with two of our pilots that they're willing to take a reference call. I'll send their contact information separately and propose some times for the calls to happen next week. Thanks for your patience. Arjun\"\n}",
+  "site": "expert"
+ },
+ "60e982e8695ee2bec06b3d9dc1cc3b329031d6268dbae3a6bc537a44e17b9ef4": {
+  "framed": true,
+  "input_tokens": 7935,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4109,
+  "parsed": {
+   "alternative": "If you believe Bluepeak is waiting for you to move, send a brief message to Meera Shah asking if they would like to schedule a call to discuss next steps. This is lower-risk than a chase message because it offers value (a conversation) rather than asking for movement. However, this should only be done if you have evidence that they expect you to move \u2014 which the file does not show.",
+   "appraisal": {
+    "reasons": [
+     "Stakes are medium because Bluepeak is one of five investors written to in the seed wave, and one of many prospects. A positive outcome would be a seed investment, which is material but not the only path to funding.",
+     "Urgency is low because the file shows no deadline, no promise, and no stated timeline. Investor due diligence is inherently slow, and three days of silence is within normal patterns.",
+     "Reversibility is reversible because any move you make now (a message, a meeting request) can be undone or reframed if Bluepeak responds negatively. A wrong move here damages the relationship but does not close the door permanently.",
+     "The reasoning units found low risk and high engagement, which supports a low-urgency judgment.",
+     "The file has been active for twenty-three days with healthy engagement, suggesting this is a live prospect, not a stalled one."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "Done when Bluepeak either (a) requests a meeting or sends a term sheet, in which case the file moves to a new stage; (b) sends a pass, in which case the file is closed; or (c) remains silent for more than three weeks after your last message, in which case the file is deprioritized and closed unless they re-engage.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "You have answered all questions asked. Bluepeak has gone silent for three days. No meeting has been requested, no term sheet has been sent, and no additional asks have been made. The file shows two active situations (account_admin and opportunity) but no stage progression or decision point.",
+    "expected": "Without a named kind of work or playbook, the expectation comes from the brief: Nimbus Labs is raising a seed round. Bluepeak's questions suggest they are evaluating whether to participate. The expected pattern would be: questions asked, answers provided, internal review by the investor, then either a meeting request or a pass. You are currently in the internal review phase.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Bluepeak Ventures has asked three substantive questions about Nimbus Labs over twenty-three days, each answered within one day.",
+     "evidence": [
+      "evt_#8",
+      "evt_#6",
+      "evt_#4",
+      "evt_#2",
+      "num:your_reply_time:meera@bluepeak.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The questions asked by Meera Shah concern pilot retention, pricing strategy, hiring plans, and pipeline depth \u2014 all operational and strategic details of Nimbus Labs.",
+     "evidence": [
+      "evt_#8",
+      "evt_#6",
+      "evt_#4",
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Your last message to Bluepeak was sent on 2026-08-28, stating 'Nine teams are in conversation for next quarter.'",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Nine teams are in conversation for next quarter"
+    },
+    {
+     "claim": "No reply has been received from Bluepeak since 2026-08-28, and the mailbox has been read through 2026-08-31 18:00 UTC.",
+     "evidence": [
+      "cov:last_mail",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no named kind of work in the brief, no playbook, and no promises recorded.",
+     "evidence": [
+      "file:kind",
+      "none:playbook",
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Bluepeak is not listed in the brief as an investor, program, partner, or connector \u2014 it appears only in this file.",
+     "evidence": [
+      "brief:company",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows two active situations: account_admin (23 days, quiet 3.4 days) and opportunity (1 day visible, quiet 18.4 days).",
+     "evidence": [
+      "sit:sit_#1",
+      "sit:sit_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and high engagement, but measured insufficient context for relationship status and opportunity owner.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.relationship",
+      "ru:core.opportunity"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "Bluepeak Ventures is conducting early-stage investor due diligence on Nimbus Labs. They have asked three substantive operational questions over three weeks, each answered within one day. They have now gone silent for three days after receiving your answer about pipeline depth. This is a normal pause in an investor evaluation cycle, not a signal of disinterest or a stalled deal.",
+    "rivals": [
+     "Bluepeak is a potential customer or design partner exploring a pilot, and the questions are exploratory before a commitment.",
+     "Bluepeak has deprioritized Nimbus Labs and will not reply; the file should be closed.",
+     "Bluepeak is waiting for you to take the next step \u2014 to request a meeting or send additional materials \u2014 and the silence is a signal that they expect you to move."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A follow-up message from Bluepeak asking for a meeting, a call, or additional materials; or silence extending beyond two weeks, which would suggest deprioritization.",
+     "proposition": "Bluepeak is conducting investment due diligence and will either request a meeting or send a term sheet within the next two weeks."
+    },
+    {
+     "needs": "Clarification from the founder on how Bluepeak was introduced and what the initial conversation was about; the file does not show a connector or an introduction.",
+     "proposition": "Bluepeak is a potential customer or design partner, not an investor, and the questions are exploratory before a pilot or partnership."
+    },
+    {
+     "needs": "Silence extending beyond two weeks with no follow-up from them; or a message from them stating they are not moving forward.",
+     "proposition": "Bluepeak has moved on and will not reply, and the file should be closed."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "none:promises"
+     ],
+     "claim": "Bluepeak's questions are exploratory due diligence on Nimbus Labs, not a formal process with stated timelines or commitments."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move",
+      "evt_#1"
+     ],
+     "claim": "The ball is in Bluepeak's court: you have answered every question asked, and no open ask from you awaits their reply."
+    },
+    {
+     "based_on": [
+      "num:usual_gap",
+      "num:longest_gap",
+      "num:days_quiet"
+     ],
+     "claim": "The three-day silence since your last message is within the normal gap pattern (usually two days, longest six and a half days) and does not signal disengagement."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "ru:core.temporal"
+     ],
+     "claim": "Bluepeak's interest appears genuine \u2014 they are asking the questions a venture investor would ask before deciding whether to engage further."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:6",
+      "file:domains"
+     ],
+     "claim": "This file should be classified as investor work, not as a generic admin or sales file, because the questions and pattern match early-stage investor due diligence."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-14",
+    "for_whom": "Bluepeak Ventures",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:3",
+     "fact:4",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "wait for Bluepeak to reply or to request a meeting; do not send a chase message or a follow-up ask",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When an investor goes quiet after you have answered their questions, the silence is usually internal deliberation, not disinterest. Chasing before they have asked for a follow-up converts a normal wait into a pressure signal.",
+     "kind": "practice",
+     "why": "Investors expect founders to be patient during their evaluation cycle. A chase message reads as either desperation or misunderstanding of how their process works, and it can shift their perception of the founder's judgment."
+    },
+    {
+     "claim": "Investor due diligence questions asked over three weeks, with answers provided same-day, suggest the investor is serious enough to be thorough but not yet committed enough to move fast.",
+     "kind": "base_rate",
+     "why": "The pace and depth indicate they are evaluating, not yet deciding. A committed investor moves faster; a disinterested one stops asking."
+    },
+    {
+     "claim": "An investor who asks about pipeline depth and hiring plans is signaling they are thinking about post-investment execution, not just market fit.",
+     "kind": "counter_pattern",
+     "why": "These are questions asked by investors who are already imagining the company scaling, which is a positive signal buried in the due diligence."
+    },
+    {
+     "claim": "A file with no named kind of work and no playbook should be classified before it is judged, because the frame determines what silence means.",
+     "kind": "practice",
+     "why": "The same three-day gap means something different if this is investor due diligence (normal) versus a vendor negotiation (slow) versus a hiring conversation (stalled)."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Venture investors conducting early due diligence ask operational questions in sequence, with gaps between replies as they consult internally or move to other prospects.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "A venture investor who goes silent after receiving answers to all their questions may be moving to a decision \u2014 either positive (preparing a term sheet) or negative (deprioritizing).",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:3"
+     ],
+     "claim": "Early-stage investor conversations that reach the operational-detail stage (pricing, hiring, pipeline) have moved past initial skepticism and are in evaluation.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#8",
+     "evt_#6",
+     "evt_#4",
+     "evt_#2",
+     "file:domains"
+    ],
+    "kind": "investor",
+    "why": "The questions asked (pilot retention, pricing, hiring plans, pipeline depth) are the standard due diligence questions asked by venture investors evaluating a seed-stage company. The pattern of questions over time, the depth of inquiry, and the operational focus all match investor evaluation, not customer discovery or partnership exploration. The file should be reclassified from its current unnamed status to investor work."
+   },
+   "scenarios": {
+    "act": "You send a message to Bluepeak asking for a meeting or offering to answer additional questions. This accelerates the timeline but risks signaling desperation or misunderstanding their process. It could also clarify their intent if they respond with a clear yes or no.",
+    "best": "Bluepeak replies within one week with a request for a meeting or a term sheet. The due diligence was thorough, and they are moving to the next stage. You have a new investor in the pipeline.",
+    "do_nothing": "Bluepeak continues internal review. If they are interested, they will request a meeting or send a term sheet within one to three weeks. If they are not interested, they will either send a pass or simply stop replying. The file remains open and quiet, with no action from you. The risk is that you miss a signal if they are waiting for you to move, but the base rate suggests investor due diligence is a waiting game.",
+    "signals_to_watch": [
+     "A message from Bluepeak requesting a meeting, a call, or a term sheet discussion.",
+     "A message from Bluepeak asking for additional materials or references.",
+     "Silence extending beyond two weeks with no follow-up from them.",
+     "A message from Bluepeak stating they are not moving forward.",
+     "A message from Meera Shah on a different topic, which would indicate they are still engaged."
+    ],
+    "worst": "Bluepeak never replies, and the file goes dormant. You have invested time in answering their questions but gained no outcome. Alternatively, you send a chase message and they reply with a pass, citing your follow-up as a sign of poor judgment."
+   },
+   "unknowns": [
+    {
+     "question": "How was Bluepeak introduced to Nimbus Labs, and what was the initial conversation about?",
+     "relevance": "The file shows no connector and no introduction context. Knowing whether this was a warm intro or a cold outreach, and whether Bluepeak approached you or you approached them, would clarify their level of interest and the expected pace."
+    },
+    {
+     "question": "Is Bluepeak an investor, a customer, a partner, or something else?",
+     "relevance": "The file's domains are listed as admin and sales, but the questions asked are investor due diligence. Clarifying Bluepeak's role would determine what the next move should be and what silence means."
+    },
+    {
+     "question": "What is the founder's relationship with Meera Shah, and has there been any conversation outside email?",
+     "relevance": "Email silence can mask active conversations happening on calls or in person. If there have been calls, the silence is less meaningful; if not, it may indicate they are still in internal review."
+    },
+    {
+     "question": "Are there other investors in the seed round who are further along, and is Bluepeak a primary target or a secondary prospect?",
+     "relevance": "The brief lists five investors written to in the seed wave and one engaged (Lumen Ventures). Knowing Bluepeak's priority would determine whether to wait or to move on."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-14 (two weeks from the last message). If Bluepeak has not replied by then, send a single, brief message asking if they would like to schedule a call. If they do not reply to that message within one week, close the file and move on. Do not send multiple chase messages or escalate internally; investor silence is normal and does not warrant pressure."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Bluepeak Ventures has asked three substantive questions about Nimbus Labs over twenty-three days, each answered within one day.\",\n      \"evidence\": [\n        \"evt_#8\",\n        \"evt_#6\",\n        \"evt_#4\",\n        \"evt_#2\",\n        \"num:your_reply_time:meera@bluepeak.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The questions asked by Meera Shah concern pilot retention, pricing strategy, hiring plans, and pipeline depth \u2014 all operational and strategic details of Nimbus Labs.\",\n      \"evidence\": [\n        \"evt_#8\",\n        \"evt_#6\",\n        \"evt_#4\",\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Your last message to Bluepeak was sent on 2026-08-28, stating 'Nine teams are in conversation for next quarter.'\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Nine teams are in conversation for next quarter\"\n    },\n    {\n      \"claim\": \"No reply has been received from Bluepeak since 2026-08-28, and the mailbox has been read through 2026-08-31 18:00 UTC.\",\n      \"evidence\": [\n        \"cov:last_mail\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no named kind of work in the brief, no playbook, and no promises recorded.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\",\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Bluepeak is not listed in the brief as an investor, program, partner, or connector \u2014 it appears only in this file.\",\n      \"evidence\": [\n        \"brief:company\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows two active situations: account_admin (23 days, quiet 3.4 days) and opportunity (1 day visible, quiet 18.4 days).\",\n      \"evidence\": [\n        \"sit:sit_#1\",\n        \"sit:sit_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and high engagement, but measured insufficient context for relationship status and opportunity owner.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.relationship\",\n        \"ru:core.opportunity\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Bluepeak's questions are exploratory due diligence on Nimbus Labs, not a formal process with stated timelines or commitments.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in Bluepeak's court: you have answered every question asked, and no open ask from you awaits their reply.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The three-day silence since your last message is within the normal gap pattern (usually two days, longest six and a half days) and does not signal disengagement.\",\n      \"based_on\": [\n        \"num:usual_gap\",\n        \"num:longest_gap\",\n        \"num:days_quiet\"\n      ]\n    },\n    {\n      \"claim\": \"Bluepeak's interest appears genuine \u2014 they are asking the questions a venture investor would ask before deciding whether to engage further.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"ru:core.temporal\"\n      ]\n    },\n    {\n      \"claim\": \"This file should be classified as investor work, not as a generic admin or sales file, because the questions and pattern match early-stage investor due diligence.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:6\",\n        \"file:domains\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Venture investors conducting early due diligence ask operational questions in sequence, with gaps between replies as they consult internally or move to other prospects.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A venture investor who goes silent after receiving answers to all their questions may be moving to a decision \u2014 either positive (preparing a term sheet) or negative (deprioritizing).\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Early-stage investor conversations that reach the operational-detail stage (pricing, hiring, pipeline) have moved past initial skepticism and are in evaluation.\",\n      \"based_on\": [\n        \"own:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When an investor goes quiet after you have answered their questions, the silence is usually internal deliberation, not disinterest. Chasing before they have asked for a follow-up converts a normal wait into a pressure signal.\",\n      \"why\": \"Investors expect founders to be patient during their evaluation cycle. A chase message reads as either desperation or misunderstanding of how their process works, and it can shift their perception of the founder's judgment.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investor due diligence questions asked over three weeks, with answers provided same-day, suggest the investor is serious enough to be thorough but not yet committed enough to move fast.\",\n      \"why\": \"The pace and depth indicate they are evaluating, not yet deciding. A committed investor moves faster; a disinterested one stops asking.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An investor who asks about pipeline depth and hiring plans is signaling they are thinking about post-investment execution, not just market fit.\",\n      \"why\": \"These are questions asked by investors who are already imagining the company scaling, which is a positive signal buried in the due diligence.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A file with no named kind of work and no playbook should be classified before it is judged, because the frame determines what silence means.\",\n      \"why\": \"The same three-day gap means something different if this is investor due diligence (normal) versus a vendor negotiation (slow) versus a hiring conversation (stalled).\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Bluepeak is conducting investment due diligence and will either request a meeting or send a term sheet within the next two weeks.\",\n      \"needs\": \"A follow-up message from Bluepeak asking for a meeting, a call, or additional materials; or silence extending beyond two weeks, which would suggest deprioritization.\"\n    },\n    {\n      \"proposition\": \"Bluepeak is a potential customer or design partner, not an investor, and the questions are exploratory before a pilot or partnership.\",\n      \"needs\": \"Clarification from the founder on how Bluepeak was introduced and what the initial conversation was about; the file does not show a connector or an introduction.\"\n    },\n    {\n      \"proposition\": \"Bluepeak has moved on and will not reply, and the file should be closed.\",\n      \"needs\": \"Silence extending beyond two weeks with no follow-up from them; or a message from them stating they are not moving forward.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"How was Bluepeak introduced to Nimbus Labs, and what was the initial conversation about?\",\n      \"relevance\": \"The file shows no connector and no introduction context. Knowing whether this was a warm intro or a cold outreach, and whether Bluepeak approached you or you approached them, would clarify their level of interest and the expected pace.\"\n    },\n    {\n      \"question\": \"Is Bluepeak an investor, a customer, a partner, or something else?\",\n      \"relevance\": \"The file's domains are listed as admin and sales, but the questions asked are investor due diligence. Clarifying Bluepeak's role would determine what the next move should be and what silence means.\"\n    },\n    {\n      \"question\": \"What is the founder's relationship with Meera Shah, and has there been any conversation outside email?\",\n      \"relevance\": \"Email silence can mask active conversations happening on calls or in person. If there have been calls, the silence is less meaningful; if not, it may indicate they are still in internal review.\"\n    },\n    {\n      \"question\": \"Are there other investors in the seed round who are further along, and is Bluepeak a primary target or a secondary prospect?\",\n      \"relevance\": \"The brief lists five investors written to in the seed wave and one engaged (Lumen Ventures). Knowing Bluepeak's priority would determine whether to wait or to move on.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"Bluepeak Ventures is conducting early-stage investor due diligence on Nimbus Labs. They have asked three substantive operational questions over three weeks, each answered within one day. They have now gone silent for three days after receiving your answer about pipeline depth. This is a normal pause in an investor evaluation cycle, not a signal of disinterest or a stalled deal.\",\n    \"rivals\": [\n      \"Bluepeak is a potential customer or design partner exploring a pilot, and the questions are exploratory before a commitment.\",\n      \"Bluepeak has deprioritized Nimbus Labs and will not reply; the file should be closed.\",\n      \"Bluepeak is waiting for you to take the next step \u2014 to request a meeting or send additional materials \u2014 and the silence is a signal that they expect you to move.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The questions asked (pilot retention, pricing, hiring plans, pipeline depth) are the standard due diligence questions asked by venture investors evaluating a seed-stage company. The pattern of questions over time, the depth of inquiry, and the operational focus all match investor evaluation, not customer discovery or partnership exploration. The file should be reclassified from its current unnamed status to investor work.\",\n    \"evidence\": [\n      \"evt_#8\",\n      \"evt_#6\",\n      \"evt_#4\",\n      \"evt_#2\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a named kind of work or playbook, the expectation comes from the brief: Nimbus Labs is raising a seed round. Bluepeak's questions suggest they are evaluating whether to participate. The expected pattern would be: questions asked, answers provided, internal review by the investor, then either a meeting request or a pass. You are currently in the internal review phase.\",\n    \"actual\": \"You have answered all questions asked. Bluepeak has gone silent for three days. No meeting has been requested, no term sheet has been sent, and no additional asks have been made. The file shows two active situations (account_admin and opportunity) but no stage progression or decision point.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Bluepeak continues internal review. If they are interested, they will request a meeting or send a term sheet within one to three weeks. If they are not interested, they will either send a pass or simply stop replying. The file remains open and quiet, with no action from you. The risk is that you miss a signal if they are waiting for you to move, but the base rate suggests investor due diligence is a waiting game.\",\n    \"act\": \"You send a message to Bluepeak asking for a meeting or offering to answer additional questions. This accelerates the timeline but risks signaling desperation or misunderstanding their process. It could also clarify their intent if they respond with a clear yes or no.\",\n    \"best\": \"Bluepeak replies within one week with a request for a meeting or a term sheet. The due diligence was thorough, and they are moving to the next stage. You have a new investor in the pipeline.\",\n    \"worst\": \"Bluepeak never replies, and the file goes dormant. You have invested time in answering their questions but gained no outcome. Alternatively, you send a chase message and they reply with a pass, citing your follow-up as a sign of poor judgment.\",\n    \"signals_to_watch\": [\n      \"A message from Bluepeak requesting a meeting, a call, or a term sheet discussion.\",\n      \"A message from Bluepeak asking for additional materials or references.\",\n      \"Silence extending beyond two weeks with no follow-up from them.\",\n      \"A message from Bluepeak stating they are not moving forward.\",\n      \"A message from Meera Shah on a different topic, which would indicate they are still engaged.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Stakes are medium because Bluepeak is one of five investors written to in the seed wave, and one of many prospects. A positive outcome would be a seed investment, which is material but not the only path to funding.\",\n      \"Urgency is low because the file shows no deadline, no promise, and no stated timeline. Investor due diligence is inherently slow, and three days of silence is within normal patterns.\",\n      \"Reversibility is reversible because any move you make now (a message, a meeting request) can be undone or reframed if Bluepeak responds negatively. A wrong move here damages the relationship but does not close the door permanently.\",\n      \"The reasoning units found low risk and high engagement, which supports a low-urgency judgment.\",\n      \"The file has been active for twenty-three days with healthy engagement, suggesting this is a live prospect, not a stalled one.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for Bluepeak to reply or to request a meeting; do not send a chase message or a follow-up ask\",\n    \"for_whom\": \"Bluepeak Ventures\",\n    \"by_when\": \"2026-09-14\",\n    \"rests_on\": [\n      \"fact:3\",\n      \"fact:4\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If you believe Bluepeak is waiting for you to move, send a brief message to Meera Shah asking if they would like to schedule a call to discuss next steps. This is lower-risk than a chase message because it offers value (a conversation) rather than asking for movement. However, this should only be done if you have evidence that they expect you to move \u2014 which the file does not show.\",\n  \"wait_or_stop\": \"Wait until 2026-09-14 (two weeks from the last message). If Bluepeak has not replied by then, send a single, brief message asking if they would like to schedule a call. If they do not reply to that message within one week, close the file and move on. Do not send multiple chase messages or escalate internally; investor silence is normal and does not warrant pressure.\",\n  \"done_when\": \"Done when Bluepeak either (a) requests a meeting or sends a term sheet, in which case the file moves to a new stage; (b) sends a pass, in which case the file is closed; or (c) remains silent for more than three weeks after your last message, in which case the file is deprioritized and closed unless they re-engage.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

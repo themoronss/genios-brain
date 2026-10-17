@@ -1,0 +1,456 @@
+{
+ "3aee31c052b542f06f09307a4040cf16ef23b1d45c3c2d28ad2002a16f0a5b6a": {
+  "framed": true,
+  "input_tokens": 14486,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3610,
+  "parsed": {
+   "alternative": "Prepare for the review based on the founder's current understanding of Lakshya's expectations, using the programme's published curriculum or any prior communications as a guide. This risks preparing the wrong things or missing a key expectation, but it moves faster and does not require a reply from Lakshya.",
+   "appraisal": {
+    "reasons": [
+     "The founder is in an active accelerator programme, and the Phase-1 review is a checkpoint that could affect the programme's level of support and signalling to its network.",
+     "The review is scheduled for 30 September, which is ten days away, leaving limited time to prepare if the founder is not already doing so.",
+     "Poor performance at the review could result in reduced support or, in a worst case, being asked to leave the programme, which would be costly to reverse.",
+     "The file shows no prior guidance from Lakshya on what to prepare, suggesting the founder may not know what is expected.",
+     "The founder is also raising a seed round and pursuing other goals, so the review is one of several concurrent priorities; missing it or performing poorly could affect the fundraising narrative."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Lakshya has provided details on what the Phase-1 review will cover and what the founder should prepare. The founder has prepared a clear narrative of progress, key metrics, and a plan for the next phase. The founder attends the review on 30 September prepared and confident.",
+   "draft": "Hi Divya, Thanks for the logistics note on the Phase-1 review on 30 Sep. To prepare well, could you share what the review will cover, what metrics or milestones you'll assess, and what format it will take? That way I can make sure I'm ready to show the progress we've made. Thanks, Arjun",
+   "expected_vs_actual": {
+    "actual": "Lakshya sent a logistics notification about the Phase-1 review scheduled for 30 September, with no fee for this cohort. No ask was made, no promise was given, and no prior guidance on what to prepare was included in the message.",
+    "expected": "The programme's own deadlines \u2014 assignments, reviews, demo day \u2014 are published to the cohort and fixed for all of it. The founder attends scheduled events and delivers on the programme's calendar. Quiet during this stage means nothing about the application, which is settled.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Lakshya Accelerator sent a logistics message about Phase-1 reviews scheduled for 30 September at their campus, with no programme fee for this cohort.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Phase-1 reviews are on 30 Sep at the Lakshya campus. There is no fee for the review; the programme fee is waived for this cohort."
+    },
+    {
+     "claim": "The file is marked as 'the program the founder is in' in the brief, indicating active participation in Lakshya Accelerator.",
+     "evidence": [
+      "brief:cbl_#13"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises were found in Lakshya's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.54 days since the last touch on 2026-09-20 05:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is listed as 'program' in the brief, not as an application but as active participation.",
+     "evidence": [
+      "file:kind",
+      "brief:cbl_#13"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency and low risk, with engagement marked as healthy.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "The founder is in an active accelerator programme and has received a logistics notification about a scheduled cohort review. The next move is to prepare for and attend the review on the stated date. This is a routine programme calendar event, not an application decision or a crisis.",
+    "rivals": [
+     "The review is a gate that could result in the founder being asked to leave the programme, and the founder is unprepared.",
+     "The review is a signal that Lakshya is evaluating whether to increase or decrease support for the founder, and the founder should treat it as a critical milestone.",
+     "The message is a reminder that the founder has missed a prior deadline or ask from Lakshya, and the review is a consequence."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from Lakshya of what the review covers, what metrics or milestones they will assess, and what the founder should prepare.",
+     "proposition": "The Phase-1 review is a formal assessment that will inform the programme's level of support and mentorship for the rest of the cohort."
+    },
+    {
+     "needs": "Clarity on whether the review can result in a founder being asked to leave, or whether it is purely informational.",
+     "proposition": "The review is a routine check-in with no material consequence for the founder's standing in the programme."
+    },
+    {
+     "needs": "A check with Lakshya or other founders in the cohort on what preparation is underway.",
+     "proposition": "Other cohort members have already begun preparing for the review, and the founder is behind."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "none:promises"
+     ],
+     "claim": "The message from Lakshya is a logistics notification, not a selection decision or an ask requiring a reply."
+    },
+    {
+     "based_on": [
+      "brief:cbl_#13",
+      "file:role"
+     ],
+     "claim": "The founder is already accepted into Lakshya Accelerator and is now in the 'in_programme' stage, not in an application stage."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "The Phase-1 review on 30 September is a fixed calendar event for the cohort, not a decision point or a deadline the founder controls."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The next move is the founder's: to prepare for and attend the Phase-1 review on the scheduled date."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-21",
+    "for_whom": "Divya Raman at Lakshya Accelerator",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "inference:3",
+     "unknown:1"
+    ],
+    "to": "divya@lakshya.test",
+    "what": "Ask Lakshya for details on what the Phase-1 review will cover, what metrics or milestones will be assessed, what format the review will take, and what the founder should prepare.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A Phase-1 review in an accelerator is typically a structured checkpoint where the programme evaluates the cohort's progress against milestones, often with mentors or investors present, and the founder's preparation and performance can affect the programme's support and any follow-on opportunities.",
+     "kind": "practice",
+     "why": "Accelerators use reviews to assess fit, progress and readiness; a founder who arrives unprepared or without clear metrics loses the programme's attention and any informal signalling to their network."
+    },
+    {
+     "claim": "A waived programme fee signals either a strong cohort or a programme that is confident in its model; it does not reduce the founder's obligation to perform at reviews.",
+     "kind": "practice",
+     "why": "Fee waivers are about the programme's economics, not about lowered expectations for founders."
+    },
+    {
+     "claim": "A logistics message with no ask and no deadline stated is often treated as 'noted' and filed, when the real work \u2014 preparing for the review \u2014 is the founder's to own and schedule.",
+     "kind": "counter_pattern",
+     "why": "Founders often wait for explicit reminders or asks before acting, but accelerator reviews are on the programme's calendar, not the founder's, and preparation is the founder's move."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "Accelerator programmes send logistics notifications about cohort events without requiring a reply, as part of their standard calendar communication.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "A programme's quiet during the 'in_programme' stage means nothing about the application, which is settled; what the file holds now is the programme's own deadlines \u2014 assignments, reviews, demo day \u2014 published to the cohort and fixed for all of it.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Founders often miss or under-prepare for accelerator review events because they treat them as routine calendar items rather than as critical milestones where the programme assesses progress.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#13"
+    ],
+    "kind": null,
+    "why": "The file is correctly marked as 'program' in the brief. The file is not an application (which would be 'program' with stage 'applied' or 'under_review'), but rather active participation in an accelerator cohort. The kind is correct."
+   },
+   "scenarios": {
+    "act": "The founder asks Lakshya for details on what the Phase-1 review will cover, what metrics or milestones will be assessed, and what format the review will take. The founder then prepares a clear narrative of progress to date, metrics on key milestones, and a plan for the next phase. The founder attends the review on 30 September prepared and confident. Lakshya sees a founder who is engaged and making progress, and the programme's support and signalling to its network are informed by that performance.",
+    "best": "The Phase-1 review is a routine check-in where the founder demonstrates clear progress on key metrics. Lakshya signals to its network that the founder is a strong performer, leading to introductions to investors, customers or partners. The founder's standing in the programme is elevated, and the programme's support increases.",
+    "do_nothing": "The founder does not prepare for the Phase-1 review and arrives on 30 September without a clear narrative of progress, metrics or milestones. If the review is a gate, the founder may be asked to leave or may receive reduced support. If it is informational, the founder misses an opportunity to signal progress to Lakshya and its network. The file remains quiet until the review date, at which point the founder's performance is the only signal.",
+    "signals_to_watch": [
+     "Whether Lakshya responds to a request for details on the review with specifics or with vague guidance.",
+     "Whether the founder's current metrics are on track or behind the milestones Lakshya will assess.",
+     "Whether other cohort members are visibly preparing for the review, signalling its importance.",
+     "Whether Lakshya sends any follow-up communications before 30 September with reminders or additional guidance.",
+     "The tone and content of Lakshya's feedback at the review itself \u2014 whether it is encouraging or critical."
+    ],
+    "worst": "The Phase-1 review is a gate, and the founder arrives unprepared or with poor metrics. Lakshya asks the founder to leave the programme or significantly reduces support. The founder loses the programme's network and credibility, and the file closes with a reason."
+   },
+   "unknowns": [
+    {
+     "question": "What does Lakshya expect the founder to prepare or present at the Phase-1 review?",
+     "relevance": "The founder's preparation strategy and timeline depend on the scope and format of the review; without this, the founder may prepare the wrong things or miss a deadline."
+    },
+    {
+     "question": "Is the Phase-1 review a gate that could result in the founder being asked to leave the programme, or is it purely informational?",
+     "relevance": "If it is a gate, the stakes are high and the founder should treat it as a critical milestone; if it is informational, the stakes are lower and the focus is on demonstrating progress."
+    },
+    {
+     "question": "What is the founder's current progress against the milestones Lakshya will assess?",
+     "relevance": "If the founder is behind, the next move is to accelerate work or to clarify with Lakshya what is expected; if on track, the move is to prepare a clear narrative."
+    },
+    {
+     "question": "Has Lakshya sent any prior guidance on what the Phase-1 review will cover, or is this the first communication about it?",
+     "relevance": "If prior guidance exists, the founder should review it; if this is the first communication, the founder should ask Lakshya for details before preparing."
+    }
+   ],
+   "wait_or_stop": "Wait for Lakshya's reply before finalizing the preparation plan. If Lakshya does not reply by 2026-09-25, proceed with preparation based on the founder's best judgment and the programme's published materials. Do not stop; the review is a fixed date and the founder must attend."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Lakshya Accelerator sent a logistics message about Phase-1 reviews scheduled for 30 September at their campus, with no programme fee for this cohort.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Phase-1 reviews are on 30 Sep at the Lakshya campus. There is no fee for the review; the programme fee is waived for this cohort.\"\n    },\n    {\n      \"claim\": \"The file is marked as 'the program the founder is in' in the brief, indicating active participation in Lakshya Accelerator.\",\n      \"evidence\": [\n        \"brief:cbl_#13\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises were found in Lakshya's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.54 days since the last touch on 2026-09-20 05:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is listed as 'program' in the brief, not as an application but as active participation.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"brief:cbl_#13\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency and low risk, with engagement marked as healthy.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The message from Lakshya is a logistics notification, not a selection decision or an ask requiring a reply.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"The founder is already accepted into Lakshya Accelerator and is now in the 'in_programme' stage, not in an application stage.\",\n      \"based_on\": [\n        \"brief:cbl_#13\",\n        \"file:role\"\n      ]\n    },\n    {\n      \"claim\": \"The Phase-1 review on 30 September is a fixed calendar event for the cohort, not a decision point or a deadline the founder controls.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is the founder's: to prepare for and attend the Phase-1 review on the scheduled date.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Accelerator programmes send logistics notifications about cohort events without requiring a reply, as part of their standard calendar communication.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.prepare_for_the_interview\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme's quiet during the 'in_programme' stage means nothing about the application, which is settled; what the file holds now is the programme's own deadlines \u2014 assignments, reviews, demo day \u2014 published to the cohort and fixed for all of it.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founders often miss or under-prepare for accelerator review events because they treat them as routine calendar items rather than as critical milestones where the programme assesses progress.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A Phase-1 review in an accelerator is typically a structured checkpoint where the programme evaluates the cohort's progress against milestones, often with mentors or investors present, and the founder's preparation and performance can affect the programme's support and any follow-on opportunities.\",\n      \"why\": \"Accelerators use reviews to assess fit, progress and readiness; a founder who arrives unprepared or without clear metrics loses the programme's attention and any informal signalling to their network.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A waived programme fee signals either a strong cohort or a programme that is confident in its model; it does not reduce the founder's obligation to perform at reviews.\",\n      \"why\": \"Fee waivers are about the programme's economics, not about lowered expectations for founders.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A logistics message with no ask and no deadline stated is often treated as 'noted' and filed, when the real work \u2014 preparing for the review \u2014 is the founder's to own and schedule.\",\n      \"why\": \"Founders often wait for explicit reminders or asks before acting, but accelerator reviews are on the programme's calendar, not the founder's, and preparation is the founder's move.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The Phase-1 review is a formal assessment that will inform the programme's level of support and mentorship for the rest of the cohort.\",\n      \"needs\": \"Confirmation from Lakshya of what the review covers, what metrics or milestones they will assess, and what the founder should prepare.\"\n    },\n    {\n      \"proposition\": \"The review is a routine check-in with no material consequence for the founder's standing in the programme.\",\n      \"needs\": \"Clarity on whether the review can result in a founder being asked to leave, or whether it is purely informational.\"\n    },\n    {\n      \"proposition\": \"Other cohort members have already begun preparing for the review, and the founder is behind.\",\n      \"needs\": \"A check with Lakshya or other founders in the cohort on what preparation is underway.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Lakshya expect the founder to prepare or present at the Phase-1 review?\",\n      \"relevance\": \"The founder's preparation strategy and timeline depend on the scope and format of the review; without this, the founder may prepare the wrong things or miss a deadline.\"\n    },\n    {\n      \"question\": \"Is the Phase-1 review a gate that could result in the founder being asked to leave the programme, or is it purely informational?\",\n      \"relevance\": \"If it is a gate, the stakes are high and the founder should treat it as a critical milestone; if it is informational, the stakes are lower and the focus is on demonstrating progress.\"\n    },\n    {\n      \"question\": \"What is the founder's current progress against the milestones Lakshya will assess?\",\n      \"relevance\": \"If the founder is behind, the next move is to accelerate work or to clarify with Lakshya what is expected; if on track, the move is to prepare a clear narrative.\"\n    },\n    {\n      \"question\": \"Has Lakshya sent any prior guidance on what the Phase-1 review will cover, or is this the first communication about it?\",\n      \"relevance\": \"If prior guidance exists, the founder should review it; if this is the first communication, the founder should ask Lakshya for details before preparing.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"The founder is in an active accelerator programme and has received a logistics notification about a scheduled cohort review. The next move is to prepare for and attend the review on the stated date. This is a routine programme calendar event, not an application decision or a crisis.\",\n    \"rivals\": [\n      \"The review is a gate that could result in the founder being asked to leave the programme, and the founder is unprepared.\",\n      \"The review is a signal that Lakshya is evaluating whether to increase or decrease support for the founder, and the founder should treat it as a critical milestone.\",\n      \"The message is a reminder that the founder has missed a prior deadline or ask from Lakshya, and the review is a consequence.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The file is correctly marked as 'program' in the brief. The file is not an application (which would be 'program' with stage 'applied' or 'under_review'), but rather active participation in an accelerator cohort. The kind is correct.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#13\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The programme's own deadlines \u2014 assignments, reviews, demo day \u2014 are published to the cohort and fixed for all of it. The founder attends scheduled events and delivers on the programme's calendar. Quiet during this stage means nothing about the application, which is settled.\",\n    \"actual\": \"Lakshya sent a logistics notification about the Phase-1 review scheduled for 30 September, with no fee for this cohort. No ask was made, no promise was given, and no prior guidance on what to prepare was included in the message.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not prepare for the Phase-1 review and arrives on 30 September without a clear narrative of progress, metrics or milestones. If the review is a gate, the founder may be asked to leave or may receive reduced support. If it is informational, the founder misses an opportunity to signal progress to Lakshya and its network. The file remains quiet until the review date, at which point the founder's performance is the only signal.\",\n    \"act\": \"The founder asks Lakshya for details on what the Phase-1 review will cover, what metrics or milestones will be assessed, and what format the review will take. The founder then prepares a clear narrative of progress to date, metrics on key milestones, and a plan for the next phase. The founder attends the review on 30 September prepared and confident. Lakshya sees a founder who is engaged and making progress, and the programme's support and signalling to its network are informed by that performance.\",\n    \"best\": \"The Phase-1 review is a routine check-in where the founder demonstrates clear progress on key metrics. Lakshya signals to its network that the founder is a strong performer, leading to introductions to investors, customers or partners. The founder's standing in the programme is elevated, and the programme's support increases.\",\n    \"worst\": \"The Phase-1 review is a gate, and the founder arrives unprepared or with poor metrics. Lakshya asks the founder to leave the programme or significantly reduces support. The founder loses the programme's network and credibility, and the file closes with a reason.\",\n    \"signals_to_watch\": [\n      \"Whether Lakshya responds to a request for details on the review with specifics or with vague guidance.\",\n      \"Whether the founder's current metrics are on track or behind the milestones Lakshya will assess.\",\n      \"Whether other cohort members are visibly preparing for the review, signalling its importance.\",\n      \"Whether Lakshya sends any follow-up communications before 30 September with reminders or additional guidance.\",\n      \"The tone and content of Lakshya's feedback at the review itself \u2014 whether it is encouraging or critical.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The founder is in an active accelerator programme, and the Phase-1 review is a checkpoint that could affect the programme's level of support and signalling to its network.\",\n      \"The review is scheduled for 30 September, which is ten days away, leaving limited time to prepare if the founder is not already doing so.\",\n      \"Poor performance at the review could result in reduced support or, in a worst case, being asked to leave the programme, which would be costly to reverse.\",\n      \"The file shows no prior guidance from Lakshya on what to prepare, suggesting the founder may not know what is expected.\",\n      \"The founder is also raising a seed round and pursuing other goals, so the review is one of several concurrent priorities; missing it or performing poorly could affect the fundraising narrative.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Ask Lakshya for details on what the Phase-1 review will cover, what metrics or milestones will be assessed, what format the review will take, and what the founder should prepare.\",\n    \"for_whom\": \"Divya Raman at Lakshya Accelerator\",\n    \"by_when\": \"2026-09-21\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"inference:3\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.prepare_for_the_interview\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"divya@lakshya.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Prepare for the review based on the founder's current understanding of Lakshya's expectations, using the programme's published curriculum or any prior communications as a guide. This risks preparing the wrong things or missing a key expectation, but it moves faster and does not require a reply from Lakshya.\",\n  \"wait_or_stop\": \"Wait for Lakshya's reply before finalizing the preparation plan. If Lakshya does not reply by 2026-09-25, proceed with preparation based on the founder's best judgment and the programme's published materials. Do not stop; the review is a fixed date and the founder must attend.\",\n  \"done_when\": \"Lakshya has provided details on what the Phase-1 review will cover and what the founder should prepare. The founder has prepared a clear narrative of progress, key metrics, and a plan for the next phase. The founder attends the review on 30 September prepared and confident.\",\n  \"draft\": \"Hi Divya, Thanks for the logistics note on the Phase-1 review on 30 Sep. To prepare well, could you share what the review will cover, what metrics or milestones you'll assess, and what format it will take? That way I can make sure I'm ready to show the progress we've made. Thanks, Arjun\"\n}",
+  "site": "expert"
+ },
+ "fba097fde287b0f1e854354d8b0d7dcb46220e1007beb9a6a996e666006eaaa7": {
+  "framed": true,
+  "input_tokens": 14555,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3466,
+  "parsed": {
+   "alternative": "If the founder has already prepared for the review and knows what to bring, update the file with that work and set a reminder for 30 September to attend. Do not send a message to Lakshya unless there is a question about the review.",
+   "appraisal": {
+    "reasons": [
+     "The review is a fixed date 10 days away; missing it or showing up unprepared is a miss that cannot be undone.",
+     "If the review is a selection gate, the stakes are high; if it is a checkpoint, they are lower, but the file does not say which.",
+     "The founder is already in the programme, so the stakes are not as high as an application decision, but the review is a milestone that affects the founder's standing and momentum.",
+     "The file shows no preparation underway, so the founder has work to do between now and 30 September.",
+     "The playbook says a programme's calendar is the file's calendar, and the founder should track and prepare for each milestone."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The founder has confirmed receipt, asked for clarification, received Lakshya's reply, and begun preparing for the review. On 30 September, the founder attends the review with the materials ready. After the review, the file is updated with the outcome and any feedback.",
+   "draft": "Hi Divya, Thanks for the note on the Phase-1 review on 30 Sep. I want to make sure I'm well prepared \u2014 could you let me know what materials or metrics you'd like me to bring, and what format works best? Also, is this a progress checkpoint for all cohort members, or a selection gate? Looking forward to it. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "Lakshya sent a logistics message about a Phase-1 review on 30 September with no fee and no further detail. The file shows no preparation underway, no confirmation of receipt, and no ask for clarification on what to prepare. The file is quiet 0.54 days after the message.",
+    "expected": "The founder is in the programme and receiving its calendar of milestones \u2014 reviews, assignments, demo day \u2014 and the file should track preparation for each one. The playbook says the programme's calendar is the file's calendar, and quiet means nothing about the application, which is settled.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Lakshya Accelerator sent a logistics message about Phase-1 reviews scheduled for 30 September at their campus, with no programme fee for this cohort.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Phase-1 reviews are on 30 Sep at the Lakshya campus. There is no fee for the review; the programme fee is waived for this cohort."
+    },
+    {
+     "claim": "The file was last touched 0.54 days ago, on 2026-09-20 at 05:00 UTC.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as 'the program the founder is in' in the company brief.",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#32"
+     ],
+     "quote": "Lakshya Accelerator \u2014 the program the founder is in"
+    },
+    {
+     "claim": "No promise was found in Lakshya's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows no written reply from the founder to Lakshya.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency and low risk.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A cohort programme member has received a logistics message about an internal review scheduled for 10 days from now; the founder must prepare for and attend it, and the file shows no preparation underway.",
+    "rivals": [
+     "A selection gate disguised as a logistics message, where the founder's place in the programme is not yet confirmed and the review will determine it.",
+     "A routine checkpoint that the founder has already prepared for, and the file simply has not been updated with that work.",
+     "A low-priority milestone that the founder should defer in favour of higher-stakes work like fundraising or hiring."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Lakshya's own description of what Phase-1 reviews are for \u2014 whether they are progress checkpoints for all cohort members or selection gates that some do not pass.",
+     "proposition": "The Phase-1 review is a selection gate and the founder's place in the programme is not yet confirmed."
+    },
+    {
+     "needs": "A message from the founder or a note in the file showing what preparation is underway or done.",
+     "proposition": "The founder has already prepared for the review and knows what to bring."
+    },
+    {
+     "needs": "Clarity on whether the review is a hard deadline that will affect the founder's standing in the programme or a routine checkpoint.",
+     "proposition": "The review is a formality and the founder's focus should be elsewhere \u2014 on fundraising, hiring, or design partners."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "The message from Divya Raman is a logistics notification, not a request or a decision point."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "brief:cbl_#13"
+     ],
+     "claim": "The founder is already in the programme \u2014 the file says 'the program the founder is in' \u2014 so this is not an application awaiting a decision but an active cohort member receiving programme communications."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "The Phase-1 review on 30 September is a fixed date the founder must prepare for and attend."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "fact:1",
+      "inference:3"
+     ],
+     "claim": "The next move is the founder's: to prepare for and attend the Phase-1 review on the date given."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-21",
+    "for_whom": "Divya Raman at Lakshya Accelerator",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.follow_an_application",
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": "divya@lakshya.test",
+    "what": "confirm receipt of Lakshya's message and ask what to prepare for the Phase-1 review \u2014 what materials, what metrics, what format, and what the review is for (selection gate or progress checkpoint).",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A programme's logistics message about a review date is a calendar commitment, not a conversation; the founder should confirm receipt and ask what to prepare, if the programme has not said.",
+     "kind": "practice",
+     "why": "Silence on a fixed date until it passes is a miss; a brief confirmation keeps the relationship warm and surfaces any missing information about what the review will cover or what materials to bring."
+    },
+    {
+     "claim": "Most founders miss internal programme reviews because they file the logistics message and do not work back from the date to prepare.",
+     "kind": "base_rate",
+     "why": "A review is a milestone, not a deadline that moves; the founder's preparation \u2014 metrics, narrative, demo, slides \u2014 is the work between now and then, and it is easy to defer until the week before."
+    },
+    {
+     "claim": "A programme that waives fees and schedules a review is signalling that the founder is in good standing and the cohort is moving forward; the review is a chance to show progress and get feedback.",
+     "kind": "practice",
+     "why": "The waived fee and the scheduled date are positive signals; the founder should treat the review as a milestone to prepare for, not a gate to worry about."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "A programme's logistics message about a review date is a fixed calendar event that requires the founder to prepare and show up; silence on it until the date passes is a miss.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application",
+      "brief:cbl_#13"
+     ],
+     "claim": "A cohort programme's internal reviews are not selection gates but progress checkpoints; the founder is already in, and the review is a milestone to prepare for.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "brief:cbl_#13",
+     "evt_#1"
+    ],
+    "kind": "program",
+    "why": "The file is marked in the brief as 'the program the founder is in' and the message is from a programme lead about an internal review; this is programme management, not fundraising, hiring, or any other kind of work."
+   },
+   "scenarios": {
+    "act": "The founder confirms receipt of Lakshya's message and asks what to prepare for the Phase-1 review \u2014 what materials, what metrics, what format. The founder works back from 30 September to prepare. On the day, the founder attends with the materials ready and gets feedback. The file is updated with the review outcome.",
+    "best": "The founder asks for clarification and learns that the review is a routine checkpoint for all cohort members. The founder prepares a strong progress update showing traction on fundraising, hiring, or product. The review goes well, the founder gets useful feedback, and the relationship with Lakshya is strengthened. The founder's momentum in the programme is clear.",
+    "do_nothing": "The founder does not confirm receipt or ask what to prepare. On 30 September, the founder either misses the review or shows up unprepared. If it is a selection gate, the founder's standing in the programme is at risk. If it is a checkpoint, the founder shows less progress than they could have. Either way, the opportunity to get feedback and show momentum is lost.",
+    "signals_to_watch": [
+     "Whether the founder confirms receipt and asks for clarification within a day or two.",
+     "What Lakshya says the review is for \u2014 a selection gate or a progress checkpoint.",
+     "Whether the founder begins preparing materials \u2014 metrics, a demo, a pitch, a progress report.",
+     "The date of the review (30 September) and whether the founder attends.",
+     "The outcome of the review and any feedback Lakshya gives."
+    ],
+    "worst": "The founder does not prepare or confirm receipt. On 30 September, the founder misses the review or shows up unprepared. Lakshya interprets this as lack of commitment or progress. The founder's standing in the programme is damaged, and the relationship cools. If the review was a selection gate, the founder is at risk of being asked to leave the cohort."
+   },
+   "unknowns": [
+    {
+     "question": "What does Lakshya expect the founder to prepare for the Phase-1 review \u2014 metrics, a demo, a pitch, a progress report?",
+     "relevance": "The founder needs to know what to prepare and by when; without it, the review date is a calendar event with no work attached."
+    },
+    {
+     "question": "Is the Phase-1 review a selection gate or a progress checkpoint for all cohort members?",
+     "relevance": "If it is a gate, the stakes are high and the founder should prepare intensively; if it is a checkpoint, the stakes are lower and the focus is on showing progress."
+    },
+    {
+     "question": "What is the founder's current progress on the goals in the brief \u2014 fundraising, hiring, design partners \u2014 and how does the review fit into that timeline?",
+     "relevance": "The review is one of many moving pieces; knowing the founder's current state and priorities would show whether the review is a blocker or a parallel track."
+    },
+    {
+     "question": "Has the founder confirmed receipt of Lakshya's message and asked for clarification on what to prepare?",
+     "relevance": "If not, the founder should do so now; if yes, the file should show it."
+    }
+   ],
+   "wait_or_stop": "Wait until Lakshya replies with clarification on what to prepare. If Lakshya does not reply within three days, send a follow-up. Do not stop; the review is a fixed date and the founder must prepare. Stop only if Lakshya says the review has been postponed or cancelled."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Lakshya Accelerator sent a logistics message about Phase-1 reviews scheduled for 30 September at their campus, with no programme fee for this cohort.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Phase-1 reviews are on 30 Sep at the Lakshya campus. There is no fee for the review; the programme fee is waived for this cohort.\"\n    },\n    {\n      \"claim\": \"The file was last touched 0.54 days ago, on 2026-09-20 at 05:00 UTC.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as 'the program the founder is in' in the company brief.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#32\"\n      ],\n      \"quote\": \"Lakshya Accelerator \u2014 the program the founder is in\"\n    },\n    {\n      \"claim\": \"No promise was found in Lakshya's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows no written reply from the founder to Lakshya.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency and low risk.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The message from Divya Raman is a logistics notification, not a request or a decision point.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"claim\": \"The founder is already in the programme \u2014 the file says 'the program the founder is in' \u2014 so this is not an application awaiting a decision but an active cohort member receiving programme communications.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"brief:cbl_#13\"\n      ]\n    },\n    {\n      \"claim\": \"The Phase-1 review on 30 September is a fixed date the founder must prepare for and attend.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is the founder's: to prepare for and attend the Phase-1 review on the date given.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"fact:1\",\n        \"inference:3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme's logistics message about a review date is a fixed calendar event that requires the founder to prepare and show up; silence on it until the date passes is a miss.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A cohort programme's internal reviews are not selection gates but progress checkpoints; the founder is already in, and the review is a milestone to prepare for.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\",\n        \"brief:cbl_#13\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A programme's logistics message about a review date is a calendar commitment, not a conversation; the founder should confirm receipt and ask what to prepare, if the programme has not said.\",\n      \"why\": \"Silence on a fixed date until it passes is a miss; a brief confirmation keeps the relationship warm and surfaces any missing information about what the review will cover or what materials to bring.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most founders miss internal programme reviews because they file the logistics message and do not work back from the date to prepare.\",\n      \"why\": \"A review is a milestone, not a deadline that moves; the founder's preparation \u2014 metrics, narrative, demo, slides \u2014 is the work between now and then, and it is easy to defer until the week before.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A programme that waives fees and schedules a review is signalling that the founder is in good standing and the cohort is moving forward; the review is a chance to show progress and get feedback.\",\n      \"why\": \"The waived fee and the scheduled date are positive signals; the founder should treat the review as a milestone to prepare for, not a gate to worry about.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The Phase-1 review is a selection gate and the founder's place in the programme is not yet confirmed.\",\n      \"needs\": \"Lakshya's own description of what Phase-1 reviews are for \u2014 whether they are progress checkpoints for all cohort members or selection gates that some do not pass.\"\n    },\n    {\n      \"proposition\": \"The founder has already prepared for the review and knows what to bring.\",\n      \"needs\": \"A message from the founder or a note in the file showing what preparation is underway or done.\"\n    },\n    {\n      \"proposition\": \"The review is a formality and the founder's focus should be elsewhere \u2014 on fundraising, hiring, or design partners.\",\n      \"needs\": \"Clarity on whether the review is a hard deadline that will affect the founder's standing in the programme or a routine checkpoint.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Lakshya expect the founder to prepare for the Phase-1 review \u2014 metrics, a demo, a pitch, a progress report?\",\n      \"relevance\": \"The founder needs to know what to prepare and by when; without it, the review date is a calendar event with no work attached.\"\n    },\n    {\n      \"question\": \"Is the Phase-1 review a selection gate or a progress checkpoint for all cohort members?\",\n      \"relevance\": \"If it is a gate, the stakes are high and the founder should prepare intensively; if it is a checkpoint, the stakes are lower and the focus is on showing progress.\"\n    },\n    {\n      \"question\": \"What is the founder's current progress on the goals in the brief \u2014 fundraising, hiring, design partners \u2014 and how does the review fit into that timeline?\",\n      \"relevance\": \"The review is one of many moving pieces; knowing the founder's current state and priorities would show whether the review is a blocker or a parallel track.\"\n    },\n    {\n      \"question\": \"Has the founder confirmed receipt of Lakshya's message and asked for clarification on what to prepare?\",\n      \"relevance\": \"If not, the founder should do so now; if yes, the file should show it.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A cohort programme member has received a logistics message about an internal review scheduled for 10 days from now; the founder must prepare for and attend it, and the file shows no preparation underway.\",\n    \"rivals\": [\n      \"A selection gate disguised as a logistics message, where the founder's place in the programme is not yet confirmed and the review will determine it.\",\n      \"A routine checkpoint that the founder has already prepared for, and the file simply has not been updated with that work.\",\n      \"A low-priority milestone that the founder should defer in favour of higher-stakes work like fundraising or hiring.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is marked in the brief as 'the program the founder is in' and the message is from a programme lead about an internal review; this is programme management, not fundraising, hiring, or any other kind of work.\",\n    \"evidence\": [\n      \"file:role\",\n      \"brief:cbl_#13\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The founder is in the programme and receiving its calendar of milestones \u2014 reviews, assignments, demo day \u2014 and the file should track preparation for each one. The playbook says the programme's calendar is the file's calendar, and quiet means nothing about the application, which is settled.\",\n    \"actual\": \"Lakshya sent a logistics message about a Phase-1 review on 30 September with no fee and no further detail. The file shows no preparation underway, no confirmation of receipt, and no ask for clarification on what to prepare. The file is quiet 0.54 days after the message.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not confirm receipt or ask what to prepare. On 30 September, the founder either misses the review or shows up unprepared. If it is a selection gate, the founder's standing in the programme is at risk. If it is a checkpoint, the founder shows less progress than they could have. Either way, the opportunity to get feedback and show momentum is lost.\",\n    \"act\": \"The founder confirms receipt of Lakshya's message and asks what to prepare for the Phase-1 review \u2014 what materials, what metrics, what format. The founder works back from 30 September to prepare. On the day, the founder attends with the materials ready and gets feedback. The file is updated with the review outcome.\",\n    \"best\": \"The founder asks for clarification and learns that the review is a routine checkpoint for all cohort members. The founder prepares a strong progress update showing traction on fundraising, hiring, or product. The review goes well, the founder gets useful feedback, and the relationship with Lakshya is strengthened. The founder's momentum in the programme is clear.\",\n    \"worst\": \"The founder does not prepare or confirm receipt. On 30 September, the founder misses the review or shows up unprepared. Lakshya interprets this as lack of commitment or progress. The founder's standing in the programme is damaged, and the relationship cools. If the review was a selection gate, the founder is at risk of being asked to leave the cohort.\",\n    \"signals_to_watch\": [\n      \"Whether the founder confirms receipt and asks for clarification within a day or two.\",\n      \"What Lakshya says the review is for \u2014 a selection gate or a progress checkpoint.\",\n      \"Whether the founder begins preparing materials \u2014 metrics, a demo, a pitch, a progress report.\",\n      \"The date of the review (30 September) and whether the founder attends.\",\n      \"The outcome of the review and any feedback Lakshya gives.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The review is a fixed date 10 days away; missing it or showing up unprepared is a miss that cannot be undone.\",\n      \"If the review is a selection gate, the stakes are high; if it is a checkpoint, they are lower, but the file does not say which.\",\n      \"The founder is already in the programme, so the stakes are not as high as an application decision, but the review is a milestone that affects the founder's standing and momentum.\",\n      \"The file shows no preparation underway, so the founder has work to do between now and 30 September.\",\n      \"The playbook says a programme's calendar is the file's calendar, and the founder should track and prepare for each milestone.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"confirm receipt of Lakshya's message and ask what to prepare for the Phase-1 review \u2014 what materials, what metrics, what format, and what the review is for (selection gate or progress checkpoint).\",\n    \"for_whom\": \"Divya Raman at Lakshya Accelerator\",\n    \"by_when\": \"2026-09-21\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.follow_an_application\",\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"own:1\"\n    ],\n    \"to\": \"divya@lakshya.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder has already prepared for the review and knows what to bring, update the file with that work and set a reminder for 30 September to attend. Do not send a message to Lakshya unless there is a question about the review.\",\n  \"wait_or_stop\": \"Wait until Lakshya replies with clarification on what to prepare. If Lakshya does not reply within three days, send a follow-up. Do not stop; the review is a fixed date and the founder must prepare. Stop only if Lakshya says the review has been postponed or cancelled.\",\n  \"done_when\": \"The founder has confirmed receipt, asked for clarification, received Lakshya's reply, and begun preparing for the review. On 30 September, the founder attends the review with the materials ready. After the review, the file is updated with the outcome and any feedback.\",\n  \"draft\": \"Hi Divya, Thanks for the note on the Phase-1 review on 30 Sep. I want to make sure I'm well prepared \u2014 could you let me know what materials or metrics you'd like me to bring, and what format works best? Also, is this a progress checkpoint for all cohort members, or a selection gate? Looking forward to it. Best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

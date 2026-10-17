@@ -1,0 +1,453 @@
+{
+ "43a027eb276c9793c93b846b0496a290c9d0ff1d4ff67d958c901a91dfa30340": {
+  "framed": true,
+  "input_tokens": 14915,
+  "model": "claude-sonnet-5",
+  "output_tokens": 3571,
+  "parsed": {
+   "alternative": "if no specific times can be offered yet, send a short holding reply confirming the raise is open and that times will follow within a day or two, rather than leaving the question fully unanswered",
+   "appraisal": {
+    "reasons": [
+     "the file is a single inbound first-contact email with an open, simple question, not a deal in motion [evt_#1]",
+     "the engine's temporal and risk readings both show low urgency and healthy engagement with no blocking dependency [ru:core.temporal, ru:core.risk, ru:core.dependency]",
+     "the ask is a question we owe an answer to, and the house heuristic treats our silence as informative to the investor even when the engine reads this as low urgency [loop:loop_#1, pb:founder_office.heu.investor_relations.investors_do_not_chase]",
+     "a wrong or slow move here is easily corrected by simply replying later, since nothing irreversible has happened yet"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "a first call with Tom Keller is on the calendar, or he declines to proceed",
+   "draft": "Hi Tom, thanks for reaching out \u2014 yes, we're raising our seed round now. Nimbus Labs is an AI chief of staff for founders. Happy to grab 20 minutes \u2014 would [time 1], [time 2] or [time 3] work on your end? Arjun",
+   "facts": [
+    {
+     "claim": "Tom Keller of Northfield Ventures wrote a cold first-contact email introducing himself, stating the firm's thesis, and asking if the company is raising this year, offering a 20-minute call",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Hi Arjun, I came across Nimbus Labs in a founder community. We invest in AI-native productivity at seed. Are you raising this year? Happy to grab 20 minutes."
+    },
+    {
+     "claim": "this is the first and only touch in the file, and we have not yet replied",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "the open ask is a question on which Northfield is waiting on us, open since first contact",
+     "evidence": [
+      "loop:loop_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "the company brief lists Northfield Ventures as already written to in the seed wave, which is not reflected as a prior touch in this file",
+     "evidence": [
+      "brief:cbl_#8",
+      "file:first_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "the file has been quiet for a small fraction of a day, well inside the first_contact stage's typical window and far from the dormancy threshold",
+     "evidence": [
+      "num:days_quiet",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "no promise was made in the mail",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "reply-time numbers for this contact are not yet measured",
+     "evidence": [
+      "num:their_reply_time:tom@northfieldvc.test",
+      "num:your_reply_time:tom@northfieldvc.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "the engine's temporal and risk readings both treat this file as low urgency with healthy engagement and no blocking dependency",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.risk",
+      "ru:core.dependency"
+     ],
+     "quote": null
+    }
+   ],
+   "hypotheses": [
+    {
+     "needs": "the content or timestamp of the original seed-wave outreach to Northfield, which is not shown in this file",
+     "proposition": "Tom Keller's outreach is the personal contact behind the firm Northfield Ventures already listed as 'written to in the seed wave', meaning this may not be a fresh inbound but a reply within an existing outbound effort"
+    },
+    {
+     "needs": "confirmation of Northfield's typical cheque size and stage focus beyond the one-line thesis in the email",
+     "proposition": "Northfield Ventures' stage and cheque size fit the seed round currently being raised"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:4"
+     ],
+     "claim": "the brief's description of Northfield as already 'written to in the seed wave' and this file's first_touch being an inbound cold email together suggest the outbound wave either crossed with this inbound note or has not yet actually reached Tom Keller personally"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3",
+      "fact:6"
+     ],
+     "claim": "because the ask is simple (confirm raising, offer times) and unconditional, this is answerable immediately without new information"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "heu:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "the move is ours to make, and delay carries reputational cost disproportionate to the effort required, since first-contact replies are cheap and expected quickly"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop_#1",
+    "by_when": "2026-09-17",
+    "for_whom": "Northfield Ventures",
+    "guided_by": [
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "tom@northfieldvc.test",
+    "what": "reply to Tom Keller confirming the seed round is open, giving the one line on what the company does, and proposing two or three concrete times for a 20-minute call",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "a warm, specific reply to a cold investor inbound is best sent within a day or two, before the investor's attention moves to the next plan in their pipeline",
+     "kind": "practice",
+     "why": "partners see far more opportunities than they can pursue, and a prompt, concrete reply signals a founder running a tight process, which itself shapes the investor's read of the company"
+    },
+    {
+     "claim": "replying to a first-contact investor email should offer concrete times rather than asking them to propose times, to remove friction and move straight to a booked call",
+     "kind": "practice",
+     "why": "every extra round of scheduling email is a chance for a low-commitment inbound lead to go cold"
+    },
+    {
+     "claim": "treating every inbound investor note as equally promising regardless of fit or specificity risks over-investing founder time in low-probability conversations",
+     "kind": "counter_pattern",
+     "why": "a fund with a stated thesis that matches the company's stage and sector is more likely to convert than a generic approach, so the reply can be warm but should also gather the detail needed to assess fit (e.g. cheque size, process)"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "most first emails, even warm ones, never convert to a meeting, so silence before a first meeting is the default rather than a signal \u2014 but that default describes the investor's silence, not ours, and here the turn is ours",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process"
+     ],
+     "claim": "a round's momentum depends on running every live conversation in parallel rather than letting any one sit",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "ru:core.temporal",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "while the file reads as low urgency on the engine's temporal signal, that reading does not account for the asymmetry that our silence, not theirs, is what is informative to an investor at this stage",
+     "kind": "counter_pattern"
+    }
+   ],
+   "scenarios": {
+    "act": "a same-day or next-day reply confirming the raise and offering times converts an inbound note into a scheduled first call, keeping the conversation live and in parallel with the other seed-wave investors",
+    "best": "Tom Keller books a call quickly, and Northfield becomes an active parallel thread alongside the other seed conversations, adding to round momentum",
+    "do_nothing": "the open question sits unanswered; per the playbook's own framing of first_contact, silence after a warm or inbound approach before a meeting is not itself catastrophic in the first few days, but the file risks drifting while whose_move stays with us, and the investor's attention moves elsewhere",
+    "signals_to_watch": [
+     "whether Tom Keller replies to confirm a time",
+     "whether Northfield asks for materials (deck, data) signaling genuine interest",
+     "whether the reply surfaces that this is in fact a response to the existing seed-wave outreach"
+    ],
+    "worst": "the reply is delayed long enough that Northfield's attention moves on, and the lead quietly goes cold without ever becoming a counted no"
+   },
+   "unknowns": [
+    {
+     "question": "what was actually sent to Northfield Ventures in the seed wave referenced in the brief, and when",
+     "relevance": "if that outreach already covered the same ground, the reply should reference it rather than treat this as a wholly fresh conversation"
+    },
+    {
+     "question": "the founder's current availability for calls in the near term",
+     "relevance": "the reply needs to offer concrete times, which requires knowing the calendar"
+    },
+    {
+     "question": "Northfield Ventures' typical cheque size and lead/follow preference",
+     "relevance": "would affect how the reply frames the ask and whether this investor is prioritized alongside the other live seed conversations"
+    }
+   ],
+   "wait_or_stop": "no reason to wait: the ask is simple and answerable now; stop pursuing only if Northfield fails to respond after a reply with proposed times is sent, at which point it is treated per first_contact's quiet norms rather than chased"
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Tom Keller of Northfield Ventures wrote a cold first-contact email introducing himself, stating the firm's thesis, and asking if the company is raising this year, offering a 20-minute call\",\n      \"evidence\": [\"evt_#1\"],\n      \"quote\": \"Hi Arjun, I came across Nimbus Labs in a founder community. We invest in AI-native productivity at seed. Are you raising this year? Happy to grab 20 minutes.\"\n    },\n    {\n      \"claim\": \"this is the first and only touch in the file, and we have not yet replied\",\n      \"evidence\": [\"file:first_touch\", \"file:last_touch\", \"none:we_wrote\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"the open ask is a question on which Northfield is waiting on us, open since first contact\",\n      \"evidence\": [\"loop:loop_#1\", \"file:whose_move\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"the company brief lists Northfield Ventures as already written to in the seed wave, which is not reflected as a prior touch in this file\",\n      \"evidence\": [\"brief:cbl_#8\", \"file:first_touch\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"the file has been quiet for a small fraction of a day, well inside the first_contact stage's typical window and far from the dormancy threshold\",\n      \"evidence\": [\"num:days_quiet\", \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"no promise was made in the mail\",\n      \"evidence\": [\"none:promises\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"reply-time numbers for this contact are not yet measured\",\n      \"evidence\": [\"num:their_reply_time:tom@northfieldvc.test\", \"num:your_reply_time:tom@northfieldvc.test\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"the engine's temporal and risk readings both treat this file as low urgency with healthy engagement and no blocking dependency\",\n      \"evidence\": [\"ru:core.temporal\", \"ru:core.risk\", \"ru:core.dependency\"],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"the brief's description of Northfield as already 'written to in the seed wave' and this file's first_touch being an inbound cold email together suggest the outbound wave either crossed with this inbound note or has not yet actually reached Tom Keller personally\",\n      \"based_on\": [\"fact:1\", \"fact:4\"]\n    },\n    {\n      \"claim\": \"because the ask is simple (confirm raising, offer times) and unconditional, this is answerable immediately without new information\",\n      \"based_on\": [\"fact:1\", \"fact:3\", \"fact:6\"]\n    },\n    {\n      \"claim\": \"the move is ours to make, and delay carries reputational cost disproportionate to the effort required, since first-contact replies are cheap and expected quickly\",\n      \"based_on\": [\"fact:3\", \"heu:founder_office.heu.investor_relations.investors_do_not_chase\"]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"most first emails, even warm ones, never convert to a meeting, so silence before a first meeting is the default rather than a signal \u2014 but that default describes the investor's silence, not ours, and here the turn is ours\",\n      \"based_on\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"a round's momentum depends on running every live conversation in parallel rather than letting any one sit\",\n      \"based_on\": [\"pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process\"]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"while the file reads as low urgency on the engine's temporal signal, that reading does not account for the asymmetry that our silence, not theirs, is what is informative to an investor at this stage\",\n      \"based_on\": [\"ru:core.temporal\", \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"a warm, specific reply to a cold investor inbound is best sent within a day or two, before the investor's attention moves to the next plan in their pipeline\",\n      \"why\": \"partners see far more opportunities than they can pursue, and a prompt, concrete reply signals a founder running a tight process, which itself shapes the investor's read of the company\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"replying to a first-contact investor email should offer concrete times rather than asking them to propose times, to remove friction and move straight to a booked call\",\n      \"why\": \"every extra round of scheduling email is a chance for a low-commitment inbound lead to go cold\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"treating every inbound investor note as equally promising regardless of fit or specificity risks over-investing founder time in low-probability conversations\",\n      \"why\": \"a fund with a stated thesis that matches the company's stage and sector is more likely to convert than a generic approach, so the reply can be warm but should also gather the detail needed to assess fit (e.g. cheque size, process)\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tom Keller's outreach is the personal contact behind the firm Northfield Ventures already listed as 'written to in the seed wave', meaning this may not be a fresh inbound but a reply within an existing outbound effort\",\n      \"needs\": \"the content or timestamp of the original seed-wave outreach to Northfield, which is not shown in this file\"\n    },\n    {\n      \"proposition\": \"Northfield Ventures' stage and cheque size fit the seed round currently being raised\",\n      \"needs\": \"confirmation of Northfield's typical cheque size and stage focus beyond the one-line thesis in the email\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"what was actually sent to Northfield Ventures in the seed wave referenced in the brief, and when\",\n      \"relevance\": \"if that outreach already covered the same ground, the reply should reference it rather than treat this as a wholly fresh conversation\"\n    },\n    {\n      \"question\": \"the founder's current availability for calls in the near term\",\n      \"relevance\": \"the reply needs to offer concrete times, which requires knowing the calendar\"\n    },\n    {\n      \"question\": \"Northfield Ventures' typical cheque size and lead/follow preference\",\n      \"relevance\": \"would affect how the reply frames the ask and whether this investor is prioritized alongside the other live seed conversations\"\n    }\n  ],\n  \"scenarios\": {\n    \"do_nothing\": \"the open question sits unanswered; per the playbook's own framing of first_contact, silence after a warm or inbound approach before a meeting is not itself catastrophic in the first few days, but the file risks drifting while whose_move stays with us, and the investor's attention moves elsewhere\",\n    \"act\": \"a same-day or next-day reply confirming the raise and offering times converts an inbound note into a scheduled first call, keeping the conversation live and in parallel with the other seed-wave investors\",\n    \"best\": \"Tom Keller books a call quickly, and Northfield becomes an active parallel thread alongside the other seed conversations, adding to round momentum\",\n    \"worst\": \"the reply is delayed long enough that Northfield's attention moves on, and the lead quietly goes cold without ever becoming a counted no\",\n    \"signals_to_watch\": [\n      \"whether Tom Keller replies to confirm a time\",\n      \"whether Northfield asks for materials (deck, data) signaling genuine interest\",\n      \"whether the reply surfaces that this is in fact a response to the existing seed-wave outreach\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"the file is a single inbound first-contact email with an open, simple question, not a deal in motion [evt_#1]\",\n      \"the engine's temporal and risk readings both show low urgency and healthy engagement with no blocking dependency [ru:core.temporal, ru:core.risk, ru:core.dependency]\",\n      \"the ask is a question we owe an answer to, and the house heuristic treats our silence as informative to the investor even when the engine reads this as low urgency [loop:loop_#1, pb:founder_office.heu.investor_relations.investors_do_not_chase]\",\n      \"a wrong or slow move here is easily corrected by simply replying later, since nothing irreversible has happened yet\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"reply to Tom Keller confirming the seed round is open, giving the one line on what the company does, and proposing two or three concrete times for a 20-minute call\",\n    \"for_whom\": \"Northfield Ventures\",\n    \"by_when\": \"2026-09-17\",\n    \"rests_on\": [\"fact:1\", \"fact:3\", \"inference:2\", \"inference:3\"],\n    \"guided_by\": [\"pb:founder_office.heu.investor_relations.investors_do_not_chase\", \"pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process\", \"own:1\", \"own:2\"],\n    \"to\": \"tom@northfieldvc.test\",\n    \"answers\": \"loop_#1\"\n  },\n  \"alternative\": \"if no specific times can be offered yet, send a short holding reply confirming the raise is open and that times will follow within a day or two, rather than leaving the question fully unanswered\",\n  \"wait_or_stop\": \"no reason to wait: the ask is simple and answerable now; stop pursuing only if Northfield fails to respond after a reply with proposed times is sent, at which point it is treated per first_contact's quiet norms rather than chased\",\n  \"done_when\": \"a first call with Tom Keller is on the calendar, or he declines to proceed\",\n  \"draft\": \"Hi Tom, thanks for reaching out \u2014 yes, we're raising our seed round now. Nimbus Labs is an AI chief of staff for founders. Happy to grab 20 minutes \u2014 would [time 1], [time 2] or [time 3] work on your end? Arjun\"\n}",
+  "site": "expert"
+ },
+ "a10088c39aebd282fddda21fe96d2654d1d9c7387413ebb24ff54e53f2458d3e": {
+  "framed": true,
+  "input_tokens": 14969,
+  "model": "claude-sonnet-5",
+  "output_tokens": 3941,
+  "parsed": {
+   "alternative": "If no times work for Tom Keller, offer to send a short deck and ask him to propose a time that suits his calendar instead",
+   "appraisal": {
+    "reasons": [
+     "a seed round in active fundraising benefits from every fitting investor conversation moving forward (brief:cbl_#2)",
+     "the reasoning units read this file as low urgency and low risk currently (ru:core.temporal, ru:core.risk)",
+     "the ask is a simple scheduling question, not a high-stakes commitment, and a late reply is recoverable (loop:loop_#1)"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "A first call or meeting with Tom Keller is on the calendar, or he declines",
+   "draft": "Hi Tom, thanks for reaching out \u2014 yes, we're actively raising our seed round. Would love to grab 20 minutes. I'm free Wednesday or Thursday afternoon this week, or Monday next week \u2014 let me know what works and I'll send an invite. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "Northfield's partner has written in once, asking if we are raising and offering a 20-minute call; no reply has been sent yet and no meeting is scheduled",
+    "expected": "At first_contact, the playbook expects either a first meeting or call to be arranged, or a decline \u2014 quiet before that point is the default rather than a signal, and the stage typically runs about two weeks",
+    "stage": "first_contact"
+   },
+   "facts": [
+    {
+     "claim": "Tom Keller of Northfield Ventures wrote in, having found Nimbus Labs in a founder community, asking if the company is raising this year and offering to meet for 20 minutes",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Nimbus Labs Hi Arjun, I came across Nimbus Labs in a founder community. We invest in AI-native productivity at seed. Are you raising this year? Happy to grab 20 minutes. Tom Keller Partner, Northfield Ventures"
+    },
+    {
+     "claim": "This is the first and only touch in the file, open since the same timestamp",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The open ask is a question where Northfield waits on us, open since first contact",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "It is our move to respond",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The company brief lists Northfield Ventures as already written to in the seed wave",
+     "evidence": [
+      "brief:cbl_#8"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise exists in this file's mail",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet a small fraction of a day, well inside the 90-day dormancy window the playbook sets",
+     "evidence": [
+      "num:days_quiet",
+      "sit_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply-time numbers have been measured yet for Tom Keller",
+     "evidence": [
+      "num:their_reply_time:tom@northfieldvc.test",
+      "num:your_reply_time:tom@northfieldvc.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This investor conversation has not been judged before; this is the first time it is being seen",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@fundraising",
+      "hist:derived.history.prior_outcome@fundraising",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units read this as healthy engagement with low urgency and no blocking dependency",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A new investor has reached out inbound, fitting thesis and stage, asking a direct question that opens a first-contact conversation \u2014 the move is to answer promptly and convert interest into a scheduled first call",
+    "rivals": [
+     "This could be a lower-priority, associate-level sourcing email dressed as partner interest, worth only a brief reply rather than urgent scheduling",
+     "This could be read as already covered by the planned seed-wave outreach to Northfield, making this inbound note a duplicate thread rather than a new one"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "confirmation of his role and check-writing authority at Northfield, which would come out on the first call",
+     "proposition": "Tom Keller is a genuine decision-making partner at Northfield Ventures who can move this to a partners' meeting quickly"
+    },
+    {
+     "needs": "checking whether the seed-wave outreach to Northfield listed in the brief has actually gone out yet, which is not shown in this file's event history",
+     "proposition": "Northfield Ventures was already part of the planned seed wave outreach, and this inbound note may cross with or precede a planned email from our side"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:5"
+     ],
+     "claim": "Northfield Ventures is a new inbound-style contact (found Nimbus Labs via a founder community, not through a connector), so this is a fresh investor lead needing a first reply rather than a continuation of an existing thread"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:5",
+      "fact:2"
+     ],
+     "claim": "Because the brief already lists Northfield as part of the seed wave but the file shows no prior touch, this inbound note is effectively the investor opting itself in \u2014 the reply should move straight to proposing times, not a cold re-pitch"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:7"
+     ],
+     "claim": "The file sits at the very start of first_contact, and the clock the playbook cares about (first_contact typically 14 days) has barely started"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop_#1",
+    "by_when": "2026-09-17",
+    "for_whom": "Northfield Ventures",
+    "guided_by": [
+     "heu:founder_office.heu.investor_relations.investors_do_not_chase",
+     "heu:founder_office.heu.investor_relations.momentum_is_a_parallel_process",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "fact:4",
+     "inference:1"
+    ],
+    "to": "tom@northfieldvc.test",
+    "what": "reply to Tom Keller confirming the seed round is active and offering two or three times for a 20-minute call",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An inbound note from a partner at a fund that fits thesis and stage is answered same-day with two or three concrete times, because speed itself signals a company running a live process",
+     "kind": "practice",
+     "why": "founders who sit on investor-initiated interest look passive, and passivity is the one impression a raise cannot afford to give"
+    },
+    {
+     "claim": "The reply to a first inbound investor note should be short and should not over-explain the company; it should confirm interest, answer the question asked, and offer times",
+     "kind": "practice",
+     "why": "a long pitch in a first reply reads as needy and wastes the investor's actual ask, which was simply to get on a call"
+    },
+    {
+     "claim": "Occasionally an inbound note from an unfamiliar fund is really a lower-signal associate-sourced outreach rather than a partner-level conversation, even when signed by a partner",
+     "kind": "counter_pattern",
+     "why": "titles in a signature do not guarantee the sender is the actual decision-maker on the deal, and that affects how much weight to put on the conversation early on"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "In early-stage fundraising, a large share of first emails from investors never convert into a meeting, so silence before a first meeting is the default rather than a signal",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "heu:founder_office.heu.investor_relations.investors_do_not_chase",
+      "fact:3"
+     ],
+     "claim": "When the turn is ours and an investor has asked a direct, answerable question, the reply is owed promptly because our silence reads as lost momentum, while theirs does not yet read as anything",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "heu:founder_office.heu.investor_relations.momentum_is_a_parallel_process",
+      "fact:5"
+     ],
+     "claim": "A round's momentum comes from parallel conversations, so a fresh inbound interest should be moved quickly into the same live set as the other seed-wave investors rather than handled in isolation",
+     "kind": "pattern"
+    }
+   ],
+   "patterns_note": null,
+   "proposed_kind": null,
+   "scenarios": {
+    "act": "A same-day reply confirming we are raising and offering times converts the inbound note into a scheduled first call, moving the file toward first_call",
+    "best": "Tom Keller books a call quickly, it goes well, and Northfield becomes an active parallel thread alongside the other seed-wave investors, adding real momentum to the round",
+    "do_nothing": "The question sits unanswered; per the stop-rule, the file stays technically open for a long time before being called dormant, but each day of silence after an investor's direct question reads as lost momentum on our side, and the warm inbound interest cools",
+    "signals_to_watch": [
+     "whether Tom Keller responds to proposed times and how quickly",
+     "whether the reply crosses with or duplicates a seed-wave email already sent by our side",
+     "whether a call, once held, names a concrete next step and date"
+    ],
+    "worst": "The reply is delayed or generic, the investor's interest cools as is typical for a large share of first inbound notes, and the conversation never becomes a meeting"
+   },
+   "unknowns": [
+    {
+     "question": "Has the seed-wave email to Northfield Ventures referenced in the brief already been sent, or is this inbound note arriving before our own outreach went out",
+     "relevance": "if our own wave email is about to cross with this reply, the reply should acknowledge that rather than look like we never reached out"
+    },
+    {
+     "question": "What stage and cheque size Northfield typically writes at, and whether Tom Keller leads or follows",
+     "relevance": "determines how much this conversation can realistically matter to closing the round versus being a smaller or follower participant"
+    },
+    {
+     "question": "Whether any portfolio company of Northfield's competes with Nimbus Labs",
+     "relevance": "a conflict would change whether this conversation is worth pursuing at all"
+    }
+   ],
+   "wait_or_stop": "Wait only until a reply is sent \u2014 there is no reason to delay further given the ask is simple and we owe the answer; if no response comes back after the reply within the first_contact stage's typical span, follow up once rather than assume a no, per how silence before a first meeting is read"
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Tom Keller of Northfield Ventures wrote in, having found Nimbus Labs in a founder community, asking if the company is raising this year and offering to meet for 20 minutes\",\n      \"evidence\": [\"evt_#1\"],\n      \"quote\": \"Nimbus Labs Hi Arjun, I came across Nimbus Labs in a founder community. We invest in AI-native productivity at seed. Are you raising this year? Happy to grab 20 minutes. Tom Keller Partner, Northfield Ventures\"\n    },\n    {\n      \"claim\": \"This is the first and only touch in the file, open since the same timestamp\",\n      \"evidence\": [\"file:first_touch\", \"file:last_touch\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The open ask is a question where Northfield waits on us, open since first contact\",\n      \"evidence\": [\"loop:loop_#1\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"It is our move to respond\",\n      \"evidence\": [\"file:whose_move\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The company brief lists Northfield Ventures as already written to in the seed wave\",\n      \"evidence\": [\"brief:cbl_#8\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise exists in this file's mail\",\n      \"evidence\": [\"none:promises\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet a small fraction of a day, well inside the 90-day dormancy window the playbook sets\",\n      \"evidence\": [\"num:days_quiet\", \"sit_#1\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply-time numbers have been measured yet for Tom Keller\",\n      \"evidence\": [\"num:their_reply_time:tom@northfieldvc.test\", \"num:your_reply_time:tom@northfieldvc.test\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This investor conversation has not been judged before; this is the first time it is being seen\",\n      \"evidence\": [\"hist:derived.history.prior_card_verdict@fundraising\", \"hist:derived.history.prior_outcome@fundraising\", \"hist:derived.history.times_seen@fundraising\"],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units read this as healthy engagement with low urgency and no blocking dependency\",\n      \"evidence\": [\"ru:core.temporal\", \"ru:core.dependency\", \"ru:core.risk\"],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Northfield Ventures is a new inbound-style contact (found Nimbus Labs via a founder community, not through a connector), so this is a fresh investor lead needing a first reply rather than a continuation of an existing thread\",\n      \"based_on\": [\"fact:1\", \"fact:5\"]\n    },\n    {\n      \"claim\": \"Because the brief already lists Northfield as part of the seed wave but the file shows no prior touch, this inbound note is effectively the investor opting itself in \u2014 the reply should move straight to proposing times, not a cold re-pitch\",\n      \"based_on\": [\"fact:1\", \"fact:5\", \"fact:2\"]\n    },\n    {\n      \"claim\": \"The file sits at the very start of first_contact, and the clock the playbook cares about (first_contact typically 14 days) has barely started\",\n      \"based_on\": [\"fact:3\", \"fact:7\"]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"In early-stage fundraising, a large share of first emails from investors never convert into a meeting, so silence before a first meeting is the default rather than a signal\",\n      \"based_on\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When the turn is ours and an investor has asked a direct, answerable question, the reply is owed promptly because our silence reads as lost momentum, while theirs does not yet read as anything\",\n      \"based_on\": [\"heu:founder_office.heu.investor_relations.investors_do_not_chase\", \"fact:3\"]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A round's momentum comes from parallel conversations, so a fresh inbound interest should be moved quickly into the same live set as the other seed-wave investors rather than handled in isolation\",\n      \"based_on\": [\"heu:founder_office.heu.investor_relations.momentum_is_a_parallel_process\", \"fact:5\"]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An inbound note from a partner at a fund that fits thesis and stage is answered same-day with two or three concrete times, because speed itself signals a company running a live process\",\n      \"why\": \"founders who sit on investor-initiated interest look passive, and passivity is the one impression a raise cannot afford to give\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The reply to a first inbound investor note should be short and should not over-explain the company; it should confirm interest, answer the question asked, and offer times\",\n      \"why\": \"a long pitch in a first reply reads as needy and wastes the investor's actual ask, which was simply to get on a call\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Occasionally an inbound note from an unfamiliar fund is really a lower-signal associate-sourced outreach rather than a partner-level conversation, even when signed by a partner\",\n      \"why\": \"titles in a signature do not guarantee the sender is the actual decision-maker on the deal, and that affects how much weight to put on the conversation early on\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tom Keller is a genuine decision-making partner at Northfield Ventures who can move this to a partners' meeting quickly\",\n      \"needs\": \"confirmation of his role and check-writing authority at Northfield, which would come out on the first call\"\n    },\n    {\n      \"proposition\": \"Northfield Ventures was already part of the planned seed wave outreach, and this inbound note may cross with or precede a planned email from our side\",\n      \"needs\": \"checking whether the seed-wave outreach to Northfield listed in the brief has actually gone out yet, which is not shown in this file's event history\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the seed-wave email to Northfield Ventures referenced in the brief already been sent, or is this inbound note arriving before our own outreach went out\",\n      \"relevance\": \"if our own wave email is about to cross with this reply, the reply should acknowledge that rather than look like we never reached out\"\n    },\n    {\n      \"question\": \"What stage and cheque size Northfield typically writes at, and whether Tom Keller leads or follows\",\n      \"relevance\": \"determines how much this conversation can realistically matter to closing the round versus being a smaller or follower participant\"\n    },\n    {\n      \"question\": \"Whether any portfolio company of Northfield's competes with Nimbus Labs\",\n      \"relevance\": \"a conflict would change whether this conversation is worth pursuing at all\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A new investor has reached out inbound, fitting thesis and stage, asking a direct question that opens a first-contact conversation \u2014 the move is to answer promptly and convert interest into a scheduled first call\",\n    \"rivals\": [\n      \"This could be a lower-priority, associate-level sourcing email dressed as partner interest, worth only a brief reply rather than urgent scheduling\",\n      \"This could be read as already covered by the planned seed-wave outreach to Northfield, making this inbound note a duplicate thread rather than a new one\"\n    ]\n  },\n  \"proposed_kind\": null,\n  \"expected_vs_actual\": {\n    \"stage\": \"first_contact\",\n    \"expected\": \"At first_contact, the playbook expects either a first meeting or call to be arranged, or a decline \u2014 quiet before that point is the default rather than a signal, and the stage typically runs about two weeks\",\n    \"actual\": \"Northfield's partner has written in once, asking if we are raising and offering a 20-minute call; no reply has been sent yet and no meeting is scheduled\"\n  },\n  \"patterns_note\": null,\n  \"scenarios\": {\n    \"do_nothing\": \"The question sits unanswered; per the stop-rule, the file stays technically open for a long time before being called dormant, but each day of silence after an investor's direct question reads as lost momentum on our side, and the warm inbound interest cools\",\n    \"act\": \"A same-day reply confirming we are raising and offering times converts the inbound note into a scheduled first call, moving the file toward first_call\",\n    \"best\": \"Tom Keller books a call quickly, it goes well, and Northfield becomes an active parallel thread alongside the other seed-wave investors, adding real momentum to the round\",\n    \"worst\": \"The reply is delayed or generic, the investor's interest cools as is typical for a large share of first inbound notes, and the conversation never becomes a meeting\",\n    \"signals_to_watch\": [\n      \"whether Tom Keller responds to proposed times and how quickly\",\n      \"whether the reply crosses with or duplicates a seed-wave email already sent by our side\",\n      \"whether a call, once held, names a concrete next step and date\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"a seed round in active fundraising benefits from every fitting investor conversation moving forward (brief:cbl_#2)\",\n      \"the reasoning units read this file as low urgency and low risk currently (ru:core.temporal, ru:core.risk)\",\n      \"the ask is a simple scheduling question, not a high-stakes commitment, and a late reply is recoverable (loop:loop_#1)\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"reply to Tom Keller confirming the seed round is active and offering two or three times for a 20-minute call\",\n    \"for_whom\": \"Northfield Ventures\",\n    \"by_when\": \"2026-09-17\",\n    \"rests_on\": [\"fact:1\", \"fact:3\", \"fact:4\", \"inference:1\"],\n    \"guided_by\": [\"heu:founder_office.heu.investor_relations.investors_do_not_chase\", \"heu:founder_office.heu.investor_relations.momentum_is_a_parallel_process\", \"own:1\", \"own:2\"],\n    \"to\": \"tom@northfieldvc.test\",\n    \"answers\": \"loop_#1\"\n  },\n  \"alternative\": \"If no times work for Tom Keller, offer to send a short deck and ask him to propose a time that suits his calendar instead\",\n  \"wait_or_stop\": \"Wait only until a reply is sent \u2014 there is no reason to delay further given the ask is simple and we owe the answer; if no response comes back after the reply within the first_contact stage's typical span, follow up once rather than assume a no, per how silence before a first meeting is read\",\n  \"done_when\": \"A first call or meeting with Tom Keller is on the calendar, or he declines\",\n  \"draft\": \"Hi Tom, thanks for reaching out \u2014 yes, we're actively raising our seed round. Would love to grab 20 minutes. I'm free Wednesday or Thursday afternoon this week, or Monday next week \u2014 let me know what works and I'll send an invite. Best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

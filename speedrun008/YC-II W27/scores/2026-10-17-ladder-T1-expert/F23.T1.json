@@ -1,0 +1,1304 @@
+{
+ "06a48f2860bf7af279b35b3be5d667edc88458ef836562f81dc8e69eb1ef3f07": {
+  "framed": true,
+  "input_tokens": 13930,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3717,
+  "parsed": {
+   "alternative": "Send a mail to State Startup Mission asking for the application status and the deadline. However, the portal is the authoritative record, and a mail to the programme may not be answered quickly. The portal check is faster and more reliable.",
+   "appraisal": {
+    "reasons": [
+     "The application is to a government programme that is on the watchlist and is one of the founder's stated goals.",
+     "If the application was submitted, the deadline may be approaching or may have passed; if it has passed and the file is not managed, the decision may be missed.",
+     "If the application was never submitted, the next intake may not open for months, and the opportunity is lost for this cohort.",
+     "A missed deadline or a missed decision cannot be recovered; the file can only be re-applied to the next intake."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The file is updated with the programme's published deadline, the application's submission confirmation (or a note that it was never submitted), and the current status on the portal. A plan is in place to track the decision date or the next intake's deadline.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The file shows no deadline, no submission confirmation, and no portal status check. The only contact is three administrative newsletters. The file has not been managed by the programme's calendar.",
+    "expected": "The playbook expects the file to record the programme's published deadline, the application's submission confirmation, and the current status on the programme's portal. At the 'applied' stage, the file should show the deadline, the receipt, and a plan to track the window's close and the review's start. If the window has closed, the file should show the transition to 'under_review' and the programme's published decision date.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Nimbus Labs applied to State Startup Mission, a government programme.",
+     "evidence": [
+      "brief:cbl_#19",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The company has received three newsletters from State Startup Mission since application, all administrative bulletins with no decision or status update.",
+     "evidence": [
+      "evt_#1",
+      "evt_#2",
+      "evt_#3"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows no application deadline, no submission confirmation, and no status check of the programme's portal.",
+     "evidence": [
+      "none:promises",
+      "none:we_wrote",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The last touch from State Startup Mission was 10 days ago; the file has been quiet for 0.54 days since then.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time or engagement metric has been measured for this file.",
+     "evidence": [
+      "num:their_reply_time:no-reply@statestartup.gov.test",
+      "num:your_reply_time:no-reply@statestartup.gov.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook for programme applications names six stages: applied, under_review, interview, decision, onboarding, in_programme, and declined.",
+     "evidence": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook states that a programme's silence before its published decision date carries no information about the application.",
+     "evidence": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "For a government scheme, the portal's status is the decision record and the mail only reports it.",
+     "evidence": [
+      "pb:founder_office.heu.program_applications.the_portal_is_the_record"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook warns that an application can be lost on a date rather than on merit if left alone: the interview slot goes unbooked, a clarification goes unanswered past the programme's date, an offer lapses before its agreement is signed.",
+     "evidence": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A government programme application whose submission and status are not recorded in the file, leaving it at risk of being lost on a date rather than on merit.",
+    "rivals": [
+     "An administrative mailing list subscription that is not an application at all.",
+     "An application that was submitted but whose confirmation was not filed, so the file is incomplete rather than the application being at risk.",
+     "A programme that has already decided and sent the decision to the portal, but the founder has not checked the portal and the mail has not arrived."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The submission confirmation mail or the portal's submitted status, with the date and the application ID.",
+     "proposition": "The application to State Startup Mission was submitted before 2026-09-05."
+    },
+    {
+     "needs": "The programme's published deadline, and the portal's current status for this application.",
+     "proposition": "The application is still in the 'applied' stage, waiting for the programme's deadline to close and the review to begin."
+    },
+    {
+     "needs": "A check of the State Startup Mission portal for this company's application status.",
+     "proposition": "The application has been rejected or is under review, and the status is on the portal but not in the mailbox."
+    },
+    {
+     "needs": "A search of the founder's sent mail for the application submission, or a check of the portal for any record of this company.",
+     "proposition": "The application was never submitted, and the newsletters are the only contact because the company is on the programme's mailing list."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:3",
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "The file's stage cannot be determined from the dossier because no application deadline, submission confirmation, or portal status has been recorded."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.heu.program_applications.the_portal_is_the_record"
+     ],
+     "claim": "The newsletters received are administrative broadcasts, not programme communications about this application's status."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "Without the programme's published deadline and the application's submission confirmation, the file cannot be managed by the playbook's calendar."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "inference:1",
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "The next move is to find out whether the application was submitted, when, and what the programme's deadline and current status are."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "card:card_#1",
+    "by_when": "2026-09-28",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:3",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Check the State Startup Mission portal for the application status, the deadline, and the current stage. If the application was submitted, record the submission confirmation, the deadline, and the portal status. If the application was never submitted, decide whether to apply in the next intake.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Government programmes in India publish their deadlines and decision dates on their portals and in their terms; the first move is always to read the programme's own published calendar and the portal's status, not the mailbox.",
+     "kind": "practice",
+     "why": "The portal is the system of record; mail is notification. A founder who reads only mail will miss status changes, eligibility checks, and requests for documents that appear on the portal first."
+    },
+    {
+     "claim": "An application to a government scheme without a recorded submission confirmation is often not submitted at all, or submitted to the wrong programme, or submitted under a different entity name.",
+     "kind": "base_rate",
+     "why": "Government portals require exact entity names and send confirmation mails; the absence of a confirmation in the file is a red flag that the application may not have gone in."
+    },
+    {
+     "claim": "A founder who has applied to a government programme but has not recorded the deadline or the submission confirmation is often managing the application by feel rather than by the programme's calendar.",
+     "kind": "counter_pattern",
+     "why": "The playbook is clear: the deadline is the only fixed point, and the submission confirmation is the proof. Without both, the file is not being managed; it is being hoped for."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application",
+      "cap:founder_office.programs_and_applications.program_applications#f3"
+     ],
+     "claim": "A programme application file without a recorded deadline or submission confirmation is at risk of being lost on a date rather than on merit.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+      "cap:founder_office.programs_and_applications.program_applications#f6"
+     ],
+     "claim": "Government scheme portals hold the authoritative status; mail is a copy and can be missed.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+      "cap:founder_office.programs_and_applications.program_applications#f2"
+     ],
+     "claim": "A programme's silence before its published decision date is not a no and does not warrant escalation or a follow-up chase.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#19",
+     "file:kind"
+    ],
+    "kind": "program",
+    "why": "The brief names it as 'Program \u00b7 State Startup Mission \u2014 applied', and the playbook for programme applications applies."
+   },
+   "scenarios": {
+    "act": "The founder checks the State Startup Mission portal for the application status and the programme's deadline. If the application was submitted, the file is updated with the deadline, the receipt, and the portal status, and a plan is made to track the decision date. If the application was never submitted, the founder decides whether to apply in the next intake.",
+    "best": "The application was submitted and is under review on the portal. The founder records the deadline, the receipt, and the current status, and sets a calendar reminder for the decision date. The decision arrives on time, and the file is closed with the outcome.",
+    "do_nothing": "The file remains unmanaged. If the application was submitted, the deadline may pass without the founder knowing, or the decision may arrive on the portal and not be seen. If the application was never submitted, the window may close without the founder realizing. The file will age to 90 days of quiet and be marked dormant, at which point the application is lost.",
+    "signals_to_watch": [
+     "A submission confirmation mail from State Startup Mission, with the application ID and the deadline.",
+     "A status change on the State Startup Mission portal, showing the application is under review or has been decided.",
+     "A decision mail from the programme, with an offer, a rejection, or a request for more information.",
+     "The programme's published decision date passing without a decision mail or portal update."
+    ],
+    "worst": "The application was never submitted, or was submitted to the wrong entity or programme. The deadline has passed, and the window is closed. The founder does not realize until the file is marked dormant, and the opportunity is lost."
+   },
+   "unknowns": [
+    {
+     "question": "What is State Startup Mission's published application deadline for the cohort Nimbus Labs applied to?",
+     "relevance": "The deadline is the only fixed point in the playbook; without it, the file cannot be staged or managed by calendar."
+    },
+    {
+     "question": "Was the application to State Startup Mission submitted, and if so, when and with what confirmation?",
+     "relevance": "The submission confirmation is the proof that the application went in; without it, the file is at risk of being lost on a date."
+    },
+    {
+     "question": "What is the current status of the application on the State Startup Mission portal?",
+     "relevance": "The portal is the authoritative record; the mail is a copy. The status on the portal determines the stage and the next move."
+    },
+    {
+     "question": "Has the programme's decision date passed, or is the application still in the window?",
+     "relevance": "If the decision date has passed and no decision has been received, the file may be declined or lost; if the window is still open, the silence is expected."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-28 for the founder to check the portal. If the portal shows the application was submitted and is under review, update the file with the deadline and the decision date, and set a reminder for that date. If the portal shows the application was rejected or is not found, decide whether to re-apply in the next intake. If the portal is not accessible or the application is not found, send a mail to the programme asking for the status. Stop if the founder decides not to pursue this programme."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Nimbus Labs applied to State Startup Mission, a government programme.\",\n      \"evidence\": [\n        \"brief:cbl_#19\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The company has received three newsletters from State Startup Mission since application, all administrative bulletins with no decision or status update.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"evt_#2\",\n        \"evt_#3\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows no application deadline, no submission confirmation, and no status check of the programme's portal.\",\n      \"evidence\": [\n        \"none:promises\",\n        \"none:we_wrote\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The last touch from State Startup Mission was 10 days ago; the file has been quiet for 0.54 days since then.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time or engagement metric has been measured for this file.\",\n      \"evidence\": [\n        \"num:their_reply_time:no-reply@statestartup.gov.test\",\n        \"num:your_reply_time:no-reply@statestartup.gov.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook for programme applications names six stages: applied, under_review, interview, decision, onboarding, in_programme, and declined.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook states that a programme's silence before its published decision date carries no information about the application.\",\n      \"evidence\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"For a government scheme, the portal's status is the decision record and the mail only reports it.\",\n      \"evidence\": [\n        \"pb:founder_office.heu.program_applications.the_portal_is_the_record\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook warns that an application can be lost on a date rather than on merit if left alone: the interview slot goes unbooked, a clarification goes unanswered past the programme's date, an offer lapses before its agreement is signed.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The file's stage cannot be determined from the dossier because no application deadline, submission confirmation, or portal status has been recorded.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    },\n    {\n      \"claim\": \"The newsletters received are administrative broadcasts, not programme communications about this application's status.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.heu.program_applications.the_portal_is_the_record\"\n      ]\n    },\n    {\n      \"claim\": \"Without the programme's published deadline and the application's submission confirmation, the file cannot be managed by the playbook's calendar.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is to find out whether the application was submitted, when, and what the programme's deadline and current status are.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"inference:1\",\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme application file without a recorded deadline or submission confirmation is at risk of being lost on a date rather than on merit.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\",\n        \"cap:founder_office.programs_and_applications.program_applications#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Government scheme portals hold the authoritative status; mail is a copy and can be missed.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.the_portal_is_the_record\",\n        \"cap:founder_office.programs_and_applications.program_applications#f6\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A programme's silence before its published decision date is not a no and does not warrant escalation or a follow-up chase.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n        \"cap:founder_office.programs_and_applications.program_applications#f2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Government programmes in India publish their deadlines and decision dates on their portals and in their terms; the first move is always to read the programme's own published calendar and the portal's status, not the mailbox.\",\n      \"why\": \"The portal is the system of record; mail is notification. A founder who reads only mail will miss status changes, eligibility checks, and requests for documents that appear on the portal first.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An application to a government scheme without a recorded submission confirmation is often not submitted at all, or submitted to the wrong programme, or submitted under a different entity name.\",\n      \"why\": \"Government portals require exact entity names and send confirmation mails; the absence of a confirmation in the file is a red flag that the application may not have gone in.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who has applied to a government programme but has not recorded the deadline or the submission confirmation is often managing the application by feel rather than by the programme's calendar.\",\n      \"why\": \"The playbook is clear: the deadline is the only fixed point, and the submission confirmation is the proof. Without both, the file is not being managed; it is being hoped for.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The application to State Startup Mission was submitted before 2026-09-05.\",\n      \"needs\": \"The submission confirmation mail or the portal's submitted status, with the date and the application ID.\"\n    },\n    {\n      \"proposition\": \"The application is still in the 'applied' stage, waiting for the programme's deadline to close and the review to begin.\",\n      \"needs\": \"The programme's published deadline, and the portal's current status for this application.\"\n    },\n    {\n      \"proposition\": \"The application has been rejected or is under review, and the status is on the portal but not in the mailbox.\",\n      \"needs\": \"A check of the State Startup Mission portal for this company's application status.\"\n    },\n    {\n      \"proposition\": \"The application was never submitted, and the newsletters are the only contact because the company is on the programme's mailing list.\",\n      \"needs\": \"A search of the founder's sent mail for the application submission, or a check of the portal for any record of this company.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is State Startup Mission's published application deadline for the cohort Nimbus Labs applied to?\",\n      \"relevance\": \"The deadline is the only fixed point in the playbook; without it, the file cannot be staged or managed by calendar.\"\n    },\n    {\n      \"question\": \"Was the application to State Startup Mission submitted, and if so, when and with what confirmation?\",\n      \"relevance\": \"The submission confirmation is the proof that the application went in; without it, the file is at risk of being lost on a date.\"\n    },\n    {\n      \"question\": \"What is the current status of the application on the State Startup Mission portal?\",\n      \"relevance\": \"The portal is the authoritative record; the mail is a copy. The status on the portal determines the stage and the next move.\"\n    },\n    {\n      \"question\": \"Has the programme's decision date passed, or is the application still in the window?\",\n      \"relevance\": \"If the decision date has passed and no decision has been received, the file may be declined or lost; if the window is still open, the silence is expected.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A government programme application whose submission and status are not recorded in the file, leaving it at risk of being lost on a date rather than on merit.\",\n    \"rivals\": [\n      \"An administrative mailing list subscription that is not an application at all.\",\n      \"An application that was submitted but whose confirmation was not filed, so the file is incomplete rather than the application being at risk.\",\n      \"A programme that has already decided and sent the decision to the portal, but the founder has not checked the portal and the mail has not arrived.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The brief names it as 'Program \u00b7 State Startup Mission \u2014 applied', and the playbook for programme applications applies.\",\n    \"evidence\": [\n      \"brief:cbl_#19\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The playbook expects the file to record the programme's published deadline, the application's submission confirmation, and the current status on the programme's portal. At the 'applied' stage, the file should show the deadline, the receipt, and a plan to track the window's close and the review's start. If the window has closed, the file should show the transition to 'under_review' and the programme's published decision date.\",\n    \"actual\": \"The file shows no deadline, no submission confirmation, and no portal status check. The only contact is three administrative newsletters. The file has not been managed by the programme's calendar.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains unmanaged. If the application was submitted, the deadline may pass without the founder knowing, or the decision may arrive on the portal and not be seen. If the application was never submitted, the window may close without the founder realizing. The file will age to 90 days of quiet and be marked dormant, at which point the application is lost.\",\n    \"act\": \"The founder checks the State Startup Mission portal for the application status and the programme's deadline. If the application was submitted, the file is updated with the deadline, the receipt, and the portal status, and a plan is made to track the decision date. If the application was never submitted, the founder decides whether to apply in the next intake.\",\n    \"best\": \"The application was submitted and is under review on the portal. The founder records the deadline, the receipt, and the current status, and sets a calendar reminder for the decision date. The decision arrives on time, and the file is closed with the outcome.\",\n    \"worst\": \"The application was never submitted, or was submitted to the wrong entity or programme. The deadline has passed, and the window is closed. The founder does not realize until the file is marked dormant, and the opportunity is lost.\",\n    \"signals_to_watch\": [\n      \"A submission confirmation mail from State Startup Mission, with the application ID and the deadline.\",\n      \"A status change on the State Startup Mission portal, showing the application is under review or has been decided.\",\n      \"A decision mail from the programme, with an offer, a rejection, or a request for more information.\",\n      \"The programme's published decision date passing without a decision mail or portal update.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The application is to a government programme that is on the watchlist and is one of the founder's stated goals.\",\n      \"If the application was submitted, the deadline may be approaching or may have passed; if it has passed and the file is not managed, the decision may be missed.\",\n      \"If the application was never submitted, the next intake may not open for months, and the opportunity is lost for this cohort.\",\n      \"A missed deadline or a missed decision cannot be recovered; the file can only be re-applied to the next intake.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Check the State Startup Mission portal for the application status, the deadline, and the current stage. If the application was submitted, record the submission confirmation, the deadline, and the portal status. If the application was never submitted, decide whether to apply in the next intake.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-28\",\n    \"rests_on\": [\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.program_applications.the_portal_is_the_record\",\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": \"card:card_#1\"\n  },\n  \"alternative\": \"Send a mail to State Startup Mission asking for the application status and the deadline. However, the portal is the authoritative record, and a mail to the programme may not be answered quickly. The portal check is faster and more reliable.\",\n  \"wait_or_stop\": \"Wait until 2026-09-28 for the founder to check the portal. If the portal shows the application was submitted and is under review, update the file with the deadline and the decision date, and set a reminder for that date. If the portal shows the application was rejected or is not found, decide whether to re-apply in the next intake. If the portal is not accessible or the application is not found, send a mail to the programme asking for the status. Stop if the founder decides not to pursue this programme.\",\n  \"done_when\": \"The file is updated with the programme's published deadline, the application's submission confirmation (or a note that it was never submitted), and the current status on the portal. A plan is in place to track the decision date or the next intake's deadline.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "192303bdcad77ae5a54d371f1ac5fb3d24e95adf3018d3a948248901cf77e964": {
+  "framed": true,
+  "input_tokens": 14063,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3657,
+  "parsed": {
+   "alternative": "If the portal is not accessible or does not show the application, write to State Startup Mission's support email asking for the application status and the published deadline for this intake. Include the registration number SSM-2026-3381.",
+   "appraisal": {
+    "reasons": [
+     "The application is one of several programmes in motion; State Startup Mission is a government scheme with no direct investment, but recognition and potential support.",
+     "The programme operates on a published calendar; there is no immediate deadline or decision point.",
+     "If the application is rejected, re-application is possible at the next intake; if it is accepted, the onboarding process is reversible up to the point of signing the agreement.",
+     "The file is quiet within normal bounds; no signal of urgency has arrived.",
+     "The risk of doing nothing is missing a portal status change or a request for documents, which could be costly if the response window closes."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The application's current status is recorded on the file, the programme's published deadline is known, and a follow-up date is set based on the expected review period. If a request for documents or a status change is found, it is answered or logged immediately.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The application was registered successfully. Four administrative messages have arrived (registration confirmation, two bulletins, one scheme update) over thirty days. No request for documents, no interview invitation, no status change on the portal (unknown). No outbound mail from us. The file is quiet for 0.54 days, within the normal gap.",
+    "expected": "The application window is open or has just closed. The programme is collecting applications and will begin review after the deadline. The applicant should receive administrative mail (bulletins, scheme updates) and should check the portal for status. No decision is expected until the programme's published review period begins.",
+    "stage": "applied"
+   },
+   "facts": [
+    {
+     "claim": "Nimbus Labs applied to State Startup Mission and received a registration confirmation.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Your registration on the State Startup Mission portal is complete. Your registration number is SSM-2026-3381."
+    },
+    {
+     "claim": "The file shows four inbound messages from State Startup Mission over thirty days, all administrative in nature.",
+     "evidence": [
+      "evt_#1",
+      "evt_#2",
+      "evt_#3",
+      "evt_#4"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises or commitments appear in State Startup Mission's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.54 days, well within the median gap of 10 days between touches.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "We have not written to State Startup Mission.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is program, and State Startup Mission is on the watchlist.",
+     "evidence": [
+      "file:kind",
+      "file:role",
+      "brief:cbl_#19"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was queued asking for the programme's published application deadline and when the company submitted.",
+     "evidence": [
+      "card:card_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and high engagement.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.temporal"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A government startup scheme application in the early stage after registration, waiting for the programme's review process to begin. The registration confirmation shows the application is in the system; the silence since then is consistent with a batch programme's normal calendar, not a signal of rejection or disinterest.",
+    "rivals": [
+     "The application has entered review and the portal shows a status change that the mail has not yet reported, and we are missing it by reading only the mailbox.",
+     "The programme is a rolling intake and the application is in queue but has not yet been assigned to an incubator, and the silence is normal for this stage.",
+     "The application has been rejected or flagged for missing information, and the mail is delayed or has been filtered."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The programme's published deadline and the date the application was submitted.",
+     "proposition": "The application is in the applied stage, waiting for the programme's window to close before review begins."
+    },
+    {
+     "needs": "A direct check of the State Startup Mission portal for the application's current status.",
+     "proposition": "The programme has already begun review and the portal shows a status change that the mail has not yet reported."
+    },
+    {
+     "needs": "Confirmation of whether State Startup Mission uses a cohort model or a rolling model.",
+     "proposition": "The programme is a rolling intake that reviews applications as they arrive, and the silence means the application is in queue but not yet assigned to an incubator."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The registration confirmation indicates the application was submitted successfully and is now in the programme's system."
+    },
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "The mail pattern \u2014 registration, then three administrative bulletins \u2014 is consistent with a programme's standard communication cadence, not a selection process in motion."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "The absence of any request for documents, clarification, or interview invitation suggests the application has not yet entered active review."
+    },
+    {
+     "based_on": [
+      "fact:7"
+     ],
+     "claim": "The file cannot be judged without knowing the programme's published deadline and the date of submission, which the queued card seeks."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "inference:3"
+     ],
+     "claim": "The ball is in the programme's court; we are waiting for their selection process to move."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "card:card_#1",
+    "by_when": "2026-10-08",
+    "for_whom": "Nimbus Labs",
+    "guided_by": [
+     "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:7",
+     "inference:4",
+     "unknown:1",
+     "unknown:2"
+    ],
+    "to": null,
+    "what": "Check the State Startup Mission portal directly for the application's current status, the published deadline for this intake, and any requests or notifications. Record the deadline and the current status on the file.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Government startup schemes in India typically publish their application windows and decision timelines on their portals; the portal status is always more current than the mailbox.",
+     "kind": "practice",
+     "why": "Schemes operate on published calendars and batch processes; mail is a courtesy copy of the portal's record, often delayed or templated."
+    },
+    {
+     "claim": "A registration confirmation from a government scheme means the application is in the queue; the next signal is either a request for missing documents or a status change on the portal.",
+     "kind": "base_rate",
+     "why": "Schemes validate submissions on receipt and notify applicants of their registration number; this is the baseline state before review begins."
+    },
+    {
+     "claim": "The first move after registration is to check the programme's portal directly for the application status and any published deadlines, not to wait for mail.",
+     "kind": "practice",
+     "why": "Mail is reactive; the portal is the source of truth and updates in real time."
+    },
+    {
+     "claim": "A founder who treats a programme's silence as disinterest and escalates before the published decision date often converts a normal wait into a relationship problem.",
+     "kind": "counter_pattern",
+     "why": "Programmes have fixed calendars and read all applications together; early pressure signals either misunderstanding of the process or lack of confidence in the application."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A programme that reads applications as a batch answers on its own published calendar, not on the applicant's; its quiet before that date is not a no.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.the_portal_is_the_record"
+     ],
+     "claim": "Government schemes communicate via portal status and templated mail; the portal is the record, and silence in the mailbox does not mean silence in the programme.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "An application in the applied stage typically waits fourteen days for the application window to close, after which the programme reads it.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3",
+      "cap:founder_office.programs_and_applications.program_applications#f2"
+     ],
+     "claim": "Chasing a programme before its published decision date is a common error that damages the relationship without moving the process.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:role",
+     "brief:cbl_#19"
+    ],
+    "kind": "program",
+    "why": "The file is an application to State Startup Mission, a government startup recognition and support scheme. It is a selection process with a published calendar, not an investor conversation or a vendor relationship."
+   },
+   "scenarios": {
+    "act": "Check the State Startup Mission portal directly for the application's current status, the published deadline, and any requests or notifications. If a status change or a request is found, respond immediately. If the deadline is known and has passed, calculate the expected review period and set a follow-up date. If the deadline is still ahead, set a reminder to check the portal as it approaches.",
+    "best": "The portal shows the application is in active review, on track for a decision within the programme's published timeline. No documents are missing. The programme's next step is clear (e.g., eligibility check, incubator assignment, interview invitation). We respond to any request immediately and track the programme's calendar.",
+    "do_nothing": "The file remains in applied stage. The programme continues its review process on its own calendar. If the deadline has not yet passed, the application waits for the window to close. If the deadline has passed, the application waits for the programme to begin review and issue a decision. The risk is that a portal status change or a request for documents goes unnoticed if we do not check the portal directly.",
+    "signals_to_watch": [
+     "A status change on the State Startup Mission portal (from registered to under review, eligibility check, incubator assignment, or decision).",
+     "A mail from the programme requesting documents, clarifications, or additional information.",
+     "An invitation to an interview, pitch, or demo day.",
+     "A decision mail (offer or rejection).",
+     "The programme's published deadline passing without a status change (indicates the review period has begun)."
+    ],
+    "worst": "The portal shows the application was rejected or flagged for missing information, and the mail notification was delayed or filtered. We discover this only after the programme's response window has closed, and re-application is not possible until the next intake. Alternatively, the application was never submitted successfully, and the registration confirmation was for a different step."
+   },
+   "unknowns": [
+    {
+     "question": "What is the State Startup Mission's published application deadline, and when did Nimbus Labs submit its application?",
+     "relevance": "This determines whether the file is in the applied stage (waiting for the window to close) or under_review (waiting for a decision). It is the anchor for all timing judgments."
+    },
+    {
+     "question": "What does the State Startup Mission portal show as the current status of the application?",
+     "relevance": "The portal is the authoritative record for a government scheme; the mail may lag behind it. A status change on the portal would indicate the programme has moved, even if no mail has arrived."
+    },
+    {
+     "question": "Does State Startup Mission use a cohort model (batch deadline, then review) or a rolling model (applications reviewed as received)?",
+     "relevance": "This determines the expected timeline and what silence means. A cohort programme's quiet before its deadline is normal; a rolling scheme's quiet after submission may indicate the application is waiting for assignment."
+    },
+    {
+     "question": "Has the programme requested any documents, clarifications, or additional information since registration?",
+     "relevance": "A request would indicate active review and would require a response by a specific date. The absence of a request suggests the application has not yet entered active review."
+    }
+   ],
+   "wait_or_stop": "Wait until the portal check is complete and the deadline is known. If the deadline is still ahead, set a reminder to check the portal one week before it closes. If the deadline has passed, calculate the expected review period from the programme's published timeline (typically 45 days for SISFS-like schemes) and set a follow-up date. Stop if the programme's next intake is more than six months away and the application has been rejected; re-apply at the next intake with the feedback."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Nimbus Labs applied to State Startup Mission and received a registration confirmation.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Your registration on the State Startup Mission portal is complete. Your registration number is SSM-2026-3381.\"\n    },\n    {\n      \"claim\": \"The file shows four inbound messages from State Startup Mission over thirty days, all administrative in nature.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"evt_#2\",\n        \"evt_#3\",\n        \"evt_#4\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises or commitments appear in State Startup Mission's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.54 days, well within the median gap of 10 days between touches.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"We have not written to State Startup Mission.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is program, and State Startup Mission is on the watchlist.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\",\n        \"brief:cbl_#19\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was queued asking for the programme's published application deadline and when the company submitted.\",\n      \"evidence\": [\n        \"card:card_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and high engagement.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.temporal\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The registration confirmation indicates the application was submitted successfully and is now in the programme's system.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The mail pattern \u2014 registration, then three administrative bulletins \u2014 is consistent with a programme's standard communication cadence, not a selection process in motion.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The absence of any request for documents, clarification, or interview invitation suggests the application has not yet entered active review.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The file cannot be judged without knowing the programme's published deadline and the date of submission, which the queued card seeks.\",\n      \"based_on\": [\n        \"fact:7\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in the programme's court; we are waiting for their selection process to move.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"inference:3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme that reads applications as a batch answers on its own published calendar, not on the applicant's; its quiet before that date is not a no.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Government schemes communicate via portal status and templated mail; the portal is the record, and silence in the mailbox does not mean silence in the programme.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.the_portal_is_the_record\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An application in the applied stage typically waits fourteen days for the application window to close, after which the programme reads it.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing a programme before its published decision date is a common error that damages the relationship without moving the process.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\",\n        \"cap:founder_office.programs_and_applications.program_applications#f2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Government startup schemes in India typically publish their application windows and decision timelines on their portals; the portal status is always more current than the mailbox.\",\n      \"why\": \"Schemes operate on published calendars and batch processes; mail is a courtesy copy of the portal's record, often delayed or templated.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A registration confirmation from a government scheme means the application is in the queue; the next signal is either a request for missing documents or a status change on the portal.\",\n      \"why\": \"Schemes validate submissions on receipt and notify applicants of their registration number; this is the baseline state before review begins.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The first move after registration is to check the programme's portal directly for the application status and any published deadlines, not to wait for mail.\",\n      \"why\": \"Mail is reactive; the portal is the source of truth and updates in real time.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who treats a programme's silence as disinterest and escalates before the published decision date often converts a normal wait into a relationship problem.\",\n      \"why\": \"Programmes have fixed calendars and read all applications together; early pressure signals either misunderstanding of the process or lack of confidence in the application.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The application is in the applied stage, waiting for the programme's window to close before review begins.\",\n      \"needs\": \"The programme's published deadline and the date the application was submitted.\"\n    },\n    {\n      \"proposition\": \"The programme has already begun review and the portal shows a status change that the mail has not yet reported.\",\n      \"needs\": \"A direct check of the State Startup Mission portal for the application's current status.\"\n    },\n    {\n      \"proposition\": \"The programme is a rolling intake that reviews applications as they arrive, and the silence means the application is in queue but not yet assigned to an incubator.\",\n      \"needs\": \"Confirmation of whether State Startup Mission uses a cohort model or a rolling model.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the State Startup Mission's published application deadline, and when did Nimbus Labs submit its application?\",\n      \"relevance\": \"This determines whether the file is in the applied stage (waiting for the window to close) or under_review (waiting for a decision). It is the anchor for all timing judgments.\"\n    },\n    {\n      \"question\": \"What does the State Startup Mission portal show as the current status of the application?\",\n      \"relevance\": \"The portal is the authoritative record for a government scheme; the mail may lag behind it. A status change on the portal would indicate the programme has moved, even if no mail has arrived.\"\n    },\n    {\n      \"question\": \"Does State Startup Mission use a cohort model (batch deadline, then review) or a rolling model (applications reviewed as received)?\",\n      \"relevance\": \"This determines the expected timeline and what silence means. A cohort programme's quiet before its deadline is normal; a rolling scheme's quiet after submission may indicate the application is waiting for assignment.\"\n    },\n    {\n      \"question\": \"Has the programme requested any documents, clarifications, or additional information since registration?\",\n      \"relevance\": \"A request would indicate active review and would require a response by a specific date. The absence of a request suggests the application has not yet entered active review.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A government startup scheme application in the early stage after registration, waiting for the programme's review process to begin. The registration confirmation shows the application is in the system; the silence since then is consistent with a batch programme's normal calendar, not a signal of rejection or disinterest.\",\n    \"rivals\": [\n      \"The application has entered review and the portal shows a status change that the mail has not yet reported, and we are missing it by reading only the mailbox.\",\n      \"The programme is a rolling intake and the application is in queue but has not yet been assigned to an incubator, and the silence is normal for this stage.\",\n      \"The application has been rejected or flagged for missing information, and the mail is delayed or has been filtered.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is an application to State Startup Mission, a government startup recognition and support scheme. It is a selection process with a published calendar, not an investor conversation or a vendor relationship.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:role\",\n      \"brief:cbl_#19\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"applied\",\n    \"expected\": \"The application window is open or has just closed. The programme is collecting applications and will begin review after the deadline. The applicant should receive administrative mail (bulletins, scheme updates) and should check the portal for status. No decision is expected until the programme's published review period begins.\",\n    \"actual\": \"The application was registered successfully. Four administrative messages have arrived (registration confirmation, two bulletins, one scheme update) over thirty days. No request for documents, no interview invitation, no status change on the portal (unknown). No outbound mail from us. The file is quiet for 0.54 days, within the normal gap.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains in applied stage. The programme continues its review process on its own calendar. If the deadline has not yet passed, the application waits for the window to close. If the deadline has passed, the application waits for the programme to begin review and issue a decision. The risk is that a portal status change or a request for documents goes unnoticed if we do not check the portal directly.\",\n    \"act\": \"Check the State Startup Mission portal directly for the application's current status, the published deadline, and any requests or notifications. If a status change or a request is found, respond immediately. If the deadline is known and has passed, calculate the expected review period and set a follow-up date. If the deadline is still ahead, set a reminder to check the portal as it approaches.\",\n    \"best\": \"The portal shows the application is in active review, on track for a decision within the programme's published timeline. No documents are missing. The programme's next step is clear (e.g., eligibility check, incubator assignment, interview invitation). We respond to any request immediately and track the programme's calendar.\",\n    \"worst\": \"The portal shows the application was rejected or flagged for missing information, and the mail notification was delayed or filtered. We discover this only after the programme's response window has closed, and re-application is not possible until the next intake. Alternatively, the application was never submitted successfully, and the registration confirmation was for a different step.\",\n    \"signals_to_watch\": [\n      \"A status change on the State Startup Mission portal (from registered to under review, eligibility check, incubator assignment, or decision).\",\n      \"A mail from the programme requesting documents, clarifications, or additional information.\",\n      \"An invitation to an interview, pitch, or demo day.\",\n      \"A decision mail (offer or rejection).\",\n      \"The programme's published deadline passing without a status change (indicates the review period has begun).\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The application is one of several programmes in motion; State Startup Mission is a government scheme with no direct investment, but recognition and potential support.\",\n      \"The programme operates on a published calendar; there is no immediate deadline or decision point.\",\n      \"If the application is rejected, re-application is possible at the next intake; if it is accepted, the onboarding process is reversible up to the point of signing the agreement.\",\n      \"The file is quiet within normal bounds; no signal of urgency has arrived.\",\n      \"The risk of doing nothing is missing a portal status change or a request for documents, which could be costly if the response window closes.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Check the State Startup Mission portal directly for the application's current status, the published deadline for this intake, and any requests or notifications. Record the deadline and the current status on the file.\",\n    \"for_whom\": \"Nimbus Labs\",\n    \"by_when\": \"2026-10-08\",\n    \"rests_on\": [\n      \"fact:7\",\n      \"inference:4\",\n      \"unknown:1\",\n      \"unknown:2\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.program_applications.the_portal_is_the_record\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": \"card:card_#1\"\n  },\n  \"alternative\": \"If the portal is not accessible or does not show the application, write to State Startup Mission's support email asking for the application status and the published deadline for this intake. Include the registration number SSM-2026-3381.\",\n  \"wait_or_stop\": \"Wait until the portal check is complete and the deadline is known. If the deadline is still ahead, set a reminder to check the portal one week before it closes. If the deadline has passed, calculate the expected review period from the programme's published timeline (typically 45 days for SISFS-like schemes) and set a follow-up date. Stop if the programme's next intake is more than six months away and the application has been rejected; re-apply at the next intake with the feedback.\",\n  \"done_when\": \"The application's current status is recorded on the file, the programme's published deadline is known, and a follow-up date is set based on the expected review period. If a request for documents or a status change is found, it is answered or logged immediately.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "b58d0cb06361006f27390c3ac832ec663f34d522c281c5dedd180906a95a5523": {
+  "framed": true,
+  "input_tokens": 13551,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3394,
+  "parsed": {
+   "alternative": "If the portal is not accessible or the company has no record of its submission, send a single status query to State Startup Mission through the programme's published contact channel, asking for confirmation of the application's receipt and current status. Do not chase; ask once and wait for the programme's published decision date.",
+   "appraisal": {
+    "reasons": [
+     "The company listed State Startup Mission as an applied programme in its brief, indicating it is part of the seed-stage fundraising and programme strategy.",
+     "If the application's status is unknown and a decision date has passed, the company may miss the opportunity for this cohort and must wait for the next intake, which is costly in time.",
+     "If the application was never submitted successfully, resubmitting after the deadline may result in a move to the next cohort or a rejection.",
+     "The playbook warns that 'Left alone, an application is lost on a date rather than on merit: the interview slot goes unbooked, a clarification goes unanswered past the programme's date, an offer lapses before its agreement is signed, and a rejection that came with a re-application date is filed as final.'",
+     "The file has been quiet for only 0.54 days, so there is still time to act before the 90-day dormancy threshold, but the company must first establish the programme's calendar."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The file records the State Startup Mission's published deadline, the company's submission date and confirmation receipt, the current portal status, and the expected decision date. If a decision has been made, the file records the outcome and any next steps.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The file records only that a newsletter was sent on 2026-09-05. No deadline, submission date, confirmation receipt, or portal status is recorded. The file does not show whether the application was submitted, when, or what the programme's calendar is.",
+    "expected": "The playbook's 'applied' stage expects the company to have submitted an application before the programme's deadline, received a confirmation, and to be waiting for the programme's review window to close. At this stage, the programme's quiet is normal and carries no information. The file should record the deadline, the submission date, and the confirmation receipt.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "State Startup Mission sent a monthly bulletin to the company on 2026-09-05 at 05:00 UTC.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Monthly bulletin Dear Startup, This month: new incubators empanelled and a policy update. State Startup Mission"
+    },
+    {
+     "claim": "The file has been quiet for 0.54 days as of 2026-09-05 18:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in the mail from State Startup Mission.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's first and last touch both occurred at 2026-09-05 05:00 UTC.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as a program application in the brief, and State Startup Mission is on the watchlist.",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#19"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No open asks are recorded on this file.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found low risk and low urgency, with engagement marked as healthy.",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.risk"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has not been written to by the company.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A government programme has sent a routine administrative newsletter to the company. The company's application status is unknown because the file lacks the programme's published dates, the company's submission date, and the portal status. The next move is to establish these facts before any action on the application itself.",
+    "rivals": [
+     "The newsletter is a signal that the programme is actively reviewing applications and the company should prepare for an interview or decision soon.",
+     "The newsletter is a signal that the programme has rejected the company's application and is moving on to the next cohort.",
+     "The company's application was never submitted successfully, and the newsletter is the only contact the programme has made."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The programme's published application deadline and the date the company submitted its application.",
+     "proposition": "The company's application to State Startup Mission is still in the 'applied' stage, waiting for the programme's review window to close."
+    },
+    {
+     "needs": "Access to the State Startup Mission portal to check the application's current status.",
+     "proposition": "The application has already been reviewed and a decision has been made, but the company has not checked the portal or received a decision mail."
+    },
+    {
+     "needs": "Confirmation of the decision status from the portal or a decision mail, and if rejected, the programme's re-application date.",
+     "proposition": "The company's application was rejected or moved to a later cohort, and the company has not yet acted on that decision."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3"
+     ],
+     "claim": "This is a routine administrative communication from a government programme, not a decision or a request for action."
+    },
+    {
+     "based_on": [
+      "brief:cbl_#19",
+      "file:role"
+     ],
+     "claim": "The company applied to State Startup Mission at some point before 2026-09-05, and the application is now in a waiting state."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3"
+     ],
+     "claim": "The bulletin itself carries no actionable content for the company's application status."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "none:promises",
+      "ru:core.timeline"
+     ],
+     "claim": "The file's stage cannot be determined from the dossier because no application status, deadline, or decision has been recorded."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-06",
+    "for_whom": "the company's file on State Startup Mission",
+    "guided_by": [
+     "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+     "cap:founder_office.programs_and_applications.program_applications#f6",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:4",
+     "fact:5",
+     "inference:2",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "Check the State Startup Mission portal for the application's current status, retrieve the company's submission confirmation, and record the programme's published deadline and expected decision date.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Government programme communications often arrive as templated newsletters from no-reply addresses and should not be treated as direct engagement with the application.",
+     "kind": "practice",
+     "why": "Such mail is administrative broadcast, not a response to the company's application or a signal of progress."
+    },
+    {
+     "claim": "When a programme application has no recorded deadline, decision date, or status check, the file is incomplete and the next move is to establish the programme's own calendar and portal status.",
+     "kind": "base_rate",
+     "why": "Without the programme's published dates and portal access, the company cannot distinguish between normal silence and a missed deadline or decision."
+    },
+    {
+     "claim": "Treating a government programme's newsletter as a signal of interest or progress is a common error that delays the real work of tracking the application's actual status.",
+     "kind": "counter_pattern",
+     "why": "The newsletter is sent to all applicants and carries no information about this company's standing; the portal and the programme's published decision date are the only reliable signals."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "Government programmes send routine newsletters to applicants without indicating application status or next steps.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A programme's quiet before its published decision date carries no information about an application's standing.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+      "cap:founder_office.programs_and_applications.program_applications#f6"
+     ],
+     "claim": "A government scheme's portal holds the status and the mail only reports it; reading only the mail misses the application's actual state.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#19",
+     "file:role"
+    ],
+    "kind": "program",
+    "why": "The brief names this file as 'State Startup Mission \u2014 applied' under the 'Program' section, and the playbook for program applications applies."
+   },
+   "scenarios": {
+    "act": "The company checks the State Startup Mission portal for the application's current status, retrieves its own submission confirmation, and records the programme's published deadline and decision date. If the application is still in review, the file is updated with the expected decision date. If a decision has been made, the file is updated with the outcome and any next steps. If the application was never submitted, the company resubmits before the next deadline.",
+    "best": "The portal shows the application is under review and on track for a decision within the programme's published timeline. The company records the decision date and waits. When the decision arrives, it is an offer, and the company moves to onboarding.",
+    "do_nothing": "The file remains incomplete. The company does not know whether its application is still being reviewed, has been decided, or was never submitted. If the programme's deadline has passed and a decision is due, the company misses it. If the application was rejected with a re-application date, that date passes without action. The file ages to 90 days of quiet and is closed as dormant without ever establishing the application's actual status.",
+    "signals_to_watch": [
+     "The State Startup Mission portal's status field for the company's application.",
+     "A decision mail from State Startup Mission with an offer, rejection, or move to a later cohort.",
+     "The programme's published decision date passing without a mail or portal update.",
+     "A request from the programme for missing documents or clarifications."
+    ],
+    "worst": "The portal shows the application was rejected weeks ago, and the re-application deadline has passed. The company has lost the opportunity for this cohort and must wait for the next intake. Or the portal shows no record of the application at all, meaning it was never submitted successfully."
+   },
+   "unknowns": [
+    {
+     "question": "What is the State Startup Mission's published application deadline, and when did the company submit its application?",
+     "relevance": "This determines whether the file is in the 'applied' stage waiting for review, or past the deadline and in 'under_review' or 'decision'."
+    },
+    {
+     "question": "What does the State Startup Mission portal show as the current status of the company's application?",
+     "relevance": "The portal is the authoritative record for government schemes; the mail is only a copy. The portal status determines the next move."
+    },
+    {
+     "question": "Has the company received a decision mail from State Startup Mission, and if so, what did it say?",
+     "relevance": "A decision mail would indicate whether the application was accepted, rejected, or moved to a later cohort, and would carry any re-application date or next steps."
+    },
+    {
+     "question": "What is the company's own record of when it applied to State Startup Mission and what it submitted?",
+     "relevance": "The company's own timeline and submission confirmation are needed to verify that the application was actually submitted and to calculate how long it has been waiting."
+    }
+   ],
+   "wait_or_stop": "Wait until the portal status is checked and the programme's published decision date is established. If the decision date has passed and no decision has been made, send one status query through the programme's channel and wait two weeks. If still no response, close the file as lapsed with the reason. If a decision has been made, act on it immediately: if an offer, move to onboarding; if a rejection, file the re-application date and decide whether to re-apply."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"State Startup Mission sent a monthly bulletin to the company on 2026-09-05 at 05:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Monthly bulletin Dear Startup, This month: new incubators empanelled and a policy update. State Startup Mission\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.54 days as of 2026-09-05 18:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in the mail from State Startup Mission.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's first and last touch both occurred at 2026-09-05 05:00 UTC.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as a program application in the brief, and State Startup Mission is on the watchlist.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#19\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No open asks are recorded on this file.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found low risk and low urgency, with engagement marked as healthy.\",\n      \"evidence\": [\n        \"ru:core.temporal\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has not been written to by the company.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a routine administrative communication from a government programme, not a decision or a request for action.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The company applied to State Startup Mission at some point before 2026-09-05, and the application is now in a waiting state.\",\n      \"based_on\": [\n        \"brief:cbl_#19\",\n        \"file:role\"\n      ]\n    },\n    {\n      \"claim\": \"The bulletin itself carries no actionable content for the company's application status.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The file's stage cannot be determined from the dossier because no application status, deadline, or decision has been recorded.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"none:promises\",\n        \"ru:core.timeline\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Government programmes send routine newsletters to applicants without indicating application status or next steps.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme's quiet before its published decision date carries no information about an application's standing.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A government scheme's portal holds the status and the mail only reports it; reading only the mail misses the application's actual state.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.the_portal_is_the_record\",\n        \"cap:founder_office.programs_and_applications.program_applications#f6\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Government programme communications often arrive as templated newsletters from no-reply addresses and should not be treated as direct engagement with the application.\",\n      \"why\": \"Such mail is administrative broadcast, not a response to the company's application or a signal of progress.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a programme application has no recorded deadline, decision date, or status check, the file is incomplete and the next move is to establish the programme's own calendar and portal status.\",\n      \"why\": \"Without the programme's published dates and portal access, the company cannot distinguish between normal silence and a missed deadline or decision.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Treating a government programme's newsletter as a signal of interest or progress is a common error that delays the real work of tracking the application's actual status.\",\n      \"why\": \"The newsletter is sent to all applicants and carries no information about this company's standing; the portal and the programme's published decision date are the only reliable signals.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The company's application to State Startup Mission is still in the 'applied' stage, waiting for the programme's review window to close.\",\n      \"needs\": \"The programme's published application deadline and the date the company submitted its application.\"\n    },\n    {\n      \"proposition\": \"The application has already been reviewed and a decision has been made, but the company has not checked the portal or received a decision mail.\",\n      \"needs\": \"Access to the State Startup Mission portal to check the application's current status.\"\n    },\n    {\n      \"proposition\": \"The company's application was rejected or moved to a later cohort, and the company has not yet acted on that decision.\",\n      \"needs\": \"Confirmation of the decision status from the portal or a decision mail, and if rejected, the programme's re-application date.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the State Startup Mission's published application deadline, and when did the company submit its application?\",\n      \"relevance\": \"This determines whether the file is in the 'applied' stage waiting for review, or past the deadline and in 'under_review' or 'decision'.\"\n    },\n    {\n      \"question\": \"What does the State Startup Mission portal show as the current status of the company's application?\",\n      \"relevance\": \"The portal is the authoritative record for government schemes; the mail is only a copy. The portal status determines the next move.\"\n    },\n    {\n      \"question\": \"Has the company received a decision mail from State Startup Mission, and if so, what did it say?\",\n      \"relevance\": \"A decision mail would indicate whether the application was accepted, rejected, or moved to a later cohort, and would carry any re-application date or next steps.\"\n    },\n    {\n      \"question\": \"What is the company's own record of when it applied to State Startup Mission and what it submitted?\",\n      \"relevance\": \"The company's own timeline and submission confirmation are needed to verify that the application was actually submitted and to calculate how long it has been waiting.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A government programme has sent a routine administrative newsletter to the company. The company's application status is unknown because the file lacks the programme's published dates, the company's submission date, and the portal status. The next move is to establish these facts before any action on the application itself.\",\n    \"rivals\": [\n      \"The newsletter is a signal that the programme is actively reviewing applications and the company should prepare for an interview or decision soon.\",\n      \"The newsletter is a signal that the programme has rejected the company's application and is moving on to the next cohort.\",\n      \"The company's application was never submitted successfully, and the newsletter is the only contact the programme has made.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The brief names this file as 'State Startup Mission \u2014 applied' under the 'Program' section, and the playbook for program applications applies.\",\n    \"evidence\": [\n      \"brief:cbl_#19\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The playbook's 'applied' stage expects the company to have submitted an application before the programme's deadline, received a confirmation, and to be waiting for the programme's review window to close. At this stage, the programme's quiet is normal and carries no information. The file should record the deadline, the submission date, and the confirmation receipt.\",\n    \"actual\": \"The file records only that a newsletter was sent on 2026-09-05. No deadline, submission date, confirmation receipt, or portal status is recorded. The file does not show whether the application was submitted, when, or what the programme's calendar is.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains incomplete. The company does not know whether its application is still being reviewed, has been decided, or was never submitted. If the programme's deadline has passed and a decision is due, the company misses it. If the application was rejected with a re-application date, that date passes without action. The file ages to 90 days of quiet and is closed as dormant without ever establishing the application's actual status.\",\n    \"act\": \"The company checks the State Startup Mission portal for the application's current status, retrieves its own submission confirmation, and records the programme's published deadline and decision date. If the application is still in review, the file is updated with the expected decision date. If a decision has been made, the file is updated with the outcome and any next steps. If the application was never submitted, the company resubmits before the next deadline.\",\n    \"best\": \"The portal shows the application is under review and on track for a decision within the programme's published timeline. The company records the decision date and waits. When the decision arrives, it is an offer, and the company moves to onboarding.\",\n    \"worst\": \"The portal shows the application was rejected weeks ago, and the re-application deadline has passed. The company has lost the opportunity for this cohort and must wait for the next intake. Or the portal shows no record of the application at all, meaning it was never submitted successfully.\",\n    \"signals_to_watch\": [\n      \"The State Startup Mission portal's status field for the company's application.\",\n      \"A decision mail from State Startup Mission with an offer, rejection, or move to a later cohort.\",\n      \"The programme's published decision date passing without a mail or portal update.\",\n      \"A request from the programme for missing documents or clarifications.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The company listed State Startup Mission as an applied programme in its brief, indicating it is part of the seed-stage fundraising and programme strategy.\",\n      \"If the application's status is unknown and a decision date has passed, the company may miss the opportunity for this cohort and must wait for the next intake, which is costly in time.\",\n      \"If the application was never submitted successfully, resubmitting after the deadline may result in a move to the next cohort or a rejection.\",\n      \"The playbook warns that 'Left alone, an application is lost on a date rather than on merit: the interview slot goes unbooked, a clarification goes unanswered past the programme's date, an offer lapses before its agreement is signed, and a rejection that came with a re-application date is filed as final.'\",\n      \"The file has been quiet for only 0.54 days, so there is still time to act before the 90-day dormancy threshold, but the company must first establish the programme's calendar.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Check the State Startup Mission portal for the application's current status, retrieve the company's submission confirmation, and record the programme's published deadline and expected decision date.\",\n    \"for_whom\": \"the company's file on State Startup Mission\",\n    \"by_when\": \"2026-09-06\",\n    \"rests_on\": [\n      \"fact:4\",\n      \"fact:5\",\n      \"inference:2\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.program_applications.the_portal_is_the_record\",\n      \"cap:founder_office.programs_and_applications.program_applications#f6\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the portal is not accessible or the company has no record of its submission, send a single status query to State Startup Mission through the programme's published contact channel, asking for confirmation of the application's receipt and current status. Do not chase; ask once and wait for the programme's published decision date.\",\n  \"wait_or_stop\": \"Wait until the portal status is checked and the programme's published decision date is established. If the decision date has passed and no decision has been made, send one status query through the programme's channel and wait two weeks. If still no response, close the file as lapsed with the reason. If a decision has been made, act on it immediately: if an offer, move to onboarding; if a rejection, file the re-application date and decide whether to re-apply.\",\n  \"done_when\": \"The file records the State Startup Mission's published deadline, the company's submission date and confirmation receipt, the current portal status, and the expected decision date. If a decision has been made, the file records the outcome and any next steps.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "bb68e9b6e6a4fbdcd15b2c533d45e9c4cd1b249a86f3849d526f069ad06715e9": {
+  "framed": true,
+  "input_tokens": 14252,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3378,
+  "parsed": {
+   "alternative": "Write to the State Startup Mission's support address asking for the current status of the application and the programme's published timeline for review and decision. This is slower than checking the portal but will get an answer if the portal is not accessible.",
+   "appraisal": {
+    "reasons": [
+     "The application is to a government scheme that is on the watchlist, so it matters to the company's goals.",
+     "The programme's quiet is normal process, not a signal of urgency.",
+     "If the company misses a deadline set by the programme \u2014 a reply-by date for an offer, or a re-application date for a rejection \u2014 the cost is high and the reversal is difficult or impossible."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The portal status is known and recorded on the file, the programme's published deadline is on the file, and the company knows what stage the application is in and what the next step is.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The company received a registration confirmation on 2026-10-05. The programme has sent four administrative updates over thirty days. No interview invitation or decision has arrived. The company has not written to the programme.",
+    "expected": "The playbook's stages depend on the programme's published deadline and the submission date, which are not in the file. Without them, the stage cannot be named. If the application is in 'applied', the playbook expects nothing from the company until the programme's review window closes. If it is in 'under_review', the playbook expects the programme to notify the company of an interview invitation or a decision within its published timeline.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "The programme sent a registration confirmation on 2026-10-05 with registration number SSM-2026-3381.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Your registration number is SSM-2026-3381"
+    },
+    {
+     "claim": "The programme has sent four messages over thirty days, with a median gap of ten days between them.",
+     "evidence": [
+      "evt_#1",
+      "evt_#2",
+      "evt_#3",
+      "evt_#4",
+      "num:usual_gap",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.54 days, which is within the gaps the programme has closed before.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in the programme's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The company has not written to the programme.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is named as 'program' in the brief.",
+     "evidence": [
+      "file:kind",
+      "brief:cbl_#19"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The programme is on the watchlist because it is the State Startup Mission.",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#28"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found engagement to be high and drop to be low, with no blocking dependency observed.",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.dependency"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A government scheme application in the early administrative phase, with registration confirmed and the programme sending routine updates while it waits for its own review window to close or open.",
+    "rivals": [
+     "An application already under review, with the programme's silence being normal process rather than a signal.",
+     "An application that has been decided but the decision mail was not received or was filtered as automated."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The programme's published deadline for this cohort, and the date the company submitted its application.",
+     "proposition": "The application is in the 'applied' stage, waiting for the programme's review window to close."
+    },
+    {
+     "needs": "The portal's current status for registration number SSM-2026-3381, which would show whether the programme has moved the application to a later stage.",
+     "proposition": "The application is already under review or has been reviewed."
+    },
+    {
+     "needs": "The programme's published timeline for review and decision, and whether it invites all applicants to interview or only a shortlist.",
+     "proposition": "The programme will send an interview invitation or a decision without further action from the company."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The registration confirmation indicates the application was submitted and accepted into the programme's system."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:4",
+      "evt_#2",
+      "evt_#3",
+      "evt_#4"
+     ],
+     "claim": "The programme's messages are administrative updates, not requests for action or signals of review."
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application",
+      "card:card_#1"
+     ],
+     "claim": "The current stage cannot be determined from the dossier because the playbook's stage names require knowledge of the programme's published deadline and the application's submission date, which are not in the file."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "file:whose_move"
+     ],
+     "claim": "The ball is in the programme's court, not ours, because registration is complete and no ask from the programme is outstanding."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "card:card_#1",
+    "by_when": "2026-10-07",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+     "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "inference:3",
+     "unknown:1",
+     "unknown:2"
+    ],
+    "to": null,
+    "what": "Check the State Startup Mission's portal for the current status of registration number SSM-2026-3381, and note the programme's published deadline for this cohort and the date the company submitted the application.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A government scheme's registration confirmation is the receipt that proves submission; without it the application may not have gone in.",
+     "kind": "practice",
+     "why": "The confirmation is the only proof the system accepted the application, and it is the first checkpoint before any review begins."
+    },
+    {
+     "claim": "Administrative bulletins from a scheme are routine and do not signal review status or urgency.",
+     "kind": "base_rate",
+     "why": "Schemes send templated updates to all registered applicants on their own calendar, independent of any individual application's progress."
+    },
+    {
+     "claim": "The portal is the authoritative record for a government scheme; the mailbox is a copy most likely to be lost.",
+     "kind": "practice",
+     "why": "Schemes apply their rules through the portal in real time, and mail is a secondary notification that can be filtered or archived."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.the_portal_is_the_record"
+     ],
+     "claim": "A government scheme's portal holds the status and the mail only reports it; the application moves, or is asked a question, and nobody sees it until the portal's own clock has run.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A programme that reads its applications as a batch answers on its own published calendar, not on the applicant's; its quiet before that date is not a no.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.programs_and_applications.program_applications#f2"
+     ],
+     "claim": "Treating a batch's silence as a no before the published decision date causes the founder to give up or nag when the programme has published its calendar and said it will answer everyone.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:role",
+     "brief:cbl_#19"
+    ],
+    "kind": "program",
+    "why": "The brief names this work as 'program' and the file's role is 'watched' under State Startup Mission. The playbook for programme applications applies."
+   },
+   "scenarios": {
+    "act": "The company checks the portal for the current status of registration number SSM-2026-3381. If the status is 'applied', the company notes the programme's published deadline and waits. If the status is 'under_review', the company waits for the programme's published decision date. If the status shows a decision, the company reads it and acts on it. If the portal is not accessible or does not show a status, the company writes to the programme asking for the current status and the next step.",
+    "best": "The portal shows the application is under review and on track for a decision within the programme's published timeline. An interview invitation arrives with a date to book. The company attends, the programme decides to accept, and the onboarding process begins.",
+    "do_nothing": "The file remains quiet. The programme continues to send administrative updates on its own calendar. If the application is still in 'applied', nothing changes until the review window closes. If it is under review, the company waits for an interview invitation or a decision. If the decision has already been made and the mail was lost, the company misses the reply-by date for an offer or the re-application date for a rejection.",
+    "signals_to_watch": [
+     "An interview invitation from the programme, with a date to book.",
+     "A decision mail from the programme, with an offer or a rejection.",
+     "A request from the programme for a missing document or a clarification.",
+     "The programme's published decision date passing without a mail.",
+     "The portal's status changing from 'applied' to 'under_review' or to a decision."
+    ],
+    "worst": "The portal is not accessible or does not show a status. The programme's decision has been made and the mail was lost. The reply-by date for an offer has passed, or the re-application date for a rejection has passed. The company has missed the window to act."
+   },
+   "unknowns": [
+    {
+     "question": "What is the State Startup Mission's published application deadline, and when did the company submit its application?",
+     "relevance": "The deadline is the only fixed point in the application timeline; without it, the current stage cannot be named and the next action cannot be timed. The submission date determines whether the application is still in the 'applied' window or has moved to 'under_review'."
+    },
+    {
+     "question": "What does the State Startup Mission's portal show for registration number SSM-2026-3381 right now?",
+     "relevance": "The portal is the authoritative record; it will show whether the application is still in 'applied', has moved to 'under_review', or has received a decision. The mail alone cannot answer this."
+    },
+    {
+     "question": "Does the State Startup Mission write only to applicants it wants to interview, or does it notify all applicants of its decision?",
+     "relevance": "If it writes only to selected applicants, silence after the published decision date is the answer. If it notifies all, silence after that date means the decision has not yet been made or the mail was lost."
+    }
+   ],
+   "wait_or_stop": "Wait until the portal status is known and the programme's published deadline is on the file. If the deadline has not yet passed and the application is still in 'applied', wait for the programme's review window to close. If the deadline has passed and no decision has arrived, write to the programme once through its published channel and wait two weeks for a reply; if no reply comes, close the file as lapsed. If the portal shows a decision, act on it at once."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"The programme sent a registration confirmation on 2026-10-05 with registration number SSM-2026-3381.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Your registration number is SSM-2026-3381\"\n    },\n    {\n      \"claim\": \"The programme has sent four messages over thirty days, with a median gap of ten days between them.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"evt_#2\",\n        \"evt_#3\",\n        \"evt_#4\",\n        \"num:usual_gap\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.54 days, which is within the gaps the programme has closed before.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in the programme's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The company has not written to the programme.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is named as 'program' in the brief.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"brief:cbl_#19\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The programme is on the watchlist because it is the State Startup Mission.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#28\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found engagement to be high and drop to be low, with no blocking dependency observed.\",\n      \"evidence\": [\n        \"ru:core.temporal\",\n        \"ru:core.dependency\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The registration confirmation indicates the application was submitted and accepted into the programme's system.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The programme's messages are administrative updates, not requests for action or signals of review.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:4\",\n        \"evt_#2\",\n        \"evt_#3\",\n        \"evt_#4\"\n      ]\n    },\n    {\n      \"claim\": \"The current stage cannot be determined from the dossier because the playbook's stage names require knowledge of the programme's published deadline and the application's submission date, which are not in the file.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\",\n        \"card:card_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in the programme's court, not ours, because registration is complete and no ask from the programme is outstanding.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"file:whose_move\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A government scheme's portal holds the status and the mail only reports it; the application moves, or is asked a question, and nobody sees it until the portal's own clock has run.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.the_portal_is_the_record\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme that reads its applications as a batch answers on its own published calendar, not on the applicant's; its quiet before that date is not a no.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Treating a batch's silence as a no before the published decision date causes the founder to give up or nag when the programme has published its calendar and said it will answer everyone.\",\n      \"based_on\": [\n        \"cap:founder_office.programs_and_applications.program_applications#f2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A government scheme's registration confirmation is the receipt that proves submission; without it the application may not have gone in.\",\n      \"why\": \"The confirmation is the only proof the system accepted the application, and it is the first checkpoint before any review begins.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Administrative bulletins from a scheme are routine and do not signal review status or urgency.\",\n      \"why\": \"Schemes send templated updates to all registered applicants on their own calendar, independent of any individual application's progress.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The portal is the authoritative record for a government scheme; the mailbox is a copy most likely to be lost.\",\n      \"why\": \"Schemes apply their rules through the portal in real time, and mail is a secondary notification that can be filtered or archived.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The application is in the 'applied' stage, waiting for the programme's review window to close.\",\n      \"needs\": \"The programme's published deadline for this cohort, and the date the company submitted its application.\"\n    },\n    {\n      \"proposition\": \"The application is already under review or has been reviewed.\",\n      \"needs\": \"The portal's current status for registration number SSM-2026-3381, which would show whether the programme has moved the application to a later stage.\"\n    },\n    {\n      \"proposition\": \"The programme will send an interview invitation or a decision without further action from the company.\",\n      \"needs\": \"The programme's published timeline for review and decision, and whether it invites all applicants to interview or only a shortlist.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the State Startup Mission's published application deadline, and when did the company submit its application?\",\n      \"relevance\": \"The deadline is the only fixed point in the application timeline; without it, the current stage cannot be named and the next action cannot be timed. The submission date determines whether the application is still in the 'applied' window or has moved to 'under_review'.\"\n    },\n    {\n      \"question\": \"What does the State Startup Mission's portal show for registration number SSM-2026-3381 right now?\",\n      \"relevance\": \"The portal is the authoritative record; it will show whether the application is still in 'applied', has moved to 'under_review', or has received a decision. The mail alone cannot answer this.\"\n    },\n    {\n      \"question\": \"Does the State Startup Mission write only to applicants it wants to interview, or does it notify all applicants of its decision?\",\n      \"relevance\": \"If it writes only to selected applicants, silence after the published decision date is the answer. If it notifies all, silence after that date means the decision has not yet been made or the mail was lost.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A government scheme application in the early administrative phase, with registration confirmed and the programme sending routine updates while it waits for its own review window to close or open.\",\n    \"rivals\": [\n      \"An application already under review, with the programme's silence being normal process rather than a signal.\",\n      \"An application that has been decided but the decision mail was not received or was filtered as automated.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The brief names this work as 'program' and the file's role is 'watched' under State Startup Mission. The playbook for programme applications applies.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:role\",\n      \"brief:cbl_#19\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The playbook's stages depend on the programme's published deadline and the submission date, which are not in the file. Without them, the stage cannot be named. If the application is in 'applied', the playbook expects nothing from the company until the programme's review window closes. If it is in 'under_review', the playbook expects the programme to notify the company of an interview invitation or a decision within its published timeline.\",\n    \"actual\": \"The company received a registration confirmation on 2026-10-05. The programme has sent four administrative updates over thirty days. No interview invitation or decision has arrived. The company has not written to the programme.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. The programme continues to send administrative updates on its own calendar. If the application is still in 'applied', nothing changes until the review window closes. If it is under review, the company waits for an interview invitation or a decision. If the decision has already been made and the mail was lost, the company misses the reply-by date for an offer or the re-application date for a rejection.\",\n    \"act\": \"The company checks the portal for the current status of registration number SSM-2026-3381. If the status is 'applied', the company notes the programme's published deadline and waits. If the status is 'under_review', the company waits for the programme's published decision date. If the status shows a decision, the company reads it and acts on it. If the portal is not accessible or does not show a status, the company writes to the programme asking for the current status and the next step.\",\n    \"best\": \"The portal shows the application is under review and on track for a decision within the programme's published timeline. An interview invitation arrives with a date to book. The company attends, the programme decides to accept, and the onboarding process begins.\",\n    \"worst\": \"The portal is not accessible or does not show a status. The programme's decision has been made and the mail was lost. The reply-by date for an offer has passed, or the re-application date for a rejection has passed. The company has missed the window to act.\",\n    \"signals_to_watch\": [\n      \"An interview invitation from the programme, with a date to book.\",\n      \"A decision mail from the programme, with an offer or a rejection.\",\n      \"A request from the programme for a missing document or a clarification.\",\n      \"The programme's published decision date passing without a mail.\",\n      \"The portal's status changing from 'applied' to 'under_review' or to a decision.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The application is to a government scheme that is on the watchlist, so it matters to the company's goals.\",\n      \"The programme's quiet is normal process, not a signal of urgency.\",\n      \"If the company misses a deadline set by the programme \u2014 a reply-by date for an offer, or a re-application date for a rejection \u2014 the cost is high and the reversal is difficult or impossible.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Check the State Startup Mission's portal for the current status of registration number SSM-2026-3381, and note the programme's published deadline for this cohort and the date the company submitted the application.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-10-07\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"inference:3\",\n      \"unknown:1\",\n      \"unknown:2\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.program_applications.the_portal_is_the_record\",\n      \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": \"card:card_#1\"\n  },\n  \"alternative\": \"Write to the State Startup Mission's support address asking for the current status of the application and the programme's published timeline for review and decision. This is slower than checking the portal but will get an answer if the portal is not accessible.\",\n  \"wait_or_stop\": \"Wait until the portal status is known and the programme's published deadline is on the file. If the deadline has not yet passed and the application is still in 'applied', wait for the programme's review window to close. If the deadline has passed and no decision has arrived, write to the programme once through its published channel and wait two weeks for a reply; if no reply comes, close the file as lapsed. If the portal shows a decision, act on it at once.\",\n  \"done_when\": \"The portal status is known and recorded on the file, the programme's published deadline is on the file, and the company knows what stage the application is in and what the next step is.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "f1f7fc5c0f06570988dd8b5d79780ca91e7f281a75e3c56fc481dbb36f6ad654": {
+  "framed": true,
+  "input_tokens": 13429,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4002,
+  "parsed": {
+   "alternative": "If the portal is not accessible or does not show the application, send a single status query to State Startup Mission through the programme's published contact channel, asking for confirmation of receipt and the current status. Do not chase; ask once, and file the response.",
+   "appraisal": {
+    "reasons": [
+     "The file is one of six programme applications in motion; State Startup Mission is one of several paths to accelerator support.",
+     "The programme's decision date is unknown, so urgency cannot be assessed. If the deadline is far ahead, urgency is low. If it is near, urgency is high.",
+     "If the application was not submitted, the founder can resubmit to the next cohort. If it was submitted and is under review, the founder can wait for the decision. Either way, the move is reversible.",
+     "The bulletin carries no promise and no request, so it does not change the file's status or urgency.",
+     "The file has been quiet for 0.54 days, well within the playbook's 90-day window for a programme application."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The application's status is confirmed on the portal, the programme's decision date is filed, and the file is staged. If the application was not submitted, the founder has decided whether to resubmit or close the file.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The file shows a routine bulletin from State Startup Mission on 2026-09-05, with no promise, no request, and no status update. The file has been quiet for 0.54 days. No submission confirmation, no portal status, and no deadline have been recorded. The founder has not written to the programme. The file's whose_move is not written, and no open asks are recorded.",
+    "expected": "The application is in the applied stage, waiting for the programme's decision window to close. The playbook expects the file to be silent until the programme's published deadline passes. At that point, the programme will either invite the company to interview, ask for clarification, or send a decision. The founder's job is to know the programme's deadline and to act only when that date arrives or when the programme asks for something.",
+    "stage": "applied"
+   },
+   "facts": [
+    {
+     "claim": "State Startup Mission sent a monthly bulletin on 2026-09-05 at 05:00 UTC describing new incubators and a policy update.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Monthly bulletin Dear Startup, This month: new incubators empanelled and a policy update. State Startup Mission"
+    },
+    {
+     "claim": "The file shows Nimbus Labs applied to State Startup Mission as a program application.",
+     "evidence": [
+      "brief:cbl_#19"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in the mail from State Startup Mission.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.54 days since the last touch on 2026-09-05 at 05:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's usual gap between touches has not been measured, and the longest closed gap is unknown.",
+     "evidence": [
+      "num:usual_gap",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "State Startup Mission is on the watchlist as a programme the founder is tracking.",
+     "evidence": [
+      "brief:cbl_#30"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is program, and its role in the brief is watched.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No open asks are recorded on this file.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency and low risk on this file.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been checked against 60 days of mail history, with the last sync completed on 2026-09-05 at 18:00 UTC.",
+     "evidence": [
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The founder has not written to State Startup Mission on this file.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A programme application in its waiting period, before the programme's decision date. The bulletin is routine administrative mail, not a signal about the application's status. The file is dormant until the programme's own calendar requires action.",
+    "rivals": [
+     "The application was not submitted, and the file is tracking a non-existent application.",
+     "The bulletin is a signal that the programme is reviewing applications, and the founder should follow up to confirm receipt.",
+     "State Startup Mission has rejected the application silently, and the bulletin is a courtesy mail to all applicants.",
+     "The application is under review, and the bulletin is a sign of programme activity that should prompt a status check."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation that the application was submitted \u2014 a receipt mail or a portal status showing the application in the system, and the programme's published deadline for this cohort.",
+     "proposition": "Nimbus Labs' application to State Startup Mission was submitted and is now in the applied stage, waiting for the programme's decision window to close."
+    },
+    {
+     "needs": "A check of the State Startup Mission portal or a search of the mail for a submission confirmation.",
+     "proposition": "The application was not submitted, or was submitted but the receipt was not filed."
+    },
+    {
+     "needs": "The programme's own published rules on application windows and decision timelines.",
+     "proposition": "State Startup Mission has a rolling intake, not a cohort deadline, and applications are read as they arrive."
+    },
+    {
+     "needs": "A check of the portal to see the application's current status.",
+     "proposition": "The bulletin is a signal that the programme is active and processing applications, but carries no information about Nimbus Labs' own application."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "none:promises"
+     ],
+     "claim": "The mail from State Startup Mission is a routine administrative bulletin, not a response to an application or a request for action."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "file:whose_move",
+      "none:we_wrote"
+     ],
+     "claim": "The file's stage cannot be determined from the dossier because no application status, deadline, or programme communication about Nimbus Labs' application has been recorded."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "The silence on this file is consistent with a programme application in its early waiting period, before the programme's published decision date."
+    },
+    {
+     "based_on": [
+      "fact:8",
+      "file:whose_move"
+     ],
+     "claim": "The next move is ours: to establish what stage the application is in and what State Startup Mission expects next."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-06",
+    "for_whom": "yourself and the founder",
+    "guided_by": [
+     "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+     "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+     "pb:founder_office.pb.program_applications.follow_an_application",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:8",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Check the State Startup Mission portal to confirm the application's status, retrieve the programme's published deadline for this cohort, and file both on this file. If the application was not submitted, decide whether to resubmit to the next cohort or close the file.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a programme application is filed, the first move is to confirm receipt \u2014 a confirmation mail or a portal status showing the application was submitted. Without this, the application may not have gone in.",
+     "kind": "practice",
+     "why": "YC explicitly warns that without its confirmation email, the application likely did not submit. A receipt is the only proof the application entered the programme's system."
+    },
+    {
+     "claim": "Government schemes in India typically publish their application deadlines, selection timelines, and portal access upfront. The portal is the source of truth; mail is secondary.",
+     "kind": "base_rate",
+     "why": "SISFS, State Startup Mission, and similar schemes operate on published calendars and require applicants to track progress on their portals in real time. The mail is a courtesy copy."
+    },
+    {
+     "claim": "An application to a programme should be tracked by the programme's own deadline and decision date, not by the silence between touches.",
+     "kind": "practice",
+     "why": "Programmes read applications as batches against a fixed calendar. The founder's job is to know that calendar and to act only when the programme's own dates require it."
+    },
+    {
+     "claim": "Chasing a programme for status before its published decision date damages the relationship and signals misunderstanding of how programmes work.",
+     "kind": "counter_pattern",
+     "why": "Programmes are not investors; they read every application alike and answer on their own calendar. A chase before the decision date reads as either incompetence or pressure."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+      "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+     ],
+     "claim": "A programme application in its early stage produces administrative mail \u2014 newsletters, policy updates, incubator announcements \u2014 that carries no signal about the applicant's own submission.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.the_portal_is_the_record"
+     ],
+     "claim": "A government scheme's portal holds the application status; the mail only reports it, often in templates that filters treat as automated.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "An application to a programme with a cohort deadline is silent until the programme's published decision date; quiet before that date carries no information about the application's merit or status.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "none:promises"
+     ],
+     "claim": "A routine bulletin from a programme does not indicate that an application has been received, is under review, or has been decided.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#19",
+     "file:kind"
+    ],
+    "kind": "program",
+    "why": "The brief names this file as an application to State Startup Mission, a government accelerator and incubation programme. The file's kind is program, and the playbook for programme applications applies."
+   },
+   "scenarios": {
+    "act": "The founder checks the State Startup Mission portal to confirm the application's status and retrieves the programme's published deadline. If the application was submitted, the deadline is filed and the file is staged. If the application was not submitted, the founder resubmits or closes the file with that reason. If the application is under review, the founder notes the programme's decision date and waits.",
+    "best": "The application was submitted on time, is in the applied stage, and the programme's decision date is known. The founder files the deadline and waits. The programme invites the company to interview or sends a decision on its published date. The founder acts on the programme's next request.",
+    "do_nothing": "The file remains dormant. If the application was submitted, it waits for the programme's decision date. If the application was not submitted, the opportunity is lost. The file will age silently until the programme's deadline passes or until the founder checks the portal and discovers the application is missing.",
+    "signals_to_watch": [
+     "A confirmation mail from State Startup Mission showing the application was received and assigned a reference number.",
+     "A portal status showing the application in the system, with a current stage (applied, under_review, etc.) and a decision date.",
+     "A mail from the programme asking for clarification, a missing document, or an interview.",
+     "The programme's published decision date passing without a mail from the programme.",
+     "A mail from the programme announcing decisions or inviting interviews."
+    ],
+    "worst": "The application was never submitted, or was submitted but the receipt was not filed. The founder discovers this after the programme's deadline has passed, and the opportunity is lost. Or the application was submitted but the founder does not know the programme's decision date, and the file ages past it without action."
+   },
+   "unknowns": [
+    {
+     "question": "Was Nimbus Labs' application to State Startup Mission actually submitted, and if so, when?",
+     "relevance": "Without a submission confirmation, the file may be tracking a non-existent application. This is the first fact to establish."
+    },
+    {
+     "question": "What is State Startup Mission's published deadline for this cohort, and when does the programme expect to announce decisions?",
+     "relevance": "The programme's own calendar is the only fixed point. Without it, the file cannot be staged or prioritized."
+    },
+    {
+     "question": "What is the current status of the application on the State Startup Mission portal?",
+     "relevance": "The portal is the record for a government scheme. The mail is secondary. The portal status determines whether the application is in applied, under_review, or another stage."
+    },
+    {
+     "question": "Is State Startup Mission a cohort programme or a rolling intake?",
+     "relevance": "A cohort programme answers on a fixed date; a rolling one picks applications up as they arrive. The silence means different things in each case."
+    },
+    {
+     "question": "What is the relationship between the bulletin and Nimbus Labs' application \u2014 is the bulletin a response to the application, or a routine administrative mail?",
+     "relevance": "The bulletin contains no promise and no reference to Nimbus Labs. It appears to be routine. Confirming this would clarify whether the programme is aware of the application."
+    }
+   ],
+   "wait_or_stop": "Wait until the portal check is complete. If the application was submitted and the deadline is known, wait for the programme's decision date. If the application was not submitted and the next cohort's deadline is more than two weeks away, resubmit. If the next deadline is less than two weeks away, close the file and decide whether to apply to the next cohort. Stop chasing the programme before its published decision date; a chase before that date damages the relationship."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"State Startup Mission sent a monthly bulletin on 2026-09-05 at 05:00 UTC describing new incubators and a policy update.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Monthly bulletin Dear Startup, This month: new incubators empanelled and a policy update. State Startup Mission\"\n    },\n    {\n      \"claim\": \"The file shows Nimbus Labs applied to State Startup Mission as a program application.\",\n      \"evidence\": [\n        \"brief:cbl_#19\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in the mail from State Startup Mission.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.54 days since the last touch on 2026-09-05 at 05:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's usual gap between touches has not been measured, and the longest closed gap is unknown.\",\n      \"evidence\": [\n        \"num:usual_gap\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"State Startup Mission is on the watchlist as a programme the founder is tracking.\",\n      \"evidence\": [\n        \"brief:cbl_#30\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is program, and its role in the brief is watched.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No open asks are recorded on this file.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency and low risk on this file.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been checked against 60 days of mail history, with the last sync completed on 2026-09-05 at 18:00 UTC.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The founder has not written to State Startup Mission on this file.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The mail from State Startup Mission is a routine administrative bulletin, not a response to an application or a request for action.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"The file's stage cannot be determined from the dossier because no application status, deadline, or programme communication about Nimbus Labs' application has been recorded.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:whose_move\",\n        \"none:we_wrote\"\n      ]\n    },\n    {\n      \"claim\": \"The silence on this file is consistent with a programme application in its early waiting period, before the programme's published decision date.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: to establish what stage the application is in and what State Startup Mission expects next.\",\n      \"based_on\": [\n        \"fact:8\",\n        \"file:whose_move\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme application in its early stage produces administrative mail \u2014 newsletters, policy updates, incubator announcements \u2014 that carries no signal about the applicant's own submission.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n        \"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A government scheme's portal holds the application status; the mail only reports it, often in templates that filters treat as automated.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.the_portal_is_the_record\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An application to a programme with a cohort deadline is silent until the programme's published decision date; quiet before that date carries no information about the application's merit or status.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A routine bulletin from a programme does not indicate that an application has been received, is under review, or has been decided.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"none:promises\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a programme application is filed, the first move is to confirm receipt \u2014 a confirmation mail or a portal status showing the application was submitted. Without this, the application may not have gone in.\",\n      \"why\": \"YC explicitly warns that without its confirmation email, the application likely did not submit. A receipt is the only proof the application entered the programme's system.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Government schemes in India typically publish their application deadlines, selection timelines, and portal access upfront. The portal is the source of truth; mail is secondary.\",\n      \"why\": \"SISFS, State Startup Mission, and similar schemes operate on published calendars and require applicants to track progress on their portals in real time. The mail is a courtesy copy.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An application to a programme should be tracked by the programme's own deadline and decision date, not by the silence between touches.\",\n      \"why\": \"Programmes read applications as batches against a fixed calendar. The founder's job is to know that calendar and to act only when the programme's own dates require it.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing a programme for status before its published decision date damages the relationship and signals misunderstanding of how programmes work.\",\n      \"why\": \"Programmes are not investors; they read every application alike and answer on their own calendar. A chase before the decision date reads as either incompetence or pressure.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Nimbus Labs' application to State Startup Mission was submitted and is now in the applied stage, waiting for the programme's decision window to close.\",\n      \"needs\": \"Confirmation that the application was submitted \u2014 a receipt mail or a portal status showing the application in the system, and the programme's published deadline for this cohort.\"\n    },\n    {\n      \"proposition\": \"The application was not submitted, or was submitted but the receipt was not filed.\",\n      \"needs\": \"A check of the State Startup Mission portal or a search of the mail for a submission confirmation.\"\n    },\n    {\n      \"proposition\": \"State Startup Mission has a rolling intake, not a cohort deadline, and applications are read as they arrive.\",\n      \"needs\": \"The programme's own published rules on application windows and decision timelines.\"\n    },\n    {\n      \"proposition\": \"The bulletin is a signal that the programme is active and processing applications, but carries no information about Nimbus Labs' own application.\",\n      \"needs\": \"A check of the portal to see the application's current status.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Was Nimbus Labs' application to State Startup Mission actually submitted, and if so, when?\",\n      \"relevance\": \"Without a submission confirmation, the file may be tracking a non-existent application. This is the first fact to establish.\"\n    },\n    {\n      \"question\": \"What is State Startup Mission's published deadline for this cohort, and when does the programme expect to announce decisions?\",\n      \"relevance\": \"The programme's own calendar is the only fixed point. Without it, the file cannot be staged or prioritized.\"\n    },\n    {\n      \"question\": \"What is the current status of the application on the State Startup Mission portal?\",\n      \"relevance\": \"The portal is the record for a government scheme. The mail is secondary. The portal status determines whether the application is in applied, under_review, or another stage.\"\n    },\n    {\n      \"question\": \"Is State Startup Mission a cohort programme or a rolling intake?\",\n      \"relevance\": \"A cohort programme answers on a fixed date; a rolling one picks applications up as they arrive. The silence means different things in each case.\"\n    },\n    {\n      \"question\": \"What is the relationship between the bulletin and Nimbus Labs' application \u2014 is the bulletin a response to the application, or a routine administrative mail?\",\n      \"relevance\": \"The bulletin contains no promise and no reference to Nimbus Labs. It appears to be routine. Confirming this would clarify whether the programme is aware of the application.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A programme application in its waiting period, before the programme's decision date. The bulletin is routine administrative mail, not a signal about the application's status. The file is dormant until the programme's own calendar requires action.\",\n    \"rivals\": [\n      \"The application was not submitted, and the file is tracking a non-existent application.\",\n      \"The bulletin is a signal that the programme is reviewing applications, and the founder should follow up to confirm receipt.\",\n      \"State Startup Mission has rejected the application silently, and the bulletin is a courtesy mail to all applicants.\",\n      \"The application is under review, and the bulletin is a sign of programme activity that should prompt a status check.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The brief names this file as an application to State Startup Mission, a government accelerator and incubation programme. The file's kind is program, and the playbook for programme applications applies.\",\n    \"evidence\": [\n      \"brief:cbl_#19\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"applied\",\n    \"expected\": \"The application is in the applied stage, waiting for the programme's decision window to close. The playbook expects the file to be silent until the programme's published deadline passes. At that point, the programme will either invite the company to interview, ask for clarification, or send a decision. The founder's job is to know the programme's deadline and to act only when that date arrives or when the programme asks for something.\",\n    \"actual\": \"The file shows a routine bulletin from State Startup Mission on 2026-09-05, with no promise, no request, and no status update. The file has been quiet for 0.54 days. No submission confirmation, no portal status, and no deadline have been recorded. The founder has not written to the programme. The file's whose_move is not written, and no open asks are recorded.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains dormant. If the application was submitted, it waits for the programme's decision date. If the application was not submitted, the opportunity is lost. The file will age silently until the programme's deadline passes or until the founder checks the portal and discovers the application is missing.\",\n    \"act\": \"The founder checks the State Startup Mission portal to confirm the application's status and retrieves the programme's published deadline. If the application was submitted, the deadline is filed and the file is staged. If the application was not submitted, the founder resubmits or closes the file with that reason. If the application is under review, the founder notes the programme's decision date and waits.\",\n    \"best\": \"The application was submitted on time, is in the applied stage, and the programme's decision date is known. The founder files the deadline and waits. The programme invites the company to interview or sends a decision on its published date. The founder acts on the programme's next request.\",\n    \"worst\": \"The application was never submitted, or was submitted but the receipt was not filed. The founder discovers this after the programme's deadline has passed, and the opportunity is lost. Or the application was submitted but the founder does not know the programme's decision date, and the file ages past it without action.\",\n    \"signals_to_watch\": [\n      \"A confirmation mail from State Startup Mission showing the application was received and assigned a reference number.\",\n      \"A portal status showing the application in the system, with a current stage (applied, under_review, etc.) and a decision date.\",\n      \"A mail from the programme asking for clarification, a missing document, or an interview.\",\n      \"The programme's published decision date passing without a mail from the programme.\",\n      \"A mail from the programme announcing decisions or inviting interviews.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is one of six programme applications in motion; State Startup Mission is one of several paths to accelerator support.\",\n      \"The programme's decision date is unknown, so urgency cannot be assessed. If the deadline is far ahead, urgency is low. If it is near, urgency is high.\",\n      \"If the application was not submitted, the founder can resubmit to the next cohort. If it was submitted and is under review, the founder can wait for the decision. Either way, the move is reversible.\",\n      \"The bulletin carries no promise and no request, so it does not change the file's status or urgency.\",\n      \"The file has been quiet for 0.54 days, well within the playbook's 90-day window for a programme application.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Check the State Startup Mission portal to confirm the application's status, retrieve the programme's published deadline for this cohort, and file both on this file. If the application was not submitted, decide whether to resubmit to the next cohort or close the file.\",\n    \"for_whom\": \"yourself and the founder\",\n    \"by_when\": \"2026-09-06\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:8\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.program_applications.the_portal_is_the_record\",\n      \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n      \"pb:founder_office.pb.program_applications.follow_an_application\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the portal is not accessible or does not show the application, send a single status query to State Startup Mission through the programme's published contact channel, asking for confirmation of receipt and the current status. Do not chase; ask once, and file the response.\",\n  \"wait_or_stop\": \"Wait until the portal check is complete. If the application was submitted and the deadline is known, wait for the programme's decision date. If the application was not submitted and the next cohort's deadline is more than two weeks away, resubmit. If the next deadline is less than two weeks away, close the file and decide whether to apply to the next cohort. Stop chasing the programme before its published decision date; a chase before that date damages the relationship.\",\n  \"done_when\": \"The application's status is confirmed on the portal, the programme's decision date is filed, and the file is staged. If the application was not submitted, the founder has decided whether to resubmit or close the file.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

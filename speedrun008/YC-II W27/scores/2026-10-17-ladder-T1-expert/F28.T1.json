@@ -1,0 +1,686 @@
+{
+ "0369a1dbab61974614a902b7b7885a71d1d9af08236b98786ef1ea52cb84c90f": {
+  "framed": true,
+  "input_tokens": 7145,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3425,
+  "parsed": {
+   "alternative": "If the questionnaire is already in hand or can be retrieved from Novacore's website, skip the request and move directly to completion. Review it today, identify any gaps, and send a reply to Ishita Rao by 2026-09-30 confirming receipt and committing to a delivery date of 2026-10-05 or earlier.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because Novacore is one of several design partners in talks, and this is an early-stage conversation; a slip here does not block the company's progress, but it does affect this relationship's trajectory.",
+     "The urgency is medium because the deadline is nine days away, which is enough time to act but not so much that delay is costless; a reply in the next two days is comfortable, a reply in the next five days is acceptable, and a reply after day seven is risky.",
+     "A wrong move is reversible: if you miss the deadline, you can apologize, explain, and reschedule; the relationship is not broken, but it is strained. If you reply slowly or incompletely, you can follow up with a fuller answer.",
+     "The file shows no promise was made to Novacore before this request, so there is no prior commitment to break; the only commitment is the implicit one to show up prepared for the call."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Done when you have sent a reply to Ishita Rao confirming receipt of the questionnaire, stating the date by which you will return completed answers, and flagging any blockers or questions. The questionnaire itself is complete and sent to Ishita Rao by the committed date, and the 8 October call proceeds as scheduled.",
+   "draft": "Hi Ishita, Thanks for the heads-up. Could you send over the security questionnaire? I'll get it back to you by [date], well ahead of our call on the 8th. If there's anything we need to clarify or if the IT team has a specific review timeline, let me know. Looking forward to it. Arjun",
+   "expected_vs_actual": {
+    "actual": "Novacore has requested security questionnaire answers before the call. This is the first substantive ask in the relationship. No reply has been sent.",
+    "expected": "In the absence of a playbook, the expectation is that a design partner conversation moves from introduction to a substantive call. Before that call, the partner may request materials to prepare or to evaluate fit.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Novacore's Head of Partnerships, Ishita Rao, requested security questionnaire answers before a scheduled call on 8 October.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you send your security questionnaire answers before then? Our IT team needs them first."
+    },
+    {
+     "claim": "A meeting between Novacore and Nimbus Labs is booked for 8 October 2026 at 08:30 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file records Novacore as a design partner in talks, with first and last touch both on 29 September 2026 at 09:00 UTC.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: an open ask exists for which we have not yet replied.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this kind of work.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.38 days since the request arrived.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner has requested compliance materials as a precondition to a scheduled call. The request is routine but carries an implicit deadline. The next move is ours: to confirm receipt, assess feasibility, and commit to a delivery date.",
+    "rivals": [
+     "This is a test of responsiveness and professionalism; a slow or incomplete reply signals that Nimbus Labs is not ready for partnership.",
+     "The questionnaire is a formality that Novacore sends to all prospects; it is not a blocker, and the call will proceed regardless of the answer's timing.",
+     "Novacore is evaluating Nimbus Labs' security posture as a condition of deeper engagement; the questionnaire is the first real filter."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from Ishita Rao or the questionnaire itself showing its length and complexity.",
+     "proposition": "The security questionnaire is a standard template that Novacore sends to all potential partners, and completion is routine."
+    },
+    {
+     "needs": "A review of what the questionnaire asks and what Nimbus Labs can currently provide.",
+     "proposition": "The questionnaire requires information about Nimbus Labs' infrastructure, data handling, or compliance posture that may not yet be documented."
+    },
+    {
+     "needs": "Clarification from Ishita Rao on the IT team's review timeline and any hard deadline before the call.",
+     "proposition": "Novacore's IT team has a fixed review cycle, and answers arriving after a certain date will miss the window for the 8 October call."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "own:1"
+     ],
+     "claim": "Ishita Rao's request is a precondition to the meeting, not a casual ask: the IT team's need signals a formal evaluation process."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The request carries an implicit deadline: the answers must arrive before 8 October, and likely with enough lead time for IT review."
+    },
+    {
+     "based_on": [
+      "file:first_touch",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "claim": "This is the first substantive exchange with Novacore; the relationship is at the stage where responsiveness signals seriousness."
+    },
+    {
+     "based_on": [
+      "none:playbook",
+      "whatif:14"
+     ],
+     "claim": "The absence of a playbook means no stop rule is named; the file will not go dormant by default, and the meeting date is the natural boundary."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-01",
+    "for_whom": "Ishita Rao at Novacore",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#q",
+     "own:3",
+     "own:4"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:4",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "ishita@novacore.test",
+    "what": "Request the security questionnaire from Ishita Rao, assess what it asks, and commit to a delivery date. If the questionnaire is already attached or linked, review it immediately and flag any blockers.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Security questionnaires from IT teams are rarely negotiable; they are templates with fixed fields, and the time to complete them is usually underestimated.",
+     "kind": "practice",
+     "why": "IT teams use them to gate access and liability; they do not treat them as conversation starters."
+    },
+    {
+     "claim": "When a partner asks for materials before a call, the materials are the price of admission to the call, not a topic for the call.",
+     "kind": "base_rate",
+     "why": "The call is scheduled to move forward, not to discuss whether the materials exist."
+    },
+    {
+     "claim": "A nine-day gap between request and deadline feels long until the questionnaire is opened; most founders discover on day seven that the form is longer than expected or requires information they do not have.",
+     "kind": "counter_pattern",
+     "why": "Questionnaires are often treated as low-priority until the deadline is close, and then the work compounds."
+    },
+    {
+     "claim": "A reply to a questionnaire request should confirm receipt, state the completion date, and flag any blockers immediately\u2014not wait until the deadline is near.",
+     "kind": "practice",
+     "why": "This signals competence and gives the partner time to escalate if the date will slip."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#q"
+     ],
+     "claim": "A request for compliance materials before a partnership call is a standard gate; failure to provide them before the deadline often results in postponement or cancellation.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "own:2"
+     ],
+     "claim": "Design partner conversations that reach the stage of formal security questionnaires have moved past exploratory talk and into evaluation.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A request for answers before a call, when the call is nine days away, is not urgent in tone but is urgent in consequence: delay past a certain point makes the call itself at risk.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#25"
+    ],
+    "kind": "partner",
+    "why": "The dossier names Novacore as a design partner in talks. The request is for materials to support a partnership evaluation, not a vendor contract or a hiring decision."
+   },
+   "scenarios": {
+    "act": "You confirm receipt of the request, assess what the questionnaire asks, and commit to a delivery date\u2014ideally within three to five days, leaving buffer time before the call. If any information is missing or requires new work, you flag it now and propose a revised date. Ishita Rao receives a professional, timely reply and can brief her IT team with confidence.",
+    "best": "The questionnaire is a standard template with straightforward answers that Nimbus Labs can provide from existing documentation. You reply within two days with complete answers. The IT team reviews them without issue. The 8 October call proceeds on schedule, and Novacore sees Nimbus Labs as organized and responsive.",
+    "do_nothing": "The questionnaire request sits unanswered. Ishita Rao follows up a few days before the call, or the call is postponed because the IT team did not receive the answers in time. Either way, the relationship loses momentum, and Novacore's impression of Nimbus Labs' professionalism is diminished.",
+    "signals_to_watch": [
+     "Whether the questionnaire is received and reviewed within one day of your request.",
+     "Whether Ishita Rao replies to your confirmation message, and how quickly.",
+     "Whether the IT team's review timeline is flexible or fixed.",
+     "Whether any follow-up from Novacore arrives before the call, signaling urgency or concern."
+    ],
+    "worst": "The questionnaire asks for information Nimbus Labs does not have or cannot provide (e.g., SOC 2 certification, specific data residency commitments). You discover this only after the deadline has passed. The call is postponed, and Novacore's confidence in the partnership is shaken. The relationship stalls."
+   },
+   "unknowns": [
+    {
+     "question": "What does the security questionnaire ask, and how long does it typically take to complete?",
+     "relevance": "This determines whether the nine-day window is comfortable or tight, and whether any information is missing or needs to be created."
+    },
+    {
+     "question": "Does Nimbus Labs have documented answers to standard security questions, or will this require new work?",
+     "relevance": "If answers must be created, the timeline may slip; if they exist, the move is simple and fast."
+    },
+    {
+     "question": "What is Novacore's actual deadline for receiving the answers, and is there any flexibility if they arrive a day or two late?",
+     "relevance": "The implicit deadline may be softer than the call date; clarifying it removes guesswork and allows for realistic planning."
+    },
+    {
+     "question": "Is this questionnaire a gate to the call, or a parallel process that does not block the meeting?",
+     "relevance": "If it is a gate, missing it postpones the call; if it is parallel, the call proceeds and the questionnaire is a separate track."
+    }
+   ],
+   "wait_or_stop": "Wait until you have the questionnaire in hand. Do not wait past 2026-10-01 to confirm receipt and commit to a date; if you have not heard back from Ishita Rao by then, send a follow-up. Stop if Novacore cancels the call or indicates that the questionnaire is no longer needed."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Novacore's Head of Partnerships, Ishita Rao, requested security questionnaire answers before a scheduled call on 8 October.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you send your security questionnaire answers before then? Our IT team needs them first.\"\n    },\n    {\n      \"claim\": \"A meeting between Novacore and Nimbus Labs is booked for 8 October 2026 at 08:30 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file records Novacore as a design partner in talks, with first and last touch both on 29 September 2026 at 09:00 UTC.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: an open ask exists for which we have not yet replied.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this kind of work.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.38 days since the request arrived.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Ishita Rao's request is a precondition to the meeting, not a casual ask: the IT team's need signals a formal evaluation process.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"claim\": \"The request carries an implicit deadline: the answers must arrive before 8 October, and likely with enough lead time for IT review.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"This is the first substantive exchange with Novacore; the relationship is at the stage where responsiveness signals seriousness.\",\n      \"based_on\": [\n        \"file:first_touch\",\n        \"hist:derived.history.times_seen@admin\"\n      ]\n    },\n    {\n      \"claim\": \"The absence of a playbook means no stop rule is named; the file will not go dormant by default, and the meeting date is the natural boundary.\",\n      \"based_on\": [\n        \"none:playbook\",\n        \"whatif:14\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A request for compliance materials before a partnership call is a standard gate; failure to provide them before the deadline often results in postponement or cancellation.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#q\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partner conversations that reach the stage of formal security questionnaires have moved past exploratory talk and into evaluation.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A request for answers before a call, when the call is nine days away, is not urgent in tone but is urgent in consequence: delay past a certain point makes the call itself at risk.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Security questionnaires from IT teams are rarely negotiable; they are templates with fixed fields, and the time to complete them is usually underestimated.\",\n      \"why\": \"IT teams use them to gate access and liability; they do not treat them as conversation starters.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a partner asks for materials before a call, the materials are the price of admission to the call, not a topic for the call.\",\n      \"why\": \"The call is scheduled to move forward, not to discuss whether the materials exist.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A nine-day gap between request and deadline feels long until the questionnaire is opened; most founders discover on day seven that the form is longer than expected or requires information they do not have.\",\n      \"why\": \"Questionnaires are often treated as low-priority until the deadline is close, and then the work compounds.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A reply to a questionnaire request should confirm receipt, state the completion date, and flag any blockers immediately\u2014not wait until the deadline is near.\",\n      \"why\": \"This signals competence and gives the partner time to escalate if the date will slip.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The security questionnaire is a standard template that Novacore sends to all potential partners, and completion is routine.\",\n      \"needs\": \"Confirmation from Ishita Rao or the questionnaire itself showing its length and complexity.\"\n    },\n    {\n      \"proposition\": \"The questionnaire requires information about Nimbus Labs' infrastructure, data handling, or compliance posture that may not yet be documented.\",\n      \"needs\": \"A review of what the questionnaire asks and what Nimbus Labs can currently provide.\"\n    },\n    {\n      \"proposition\": \"Novacore's IT team has a fixed review cycle, and answers arriving after a certain date will miss the window for the 8 October call.\",\n      \"needs\": \"Clarification from Ishita Rao on the IT team's review timeline and any hard deadline before the call.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does the security questionnaire ask, and how long does it typically take to complete?\",\n      \"relevance\": \"This determines whether the nine-day window is comfortable or tight, and whether any information is missing or needs to be created.\"\n    },\n    {\n      \"question\": \"Does Nimbus Labs have documented answers to standard security questions, or will this require new work?\",\n      \"relevance\": \"If answers must be created, the timeline may slip; if they exist, the move is simple and fast.\"\n    },\n    {\n      \"question\": \"What is Novacore's actual deadline for receiving the answers, and is there any flexibility if they arrive a day or two late?\",\n      \"relevance\": \"The implicit deadline may be softer than the call date; clarifying it removes guesswork and allows for realistic planning.\"\n    },\n    {\n      \"question\": \"Is this questionnaire a gate to the call, or a parallel process that does not block the meeting?\",\n      \"relevance\": \"If it is a gate, missing it postpones the call; if it is parallel, the call proceeds and the questionnaire is a separate track.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner has requested compliance materials as a precondition to a scheduled call. The request is routine but carries an implicit deadline. The next move is ours: to confirm receipt, assess feasibility, and commit to a delivery date.\",\n    \"rivals\": [\n      \"This is a test of responsiveness and professionalism; a slow or incomplete reply signals that Nimbus Labs is not ready for partnership.\",\n      \"The questionnaire is a formality that Novacore sends to all prospects; it is not a blocker, and the call will proceed regardless of the answer's timing.\",\n      \"Novacore is evaluating Nimbus Labs' security posture as a condition of deeper engagement; the questionnaire is the first real filter.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The dossier names Novacore as a design partner in talks. The request is for materials to support a partnership evaluation, not a vendor contract or a hiring decision.\",\n    \"evidence\": [\n      \"brief:cbl_#25\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"In the absence of a playbook, the expectation is that a design partner conversation moves from introduction to a substantive call. Before that call, the partner may request materials to prepare or to evaluate fit.\",\n    \"actual\": \"Novacore has requested security questionnaire answers before the call. This is the first substantive ask in the relationship. No reply has been sent.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The questionnaire request sits unanswered. Ishita Rao follows up a few days before the call, or the call is postponed because the IT team did not receive the answers in time. Either way, the relationship loses momentum, and Novacore's impression of Nimbus Labs' professionalism is diminished.\",\n    \"act\": \"You confirm receipt of the request, assess what the questionnaire asks, and commit to a delivery date\u2014ideally within three to five days, leaving buffer time before the call. If any information is missing or requires new work, you flag it now and propose a revised date. Ishita Rao receives a professional, timely reply and can brief her IT team with confidence.\",\n    \"best\": \"The questionnaire is a standard template with straightforward answers that Nimbus Labs can provide from existing documentation. You reply within two days with complete answers. The IT team reviews them without issue. The 8 October call proceeds on schedule, and Novacore sees Nimbus Labs as organized and responsive.\",\n    \"worst\": \"The questionnaire asks for information Nimbus Labs does not have or cannot provide (e.g., SOC 2 certification, specific data residency commitments). You discover this only after the deadline has passed. The call is postponed, and Novacore's confidence in the partnership is shaken. The relationship stalls.\",\n    \"signals_to_watch\": [\n      \"Whether the questionnaire is received and reviewed within one day of your request.\",\n      \"Whether Ishita Rao replies to your confirmation message, and how quickly.\",\n      \"Whether the IT team's review timeline is flexible or fixed.\",\n      \"Whether any follow-up from Novacore arrives before the call, signaling urgency or concern.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because Novacore is one of several design partners in talks, and this is an early-stage conversation; a slip here does not block the company's progress, but it does affect this relationship's trajectory.\",\n      \"The urgency is medium because the deadline is nine days away, which is enough time to act but not so much that delay is costless; a reply in the next two days is comfortable, a reply in the next five days is acceptable, and a reply after day seven is risky.\",\n      \"A wrong move is reversible: if you miss the deadline, you can apologize, explain, and reschedule; the relationship is not broken, but it is strained. If you reply slowly or incompletely, you can follow up with a fuller answer.\",\n      \"The file shows no promise was made to Novacore before this request, so there is no prior commitment to break; the only commitment is the implicit one to show up prepared for the call.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Request the security questionnaire from Ishita Rao, assess what it asks, and commit to a delivery date. If the questionnaire is already attached or linked, review it immediately and flag any blockers.\",\n    \"for_whom\": \"Ishita Rao at Novacore\",\n    \"by_when\": \"2026-10-01\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#q\",\n      \"own:3\",\n      \"own:4\"\n    ],\n    \"to\": \"ishita@novacore.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the questionnaire is already in hand or can be retrieved from Novacore's website, skip the request and move directly to completion. Review it today, identify any gaps, and send a reply to Ishita Rao by 2026-09-30 confirming receipt and committing to a delivery date of 2026-10-05 or earlier.\",\n  \"wait_or_stop\": \"Wait until you have the questionnaire in hand. Do not wait past 2026-10-01 to confirm receipt and commit to a date; if you have not heard back from Ishita Rao by then, send a follow-up. Stop if Novacore cancels the call or indicates that the questionnaire is no longer needed.\",\n  \"done_when\": \"Done when you have sent a reply to Ishita Rao confirming receipt of the questionnaire, stating the date by which you will return completed answers, and flagging any blockers or questions. The questionnaire itself is complete and sent to Ishita Rao by the committed date, and the 8 October call proceeds as scheduled.\",\n  \"draft\": \"Hi Ishita, Thanks for the heads-up. Could you send over the security questionnaire? I'll get it back to you by [date], well ahead of our call on the 8th. If there's anything we need to clarify or if the IT team has a specific review timeline, let me know. Looking forward to it. Arjun\"\n}",
+  "site": "expert"
+ },
+ "4db499dc26cc865c64831724babb53afa5207a389180115952709a830ddc1029": {
+  "framed": true,
+  "input_tokens": 7192,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3193,
+  "parsed": {
+   "alternative": "If the founder does not have the questionnaire and does not know what Novacore is asking for, send a brief message to Ishita Rao asking for the form or clarification, and offer to complete it by end of day 2026-10-07.",
+   "appraisal": {
+    "reasons": [
+     "The meeting is in two days, and the questionnaire is a prerequisite.",
+     "A missed or delayed prerequisite signals disorganization to a partner and damages the relationship.",
+     "Novacore is one of four design partners in motion, and losing momentum here is costly.",
+     "The founder is in the active cohort of Lakshya Accelerator and raising a seed round; a partnership delay is a distraction.",
+     "A postponed meeting is reversible, but the relationship damage from silence is costly to repair."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The questionnaire is sent to Novacore and Ishita Rao confirms receipt. Novacore's IT team clears it before the meeting, or the meeting is rescheduled with a new date for clearance.",
+   "draft": "Hi Ishita, Thanks for the reminder. We'll get the security questionnaire to you by end of day tomorrow so your IT team has time to review before our call. Looking forward to 8 Oct. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The founder has not sent the questionnaire over a week after it was requested, and the meeting is in two days.",
+    "expected": "Without a playbook, the expectation is that a partner who asks for a prerequisite before a meeting is serious about moving forward, and the founder will provide it in time.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Novacore's Head of Partnerships asked for security questionnaire answers before a scheduled call.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you send your security questionnaire answers before then? Our IT team needs them first."
+    },
+    {
+     "claim": "A meeting with Novacore is booked for 2026-10-08 08:30 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 7.12 days since the last touch on 2026-09-29 09:00 UTC.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we hold an open ask to provide security questionnaire answers.",
+     "evidence": [
+      "loop:loop_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this kind of work.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time the file has been reviewed.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@admin",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A partner has asked for a compliance prerequisite before a meeting in two days. The founder has not sent it. The move is ours, and the deadline is real.",
+    "rivals": [
+     "The founder is waiting for internal clarity about what the questionnaire is or who should fill it, and the silence is not disinterest but confusion.",
+     "The founder has deprioritized Novacore relative to other work in motion and is implicitly signaling that the partnership is not urgent.",
+     "Novacore is a low-priority exploratory conversation, and the compliance overhead is not worth the founder's time unless the partnership becomes serious."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A check of the founder's files, email drafts, or a direct ask: 'Do you have the questionnaire ready?'",
+     "proposition": "The security questionnaire has been completed and is ready to send."
+    },
+    {
+     "needs": "A reply from Novacore clarifying the form, or a check with the founder about whether the request was understood.",
+     "proposition": "The questionnaire has not been started because the founder is unclear about what Novacore is asking for."
+    },
+    {
+     "needs": "A conversation with the founder about the priority of the Novacore partnership relative to other work in motion.",
+     "proposition": "The founder has deprioritized Novacore and is waiting to see if other partnerships or funding rounds move first."
+    },
+    {
+     "needs": "Clarification from the founder about what Novacore represents in the company's strategy and whether the partnership is worth the compliance overhead.",
+     "proposition": "Novacore is a low-priority design partner and the meeting is exploratory, not a commitment."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "own:1"
+     ],
+     "claim": "The security questionnaire is a prerequisite for the meeting, not a courtesy request."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:2",
+      "own:2"
+     ],
+     "claim": "Silence from us for over a week before a meeting in two days signals either disorganization or deprioritization to Novacore."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The meeting is at risk if the questionnaire is not sent before 2026-10-08."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-06",
+    "for_whom": "Novacore, via Ishita Rao",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "the founder",
+    "what": "Find out whether the founder has the security questionnaire ready, and if so, send it to Novacore immediately. If not, ask the founder what is blocking it or ask Novacore for the form.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A security questionnaire is a compliance gate, not a relationship signal. It is usually a form to fill, not a conversation. Delay on it reads as friction or disinterest to the partner's IT team, who are gatekeepers, not decision-makers.",
+     "kind": "practice",
+     "why": "IT teams control access and escalate delays to their leadership. A founder's silence on a security form is interpreted as a company that is not serious about the partnership."
+    },
+    {
+     "claim": "When a partner names a specific team and a specific deadline, they are signaling that the deadline is real and that the team will enforce it.",
+     "kind": "base_rate",
+     "why": "Named dependencies are rarely decorative. They indicate a process gate, not a preference."
+    },
+    {
+     "claim": "A questionnaire sent the day before a meeting is worse than one sent a week before. The partner's IT team needs time to review and clear it, or the meeting will be awkward.",
+     "kind": "practice",
+     "why": "Last-minute compliance documents create the impression of disorganization and force the partner to choose between delaying the meeting or proceeding without clearance."
+    },
+    {
+     "claim": "A founder who is serious about a partnership but has not yet sent a security questionnaire is usually blocked by internal confusion about who owns the task, not by disinterest.",
+     "kind": "counter_pattern",
+     "why": "Compliance tasks are often unclear in early-stage companies. The founder may not know what the questionnaire is, where it is, or who should fill it."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:3"
+     ],
+     "claim": "IT security questionnaires from partners are rarely urgent-sounding unless the partner is serious about moving forward.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "own:4"
+     ],
+     "claim": "A request framed as a prerequisite for a meeting, with a named team dependency, is a hard blocker, not a soft ask.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence on a prerequisite request before a booked meeting is often not neglect but a sign the founder is waiting for internal clarity or has deprioritized the partnership.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#25"
+    ],
+    "kind": "partner",
+    "why": "The dossier names Novacore as a design partner in the brief, and the file is about partnership talks, not a vendor relationship or a compliance gate."
+   },
+   "scenarios": {
+    "act": "The founder sends the questionnaire immediately, or asks Novacore for the form if it was not provided. Novacore's IT team has time to review it before the meeting. The meeting proceeds on schedule. The partnership moves forward.",
+    "best": "The founder has the questionnaire ready and sends it within hours. Novacore's IT team clears it before the meeting. The meeting is productive, and the partnership advances to the next stage.",
+    "do_nothing": "The founder does not send the questionnaire. On 2026-10-08, Novacore's IT team has not cleared the company, and the meeting is either postponed or proceeds without IT clearance. The partnership is delayed or stalled. Novacore interprets the silence as disinterest or disorganization.",
+    "signals_to_watch": [
+     "Whether the founder sends the questionnaire before 2026-10-07.",
+     "Whether Novacore confirms receipt and clearance before the meeting.",
+     "Whether the meeting proceeds on schedule or is postponed.",
+     "Whether Novacore follows up after the meeting or goes quiet."
+    ],
+    "worst": "The founder does not send the questionnaire, and the meeting is cancelled or postponed. Novacore interprets the delay as a sign that the company is not serious about the partnership. The partnership stalls or ends."
+   },
+   "unknowns": [
+    {
+     "question": "Does the founder have the security questionnaire, and is it complete?",
+     "relevance": "If it is ready, the move is to send it immediately. If it is not, the move is to find out what is blocking it or to ask Novacore for the form."
+    },
+    {
+     "question": "What is the founder's priority for the Novacore partnership relative to the seed round, accelerator applications, and other design partners?",
+     "relevance": "If Novacore is a must-have partner, the questionnaire is urgent. If it is exploratory, the founder may choose to defer or decline."
+    },
+    {
+     "question": "Has Novacore sent the security questionnaire form, or is the founder expected to know what it is?",
+     "relevance": "If the form was not sent, the founder may be blocked by not knowing what to fill out. If it was sent, the founder has simply not acted on it."
+    },
+    {
+     "question": "What is the relationship between Novacore and the company's product or go-to-market strategy?",
+     "relevance": "If Novacore is a design partner for the core product, the partnership is strategic. If it is exploratory, the compliance overhead may not be justified."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The meeting is in two days, and the questionnaire is a hard prerequisite. If the founder does not send it by end of day 2026-10-07, the meeting will be at risk. Stop if the founder decides to postpone or decline the partnership."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Novacore's Head of Partnerships asked for security questionnaire answers before a scheduled call.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you send your security questionnaire answers before then? Our IT team needs them first.\"\n    },\n    {\n      \"claim\": \"A meeting with Novacore is booked for 2026-10-08 08:30 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 7.12 days since the last touch on 2026-09-29 09:00 UTC.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we hold an open ask to provide security questionnaire answers.\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this kind of work.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time the file has been reviewed.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@admin\",\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The security questionnaire is a prerequisite for the meeting, not a courtesy request.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"claim\": \"Silence from us for over a week before a meeting in two days signals either disorganization or deprioritization to Novacore.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:2\",\n        \"own:2\"\n      ]\n    },\n    {\n      \"claim\": \"The meeting is at risk if the questionnaire is not sent before 2026-10-08.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"IT security questionnaires from partners are rarely urgent-sounding unless the partner is serious about moving forward.\",\n      \"based_on\": [\n        \"own:3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A request framed as a prerequisite for a meeting, with a named team dependency, is a hard blocker, not a soft ask.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"own:4\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence on a prerequisite request before a booked meeting is often not neglect but a sign the founder is waiting for internal clarity or has deprioritized the partnership.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A security questionnaire is a compliance gate, not a relationship signal. It is usually a form to fill, not a conversation. Delay on it reads as friction or disinterest to the partner's IT team, who are gatekeepers, not decision-makers.\",\n      \"why\": \"IT teams control access and escalate delays to their leadership. A founder's silence on a security form is interpreted as a company that is not serious about the partnership.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a partner names a specific team and a specific deadline, they are signaling that the deadline is real and that the team will enforce it.\",\n      \"why\": \"Named dependencies are rarely decorative. They indicate a process gate, not a preference.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A questionnaire sent the day before a meeting is worse than one sent a week before. The partner's IT team needs time to review and clear it, or the meeting will be awkward.\",\n      \"why\": \"Last-minute compliance documents create the impression of disorganization and force the partner to choose between delaying the meeting or proceeding without clearance.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who is serious about a partnership but has not yet sent a security questionnaire is usually blocked by internal confusion about who owns the task, not by disinterest.\",\n      \"why\": \"Compliance tasks are often unclear in early-stage companies. The founder may not know what the questionnaire is, where it is, or who should fill it.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The security questionnaire has been completed and is ready to send.\",\n      \"needs\": \"A check of the founder's files, email drafts, or a direct ask: 'Do you have the questionnaire ready?'\"\n    },\n    {\n      \"proposition\": \"The questionnaire has not been started because the founder is unclear about what Novacore is asking for.\",\n      \"needs\": \"A reply from Novacore clarifying the form, or a check with the founder about whether the request was understood.\"\n    },\n    {\n      \"proposition\": \"The founder has deprioritized Novacore and is waiting to see if other partnerships or funding rounds move first.\",\n      \"needs\": \"A conversation with the founder about the priority of the Novacore partnership relative to other work in motion.\"\n    },\n    {\n      \"proposition\": \"Novacore is a low-priority design partner and the meeting is exploratory, not a commitment.\",\n      \"needs\": \"Clarification from the founder about what Novacore represents in the company's strategy and whether the partnership is worth the compliance overhead.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the founder have the security questionnaire, and is it complete?\",\n      \"relevance\": \"If it is ready, the move is to send it immediately. If it is not, the move is to find out what is blocking it or to ask Novacore for the form.\"\n    },\n    {\n      \"question\": \"What is the founder's priority for the Novacore partnership relative to the seed round, accelerator applications, and other design partners?\",\n      \"relevance\": \"If Novacore is a must-have partner, the questionnaire is urgent. If it is exploratory, the founder may choose to defer or decline.\"\n    },\n    {\n      \"question\": \"Has Novacore sent the security questionnaire form, or is the founder expected to know what it is?\",\n      \"relevance\": \"If the form was not sent, the founder may be blocked by not knowing what to fill out. If it was sent, the founder has simply not acted on it.\"\n    },\n    {\n      \"question\": \"What is the relationship between Novacore and the company's product or go-to-market strategy?\",\n      \"relevance\": \"If Novacore is a design partner for the core product, the partnership is strategic. If it is exploratory, the compliance overhead may not be justified.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A partner has asked for a compliance prerequisite before a meeting in two days. The founder has not sent it. The move is ours, and the deadline is real.\",\n    \"rivals\": [\n      \"The founder is waiting for internal clarity about what the questionnaire is or who should fill it, and the silence is not disinterest but confusion.\",\n      \"The founder has deprioritized Novacore relative to other work in motion and is implicitly signaling that the partnership is not urgent.\",\n      \"Novacore is a low-priority exploratory conversation, and the compliance overhead is not worth the founder's time unless the partnership becomes serious.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The dossier names Novacore as a design partner in the brief, and the file is about partnership talks, not a vendor relationship or a compliance gate.\",\n    \"evidence\": [\n      \"brief:cbl_#25\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation is that a partner who asks for a prerequisite before a meeting is serious about moving forward, and the founder will provide it in time.\",\n    \"actual\": \"The founder has not sent the questionnaire over a week after it was requested, and the meeting is in two days.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not send the questionnaire. On 2026-10-08, Novacore's IT team has not cleared the company, and the meeting is either postponed or proceeds without IT clearance. The partnership is delayed or stalled. Novacore interprets the silence as disinterest or disorganization.\",\n    \"act\": \"The founder sends the questionnaire immediately, or asks Novacore for the form if it was not provided. Novacore's IT team has time to review it before the meeting. The meeting proceeds on schedule. The partnership moves forward.\",\n    \"best\": \"The founder has the questionnaire ready and sends it within hours. Novacore's IT team clears it before the meeting. The meeting is productive, and the partnership advances to the next stage.\",\n    \"worst\": \"The founder does not send the questionnaire, and the meeting is cancelled or postponed. Novacore interprets the delay as a sign that the company is not serious about the partnership. The partnership stalls or ends.\",\n    \"signals_to_watch\": [\n      \"Whether the founder sends the questionnaire before 2026-10-07.\",\n      \"Whether Novacore confirms receipt and clearance before the meeting.\",\n      \"Whether the meeting proceeds on schedule or is postponed.\",\n      \"Whether Novacore follows up after the meeting or goes quiet.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The meeting is in two days, and the questionnaire is a prerequisite.\",\n      \"A missed or delayed prerequisite signals disorganization to a partner and damages the relationship.\",\n      \"Novacore is one of four design partners in motion, and losing momentum here is costly.\",\n      \"The founder is in the active cohort of Lakshya Accelerator and raising a seed round; a partnership delay is a distraction.\",\n      \"A postponed meeting is reversible, but the relationship damage from silence is costly to repair.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Find out whether the founder has the security questionnaire ready, and if so, send it to Novacore immediately. If not, ask the founder what is blocking it or ask Novacore for the form.\",\n    \"for_whom\": \"Novacore, via Ishita Rao\",\n    \"by_when\": \"2026-10-06\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"the founder\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder does not have the questionnaire and does not know what Novacore is asking for, send a brief message to Ishita Rao asking for the form or clarification, and offer to complete it by end of day 2026-10-07.\",\n  \"wait_or_stop\": \"Do not wait. The meeting is in two days, and the questionnaire is a hard prerequisite. If the founder does not send it by end of day 2026-10-07, the meeting will be at risk. Stop if the founder decides to postpone or decline the partnership.\",\n  \"done_when\": \"The questionnaire is sent to Novacore and Ishita Rao confirms receipt. Novacore's IT team clears it before the meeting, or the meeting is rescheduled with a new date for clearance.\",\n  \"draft\": \"Hi Ishita, Thanks for the reminder. We'll get the security questionnaire to you by end of day tomorrow so your IT team has time to review before our call. Looking forward to 8 Oct. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "56f2b7aebe3362caed706a6fe1136eaa38554620466de6262a49bd54c88276b2": {
+  "framed": true,
+  "input_tokens": 7296,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2932,
+  "parsed": {
+   "alternative": "If the questionnaire does not exist, send a message to Ishita Rao by 2026-09-30 asking for the template or standard questions Novacore uses, so the team can prepare answers in time for the meeting.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because design partners are a stated goal in the brief, but this is one of several partner conversations in motion; a missed opportunity here does not block the company's progress.",
+     "Urgency is medium because the deadline is 9 days away, which is enough time to act but not so much that delay is costless; a response in the next two business days is standard practice.",
+     "A wrong move is reversible: if the questionnaire is sent late or incomplete, the meeting can be rescheduled or the relationship can be repaired with an explanation and a corrected submission.",
+     "The relationship is new and unmeasured; there is no history of trust or friction to draw on."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The questionnaire has been sent to Ishita Rao and she has confirmed receipt. The meeting on 2026-10-08 proceeds as scheduled, or is rescheduled with a new date confirmed.",
+   "draft": "Hi Ishita, Thanks for the note. We'll get you the security questionnaire answers by October 1st so your IT team has time to review before our call on the 8th. Looking forward to it. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "Novacore has confirmed interest (meeting booked), and is now clarifying a pre-meeting requirement (security questionnaire). This is the expected next step in a live partner conversation.",
+    "expected": "No playbook exists for partner work. From the brief, the goal is to land design partners. A typical early stage would be: initial outreach, interest confirmed, meeting scheduled, pre-meeting requirements clarified.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Novacore's Head of Partnerships asked for security questionnaire answers before a scheduled call.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you send your security questionnaire answers before then? Our IT team needs them first."
+    },
+    {
+     "claim": "A meeting with Novacore is booked for 2026-10-08 08:30 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file records no prior reply time or engagement history with Ishita Rao.",
+     "evidence": [
+      "num:their_reply_time:ishita@novacore.test",
+      "num:your_reply_time:ishita@novacore.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: Novacore has made an open ask and waits on us.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is 0.38 days old as of the dossier timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this kind of work.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner has asked for security questionnaire answers before a scheduled meeting 9 days away. The ball is in our court. This is a routine gating step in vendor evaluation; the ask is clear and the deadline is soft but real.",
+    "rivals": [
+     "This is a test of responsiveness: Novacore is screening for operational maturity and will deprioritize slow responders.",
+     "This is a low-priority exploratory conversation; the questionnaire is a courtesy ask and a missed deadline would not kill the relationship.",
+     "This is a signal that Novacore's IT team has concerns about Nimbus Labs and is using the questionnaire to surface them before the meeting."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder that the questionnaire has been drafted and is available.",
+     "proposition": "The security questionnaire already exists and is ready to send."
+    },
+    {
+     "needs": "Clarification of what Novacore's standard questionnaire contains and what information is required.",
+     "proposition": "The questionnaire does not exist or is incomplete."
+    },
+    {
+     "needs": "Evidence of what Novacore's business model is, whether they have used Nimbus Labs' product, and what the partnership would entail.",
+     "proposition": "This is a genuine design partner opportunity with real pilot or contract potential."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#1"
+     ],
+     "claim": "Ishita Rao's request is a condition precedent to the meeting: she states the IT team needs the answers first, before the call."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:4",
+      "sit:sit_#1"
+     ],
+     "claim": "The ask is open and unmet; the meeting is 9 days away, leaving time to respond before the deadline."
+    },
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin",
+      "file:kind",
+      "brief:cbl_#25"
+     ],
+     "claim": "This is a live account administration situation: a design partner relationship in early stages with a clear next step agreed."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-01",
+    "for_whom": "Novacore",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "sig:admin.sit.live_account_admin",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:4",
+     "inference:1"
+    ],
+    "to": "ishita@novacore.test",
+    "what": "send the security questionnaire to Ishita Rao",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A security questionnaire should be answered within two business days of receipt; delay signals either lack of readiness or low priority to the counterparty.",
+     "kind": "practice",
+     "why": "IT teams use questionnaire turnaround as a proxy for operational maturity and responsiveness."
+    },
+    {
+     "claim": "Design partner conversations often stall at the security questionnaire stage; those who answer promptly move to pilot or contract faster.",
+     "kind": "base_rate",
+     "why": "The questionnaire is where intent meets operational reality; slow answers predict slow execution."
+    },
+    {
+     "claim": "A response to a pre-meeting ask should arrive at least three business days before the meeting, not the day before.",
+     "kind": "practice",
+     "why": "IT teams need time to review and flag issues; a last-minute submission forces a rushed decision or a rescheduled call."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A counterparty who asks for documents before a meeting expects them in time to review; silence reads as either inability or disinterest.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "Security questionnaires are standard gatekeeping in vendor and partner evaluation; they are rarely waived and often block progress if delayed.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "sit:sit_#1"
+     ],
+     "claim": "A request made 9 days before a meeting is not urgent; it is a courtesy reminder, not a crisis.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#25"
+    ],
+    "kind": "partner",
+    "why": "The dossier names this file as partner work; Novacore is listed under design partner talks in the brief."
+   },
+   "scenarios": {
+    "act": "The questionnaire is sent within two business days. Novacore's IT team reviews it before the meeting. The meeting proceeds on schedule with fewer surprises. The relationship advances to the next stage (pilot discussion, contract terms, or a decision to not proceed).",
+    "best": "The questionnaire is sent by 2026-10-01. Novacore's IT team approves it with no follow-up questions. The meeting on 2026-10-08 is productive and leads to a pilot or partnership agreement.",
+    "do_nothing": "The questionnaire is not sent. Ishita Rao follows up closer to the meeting date. If we still have not sent it by 2026-10-07, the meeting is at risk of cancellation or postponement. The relationship cools; Novacore deprioritizes Nimbus Labs.",
+    "signals_to_watch": [
+     "Whether the questionnaire is found or must be created from scratch.",
+     "Whether Ishita Rao sends a follow-up reminder before 2026-10-05.",
+     "Whether the meeting is confirmed or rescheduled after the questionnaire is sent.",
+     "Whether Novacore's IT team approves the questionnaire or requests changes."
+    ],
+    "worst": "The questionnaire is not sent until 2026-10-07 or later. Novacore's IT team flags compliance or security issues that require rework. The meeting is postponed. The partnership stalls or is abandoned."
+   },
+   "unknowns": [
+    {
+     "question": "Does the security questionnaire exist and is it ready to send?",
+     "relevance": "If it does not exist, the next move is to find or create it, not to send it; if it does, the move is immediate."
+    },
+    {
+     "question": "What is Novacore's business, and why are they evaluating Nimbus Labs as a design partner?",
+     "relevance": "This determines whether the partnership is strategic or exploratory, and whether the meeting is a real opportunity or a courtesy call."
+    },
+    {
+     "question": "Has the founder or team reviewed Novacore's security questionnaire template, and do we know what it asks?",
+     "relevance": "Some questionnaires are standard; others are bespoke and require research or legal review before answering."
+    }
+   ],
+   "wait_or_stop": "Wait until the questionnaire is confirmed to exist. If it does not exist by 2026-09-30, escalate to the founder to decide whether to ask Novacore for the template or to reschedule the meeting. Stop if Novacore cancels the meeting or indicates the partnership is no longer of interest."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Novacore's Head of Partnerships asked for security questionnaire answers before a scheduled call.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you send your security questionnaire answers before then? Our IT team needs them first.\"\n    },\n    {\n      \"claim\": \"A meeting with Novacore is booked for 2026-10-08 08:30 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file records no prior reply time or engagement history with Ishita Rao.\",\n      \"evidence\": [\n        \"num:their_reply_time:ishita@novacore.test\",\n        \"num:your_reply_time:ishita@novacore.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: Novacore has made an open ask and waits on us.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is 0.38 days old as of the dossier timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this kind of work.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Ishita Rao's request is a condition precedent to the meeting: she states the IT team needs the answers first, before the call.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The ask is open and unmet; the meeting is 9 days away, leaving time to respond before the deadline.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:4\",\n        \"sit:sit_#1\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live account administration situation: a design partner relationship in early stages with a clear next step agreed.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\",\n        \"file:kind\",\n        \"brief:cbl_#25\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A counterparty who asks for documents before a meeting expects them in time to review; silence reads as either inability or disinterest.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Security questionnaires are standard gatekeeping in vendor and partner evaluation; they are rarely waived and often block progress if delayed.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A request made 9 days before a meeting is not urgent; it is a courtesy reminder, not a crisis.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"sit:sit_#1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A security questionnaire should be answered within two business days of receipt; delay signals either lack of readiness or low priority to the counterparty.\",\n      \"why\": \"IT teams use questionnaire turnaround as a proxy for operational maturity and responsiveness.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partner conversations often stall at the security questionnaire stage; those who answer promptly move to pilot or contract faster.\",\n      \"why\": \"The questionnaire is where intent meets operational reality; slow answers predict slow execution.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A response to a pre-meeting ask should arrive at least three business days before the meeting, not the day before.\",\n      \"why\": \"IT teams need time to review and flag issues; a last-minute submission forces a rushed decision or a rescheduled call.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The security questionnaire already exists and is ready to send.\",\n      \"needs\": \"Confirmation from the founder that the questionnaire has been drafted and is available.\"\n    },\n    {\n      \"proposition\": \"The questionnaire does not exist or is incomplete.\",\n      \"needs\": \"Clarification of what Novacore's standard questionnaire contains and what information is required.\"\n    },\n    {\n      \"proposition\": \"This is a genuine design partner opportunity with real pilot or contract potential.\",\n      \"needs\": \"Evidence of what Novacore's business model is, whether they have used Nimbus Labs' product, and what the partnership would entail.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the security questionnaire exist and is it ready to send?\",\n      \"relevance\": \"If it does not exist, the next move is to find or create it, not to send it; if it does, the move is immediate.\"\n    },\n    {\n      \"question\": \"What is Novacore's business, and why are they evaluating Nimbus Labs as a design partner?\",\n      \"relevance\": \"This determines whether the partnership is strategic or exploratory, and whether the meeting is a real opportunity or a courtesy call.\"\n    },\n    {\n      \"question\": \"Has the founder or team reviewed Novacore's security questionnaire template, and do we know what it asks?\",\n      \"relevance\": \"Some questionnaires are standard; others are bespoke and require research or legal review before answering.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner has asked for security questionnaire answers before a scheduled meeting 9 days away. The ball is in our court. This is a routine gating step in vendor evaluation; the ask is clear and the deadline is soft but real.\",\n    \"rivals\": [\n      \"This is a test of responsiveness: Novacore is screening for operational maturity and will deprioritize slow responders.\",\n      \"This is a low-priority exploratory conversation; the questionnaire is a courtesy ask and a missed deadline would not kill the relationship.\",\n      \"This is a signal that Novacore's IT team has concerns about Nimbus Labs and is using the questionnaire to surface them before the meeting.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The dossier names this file as partner work; Novacore is listed under design partner talks in the brief.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#25\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook exists for partner work. From the brief, the goal is to land design partners. A typical early stage would be: initial outreach, interest confirmed, meeting scheduled, pre-meeting requirements clarified.\",\n    \"actual\": \"Novacore has confirmed interest (meeting booked), and is now clarifying a pre-meeting requirement (security questionnaire). This is the expected next step in a live partner conversation.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The questionnaire is not sent. Ishita Rao follows up closer to the meeting date. If we still have not sent it by 2026-10-07, the meeting is at risk of cancellation or postponement. The relationship cools; Novacore deprioritizes Nimbus Labs.\",\n    \"act\": \"The questionnaire is sent within two business days. Novacore's IT team reviews it before the meeting. The meeting proceeds on schedule with fewer surprises. The relationship advances to the next stage (pilot discussion, contract terms, or a decision to not proceed).\",\n    \"best\": \"The questionnaire is sent by 2026-10-01. Novacore's IT team approves it with no follow-up questions. The meeting on 2026-10-08 is productive and leads to a pilot or partnership agreement.\",\n    \"worst\": \"The questionnaire is not sent until 2026-10-07 or later. Novacore's IT team flags compliance or security issues that require rework. The meeting is postponed. The partnership stalls or is abandoned.\",\n    \"signals_to_watch\": [\n      \"Whether the questionnaire is found or must be created from scratch.\",\n      \"Whether Ishita Rao sends a follow-up reminder before 2026-10-05.\",\n      \"Whether the meeting is confirmed or rescheduled after the questionnaire is sent.\",\n      \"Whether Novacore's IT team approves the questionnaire or requests changes.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because design partners are a stated goal in the brief, but this is one of several partner conversations in motion; a missed opportunity here does not block the company's progress.\",\n      \"Urgency is medium because the deadline is 9 days away, which is enough time to act but not so much that delay is costless; a response in the next two business days is standard practice.\",\n      \"A wrong move is reversible: if the questionnaire is sent late or incomplete, the meeting can be rescheduled or the relationship can be repaired with an explanation and a corrected submission.\",\n      \"The relationship is new and unmeasured; there is no history of trust or friction to draw on.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the security questionnaire to Ishita Rao\",\n    \"for_whom\": \"Novacore\",\n    \"by_when\": \"2026-10-01\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:1\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"sig:admin.sit.live_account_admin\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"ishita@novacore.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the questionnaire does not exist, send a message to Ishita Rao by 2026-09-30 asking for the template or standard questions Novacore uses, so the team can prepare answers in time for the meeting.\",\n  \"wait_or_stop\": \"Wait until the questionnaire is confirmed to exist. If it does not exist by 2026-09-30, escalate to the founder to decide whether to ask Novacore for the template or to reschedule the meeting. Stop if Novacore cancels the meeting or indicates the partnership is no longer of interest.\",\n  \"done_when\": \"The questionnaire has been sent to Ishita Rao and she has confirmed receipt. The meeting on 2026-10-08 proceeds as scheduled, or is rescheduled with a new date confirmed.\",\n  \"draft\": \"Hi Ishita, Thanks for the note. We'll get you the security questionnaire answers by October 1st so your IT team has time to review before our call on the 8th. Looking forward to it. Best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

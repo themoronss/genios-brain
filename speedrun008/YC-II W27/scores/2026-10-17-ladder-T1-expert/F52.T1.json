@@ -1,0 +1,444 @@
+{
+ "5061caf54d90b88536fcb5ba146f4e4adb146956ceb497ed746d01bca161b43d": {
+  "framed": true,
+  "input_tokens": 8052,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3287,
+  "parsed": {
+   "alternative": "If the founder believes the ten-customer metric is unachievable or will take too long, send a brief note to Gautam Varma asking whether there is a lower threshold or a different metric that would bring the fund back into the conversation sooner. This is a lower-probability move, but it clarifies the investor's true position.",
+   "appraisal": {
+    "reasons": [
+     "The investor has passed, so there is no immediate action required; the stakes are medium because Ridgeline Capital is a real fund with a real cheque, and the condition is achievable.",
+     "Urgency is low because the investor has set a clear condition and asked for a note when it is met; there is no time pressure until the company reaches ten customers.",
+     "A wrong move (e.g., re-pitching too early, or forgetting to reopen) is reversible; the founder can always send a note later if the metric is hit."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The condition is logged in the file with the exact words and the date received. A reminder is set to reopen when the company reaches ten paying customers. When the metric is hit, a brief note is sent to Gautam Varma with proof of the milestone, and the investor responds with a next step (e.g., a call, a data-room request, or a term sheet).",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The investor passed with a specific condition (ten paying customers) and asked for a note when it is met. No reply has been sent, and the file has been quiet for over a day.",
+    "expected": "The brief names no playbook for this file, so no stage is expected. However, the file's domain is fundraising, and the investor has passed with a condition. The expected next move is to log the condition and track progress toward the metric.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Ridgeline Capital passed on the seed round with a conditional criterion: ten paying customers.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "we like the team, but it is slightly early for us to come in. Let's re-engage once you have ten paying customers; send me a note then."
+    },
+    {
+     "claim": "The pass came from Gautam Varma at Ridgeline Capital on 2026-04-02 at 09:00 UTC.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply has been sent to Ridgeline Capital since their pass.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.12 days as of the dossier date.",
+     "evidence": [
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Ridgeline Capital is not named in the brief's work in motion.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A conditional deferral from a real investor who likes the team but is waiting for proof of traction before committing. The pass is on stage, not on the company, and carries an implicit date on which it stops being true.",
+    "rivals": [
+     "A soft no disguised as a condition: the investor is not interested and is using the metric as a polite exit.",
+     "A test of the founder's execution: the investor wants to see whether the founder can hit the metric, and will invest if they do.",
+     "A generic pass that the founder should file and forget: the metric is too high or too far away to matter for this round."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation that Ridgeline Capital is in the brief's target list, or that Gautam Varma is a known partner at the fund.",
+     "proposition": "Ridgeline Capital is a real investor with a real cheque size and thesis that fits Nimbus Labs."
+    },
+    {
+     "needs": "The founder's estimate of how long it will take to reach ten paying customers, and whether that timeline fits the seed round's urgency.",
+     "proposition": "The ten-customer metric is achievable within a reasonable timeframe for Nimbus Labs."
+    },
+    {
+     "needs": "The founder's read of the relationship before this email, and whether Gautam Varma has invested in similar companies.",
+     "proposition": "Ridgeline Capital's pass was on traction alone, not on a deeper concern about the team or product."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "This is a conditional deferral, not a terminal pass: the investor named a specific metric that would reopen the conversation."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The next move is ours: the investor has set a clear condition and asked for a note when it is met."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "brief:cbl_#7"
+     ],
+     "claim": "The file was not tracked in the brief, which means it was either an unexpected inbound or added after the brief was written."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+     ],
+     "claim": "The pass is on traction (ten paying customers), not on team or thesis, and therefore carries an implicit date on which it stops being true."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": null,
+    "for_whom": "Ridgeline Capital, via Gautam Varma",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+     "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "Log the condition in the file and set a reminder to reopen when the company reaches ten paying customers. Track the company's customer acquisition rate and confirm that the metric is achievable within a reasonable timeframe.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A conditional pass should be logged with the exact words of the condition and the date it was received, so it can be reopened without re-pitching.",
+     "kind": "practice",
+     "why": "The founder will forget the condition or the investor's name in three months; a note in the file prevents a cold re-approach and preserves the relationship."
+    },
+    {
+     "claim": "Most founders do not follow up on conditional passes until they have the metric, and many never do; those who do reopen at the right moment convert at a higher rate than cold outreach.",
+     "kind": "base_rate",
+     "why": "A conditional pass is a standing invitation, and the investor has already said yes to the company if the condition is met; the founder's job is to prove it."
+    },
+    {
+     "claim": "The note to reopen should be brief, factual, and lead with the metric: 'We now have ten paying customers. Here's what changed.' Nothing more.",
+     "kind": "practice",
+     "why": "The investor already knows the company; they are waiting for proof of the condition, not a re-pitch. A long email signals that the founder does not understand what the investor said."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict",
+      "pb:founder_office.pb.investor_relations.reopen_after_a_pass"
+     ],
+     "claim": "Passes on stage or traction are decisions about timing, not verdicts on the company, and reopen when the condition is met.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+      "cap:founder_office.fundraising.investor_relations#f2"
+     ],
+     "claim": "A conditional deferral that names a specific metric is warmer than a generic pass and should be filed as a future lead, not as closed.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f2"
+     ],
+     "claim": "Treating a pass as terminal discards what Paul Graham calls 'some of your warmest leads for future fundraising'.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "file:domains"
+    ],
+    "kind": "investor",
+    "why": "Ridgeline Capital is a fund that passed on the seed round with a conditional criterion. The file is about an investor relationship, not a program, compliance, hiring, intro, partner, or vendor engagement."
+   },
+   "scenarios": {
+    "act": "The founder logs the condition and the date in the file, and sets a reminder to reopen when the company reaches ten paying customers. When the metric is hit, the founder sends a brief note to Gautam Varma with proof of the milestone. Ridgeline Capital moves to a partner meeting or diligence.",
+    "best": "The company reaches ten paying customers within two months. The founder sends a note to Gautam Varma. The investor is impressed by the execution and moves quickly to a term sheet. Ridgeline Capital becomes a lead investor in the seed round.",
+    "do_nothing": "The file remains quiet and untracked. The founder forgets the condition or Gautam Varma's name. Months later, if the company reaches ten customers, the founder does not reopen the conversation, and Ridgeline Capital moves on to other companies. The warm lead is lost.",
+    "signals_to_watch": [
+     "The company's customer acquisition rate and whether it is accelerating.",
+     "Whether the founder has logged the condition and set a reminder to reopen.",
+     "Whether Gautam Varma or Ridgeline Capital reaches out with any other signals (e.g., a portfolio company that competes, a shift in the fund's thesis).",
+     "Whether the founder closes the seed round before reaching ten customers, which would make the conditional pass moot."
+    ],
+    "worst": "The company never reaches ten paying customers, or takes over a year to do so. By then, Ridgeline Capital has moved on, and the founder never reopens the conversation. The warm lead is wasted, and the founder learns too late that the investor was serious."
+   },
+   "unknowns": [
+    {
+     "question": "Is Ridgeline Capital a fund the founder was targeting, or an unexpected inbound?",
+     "relevance": "If unexpected, the founder may not have context on the fund's stage, cheque size, or thesis; if targeted, the pass may signal a misalignment that the metric alone will not fix."
+    },
+    {
+     "question": "How many paying customers does Nimbus Labs have now, and what is the trajectory?",
+     "relevance": "If the company is already at eight or nine customers, the reopen is imminent; if at two or three, it may take months, and the founder should decide whether to prioritize this investor or focus on the round."
+    },
+    {
+     "question": "Did the founder or a connector introduce Nimbus Labs to Ridgeline Capital, or did the fund source the company?",
+     "relevance": "If a connector made the intro, the founder should loop them in on the reopen; if the fund sourced it, the founder should confirm that Gautam Varma is the right person to send the note to."
+    },
+    {
+     "question": "What is the founder's current investor pipeline, and how many other funds are in the round?",
+     "relevance": "If the round is already oversubscribed or closing, Ridgeline Capital's conditional pass may not matter; if the round is slow, it is a valuable warm lead to track."
+    }
+   ],
+   "wait_or_stop": "Wait until the company reaches ten paying customers, or until the founder has a clear signal that the metric is unachievable. If the company reaches ten customers, send the reopen note within a week. If the company closes the seed round before reaching ten customers, the conditional pass becomes moot and the file can be closed. If more than a year passes with no progress toward the metric, the file can be archived as a historical lead."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Ridgeline Capital passed on the seed round with a conditional criterion: ten paying customers.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"we like the team, but it is slightly early for us to come in. Let's re-engage once you have ten paying customers; send me a note then.\"\n    },\n    {\n      \"claim\": \"The pass came from Gautam Varma at Ridgeline Capital on 2026-04-02 at 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply has been sent to Ridgeline Capital since their pass.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.12 days as of the dossier date.\",\n      \"evidence\": [\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Ridgeline Capital is not named in the brief's work in motion.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a conditional deferral, not a terminal pass: the investor named a specific metric that would reopen the conversation.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: the investor has set a clear condition and asked for a note when it is met.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The file was not tracked in the brief, which means it was either an unexpected inbound or added after the brief was written.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"brief:cbl_#7\"\n      ]\n    },\n    {\n      \"claim\": \"The pass is on traction (ten paying customers), not on team or thesis, and therefore carries an implicit date on which it stops being true.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Passes on stage or traction are decisions about timing, not verdicts on the company, and reopen when the condition is met.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\",\n        \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A conditional deferral that names a specific metric is warmer than a generic pass and should be filed as a future lead, not as closed.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n        \"cap:founder_office.fundraising.investor_relations#f2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Treating a pass as terminal discards what Paul Graham calls 'some of your warmest leads for future fundraising'.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A conditional pass should be logged with the exact words of the condition and the date it was received, so it can be reopened without re-pitching.\",\n      \"why\": \"The founder will forget the condition or the investor's name in three months; a note in the file prevents a cold re-approach and preserves the relationship.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most founders do not follow up on conditional passes until they have the metric, and many never do; those who do reopen at the right moment convert at a higher rate than cold outreach.\",\n      \"why\": \"A conditional pass is a standing invitation, and the investor has already said yes to the company if the condition is met; the founder's job is to prove it.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The note to reopen should be brief, factual, and lead with the metric: 'We now have ten paying customers. Here's what changed.' Nothing more.\",\n      \"why\": \"The investor already knows the company; they are waiting for proof of the condition, not a re-pitch. A long email signals that the founder does not understand what the investor said.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Ridgeline Capital is a real investor with a real cheque size and thesis that fits Nimbus Labs.\",\n      \"needs\": \"Confirmation that Ridgeline Capital is in the brief's target list, or that Gautam Varma is a known partner at the fund.\"\n    },\n    {\n      \"proposition\": \"The ten-customer metric is achievable within a reasonable timeframe for Nimbus Labs.\",\n      \"needs\": \"The founder's estimate of how long it will take to reach ten paying customers, and whether that timeline fits the seed round's urgency.\"\n    },\n    {\n      \"proposition\": \"Ridgeline Capital's pass was on traction alone, not on a deeper concern about the team or product.\",\n      \"needs\": \"The founder's read of the relationship before this email, and whether Gautam Varma has invested in similar companies.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Ridgeline Capital a fund the founder was targeting, or an unexpected inbound?\",\n      \"relevance\": \"If unexpected, the founder may not have context on the fund's stage, cheque size, or thesis; if targeted, the pass may signal a misalignment that the metric alone will not fix.\"\n    },\n    {\n      \"question\": \"How many paying customers does Nimbus Labs have now, and what is the trajectory?\",\n      \"relevance\": \"If the company is already at eight or nine customers, the reopen is imminent; if at two or three, it may take months, and the founder should decide whether to prioritize this investor or focus on the round.\"\n    },\n    {\n      \"question\": \"Did the founder or a connector introduce Nimbus Labs to Ridgeline Capital, or did the fund source the company?\",\n      \"relevance\": \"If a connector made the intro, the founder should loop them in on the reopen; if the fund sourced it, the founder should confirm that Gautam Varma is the right person to send the note to.\"\n    },\n    {\n      \"question\": \"What is the founder's current investor pipeline, and how many other funds are in the round?\",\n      \"relevance\": \"If the round is already oversubscribed or closing, Ridgeline Capital's conditional pass may not matter; if the round is slow, it is a valuable warm lead to track.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A conditional deferral from a real investor who likes the team but is waiting for proof of traction before committing. The pass is on stage, not on the company, and carries an implicit date on which it stops being true.\",\n    \"rivals\": [\n      \"A soft no disguised as a condition: the investor is not interested and is using the metric as a polite exit.\",\n      \"A test of the founder's execution: the investor wants to see whether the founder can hit the metric, and will invest if they do.\",\n      \"A generic pass that the founder should file and forget: the metric is too high or too far away to matter for this round.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Ridgeline Capital is a fund that passed on the seed round with a conditional criterion. The file is about an investor relationship, not a program, compliance, hiring, intro, partner, or vendor engagement.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this file, so no stage is expected. However, the file's domain is fundraising, and the investor has passed with a condition. The expected next move is to log the condition and track progress toward the metric.\",\n    \"actual\": \"The investor passed with a specific condition (ten paying customers) and asked for a note when it is met. No reply has been sent, and the file has been quiet for over a day.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet and untracked. The founder forgets the condition or Gautam Varma's name. Months later, if the company reaches ten customers, the founder does not reopen the conversation, and Ridgeline Capital moves on to other companies. The warm lead is lost.\",\n    \"act\": \"The founder logs the condition and the date in the file, and sets a reminder to reopen when the company reaches ten paying customers. When the metric is hit, the founder sends a brief note to Gautam Varma with proof of the milestone. Ridgeline Capital moves to a partner meeting or diligence.\",\n    \"best\": \"The company reaches ten paying customers within two months. The founder sends a note to Gautam Varma. The investor is impressed by the execution and moves quickly to a term sheet. Ridgeline Capital becomes a lead investor in the seed round.\",\n    \"worst\": \"The company never reaches ten paying customers, or takes over a year to do so. By then, Ridgeline Capital has moved on, and the founder never reopens the conversation. The warm lead is wasted, and the founder learns too late that the investor was serious.\",\n    \"signals_to_watch\": [\n      \"The company's customer acquisition rate and whether it is accelerating.\",\n      \"Whether the founder has logged the condition and set a reminder to reopen.\",\n      \"Whether Gautam Varma or Ridgeline Capital reaches out with any other signals (e.g., a portfolio company that competes, a shift in the fund's thesis).\",\n      \"Whether the founder closes the seed round before reaching ten customers, which would make the conditional pass moot.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The investor has passed, so there is no immediate action required; the stakes are medium because Ridgeline Capital is a real fund with a real cheque, and the condition is achievable.\",\n      \"Urgency is low because the investor has set a clear condition and asked for a note when it is met; there is no time pressure until the company reaches ten customers.\",\n      \"A wrong move (e.g., re-pitching too early, or forgetting to reopen) is reversible; the founder can always send a note later if the metric is hit.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Log the condition in the file and set a reminder to reopen when the company reaches ten paying customers. Track the company's customer acquisition rate and confirm that the metric is achievable within a reasonable timeframe.\",\n    \"for_whom\": \"Ridgeline Capital, via Gautam Varma\",\n    \"by_when\": null,\n    \"rests_on\": [\n      \"fact:1\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n      \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder believes the ten-customer metric is unachievable or will take too long, send a brief note to Gautam Varma asking whether there is a lower threshold or a different metric that would bring the fund back into the conversation sooner. This is a lower-probability move, but it clarifies the investor's true position.\",\n  \"wait_or_stop\": \"Wait until the company reaches ten paying customers, or until the founder has a clear signal that the metric is unachievable. If the company reaches ten customers, send the reopen note within a week. If the company closes the seed round before reaching ten customers, the conditional pass becomes moot and the file can be closed. If more than a year passes with no progress toward the metric, the file can be archived as a historical lead.\",\n  \"done_when\": \"The condition is logged in the file with the exact words and the date received. A reminder is set to reopen when the company reaches ten paying customers. When the metric is hit, a brief note is sent to Gautam Varma with proof of the milestone, and the investor responds with a next step (e.g., a call, a data-room request, or a term sheet).\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "7b2f78c14ef6093e1d8ac096faf7aa4f2f14a8d7d0d07697c627b63fc4518115": {
+  "framed": true,
+  "input_tokens": 6020,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2979,
+  "parsed": {
+   "alternative": "If you believe Vertex Angels is a strategic fit for your seed round, research their investment thesis and decision-makers now, and send a warm introduction request through a connector (such as Introly) rather than waiting for a reply to an unsolicited update.",
+   "appraisal": {
+    "reasons": [
+     "Vertex Angels is not on your deliberate seed round prospect list, so the stakes are lower than for named funds like Banyan or Northfield.",
+     "Over a week of silence is normal for unsolicited outreach; there is no deadline or time-sensitive opportunity at risk.",
+     "A follow-up message or a decision to close the file can be reversed if new information arrives; no commitment has been made."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "Either Nandini replies with interest and you schedule a call, or you receive a clear pass and close the file with a note of the outcome.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "You sent an update to Nandini at Vertex Angels; no reply has been received in over a week.",
+    "expected": "If Vertex Angels is a deliberate prospect, the brief would name it among your seed round targets. If it is an inbound contact, the brief would note it as a new lead. The file's classification as support suggests neither.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You sent an update to Nandini at Vertex Angels on 2026-09-12 reporting 12 paying customers and two-day onboarding.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "we crossed 12 paying customers this month, and onboarding is down to two days"
+    },
+    {
+     "claim": "No reply has been received from Vertex Angels since that update was sent.",
+     "evidence": [
+      "cov:last_mail",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 8.17 days as of the dossier date.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Vertex Angels is not named in the brief as part of any work in motion.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is classified as a support case, not as investor, program, compliance, hiring, intro, or partner work.",
+     "evidence": [
+      "sit:sit_#1",
+      "file:domains"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time this file has been seen or judged.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@support",
+      "hist:derived.history.times_seen@support"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An unsolicited update sent to a potential investor contact with no prior relationship or scheduled follow-up, now silent for over a week.",
+    "rivals": [
+     "An inbound inquiry from Vertex Angels that was misfiled as support and needs reclassification as investor work.",
+     "A warm introduction to Vertex Angels that is proceeding normally through their evaluation cycle, with silence as an expected part of the process.",
+     "A contact who received the update but is not the right person to move it forward internally."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A follow-up after two weeks of silence, or a signal from Nandini (a meeting request, a question, or a referral to a partner).",
+     "proposition": "Vertex Angels is a potential investor who may be evaluating Nimbus Labs internally."
+    },
+    {
+     "needs": "A follow-up that asks directly whether they are interested, or a pivot to other prospects on your list.",
+     "proposition": "Vertex Angels is not a fit for your seed round and the silence is a soft pass."
+    },
+    {
+     "needs": "Research into Vertex Angels' structure and a follow-up to the right person, or confirmation from Nandini that she shared it.",
+     "proposition": "Nandini is not the decision-maker at Vertex Angels and your update was not forwarded."
+    },
+    {
+     "needs": "Confirmation of Vertex Angels' role in your fundraising strategy and reclassification of the file.",
+     "proposition": "The file was miscategorized as support when it should be investor work."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "file:role",
+      "brief:cbl_#7",
+      "brief:cbl_#8"
+     ],
+     "claim": "Vertex Angels appears to be an inbound contact, not an outbound prospect from your seed round strategy."
+    },
+    {
+     "based_on": [
+      "file:first_touch",
+      "file:role"
+     ],
+     "claim": "The update you sent was unsolicited or exploratory, since no prior engagement with Vertex Angels is recorded in the brief."
+    },
+    {
+     "based_on": [
+      "num:days_quiet",
+      "num:their_reply_time:nandini@vertexangels.test"
+     ],
+     "claim": "The silence may indicate either lack of interest, a slow review cycle, or that the contact is not the right person at Vertex Angels."
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "sit:sit_#1"
+     ],
+     "claim": "The file's classification as support rather than investor work suggests a mismatch between what you sent and how the system categorized it."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-26",
+    "for_whom": "Nandini at Vertex Angels",
+    "guided_by": [
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1"
+    ],
+    "to": null,
+    "what": "Wait until 2026-09-26 (two weeks from the update). If no reply has arrived by then, send a brief follow-up asking whether Vertex Angels is interested in a conversation. If the follow-up receives no reply within three days, close the file and move on.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An update sent to an investor without prior warm introduction or scheduled call rarely generates a response; the absence of reply after over a week is the expected outcome, not a signal of rejection.",
+     "kind": "practice",
+     "why": "Investors receive hundreds of unsolicited updates; a reply requires prior relationship or exceptional timing."
+    },
+    {
+     "claim": "When a contact is not on your deliberate prospect list and appears only in a support file, it is usually either a cold outreach that did not convert or an inbound inquiry that was misfiled.",
+     "kind": "base_rate",
+     "why": "Your brief lists five named seed funds and one engaged fund; Vertex Angels is not among them, suggesting it was not part of your seed strategy."
+    },
+    {
+     "claim": "A contact who receives a strong product update and remains silent may be more interested than one who replies with polite deflection; silence can mean internal discussion is happening.",
+     "kind": "counter_pattern",
+     "why": "Investors often go quiet when they are evaluating; a quick no is easier to send than silence."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:N"
+     ],
+     "claim": "Unsolicited updates to potential investors without prior relationship typically receive no reply within a week.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "hist:derived.history.prior_card_verdict@support",
+      "file:role"
+     ],
+     "claim": "When a file is first seen and classified as support rather than investor work, it often indicates the contact was not sourced through your deliberate fundraising strategy.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "brief:cbl_#7"
+    ],
+    "kind": "investor",
+    "why": "The update you sent reports product metrics (12 paying customers, two-day onboarding) that are typical of a pitch or progress update to a potential seed investor. The brief lists five named seed funds and one engaged fund; Vertex Angels is not among them, but the content of your message is investor-focused, not support-focused."
+   },
+   "scenarios": {
+    "act": "You follow up with Nandini after two weeks of silence, asking whether Vertex Angels is interested in a conversation. This clarifies their position and either opens a dialogue or closes the loop. If they are interested, you move them into your active prospect list; if not, you move on.",
+    "best": "Nandini replies that Vertex Angels is interested and wants to schedule a call. You add them to your seed round prospects and move into a structured fundraising conversation.",
+    "do_nothing": "The file remains quiet and unresolved. After 14 days of silence, it will have been quiet for over three weeks. Without a playbook rule to close it, it will remain open indefinitely, consuming attention without progress. Vertex Angels may be evaluating internally, or may have moved on; you will not know which.",
+    "signals_to_watch": [
+     "A reply from Nandini within two days of a follow-up message.",
+     "A request for a call or meeting.",
+     "A question about your product, team, or fundraising timeline.",
+     "A referral to another person at Vertex Angels or to another investor.",
+     "Continued silence after a second follow-up, which would indicate disinterest."
+    ],
+    "worst": "Nandini does not reply to the follow-up, or replies that Vertex Angels is not a fit. You have spent two weeks waiting for a signal that never came, and must now decide whether to follow up again or close the file."
+   },
+   "unknowns": [
+    {
+     "question": "Is Vertex Angels a deliberate prospect in your seed round, or an inbound contact?",
+     "relevance": "This determines whether the silence is a normal part of your outreach cycle or a missed opportunity that needs follow-up."
+    },
+    {
+     "question": "How did you find Nandini, and was there a prior conversation before the update?",
+     "relevance": "A warm introduction or prior call changes the meaning of silence; an unsolicited email makes silence expected."
+    },
+    {
+     "question": "What is Vertex Angels' typical response time and decision cycle?",
+     "relevance": "Over a week of silence may be normal for their process, or it may indicate disinterest."
+    },
+    {
+     "question": "Is Nandini the right contact at Vertex Angels, or should the update have gone to a partner or investment committee?",
+     "relevance": "If Nandini is not the decision-maker, the silence may not reflect Vertex Angels' actual interest."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-26 for a reply. If none arrives, send a follow-up on that date. If the follow-up receives no reply by 2026-09-29, close the file and remove it from active tracking unless Vertex Angels reaches out."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You sent an update to Nandini at Vertex Angels on 2026-09-12 reporting 12 paying customers and two-day onboarding.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"we crossed 12 paying customers this month, and onboarding is down to two days\"\n    },\n    {\n      \"claim\": \"No reply has been received from Vertex Angels since that update was sent.\",\n      \"evidence\": [\n        \"cov:last_mail\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 8.17 days as of the dossier date.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Vertex Angels is not named in the brief as part of any work in motion.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is classified as a support case, not as investor, program, compliance, hiring, intro, or partner work.\",\n      \"evidence\": [\n        \"sit:sit_#1\",\n        \"file:domains\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time this file has been seen or judged.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@support\",\n        \"hist:derived.history.times_seen@support\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Vertex Angels appears to be an inbound contact, not an outbound prospect from your seed round strategy.\",\n      \"based_on\": [\n        \"file:role\",\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\"\n      ]\n    },\n    {\n      \"claim\": \"The update you sent was unsolicited or exploratory, since no prior engagement with Vertex Angels is recorded in the brief.\",\n      \"based_on\": [\n        \"file:first_touch\",\n        \"file:role\"\n      ]\n    },\n    {\n      \"claim\": \"The silence may indicate either lack of interest, a slow review cycle, or that the contact is not the right person at Vertex Angels.\",\n      \"based_on\": [\n        \"num:days_quiet\",\n        \"num:their_reply_time:nandini@vertexangels.test\"\n      ]\n    },\n    {\n      \"claim\": \"The file's classification as support rather than investor work suggests a mismatch between what you sent and how the system categorized it.\",\n      \"based_on\": [\n        \"file:domains\",\n        \"sit:sit_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Unsolicited updates to potential investors without prior relationship typically receive no reply within a week.\",\n      \"based_on\": [\n        \"own:N\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a file is first seen and classified as support rather than investor work, it often indicates the contact was not sourced through your deliberate fundraising strategy.\",\n      \"based_on\": [\n        \"hist:derived.history.prior_card_verdict@support\",\n        \"file:role\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An update sent to an investor without prior warm introduction or scheduled call rarely generates a response; the absence of reply after over a week is the expected outcome, not a signal of rejection.\",\n      \"why\": \"Investors receive hundreds of unsolicited updates; a reply requires prior relationship or exceptional timing.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a contact is not on your deliberate prospect list and appears only in a support file, it is usually either a cold outreach that did not convert or an inbound inquiry that was misfiled.\",\n      \"why\": \"Your brief lists five named seed funds and one engaged fund; Vertex Angels is not among them, suggesting it was not part of your seed strategy.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A contact who receives a strong product update and remains silent may be more interested than one who replies with polite deflection; silence can mean internal discussion is happening.\",\n      \"why\": \"Investors often go quiet when they are evaluating; a quick no is easier to send than silence.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Vertex Angels is a potential investor who may be evaluating Nimbus Labs internally.\",\n      \"needs\": \"A follow-up after two weeks of silence, or a signal from Nandini (a meeting request, a question, or a referral to a partner).\"\n    },\n    {\n      \"proposition\": \"Vertex Angels is not a fit for your seed round and the silence is a soft pass.\",\n      \"needs\": \"A follow-up that asks directly whether they are interested, or a pivot to other prospects on your list.\"\n    },\n    {\n      \"proposition\": \"Nandini is not the decision-maker at Vertex Angels and your update was not forwarded.\",\n      \"needs\": \"Research into Vertex Angels' structure and a follow-up to the right person, or confirmation from Nandini that she shared it.\"\n    },\n    {\n      \"proposition\": \"The file was miscategorized as support when it should be investor work.\",\n      \"needs\": \"Confirmation of Vertex Angels' role in your fundraising strategy and reclassification of the file.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Vertex Angels a deliberate prospect in your seed round, or an inbound contact?\",\n      \"relevance\": \"This determines whether the silence is a normal part of your outreach cycle or a missed opportunity that needs follow-up.\"\n    },\n    {\n      \"question\": \"How did you find Nandini, and was there a prior conversation before the update?\",\n      \"relevance\": \"A warm introduction or prior call changes the meaning of silence; an unsolicited email makes silence expected.\"\n    },\n    {\n      \"question\": \"What is Vertex Angels' typical response time and decision cycle?\",\n      \"relevance\": \"Over a week of silence may be normal for their process, or it may indicate disinterest.\"\n    },\n    {\n      \"question\": \"Is Nandini the right contact at Vertex Angels, or should the update have gone to a partner or investment committee?\",\n      \"relevance\": \"If Nandini is not the decision-maker, the silence may not reflect Vertex Angels' actual interest.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An unsolicited update sent to a potential investor contact with no prior relationship or scheduled follow-up, now silent for over a week.\",\n    \"rivals\": [\n      \"An inbound inquiry from Vertex Angels that was misfiled as support and needs reclassification as investor work.\",\n      \"A warm introduction to Vertex Angels that is proceeding normally through their evaluation cycle, with silence as an expected part of the process.\",\n      \"A contact who received the update but is not the right person to move it forward internally.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The update you sent reports product metrics (12 paying customers, two-day onboarding) that are typical of a pitch or progress update to a potential seed investor. The brief lists five named seed funds and one engaged fund; Vertex Angels is not among them, but the content of your message is investor-focused, not support-focused.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"brief:cbl_#7\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"If Vertex Angels is a deliberate prospect, the brief would name it among your seed round targets. If it is an inbound contact, the brief would note it as a new lead. The file's classification as support suggests neither.\",\n    \"actual\": \"You sent an update to Nandini at Vertex Angels; no reply has been received in over a week.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet and unresolved. After 14 days of silence, it will have been quiet for over three weeks. Without a playbook rule to close it, it will remain open indefinitely, consuming attention without progress. Vertex Angels may be evaluating internally, or may have moved on; you will not know which.\",\n    \"act\": \"You follow up with Nandini after two weeks of silence, asking whether Vertex Angels is interested in a conversation. This clarifies their position and either opens a dialogue or closes the loop. If they are interested, you move them into your active prospect list; if not, you move on.\",\n    \"best\": \"Nandini replies that Vertex Angels is interested and wants to schedule a call. You add them to your seed round prospects and move into a structured fundraising conversation.\",\n    \"worst\": \"Nandini does not reply to the follow-up, or replies that Vertex Angels is not a fit. You have spent two weeks waiting for a signal that never came, and must now decide whether to follow up again or close the file.\",\n    \"signals_to_watch\": [\n      \"A reply from Nandini within two days of a follow-up message.\",\n      \"A request for a call or meeting.\",\n      \"A question about your product, team, or fundraising timeline.\",\n      \"A referral to another person at Vertex Angels or to another investor.\",\n      \"Continued silence after a second follow-up, which would indicate disinterest.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Vertex Angels is not on your deliberate seed round prospect list, so the stakes are lower than for named funds like Banyan or Northfield.\",\n      \"Over a week of silence is normal for unsolicited outreach; there is no deadline or time-sensitive opportunity at risk.\",\n      \"A follow-up message or a decision to close the file can be reversed if new information arrives; no commitment has been made.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Wait until 2026-09-26 (two weeks from the update). If no reply has arrived by then, send a brief follow-up asking whether Vertex Angels is interested in a conversation. If the follow-up receives no reply within three days, close the file and move on.\",\n    \"for_whom\": \"Nandini at Vertex Angels\",\n    \"by_when\": \"2026-09-26\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If you believe Vertex Angels is a strategic fit for your seed round, research their investment thesis and decision-makers now, and send a warm introduction request through a connector (such as Introly) rather than waiting for a reply to an unsolicited update.\",\n  \"wait_or_stop\": \"Wait until 2026-09-26 for a reply. If none arrives, send a follow-up on that date. If the follow-up receives no reply by 2026-09-29, close the file and remove it from active tracking unless Vertex Angels reaches out.\",\n  \"done_when\": \"Either Nandini replies with interest and you schedule a call, or you receive a clear pass and close the file with a note of the outcome.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

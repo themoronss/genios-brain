@@ -1,0 +1,520 @@
+{
+ "01961520c411817996671b921d018f5261dafdabce6a5c6989620a622be423e9": {
+  "framed": true,
+  "input_tokens": 8469,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3867,
+  "parsed": {
+   "alternative": "If the deck is not ready, send Ravi a note today saying you will send it by a specific date (e.g., 2026-09-12) and ask if he is available for a call on that date or shortly after. This keeps the conversation warm and sets a clear expectation.",
+   "appraisal": {
+    "reasons": [
+     "Seedfund is not a named target investor, so losing this conversation is not a critical loss, but it is a missed opportunity if Seedfund is a good fit.",
+     "The conversation is still warm: Ravi asked for the deck, which signals interest, but the seven-day silence is at the edge of becoming a soft no.",
+     "Sending the deck now is reversible: if Ravi passes, the founder can reopen later with new traction; if Ravi moves forward, the founder gains a potential investor.",
+     "The founder's time is finite, and this conversation is competing with the named targets; the decision to prioritize it depends on Seedfund's fit and the status of the named targets."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The deck is sent to Ravi, and he has replied with a next step (a call scheduled, a request for more information, or a pass). If Ravi passes, the file is closed and can be reopened if traction changes. If Ravi schedules a call or asks for more information, the file moves to the next stage.",
+   "draft": "Hi Ravi, Apologies for the delay\u2014attached is our deck. We'd love to find time for a call next week if you're available. Let me know what works. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The founder wrote to Ravi on 2026-09-01 asking for a meeting. Ravi replied on 2026-09-03 asking for the deck. The founder has not sent it, and Ravi has not followed up. The file is now quiet over seven days, longer than any gap it has closed before.",
+    "expected": "Without a playbook, the expectation comes from the brief and the file's own history. The brief names five seed-stage investors the founder is actively pursuing (Banyan, Northfield, Harbor Point, Tusker, Fjord) and one engaged (Lumen). Seedfund is not named. The expected pattern for a warm investor conversation is: outreach, request for materials, materials sent within one business day, meeting scheduled or next step agreed. The actual pattern is: outreach on 2026-09-01, request for deck on 2026-09-03, silence for over seven days.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Arjun wrote to Ravi Iyer at Seedfund on 2026-09-01 asking for a twenty-minute meeting to discuss Nimbus Labs' seed round.",
+     "evidence": [
+      "evt_#2",
+      "file:first_touch"
+     ],
+     "quote": "Nimbus Labs is raising a seed round to bring calendar-aware planning to small teams. Could we find 20 minutes next week?"
+    },
+    {
+     "claim": "Ravi Iyer replied on 2026-09-03 asking for the deck before a call.",
+     "evidence": [
+      "evt_#1",
+      "file:last_touch"
+     ],
+     "quote": "Could you send the deck before we speak?"
+    },
+    {
+     "claim": "The file has been quiet for over seven days since the last touch on 2026-09-03.",
+     "evidence": [
+      "num:days_quiet",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The next move is ours: Ravi asked for the deck and we have not sent it.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1",
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Seedfund is not named in the brief as a target investor.",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9",
+      "brief:cbl_#10",
+      "brief:cbl_#11",
+      "brief:cbl_#12"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no playbook: the brief names no kind of work for Seedfund.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's domain is fundraising.",
+     "evidence": [
+      "file:domains"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The usual gap between touches in this file is two days; the longest closed gap is two days; the file is now quiet over seven days.",
+     "evidence": [
+      "num:usual_gap",
+      "num:longest_gap",
+      "num:days_quiet"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm investor conversation that has stalled because the founder has not sent the requested deck; the investor signaled interest by asking for materials, but the founder's silence for over a week is now at risk of being read as a soft no.",
+    "rivals": [
+     "A low-priority cold outreach that the founder has deprioritized in favor of named targets; the investor's silence is the default state for a conversation that was never warm.",
+     "A conversation that is waiting for the founder to finish the deck; the investor is not chasing because the founder has not yet delivered what was asked."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder whether the deck was sent, and if so, when and to whom.",
+     "proposition": "The deck has been sent but the dossier does not show it because it was sent outside the monitored email accounts."
+    },
+    {
+     "needs": "The founder's ranking of investors by priority and stage fit; whether Seedfund was a cold outreach or a connector's introduction.",
+     "proposition": "Seedfund is a low-priority investor and the founder has deprioritized this conversation in favor of the named targets (Banyan, Northfield, Harbor Point, Tusker, Fjord, Lumen)."
+    },
+    {
+     "needs": "The status of the deck and the founder's timeline for finishing it.",
+     "proposition": "The deck is not ready and the founder is waiting to send it until it is polished."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "evt_#1"
+     ],
+     "claim": "Ravi's request for the deck is a conditional next step: he will not meet until he has seen it."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:2",
+      "cap:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "The silence since 2026-09-03 is a soft no or a deferral, not a hard pass: Ravi asked for something, which signals continued interest, but we have not sent it and he has not followed up."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "brief:cbl_#27"
+     ],
+     "claim": "Seedfund may have been introduced by Introly or reached cold; the dossier does not name it as a target, so it is likely a cold outreach or a connector's introduction."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "fact:3",
+      "fact:8"
+     ],
+     "claim": "The move is ours and overdue: we owe Ravi the deck, and the seven-day silence is longer than any gap this file has closed before."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-11",
+    "for_whom": "Ravi Iyer at Seedfund",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "cap:founder_office.heu.investor_relations.investors_do_not_chase",
+     "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:3",
+     "fact:4",
+     "inference:1",
+     "inference:4"
+    ],
+    "to": "ravi@seedfund.test",
+    "what": "send the deck to Ravi with a short note acknowledging the delay and reaffirming interest in a call",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A deck sent the same day or next morning to an investor who asked for it keeps the conversation in motion and prevents the investor from moving on to other companies.",
+     "kind": "practice",
+     "why": "Investors see many plans and have limited attention; a slow response is read as a lack of urgency or readiness on the founder's part."
+    },
+    {
+     "claim": "When the founder owes a move in a fundraising conversation, the clock runs against the founder, not the investor; silence beyond a week is usually a soft no unless the investor has named a specific date to reconnect.",
+     "kind": "base_rate",
+     "why": "Investors have no cost to waiting and many other options; a founder who does not move loses the investor's attention and momentum."
+    },
+    {
+     "claim": "A cold outreach or introduction to an investor who is not on the target list often signals the founder is casting a wide net or following a connector's suggestion; these conversations are lower priority than warm intros to named targets.",
+     "kind": "counter_pattern",
+     "why": "Warm intros to investors who fit the stage and thesis convert at higher rates; cold or low-fit conversations consume time without proportional return."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "When an investor asks for a deck before a call, sending it within one business day keeps the thread warm and signals seriousness.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4",
+      "cap:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "A request for a deck followed by silence from the founder for over a week often signals the founder has deprioritized the investor or is waiting for other conversations to move first.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "Investors who ask for materials before a meeting are screening for basic readiness; a delayed response is read as a signal of lower priority or execution risk.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "evt_#2",
+     "evt_#1"
+    ],
+    "kind": "investor",
+    "why": "The file is a fundraising conversation with an investor who asked for a deck before a meeting; it belongs in the investor relations workflow, not as a generic kind of work."
+   },
+   "scenarios": {
+    "act": "The founder sends the deck to Ravi today or tomorrow, with a short note. Ravi reviews it and either schedules a call, asks for more information, or passes. The conversation moves to a known stage (meeting scheduled, diligence, or pass) within a few days.",
+    "best": "The founder sends the deck. Ravi schedules a call within two days. The call goes well, and Ravi commits to the round or introduces the founder to a partner. Seedfund becomes a lead or a strong supporter.",
+    "do_nothing": "The file remains quiet. After another week, Ravi will have moved on to other companies. The conversation will be effectively closed, and reopening it later will require a new reason to reconnect (a lead investor, a revenue milestone, a launch). The founder will have lost a potential investor and the momentum of a warm conversation.",
+    "signals_to_watch": [
+     "Whether the deck is sent within one business day",
+     "Ravi's reply time after receiving the deck",
+     "Whether Ravi schedules a call, asks for more information, or passes",
+     "The tone and specificity of Ravi's reply (warm, neutral, or cold)",
+     "Whether Ravi introduces the founder to a partner or other investors"
+    ],
+    "worst": "The founder sends the deck. Ravi reviews it and passes, citing stage, traction, or thesis. The conversation ends. The founder has lost the time and attention that could have gone to the named targets."
+   },
+   "unknowns": [
+    {
+     "question": "Was the deck sent to Ravi after 2026-09-03, and if so, when?",
+     "relevance": "If the deck was sent, the file's status changes from overdue to awaiting Ravi's next move; if not, the founder must send it now to keep the conversation alive."
+    },
+    {
+     "question": "How does Seedfund fit the founder's target investor profile \u2014 stage, cheque size, thesis, portfolio?",
+     "relevance": "If Seedfund is a poor fit, the founder may be right to deprioritize it; if it is a good fit, the silence is a missed opportunity."
+    },
+    {
+     "question": "Was Seedfund introduced by Introly or reached cold?",
+     "relevance": "A warm intro carries more weight and warrants faster response; a cold outreach may be lower priority."
+    },
+    {
+     "question": "What is the status of the named target investors (Banyan, Northfield, Harbor Point, Tusker, Fjord, Lumen)?",
+     "relevance": "If the named targets are moving faster, the founder may be right to focus there; if they are also stalled, the founder should move all conversations in parallel."
+    }
+   ],
+   "wait_or_stop": "Wait if the founder confirms the deck was already sent and is waiting for Ravi's reply; in that case, follow up with Ravi on 2026-09-17 if he has not replied. Stop if the founder confirms Seedfund is a poor fit or a low priority; in that case, close the file and focus on the named targets."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Arjun wrote to Ravi Iyer at Seedfund on 2026-09-01 asking for a twenty-minute meeting to discuss Nimbus Labs' seed round.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:first_touch\"\n      ],\n      \"quote\": \"Nimbus Labs is raising a seed round to bring calendar-aware planning to small teams. Could we find 20 minutes next week?\"\n    },\n    {\n      \"claim\": \"Ravi Iyer replied on 2026-09-03 asking for the deck before a call.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"Could you send the deck before we speak?\"\n    },\n    {\n      \"claim\": \"The file has been quiet for over seven days since the last touch on 2026-09-03.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The next move is ours: Ravi asked for the deck and we have not sent it.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Seedfund is not named in the brief as a target investor.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\",\n        \"brief:cbl_#10\",\n        \"brief:cbl_#11\",\n        \"brief:cbl_#12\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no playbook: the brief names no kind of work for Seedfund.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's domain is fundraising.\",\n      \"evidence\": [\n        \"file:domains\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The usual gap between touches in this file is two days; the longest closed gap is two days; the file is now quiet over seven days.\",\n      \"evidence\": [\n        \"num:usual_gap\",\n        \"num:longest_gap\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Ravi's request for the deck is a conditional next step: he will not meet until he has seen it.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The silence since 2026-09-03 is a soft no or a deferral, not a hard pass: Ravi asked for something, which signals continued interest, but we have not sent it and he has not followed up.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:2\",\n        \"cap:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"claim\": \"Seedfund may have been introduced by Introly or reached cold; the dossier does not name it as a target, so it is likely a cold outreach or a connector's introduction.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"brief:cbl_#27\"\n      ]\n    },\n    {\n      \"claim\": \"The move is ours and overdue: we owe Ravi the deck, and the seven-day silence is longer than any gap this file has closed before.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"fact:3\",\n        \"fact:8\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an investor asks for a deck before a call, sending it within one business day keeps the thread warm and signals seriousness.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A request for a deck followed by silence from the founder for over a week often signals the founder has deprioritized the investor or is waiting for other conversations to move first.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\",\n        \"cap:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investors who ask for materials before a meeting are screening for basic readiness; a delayed response is read as a signal of lower priority or execution risk.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A deck sent the same day or next morning to an investor who asked for it keeps the conversation in motion and prevents the investor from moving on to other companies.\",\n      \"why\": \"Investors see many plans and have limited attention; a slow response is read as a lack of urgency or readiness on the founder's part.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When the founder owes a move in a fundraising conversation, the clock runs against the founder, not the investor; silence beyond a week is usually a soft no unless the investor has named a specific date to reconnect.\",\n      \"why\": \"Investors have no cost to waiting and many other options; a founder who does not move loses the investor's attention and momentum.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A cold outreach or introduction to an investor who is not on the target list often signals the founder is casting a wide net or following a connector's suggestion; these conversations are lower priority than warm intros to named targets.\",\n      \"why\": \"Warm intros to investors who fit the stage and thesis convert at higher rates; cold or low-fit conversations consume time without proportional return.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The deck has been sent but the dossier does not show it because it was sent outside the monitored email accounts.\",\n      \"needs\": \"Confirmation from the founder whether the deck was sent, and if so, when and to whom.\"\n    },\n    {\n      \"proposition\": \"Seedfund is a low-priority investor and the founder has deprioritized this conversation in favor of the named targets (Banyan, Northfield, Harbor Point, Tusker, Fjord, Lumen).\",\n      \"needs\": \"The founder's ranking of investors by priority and stage fit; whether Seedfund was a cold outreach or a connector's introduction.\"\n    },\n    {\n      \"proposition\": \"The deck is not ready and the founder is waiting to send it until it is polished.\",\n      \"needs\": \"The status of the deck and the founder's timeline for finishing it.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Was the deck sent to Ravi after 2026-09-03, and if so, when?\",\n      \"relevance\": \"If the deck was sent, the file's status changes from overdue to awaiting Ravi's next move; if not, the founder must send it now to keep the conversation alive.\"\n    },\n    {\n      \"question\": \"How does Seedfund fit the founder's target investor profile \u2014 stage, cheque size, thesis, portfolio?\",\n      \"relevance\": \"If Seedfund is a poor fit, the founder may be right to deprioritize it; if it is a good fit, the silence is a missed opportunity.\"\n    },\n    {\n      \"question\": \"Was Seedfund introduced by Introly or reached cold?\",\n      \"relevance\": \"A warm intro carries more weight and warrants faster response; a cold outreach may be lower priority.\"\n    },\n    {\n      \"question\": \"What is the status of the named target investors (Banyan, Northfield, Harbor Point, Tusker, Fjord, Lumen)?\",\n      \"relevance\": \"If the named targets are moving faster, the founder may be right to focus there; if they are also stalled, the founder should move all conversations in parallel.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm investor conversation that has stalled because the founder has not sent the requested deck; the investor signaled interest by asking for materials, but the founder's silence for over a week is now at risk of being read as a soft no.\",\n    \"rivals\": [\n      \"A low-priority cold outreach that the founder has deprioritized in favor of named targets; the investor's silence is the default state for a conversation that was never warm.\",\n      \"A conversation that is waiting for the founder to finish the deck; the investor is not chasing because the founder has not yet delivered what was asked.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is a fundraising conversation with an investor who asked for a deck before a meeting; it belongs in the investor relations workflow, not as a generic kind of work.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"evt_#2\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief and the file's own history. The brief names five seed-stage investors the founder is actively pursuing (Banyan, Northfield, Harbor Point, Tusker, Fjord) and one engaged (Lumen). Seedfund is not named. The expected pattern for a warm investor conversation is: outreach, request for materials, materials sent within one business day, meeting scheduled or next step agreed. The actual pattern is: outreach on 2026-09-01, request for deck on 2026-09-03, silence for over seven days.\",\n    \"actual\": \"The founder wrote to Ravi on 2026-09-01 asking for a meeting. Ravi replied on 2026-09-03 asking for the deck. The founder has not sent it, and Ravi has not followed up. The file is now quiet over seven days, longer than any gap it has closed before.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. After another week, Ravi will have moved on to other companies. The conversation will be effectively closed, and reopening it later will require a new reason to reconnect (a lead investor, a revenue milestone, a launch). The founder will have lost a potential investor and the momentum of a warm conversation.\",\n    \"act\": \"The founder sends the deck to Ravi today or tomorrow, with a short note. Ravi reviews it and either schedules a call, asks for more information, or passes. The conversation moves to a known stage (meeting scheduled, diligence, or pass) within a few days.\",\n    \"best\": \"The founder sends the deck. Ravi schedules a call within two days. The call goes well, and Ravi commits to the round or introduces the founder to a partner. Seedfund becomes a lead or a strong supporter.\",\n    \"worst\": \"The founder sends the deck. Ravi reviews it and passes, citing stage, traction, or thesis. The conversation ends. The founder has lost the time and attention that could have gone to the named targets.\",\n    \"signals_to_watch\": [\n      \"Whether the deck is sent within one business day\",\n      \"Ravi's reply time after receiving the deck\",\n      \"Whether Ravi schedules a call, asks for more information, or passes\",\n      \"The tone and specificity of Ravi's reply (warm, neutral, or cold)\",\n      \"Whether Ravi introduces the founder to a partner or other investors\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Seedfund is not a named target investor, so losing this conversation is not a critical loss, but it is a missed opportunity if Seedfund is a good fit.\",\n      \"The conversation is still warm: Ravi asked for the deck, which signals interest, but the seven-day silence is at the edge of becoming a soft no.\",\n      \"Sending the deck now is reversible: if Ravi passes, the founder can reopen later with new traction; if Ravi moves forward, the founder gains a potential investor.\",\n      \"The founder's time is finite, and this conversation is competing with the named targets; the decision to prioritize it depends on Seedfund's fit and the status of the named targets.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the deck to Ravi with a short note acknowledging the delay and reaffirming interest in a call\",\n    \"for_whom\": \"Ravi Iyer at Seedfund\",\n    \"by_when\": \"2026-09-11\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:3\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"cap:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n    ],\n    \"to\": \"ravi@seedfund.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the deck is not ready, send Ravi a note today saying you will send it by a specific date (e.g., 2026-09-12) and ask if he is available for a call on that date or shortly after. This keeps the conversation warm and sets a clear expectation.\",\n  \"wait_or_stop\": \"Wait if the founder confirms the deck was already sent and is waiting for Ravi's reply; in that case, follow up with Ravi on 2026-09-17 if he has not replied. Stop if the founder confirms Seedfund is a poor fit or a low priority; in that case, close the file and focus on the named targets.\",\n  \"done_when\": \"The deck is sent to Ravi, and he has replied with a next step (a call scheduled, a request for more information, or a pass). If Ravi passes, the file is closed and can be reopened if traction changes. If Ravi schedules a call or asks for more information, the file moves to the next stage.\",\n  \"draft\": \"Hi Ravi, Apologies for the delay\u2014attached is our deck. We'd love to find time for a call next week if you're available. Let me know what works. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "cd68420b1ff2dd43bc3f672b954261963cc0c36cca38f741e1de564e4658755d": {
+  "framed": true,
+  "input_tokens": 8292,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3695,
+  "parsed": {
+   "alternative": "Before sending the deck, confirm with the founder that the deck is ready and that Seedfund Partners is a fit for the round. If the deck is not ready, finish it first. If Seedfund Partners is a poor fit, consider deprioritizing them and focusing on investors who are a better match.",
+   "appraisal": {
+    "reasons": [
+     "Seedfund Partners is one investor in a seed round; losing this conversation is not fatal, but it is a lost opportunity.",
+     "The move is ours and the clock is running. Seven days of silence is already a deprioritization signal. Another week will likely end the conversation.",
+     "Sending the deck is reversible; not sending it is also reversible, but the cost of delay is high.",
+     "The brief names five other seed investors written to in the seed wave and one engaged. This file is one of many in the round. But each investor conversation run in parallel is a source of momentum; a conversation that stalls costs the round's velocity."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The deck is sent to Ravi Iyer. Ravi Iyer replies and either schedules a meeting or asks for more information. The conversation moves to the next stage.",
+   "draft": "Hi Ravi, attached is the Nimbus Labs deck. We're raising a seed round to bring calendar-aware planning to small teams. Happy to walk through it whenever works for you. Arjun",
+   "expected_vs_actual": {
+    "actual": "The deck has not been sent. Seven days have passed since the request. No follow-up has been sent to Ravi Iyer.",
+    "expected": "The brief names no playbook for this file. From the engine's lines on investor relations, the expected stage after a deck request is either a meeting scheduled or a follow-up from the investor asking when they can expect it. The expected move is to send the deck within one business day.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Seedfund Partners asked for a pitch deck before agreeing to speak.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you send the deck before we speak?"
+    },
+    {
+     "claim": "You initiated contact with Seedfund Partners on 2026-09-01, asking for a 20-minute call.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Could we find 20 minutes next week?"
+    },
+    {
+     "claim": "Seedfund Partners replied within two days of your outreach.",
+     "evidence": [
+      "evt_#2",
+      "evt_#1",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No deck has been sent to Seedfund Partners since their request on 2026-09-03.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for over a week, longer than any prior gap in this conversation.",
+     "evidence": [
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Seedfund Partners is not named in the brief as a target investor, and this file has no kind of work assigned to it.",
+     "evidence": [
+      "file:kind",
+      "file:role",
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9",
+      "brief:cbl_#10",
+      "brief:cbl_#11"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names five seed-stage investors written to in the seed wave, and one investor engaged: Lumen Ventures.",
+     "evidence": [
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9",
+      "brief:cbl_#10",
+      "brief:cbl_#11",
+      "brief:cbl_#12"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A live investor prospect has asked for a pitch deck and is waiting. The move is yours, and seven days of silence is a deprioritization signal that costs the relationship.",
+    "rivals": [
+     "A soft no disguised as a request \u2014 the investor is filtering you out and the deck request is a polite gate.",
+     "A conversation between meetings \u2014 the investor is genuinely interested but has no urgency, and the silence is normal.",
+     "An administrative oversight \u2014 the deck was drafted but not sent, or sent to the wrong address."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder that the deck is complete and in hand.",
+     "proposition": "The deck exists and is ready to send."
+    },
+    {
+     "needs": "The source of the introduction \u2014 who connected you to Ravi Iyer, and when.",
+     "proposition": "Seedfund Partners is a warm introduction, not a cold outreach."
+    },
+    {
+     "needs": "Confirmation of their stage, check size, and portfolio \u2014 whether they are a fit for your round or a long shot.",
+     "proposition": "Seedfund Partners is a real seed-stage investor with the right check size and thesis for your round."
+    },
+    {
+     "needs": "A check of your sent folder and drafts to confirm the deck was not sent.",
+     "proposition": "The silence is accidental \u2014 the deck was drafted but not sent, or sent to the wrong address."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The move is yours: Ravi Iyer has asked for a deliverable and is waiting for it."
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "file:role"
+     ],
+     "claim": "Seedfund Partners is a live investor prospect, not a named target in the brief, suggesting either an outbound cold or warm introduction not yet logged, or a prospect added after the brief was written."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "fact:5",
+      "cap:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "Seven days of silence after a direct request for a deck is a signal of deprioritization on your side, not on theirs."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "sig:founder_office.sit.live_investor_relationship"
+     ],
+     "claim": "The conversation is at the stage of a first meeting request, not yet a meeting scheduled or a partners' meeting booked."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-10",
+    "for_whom": "Ravi Iyer at Seedfund Partners",
+    "guided_by": [
+     "cap:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:4",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "ravi@seedfund.test",
+    "what": "send the pitch deck to Ravi Iyer with a brief note",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A deck request is a gate, not a commitment. Sending it same-day or next-day is table stakes; delay beyond that signals either disorganization or that you do not want the meeting.",
+     "kind": "practice",
+     "why": "Investors use the deck request to filter for founders who are organized and moving fast. A delayed response reads as a no before they have even looked at the deck."
+    },
+    {
+     "claim": "In seed fundraising, the first meeting is the hardest gate to pass. Once an investor asks for a deck, the probability of a meeting is high if the deck goes out fast; it drops sharply if it does not.",
+     "kind": "base_rate",
+     "why": "The ask for a deck is a signal of interest. Delay converts that signal into doubt about your execution."
+    },
+    {
+     "claim": "A single investor conversation run in isolation, without parallel momentum from other investors, has no clock and no urgency.",
+     "kind": "counter_pattern",
+     "why": "Investors move when they see other investors moving. A conversation that stands alone can wait indefinitely without anyone saying so."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:founder_office.heu.investor_relations.investors_do_not_chase",
+      "own:1"
+     ],
+     "claim": "When an investor asks for a deck before a call, sending it within one business day keeps the thread warm and signals seriousness.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "cap:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "A deck request followed by silence from the founder is often read as a soft no or deprioritization, even when the investor's tone was positive.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "Investors see far more companies than they can fund and lose nothing by dropping one; a founder who does not move quickly after a direct ask is at risk of being deprioritized.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "brief:cbl_#7",
+     "brief:cbl_#8",
+     "brief:cbl_#9",
+     "brief:cbl_#10",
+     "brief:cbl_#11"
+    ],
+    "kind": "investor",
+    "why": "Seedfund Partners is a seed-stage investor prospect in a fundraising conversation. The brief names this as a domain and lists five other seed investors written to in the seed wave. This file should be classified as investor, not as an unnamed kind of work."
+   },
+   "scenarios": {
+    "act": "Send the deck today. Ravi Iyer will review it and either schedule a meeting or ask for more information. The conversation will move to the next stage. The probability of a meeting remains high.",
+    "best": "The deck is strong. Ravi Iyer schedules a meeting within three days. The meeting goes well. A partners' meeting is booked. Seedfund Partners becomes a live lead in the round.",
+    "do_nothing": "After another week, the file will be quiet for over two weeks. Ravi Iyer will have moved on to other companies. The conversation will be dormant, and reopening it will require a new reason to reach out \u2014 a new traction milestone, a lead investor, or a restart of the round. The probability of a meeting drops sharply.",
+    "signals_to_watch": [
+     "Ravi Iyer replies to the deck within three days.",
+     "Ravi Iyer schedules a meeting or asks for a call.",
+     "Ravi Iyer does not reply after two weeks \u2014 a soft no.",
+     "Other investors in the wave move faster or slower \u2014 a signal of momentum or stagnation in the round."
+    ],
+    "worst": "The deck is sent, but Ravi Iyer does not reply. After two weeks, you follow up and learn that Seedfund Partners is not a fit for your stage or thesis. The conversation ends. The time spent on this prospect was wasted."
+   },
+   "unknowns": [
+    {
+     "question": "Is the deck ready to send, or is it still in draft?",
+     "relevance": "If the deck is ready, the move is to send it today. If it is not, the move is to finish it first, and the delay is a different problem."
+    },
+    {
+     "question": "How did you find Seedfund Partners, and is this a warm introduction or a cold outreach?",
+     "relevance": "A warm introduction carries more weight and suggests a higher probability of a meeting. A cold outreach to a generic address is a lower-probability play."
+    },
+    {
+     "question": "What is Seedfund Partners' actual stage, check size, and thesis? Do they fit your round?",
+     "relevance": "If they are a poor fit, the move is to deprioritize them and focus on investors who are. If they are a good fit, the move is to send the deck today."
+    },
+    {
+     "question": "Are you running this round in parallel with other investors, or in sequence?",
+     "relevance": "If in sequence, this conversation has no clock and no urgency. If in parallel, the silence costs momentum."
+    }
+   ],
+   "wait_or_stop": "Do not wait. Send the deck today. If Ravi Iyer does not reply within two weeks of the deck being sent, follow up once with a new fact \u2014 a lead investor, a revenue milestone, or a launch. If there is still no reply after that, file the conversation as a soft no and move on."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Seedfund Partners asked for a pitch deck before agreeing to speak.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you send the deck before we speak?\"\n    },\n    {\n      \"claim\": \"You initiated contact with Seedfund Partners on 2026-09-01, asking for a 20-minute call.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Could we find 20 minutes next week?\"\n    },\n    {\n      \"claim\": \"Seedfund Partners replied within two days of your outreach.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"evt_#1\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No deck has been sent to Seedfund Partners since their request on 2026-09-03.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for over a week, longer than any prior gap in this conversation.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Seedfund Partners is not named in the brief as a target investor, and this file has no kind of work assigned to it.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\",\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\",\n        \"brief:cbl_#10\",\n        \"brief:cbl_#11\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names five seed-stage investors written to in the seed wave, and one investor engaged: Lumen Ventures.\",\n      \"evidence\": [\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\",\n        \"brief:cbl_#10\",\n        \"brief:cbl_#11\",\n        \"brief:cbl_#12\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The move is yours: Ravi Iyer has asked for a deliverable and is waiting for it.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"Seedfund Partners is a live investor prospect, not a named target in the brief, suggesting either an outbound cold or warm introduction not yet logged, or a prospect added after the brief was written.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"file:role\"\n      ]\n    },\n    {\n      \"claim\": \"Seven days of silence after a direct request for a deck is a signal of deprioritization on your side, not on theirs.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"fact:5\",\n        \"cap:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"claim\": \"The conversation is at the stage of a first meeting request, not yet a meeting scheduled or a partners' meeting booked.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"sig:founder_office.sit.live_investor_relationship\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an investor asks for a deck before a call, sending it within one business day keeps the thread warm and signals seriousness.\",\n      \"based_on\": [\n        \"cap:founder_office.heu.investor_relations.investors_do_not_chase\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A deck request followed by silence from the founder is often read as a soft no or deprioritization, even when the investor's tone was positive.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"cap:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investors see far more companies than they can fund and lose nothing by dropping one; a founder who does not move quickly after a direct ask is at risk of being deprioritized.\",\n      \"based_on\": [\n        \"cap:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A deck request is a gate, not a commitment. Sending it same-day or next-day is table stakes; delay beyond that signals either disorganization or that you do not want the meeting.\",\n      \"why\": \"Investors use the deck request to filter for founders who are organized and moving fast. A delayed response reads as a no before they have even looked at the deck.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"In seed fundraising, the first meeting is the hardest gate to pass. Once an investor asks for a deck, the probability of a meeting is high if the deck goes out fast; it drops sharply if it does not.\",\n      \"why\": \"The ask for a deck is a signal of interest. Delay converts that signal into doubt about your execution.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A single investor conversation run in isolation, without parallel momentum from other investors, has no clock and no urgency.\",\n      \"why\": \"Investors move when they see other investors moving. A conversation that stands alone can wait indefinitely without anyone saying so.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The deck exists and is ready to send.\",\n      \"needs\": \"Confirmation from the founder that the deck is complete and in hand.\"\n    },\n    {\n      \"proposition\": \"Seedfund Partners is a warm introduction, not a cold outreach.\",\n      \"needs\": \"The source of the introduction \u2014 who connected you to Ravi Iyer, and when.\"\n    },\n    {\n      \"proposition\": \"Seedfund Partners is a real seed-stage investor with the right check size and thesis for your round.\",\n      \"needs\": \"Confirmation of their stage, check size, and portfolio \u2014 whether they are a fit for your round or a long shot.\"\n    },\n    {\n      \"proposition\": \"The silence is accidental \u2014 the deck was drafted but not sent, or sent to the wrong address.\",\n      \"needs\": \"A check of your sent folder and drafts to confirm the deck was not sent.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is the deck ready to send, or is it still in draft?\",\n      \"relevance\": \"If the deck is ready, the move is to send it today. If it is not, the move is to finish it first, and the delay is a different problem.\"\n    },\n    {\n      \"question\": \"How did you find Seedfund Partners, and is this a warm introduction or a cold outreach?\",\n      \"relevance\": \"A warm introduction carries more weight and suggests a higher probability of a meeting. A cold outreach to a generic address is a lower-probability play.\"\n    },\n    {\n      \"question\": \"What is Seedfund Partners' actual stage, check size, and thesis? Do they fit your round?\",\n      \"relevance\": \"If they are a poor fit, the move is to deprioritize them and focus on investors who are. If they are a good fit, the move is to send the deck today.\"\n    },\n    {\n      \"question\": \"Are you running this round in parallel with other investors, or in sequence?\",\n      \"relevance\": \"If in sequence, this conversation has no clock and no urgency. If in parallel, the silence costs momentum.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A live investor prospect has asked for a pitch deck and is waiting. The move is yours, and seven days of silence is a deprioritization signal that costs the relationship.\",\n    \"rivals\": [\n      \"A soft no disguised as a request \u2014 the investor is filtering you out and the deck request is a polite gate.\",\n      \"A conversation between meetings \u2014 the investor is genuinely interested but has no urgency, and the silence is normal.\",\n      \"An administrative oversight \u2014 the deck was drafted but not sent, or sent to the wrong address.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Seedfund Partners is a seed-stage investor prospect in a fundraising conversation. The brief names this as a domain and lists five other seed investors written to in the seed wave. This file should be classified as investor, not as an unnamed kind of work.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"brief:cbl_#7\",\n      \"brief:cbl_#8\",\n      \"brief:cbl_#9\",\n      \"brief:cbl_#10\",\n      \"brief:cbl_#11\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this file. From the engine's lines on investor relations, the expected stage after a deck request is either a meeting scheduled or a follow-up from the investor asking when they can expect it. The expected move is to send the deck within one business day.\",\n    \"actual\": \"The deck has not been sent. Seven days have passed since the request. No follow-up has been sent to Ravi Iyer.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"After another week, the file will be quiet for over two weeks. Ravi Iyer will have moved on to other companies. The conversation will be dormant, and reopening it will require a new reason to reach out \u2014 a new traction milestone, a lead investor, or a restart of the round. The probability of a meeting drops sharply.\",\n    \"act\": \"Send the deck today. Ravi Iyer will review it and either schedule a meeting or ask for more information. The conversation will move to the next stage. The probability of a meeting remains high.\",\n    \"best\": \"The deck is strong. Ravi Iyer schedules a meeting within three days. The meeting goes well. A partners' meeting is booked. Seedfund Partners becomes a live lead in the round.\",\n    \"worst\": \"The deck is sent, but Ravi Iyer does not reply. After two weeks, you follow up and learn that Seedfund Partners is not a fit for your stage or thesis. The conversation ends. The time spent on this prospect was wasted.\",\n    \"signals_to_watch\": [\n      \"Ravi Iyer replies to the deck within three days.\",\n      \"Ravi Iyer schedules a meeting or asks for a call.\",\n      \"Ravi Iyer does not reply after two weeks \u2014 a soft no.\",\n      \"Other investors in the wave move faster or slower \u2014 a signal of momentum or stagnation in the round.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Seedfund Partners is one investor in a seed round; losing this conversation is not fatal, but it is a lost opportunity.\",\n      \"The move is ours and the clock is running. Seven days of silence is already a deprioritization signal. Another week will likely end the conversation.\",\n      \"Sending the deck is reversible; not sending it is also reversible, but the cost of delay is high.\",\n      \"The brief names five other seed investors written to in the seed wave and one engaged. This file is one of many in the round. But each investor conversation run in parallel is a source of momentum; a conversation that stalls costs the round's velocity.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the pitch deck to Ravi Iyer with a brief note\",\n    \"for_whom\": \"Ravi Iyer at Seedfund Partners\",\n    \"by_when\": \"2026-09-10\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"ravi@seedfund.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"Before sending the deck, confirm with the founder that the deck is ready and that Seedfund Partners is a fit for the round. If the deck is not ready, finish it first. If Seedfund Partners is a poor fit, consider deprioritizing them and focusing on investors who are a better match.\",\n  \"wait_or_stop\": \"Do not wait. Send the deck today. If Ravi Iyer does not reply within two weeks of the deck being sent, follow up once with a new fact \u2014 a lead investor, a revenue milestone, or a launch. If there is still no reply after that, file the conversation as a soft no and move on.\",\n  \"done_when\": \"The deck is sent to Ravi Iyer. Ravi Iyer replies and either schedules a meeting or asks for more information. The conversation moves to the next stage.\",\n  \"draft\": \"Hi Ravi, attached is the Nimbus Labs deck. We're raising a seed round to bring calendar-aware planning to small teams. Happy to walk through it whenever works for you. Arjun\"\n}",
+  "site": "expert"
+ }
+}

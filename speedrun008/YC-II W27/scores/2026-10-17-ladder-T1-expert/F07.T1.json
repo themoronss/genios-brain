@@ -1,0 +1,737 @@
+{
+ "ba90d68eb108d9c2f1017c2a263a1a9bfd75b1e753273d0a10b7a546df62ae74": {
+  "framed": true,
+  "input_tokens": 7586,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4049,
+  "parsed": {
+   "alternative": "If you are uncertain what was discussed in the meeting, send a brief message to Leela asking to confirm next steps and your understanding of what she shared, rather than proposing a specific partnership. This is safer but weaker; it signals that you did not take notes and may read as disorganized.",
+   "appraisal": {
+    "reasons": [
+     "The brief names design partners as a goal; Ferngrove is a warm lead from a connector, suggesting real potential",
+     "The meeting happened and Leela showed genuine interest by preparing and sharing material; this is not a cold lead",
+     "The silence is now 2.1 days, longer than any prior gap, and you have not yet written; the window for a warm follow-up is closing",
+     "A follow-up message is reversible: if Leela does not respond, you can try again or move on; if she responds negatively, you have lost nothing but time",
+     "The file's kind of work is unnamed, so the stakes are unclear; clarifying it is the first step"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Leela responds with either a commitment to a next step (a design partnership, a follow-up call, a trial, or an introduction), or a clear decline. The file moves from 'quiet' to 'active' or 'closed' depending on her response.",
+   "draft": "Hi Leela, thanks for taking the time yesterday\u2014I really appreciated seeing Ferngrove's onboarding flow and hearing where you lose people. I can see how Nimbus Labs could help you there. I'd like to explore whether we could work together as design partners: you'd get early access to our product and help shape it for founders like you, and we'd get real feedback on what matters most. Would that be interesting to you? Happy to jump on a call to talk through what that would look like. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "A meeting occurred on 2026-08-13 at 09:30 UTC. No record of its content exists. No promises were extracted. You have not written to Ferngrove since. The file has been quiet for 2.1 days, longer than any prior gap.",
+    "expected": "The brief names no kind of work for Ferngrove and the dossier names no playbook. Without a playbook, expectation comes from the brief's goals and the file's own history. The brief lists design partners as a goal. The file shows a warm introduction, a same-day meeting, and a prepared counterparty. The expected next step is a follow-up from you that either proposes a design partnership or clarifies what Ferngrove is exploring.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to Leela Krishnan at Ferngrove on 2026-08-12 at 05:00 UTC",
+     "evidence": [
+      "evt_#4",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Leela Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "Leela responded the same day proposing a meeting at 3 pm IST on 2026-08-13",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": "Hi Arjun, happy to connect. I've sent you an invite for tomorrow at 3 pm IST."
+    },
+    {
+     "claim": "Leela sent a follow-up message on 2026-08-13 at 08:00 UTC confirming the meeting and stating her intent to bring Ferngrove's onboarding flow",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Looking forward to it. I'll bring our current onboarding flow so you can see where we lose people."
+    },
+    {
+     "claim": "A meeting occurred on 2026-08-13 at 09:30 UTC titled 'Ferngrove x Nimbus Labs' but no record of its content exists",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 2.1 days since the meeting, longer than any prior gap in the thread",
+     "evidence": [
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises were extracted from Ferngrove's mail",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in your court: the file's whose_move field reads 'ours'",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for Ferngrove",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was created queuing 'send a follow-up message', updated from an earlier version about researching Ferngrove",
+     "evidence": [
+      "card:card_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction from a connector led to a same-day meeting with a prepared counterparty who showed genuine interest. The meeting happened but its outcome is undocumented. You have not yet written to Ferngrove since the meeting, and the silence is now longer than any prior gap in the thread. The next move is yours, but its shape depends on what was agreed in the meeting.",
+    "rivals": [
+     "A successful exploratory meeting where both parties are now evaluating internally; silence is normal process, and chasing now would be premature",
+     "A meeting where expectations were misaligned; Leela expected you to follow up with a proposal, and your silence is now read as lack of interest",
+     "A meeting that was cordial but produced no real interest; Leela is politely disengaging and will not respond to a follow-up"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A note from the founder on what was discussed and whether Ferngrove showed interest in being a design partner",
+     "proposition": "Ferngrove is a design partner prospect and the meeting was exploratory"
+    },
+    {
+     "needs": "Clarity on whether Ferngrove has a problem Nimbus Labs solves and whether they are evaluating solutions",
+     "proposition": "Ferngrove is a potential customer and the meeting was a discovery call"
+    },
+    {
+     "needs": "A signal from Ferngrove about timing and next steps, or a follow-up from you that prompts one",
+     "proposition": "Leela is exploring whether Nimbus Labs could help Ferngrove and is now evaluating internally"
+    },
+    {
+     "needs": "A message from you that names what you learned and what you propose to do with it",
+     "proposition": "The meeting was successful and Leela is now waiting for you to propose next steps"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "evt_#3",
+      "evt_#2"
+     ],
+     "claim": "Leela showed genuine interest: she replied within hours, initiated the meeting, and prepared to share Ferngrove's operational detail"
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "none:promises"
+     ],
+     "claim": "The meeting happened as scheduled, but its outcome and any commitments made are undocumented"
+    },
+    {
+     "based_on": [
+      "num:days_quiet",
+      "num:longest_gap",
+      "evt_#2"
+     ],
+     "claim": "The silence since the meeting is unusual: it breaks the pattern of rapid replies and suggests either a natural pause after the meeting or an unmet expectation about follow-up"
+    },
+    {
+     "based_on": [
+      "none:we_wrote"
+     ],
+     "claim": "You have not yet written anything to Ferngrove after the meeting"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-15",
+    "for_whom": "Leela Krishnan at Ferngrove",
+    "guided_by": [
+     "own:1",
+     "own:4",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "sig:admin.sit.live_account_admin"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "fact:5",
+     "fact:7",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "leela@ferngrove.test",
+    "what": "send a follow-up message to Leela that thanks her for the meeting, names what you learned about Ferngrove's onboarding flow, and proposes a next step",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "After a substantive meeting where the other party prepared and shared material, the founder should document what was learned and what was agreed within 24 hours, even if only to confirm understanding",
+     "kind": "practice",
+     "why": "A meeting without a written record of its outcome leaves both parties uncertain about next steps and creates risk of misalignment; the founder's silence after the meeting is now the longest gap in the thread and suggests the meeting's value may be lost"
+    },
+    {
+     "claim": "Chasing before reading whose turn it is is the commonest error in administrative work and damages relationships",
+     "kind": "counter_pattern",
+     "why": "A reminder sent to someone waiting on you reads as incompetence; the rule holds even when silence has been long"
+    },
+    {
+     "claim": "A meeting with a product leader who brings their onboarding flow is usually exploratory: they are showing you a problem space, not making a commitment",
+     "kind": "practice",
+     "why": "The founder should clarify whether Ferngrove is a design partner prospect, a customer reference, a hiring lead, or something else before the next move"
+    },
+    {
+     "claim": "When the kind of work is unnamed in the brief, the first move after a meeting is to name it",
+     "kind": "base_rate",
+     "why": "Without a frame, follow-up is reactive; with one, it is purposeful"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "evt_#4",
+      "evt_#3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Introductions from connectors that result in a meeting within 24 hours and a prepared counterparty usually indicate serious interest",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence after a meeting is often process, not disinterest, and escalating on quietness alone converts a normal wait into a relationship event",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "evt_#2"
+     ],
+     "claim": "When a counterparty brings materials to a meeting and states intent to show them, the meeting usually produces a next step or a follow-up request",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#2",
+     "brief:cbl_#6",
+     "brief:cbl_#23",
+     "brief:cbl_#24",
+     "brief:cbl_#25",
+     "brief:cbl_#26"
+    ],
+    "kind": "partner",
+    "why": "Leela stated she would bring Ferngrove's onboarding flow to show where they lose people; this is the language of a design partner exploration, not a customer discovery or a vendor evaluation. The brief lists design partners as a goal and names four prospects; Ferngrove is not among them, suggesting this is a new lead introduced by Introly."
+   },
+   "scenarios": {
+    "act": "You send a message to Leela that names what you learned in the meeting, thanks her for sharing Ferngrove's onboarding flow, and proposes a next step: either a design partnership, a follow-up conversation, or a specific ask. This clarifies the relationship and gives Leela a clear choice to accept, decline, or counter-propose.",
+    "best": "Leela responds within 24 hours confirming interest in a design partnership or proposing a next step. Ferngrove becomes a design partner, providing real-world feedback on Nimbus Labs' product and helping you refine it for founders in similar situations.",
+    "do_nothing": "Silence continues. Leela may interpret your lack of follow-up as disinterest or as a signal that you are waiting for her to move. If she was waiting for you to propose next steps, the opportunity cools. If she was evaluating internally, she may reach out in a week or two, or she may not. The file drifts into dormancy without a clear reason.",
+    "signals_to_watch": [
+     "Whether Leela responds to your follow-up within 48 hours",
+     "Whether her response names a specific next step or timeline",
+     "Whether she asks for more information about Nimbus Labs or proposes a trial",
+     "Whether she introduces you to others at Ferngrove or asks to introduce you to her team"
+    ],
+    "worst": "Leela does not respond to your follow-up, or responds with a polite decline. The relationship ends without clarity on why, and the opportunity is lost."
+   },
+   "unknowns": [
+    {
+     "question": "What was discussed in the meeting and what did Leela show you about Ferngrove's onboarding flow?",
+     "relevance": "The outcome of the meeting determines whether Ferngrove is a design partner, a customer prospect, a hiring lead, or something else; without it, any follow-up is guesswork"
+    },
+    {
+     "question": "Did you and Leela agree on a next step or a timeline during the meeting?",
+     "relevance": "If a next step was agreed, the silence may be normal; if not, you are now overdue to propose one"
+    },
+    {
+     "question": "What is Ferngrove's business and how does it relate to Nimbus Labs?",
+     "relevance": "The brief does not name Ferngrove's role; knowing it would clarify whether this is a partner, customer, or other relationship"
+    },
+    {
+     "question": "Is Leela waiting for you to follow up, or is she evaluating internally and will reach out when ready?",
+     "relevance": "This determines whether silence is a signal to act or a signal to wait"
+    }
+   ],
+   "wait_or_stop": "Wait if Leela responds to your follow-up with a clear next step or timeline. Stop if she does not respond within a week, or if she responds with a polite decline. Do not chase a second time; one follow-up after a meeting is the norm; a second chase converts interest into pressure."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to Leela Krishnan at Ferngrove on 2026-08-12 at 05:00 UTC\",\n      \"evidence\": [\n        \"evt_#4\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Leela Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"Leela responded the same day proposing a meeting at 3 pm IST on 2026-08-13\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": \"Hi Arjun, happy to connect. I've sent you an invite for tomorrow at 3 pm IST.\"\n    },\n    {\n      \"claim\": \"Leela sent a follow-up message on 2026-08-13 at 08:00 UTC confirming the meeting and stating her intent to bring Ferngrove's onboarding flow\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Looking forward to it. I'll bring our current onboarding flow so you can see where we lose people.\"\n    },\n    {\n      \"claim\": \"A meeting occurred on 2026-08-13 at 09:30 UTC titled 'Ferngrove x Nimbus Labs' but no record of its content exists\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 2.1 days since the meeting, longer than any prior gap in the thread\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises were extracted from Ferngrove's mail\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in your court: the file's whose_move field reads 'ours'\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for Ferngrove\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was created queuing 'send a follow-up message', updated from an earlier version about researching Ferngrove\",\n      \"evidence\": [\n        \"card:card_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Leela showed genuine interest: she replied within hours, initiated the meeting, and prepared to share Ferngrove's operational detail\",\n      \"based_on\": [\n        \"evt_#3\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"The meeting happened as scheduled, but its outcome and any commitments made are undocumented\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"The silence since the meeting is unusual: it breaks the pattern of rapid replies and suggests either a natural pause after the meeting or an unmet expectation about follow-up\",\n      \"based_on\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"You have not yet written anything to Ferngrove after the meeting\",\n      \"based_on\": [\n        \"none:we_wrote\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Introductions from connectors that result in a meeting within 24 hours and a prepared counterparty usually indicate serious interest\",\n      \"based_on\": [\n        \"evt_#4\",\n        \"evt_#3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence after a meeting is often process, not disinterest, and escalating on quietness alone converts a normal wait into a relationship event\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a counterparty brings materials to a meeting and states intent to show them, the meeting usually produces a next step or a follow-up request\",\n      \"based_on\": [\n        \"evt_#2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"After a substantive meeting where the other party prepared and shared material, the founder should document what was learned and what was agreed within 24 hours, even if only to confirm understanding\",\n      \"why\": \"A meeting without a written record of its outcome leaves both parties uncertain about next steps and creates risk of misalignment; the founder's silence after the meeting is now the longest gap in the thread and suggests the meeting's value may be lost\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing before reading whose turn it is is the commonest error in administrative work and damages relationships\",\n      \"why\": \"A reminder sent to someone waiting on you reads as incompetence; the rule holds even when silence has been long\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting with a product leader who brings their onboarding flow is usually exploratory: they are showing you a problem space, not making a commitment\",\n      \"why\": \"The founder should clarify whether Ferngrove is a design partner prospect, a customer reference, a hiring lead, or something else before the next move\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When the kind of work is unnamed in the brief, the first move after a meeting is to name it\",\n      \"why\": \"Without a frame, follow-up is reactive; with one, it is purposeful\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Ferngrove is a design partner prospect and the meeting was exploratory\",\n      \"needs\": \"A note from the founder on what was discussed and whether Ferngrove showed interest in being a design partner\"\n    },\n    {\n      \"proposition\": \"Ferngrove is a potential customer and the meeting was a discovery call\",\n      \"needs\": \"Clarity on whether Ferngrove has a problem Nimbus Labs solves and whether they are evaluating solutions\"\n    },\n    {\n      \"proposition\": \"Leela is exploring whether Nimbus Labs could help Ferngrove and is now evaluating internally\",\n      \"needs\": \"A signal from Ferngrove about timing and next steps, or a follow-up from you that prompts one\"\n    },\n    {\n      \"proposition\": \"The meeting was successful and Leela is now waiting for you to propose next steps\",\n      \"needs\": \"A message from you that names what you learned and what you propose to do with it\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What was discussed in the meeting and what did Leela show you about Ferngrove's onboarding flow?\",\n      \"relevance\": \"The outcome of the meeting determines whether Ferngrove is a design partner, a customer prospect, a hiring lead, or something else; without it, any follow-up is guesswork\"\n    },\n    {\n      \"question\": \"Did you and Leela agree on a next step or a timeline during the meeting?\",\n      \"relevance\": \"If a next step was agreed, the silence may be normal; if not, you are now overdue to propose one\"\n    },\n    {\n      \"question\": \"What is Ferngrove's business and how does it relate to Nimbus Labs?\",\n      \"relevance\": \"The brief does not name Ferngrove's role; knowing it would clarify whether this is a partner, customer, or other relationship\"\n    },\n    {\n      \"question\": \"Is Leela waiting for you to follow up, or is she evaluating internally and will reach out when ready?\",\n      \"relevance\": \"This determines whether silence is a signal to act or a signal to wait\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction from a connector led to a same-day meeting with a prepared counterparty who showed genuine interest. The meeting happened but its outcome is undocumented. You have not yet written to Ferngrove since the meeting, and the silence is now longer than any prior gap in the thread. The next move is yours, but its shape depends on what was agreed in the meeting.\",\n    \"rivals\": [\n      \"A successful exploratory meeting where both parties are now evaluating internally; silence is normal process, and chasing now would be premature\",\n      \"A meeting where expectations were misaligned; Leela expected you to follow up with a proposal, and your silence is now read as lack of interest\",\n      \"A meeting that was cordial but produced no real interest; Leela is politely disengaging and will not respond to a follow-up\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"Leela stated she would bring Ferngrove's onboarding flow to show where they lose people; this is the language of a design partner exploration, not a customer discovery or a vendor evaluation. The brief lists design partners as a goal and names four prospects; Ferngrove is not among them, suggesting this is a new lead introduced by Introly.\",\n    \"evidence\": [\n      \"evt_#2\",\n      \"brief:cbl_#6\",\n      \"brief:cbl_#23\",\n      \"brief:cbl_#24\",\n      \"brief:cbl_#25\",\n      \"brief:cbl_#26\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no kind of work for Ferngrove and the dossier names no playbook. Without a playbook, expectation comes from the brief's goals and the file's own history. The brief lists design partners as a goal. The file shows a warm introduction, a same-day meeting, and a prepared counterparty. The expected next step is a follow-up from you that either proposes a design partnership or clarifies what Ferngrove is exploring.\",\n    \"actual\": \"A meeting occurred on 2026-08-13 at 09:30 UTC. No record of its content exists. No promises were extracted. You have not written to Ferngrove since. The file has been quiet for 2.1 days, longer than any prior gap.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Silence continues. Leela may interpret your lack of follow-up as disinterest or as a signal that you are waiting for her to move. If she was waiting for you to propose next steps, the opportunity cools. If she was evaluating internally, she may reach out in a week or two, or she may not. The file drifts into dormancy without a clear reason.\",\n    \"act\": \"You send a message to Leela that names what you learned in the meeting, thanks her for sharing Ferngrove's onboarding flow, and proposes a next step: either a design partnership, a follow-up conversation, or a specific ask. This clarifies the relationship and gives Leela a clear choice to accept, decline, or counter-propose.\",\n    \"best\": \"Leela responds within 24 hours confirming interest in a design partnership or proposing a next step. Ferngrove becomes a design partner, providing real-world feedback on Nimbus Labs' product and helping you refine it for founders in similar situations.\",\n    \"worst\": \"Leela does not respond to your follow-up, or responds with a polite decline. The relationship ends without clarity on why, and the opportunity is lost.\",\n    \"signals_to_watch\": [\n      \"Whether Leela responds to your follow-up within 48 hours\",\n      \"Whether her response names a specific next step or timeline\",\n      \"Whether she asks for more information about Nimbus Labs or proposes a trial\",\n      \"Whether she introduces you to others at Ferngrove or asks to introduce you to her team\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The brief names design partners as a goal; Ferngrove is a warm lead from a connector, suggesting real potential\",\n      \"The meeting happened and Leela showed genuine interest by preparing and sharing material; this is not a cold lead\",\n      \"The silence is now 2.1 days, longer than any prior gap, and you have not yet written; the window for a warm follow-up is closing\",\n      \"A follow-up message is reversible: if Leela does not respond, you can try again or move on; if she responds negatively, you have lost nothing but time\",\n      \"The file's kind of work is unnamed, so the stakes are unclear; clarifying it is the first step\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a follow-up message to Leela that thanks her for the meeting, names what you learned about Ferngrove's onboarding flow, and proposes a next step\",\n    \"for_whom\": \"Leela Krishnan at Ferngrove\",\n    \"by_when\": \"2026-08-15\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:3\",\n      \"fact:5\",\n      \"fact:7\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:4\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"sig:admin.sit.live_account_admin\"\n    ],\n    \"to\": \"leela@ferngrove.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If you are uncertain what was discussed in the meeting, send a brief message to Leela asking to confirm next steps and your understanding of what she shared, rather than proposing a specific partnership. This is safer but weaker; it signals that you did not take notes and may read as disorganized.\",\n  \"wait_or_stop\": \"Wait if Leela responds to your follow-up with a clear next step or timeline. Stop if she does not respond within a week, or if she responds with a polite decline. Do not chase a second time; one follow-up after a meeting is the norm; a second chase converts interest into pressure.\",\n  \"done_when\": \"Leela responds with either a commitment to a next step (a design partnership, a follow-up call, a trial, or an introduction), or a clear decline. The file moves from 'quiet' to 'active' or 'closed' depending on her response.\",\n  \"draft\": \"Hi Leela, thanks for taking the time yesterday\u2014I really appreciated seeing Ferngrove's onboarding flow and hearing where you lose people. I can see how Nimbus Labs could help you there. I'd like to explore whether we could work together as design partners: you'd get early access to our product and help shape it for founders like you, and we'd get real feedback on what matters most. Would that be interesting to you? Happy to jump on a call to talk through what that would look like. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "cb20fd5bdc77011ed5ed0ca2b61d06a37f37776ca15486913a7e34e789ccff44": {
+  "framed": true,
+  "input_tokens": 7288,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3011,
+  "parsed": {
+   "alternative": "If preparation time is limited, attend the meeting with a general readiness to listen and learn, and commit to a thorough follow-up within 24 hours. This is less ideal but still preserves the relationship.",
+   "appraisal": {
+    "reasons": [
+     "The meeting is imminent and represents a potential customer, partner, or investor relationship, which are core to the brief's goals",
+     "A poor meeting performance is reversible: you can follow up with more information or a second conversation",
+     "The relationship is new and unproven; there is no existing commitment at risk",
+     "Preparation now could significantly improve the meeting's outcome, but lack of preparation is not irreversible",
+     "The brief lists design partners as a goal, and Ferngrove could be a fit, but this is not yet confirmed"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The meeting has occurred, you have sent a follow-up message to Leela summarizing what you learned and proposing a concrete next step (or explaining why there is no fit), and Leela has either agreed to the next step or declined further engagement.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "Leela replied within four hours with a meeting invite for the next day. A meeting is now booked. This is ahead of typical expectations for an introduction.",
+    "expected": "After an introduction, the expected next step is either a meeting request or silence. A same-day positive reply with a meeting invite is the best-case outcome.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced Arjun to Leela Krishnan at Ferngrove on 2026-08-12 at 05:00 UTC",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Leela Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here."
+    },
+    {
+     "claim": "Leela replied the same day at 09:30 UTC proposing a meeting for the next day at 3 pm IST",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "happy to connect. I've sent you an invite for tomorrow at 3 pm IST"
+    },
+    {
+     "claim": "A meeting is booked for 2026-08-13 at 09:30 UTC titled 'Ferngrove x Nimbus Labs'",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.35 days, longer than any prior gap it closed",
+     "evidence": [
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises were made in the mail",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in Leela's court: she sent the invite and we are waiting for the meeting",
+     "evidence": [
+      "file:whose_move",
+      "evt_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction from a connector has converted to a confirmed meeting with a product leader at a potential partner or customer company. The meeting is imminent and represents an opportunity to explore a relationship.",
+    "rivals": [
+     "This is a courtesy meeting that Leela accepted out of politeness and may not lead anywhere",
+     "Ferngrove is exploring many tools and Nimbus Labs is one of several they are evaluating",
+     "Leela is gathering information for a competitive analysis or market research, not a genuine partnership exploration"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The meeting itself will reveal whether Ferngrove has a specific use case or is in early exploration",
+     "proposition": "Ferngrove is exploring AI tools for internal operations and sees Nimbus Labs as a potential fit"
+    },
+    {
+     "needs": "Leela's role as product lead and the speed of her response suggest she has decision-making authority; the meeting will show whether she has a mandate to explore partnerships",
+     "proposition": "Ferngrove might be interested in a design partnership or pilot with Nimbus Labs"
+    },
+    {
+     "needs": "Understanding Ferngrove's business model, stage, and current priorities will clarify which relationship makes sense",
+     "proposition": "This is a warm introduction that could lead to a customer, partner, or investor relationship"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "evt_#2"
+     ],
+     "claim": "Leela's response was immediate and positive, showing genuine interest in meeting"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "file:last_touch"
+     ],
+     "claim": "The meeting is scheduled for tomorrow from the file's timestamp, so it is imminent"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "This is a live account administration situation: an introduction has converted to a confirmed meeting"
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The quiet period is not a signal of disinterest; it is the normal gap between a meeting invite and the meeting itself"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-13",
+    "for_whom": "Leela Krishnan at Ferngrove",
+    "guided_by": [
+     "own:1",
+     "own:3",
+     "sig:admin.sit.live_account_admin"
+    ],
+    "rests_on": [
+     "fact:3",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "prepare for the meeting by researching Ferngrove, understanding their business, and preparing a clear narrative about Nimbus Labs; attend the meeting; follow up promptly after with a summary and next steps",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting booked same-day after an introduction is a strong signal of mutual interest and should be treated as a priority",
+     "kind": "practice",
+     "why": "Speed of response and willingness to meet indicate the counterparty sees potential value; this is when preparation matters most"
+    },
+    {
+     "claim": "Not all product leader meetings convert to partnerships or design relationships; many are exploratory and end without commitment",
+     "kind": "counter_pattern",
+     "why": "The meeting is a beginning, not a conclusion; the work is to understand what Ferngrove needs and whether Nimbus can help"
+    },
+    {
+     "claim": "The day before a meeting is the time to prepare: understand the counterparty's business, their likely pain points, and what you can offer",
+     "kind": "practice",
+     "why": "Walking in prepared converts a courtesy meeting into a substantive conversation"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin",
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "Introductions from connectors that result in a same-day positive reply and a meeting booking are high-signal introductions",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "brief:company",
+      "fact:1"
+     ],
+     "claim": "Product leaders at companies often explore partnerships or integrations with founder tools; the context of Nimbus Labs as an AI chief of staff makes this a plausible fit for Ferngrove's interests",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:introduced_by",
+     "file:role",
+     "evt_#2"
+    ],
+    "kind": "intro",
+    "why": "The file originated as an introduction from Introly, a connector. It has now converted to a meeting, but the underlying work is still the introduction and its follow-up. The brief lists this as an intro work type."
+   },
+   "scenarios": {
+    "act": "You prepare for the meeting by researching Ferngrove, understanding their business and likely pain points, and preparing a clear narrative about what Nimbus Labs does and how it might help. You attend the meeting ready to listen and ask good questions. After the meeting, you follow up promptly with next steps or a summary of what you learned.",
+    "best": "The meeting reveals a genuine fit: Ferngrove has a problem Nimbus Labs can solve, Leela has authority to move forward, and you agree on a next step\u2014a pilot, a design partnership, or a customer relationship. The relationship converts to a concrete commitment within weeks.",
+    "do_nothing": "The meeting proceeds as scheduled. If you do not prepare, you walk in without context about Ferngrove, and the conversation may be less productive. After the meeting, if there is no follow-up, the relationship cools.",
+    "signals_to_watch": [
+     "Leela's engagement during the meeting: does she ask detailed questions, or is she going through the motions?",
+     "Whether Leela mentions a specific problem or use case, or speaks only in general terms",
+     "Whether Leela introduces you to other stakeholders or keeps the conversation one-on-one",
+     "The speed and substance of Leela's follow-up after the meeting",
+     "Whether Ferngrove proposes a next step (pilot, deeper conversation, introduction to others) or ends the conversation"
+    ],
+    "worst": "The meeting is polite but reveals no fit. Ferngrove is exploring many tools and has no immediate need. Leela is not the decision-maker for partnerships. The relationship ends after the meeting with no follow-up."
+   },
+   "unknowns": [
+    {
+     "question": "What is Ferngrove's business, stage, and current priorities?",
+     "relevance": "This determines whether the meeting is exploratory, transactional, or strategic, and what you should prepare to discuss"
+    },
+    {
+     "question": "Why did Leela agree to meet so quickly, and what does she hope to learn?",
+     "relevance": "Understanding her motivation shapes the conversation and the follow-up"
+    },
+    {
+     "question": "Does Ferngrove have a specific problem Nimbus Labs could solve, or is this a general exploration?",
+     "relevance": "This determines whether the meeting could lead to a concrete next step or is primarily relationship-building"
+    },
+    {
+     "question": "What is Leela's decision-making authority and timeline?",
+     "relevance": "This determines whether a meeting with her can lead to a commitment or whether other stakeholders must be involved"
+    }
+   ],
+   "wait_or_stop": "Wait until after the meeting to decide on next steps. Stop if Ferngrove explicitly declines further engagement or if three weeks pass with no response to a follow-up."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced Arjun to Leela Krishnan at Ferngrove on 2026-08-12 at 05:00 UTC\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Leela Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\"\n    },\n    {\n      \"claim\": \"Leela replied the same day at 09:30 UTC proposing a meeting for the next day at 3 pm IST\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"happy to connect. I've sent you an invite for tomorrow at 3 pm IST\"\n    },\n    {\n      \"claim\": \"A meeting is booked for 2026-08-13 at 09:30 UTC titled 'Ferngrove x Nimbus Labs'\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.35 days, longer than any prior gap it closed\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises were made in the mail\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in Leela's court: she sent the invite and we are waiting for the meeting\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Leela's response was immediate and positive, showing genuine interest in meeting\",\n      \"based_on\": [\n        \"fact:2\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"The meeting is scheduled for tomorrow from the file's timestamp, so it is imminent\",\n      \"based_on\": [\n        \"fact:3\",\n        \"file:last_touch\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live account administration situation: an introduction has converted to a confirmed meeting\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\",\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"claim\": \"The quiet period is not a signal of disinterest; it is the normal gap between a meeting invite and the meeting itself\",\n      \"based_on\": [\n        \"fact:4\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Introductions from connectors that result in a same-day positive reply and a meeting booking are high-signal introductions\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\",\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Product leaders at companies often explore partnerships or integrations with founder tools; the context of Nimbus Labs as an AI chief of staff makes this a plausible fit for Ferngrove's interests\",\n      \"based_on\": [\n        \"brief:company\",\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting booked same-day after an introduction is a strong signal of mutual interest and should be treated as a priority\",\n      \"why\": \"Speed of response and willingness to meet indicate the counterparty sees potential value; this is when preparation matters most\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Not all product leader meetings convert to partnerships or design relationships; many are exploratory and end without commitment\",\n      \"why\": \"The meeting is a beginning, not a conclusion; the work is to understand what Ferngrove needs and whether Nimbus can help\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The day before a meeting is the time to prepare: understand the counterparty's business, their likely pain points, and what you can offer\",\n      \"why\": \"Walking in prepared converts a courtesy meeting into a substantive conversation\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Ferngrove is exploring AI tools for internal operations and sees Nimbus Labs as a potential fit\",\n      \"needs\": \"The meeting itself will reveal whether Ferngrove has a specific use case or is in early exploration\"\n    },\n    {\n      \"proposition\": \"Ferngrove might be interested in a design partnership or pilot with Nimbus Labs\",\n      \"needs\": \"Leela's role as product lead and the speed of her response suggest she has decision-making authority; the meeting will show whether she has a mandate to explore partnerships\"\n    },\n    {\n      \"proposition\": \"This is a warm introduction that could lead to a customer, partner, or investor relationship\",\n      \"needs\": \"Understanding Ferngrove's business model, stage, and current priorities will clarify which relationship makes sense\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Ferngrove's business, stage, and current priorities?\",\n      \"relevance\": \"This determines whether the meeting is exploratory, transactional, or strategic, and what you should prepare to discuss\"\n    },\n    {\n      \"question\": \"Why did Leela agree to meet so quickly, and what does she hope to learn?\",\n      \"relevance\": \"Understanding her motivation shapes the conversation and the follow-up\"\n    },\n    {\n      \"question\": \"Does Ferngrove have a specific problem Nimbus Labs could solve, or is this a general exploration?\",\n      \"relevance\": \"This determines whether the meeting could lead to a concrete next step or is primarily relationship-building\"\n    },\n    {\n      \"question\": \"What is Leela's decision-making authority and timeline?\",\n      \"relevance\": \"This determines whether a meeting with her can lead to a commitment or whether other stakeholders must be involved\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction from a connector has converted to a confirmed meeting with a product leader at a potential partner or customer company. The meeting is imminent and represents an opportunity to explore a relationship.\",\n    \"rivals\": [\n      \"This is a courtesy meeting that Leela accepted out of politeness and may not lead anywhere\",\n      \"Ferngrove is exploring many tools and Nimbus Labs is one of several they are evaluating\",\n      \"Leela is gathering information for a competitive analysis or market research, not a genuine partnership exploration\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file originated as an introduction from Introly, a connector. It has now converted to a meeting, but the underlying work is still the introduction and its follow-up. The brief lists this as an intro work type.\",\n    \"evidence\": [\n      \"file:introduced_by\",\n      \"file:role\",\n      \"evt_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"After an introduction, the expected next step is either a meeting request or silence. A same-day positive reply with a meeting invite is the best-case outcome.\",\n    \"actual\": \"Leela replied within four hours with a meeting invite for the next day. A meeting is now booked. This is ahead of typical expectations for an introduction.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The meeting proceeds as scheduled. If you do not prepare, you walk in without context about Ferngrove, and the conversation may be less productive. After the meeting, if there is no follow-up, the relationship cools.\",\n    \"act\": \"You prepare for the meeting by researching Ferngrove, understanding their business and likely pain points, and preparing a clear narrative about what Nimbus Labs does and how it might help. You attend the meeting ready to listen and ask good questions. After the meeting, you follow up promptly with next steps or a summary of what you learned.\",\n    \"best\": \"The meeting reveals a genuine fit: Ferngrove has a problem Nimbus Labs can solve, Leela has authority to move forward, and you agree on a next step\u2014a pilot, a design partnership, or a customer relationship. The relationship converts to a concrete commitment within weeks.\",\n    \"worst\": \"The meeting is polite but reveals no fit. Ferngrove is exploring many tools and has no immediate need. Leela is not the decision-maker for partnerships. The relationship ends after the meeting with no follow-up.\",\n    \"signals_to_watch\": [\n      \"Leela's engagement during the meeting: does she ask detailed questions, or is she going through the motions?\",\n      \"Whether Leela mentions a specific problem or use case, or speaks only in general terms\",\n      \"Whether Leela introduces you to other stakeholders or keeps the conversation one-on-one\",\n      \"The speed and substance of Leela's follow-up after the meeting\",\n      \"Whether Ferngrove proposes a next step (pilot, deeper conversation, introduction to others) or ends the conversation\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The meeting is imminent and represents a potential customer, partner, or investor relationship, which are core to the brief's goals\",\n      \"A poor meeting performance is reversible: you can follow up with more information or a second conversation\",\n      \"The relationship is new and unproven; there is no existing commitment at risk\",\n      \"Preparation now could significantly improve the meeting's outcome, but lack of preparation is not irreversible\",\n      \"The brief lists design partners as a goal, and Ferngrove could be a fit, but this is not yet confirmed\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"prepare for the meeting by researching Ferngrove, understanding their business, and preparing a clear narrative about Nimbus Labs; attend the meeting; follow up promptly after with a summary and next steps\",\n    \"for_whom\": \"Leela Krishnan at Ferngrove\",\n    \"by_when\": \"2026-08-13\",\n    \"rests_on\": [\n      \"fact:3\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:3\",\n      \"sig:admin.sit.live_account_admin\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If preparation time is limited, attend the meeting with a general readiness to listen and learn, and commit to a thorough follow-up within 24 hours. This is less ideal but still preserves the relationship.\",\n  \"wait_or_stop\": \"Wait until after the meeting to decide on next steps. Stop if Ferngrove explicitly declines further engagement or if three weeks pass with no response to a follow-up.\",\n  \"done_when\": \"The meeting has occurred, you have sent a follow-up message to Leela summarizing what you learned and proposing a concrete next step (or explaining why there is no fit), and Leela has either agreed to the next step or declined further engagement.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "f1691f83d3733dea75081a7ef3d448ca10856a56a4570bde989546724458fce0": {
+  "framed": true,
+  "input_tokens": 7486,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3503,
+  "parsed": {
+   "alternative": "If you are uncertain about what Ferngrove's specific problem is or what they are looking for, send a shorter follow-up asking Leela to clarify her goals before proposing a next step. This is lower risk but may feel less engaged.",
+   "appraisal": {
+    "reasons": [
+     "This is a single warm introduction that has moved to a first meeting; it is not yet a committed partnership or customer, so the stakes are not high, but it is a live opportunity",
+     "The window for a follow-up is narrow: a prompt response (within 24 hours) preserves momentum; a delayed response (beyond 3 business days) signals disinterest and is costly to recover from",
+     "A poor follow-up message can be corrected by a second message, but it damages the relationship and reduces the probability of conversion",
+     "The file is in your court and the next move is yours; delay is a choice that has consequences"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Leela responds to your follow-up with either a clear signal of interest (a question about your product, a proposal for a working session or demo, or a request for more information) or a polite decline. If she signals interest, the next move is to schedule a working session or demo. If she declines, close the file.",
+   "draft": "Hi Leela, thanks for the meeting yesterday and for sharing Ferngrove's onboarding flow \u2014 it was helpful to see where you're losing people. I'm curious: what would success look like for you? Are you looking to reduce drop-off at a specific stage, or improve the overall experience? I'd like to explore whether Nimbus could help. Would you be open to a working session where we look at your flow together and map out what an AI chief of staff could do? Let me know what works for you. \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "The meeting occurred on 2026-08-13 at 09:30 UTC; as of 2026-08-13 18:00 UTC (the last sync), you have not sent a follow-up message. The file is now quiet 0.35 days since the meeting.",
+    "expected": "The brief lists no playbook for this kind of work. From the file's own history: after a warm introduction and rapid meeting scheduling, the expected next move is a follow-up from you within one business day, clarifying interest and proposing next steps.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to Leela Krishnan at Ferngrove on 2026-08-12 at 05:00 UTC",
+     "evidence": [
+      "evt_#4",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Leela Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "Leela accepted the introduction and proposed a meeting the same day",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": "Hi Arjun, happy to connect. I've sent you an invite for tomorrow at 3 pm IST."
+    },
+    {
+     "claim": "Leela sent a follow-up message on 2026-08-13 at 08:00 UTC confirming the meeting and stating her intent to bring Ferngrove's onboarding flow",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Looking forward to it. I'll bring our current onboarding flow so you can see where we lose people."
+    },
+    {
+     "claim": "A meeting between you and Leela took place on 2026-08-13 at 09:30 UTC",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises or commitments were extracted from the mail in this file",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.35 days since the meeting",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was created on 2026-08-12 to prepare for the meeting by researching Ferngrove",
+     "evidence": [
+      "card:card_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction from a connector has moved quickly to a first meeting where the counterparty shared a specific problem; you are now in the critical window where a prompt, clear follow-up will either convert this into a partnership or customer relationship, or let it drift into silence.",
+    "rivals": [
+     "This is a courtesy meeting from someone who was introduced by a connector and is being polite; Leela may have no real interest and is waiting for you to make the next move so she can decline gracefully.",
+     "The meeting revealed a mismatch or Leela discovered you are not a fit for her needs; the silence is her way of signaling disinterest without being rude."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Leela's response to a follow-up asking what specific problem she wants to solve, or what outcome would matter to Ferngrove",
+     "proposition": "Ferngrove is exploring whether your AI chief of staff could help them improve their onboarding flow or reduce drop-off"
+    },
+    {
+     "needs": "Leela's response to a follow-up, or signals about whether she asks for a demo, references, or customer examples",
+     "proposition": "Ferngrove is vetting you as a potential competitor or adjacent player in their space"
+    },
+    {
+     "needs": "Silence beyond 3 business days, or a message from Leela indicating a change in priority",
+     "proposition": "The meeting revealed a mismatch and Leela is no longer interested"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:4",
+      "file:whose_move"
+     ],
+     "claim": "The ball is now in your court: Leela has shown interest, attended the meeting, and shared her problem; you have not yet responded or indicated next steps"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "brief:cbl_#6"
+     ],
+     "claim": "Leela's statement about losing people in onboarding suggests Ferngrove may be a potential design partner or customer for your AI chief of staff product"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "fact:6",
+      "num:longest_gap"
+     ],
+     "claim": "This is a live relationship in early stages: Leela initiated quickly, confirmed twice, and attended; the silence since the meeting is within normal post-meeting processing time"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-14",
+    "for_whom": "Leela Krishnan at Ferngrove",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "cap:admin.executive_support.commitment_tracking#f1"
+    ],
+    "rests_on": [
+     "fact:3",
+     "fact:4",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "leela@ferngrove.test",
+    "what": "send a follow-up message to Leela referencing the onboarding flow she shared, asking a clarifying question about Ferngrove's goals or the specific problem she wants to solve, and proposing a next step",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "After a substantive first meeting where the other party has shared a specific problem, the founder should follow up within one business day with a clear signal of next steps or interest",
+     "kind": "practice",
+     "why": "Silence after a meeting where materials were shared reads as either lack of interest or disorganization; a prompt follow-up preserves momentum and clarifies intent"
+    },
+    {
+     "claim": "Introductions that move from introduction to meeting in under 24 hours have a higher conversion rate to partnership or customer relationships than those that stall",
+     "kind": "base_rate",
+     "why": "Speed of response correlates with genuine fit; delays often indicate competing priorities or misalignment"
+    },
+    {
+     "claim": "A product person who shares their onboarding flow with a founder they just met is either exploring a potential solution or vetting a competitor",
+     "kind": "counter_pattern",
+     "why": "This is a specific, valuable artifact; sharing it signals either serious interest or due diligence"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "Introductions from connectors that result in same-day acceptance and rapid meeting scheduling indicate genuine interest",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:3"
+     ],
+     "claim": "A counterparty who brings specific materials to a meeting (in this case, onboarding flow) is signaling readiness to explore a concrete collaboration",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence after a meeting where the other party brought materials can indicate either processing time or a mismatch discovered during the conversation",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "fact:3",
+     "brief:cbl_#6",
+     "evt_#2"
+    ],
+    "kind": "partner",
+    "why": "Leela leads product at Ferngrove and brought her onboarding flow to the meeting, signaling interest in exploring how your AI chief of staff might help with a specific operational problem; this is consistent with design partner or customer exploration, not a transactional vendor relationship"
+   },
+   "scenarios": {
+    "act": "You send a follow-up message within 24 hours of the meeting, referencing the onboarding flow Leela shared, asking a clarifying question about her goals, and proposing a next step (a working session, a demo, or a follow-up call). Leela responds with either enthusiasm or a clear signal of whether this is a fit.",
+    "best": "Leela responds positively to your follow-up, confirms that your AI chief of staff could help Ferngrove reduce onboarding drop-off, and proposes a working session or pilot. This becomes a design partner or customer relationship that accelerates your product development and provides revenue or validation.",
+    "do_nothing": "Silence continues beyond 3 business days. Leela interprets your lack of follow-up as disinterest or disorganization. She moves on to other priorities. The relationship cools and the opportunity to explore a partnership or customer relationship is lost. By day 7, the file becomes dormant.",
+    "signals_to_watch": [
+     "Leela's response time to your follow-up: same day or next day indicates genuine interest; silence beyond 3 business days indicates disinterest",
+     "The specificity of Leela's response: does she ask clarifying questions about your product, or does she give a polite brush-off?",
+     "Whether Leela proposes a next step (demo, working session, customer reference call) or waits for you to propose one",
+     "Whether Leela asks for pricing, terms, or customer examples \u2014 signals of serious evaluation"
+    ],
+    "worst": "You send a follow-up that is generic or does not reference the specific problem Leela shared. Leela perceives this as a lack of attention or genuine interest. She does not respond, or responds with a polite decline. The relationship ends."
+   },
+   "unknowns": [
+    {
+     "question": "What was discussed in the meeting on 2026-08-13 at 09:30 UTC, and what did Leela say about Ferngrove's needs or interest?",
+     "relevance": "The meeting notes would clarify whether Ferngrove is a design partner prospect, a customer prospect, or neither; this determines the kind of work and the appropriate next move"
+    },
+    {
+     "question": "Did you make any commitments or promises during the meeting, or agree to any next steps?",
+     "relevance": "If you committed to something (a demo, a proposal, a follow-up call), the next move is to deliver it; if not, the next move is to propose one"
+    },
+    {
+     "question": "What is Ferngrove's stage, size, and business model?",
+     "relevance": "This would clarify whether they are a realistic design partner or customer for your product, and what kind of engagement makes sense"
+    }
+   ],
+   "wait_or_stop": "Wait if Leela has not responded by 2026-08-16; if she does not respond by 2026-08-20, the relationship has likely cooled and should be marked dormant unless she reaches out. Do not send a second chase message; instead, note the file as inactive and move on."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to Leela Krishnan at Ferngrove on 2026-08-12 at 05:00 UTC\",\n      \"evidence\": [\n        \"evt_#4\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Leela Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"Leela accepted the introduction and proposed a meeting the same day\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": \"Hi Arjun, happy to connect. I've sent you an invite for tomorrow at 3 pm IST.\"\n    },\n    {\n      \"claim\": \"Leela sent a follow-up message on 2026-08-13 at 08:00 UTC confirming the meeting and stating her intent to bring Ferngrove's onboarding flow\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Looking forward to it. I'll bring our current onboarding flow so you can see where we lose people.\"\n    },\n    {\n      \"claim\": \"A meeting between you and Leela took place on 2026-08-13 at 09:30 UTC\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises or commitments were extracted from the mail in this file\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.35 days since the meeting\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was created on 2026-08-12 to prepare for the meeting by researching Ferngrove\",\n      \"evidence\": [\n        \"card:card_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is now in your court: Leela has shown interest, attended the meeting, and shared her problem; you have not yet responded or indicated next steps\",\n      \"based_on\": [\n        \"fact:4\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"Leela's statement about losing people in onboarding suggests Ferngrove may be a potential design partner or customer for your AI chief of staff product\",\n      \"based_on\": [\n        \"fact:3\",\n        \"brief:cbl_#6\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live relationship in early stages: Leela initiated quickly, confirmed twice, and attended; the silence since the meeting is within normal post-meeting processing time\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\",\n        \"fact:6\",\n        \"num:longest_gap\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Introductions from connectors that result in same-day acceptance and rapid meeting scheduling indicate genuine interest\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A counterparty who brings specific materials to a meeting (in this case, onboarding flow) is signaling readiness to explore a concrete collaboration\",\n      \"based_on\": [\n        \"fact:3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence after a meeting where the other party brought materials can indicate either processing time or a mismatch discovered during the conversation\",\n      \"based_on\": [\n        \"fact:6\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"After a substantive first meeting where the other party has shared a specific problem, the founder should follow up within one business day with a clear signal of next steps or interest\",\n      \"why\": \"Silence after a meeting where materials were shared reads as either lack of interest or disorganization; a prompt follow-up preserves momentum and clarifies intent\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions that move from introduction to meeting in under 24 hours have a higher conversion rate to partnership or customer relationships than those that stall\",\n      \"why\": \"Speed of response correlates with genuine fit; delays often indicate competing priorities or misalignment\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A product person who shares their onboarding flow with a founder they just met is either exploring a potential solution or vetting a competitor\",\n      \"why\": \"This is a specific, valuable artifact; sharing it signals either serious interest or due diligence\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Ferngrove is exploring whether your AI chief of staff could help them improve their onboarding flow or reduce drop-off\",\n      \"needs\": \"Leela's response to a follow-up asking what specific problem she wants to solve, or what outcome would matter to Ferngrove\"\n    },\n    {\n      \"proposition\": \"Ferngrove is vetting you as a potential competitor or adjacent player in their space\",\n      \"needs\": \"Leela's response to a follow-up, or signals about whether she asks for a demo, references, or customer examples\"\n    },\n    {\n      \"proposition\": \"The meeting revealed a mismatch and Leela is no longer interested\",\n      \"needs\": \"Silence beyond 3 business days, or a message from Leela indicating a change in priority\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What was discussed in the meeting on 2026-08-13 at 09:30 UTC, and what did Leela say about Ferngrove's needs or interest?\",\n      \"relevance\": \"The meeting notes would clarify whether Ferngrove is a design partner prospect, a customer prospect, or neither; this determines the kind of work and the appropriate next move\"\n    },\n    {\n      \"question\": \"Did you make any commitments or promises during the meeting, or agree to any next steps?\",\n      \"relevance\": \"If you committed to something (a demo, a proposal, a follow-up call), the next move is to deliver it; if not, the next move is to propose one\"\n    },\n    {\n      \"question\": \"What is Ferngrove's stage, size, and business model?\",\n      \"relevance\": \"This would clarify whether they are a realistic design partner or customer for your product, and what kind of engagement makes sense\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction from a connector has moved quickly to a first meeting where the counterparty shared a specific problem; you are now in the critical window where a prompt, clear follow-up will either convert this into a partnership or customer relationship, or let it drift into silence.\",\n    \"rivals\": [\n      \"This is a courtesy meeting from someone who was introduced by a connector and is being polite; Leela may have no real interest and is waiting for you to make the next move so she can decline gracefully.\",\n      \"The meeting revealed a mismatch or Leela discovered you are not a fit for her needs; the silence is her way of signaling disinterest without being rude.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"Leela leads product at Ferngrove and brought her onboarding flow to the meeting, signaling interest in exploring how your AI chief of staff might help with a specific operational problem; this is consistent with design partner or customer exploration, not a transactional vendor relationship\",\n    \"evidence\": [\n      \"fact:3\",\n      \"brief:cbl_#6\",\n      \"evt_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief lists no playbook for this kind of work. From the file's own history: after a warm introduction and rapid meeting scheduling, the expected next move is a follow-up from you within one business day, clarifying interest and proposing next steps.\",\n    \"actual\": \"The meeting occurred on 2026-08-13 at 09:30 UTC; as of 2026-08-13 18:00 UTC (the last sync), you have not sent a follow-up message. The file is now quiet 0.35 days since the meeting.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Silence continues beyond 3 business days. Leela interprets your lack of follow-up as disinterest or disorganization. She moves on to other priorities. The relationship cools and the opportunity to explore a partnership or customer relationship is lost. By day 7, the file becomes dormant.\",\n    \"act\": \"You send a follow-up message within 24 hours of the meeting, referencing the onboarding flow Leela shared, asking a clarifying question about her goals, and proposing a next step (a working session, a demo, or a follow-up call). Leela responds with either enthusiasm or a clear signal of whether this is a fit.\",\n    \"best\": \"Leela responds positively to your follow-up, confirms that your AI chief of staff could help Ferngrove reduce onboarding drop-off, and proposes a working session or pilot. This becomes a design partner or customer relationship that accelerates your product development and provides revenue or validation.\",\n    \"worst\": \"You send a follow-up that is generic or does not reference the specific problem Leela shared. Leela perceives this as a lack of attention or genuine interest. She does not respond, or responds with a polite decline. The relationship ends.\",\n    \"signals_to_watch\": [\n      \"Leela's response time to your follow-up: same day or next day indicates genuine interest; silence beyond 3 business days indicates disinterest\",\n      \"The specificity of Leela's response: does she ask clarifying questions about your product, or does she give a polite brush-off?\",\n      \"Whether Leela proposes a next step (demo, working session, customer reference call) or waits for you to propose one\",\n      \"Whether Leela asks for pricing, terms, or customer examples \u2014 signals of serious evaluation\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is a single warm introduction that has moved to a first meeting; it is not yet a committed partnership or customer, so the stakes are not high, but it is a live opportunity\",\n      \"The window for a follow-up is narrow: a prompt response (within 24 hours) preserves momentum; a delayed response (beyond 3 business days) signals disinterest and is costly to recover from\",\n      \"A poor follow-up message can be corrected by a second message, but it damages the relationship and reduces the probability of conversion\",\n      \"The file is in your court and the next move is yours; delay is a choice that has consequences\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a follow-up message to Leela referencing the onboarding flow she shared, asking a clarifying question about Ferngrove's goals or the specific problem she wants to solve, and proposing a next step\",\n    \"for_whom\": \"Leela Krishnan at Ferngrove\",\n    \"by_when\": \"2026-08-14\",\n    \"rests_on\": [\n      \"fact:3\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"cap:admin.executive_support.commitment_tracking#f1\"\n    ],\n    \"to\": \"leela@ferngrove.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If you are uncertain about what Ferngrove's specific problem is or what they are looking for, send a shorter follow-up asking Leela to clarify her goals before proposing a next step. This is lower risk but may feel less engaged.\",\n  \"wait_or_stop\": \"Wait if Leela has not responded by 2026-08-16; if she does not respond by 2026-08-20, the relationship has likely cooled and should be marked dormant unless she reaches out. Do not send a second chase message; instead, note the file as inactive and move on.\",\n  \"done_when\": \"Leela responds to your follow-up with either a clear signal of interest (a question about your product, a proposal for a working session or demo, or a request for more information) or a polite decline. If she signals interest, the next move is to schedule a working session or demo. If she declines, close the file.\",\n  \"draft\": \"Hi Leela, thanks for the meeting yesterday and for sharing Ferngrove's onboarding flow \u2014 it was helpful to see where you're losing people. I'm curious: what would success look like for you? Are you looking to reduce drop-off at a specific stage, or improve the overall experience? I'd like to explore whether Nimbus could help. Would you be open to a working session where we look at your flow together and map out what an AI chief of staff could do? Let me know what works for you. \u2014 Arjun\"\n}",
+  "site": "expert"
+ }
+}

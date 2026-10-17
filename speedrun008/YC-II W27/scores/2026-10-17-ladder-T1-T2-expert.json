@@ -1,0 +1,146 @@
+{
+ "model": "ladder:T1,T2",
+ "site": "expert",
+ "date": "2026-10-17",
+ "cases": [
+  {
+   "case": "F11",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 5,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "unknown_evidence": 3,
+    "unsupported": 1
+   },
+   "noted": {
+    "unheld_number": 1
+   },
+   "held_share": 0.0,
+   "facts": 10,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 1,
+   "unknown_evidence_rate": 0.1,
+   "engine_lines": 2,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 67675,
+   "tokens_out": 19065,
+   "cost_micro_usd": 262990,
+   "ladder": {
+    "stood": {
+     "2": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1,
+     "2:first": 1,
+     "2:repair": 1
+    },
+    "climbs": {
+     "unsupported": 1
+    },
+    "cost_micro_usd": {
+     "1": 63010,
+     "2": 199980
+    }
+   },
+   "authored_verdict": "pass"
+  }
+ ],
+ "recall": 1.0,
+ "precision": 1.0,
+ "abstain_failures": 0,
+ "forbidden_outputs": 0,
+ "reviews": {
+  "valid": 1
+ },
+ "fates": {
+  "shown": 1
+ },
+ "dropped": {
+  "engine_is_no_fact": 1,
+  "unknown_evidence": 3,
+  "unsupported": 1
+ },
+ "noted": {
+  "unheld_number": 1
+ },
+ "facts": 10,
+ "facts_quoting": 1,
+ "misquoted": 0,
+ "unknown_evidence": 1,
+ "engine_lines": 2,
+ "own_lines": 3,
+ "own_dropped": 0,
+ "tokens_in": 67675,
+ "tokens_out": 19065,
+ "cost_micro_usd": 262990,
+ "held_share": 0.0,
+ "misquote_rate": 0.0,
+ "unknown_evidence_rate": 0.1,
+ "ladder": {
+  "stood": {
+   "2": 1
+  },
+  "attempts": {
+   "1:first": 1,
+   "1:repair": 1,
+   "2:first": 1,
+   "2:repair": 1
+  },
+  "climbs": {
+   "unsupported": 1
+  },
+  "cost_micro_usd": {
+   "1": 63010,
+   "2": 199980
+  }
+ },
+ "cost_usd": 0.263,
+ "calls": 5,
+ "truncated_calls": 0,
+ "thinking": null,
+ "ceiling": null,
+ "per_call_usd": null,
+ "max_usd": 0.4,
+ "stopped_at_cap": null,
+ "spent_usd": 0.263,
+ "ladder_tiers": [
+  "T1",
+  "T2"
+ ],
+ "rungs": {
+  "T1": {
+   "model": "claude-haiku-4-5-20251001",
+   "calls": 2,
+   "truncated_calls": 0,
+   "tokens_in": 22815,
+   "tokens_out": 8039,
+   "cost_usd": 0.063
+  },
+  "T2": {
+   "model": "claude-sonnet-5",
+   "calls": 3,
+   "truncated_calls": 0,
+   "tokens_in": 44860,
+   "tokens_out": 11026,
+   "cost_usd": 0.2
+  }
+ },
+ "moved": []
+}

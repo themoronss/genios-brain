@@ -1,0 +1,456 @@
+{
+ "864d8ea7ec7e92889c759b32ac2e7c196cd590accff0836bb44c4cfdb13e589e": {
+  "framed": true,
+  "input_tokens": 7120,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3069,
+  "parsed": {
+   "alternative": "Ask the founder to clarify Cobalt Peak's role and the purpose of the August update. This would resolve the unknowns and allow you to judge whether any follow-up is needed. The founder's answer would determine whether this file should remain open, be reclassified, or be closed.",
+   "appraisal": {
+    "reasons": [
+     "The file has no named role in the brief and no stated kind of work, so the stakes of this relationship are unclear.",
+     "The quiet period is only 1.29 days, well within normal processing time for most business communications.",
+     "You have already discharged your stated obligation by sending the promised update; the next move belongs to Cobalt Peak.",
+     "A follow-up message can be sent at any time if needed, so a wrong move now is easily corrected.",
+     "The relationship is unmeasured and has no prior history in the dossier, so the baseline risk is low."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Done when either Cobalt Peak replies with a question, request, or next step; or when the founder clarifies their role and you have a clear next move; or when the founder confirms the relationship is not active and the file can be closed.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "You sent a promised update and have received no reply in 1.29 days. This is consistent with normal processing time for most administrative and business relationships.",
+    "expected": "Without a named kind of work or a playbook, no stage can be assigned. If this is a routine vendor or partner relationship, the expected behavior after sending an update is to wait for a response. If it is an investor or customer relationship, the expected behavior depends on the stage of that relationship.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You sent an August update to Leena at Cobalt Peak on 2026-09-01 at 05:00 UTC reporting 22 support teams live and a routing engine handling 40% of tickets without an agent.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Relaygrid - August update Hi Leena, As promised, the August update: 22 support teams are live, and the routing engine now handles 40% of tickets without an agent. Meher"
+    },
+    {
+     "claim": "The file shows no reply from Cobalt Peak since that message was sent.",
+     "evidence": [
+      "cov:last_mail",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.29 days as of the dossier's timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was extracted from the mail you sent.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Cobalt Peak has no named role in the brief's stated goals or work in motion.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time the file has been seen or judged.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@admin",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A routine status update sent to a contact at Cobalt Peak, with the ball now in their court and no action required from you until they respond or a deadline passes.",
+    "rivals": [
+     "An unclassified relationship that was added to the file without a clear purpose and may need to be closed or reclassified.",
+     "A relationship that has stalled or cooled, and the silence signals a shift in their interest or priority.",
+     "An early-stage exploration with Cobalt Peak that is still in the information-gathering phase and does not yet warrant follow-up."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Clarification from the founder on what Cobalt Peak's role is and why the August update was promised to them.",
+     "proposition": "Cobalt Peak is a potential investor, partner, or customer that you are cultivating."
+    },
+    {
+     "needs": "Confirmation of the relationship type and whether a response is expected or required.",
+     "proposition": "Cobalt Peak is a vendor or service provider and this is a routine status update."
+    },
+    {
+     "needs": "A review of whether this file should remain open or be closed.",
+     "proposition": "The file was created in error or as a test and has no active purpose."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The message you sent was framed as a promised update ('As promised'), which means you had committed to sending it."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The ball is now in Cobalt Peak's court: you have discharged your stated obligation and are waiting for their response."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "fact:6"
+     ],
+     "claim": "The file's purpose and relationship to your company's goals remain unclear from the dossier."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The quiet period of 1.29 days is well within normal administrative processing time and does not yet signal disinterest or delay."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-09",
+    "for_whom": "Cobalt Peak",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "wait for a reply from Cobalt Peak and do not send a follow-up message until at least seven business days have passed or until you have clarity on their role and expectations",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When you send a promised update, the next move belongs to the recipient unless they ask a question or request something further.",
+     "kind": "practice",
+     "why": "An update is a delivery, not an ask; chasing it before they have had time to read and respond reads as either pressure or incompetence."
+    },
+    {
+     "claim": "A file with no named role in the brief and no stated kind of work is often a relationship that has not yet been classified or a contact that was added without a clear purpose.",
+     "kind": "base_rate",
+     "why": "The absence of context suggests either early-stage exploration or administrative housekeeping rather than active work."
+    },
+    {
+     "claim": "A single message with no prior history and no reply within 24 hours should not trigger a follow-up or escalation.",
+     "kind": "counter_pattern",
+     "why": "The first message is still in flight; a second message before the first has been read or processed creates noise and trains the recipient to deprioritize your mail."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Grant reviewers, programme committees, registrars and finance departments go quiet as a matter of process, not sentiment.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A message sent at 05:00 UTC on a Monday morning is likely to receive a reply within one to three business days if the recipient is actively engaged.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Escalating on quietness alone converts a normal wait into a relationship event and damages administrative relationships.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:role"
+    ],
+    "kind": null,
+    "why": "The dossier provides no context for Cobalt Peak's role. The file could be vendor, partner, investor, or customer depending on what Cobalt Peak does and why you are in contact. Without that information, no kind can be proposed with confidence."
+   },
+   "scenarios": {
+    "act": "If you send a follow-up message now, you risk the appearance of pressure or incompetence, especially if Leena has not yet read or processed your first message. This is the most common and most expensive error in administrative relationships.",
+    "best": "Cobalt Peak reads your update, finds it valuable, and replies with interest or a next step within three to five business days. The relationship progresses naturally without further prompting from you.",
+    "do_nothing": "The file remains open and quiet. If Cobalt Peak is a low-priority contact, the silence continues indefinitely and the file becomes dormant. If they are a high-priority contact, the lack of follow-up may signal disinterest on your part and damage the relationship.",
+    "signals_to_watch": [
+     "A reply from Leena or anyone at Cobalt Peak within three to five business days would signal engagement.",
+     "Silence beyond seven days would suggest either a low priority on their end or a misalignment in the relationship.",
+     "A request for more information or a follow-up question would indicate active interest.",
+     "A message from Cobalt Peak asking for something from you would clarify their role and expectations."
+    ],
+    "worst": "Cobalt Peak does not reply at all, either because they are not interested, because your update was not relevant to them, or because the relationship was never clearly defined. The file remains open indefinitely, consuming attention without generating value."
+   },
+   "unknowns": [
+    {
+     "question": "What is Cobalt Peak's role in your company's strategy or operations?",
+     "relevance": "Without knowing whether this is an investor, partner, customer, vendor, or other relationship, it is impossible to judge what response is expected or when."
+    },
+    {
+     "question": "Why was the August update promised to Leena at Cobalt Peak?",
+     "relevance": "Understanding the context of the promise would clarify whether this is a one-time update or the start of an ongoing reporting relationship."
+    },
+    {
+     "question": "What is the expected cadence and nature of communication with Cobalt Peak?",
+     "relevance": "If this is a monthly update, silence for 1.29 days is normal; if it is a one-time ask, the silence may indicate disinterest or a low priority on their end."
+    },
+    {
+     "question": "Has Leena or anyone at Cobalt Peak replied to any previous messages from you?",
+     "relevance": "The file shows only 60 days of history; if there is a longer pattern of engagement or silence, it would inform whether the current quiet is typical or anomalous."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-09 (seven business days from the message date) for a reply. If no reply arrives by then and the relationship is important to your company's goals, send a brief follow-up asking if they received the update and whether they have any questions. If the relationship remains unclear after the founder's input, consider closing the file or reclassifying it. Stop waiting if the founder confirms that Cobalt Peak is not a priority or if the relationship has ended."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You sent an August update to Leena at Cobalt Peak on 2026-09-01 at 05:00 UTC reporting 22 support teams live and a routing engine handling 40% of tickets without an agent.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Relaygrid - August update Hi Leena, As promised, the August update: 22 support teams are live, and the routing engine now handles 40% of tickets without an agent. Meher\"\n    },\n    {\n      \"claim\": \"The file shows no reply from Cobalt Peak since that message was sent.\",\n      \"evidence\": [\n        \"cov:last_mail\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.29 days as of the dossier's timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was extracted from the mail you sent.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Cobalt Peak has no named role in the brief's stated goals or work in motion.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time the file has been seen or judged.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@admin\",\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The message you sent was framed as a promised update ('As promised'), which means you had committed to sending it.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is now in Cobalt Peak's court: you have discharged your stated obligation and are waiting for their response.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The file's purpose and relationship to your company's goals remain unclear from the dossier.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"claim\": \"The quiet period of 1.29 days is well within normal administrative processing time and does not yet signal disinterest or delay.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Grant reviewers, programme committees, registrars and finance departments go quiet as a matter of process, not sentiment.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A message sent at 05:00 UTC on a Monday morning is likely to receive a reply within one to three business days if the recipient is actively engaged.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Escalating on quietness alone converts a normal wait into a relationship event and damages administrative relationships.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When you send a promised update, the next move belongs to the recipient unless they ask a question or request something further.\",\n      \"why\": \"An update is a delivery, not an ask; chasing it before they have had time to read and respond reads as either pressure or incompetence.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A file with no named role in the brief and no stated kind of work is often a relationship that has not yet been classified or a contact that was added without a clear purpose.\",\n      \"why\": \"The absence of context suggests either early-stage exploration or administrative housekeeping rather than active work.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A single message with no prior history and no reply within 24 hours should not trigger a follow-up or escalation.\",\n      \"why\": \"The first message is still in flight; a second message before the first has been read or processed creates noise and trains the recipient to deprioritize your mail.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Cobalt Peak is a potential investor, partner, or customer that you are cultivating.\",\n      \"needs\": \"Clarification from the founder on what Cobalt Peak's role is and why the August update was promised to them.\"\n    },\n    {\n      \"proposition\": \"Cobalt Peak is a vendor or service provider and this is a routine status update.\",\n      \"needs\": \"Confirmation of the relationship type and whether a response is expected or required.\"\n    },\n    {\n      \"proposition\": \"The file was created in error or as a test and has no active purpose.\",\n      \"needs\": \"A review of whether this file should remain open or be closed.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Cobalt Peak's role in your company's strategy or operations?\",\n      \"relevance\": \"Without knowing whether this is an investor, partner, customer, vendor, or other relationship, it is impossible to judge what response is expected or when.\"\n    },\n    {\n      \"question\": \"Why was the August update promised to Leena at Cobalt Peak?\",\n      \"relevance\": \"Understanding the context of the promise would clarify whether this is a one-time update or the start of an ongoing reporting relationship.\"\n    },\n    {\n      \"question\": \"What is the expected cadence and nature of communication with Cobalt Peak?\",\n      \"relevance\": \"If this is a monthly update, silence for 1.29 days is normal; if it is a one-time ask, the silence may indicate disinterest or a low priority on their end.\"\n    },\n    {\n      \"question\": \"Has Leena or anyone at Cobalt Peak replied to any previous messages from you?\",\n      \"relevance\": \"The file shows only 60 days of history; if there is a longer pattern of engagement or silence, it would inform whether the current quiet is typical or anomalous.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A routine status update sent to a contact at Cobalt Peak, with the ball now in their court and no action required from you until they respond or a deadline passes.\",\n    \"rivals\": [\n      \"An unclassified relationship that was added to the file without a clear purpose and may need to be closed or reclassified.\",\n      \"A relationship that has stalled or cooled, and the silence signals a shift in their interest or priority.\",\n      \"An early-stage exploration with Cobalt Peak that is still in the information-gathering phase and does not yet warrant follow-up.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The dossier provides no context for Cobalt Peak's role. The file could be vendor, partner, investor, or customer depending on what Cobalt Peak does and why you are in contact. Without that information, no kind can be proposed with confidence.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a named kind of work or a playbook, no stage can be assigned. If this is a routine vendor or partner relationship, the expected behavior after sending an update is to wait for a response. If it is an investor or customer relationship, the expected behavior depends on the stage of that relationship.\",\n    \"actual\": \"You sent a promised update and have received no reply in 1.29 days. This is consistent with normal processing time for most administrative and business relationships.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open and quiet. If Cobalt Peak is a low-priority contact, the silence continues indefinitely and the file becomes dormant. If they are a high-priority contact, the lack of follow-up may signal disinterest on your part and damage the relationship.\",\n    \"act\": \"If you send a follow-up message now, you risk the appearance of pressure or incompetence, especially if Leena has not yet read or processed your first message. This is the most common and most expensive error in administrative relationships.\",\n    \"best\": \"Cobalt Peak reads your update, finds it valuable, and replies with interest or a next step within three to five business days. The relationship progresses naturally without further prompting from you.\",\n    \"worst\": \"Cobalt Peak does not reply at all, either because they are not interested, because your update was not relevant to them, or because the relationship was never clearly defined. The file remains open indefinitely, consuming attention without generating value.\",\n    \"signals_to_watch\": [\n      \"A reply from Leena or anyone at Cobalt Peak within three to five business days would signal engagement.\",\n      \"Silence beyond seven days would suggest either a low priority on their end or a misalignment in the relationship.\",\n      \"A request for more information or a follow-up question would indicate active interest.\",\n      \"A message from Cobalt Peak asking for something from you would clarify their role and expectations.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file has no named role in the brief and no stated kind of work, so the stakes of this relationship are unclear.\",\n      \"The quiet period is only 1.29 days, well within normal processing time for most business communications.\",\n      \"You have already discharged your stated obligation by sending the promised update; the next move belongs to Cobalt Peak.\",\n      \"A follow-up message can be sent at any time if needed, so a wrong move now is easily corrected.\",\n      \"The relationship is unmeasured and has no prior history in the dossier, so the baseline risk is low.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for a reply from Cobalt Peak and do not send a follow-up message until at least seven business days have passed or until you have clarity on their role and expectations\",\n    \"for_whom\": \"Cobalt Peak\",\n    \"by_when\": \"2026-09-09\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Ask the founder to clarify Cobalt Peak's role and the purpose of the August update. This would resolve the unknowns and allow you to judge whether any follow-up is needed. The founder's answer would determine whether this file should remain open, be reclassified, or be closed.\",\n  \"wait_or_stop\": \"Wait until 2026-09-09 (seven business days from the message date) for a reply. If no reply arrives by then and the relationship is important to your company's goals, send a brief follow-up asking if they received the update and whether they have any questions. If the relationship remains unclear after the founder's input, consider closing the file or reclassifying it. Stop waiting if the founder confirms that Cobalt Peak is not a priority or if the relationship has ended.\",\n  \"done_when\": \"Done when either Cobalt Peak replies with a question, request, or next step; or when the founder clarifies their role and you have a clear next move; or when the founder confirms the relationship is not active and the file can be closed.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "df102bcd424d74c5d48670d4c86364e968d5f5eb79f229dff3bacdd8a64cbc2f": {
+  "framed": true,
+  "input_tokens": 7189,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2969,
+  "parsed": {
+   "alternative": "If the founder confirms that Cobalt Peak is a strategic priority (investor, partner, or key vendor), send a brief, warm follow-up after one week of silence, framed as a check-in rather than a chase. Example: 'Hi Leena, wanted to check if you had a chance to see the August update. Happy to discuss any questions or next steps.'",
+   "appraisal": {
+    "reasons": [
+     "Cobalt Peak is not named in the brief as a critical investor, program, or partner.",
+     "The file is only one day old in its current quiet state, well within normal administrative timelines.",
+     "The relationship status is unmeasured, suggesting it is exploratory or early-stage.",
+     "No blocking dependency or deadline is evident in the dossier.",
+     "A follow-up can be sent later if needed, and silence does not foreclose the relationship."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Cobalt Peak replies with engagement, a question, or a next step; or the founder confirms the relationship is not a priority and the file is closed.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "You sent the update as promised. Cobalt Peak has not replied. The file is quiet and awaiting their move.",
+    "expected": "Without a playbook or a named role in the brief, there is no stage to reference. The expectation from the file's own history is that after sending a promised update, the next move is the counterparty's.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You sent Leena at Cobalt Peak an August update on Relaygrid's progress on 2026-09-01 at 05:00 UTC.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Relaygrid - August update Hi Leena, As promised, the August update: 22 support teams are live, and the routing engine now handles 40% of tickets without an agent. Meher"
+    },
+    {
+     "claim": "The file shows no reply from Cobalt Peak since that message was sent.",
+     "evidence": [
+      "cov:last_mail",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.29 days as of the dossier's timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Cobalt Peak is not named in the company brief as an investor, program, partner, or other work in motion.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's domain is admin, and no playbook exists for this work.",
+     "evidence": [
+      "file:domains",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The message you sent contained a promise: 'As promised, the August update'.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "As promised, the August update"
+    }
+   ],
+   "frames": {
+    "primary": "A courtesy update sent to a contact of unknown role, awaiting their response in a normal administrative window.",
+    "rivals": [
+     "An early-stage relationship cultivation where silence signals lack of interest and a follow-up is needed to keep the door open.",
+     "A vendor or service relationship where the update is part of a regular cadence and no response is expected until a decision point.",
+     "A relationship that has stalled and requires a strategic decision about whether to continue investing time in it."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder of Cobalt Peak's role in the strategy, or a review of how this contact was sourced and what the intended outcome is.",
+     "proposition": "Cobalt Peak is a potential investor or strategic partner that you are cultivating, and the August update was sent to demonstrate progress and maintain engagement."
+    },
+    {
+     "needs": "Clarity on whether there is an open contract, service agreement, or renewal cycle that would explain the cadence of updates.",
+     "proposition": "Cobalt Peak is a vendor or service provider, and the update was sent as a courtesy or status report."
+    },
+    {
+     "needs": "A decision on what constitutes a meaningful silence\u2014how many days without a reply would trigger a follow-up, and what would that follow-up be.",
+     "proposition": "Cobalt Peak will reply within the normal window, and no action is needed now."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The ball is in Cobalt Peak's court: you have delivered what you said you would, and the next move is theirs to respond or act."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Cobalt Peak's silence so far is consistent with normal administrative process, not disinterest, given the brief quiet period."
+    },
+    {
+     "based_on": [
+      "ru:core.relationship",
+      "num:their_reply_time:leena@cobaltpeak.test",
+      "num:usual_gap"
+     ],
+     "claim": "The relationship status with Cobalt Peak is unmeasured: the dossier holds no prior history, reply times, or engagement pattern."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-15",
+    "for_whom": "Cobalt Peak",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "wait for Cobalt Peak's reply, and set a reminder to follow up if no reply arrives within two weeks",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When you have delivered a promised update and the counterparty has not yet replied, the correct move is to wait and watch for their response, not to follow up.",
+     "kind": "practice",
+     "why": "A follow-up before they have had time to read and consider your message signals anxiety and erodes trust in your judgment. The counterparty is processing, not ignoring."
+    },
+    {
+     "claim": "A file with no named role in the brief and no playbook is often a relationship in early formation or a courtesy touch that has not yet crystallized into a defined work stream.",
+     "kind": "base_rate",
+     "why": "The absence of structure suggests the relationship is still being explored, and premature escalation or chasing can foreclose it."
+    },
+    {
+     "claim": "In seed-stage fundraising and partnership work, a response window of one to two weeks is standard after a substantive update.",
+     "kind": "benchmark",
+     "why": "Decision-makers batch their reviews, and a week of silence is not a signal of rejection."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence in the first few days after a delivery is normal process, not a signal of rejection or disengagement.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1",
+      "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball"
+     ],
+     "claim": "Chasing a counterparty with a reminder while you hold the ball damages the relationship and reads as either incompetence or pressure.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "file:role",
+     "evt_#1"
+    ],
+    "kind": "vendor",
+    "why": "The file is categorized as admin with no named role in the brief. The message is a status update, which is typical of vendor or service provider relationships. However, the absence of any contract, service agreement, or renewal cycle in the brief suggests this is exploratory or the relationship is not yet formalized."
+   },
+   "scenarios": {
+    "act": "If you send a follow-up now, you risk signaling anxiety and damaging the relationship if they are still processing your update. If you wait, you preserve the relationship and allow them to respond on their own timeline.",
+    "best": "Cobalt Peak replies within one week with interest, engagement, or a next step. The relationship crystallizes into a defined work stream with clear roles and timelines.",
+    "do_nothing": "The file remains quiet. If Cobalt Peak is a strategic contact, silence may indicate they are not prioritizing the relationship. If they are a vendor or service provider, silence is normal until a decision point. After two to three weeks of no reply, the file will have aged enough to warrant a decision about whether to follow up or close it.",
+    "signals_to_watch": [
+     "A reply from Cobalt Peak within one to two weeks, indicating engagement.",
+     "A reply that asks a question or requests more information, indicating interest.",
+     "Continued silence after two weeks, indicating the contact is not a priority for them.",
+     "A reply that declines or deprioritizes the relationship, indicating a strategic decision point."
+    ],
+    "worst": "Cobalt Peak never replies, and the file becomes a dormant contact that consumes attention without producing value. Alternatively, a premature follow-up is perceived as pressure and closes the door."
+   },
+   "unknowns": [
+    {
+     "question": "What is Cobalt Peak's role in your strategy? Are they an investor, partner, vendor, or exploratory contact?",
+     "relevance": "The answer determines whether silence is normal, whether a follow-up is warranted, and what the follow-up should be. Without it, the file cannot be prioritized or acted on."
+    },
+    {
+     "question": "How was this contact sourced, and what was the original ask or offer?",
+     "relevance": "The context of the relationship shapes expectations for response time and the appropriate next move. A cold outreach has a different cadence than a warm introduction."
+    },
+    {
+     "question": "Is there a deadline or decision point tied to Cobalt Peak's response?",
+     "relevance": "If there is a time-sensitive outcome (e.g., a partnership decision, a funding round close), silence becomes urgent. If not, it is routine."
+    },
+    {
+     "question": "What is your usual reply time to Cobalt Peak, and what is theirs to you?",
+     "relevance": "The dossier shows these are not measured. A pattern of slow replies from them would normalize the current silence; a pattern of quick replies would make it notable."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-15. If no reply by then, send a follow-up. If no reply by 2026-09-29, close the file unless the founder confirms Cobalt Peak is a strategic priority. Stop if Cobalt Peak replies with a clear decline or deprioritization."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You sent Leena at Cobalt Peak an August update on Relaygrid's progress on 2026-09-01 at 05:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Relaygrid - August update Hi Leena, As promised, the August update: 22 support teams are live, and the routing engine now handles 40% of tickets without an agent. Meher\"\n    },\n    {\n      \"claim\": \"The file shows no reply from Cobalt Peak since that message was sent.\",\n      \"evidence\": [\n        \"cov:last_mail\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.29 days as of the dossier's timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Cobalt Peak is not named in the company brief as an investor, program, partner, or other work in motion.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's domain is admin, and no playbook exists for this work.\",\n      \"evidence\": [\n        \"file:domains\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The message you sent contained a promise: 'As promised, the August update'.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"As promised, the August update\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in Cobalt Peak's court: you have delivered what you said you would, and the next move is theirs to respond or act.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"Cobalt Peak's silence so far is consistent with normal administrative process, not disinterest, given the brief quiet period.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"claim\": \"The relationship status with Cobalt Peak is unmeasured: the dossier holds no prior history, reply times, or engagement pattern.\",\n      \"based_on\": [\n        \"ru:core.relationship\",\n        \"num:their_reply_time:leena@cobaltpeak.test\",\n        \"num:usual_gap\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Administrative silence in the first few days after a delivery is normal process, not a signal of rejection or disengagement.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing a counterparty with a reminder while you hold the ball damages the relationship and reads as either incompetence or pressure.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\",\n        \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When you have delivered a promised update and the counterparty has not yet replied, the correct move is to wait and watch for their response, not to follow up.\",\n      \"why\": \"A follow-up before they have had time to read and consider your message signals anxiety and erodes trust in your judgment. The counterparty is processing, not ignoring.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A file with no named role in the brief and no playbook is often a relationship in early formation or a courtesy touch that has not yet crystallized into a defined work stream.\",\n      \"why\": \"The absence of structure suggests the relationship is still being explored, and premature escalation or chasing can foreclose it.\"\n    },\n    {\n      \"kind\": \"benchmark\",\n      \"claim\": \"In seed-stage fundraising and partnership work, a response window of one to two weeks is standard after a substantive update.\",\n      \"why\": \"Decision-makers batch their reviews, and a week of silence is not a signal of rejection.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Cobalt Peak is a potential investor or strategic partner that you are cultivating, and the August update was sent to demonstrate progress and maintain engagement.\",\n      \"needs\": \"Confirmation from the founder of Cobalt Peak's role in the strategy, or a review of how this contact was sourced and what the intended outcome is.\"\n    },\n    {\n      \"proposition\": \"Cobalt Peak is a vendor or service provider, and the update was sent as a courtesy or status report.\",\n      \"needs\": \"Clarity on whether there is an open contract, service agreement, or renewal cycle that would explain the cadence of updates.\"\n    },\n    {\n      \"proposition\": \"Cobalt Peak will reply within the normal window, and no action is needed now.\",\n      \"needs\": \"A decision on what constitutes a meaningful silence\u2014how many days without a reply would trigger a follow-up, and what would that follow-up be.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Cobalt Peak's role in your strategy? Are they an investor, partner, vendor, or exploratory contact?\",\n      \"relevance\": \"The answer determines whether silence is normal, whether a follow-up is warranted, and what the follow-up should be. Without it, the file cannot be prioritized or acted on.\"\n    },\n    {\n      \"question\": \"How was this contact sourced, and what was the original ask or offer?\",\n      \"relevance\": \"The context of the relationship shapes expectations for response time and the appropriate next move. A cold outreach has a different cadence than a warm introduction.\"\n    },\n    {\n      \"question\": \"Is there a deadline or decision point tied to Cobalt Peak's response?\",\n      \"relevance\": \"If there is a time-sensitive outcome (e.g., a partnership decision, a funding round close), silence becomes urgent. If not, it is routine.\"\n    },\n    {\n      \"question\": \"What is your usual reply time to Cobalt Peak, and what is theirs to you?\",\n      \"relevance\": \"The dossier shows these are not measured. A pattern of slow replies from them would normalize the current silence; a pattern of quick replies would make it notable.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A courtesy update sent to a contact of unknown role, awaiting their response in a normal administrative window.\",\n    \"rivals\": [\n      \"An early-stage relationship cultivation where silence signals lack of interest and a follow-up is needed to keep the door open.\",\n      \"A vendor or service relationship where the update is part of a regular cadence and no response is expected until a decision point.\",\n      \"A relationship that has stalled and requires a strategic decision about whether to continue investing time in it.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"vendor\",\n    \"why\": \"The file is categorized as admin with no named role in the brief. The message is a status update, which is typical of vendor or service provider relationships. However, the absence of any contract, service agreement, or renewal cycle in the brief suggests this is exploratory or the relationship is not yet formalized.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"file:role\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook or a named role in the brief, there is no stage to reference. The expectation from the file's own history is that after sending a promised update, the next move is the counterparty's.\",\n    \"actual\": \"You sent the update as promised. Cobalt Peak has not replied. The file is quiet and awaiting their move.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. If Cobalt Peak is a strategic contact, silence may indicate they are not prioritizing the relationship. If they are a vendor or service provider, silence is normal until a decision point. After two to three weeks of no reply, the file will have aged enough to warrant a decision about whether to follow up or close it.\",\n    \"act\": \"If you send a follow-up now, you risk signaling anxiety and damaging the relationship if they are still processing your update. If you wait, you preserve the relationship and allow them to respond on their own timeline.\",\n    \"best\": \"Cobalt Peak replies within one week with interest, engagement, or a next step. The relationship crystallizes into a defined work stream with clear roles and timelines.\",\n    \"worst\": \"Cobalt Peak never replies, and the file becomes a dormant contact that consumes attention without producing value. Alternatively, a premature follow-up is perceived as pressure and closes the door.\",\n    \"signals_to_watch\": [\n      \"A reply from Cobalt Peak within one to two weeks, indicating engagement.\",\n      \"A reply that asks a question or requests more information, indicating interest.\",\n      \"Continued silence after two weeks, indicating the contact is not a priority for them.\",\n      \"A reply that declines or deprioritizes the relationship, indicating a strategic decision point.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Cobalt Peak is not named in the brief as a critical investor, program, or partner.\",\n      \"The file is only one day old in its current quiet state, well within normal administrative timelines.\",\n      \"The relationship status is unmeasured, suggesting it is exploratory or early-stage.\",\n      \"No blocking dependency or deadline is evident in the dossier.\",\n      \"A follow-up can be sent later if needed, and silence does not foreclose the relationship.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for Cobalt Peak's reply, and set a reminder to follow up if no reply arrives within two weeks\",\n    \"for_whom\": \"Cobalt Peak\",\n    \"by_when\": \"2026-09-15\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder confirms that Cobalt Peak is a strategic priority (investor, partner, or key vendor), send a brief, warm follow-up after one week of silence, framed as a check-in rather than a chase. Example: 'Hi Leena, wanted to check if you had a chance to see the August update. Happy to discuss any questions or next steps.'\",\n  \"wait_or_stop\": \"Wait until 2026-09-15. If no reply by then, send a follow-up. If no reply by 2026-09-29, close the file unless the founder confirms Cobalt Peak is a strategic priority. Stop if Cobalt Peak replies with a clear decline or deprioritization.\",\n  \"done_when\": \"Cobalt Peak replies with engagement, a question, or a next step; or the founder confirms the relationship is not a priority and the file is closed.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

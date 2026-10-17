@@ -1,0 +1,740 @@
+{
+ "6e0c05152a0ff812260f00ee6089404a645688504863558be3f763ae397edae9": {
+  "framed": true,
+  "input_tokens": 14426,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3418,
+  "parsed": {
+   "alternative": "If the deadline is fewer than five business days away and the application is complex, skip this intake and plan to re-apply at the next one, after you have closed your seed round or have more bandwidth.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because a pre-incubation programme is one of six programmes you have applied to, and you are already in Lakshya Accelerator; it is not a primary path to your seed round.",
+     "The urgency is medium because the application deadline is unknown but likely in October, which is less than two weeks away; if you decide to apply, the submission must be planned quickly.",
+     "A wrong move is reversible because a rejected application can be re-applied to at the next intake, and a missed deadline can be addressed by applying to the next cohort.",
+     "The file's risk is low because the programme is not a blocker to your seed round, and the decision is yours to make."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "You have read the programme's deadline and requirements, decided whether to apply, and either submitted an application with a receipt confirmation on file, or decided not to apply and recorded the reason.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "An announcement of an open window has arrived, but no application has been submitted, no deadline is on file, and no receipt confirmation exists. The file's stage is unknown because the application has not been submitted.",
+    "expected": "The playbook's stage 'applied' begins only after an application is submitted and a receipt confirmation is received. Until then, the file is in a pre-application state. At this stage, the playbook expects the founder to have read the programme's deadline, worked backwards from it to plan the submission, and submitted before the deadline with a receipt confirmation on file.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Awadh Enterprise Centre sent an announcement that applications for their pre-incubation programme are open, running for twelve weeks from November.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Pre-incubation programme: applications open Dear Founder, Applications for our pre-incubation programme are open. The programme runs for twelve weeks from November. Awadh Enterprise Centre"
+    },
+    {
+     "claim": "This is the only communication from Awadh Enterprise Centre in the file; it arrived on 2026-09-16 at 05:00 UTC.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows no promise, no deadline, and no ask in the mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time has been measured for Awadh Enterprise Centre, and you have not written to them.",
+     "evidence": [
+      "num:their_reply_time:eic@awadhec.test",
+      "num:your_reply_time:eic@awadhec.test",
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is 0.54 days quiet as of the dossier's timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names this work as a programme application, and lists Awadh Enterprise Centre as one of six programmes to which you have applied.",
+     "evidence": [
+      "brief:cbl_#17",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and low urgency; they did not run the tradeoff, resource, scheduling, cost, policy, alternative, validation, recommendation or planning units.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.priority",
+      "ru:not_run"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An announcement of an open application window to a pre-incubation programme, requiring a decision to apply or not, and if yes, a submission before an unknown deadline.",
+    "rivals": [
+     "A reminder that you have already applied and the window is still open, requiring no action until the programme's decision window closes.",
+     "A low-priority announcement that can be filed and revisited only if the seed round stalls or other programmes decline."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The programme's own application portal or website, which the file does not show.",
+     "proposition": "The application deadline for Awadh Enterprise Centre's pre-incubation programme is in October 2026."
+    },
+    {
+     "needs": "A record of a prior submission, which the file does not show; the mail's language ('applications are open') suggests a general announcement, not a follow-up to a specific applicant.",
+     "proposition": "You have already applied to Awadh Enterprise Centre and this mail is a reminder that the window is still open."
+    },
+    {
+     "needs": "A comparison of the programme's terms, investment, mentorship and cohort against your other active programmes and your seed-round timeline.",
+     "proposition": "Awadh Enterprise Centre's pre-incubation programme is a fit for your stage and goals."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#1"
+     ],
+     "claim": "This mail is an announcement of an open application window, not a response to an application you have already submitted."
+    },
+    {
+     "based_on": [
+      "inference:1",
+      "file:whose_move"
+     ],
+     "claim": "The next move is yours: you must decide whether to apply, and if so, when to submit."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "The programme's deadline is not yet stated in the file; the mail says only that the programme runs for twelve weeks from November, which implies an application window that closes before November."
+    },
+    {
+     "based_on": [
+      "inference:1",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "The file's stage is unknown because no application has been submitted yet; the playbook's stage 'applied' begins only after submission and receipt confirmation."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-23",
+    "for_whom": "yourself",
+    "guided_by": [
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "inference:2",
+     "inference:3",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "Read Awadh Enterprise Centre's application portal to find the exact deadline, requirements, investment terms, and selection criteria; then decide whether to apply.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a programme announces an open window, the first move is to read its full application requirements and deadline in the programme's own time zone, not the founder's.",
+     "kind": "practice",
+     "why": "A missed deadline that is read in the wrong time zone is not recoverable; the programme will not mark a late application on time for a good reason."
+    },
+    {
+     "claim": "An application to a pre-incubation programme should be evaluated against the founder's other active work \u2014 the seed round, the accelerator already in motion, the hiring \u2014 to decide whether the time to apply is worth the return.",
+     "kind": "practice",
+     "why": "A pre-incubation programme runs twelve weeks and may conflict with other commitments; the founder's attention is finite."
+    },
+    {
+     "claim": "A programme that does not name its deadline in its announcement is typical; the deadline is usually found on the programme's own portal or application form.",
+     "kind": "base_rate",
+     "why": "Programmes publish deadlines on their own sites and in their application systems, not in broadcast announcements."
+    },
+    {
+     "claim": "A pre-incubation programme is not the same as an accelerator; it typically runs longer, invests less or not at all, and is earlier stage.",
+     "kind": "counter_pattern",
+     "why": "The founder is already in Lakshya Accelerator and has applied to five other programmes; a pre-incubation programme may duplicate that work or conflict with it."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application",
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "A programme announcement of an open window is typically followed by the founder's decision to apply or not, and if yes, by a submission before the deadline.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "A programme's published deadline is the only fixed point in the application timeline; every other date is set backwards from it.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "An application left unsubmitted until the final hours risks missing the deadline due to technical issues, incomplete co-founder profiles, or upload failures.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#17",
+     "file:kind"
+    ],
+    "kind": "program",
+    "why": "The brief names this work as a programme application; the mail is an announcement of an open application window to a pre-incubation programme."
+   },
+   "scenarios": {
+    "act": "You read the programme's full requirements and deadline, decide whether to apply, and if yes, submit before the deadline with a receipt confirmation on file. The file moves to the 'applied' stage and waits for the programme's decision window to close.",
+    "best": "You apply, are selected, and the programme's terms and timeline fit your seed round and your other active work. The programme becomes a source of mentorship, introductions and credibility during your fundraising.",
+    "do_nothing": "The application window closes without a submission. The programme moves to its next intake, and you lose this cohort. If the programme is a fit, you can re-apply at the next intake, but the feedback from this cycle is lost.",
+    "signals_to_watch": [
+     "The programme's own website or portal, which will show the application deadline and requirements.",
+     "A decision mail from the programme, which will indicate whether you have been selected, rejected, or moved to a waitlist.",
+     "Your own calendar and the seed round's timeline, which will show whether a twelve-week programme from November is feasible."
+    ],
+    "worst": "You apply and are rejected; the feedback is not captured, and you do not re-apply at the next intake. Or you apply and are selected, but the programme's timeline conflicts with your seed round, and you cannot attend."
+   },
+   "unknowns": [
+    {
+     "question": "What is the exact application deadline for Awadh Enterprise Centre's pre-incubation programme, in the programme's time zone?",
+     "relevance": "The deadline is the only fixed point in the application timeline; without it, you cannot plan the submission or decide whether to apply."
+    },
+    {
+     "question": "Have you already applied to Awadh Enterprise Centre, or is this the first notice of the open window?",
+     "relevance": "If you have already applied, the file's stage is 'applied' and the next move is to wait for the programme's decision window to close; if not, the next move is to decide whether to apply."
+    },
+    {
+     "question": "What are the programme's investment terms, mentorship model, cohort size, and selection criteria?",
+     "relevance": "These determine whether the programme is a fit for your stage and whether the time to apply is worth the return, given your other active work."
+    },
+    {
+     "question": "Does Awadh Enterprise Centre's pre-incubation programme conflict with your timeline in Lakshya Accelerator or your seed-round fundraising?",
+     "relevance": "A twelve-week programme running from November may overlap with your seed round or with Lakshya's calendar; the founder's attention is finite."
+    }
+   ],
+   "wait_or_stop": "Wait until you have read the programme's deadline and requirements. Stop if the deadline has already passed, or if the programme's timeline conflicts with your seed round or Lakshya's calendar. If you decide to apply, move to the 'act' mode and submit before the deadline with a receipt confirmation on file."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Awadh Enterprise Centre sent an announcement that applications for their pre-incubation programme are open, running for twelve weeks from November.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Pre-incubation programme: applications open Dear Founder, Applications for our pre-incubation programme are open. The programme runs for twelve weeks from November. Awadh Enterprise Centre\"\n    },\n    {\n      \"claim\": \"This is the only communication from Awadh Enterprise Centre in the file; it arrived on 2026-09-16 at 05:00 UTC.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows no promise, no deadline, and no ask in the mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time has been measured for Awadh Enterprise Centre, and you have not written to them.\",\n      \"evidence\": [\n        \"num:their_reply_time:eic@awadhec.test\",\n        \"num:your_reply_time:eic@awadhec.test\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is 0.54 days quiet as of the dossier's timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names this work as a programme application, and lists Awadh Enterprise Centre as one of six programmes to which you have applied.\",\n      \"evidence\": [\n        \"brief:cbl_#17\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and low urgency; they did not run the tradeoff, resource, scheduling, cost, policy, alternative, validation, recommendation or planning units.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.priority\",\n        \"ru:not_run\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This mail is an announcement of an open application window, not a response to an application you have already submitted.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is yours: you must decide whether to apply, and if so, when to submit.\",\n      \"based_on\": [\n        \"inference:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The programme's deadline is not yet stated in the file; the mail says only that the programme runs for twelve weeks from November, which implies an application window that closes before November.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    },\n    {\n      \"claim\": \"The file's stage is unknown because no application has been submitted yet; the playbook's stage 'applied' begins only after submission and receipt confirmation.\",\n      \"based_on\": [\n        \"inference:1\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme announcement of an open window is typically followed by the founder's decision to apply or not, and if yes, by a submission before the deadline.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\",\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme's published deadline is the only fixed point in the application timeline; every other date is set backwards from it.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An application left unsubmitted until the final hours risks missing the deadline due to technical issues, incomplete co-founder profiles, or upload failures.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a programme announces an open window, the first move is to read its full application requirements and deadline in the programme's own time zone, not the founder's.\",\n      \"why\": \"A missed deadline that is read in the wrong time zone is not recoverable; the programme will not mark a late application on time for a good reason.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An application to a pre-incubation programme should be evaluated against the founder's other active work \u2014 the seed round, the accelerator already in motion, the hiring \u2014 to decide whether the time to apply is worth the return.\",\n      \"why\": \"A pre-incubation programme runs twelve weeks and may conflict with other commitments; the founder's attention is finite.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A programme that does not name its deadline in its announcement is typical; the deadline is usually found on the programme's own portal or application form.\",\n      \"why\": \"Programmes publish deadlines on their own sites and in their application systems, not in broadcast announcements.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A pre-incubation programme is not the same as an accelerator; it typically runs longer, invests less or not at all, and is earlier stage.\",\n      \"why\": \"The founder is already in Lakshya Accelerator and has applied to five other programmes; a pre-incubation programme may duplicate that work or conflict with it.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The application deadline for Awadh Enterprise Centre's pre-incubation programme is in October 2026.\",\n      \"needs\": \"The programme's own application portal or website, which the file does not show.\"\n    },\n    {\n      \"proposition\": \"You have already applied to Awadh Enterprise Centre and this mail is a reminder that the window is still open.\",\n      \"needs\": \"A record of a prior submission, which the file does not show; the mail's language ('applications are open') suggests a general announcement, not a follow-up to a specific applicant.\"\n    },\n    {\n      \"proposition\": \"Awadh Enterprise Centre's pre-incubation programme is a fit for your stage and goals.\",\n      \"needs\": \"A comparison of the programme's terms, investment, mentorship and cohort against your other active programmes and your seed-round timeline.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the exact application deadline for Awadh Enterprise Centre's pre-incubation programme, in the programme's time zone?\",\n      \"relevance\": \"The deadline is the only fixed point in the application timeline; without it, you cannot plan the submission or decide whether to apply.\"\n    },\n    {\n      \"question\": \"Have you already applied to Awadh Enterprise Centre, or is this the first notice of the open window?\",\n      \"relevance\": \"If you have already applied, the file's stage is 'applied' and the next move is to wait for the programme's decision window to close; if not, the next move is to decide whether to apply.\"\n    },\n    {\n      \"question\": \"What are the programme's investment terms, mentorship model, cohort size, and selection criteria?\",\n      \"relevance\": \"These determine whether the programme is a fit for your stage and whether the time to apply is worth the return, given your other active work.\"\n    },\n    {\n      \"question\": \"Does Awadh Enterprise Centre's pre-incubation programme conflict with your timeline in Lakshya Accelerator or your seed-round fundraising?\",\n      \"relevance\": \"A twelve-week programme running from November may overlap with your seed round or with Lakshya's calendar; the founder's attention is finite.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An announcement of an open application window to a pre-incubation programme, requiring a decision to apply or not, and if yes, a submission before an unknown deadline.\",\n    \"rivals\": [\n      \"A reminder that you have already applied and the window is still open, requiring no action until the programme's decision window closes.\",\n      \"A low-priority announcement that can be filed and revisited only if the seed round stalls or other programmes decline.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The brief names this work as a programme application; the mail is an announcement of an open application window to a pre-incubation programme.\",\n    \"evidence\": [\n      \"brief:cbl_#17\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The playbook's stage 'applied' begins only after an application is submitted and a receipt confirmation is received. Until then, the file is in a pre-application state. At this stage, the playbook expects the founder to have read the programme's deadline, worked backwards from it to plan the submission, and submitted before the deadline with a receipt confirmation on file.\",\n    \"actual\": \"An announcement of an open window has arrived, but no application has been submitted, no deadline is on file, and no receipt confirmation exists. The file's stage is unknown because the application has not been submitted.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The application window closes without a submission. The programme moves to its next intake, and you lose this cohort. If the programme is a fit, you can re-apply at the next intake, but the feedback from this cycle is lost.\",\n    \"act\": \"You read the programme's full requirements and deadline, decide whether to apply, and if yes, submit before the deadline with a receipt confirmation on file. The file moves to the 'applied' stage and waits for the programme's decision window to close.\",\n    \"best\": \"You apply, are selected, and the programme's terms and timeline fit your seed round and your other active work. The programme becomes a source of mentorship, introductions and credibility during your fundraising.\",\n    \"worst\": \"You apply and are rejected; the feedback is not captured, and you do not re-apply at the next intake. Or you apply and are selected, but the programme's timeline conflicts with your seed round, and you cannot attend.\",\n    \"signals_to_watch\": [\n      \"The programme's own website or portal, which will show the application deadline and requirements.\",\n      \"A decision mail from the programme, which will indicate whether you have been selected, rejected, or moved to a waitlist.\",\n      \"Your own calendar and the seed round's timeline, which will show whether a twelve-week programme from November is feasible.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because a pre-incubation programme is one of six programmes you have applied to, and you are already in Lakshya Accelerator; it is not a primary path to your seed round.\",\n      \"The urgency is medium because the application deadline is unknown but likely in October, which is less than two weeks away; if you decide to apply, the submission must be planned quickly.\",\n      \"A wrong move is reversible because a rejected application can be re-applied to at the next intake, and a missed deadline can be addressed by applying to the next cohort.\",\n      \"The file's risk is low because the programme is not a blocker to your seed round, and the decision is yours to make.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Read Awadh Enterprise Centre's application portal to find the exact deadline, requirements, investment terms, and selection criteria; then decide whether to apply.\",\n    \"for_whom\": \"yourself\",\n    \"by_when\": \"2026-09-23\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"inference:2\",\n      \"inference:3\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the deadline is fewer than five business days away and the application is complex, skip this intake and plan to re-apply at the next one, after you have closed your seed round or have more bandwidth.\",\n  \"wait_or_stop\": \"Wait until you have read the programme's deadline and requirements. Stop if the deadline has already passed, or if the programme's timeline conflicts with your seed round or Lakshya's calendar. If you decide to apply, move to the 'act' mode and submit before the deadline with a receipt confirmation on file.\",\n  \"done_when\": \"You have read the programme's deadline and requirements, decided whether to apply, and either submitted an application with a receipt confirmation on file, or decided not to apply and recorded the reason.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "6f963835cf801556b72c9fef1257738e34bcd0e9569dcac3e31343fff912458b": {
+  "framed": true,
+  "input_tokens": 14804,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3605,
+  "parsed": {
+   "alternative": "If the exact deadline cannot be found on the programme's website or in the mail, write to Awadh Enterprise Centre asking for the deadline and confirming the application's submission status. Keep the mail short and ask for both pieces of information in one reply.",
+   "appraisal": {
+    "reasons": [
+     "The reminder signals that the deadline is imminent, likely within days.",
+     "A missed deadline cannot be recovered for this cohort; the company would have to wait for the next intake.",
+     "The file shows the company has not confirmed the application's submission status, which is the first thing to verify.",
+     "The playbook states that an application left unconfirmed past the deadline is lost on the date rather than on merit.",
+     "The company is in the applied stage, where the only fixed point is the deadline, and the deadline is unknown."
+    ],
+    "reversibility": "irreversible",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "The exact deadline is known in the programme's time zone and in the founder's time zone. The application's submission status is confirmed \u2014 either a confirmation mail is on file, or the portal shows the application was received. If the application has not been submitted, it is submitted before the deadline and a receipt is on file. If the deadline has passed, the file is closed with the reason and the next intake's date is recorded.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The company has received two mails from the programme \u2014 an initial announcement and a reminder that applications close soon \u2014 but has not written back. The company has not confirmed whether the application was submitted. The exact deadline is unknown. The file shows no confirmation mail or portal status. The company is at risk of missing the deadline if the application has not been submitted.",
+    "expected": "The application is in, and the company is waiting for the programme's window to close and the selection process to begin. The playbook expects the company to have received a confirmation of submission, to know the exact deadline, and to wait quietly until the programme's published decision date. The typical wait at this stage is fourteen days from the application date to the deadline, then twenty-eight days from the deadline to a decision.",
+    "stage": "applied"
+   },
+   "facts": [
+    {
+     "claim": "Awadh Enterprise Centre sent a reminder that applications for the pre-incubation programme close soon.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Reminder: pre-incubation programme Dear Founder, A reminder that applications for the pre-incubation programme close soon. Awadh Enterprise Centre"
+    },
+    {
+     "claim": "Awadh Enterprise Centre sent an initial notification that applications for the pre-incubation programme are open, running for twelve weeks from November.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Pre-incubation programme: applications open Dear Founder, Applications for our pre-incubation programme are open. The programme runs for twelve weeks from November. Awadh Enterprise Centre"
+    },
+    {
+     "claim": "The file shows contact with Awadh Enterprise Centre from 2026-09-16 to 2026-09-21, a span of five days.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.54 days as of the dossier's timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in Awadh Enterprise Centre's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The company has not written to Awadh Enterprise Centre.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is classified as a program application in the brief.",
+     "evidence": [
+      "file:kind",
+      "brief:cbl_#17"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Awadh Enterprise Centre is listed among programmes the company has applied to.",
+     "evidence": [
+      "brief:cbl_#17"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A programme application at the deadline: the company has received a reminder that applications close soon, but the exact deadline is unknown, the application's submission status is unknown, and the next move is urgent and time-bound.",
+    "rivals": [
+     "A routine reminder sent weeks ahead of the actual deadline, with no urgency and no immediate action required.",
+     "A confirmation that the application was already submitted, and the company is now waiting for the programme's decision."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The exact deadline date and time in Awadh Enterprise Centre's time zone, from the programme's website or a confirmation mail.",
+     "proposition": "The application deadline is within one to three days of 2026-09-21."
+    },
+    {
+     "needs": "A confirmation mail or portal status showing the application was received and the date it was submitted.",
+     "proposition": "The company's application was already submitted before 2026-09-16."
+    },
+    {
+     "needs": "Confirmation from the founder whether the application form has been filled out and submitted, or is still in draft.",
+     "proposition": "The company has not yet applied and the reminder is a final call to submit."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The reminder on 2026-09-21 signals that the application deadline is imminent, likely within days of that date."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:6"
+     ],
+     "claim": "The company applied to Awadh Enterprise Centre's pre-incubation programme between 2026-09-16 and the reminder date, or before 2026-09-16."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "fact:6"
+     ],
+     "claim": "The next move is the company's: the programme has sent reminders but no ask is open, and the company has not yet replied or confirmed its application."
+    },
+    {
+     "based_on": [
+      "review:ffp-90235ef7d05b96fc98743e8e",
+      "card:card_#1"
+     ],
+     "claim": "The exact deadline in the programme's time zone is unknown, which is critical to the next move."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "card:card_#1",
+    "by_when": "2026-09-21",
+    "for_whom": "Awadh Enterprise Centre",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:3",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "Find the exact application deadline for Awadh Enterprise Centre's pre-incubation programme in the programme's time zone, and confirm whether the application was already submitted.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a programme sends a reminder that applications close soon, the founder should verify the exact deadline in the programme's time zone and confirm the application was submitted before acting on anything else.",
+     "kind": "practice",
+     "why": "A reminder without a confirmed submission is a warning that the application may not have gone in; YC's own guidance is that without a confirmation mail, the application likely did not submit. The time zone matters because a deadline published in the programme's zone can be misread in the founder's zone, and a missed deadline cannot be recovered."
+    },
+    {
+     "claim": "A pre-incubation programme that runs for twelve weeks typically starts in November and ends in early February, with selection happening after the application window closes.",
+     "kind": "base_rate",
+     "why": "Twelve-week programmes are standard in accelerators and incubators; the timeline from November through February is typical for cohort-based programmes in India. The selection process follows the deadline, not the application date."
+    },
+    {
+     "claim": "A reminder sent five days after the initial announcement does not mean the deadline is five days away; it means the programme is reminding applicants that the window is closing, which could be imminent or could be weeks ahead depending on the programme's own calendar.",
+     "kind": "counter_pattern",
+     "why": "Programmes vary widely in how far ahead they send reminders. Some send them a week before, others days before. The reminder is a signal to check the deadline, not a statement of how much time remains."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "A programme that sends a reminder that applications close soon typically closes its window within one to three days of the reminder.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "An application file goes dormant after ninety days of quiet; before that, the programme's own published deadline is the only fixed point.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A programme's silence before its published deadline carries no information about the application's status; the quiet is not a no.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "An application left unconfirmed past a programme's deadline is lost on the date rather than on merit.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#17"
+    ],
+    "kind": "program",
+    "why": "The file is classified as a program application in the brief, and the dossier shows it is an application to Awadh Enterprise Centre's pre-incubation programme, which is an accelerator or incubator programme, not an investor, compliance, hiring, intro, partner or vendor relationship."
+   },
+   "scenarios": {
+    "act": "If the company acts now, it will verify the exact deadline, confirm the application's submission status, and either submit the application immediately or confirm that it is already in. This removes the risk of missing the deadline and puts the file on a known timeline.",
+    "best": "The application was already submitted before the reminder, the deadline is still days away, and the company receives confirmation of submission. The company then waits for the programme's decision, which arrives within the playbook's expected window. The programme invites the company to interview or offers acceptance.",
+    "do_nothing": "If the company does nothing, the deadline will pass. If the application was not submitted, it will be lost. If it was submitted, the company will wait for the programme's decision, which typically comes within twenty-eight days of the deadline. If the deadline is within hours, the company will miss it and the application will be lost on the date rather than on merit.",
+    "signals_to_watch": [
+     "A confirmation mail from Awadh Enterprise Centre showing the application was received and the submission date.",
+     "The programme's website or portal showing the exact deadline and the application's status.",
+     "A mail from the programme asking for a missing document or clarification, which would indicate the application is under review.",
+     "Silence from the programme after the deadline passes, which would indicate the selection process has begun."
+    ],
+    "worst": "The deadline is within hours, the application has not been submitted, and the company cannot complete and submit it in time. The application is lost, and the company must wait for the next intake to re-apply. The programme's next cohort may not open for months."
+   },
+   "unknowns": [
+    {
+     "question": "What is the exact application deadline for Awadh Enterprise Centre's pre-incubation programme, in the programme's time zone?",
+     "relevance": "The deadline is the only fixed point in the application timeline. Without it, the company cannot know whether it has hours or days to act, and whether the reminder is a final warning or a routine reminder sent weeks ahead. This determines whether the next move is urgent or routine."
+    },
+    {
+     "question": "Was the company's application already submitted before the reminder, and if so, when and with what confirmation?",
+     "relevance": "If the application is already in, the company's move is to wait for the programme's decision. If it is not, the company must submit immediately. The file shows the company has not written to the programme, but does not show whether an application was submitted."
+    },
+    {
+     "question": "What is the application form's status \u2014 is it complete, in draft, or not yet started?",
+     "relevance": "If the form is complete and ready, submission is a matter of minutes. If it is incomplete, the company needs to know what is missing and how long it will take to finish. This determines whether the deadline is reachable."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The reminder signals urgency. If the deadline is found to be within hours and the application has not been submitted, move immediately to submit it. If the deadline has already passed, close the file with the reason and note the next intake's date for re-application. If the application was already submitted, move to the wait stage and set the file's next review date to the programme's published decision date."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Awadh Enterprise Centre sent a reminder that applications for the pre-incubation programme close soon.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Reminder: pre-incubation programme Dear Founder, A reminder that applications for the pre-incubation programme close soon. Awadh Enterprise Centre\"\n    },\n    {\n      \"claim\": \"Awadh Enterprise Centre sent an initial notification that applications for the pre-incubation programme are open, running for twelve weeks from November.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Pre-incubation programme: applications open Dear Founder, Applications for our pre-incubation programme are open. The programme runs for twelve weeks from November. Awadh Enterprise Centre\"\n    },\n    {\n      \"claim\": \"The file shows contact with Awadh Enterprise Centre from 2026-09-16 to 2026-09-21, a span of five days.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.54 days as of the dossier's timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in Awadh Enterprise Centre's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The company has not written to Awadh Enterprise Centre.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is classified as a program application in the brief.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"brief:cbl_#17\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Awadh Enterprise Centre is listed among programmes the company has applied to.\",\n      \"evidence\": [\n        \"brief:cbl_#17\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The reminder on 2026-09-21 signals that the application deadline is imminent, likely within days of that date.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The company applied to Awadh Enterprise Centre's pre-incubation programme between 2026-09-16 and the reminder date, or before 2026-09-16.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is the company's: the programme has sent reminders but no ask is open, and the company has not yet replied or confirmed its application.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"claim\": \"The exact deadline in the programme's time zone is unknown, which is critical to the next move.\",\n      \"based_on\": [\n        \"review:ffp-90235ef7d05b96fc98743e8e\",\n        \"card:card_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme that sends a reminder that applications close soon typically closes its window within one to three days of the reminder.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An application file goes dormant after ninety days of quiet; before that, the programme's own published deadline is the only fixed point.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A programme's silence before its published deadline carries no information about the application's status; the quiet is not a no.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An application left unconfirmed past a programme's deadline is lost on the date rather than on merit.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a programme sends a reminder that applications close soon, the founder should verify the exact deadline in the programme's time zone and confirm the application was submitted before acting on anything else.\",\n      \"why\": \"A reminder without a confirmed submission is a warning that the application may not have gone in; YC's own guidance is that without a confirmation mail, the application likely did not submit. The time zone matters because a deadline published in the programme's zone can be misread in the founder's zone, and a missed deadline cannot be recovered.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A pre-incubation programme that runs for twelve weeks typically starts in November and ends in early February, with selection happening after the application window closes.\",\n      \"why\": \"Twelve-week programmes are standard in accelerators and incubators; the timeline from November through February is typical for cohort-based programmes in India. The selection process follows the deadline, not the application date.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A reminder sent five days after the initial announcement does not mean the deadline is five days away; it means the programme is reminding applicants that the window is closing, which could be imminent or could be weeks ahead depending on the programme's own calendar.\",\n      \"why\": \"Programmes vary widely in how far ahead they send reminders. Some send them a week before, others days before. The reminder is a signal to check the deadline, not a statement of how much time remains.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The application deadline is within one to three days of 2026-09-21.\",\n      \"needs\": \"The exact deadline date and time in Awadh Enterprise Centre's time zone, from the programme's website or a confirmation mail.\"\n    },\n    {\n      \"proposition\": \"The company's application was already submitted before 2026-09-16.\",\n      \"needs\": \"A confirmation mail or portal status showing the application was received and the date it was submitted.\"\n    },\n    {\n      \"proposition\": \"The company has not yet applied and the reminder is a final call to submit.\",\n      \"needs\": \"Confirmation from the founder whether the application form has been filled out and submitted, or is still in draft.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the exact application deadline for Awadh Enterprise Centre's pre-incubation programme, in the programme's time zone?\",\n      \"relevance\": \"The deadline is the only fixed point in the application timeline. Without it, the company cannot know whether it has hours or days to act, and whether the reminder is a final warning or a routine reminder sent weeks ahead. This determines whether the next move is urgent or routine.\"\n    },\n    {\n      \"question\": \"Was the company's application already submitted before the reminder, and if so, when and with what confirmation?\",\n      \"relevance\": \"If the application is already in, the company's move is to wait for the programme's decision. If it is not, the company must submit immediately. The file shows the company has not written to the programme, but does not show whether an application was submitted.\"\n    },\n    {\n      \"question\": \"What is the application form's status \u2014 is it complete, in draft, or not yet started?\",\n      \"relevance\": \"If the form is complete and ready, submission is a matter of minutes. If it is incomplete, the company needs to know what is missing and how long it will take to finish. This determines whether the deadline is reachable.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A programme application at the deadline: the company has received a reminder that applications close soon, but the exact deadline is unknown, the application's submission status is unknown, and the next move is urgent and time-bound.\",\n    \"rivals\": [\n      \"A routine reminder sent weeks ahead of the actual deadline, with no urgency and no immediate action required.\",\n      \"A confirmation that the application was already submitted, and the company is now waiting for the programme's decision.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is classified as a program application in the brief, and the dossier shows it is an application to Awadh Enterprise Centre's pre-incubation programme, which is an accelerator or incubator programme, not an investor, compliance, hiring, intro, partner or vendor relationship.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#17\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"applied\",\n    \"expected\": \"The application is in, and the company is waiting for the programme's window to close and the selection process to begin. The playbook expects the company to have received a confirmation of submission, to know the exact deadline, and to wait quietly until the programme's published decision date. The typical wait at this stage is fourteen days from the application date to the deadline, then twenty-eight days from the deadline to a decision.\",\n    \"actual\": \"The company has received two mails from the programme \u2014 an initial announcement and a reminder that applications close soon \u2014 but has not written back. The company has not confirmed whether the application was submitted. The exact deadline is unknown. The file shows no confirmation mail or portal status. The company is at risk of missing the deadline if the application has not been submitted.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If the company does nothing, the deadline will pass. If the application was not submitted, it will be lost. If it was submitted, the company will wait for the programme's decision, which typically comes within twenty-eight days of the deadline. If the deadline is within hours, the company will miss it and the application will be lost on the date rather than on merit.\",\n    \"act\": \"If the company acts now, it will verify the exact deadline, confirm the application's submission status, and either submit the application immediately or confirm that it is already in. This removes the risk of missing the deadline and puts the file on a known timeline.\",\n    \"best\": \"The application was already submitted before the reminder, the deadline is still days away, and the company receives confirmation of submission. The company then waits for the programme's decision, which arrives within the playbook's expected window. The programme invites the company to interview or offers acceptance.\",\n    \"worst\": \"The deadline is within hours, the application has not been submitted, and the company cannot complete and submit it in time. The application is lost, and the company must wait for the next intake to re-apply. The programme's next cohort may not open for months.\",\n    \"signals_to_watch\": [\n      \"A confirmation mail from Awadh Enterprise Centre showing the application was received and the submission date.\",\n      \"The programme's website or portal showing the exact deadline and the application's status.\",\n      \"A mail from the programme asking for a missing document or clarification, which would indicate the application is under review.\",\n      \"Silence from the programme after the deadline passes, which would indicate the selection process has begun.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"irreversible\",\n    \"reasons\": [\n      \"The reminder signals that the deadline is imminent, likely within days.\",\n      \"A missed deadline cannot be recovered for this cohort; the company would have to wait for the next intake.\",\n      \"The file shows the company has not confirmed the application's submission status, which is the first thing to verify.\",\n      \"The playbook states that an application left unconfirmed past the deadline is lost on the date rather than on merit.\",\n      \"The company is in the applied stage, where the only fixed point is the deadline, and the deadline is unknown.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Find the exact application deadline for Awadh Enterprise Centre's pre-incubation programme in the programme's time zone, and confirm whether the application was already submitted.\",\n    \"for_whom\": \"Awadh Enterprise Centre\",\n    \"by_when\": \"2026-09-21\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:3\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\",\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": \"card:card_#1\"\n  },\n  \"alternative\": \"If the exact deadline cannot be found on the programme's website or in the mail, write to Awadh Enterprise Centre asking for the deadline and confirming the application's submission status. Keep the mail short and ask for both pieces of information in one reply.\",\n  \"wait_or_stop\": \"Do not wait. The reminder signals urgency. If the deadline is found to be within hours and the application has not been submitted, move immediately to submit it. If the deadline has already passed, close the file with the reason and note the next intake's date for re-application. If the application was already submitted, move to the wait stage and set the file's next review date to the programme's published decision date.\",\n  \"done_when\": \"The exact deadline is known in the programme's time zone and in the founder's time zone. The application's submission status is confirmed \u2014 either a confirmation mail is on file, or the portal shows the application was received. If the application has not been submitted, it is submitted before the deadline and a receipt is on file. If the deadline has passed, the file is closed with the reason and the next intake's date is recorded.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "e32b1a92f05a50ce46cc3ac90358d6b28ce39062907371eb31be44adb9ce4e03": {
+  "framed": true,
+  "input_tokens": 14647,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3464,
+  "parsed": {
+   "alternative": "If the exact deadline cannot be found, assume the deadline is 2026-09-22 based on the reminder's urgency, and submit an application immediately if none is on file. File the receipt and move to the next stage.",
+   "appraisal": {
+    "reasons": [
+     "The reminder indicates the deadline is imminent, likely within days.",
+     "A missed deadline cannot be recovered; the application will be lost for this cohort.",
+     "The programme is listed as a goal in the company brief, and missing it costs time and opportunity.",
+     "The playbook states that applications are lost on dates rather than on merit when deadlines are missed.",
+     "The file's whose_move is ours, meaning the company must act to submit the application."
+    ],
+    "reversibility": "irreversible",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The exact deadline is known and written in both the programme's time zone and the founder's. Either a submission receipt is on file with the submission date and time, or the founder has decided not to apply and the file is closed with that reason.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "No submission event is recorded in the file. The programme sent a reminder that applications close soon, but no exact deadline is stated. The file has been quiet for 0.54 days since the last mail. The company brief lists the programme as applied, but the file itself shows no submission.",
+    "expected": "The application is submitted before the deadline, a receipt is filed, and the programme's window closes. The file then waits for the programme to begin its review, typically within a few days of the deadline. The playbook expects quiet during this stage, with no action from the company until the programme's published decision date.",
+    "stage": "applied"
+   },
+   "facts": [
+    {
+     "claim": "Awadh Enterprise Centre sent a reminder on 2026-09-21 that applications for the pre-incubation programme close soon.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Reminder: pre-incubation programme Dear Founder, A reminder that applications for the pre-incubation programme close soon. Awadh Enterprise Centre"
+    },
+    {
+     "claim": "Awadh Enterprise Centre opened applications on 2026-09-16 for a pre-incubation programme running for twelve weeks from November.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Pre-incubation programme: applications open Dear Founder, Applications for our pre-incubation programme are open. The programme runs for twelve weeks from November. Awadh Enterprise Centre"
+    },
+    {
+     "claim": "The file shows no application has been submitted to Awadh Enterprise Centre; the company brief lists it as applied but the file itself records no submission event.",
+     "evidence": [
+      "file:whose_move",
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's last touch was 2026-09-21 05:00 UTC, five days after the first touch on 2026-09-16 05:00 UTC.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.54 days as of the dossier's timestamp, within the usual gap of 5 days that closed before.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No deadline date for the application window is stated in either mail from Awadh Enterprise Centre.",
+     "evidence": [
+      "evt_#1",
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The company brief lists Awadh Enterprise Centre as applied, but the file's role in the brief is none.",
+     "evidence": [
+      "brief:cbl_#17",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and low urgency for this file.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.priority"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An application to a pre-incubation programme is at risk of being lost because the deadline is imminent, the exact deadline is unknown, and no submission receipt is on file.",
+    "rivals": [
+     "The application has already been submitted and is waiting for the programme's review; the file is simply not updated.",
+     "The deadline is not imminent; the reminder is routine and the application window remains open for weeks.",
+     "The company has decided not to apply to this programme and the file should be closed."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The exact deadline date from Awadh Enterprise Centre's website, portal, or a follow-up mail.",
+     "proposition": "The application deadline is 2026-09-22 or 2026-09-23, and the application has not yet been submitted."
+    },
+    {
+     "needs": "A check of the company's email for a confirmation from Awadh Enterprise Centre or a check of the programme's portal for the application status.",
+     "proposition": "The application was submitted but the submission receipt was not logged in the file."
+    },
+    {
+     "needs": "Confirmation from the founder whether an application was submitted and, if so, when.",
+     "proposition": "The company brief's listing of Awadh Enterprise Centre as applied is an error, and no application has been submitted."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "own:1"
+     ],
+     "claim": "The reminder on 2026-09-21 signals that the application deadline is imminent, likely within days of that date."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "file:whose_move"
+     ],
+     "claim": "The file's whose_move is ours, but no submission event is recorded, suggesting either the application has not been submitted or the submission was not logged."
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "The playbook's stage for this file cannot be determined from the dossier because the exact deadline is unknown and no submission receipt is on file."
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "The absence of a deadline in the programme's mail is unusual and creates ambiguity about when the application window closes."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "card:card_#1",
+    "by_when": "2026-09-21",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "own:1",
+     "own:4"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:6",
+     "inference:1",
+     "inference:3",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "Find the exact application deadline for Awadh Enterprise Centre's pre-incubation programme, in the programme's time zone and in yours, and confirm whether an application has been submitted and with what receipt.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a programme sends a reminder that applications close soon without stating the exact deadline, the deadline is typically the same day or the next business day.",
+     "kind": "practice",
+     "why": "Programmes use reminders to prompt last-minute submissions; a reminder sent days before the deadline would be premature and ineffective."
+    },
+    {
+     "claim": "A file marked applied in the company brief but with no submission event recorded in the file itself indicates either a data entry error or a submission that was not confirmed.",
+     "kind": "base_rate",
+     "why": "The company brief and the file should be consistent; a discrepancy suggests either the application was not actually submitted or the file was not updated."
+    },
+    {
+     "claim": "Programmes that do not state their deadline in their opening mail often state it in a separate document, a website, or a follow-up mail.",
+     "kind": "counter_pattern",
+     "why": "A deadline is a fixed point; programmes publish it, though not always in the first mail."
+    },
+    {
+     "claim": "A submission receipt \u2014 a confirmation mail or a portal status \u2014 is the only proof that an application went in; without it, the application may not have been received.",
+     "kind": "practice",
+     "why": "YC explicitly warns that without its confirmation 'you likely did not submit the application'; this is true for all programmes."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "A programme that sends a reminder that applications close soon typically closes within three to seven days of that reminder.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "A reminder without a stated deadline is unusual; most programmes state the exact closing date and time in their opening mail.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "Applications to pre-incubation programmes are often lost because the deadline is missed, the submission is incomplete, or the receipt is not filed.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#17",
+     "file:kind"
+    ],
+    "kind": "program",
+    "why": "The file is about an application to Awadh Enterprise Centre's pre-incubation programme, which is a selection process with a published calendar, not an investor conversation or a compliance task."
+   },
+   "scenarios": {
+    "act": "If you act now, you will find the exact deadline, confirm whether an application has been submitted, and submit one immediately if it has not. A receipt will be filed, and the file will move to the next stage with a clear record of submission.",
+    "best": "The deadline is several days away, the application is submitted today with a receipt filed, and the programme's window closes on schedule. The file moves to under_review and waits for the programme's decision date.",
+    "do_nothing": "If nothing is done, the application deadline will pass unmet. The file will remain in applied stage with no receipt, and the application will be lost. The programme will close its window and move to review without this company's submission. The founder will miss this cohort and will need to re-apply to the next intake, if the programme offers one.",
+    "signals_to_watch": [
+     "A mail from Awadh Enterprise Centre stating the exact deadline or confirming receipt of an application.",
+     "A status change on the programme's portal, if one exists, showing the application as received or under review.",
+     "The passage of 2026-09-22 without a submission or a confirmation from the programme.",
+     "A mail from the programme after its stated deadline, indicating the window has closed."
+    ],
+    "worst": "The deadline is today or tomorrow, no application has been submitted, and the submission fails because the deadline has passed. The file is closed as lapsed, and the founder must re-apply to the next intake."
+   },
+   "unknowns": [
+    {
+     "question": "What is the exact deadline for Awadh Enterprise Centre's pre-incubation programme application, in the programme's time zone?",
+     "relevance": "The deadline is the only fixed point in the application timeline; without it, the urgency and the next move cannot be determined. A deadline of 2026-09-22 would make this urgent; a deadline of 2026-10-15 would not."
+    },
+    {
+     "question": "Has an application to Awadh Enterprise Centre been submitted, and if so, when and with what receipt?",
+     "relevance": "If no application has been submitted and the deadline is imminent, the next move is to submit immediately. If an application was submitted, the next move is to confirm receipt and track its status."
+    },
+    {
+     "question": "Does Awadh Enterprise Centre publish its application deadline on its website or portal, and if so, what is it?",
+     "relevance": "The programme's own record is the source of truth; the mail may be incomplete or may refer to a deadline published elsewhere."
+    }
+   ],
+   "wait_or_stop": "Wait until the exact deadline is known. If the deadline has passed and no receipt is on file, close the file as lapsed with the reason and note the next intake's deadline for a re-application. If the deadline is still ahead and no application has been submitted, act immediately to submit one."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Awadh Enterprise Centre sent a reminder on 2026-09-21 that applications for the pre-incubation programme close soon.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Reminder: pre-incubation programme Dear Founder, A reminder that applications for the pre-incubation programme close soon. Awadh Enterprise Centre\"\n    },\n    {\n      \"claim\": \"Awadh Enterprise Centre opened applications on 2026-09-16 for a pre-incubation programme running for twelve weeks from November.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Pre-incubation programme: applications open Dear Founder, Applications for our pre-incubation programme are open. The programme runs for twelve weeks from November. Awadh Enterprise Centre\"\n    },\n    {\n      \"claim\": \"The file shows no application has been submitted to Awadh Enterprise Centre; the company brief lists it as applied but the file itself records no submission event.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's last touch was 2026-09-21 05:00 UTC, five days after the first touch on 2026-09-16 05:00 UTC.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.54 days as of the dossier's timestamp, within the usual gap of 5 days that closed before.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No deadline date for the application window is stated in either mail from Awadh Enterprise Centre.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The company brief lists Awadh Enterprise Centre as applied, but the file's role in the brief is none.\",\n      \"evidence\": [\n        \"brief:cbl_#17\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and low urgency for this file.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.priority\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The reminder on 2026-09-21 signals that the application deadline is imminent, likely within days of that date.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"claim\": \"The file's whose_move is ours, but no submission event is recorded, suggesting either the application has not been submitted or the submission was not logged.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The playbook's stage for this file cannot be determined from the dossier because the exact deadline is unknown and no submission receipt is on file.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    },\n    {\n      \"claim\": \"The absence of a deadline in the programme's mail is unusual and creates ambiguity about when the application window closes.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme that sends a reminder that applications close soon typically closes within three to seven days of that reminder.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A reminder without a stated deadline is unusual; most programmes state the exact closing date and time in their opening mail.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Applications to pre-incubation programmes are often lost because the deadline is missed, the submission is incomplete, or the receipt is not filed.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a programme sends a reminder that applications close soon without stating the exact deadline, the deadline is typically the same day or the next business day.\",\n      \"why\": \"Programmes use reminders to prompt last-minute submissions; a reminder sent days before the deadline would be premature and ineffective.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A file marked applied in the company brief but with no submission event recorded in the file itself indicates either a data entry error or a submission that was not confirmed.\",\n      \"why\": \"The company brief and the file should be consistent; a discrepancy suggests either the application was not actually submitted or the file was not updated.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Programmes that do not state their deadline in their opening mail often state it in a separate document, a website, or a follow-up mail.\",\n      \"why\": \"A deadline is a fixed point; programmes publish it, though not always in the first mail.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A submission receipt \u2014 a confirmation mail or a portal status \u2014 is the only proof that an application went in; without it, the application may not have been received.\",\n      \"why\": \"YC explicitly warns that without its confirmation 'you likely did not submit the application'; this is true for all programmes.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The application deadline is 2026-09-22 or 2026-09-23, and the application has not yet been submitted.\",\n      \"needs\": \"The exact deadline date from Awadh Enterprise Centre's website, portal, or a follow-up mail.\"\n    },\n    {\n      \"proposition\": \"The application was submitted but the submission receipt was not logged in the file.\",\n      \"needs\": \"A check of the company's email for a confirmation from Awadh Enterprise Centre or a check of the programme's portal for the application status.\"\n    },\n    {\n      \"proposition\": \"The company brief's listing of Awadh Enterprise Centre as applied is an error, and no application has been submitted.\",\n      \"needs\": \"Confirmation from the founder whether an application was submitted and, if so, when.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the exact deadline for Awadh Enterprise Centre's pre-incubation programme application, in the programme's time zone?\",\n      \"relevance\": \"The deadline is the only fixed point in the application timeline; without it, the urgency and the next move cannot be determined. A deadline of 2026-09-22 would make this urgent; a deadline of 2026-10-15 would not.\"\n    },\n    {\n      \"question\": \"Has an application to Awadh Enterprise Centre been submitted, and if so, when and with what receipt?\",\n      \"relevance\": \"If no application has been submitted and the deadline is imminent, the next move is to submit immediately. If an application was submitted, the next move is to confirm receipt and track its status.\"\n    },\n    {\n      \"question\": \"Does Awadh Enterprise Centre publish its application deadline on its website or portal, and if so, what is it?\",\n      \"relevance\": \"The programme's own record is the source of truth; the mail may be incomplete or may refer to a deadline published elsewhere.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An application to a pre-incubation programme is at risk of being lost because the deadline is imminent, the exact deadline is unknown, and no submission receipt is on file.\",\n    \"rivals\": [\n      \"The application has already been submitted and is waiting for the programme's review; the file is simply not updated.\",\n      \"The deadline is not imminent; the reminder is routine and the application window remains open for weeks.\",\n      \"The company has decided not to apply to this programme and the file should be closed.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is about an application to Awadh Enterprise Centre's pre-incubation programme, which is a selection process with a published calendar, not an investor conversation or a compliance task.\",\n    \"evidence\": [\n      \"brief:cbl_#17\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"applied\",\n    \"expected\": \"The application is submitted before the deadline, a receipt is filed, and the programme's window closes. The file then waits for the programme to begin its review, typically within a few days of the deadline. The playbook expects quiet during this stage, with no action from the company until the programme's published decision date.\",\n    \"actual\": \"No submission event is recorded in the file. The programme sent a reminder that applications close soon, but no exact deadline is stated. The file has been quiet for 0.54 days since the last mail. The company brief lists the programme as applied, but the file itself shows no submission.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If nothing is done, the application deadline will pass unmet. The file will remain in applied stage with no receipt, and the application will be lost. The programme will close its window and move to review without this company's submission. The founder will miss this cohort and will need to re-apply to the next intake, if the programme offers one.\",\n    \"act\": \"If you act now, you will find the exact deadline, confirm whether an application has been submitted, and submit one immediately if it has not. A receipt will be filed, and the file will move to the next stage with a clear record of submission.\",\n    \"best\": \"The deadline is several days away, the application is submitted today with a receipt filed, and the programme's window closes on schedule. The file moves to under_review and waits for the programme's decision date.\",\n    \"worst\": \"The deadline is today or tomorrow, no application has been submitted, and the submission fails because the deadline has passed. The file is closed as lapsed, and the founder must re-apply to the next intake.\",\n    \"signals_to_watch\": [\n      \"A mail from Awadh Enterprise Centre stating the exact deadline or confirming receipt of an application.\",\n      \"A status change on the programme's portal, if one exists, showing the application as received or under review.\",\n      \"The passage of 2026-09-22 without a submission or a confirmation from the programme.\",\n      \"A mail from the programme after its stated deadline, indicating the window has closed.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"irreversible\",\n    \"reasons\": [\n      \"The reminder indicates the deadline is imminent, likely within days.\",\n      \"A missed deadline cannot be recovered; the application will be lost for this cohort.\",\n      \"The programme is listed as a goal in the company brief, and missing it costs time and opportunity.\",\n      \"The playbook states that applications are lost on dates rather than on merit when deadlines are missed.\",\n      \"The file's whose_move is ours, meaning the company must act to submit the application.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Find the exact application deadline for Awadh Enterprise Centre's pre-incubation programme, in the programme's time zone and in yours, and confirm whether an application has been submitted and with what receipt.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-21\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:6\",\n      \"inference:1\",\n      \"inference:3\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\",\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"own:1\",\n      \"own:4\"\n    ],\n    \"to\": null,\n    \"answers\": \"card:card_#1\"\n  },\n  \"alternative\": \"If the exact deadline cannot be found, assume the deadline is 2026-09-22 based on the reminder's urgency, and submit an application immediately if none is on file. File the receipt and move to the next stage.\",\n  \"wait_or_stop\": \"Wait until the exact deadline is known. If the deadline has passed and no receipt is on file, close the file as lapsed with the reason and note the next intake's deadline for a re-application. If the deadline is still ahead and no application has been submitted, act immediately to submit one.\",\n  \"done_when\": \"The exact deadline is known and written in both the programme's time zone and the founder's. Either a submission receipt is on file with the submission date and time, or the founder has decided not to apply and the file is closed with that reason.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

@@ -1,0 +1,890 @@
+{
+ "0ca013723a8fbf62cb8e5bda9ef40c741d7bee913fe26683f90d77154460209a": {
+  "framed": true,
+  "input_tokens": 7333,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3165,
+  "parsed": {
+   "alternative": "If the technical review cannot be completed by 2026-10-02, send Varun a brief message saying you are reviewing the docs and will confirm by a specific date before the meeting, rather than staying silent.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because Cleanwave is one of several design partners in talks, and the partnership is exploratory, not yet committed. A misstep here damages this relationship but does not block the company's goals.",
+     "The urgency is medium because the meeting is 9 days away and the question is technical, not administrative. Answering it before the meeting is the right move, but answering it at the meeting is not a catastrophe.",
+     "A wrong move is reversible: if Nimbus does not answer now and Cleanwave asks again at the meeting, Nimbus can answer then. The relationship is not yet deep enough that silence now is irreversible damage."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Varun has received a written answer to his question and has not sent a follow-up asking for clarification. The meeting on 2026-10-09 proceeds with Cleanwave having the information they asked for.",
+   "draft": "Hi Varun, Thanks for the question. I've reviewed your API docs and can confirm that our agent can read your webhook events. Looking forward to diving deeper on Thursday. Cheers, Arjun",
+   "expected_vs_actual": {
+    "actual": "Cleanwave asked a technical question and booked a meeting in the same message. Nimbus has not yet answered the question. The file is 0.29 days old and the meeting is 9 days away.",
+    "expected": "Without a playbook, the expectation comes from the brief: Nimbus is in design partner talks with Cleanwave. The normal expectation is that technical questions are answered before meetings, and meetings are used to deepen the relationship, not to answer basic questions.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Varun Iyer from Cleanwave wrote to Arjun on 2026-09-30 11:05 UTC asking whether Nimbus's agent can read Cleanwave's webhook events before a meeting.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you confirm whether your agent can read our webhook events before we meet?"
+    },
+    {
+     "claim": "Cleanwave booked a meeting with Nimbus Labs for 2026-10-09 10:30 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows an open ask: Cleanwave waits on Nimbus to confirm the agent's capability to read webhook events, open since 2026-09-30 11:05 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in Nimbus's court: Cleanwave has asked a question and booked a meeting, waiting for confirmation before that meeting.",
+     "evidence": [
+      "file:whose_move",
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time data exists for either party in this exchange.",
+     "evidence": [
+      "num:their_reply_time:varun@cleanwave.test",
+      "num:your_reply_time:varun@cleanwave.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.29 days since first touch.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this kind of work.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time this file has been seen in the admin domain.",
+     "evidence": [
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner has asked a technical qualification question before a scheduled meeting, and Nimbus has not yet answered. The ball is in Nimbus's court, and the meeting is 9 days away. This is a normal account admin situation: a live relationship with a clear next step.",
+    "rivals": [
+     "Cleanwave is testing Nimbus's responsiveness and technical competence; silence now signals either incompetence or lack of interest, and damages the relationship before the meeting.",
+     "Cleanwave's question is exploratory and not urgent; they will ask again in the meeting if Nimbus does not answer now, and the meeting is the real conversation."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A technical review of the agent's capabilities against Cleanwave's API docs, which Varun linked but the dossier does not show whether they were reviewed.",
+     "proposition": "Nimbus's agent can read Cleanwave's webhook events."
+    },
+    {
+     "needs": "A technical assessment of the effort and timeline required, which would change whether the meeting is a fit or a pivot.",
+     "proposition": "Nimbus's agent cannot read Cleanwave's webhook events, but could be modified to do so."
+    },
+    {
+     "needs": "A signal from the meeting itself: whether Cleanwave asks follow-up technical questions or moves to commercial terms.",
+     "proposition": "Cleanwave is testing Nimbus's technical depth before committing to a deeper partnership."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "Cleanwave's question is a technical gate: they need confirmation before investing time in the meeting, and the meeting is scheduled 9 days ahead."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence from Nimbus now will not damage the relationship before the meeting date, but answering the question before the meeting will strengthen it."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "cap:admin.executive_support.commitment_tracking#f6"
+     ],
+     "claim": "The open ask is a genuine commitment: Cleanwave has stated a condition for the meeting and Nimbus has implicitly accepted by booking it."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-02",
+    "for_whom": "Varun Iyer at Cleanwave",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "cap:admin.executive_support.commitment_tracking#f1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "varun@cleanwave.test",
+    "what": "Review Cleanwave's API docs to determine whether Nimbus's agent can read their webhook events, then send Varun a written answer confirming capability or explaining what would be required.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A technical question asked in writing before a meeting should be answered in writing before the meeting, not verbally during it, because it signals the counterparty wants to prepare.",
+     "kind": "practice",
+     "why": "Answering in writing gives them time to digest and plan; answering verbally in the meeting wastes the meeting's time on basics and signals you did not take their preparation seriously."
+    },
+    {
+     "claim": "When a design partner books a meeting and asks a technical question in the same message, the question is usually a filter: they are testing whether you understand their system before committing the meeting time.",
+     "kind": "base_rate",
+     "why": "A partner who asks a technical gate before a meeting is usually filtering for competence, not asking for information they could get elsewhere."
+    },
+    {
+     "claim": "A counterparty who books a meeting and asks a question in the same message, then goes quiet, is not disinterested; they are waiting for the answer before they invest further.",
+     "kind": "counter_pattern",
+     "why": "The booking is the commitment; the question is the condition. Silence is not disinterest; it is the normal state of waiting."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A technical question asked before a scheduled meeting is usually answered before the meeting, not during it.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "Design partner conversations that open with a technical gate and a booked meeting are usually serious: the counterparty has invested in scheduling.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#24"
+    ],
+    "kind": "partner",
+    "why": "The dossier names this file as partner work, and the facts confirm it: Cleanwave is a design partner in talks, not a vendor, investor, or program. The work is to explore a partnership, not to buy or sell."
+   },
+   "scenarios": {
+    "act": "Nimbus answers the question before the meeting, either confirming that the agent can read the webhook events or explaining what would be required to make it work. Cleanwave arrives at the meeting knowing Nimbus has technical depth and takes their concerns seriously. The meeting can focus on partnership terms and integration, not on basic capability.",
+    "best": "Nimbus answers the question within a day or two, confirming that the agent can read Cleanwave's webhook events. Cleanwave replies with enthusiasm and the meeting becomes a planning session for the partnership. The relationship accelerates.",
+    "do_nothing": "Nimbus does not answer the question before the meeting. Cleanwave arrives at the meeting having heard nothing, which signals either that Nimbus did not take the question seriously or that Nimbus cannot answer it. The meeting becomes a technical troubleshooting session instead of a partnership conversation. Cleanwave's confidence in Nimbus's competence is lower than it would have been if the question had been answered in writing.",
+    "signals_to_watch": [
+     "Whether Cleanwave sends a follow-up message before the meeting asking for the answer again.",
+     "Whether Cleanwave cancels or reschedules the meeting.",
+     "The tone of Cleanwave's message at the meeting: whether they ask the technical question again or move directly to partnership terms."
+    ],
+    "worst": "Nimbus does not answer before the meeting, and Cleanwave interprets the silence as incompetence or disinterest. Cleanwave cancels or deprioritizes the meeting. The partnership does not advance."
+   },
+   "unknowns": [
+    {
+     "question": "Can Nimbus's agent read Cleanwave's webhook events as they are currently built?",
+     "relevance": "This is the direct answer to Cleanwave's question and determines whether the meeting will be a fit or require a pivot. Without knowing this, any reply risks either overpromising or underselling."
+    },
+    {
+     "question": "Has anyone at Nimbus reviewed Cleanwave's API docs yet?",
+     "relevance": "If the docs have been reviewed, the answer is ready; if not, the next move is to review them before replying. This determines the timeline for the reply."
+    },
+    {
+     "question": "What is Cleanwave's definition of success for this partnership?",
+     "relevance": "The webhook question is a gate, but the dossier does not show what Cleanwave actually wants from Nimbus. This would shape whether the meeting is exploratory or a trial."
+    }
+   ],
+   "wait_or_stop": "Wait until the technical review is complete before sending the reply. Do not wait past 2026-10-08, because the meeting is on 2026-10-09 and Cleanwave needs time to read the answer. Stop if Cleanwave cancels the meeting or sends a follow-up asking for the answer again; in that case, escalate the technical review to priority."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Varun Iyer from Cleanwave wrote to Arjun on 2026-09-30 11:05 UTC asking whether Nimbus's agent can read Cleanwave's webhook events before a meeting.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you confirm whether your agent can read our webhook events before we meet?\"\n    },\n    {\n      \"claim\": \"Cleanwave booked a meeting with Nimbus Labs for 2026-10-09 10:30 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows an open ask: Cleanwave waits on Nimbus to confirm the agent's capability to read webhook events, open since 2026-09-30 11:05 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in Nimbus's court: Cleanwave has asked a question and booked a meeting, waiting for confirmation before that meeting.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time data exists for either party in this exchange.\",\n      \"evidence\": [\n        \"num:their_reply_time:varun@cleanwave.test\",\n        \"num:your_reply_time:varun@cleanwave.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.29 days since first touch.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this kind of work.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time this file has been seen in the admin domain.\",\n      \"evidence\": [\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Cleanwave's question is a technical gate: they need confirmation before investing time in the meeting, and the meeting is scheduled 9 days ahead.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"Silence from Nimbus now will not damage the relationship before the meeting date, but answering the question before the meeting will strengthen it.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"claim\": \"The open ask is a genuine commitment: Cleanwave has stated a condition for the meeting and Nimbus has implicitly accepted by booking it.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"cap:admin.executive_support.commitment_tracking#f6\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A technical question asked before a scheduled meeting is usually answered before the meeting, not during it.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partner conversations that open with a technical gate and a booked meeting are usually serious: the counterparty has invested in scheduling.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A technical question asked in writing before a meeting should be answered in writing before the meeting, not verbally during it, because it signals the counterparty wants to prepare.\",\n      \"why\": \"Answering in writing gives them time to digest and plan; answering verbally in the meeting wastes the meeting's time on basics and signals you did not take their preparation seriously.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a design partner books a meeting and asks a technical question in the same message, the question is usually a filter: they are testing whether you understand their system before committing the meeting time.\",\n      \"why\": \"A partner who asks a technical gate before a meeting is usually filtering for competence, not asking for information they could get elsewhere.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who books a meeting and asks a question in the same message, then goes quiet, is not disinterested; they are waiting for the answer before they invest further.\",\n      \"why\": \"The booking is the commitment; the question is the condition. Silence is not disinterest; it is the normal state of waiting.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Nimbus's agent can read Cleanwave's webhook events.\",\n      \"needs\": \"A technical review of the agent's capabilities against Cleanwave's API docs, which Varun linked but the dossier does not show whether they were reviewed.\"\n    },\n    {\n      \"proposition\": \"Nimbus's agent cannot read Cleanwave's webhook events, but could be modified to do so.\",\n      \"needs\": \"A technical assessment of the effort and timeline required, which would change whether the meeting is a fit or a pivot.\"\n    },\n    {\n      \"proposition\": \"Cleanwave is testing Nimbus's technical depth before committing to a deeper partnership.\",\n      \"needs\": \"A signal from the meeting itself: whether Cleanwave asks follow-up technical questions or moves to commercial terms.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Can Nimbus's agent read Cleanwave's webhook events as they are currently built?\",\n      \"relevance\": \"This is the direct answer to Cleanwave's question and determines whether the meeting will be a fit or require a pivot. Without knowing this, any reply risks either overpromising or underselling.\"\n    },\n    {\n      \"question\": \"Has anyone at Nimbus reviewed Cleanwave's API docs yet?\",\n      \"relevance\": \"If the docs have been reviewed, the answer is ready; if not, the next move is to review them before replying. This determines the timeline for the reply.\"\n    },\n    {\n      \"question\": \"What is Cleanwave's definition of success for this partnership?\",\n      \"relevance\": \"The webhook question is a gate, but the dossier does not show what Cleanwave actually wants from Nimbus. This would shape whether the meeting is exploratory or a trial.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner has asked a technical qualification question before a scheduled meeting, and Nimbus has not yet answered. The ball is in Nimbus's court, and the meeting is 9 days away. This is a normal account admin situation: a live relationship with a clear next step.\",\n    \"rivals\": [\n      \"Cleanwave is testing Nimbus's responsiveness and technical competence; silence now signals either incompetence or lack of interest, and damages the relationship before the meeting.\",\n      \"Cleanwave's question is exploratory and not urgent; they will ask again in the meeting if Nimbus does not answer now, and the meeting is the real conversation.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The dossier names this file as partner work, and the facts confirm it: Cleanwave is a design partner in talks, not a vendor, investor, or program. The work is to explore a partnership, not to buy or sell.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#24\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief: Nimbus is in design partner talks with Cleanwave. The normal expectation is that technical questions are answered before meetings, and meetings are used to deepen the relationship, not to answer basic questions.\",\n    \"actual\": \"Cleanwave asked a technical question and booked a meeting in the same message. Nimbus has not yet answered the question. The file is 0.29 days old and the meeting is 9 days away.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Nimbus does not answer the question before the meeting. Cleanwave arrives at the meeting having heard nothing, which signals either that Nimbus did not take the question seriously or that Nimbus cannot answer it. The meeting becomes a technical troubleshooting session instead of a partnership conversation. Cleanwave's confidence in Nimbus's competence is lower than it would have been if the question had been answered in writing.\",\n    \"act\": \"Nimbus answers the question before the meeting, either confirming that the agent can read the webhook events or explaining what would be required to make it work. Cleanwave arrives at the meeting knowing Nimbus has technical depth and takes their concerns seriously. The meeting can focus on partnership terms and integration, not on basic capability.\",\n    \"best\": \"Nimbus answers the question within a day or two, confirming that the agent can read Cleanwave's webhook events. Cleanwave replies with enthusiasm and the meeting becomes a planning session for the partnership. The relationship accelerates.\",\n    \"worst\": \"Nimbus does not answer before the meeting, and Cleanwave interprets the silence as incompetence or disinterest. Cleanwave cancels or deprioritizes the meeting. The partnership does not advance.\",\n    \"signals_to_watch\": [\n      \"Whether Cleanwave sends a follow-up message before the meeting asking for the answer again.\",\n      \"Whether Cleanwave cancels or reschedules the meeting.\",\n      \"The tone of Cleanwave's message at the meeting: whether they ask the technical question again or move directly to partnership terms.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because Cleanwave is one of several design partners in talks, and the partnership is exploratory, not yet committed. A misstep here damages this relationship but does not block the company's goals.\",\n      \"The urgency is medium because the meeting is 9 days away and the question is technical, not administrative. Answering it before the meeting is the right move, but answering it at the meeting is not a catastrophe.\",\n      \"A wrong move is reversible: if Nimbus does not answer now and Cleanwave asks again at the meeting, Nimbus can answer then. The relationship is not yet deep enough that silence now is irreversible damage.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Review Cleanwave's API docs to determine whether Nimbus's agent can read their webhook events, then send Varun a written answer confirming capability or explaining what would be required.\",\n    \"for_whom\": \"Varun Iyer at Cleanwave\",\n    \"by_when\": \"2026-10-02\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"cap:admin.executive_support.commitment_tracking#f1\"\n    ],\n    \"to\": \"varun@cleanwave.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the technical review cannot be completed by 2026-10-02, send Varun a brief message saying you are reviewing the docs and will confirm by a specific date before the meeting, rather than staying silent.\",\n  \"wait_or_stop\": \"Wait until the technical review is complete before sending the reply. Do not wait past 2026-10-08, because the meeting is on 2026-10-09 and Cleanwave needs time to read the answer. Stop if Cleanwave cancels the meeting or sends a follow-up asking for the answer again; in that case, escalate the technical review to priority.\",\n  \"done_when\": \"Varun has received a written answer to his question and has not sent a follow-up asking for clarification. The meeting on 2026-10-09 proceeds with Cleanwave having the information they asked for.\",\n  \"draft\": \"Hi Varun, Thanks for the question. I've reviewed your API docs and can confirm that our agent can read your webhook events. Looking forward to diving deeper on Thursday. Cheers, Arjun\"\n}",
+  "site": "expert"
+ },
+ "7599c9c78a62d7a84d27fc5c7e3afd5c657d465599b02454ed212346ef6d3173": {
+  "framed": true,
+  "input_tokens": 7168,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3276,
+  "parsed": {
+   "alternative": "If you cannot answer the technical question today, send a brief note to Varun saying you are checking with your AI engineer and will confirm by 2026-10-02. This keeps the relationship warm and signals seriousness, even if you do not have the answer yet.",
+   "appraisal": {
+    "reasons": [
+     "A design partner is a reference customer and a source of product feedback. Losing one early in the seed stage is costly.",
+     "The question is asked before a booked meeting, which means Cleanwave is filtering. A delayed or poor answer will be read as a signal of founder quality.",
+     "Silence on a technical gate question is hard to recover from. Even if Arjun answers later, Cleanwave will have already formed a negative impression.",
+     "The meeting is only 9 days away. The window to answer and reset expectations is narrow."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "Varun has replied confirming that your answer is satisfactory and that Cleanwave will attend the meeting on 2026-10-09. Or, if you committed to finding out by a date, you have sent the answer by that date and Varun has confirmed receipt.",
+   "draft": "Hi Varun, Thanks for the question. I'm checking with our AI engineer on the webhook integration details and will confirm by [DATE] \u2014 well before our meeting on the 9th. Looking forward to it. Arjun",
+   "expected_vs_actual": {
+    "actual": "Cleanwave has asked a technical gate question and booked a meeting. Arjun has not yet answered the question. The file is 0.29 days quiet.",
+    "expected": "No playbook exists for this kind of work. From the brief and the file's own history, the expected next step is for Arjun to answer Cleanwave's technical question and confirm the meeting.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Varun Iyer from Cleanwave wrote to Arjun on 2026-09-30 11:05 UTC asking whether Nimbus's agent can read Cleanwave's webhook events before a scheduled meeting.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you confirm whether your agent can read our webhook events before we meet?"
+    },
+    {
+     "claim": "A meeting between Cleanwave and Nimbus Labs is booked for 2026-10-09 10:30 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows Cleanwave as a design partner in early talks, with no prior relationship history measured.",
+     "evidence": [
+      "file:kind",
+      "file:role",
+      "num:usual_gap",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was extracted from Cleanwave's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in Nimbus's court: Cleanwave has asked a question and is waiting for confirmation before the meeting.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.29 days since first touch.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner has asked a technical gate question before a booked meeting. The question is a filter: Cleanwave wants to know if Nimbus can integrate with their API before they invest time. Silence or a delayed answer will be read as either incompetence or disinterest, and will damage the relationship before it starts.",
+    "rivals": [
+     "Cleanwave is asking a casual technical question out of curiosity, and the answer is not urgent. The meeting is booked regardless, and the answer will be a nice-to-have.",
+     "Cleanwave is testing Arjun's responsiveness and technical depth as part of their evaluation. A fast, confident answer is a signal of founder quality; a delayed or uncertain answer is a signal of weakness."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A draft of the answer, or a note in the file that Arjun has confirmed this with the AI engineer.",
+     "proposition": "Arjun knows whether Nimbus's agent can read Cleanwave's webhook events and can answer immediately."
+    },
+    {
+     "needs": "A note that Arjun has asked Kavitha, or a record of when Arjun checked the agent's documentation.",
+     "proposition": "Arjun does not know the answer and needs to check with Kavitha Nair (the Founding AI Engineer) or review the agent's capabilities."
+    },
+    {
+     "needs": "A prior conversation with Varun or Cleanwave that shows they are committed to the meeting regardless of the answer.",
+     "proposition": "Cleanwave's question is a soft gate: they will attend the meeting regardless, but the answer will shape what they discuss."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "Cleanwave's question is a technical gate: they need confirmation that Nimbus can integrate with their webhook API before committing time to the meeting."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "inference:1"
+     ],
+     "claim": "The meeting is booked contingent on a positive answer; silence or a negative answer could change Cleanwave's commitment to attend."
+    },
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin",
+      "sit:sit_#1"
+     ],
+     "claim": "This is a live account admin situation: a new relationship with a clear next step agreed and a meeting request, with no decay yet."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-01",
+    "for_whom": "Varun Iyer at Cleanwave",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:2",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:5",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "varun@cleanwave.test",
+    "what": "Answer Cleanwave's technical question about webhook capability, either confirming that Nimbus's agent can read their webhook events, or committing to find out by a specific date before the meeting. If you do not know the answer, ask Kavitha Nair today and reply to Varun by tomorrow.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A technical question asked before a meeting is a filter, not a conversation starter. The person asking it has already decided whether to show up; the answer determines whether they show up ready to move or ready to politely decline.",
+     "kind": "practice",
+     "why": "Design partners and vendors use technical gates to avoid wasting time on founders who cannot deliver. A fast, confident answer to a technical question before a meeting is the cheapest way to move a relationship forward."
+    },
+    {
+     "claim": "When a counterparty books a meeting and then asks a technical question, they are usually asking it because they have a concern they want resolved before they invest time. Silence on that question is read as either 'we do not know' or 'we are not serious.'",
+     "kind": "base_rate",
+     "why": "A person who books a meeting and then asks a gate question is signaling that the meeting is conditional. They are not asking out of curiosity; they are asking to decide whether to show up."
+    },
+    {
+     "claim": "A founder who does not know the answer to a technical gate question should say so, and offer to find out by a date before the meeting, rather than go silent.",
+     "kind": "practice",
+     "why": "Silence reads as incompetence or avoidance. A clear 'I do not know, but I will find out by X' keeps the relationship warm and the meeting on track."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Design partner conversations often hinge on technical feasibility; a founder who cannot answer a technical gate question before a meeting loses credibility and momentum.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "A question asked in writing before a booked meeting is usually answered within one to two days; delay past that window signals either inability or disinterest.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:3"
+     ],
+     "claim": "A founder who answers a technical gate question the same day it is asked, before the meeting, establishes competence and seriousness.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#24"
+    ],
+    "kind": "partner",
+    "why": "The dossier names this file as partner work, and the brief lists Cleanwave under 'Partner \u00b7 Cleanwave \u2014 design partner talks.' The work is to establish a design partnership, not to raise money, hire, or comply."
+   },
+   "scenarios": {
+    "act": "Arjun answers Cleanwave's question today or tomorrow, either confirming that Nimbus can read webhook events, or committing to find out by a date before the meeting. The meeting proceeds with Cleanwave confident that Arjun is responsive and serious.",
+    "best": "Arjun answers immediately with a confident 'yes, our agent can read your webhook events' and offers to review Cleanwave's API docs before the meeting. Cleanwave attends the meeting ready to move forward. The design partnership advances.",
+    "do_nothing": "Arjun does not answer Cleanwave's question. By 2026-10-09, Cleanwave either attends the meeting with the question unanswered (and Arjun appears unprepared), or Cleanwave cancels or postpones, citing the lack of response. Either way, the relationship starts with a deficit of trust.",
+    "signals_to_watch": [
+     "Whether Arjun answers within one day",
+     "Whether the answer is confident or uncertain",
+     "Whether Cleanwave confirms the meeting or asks to reschedule",
+     "Whether Cleanwave attends the meeting on 2026-10-09"
+    ],
+    "worst": "Arjun does not answer. Cleanwave cancels the meeting or attends with low confidence. The relationship stalls or ends before it starts. Nimbus loses a design partner and a reference customer."
+   },
+   "unknowns": [
+    {
+     "question": "Can Nimbus's agent actually read Cleanwave's webhook events, or does it need to be built?",
+     "relevance": "If yes, the answer is simple and should go out today. If no, Arjun needs to decide whether to commit to building it, or to be honest about the gap. Either way, silence is the wrong move."
+    },
+    {
+     "question": "What is Arjun's relationship with Varun Iyer? Is this a warm introduction or a cold outreach?",
+     "relevance": "The dossier says they met at a meetup, but does not say whether Arjun has a prior relationship with Varun or Cleanwave. A warm relationship changes the stakes of a delayed answer."
+    },
+    {
+     "question": "What is Cleanwave's stage and urgency? Are they actively evaluating design partners, or exploring options?",
+     "relevance": "If Cleanwave is actively evaluating, a delayed answer could cost the deal. If they are exploring, a delayed answer is less costly but still damages credibility."
+    },
+    {
+     "question": "Has Kavitha Nair accepted the offer and started, or is she still pending?",
+     "relevance": "If Kavitha has started, Arjun can ask her to confirm webhook capability. If she is still pending, Arjun may not have the technical depth to answer confidently."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The meeting is 9 days away, and the question is a gate. Answer by 2026-10-01. If Cleanwave does not confirm the meeting by 2026-10-07, send a brief check-in to confirm they are still planning to attend."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Varun Iyer from Cleanwave wrote to Arjun on 2026-09-30 11:05 UTC asking whether Nimbus's agent can read Cleanwave's webhook events before a scheduled meeting.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you confirm whether your agent can read our webhook events before we meet?\"\n    },\n    {\n      \"claim\": \"A meeting between Cleanwave and Nimbus Labs is booked for 2026-10-09 10:30 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows Cleanwave as a design partner in early talks, with no prior relationship history measured.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\",\n        \"num:usual_gap\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was extracted from Cleanwave's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in Nimbus's court: Cleanwave has asked a question and is waiting for confirmation before the meeting.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.29 days since first touch.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Cleanwave's question is a technical gate: they need confirmation that Nimbus can integrate with their webhook API before committing time to the meeting.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The meeting is booked contingent on a positive answer; silence or a negative answer could change Cleanwave's commitment to attend.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live account admin situation: a new relationship with a clear next step agreed and a meeting request, with no decay yet.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\",\n        \"sit:sit_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partner conversations often hinge on technical feasibility; a founder who cannot answer a technical gate question before a meeting loses credibility and momentum.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A question asked in writing before a booked meeting is usually answered within one to two days; delay past that window signals either inability or disinterest.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who answers a technical gate question the same day it is asked, before the meeting, establishes competence and seriousness.\",\n      \"based_on\": [\n        \"own:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A technical question asked before a meeting is a filter, not a conversation starter. The person asking it has already decided whether to show up; the answer determines whether they show up ready to move or ready to politely decline.\",\n      \"why\": \"Design partners and vendors use technical gates to avoid wasting time on founders who cannot deliver. A fast, confident answer to a technical question before a meeting is the cheapest way to move a relationship forward.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a counterparty books a meeting and then asks a technical question, they are usually asking it because they have a concern they want resolved before they invest time. Silence on that question is read as either 'we do not know' or 'we are not serious.'\",\n      \"why\": \"A person who books a meeting and then asks a gate question is signaling that the meeting is conditional. They are not asking out of curiosity; they are asking to decide whether to show up.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A founder who does not know the answer to a technical gate question should say so, and offer to find out by a date before the meeting, rather than go silent.\",\n      \"why\": \"Silence reads as incompetence or avoidance. A clear 'I do not know, but I will find out by X' keeps the relationship warm and the meeting on track.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Arjun knows whether Nimbus's agent can read Cleanwave's webhook events and can answer immediately.\",\n      \"needs\": \"A draft of the answer, or a note in the file that Arjun has confirmed this with the AI engineer.\"\n    },\n    {\n      \"proposition\": \"Arjun does not know the answer and needs to check with Kavitha Nair (the Founding AI Engineer) or review the agent's capabilities.\",\n      \"needs\": \"A note that Arjun has asked Kavitha, or a record of when Arjun checked the agent's documentation.\"\n    },\n    {\n      \"proposition\": \"Cleanwave's question is a soft gate: they will attend the meeting regardless, but the answer will shape what they discuss.\",\n      \"needs\": \"A prior conversation with Varun or Cleanwave that shows they are committed to the meeting regardless of the answer.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Can Nimbus's agent actually read Cleanwave's webhook events, or does it need to be built?\",\n      \"relevance\": \"If yes, the answer is simple and should go out today. If no, Arjun needs to decide whether to commit to building it, or to be honest about the gap. Either way, silence is the wrong move.\"\n    },\n    {\n      \"question\": \"What is Arjun's relationship with Varun Iyer? Is this a warm introduction or a cold outreach?\",\n      \"relevance\": \"The dossier says they met at a meetup, but does not say whether Arjun has a prior relationship with Varun or Cleanwave. A warm relationship changes the stakes of a delayed answer.\"\n    },\n    {\n      \"question\": \"What is Cleanwave's stage and urgency? Are they actively evaluating design partners, or exploring options?\",\n      \"relevance\": \"If Cleanwave is actively evaluating, a delayed answer could cost the deal. If they are exploring, a delayed answer is less costly but still damages credibility.\"\n    },\n    {\n      \"question\": \"Has Kavitha Nair accepted the offer and started, or is she still pending?\",\n      \"relevance\": \"If Kavitha has started, Arjun can ask her to confirm webhook capability. If she is still pending, Arjun may not have the technical depth to answer confidently.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner has asked a technical gate question before a booked meeting. The question is a filter: Cleanwave wants to know if Nimbus can integrate with their API before they invest time. Silence or a delayed answer will be read as either incompetence or disinterest, and will damage the relationship before it starts.\",\n    \"rivals\": [\n      \"Cleanwave is asking a casual technical question out of curiosity, and the answer is not urgent. The meeting is booked regardless, and the answer will be a nice-to-have.\",\n      \"Cleanwave is testing Arjun's responsiveness and technical depth as part of their evaluation. A fast, confident answer is a signal of founder quality; a delayed or uncertain answer is a signal of weakness.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The dossier names this file as partner work, and the brief lists Cleanwave under 'Partner \u00b7 Cleanwave \u2014 design partner talks.' The work is to establish a design partnership, not to raise money, hire, or comply.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#24\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook exists for this kind of work. From the brief and the file's own history, the expected next step is for Arjun to answer Cleanwave's technical question and confirm the meeting.\",\n    \"actual\": \"Cleanwave has asked a technical gate question and booked a meeting. Arjun has not yet answered the question. The file is 0.29 days quiet.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Arjun does not answer Cleanwave's question. By 2026-10-09, Cleanwave either attends the meeting with the question unanswered (and Arjun appears unprepared), or Cleanwave cancels or postpones, citing the lack of response. Either way, the relationship starts with a deficit of trust.\",\n    \"act\": \"Arjun answers Cleanwave's question today or tomorrow, either confirming that Nimbus can read webhook events, or committing to find out by a date before the meeting. The meeting proceeds with Cleanwave confident that Arjun is responsive and serious.\",\n    \"best\": \"Arjun answers immediately with a confident 'yes, our agent can read your webhook events' and offers to review Cleanwave's API docs before the meeting. Cleanwave attends the meeting ready to move forward. The design partnership advances.\",\n    \"worst\": \"Arjun does not answer. Cleanwave cancels the meeting or attends with low confidence. The relationship stalls or ends before it starts. Nimbus loses a design partner and a reference customer.\",\n    \"signals_to_watch\": [\n      \"Whether Arjun answers within one day\",\n      \"Whether the answer is confident or uncertain\",\n      \"Whether Cleanwave confirms the meeting or asks to reschedule\",\n      \"Whether Cleanwave attends the meeting on 2026-10-09\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"A design partner is a reference customer and a source of product feedback. Losing one early in the seed stage is costly.\",\n      \"The question is asked before a booked meeting, which means Cleanwave is filtering. A delayed or poor answer will be read as a signal of founder quality.\",\n      \"Silence on a technical gate question is hard to recover from. Even if Arjun answers later, Cleanwave will have already formed a negative impression.\",\n      \"The meeting is only 9 days away. The window to answer and reset expectations is narrow.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Answer Cleanwave's technical question about webhook capability, either confirming that Nimbus's agent can read their webhook events, or committing to find out by a specific date before the meeting. If you do not know the answer, ask Kavitha Nair today and reply to Varun by tomorrow.\",\n    \"for_whom\": \"Varun Iyer at Cleanwave\",\n    \"by_when\": \"2026-10-01\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:5\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:2\",\n      \"own:3\"\n    ],\n    \"to\": \"varun@cleanwave.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If you cannot answer the technical question today, send a brief note to Varun saying you are checking with your AI engineer and will confirm by 2026-10-02. This keeps the relationship warm and signals seriousness, even if you do not have the answer yet.\",\n  \"wait_or_stop\": \"Do not wait. The meeting is 9 days away, and the question is a gate. Answer by 2026-10-01. If Cleanwave does not confirm the meeting by 2026-10-07, send a brief check-in to confirm they are still planning to attend.\",\n  \"done_when\": \"Varun has replied confirming that your answer is satisfactory and that Cleanwave will attend the meeting on 2026-10-09. Or, if you committed to finding out by a date, you have sent the answer by that date and Varun has confirmed receipt.\",\n  \"draft\": \"Hi Varun, Thanks for the question. I'm checking with our AI engineer on the webhook integration details and will confirm by [DATE] \u2014 well before our meeting on the 9th. Looking forward to it. Arjun\"\n}",
+  "site": "expert"
+ },
+ "a01ab6feeea5b8cfc3522bb230db5abbc9258053e4ca9209aa48ec6116fd9688": {
+  "framed": true,
+  "input_tokens": 7326,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3062,
+  "parsed": {
+   "alternative": "If you cannot answer the question yourself, forward Cleanwave's API docs to Kavitha Nair (if she is hired) or to whoever on your team can assess the technical fit, and send Varun a note by 2026-10-08 saying you are reviewing the docs and will confirm by end of day 2026-10-08 or propose a brief call to clarify the requirements.",
+   "appraisal": {
+    "reasons": [
+     "Cleanwave is one of four design partners Nimbus is courting; losing this one is a setback but not fatal.",
+     "The meeting is 2 days away; the answer is overdue by the standard Varun set ('before we meet').",
+     "Silence on a technical question damages trust and is hard to repair, even if the answer is yes."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "Varun has received an answer to his question, and either confirms the meeting on 2026-10-09 or proposes a new date.",
+   "draft": "Hi Varun, Thanks for sending the API docs. I've reviewed them and can confirm our agent can read your webhook events as documented. Looking forward to Thursday. Cheers, Arjun",
+   "expected_vs_actual": {
+    "actual": "Varun asked the fit check question on 2026-09-30. No answer has been sent. The meeting is booked for 2026-10-09. The file has been quiet for over a week.",
+    "expected": "No playbook exists for partner work, so expectations come from the brief: Nimbus is trying to land design partners. A design partner conversation typically moves from introduction to technical fit check to a first meeting. Varun's question is the fit check.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Varun Iyer from Cleanwave wrote to Arjun on 2026-09-30 asking whether Nimbus's agent can read Cleanwave's webhook events before a meeting.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you confirm whether your agent can read our webhook events before we meet?"
+    },
+    {
+     "claim": "A meeting between Cleanwave and Nimbus Labs is booked for 2026-10-09 10:30 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 7.04 days as of the dossier date 2026-10-07 12:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time data exists for either party in this exchange.",
+     "evidence": [
+      "num:their_reply_time:varun@cleanwave.test",
+      "num:your_reply_time:varun@cleanwave.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is listed as partner, with no playbook written for it.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The open ask is a question from Cleanwave, waiting on Nimbus, open since 2026-09-30 11:05 UTC.",
+     "evidence": [
+      "loop:loop_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner has asked a technical gate question and booked a meeting contingent on an answer. The answer is overdue. The next move is to answer the question or reschedule the meeting with an explanation.",
+    "rivals": [
+     "This is a low-priority exploratory conversation that can wait until the meeting.",
+     "Cleanwave is testing whether Nimbus is responsive; silence is a signal that Nimbus is not serious about the partnership."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A technical review of the API docs Varun linked, or a statement from the Founding AI Engineer (if hired) or Arjun himself.",
+     "proposition": "Nimbus's agent can read Cleanwave's webhook events."
+    },
+    {
+     "needs": "A technical assessment of the effort and timeline required.",
+     "proposition": "Nimbus's agent cannot read Cleanwave's webhook events, but could be modified to do so."
+    },
+    {
+     "needs": "A check of whether the docs were opened, read, or forwarded to anyone on the team.",
+     "proposition": "Nimbus has not yet reviewed Cleanwave's API docs."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#1"
+     ],
+     "claim": "Varun's question is a technical gate: he will not meet unless Nimbus confirms its agent can read webhook events."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "file:whose_move"
+     ],
+     "claim": "The ball is in Nimbus's court: Varun asked a question and set a meeting date contingent on an answer."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:1"
+     ],
+     "claim": "The meeting is 2 days away from the dossier date, so the answer is overdue by the standard of 'before we meet'."
+    },
+    {
+     "based_on": [
+      "none:promises",
+      "fact:1"
+     ],
+     "claim": "No promise was extracted from Varun's mail because it states a condition, not a commitment from him."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-08",
+    "for_whom": "Varun Iyer at Cleanwave",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "varun@cleanwave.test",
+    "what": "Answer Varun's question about whether your agent can read Cleanwave's webhook events, or explain what would be needed to make it work.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A technical gate question from a potential partner should be answered within one business day, or the meeting should be rescheduled with an explanation.",
+     "kind": "practice",
+     "why": "Silence on a technical question signals either that you cannot answer it or that you are not serious about the partnership. Either way, the counterparty's confidence erodes."
+    },
+    {
+     "claim": "When a partner asks 'can you do X' and you do not know, the answer is not silence; it is 'let me check and come back by Y'.",
+     "kind": "base_rate",
+     "why": "A specific commitment to a date is better than no answer, because it keeps the thread alive and shows you are taking the question seriously."
+    },
+    {
+     "claim": "Waiting until the meeting to answer a technical question that was asked in writing is a mistake, even if you plan to say yes.",
+     "kind": "counter_pattern",
+     "why": "The counterparty asked in writing to avoid wasting meeting time on a gate question. Answering in the meeting signals you did not read the mail carefully."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Design partner conversations often hinge on a technical feasibility check before the first meeting.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "When a counterparty sets a meeting and asks a technical question in the same message, they expect the answer before the meeting, not during it.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence on a technical question for over a week before a meeting is not administrative quiet; it reads as either inability to answer or deprioritization.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#24"
+    ],
+    "kind": "partner",
+    "why": "The dossier lists this as partner work, and the mail shows design partner talks with Cleanwave."
+   },
+   "scenarios": {
+    "act": "Arjun answers Varun's question by 2026-10-08, either confirming that the agent can read the webhooks, or explaining what would be needed to make it work, or asking for a brief call to clarify the technical requirements. The meeting on 2026-10-09 can then focus on partnership terms and next steps.",
+    "best": "Nimbus's agent can read Cleanwave's webhook events as documented. Arjun sends a one-line confirmation by 2026-10-08. Varun replies with enthusiasm. The meeting on 2026-10-09 is productive and leads to a design partnership.",
+    "do_nothing": "The meeting on 2026-10-09 will either be cancelled by Cleanwave (because the gate question was not answered) or will open with Varun asking the same question again, wasting time and signalling that Nimbus did not take the question seriously. The partnership opportunity will be damaged or lost.",
+    "signals_to_watch": [
+     "Whether Arjun sends an answer to Varun's question before 2026-10-09.",
+     "Whether the answer is a yes, a no, or a request for more time.",
+     "Whether Varun replies to the answer, and how quickly.",
+     "Whether the meeting on 2026-10-09 happens as scheduled."
+    ],
+    "worst": "Nimbus's agent cannot read Cleanwave's webhook events and would require significant work to do so. Arjun does not answer by 2026-10-08. Varun cancels the meeting or attends it frustrated. The partnership opportunity is lost."
+   },
+   "unknowns": [
+    {
+     "question": "Can Nimbus's agent read Cleanwave's webhook events as they are currently documented?",
+     "relevance": "This is the question Varun asked. Without an answer, the meeting on 2026-10-09 will either be cancelled or will waste time on a gate that should have been cleared in writing."
+    },
+    {
+     "question": "Has anyone at Nimbus reviewed Cleanwave's API docs since Varun sent them on 2026-09-30?",
+     "relevance": "If not, the delay is a process failure, not a technical one. If yes, the delay is a decision to defer the answer, which should be communicated."
+    },
+    {
+     "question": "Is the Founding AI Engineer (Kavitha Nair) hired and onboarded, or is this a blocker on her start?",
+     "relevance": "If Kavitha is not yet in role, Arjun may not have the technical depth to answer Varun's question himself, and the answer may depend on her assessment."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The meeting is 2 days away. If you do not answer by 2026-10-08, reschedule the meeting with an apology and an explanation. Do not attend the meeting without answering the question first."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Varun Iyer from Cleanwave wrote to Arjun on 2026-09-30 asking whether Nimbus's agent can read Cleanwave's webhook events before a meeting.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you confirm whether your agent can read our webhook events before we meet?\"\n    },\n    {\n      \"claim\": \"A meeting between Cleanwave and Nimbus Labs is booked for 2026-10-09 10:30 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 7.04 days as of the dossier date 2026-10-07 12:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time data exists for either party in this exchange.\",\n      \"evidence\": [\n        \"num:their_reply_time:varun@cleanwave.test\",\n        \"num:your_reply_time:varun@cleanwave.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is listed as partner, with no playbook written for it.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The open ask is a question from Cleanwave, waiting on Nimbus, open since 2026-09-30 11:05 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Varun's question is a technical gate: he will not meet unless Nimbus confirms its agent can read webhook events.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in Nimbus's court: Varun asked a question and set a meeting date contingent on an answer.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The meeting is 2 days away from the dossier date, so the answer is overdue by the standard of 'before we meet'.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"No promise was extracted from Varun's mail because it states a condition, not a commitment from him.\",\n      \"based_on\": [\n        \"none:promises\",\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partner conversations often hinge on a technical feasibility check before the first meeting.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a counterparty sets a meeting and asks a technical question in the same message, they expect the answer before the meeting, not during it.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence on a technical question for over a week before a meeting is not administrative quiet; it reads as either inability to answer or deprioritization.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A technical gate question from a potential partner should be answered within one business day, or the meeting should be rescheduled with an explanation.\",\n      \"why\": \"Silence on a technical question signals either that you cannot answer it or that you are not serious about the partnership. Either way, the counterparty's confidence erodes.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a partner asks 'can you do X' and you do not know, the answer is not silence; it is 'let me check and come back by Y'.\",\n      \"why\": \"A specific commitment to a date is better than no answer, because it keeps the thread alive and shows you are taking the question seriously.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Waiting until the meeting to answer a technical question that was asked in writing is a mistake, even if you plan to say yes.\",\n      \"why\": \"The counterparty asked in writing to avoid wasting meeting time on a gate question. Answering in the meeting signals you did not read the mail carefully.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Nimbus's agent can read Cleanwave's webhook events.\",\n      \"needs\": \"A technical review of the API docs Varun linked, or a statement from the Founding AI Engineer (if hired) or Arjun himself.\"\n    },\n    {\n      \"proposition\": \"Nimbus's agent cannot read Cleanwave's webhook events, but could be modified to do so.\",\n      \"needs\": \"A technical assessment of the effort and timeline required.\"\n    },\n    {\n      \"proposition\": \"Nimbus has not yet reviewed Cleanwave's API docs.\",\n      \"needs\": \"A check of whether the docs were opened, read, or forwarded to anyone on the team.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Can Nimbus's agent read Cleanwave's webhook events as they are currently documented?\",\n      \"relevance\": \"This is the question Varun asked. Without an answer, the meeting on 2026-10-09 will either be cancelled or will waste time on a gate that should have been cleared in writing.\"\n    },\n    {\n      \"question\": \"Has anyone at Nimbus reviewed Cleanwave's API docs since Varun sent them on 2026-09-30?\",\n      \"relevance\": \"If not, the delay is a process failure, not a technical one. If yes, the delay is a decision to defer the answer, which should be communicated.\"\n    },\n    {\n      \"question\": \"Is the Founding AI Engineer (Kavitha Nair) hired and onboarded, or is this a blocker on her start?\",\n      \"relevance\": \"If Kavitha is not yet in role, Arjun may not have the technical depth to answer Varun's question himself, and the answer may depend on her assessment.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner has asked a technical gate question and booked a meeting contingent on an answer. The answer is overdue. The next move is to answer the question or reschedule the meeting with an explanation.\",\n    \"rivals\": [\n      \"This is a low-priority exploratory conversation that can wait until the meeting.\",\n      \"Cleanwave is testing whether Nimbus is responsive; silence is a signal that Nimbus is not serious about the partnership.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The dossier lists this as partner work, and the mail shows design partner talks with Cleanwave.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#24\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook exists for partner work, so expectations come from the brief: Nimbus is trying to land design partners. A design partner conversation typically moves from introduction to technical fit check to a first meeting. Varun's question is the fit check.\",\n    \"actual\": \"Varun asked the fit check question on 2026-09-30. No answer has been sent. The meeting is booked for 2026-10-09. The file has been quiet for over a week.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The meeting on 2026-10-09 will either be cancelled by Cleanwave (because the gate question was not answered) or will open with Varun asking the same question again, wasting time and signalling that Nimbus did not take the question seriously. The partnership opportunity will be damaged or lost.\",\n    \"act\": \"Arjun answers Varun's question by 2026-10-08, either confirming that the agent can read the webhooks, or explaining what would be needed to make it work, or asking for a brief call to clarify the technical requirements. The meeting on 2026-10-09 can then focus on partnership terms and next steps.\",\n    \"best\": \"Nimbus's agent can read Cleanwave's webhook events as documented. Arjun sends a one-line confirmation by 2026-10-08. Varun replies with enthusiasm. The meeting on 2026-10-09 is productive and leads to a design partnership.\",\n    \"worst\": \"Nimbus's agent cannot read Cleanwave's webhook events and would require significant work to do so. Arjun does not answer by 2026-10-08. Varun cancels the meeting or attends it frustrated. The partnership opportunity is lost.\",\n    \"signals_to_watch\": [\n      \"Whether Arjun sends an answer to Varun's question before 2026-10-09.\",\n      \"Whether the answer is a yes, a no, or a request for more time.\",\n      \"Whether Varun replies to the answer, and how quickly.\",\n      \"Whether the meeting on 2026-10-09 happens as scheduled.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Cleanwave is one of four design partners Nimbus is courting; losing this one is a setback but not fatal.\",\n      \"The meeting is 2 days away; the answer is overdue by the standard Varun set ('before we meet').\",\n      \"Silence on a technical question damages trust and is hard to repair, even if the answer is yes.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Answer Varun's question about whether your agent can read Cleanwave's webhook events, or explain what would be needed to make it work.\",\n    \"for_whom\": \"Varun Iyer at Cleanwave\",\n    \"by_when\": \"2026-10-08\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"varun@cleanwave.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If you cannot answer the question yourself, forward Cleanwave's API docs to Kavitha Nair (if she is hired) or to whoever on your team can assess the technical fit, and send Varun a note by 2026-10-08 saying you are reviewing the docs and will confirm by end of day 2026-10-08 or propose a brief call to clarify the requirements.\",\n  \"wait_or_stop\": \"Do not wait. The meeting is 2 days away. If you do not answer by 2026-10-08, reschedule the meeting with an apology and an explanation. Do not attend the meeting without answering the question first.\",\n  \"done_when\": \"Varun has received an answer to his question, and either confirms the meeting on 2026-10-09 or proposes a new date.\",\n  \"draft\": \"Hi Varun, Thanks for sending the API docs. I've reviewed them and can confirm our agent can read your webhook events as documented. Looking forward to Thursday. Cheers, Arjun\"\n}",
+  "site": "expert"
+ },
+ "ebf3ea62f90f03c54ecfecb654d79a8d7650a19f59f2dd24fb490ea3f20a194b": {
+  "framed": true,
+  "input_tokens": 7211,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2975,
+  "parsed": {
+   "alternative": "If you cannot determine the answer by tomorrow morning, send Varun a brief note saying you are checking with the technical team and will have an answer by end of day tomorrow, with a specific time. This keeps the thread warm and shows you are taking the question seriously.",
+   "appraisal": {
+    "reasons": [
+     "Cleanwave is a design partner, not a vendor; a failed first impression damages the relationship and makes it hard to recover.",
+     "The meeting is booked and Varun has set a technical precondition; silence on that precondition signals disrespect or incompetence.",
+     "A design partnership is part of the seed round narrative; losing a partner or starting with low trust weakens the story for investors.",
+     "The silence has already lasted seven days; one more day of silence before the meeting will be noticed and will be read as a failure to prioritize."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "Varun has received a clear answer to his question \u2014 either yes with a brief technical note, or no with a timeline and a path forward \u2014 and has acknowledged it or moved the conversation forward.",
+   "draft": "Hi Varun, Thanks for the question. I've checked with the team on our webhook capability against your spec. [INSERT ANSWER: Yes, our agent can read your webhook events. / No, we don't yet support webhooks, but we can integrate via [ALTERNATIVE]. / We need to review your spec more carefully \u2014 can we do a quick call tomorrow to clarify?] Looking forward to Thursday. Cheers, Arjun",
+   "expected_vs_actual": {
+    "actual": "The question was asked seven days ago and has not been answered. The meeting is two days away.",
+    "expected": "In a design partner conversation, a technical question asked before a first meeting should be answered before the meeting, so that both parties can come prepared and the meeting is productive.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Varun Iyer from Cleanwave wrote on 2026-09-30 asking whether Nimbus's agent can read their webhook events before a meeting.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you confirm whether your agent can read our webhook events before we meet?"
+    },
+    {
+     "claim": "A meeting between Cleanwave and Nimbus Labs is booked for 2026-10-09 10:30 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 7.04 days as of the dossier date 2026-10-07 12:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time data exists for either party in this exchange.",
+     "evidence": [
+      "num:their_reply_time:varun@cleanwave.test",
+      "num:your_reply_time:varun@cleanwave.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is categorized as partner work in the admin domain.",
+     "evidence": [
+      "file:kind",
+      "file:domains"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this kind of work.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: Varun asked a question and we have not answered it.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner has asked a technical gate question before a first meeting, we have not answered in seven days, and the meeting is two days away. The silence is either a communication failure or a product gap, and either way it puts the partnership at risk.",
+    "rivals": [
+     "This is a routine technical question that will be answered in time for the meeting, and the silence is normal process.",
+     "Varun is testing our responsiveness and the silence is already a signal that we are not the right partner for him.",
+     "The question was answered but the answer did not reach the dossier, so the file is stale."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A check with the person who would know the answer to whether they received the question and what the status is.",
+     "proposition": "The question was routed to the Founding AI Engineer hire or another technical person and is still being investigated."
+    },
+    {
+     "needs": "A technical review of the agent's current capabilities against Cleanwave's webhook spec.",
+     "proposition": "The question was seen but the answer is blocked by a dependency \u2014 for example, the agent's webhook capability is not yet built or tested."
+    },
+    {
+     "needs": "A review of the inbox and Slack to confirm whether the mail was seen.",
+     "proposition": "The question was missed entirely in the noise of the seed round and program applications."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#1"
+     ],
+     "claim": "Varun's question is a technical gate: he will not meet unless we confirm our agent can read his webhook events, or he needs the answer to prepare for the meeting."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "evt_#2"
+     ],
+     "claim": "Seven days of silence after a direct technical question, with a meeting two days away, signals either that the question was missed or that we are still investigating the answer."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "inference:1"
+     ],
+     "claim": "The meeting is at risk if we do not answer before 2026-10-09, because Varun framed the answer as a precondition."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-08",
+    "for_whom": "Varun Iyer at Cleanwave",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "varun@cleanwave.test",
+    "what": "Find out whether Nimbus's agent can read Cleanwave's webhook events, and send Varun a clear answer today or tomorrow.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A technical question framed as a precondition to a meeting should be answered or escalated within one business day, not left to age.",
+     "kind": "practice",
+     "why": "Silence on a gate question reads as either incompetence or disinterest and erodes the counterparty's confidence before the meeting even starts."
+    },
+    {
+     "claim": "When a design partner asks a technical question before a first meeting, the answer often determines whether they see you as capable of integrating with them.",
+     "kind": "base_rate",
+     "why": "A design partnership lives or dies on technical fit; the first exchange sets the tone for whether they believe you can do the work."
+    },
+    {
+     "claim": "Waiting until the day before a meeting to answer a technical gate question is a costly mistake, even if the answer is yes.",
+     "kind": "counter_pattern",
+     "why": "It signals that you do not prioritize their concerns and that you work reactively, not proactively."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A technical question asked before a meeting, with a stated precondition, is usually answered within one to two days by a responsive counterparty.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:2"
+     ],
+     "claim": "Seven days of silence on a technical gate before a booked meeting is unusual and suggests either the question was not routed to the right person or the answer is blocked by a dependency.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#24"
+    ],
+    "kind": "partner",
+    "why": "The dossier names this as partner work, and the exchange is about design partnership integration, not vendor services or a transactional relationship."
+   },
+   "scenarios": {
+    "act": "We answer the question today or tomorrow with either a yes, a no with a timeline, or a request for clarification. The meeting happens with the technical question resolved, and both parties can focus on partnership terms.",
+    "best": "We answer yes, we can read the webhooks, and we send a brief technical note showing we have looked at their spec. Varun arrives at the meeting confident we are technically competent. The partnership moves forward.",
+    "do_nothing": "The meeting happens on 2026-10-09 with the question still unanswered. Varun either cancels, attends but is skeptical of our technical capability, or asks the question again in the meeting. Either way, the partnership starts with a deficit of trust.",
+    "signals_to_watch": [
+     "Whether Varun replies to our answer and how quickly.",
+     "Whether he asks follow-up technical questions or moves to partnership terms.",
+     "Whether he attends the meeting on 2026-10-09 or cancels.",
+     "Whether he mentions the delay in his reply or in the meeting."
+    ],
+    "worst": "We answer no, we cannot read the webhooks yet, and Varun cancels the meeting. The partnership does not start, or starts with a significant technical gap that we must close before he will engage."
+   },
+   "unknowns": [
+    {
+     "question": "Can Nimbus's agent actually read Cleanwave's webhook events, or is this a capability that does not yet exist?",
+     "relevance": "If the answer is no, the meeting may be cancelled or repositioned; if yes, the answer should have been sent immediately. The technical reality determines whether this is a communication failure or a product gap."
+    },
+    {
+     "question": "Who at Nimbus is responsible for answering technical questions from design partners, and did they receive this one?",
+     "relevance": "If the question was routed to the wrong person or not routed at all, the next move is to find the right person and get the answer. If it was routed correctly and ignored, the next move is different."
+    },
+    {
+     "question": "What is Varun's tolerance for silence, and how firm is his precondition?",
+     "relevance": "If he is flexible and will meet regardless, the risk is lower. If he will cancel if we do not answer by a certain time, we need to know that deadline."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The meeting is two days away and the question is a gate. Stop waiting after 2026-10-08 end of day; if you do not have an answer by then, send the alternative message. Do not let the meeting happen with the question unanswered."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Varun Iyer from Cleanwave wrote on 2026-09-30 asking whether Nimbus's agent can read their webhook events before a meeting.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you confirm whether your agent can read our webhook events before we meet?\"\n    },\n    {\n      \"claim\": \"A meeting between Cleanwave and Nimbus Labs is booked for 2026-10-09 10:30 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 7.04 days as of the dossier date 2026-10-07 12:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time data exists for either party in this exchange.\",\n      \"evidence\": [\n        \"num:their_reply_time:varun@cleanwave.test\",\n        \"num:your_reply_time:varun@cleanwave.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is categorized as partner work in the admin domain.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:domains\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this kind of work.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: Varun asked a question and we have not answered it.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Varun's question is a technical gate: he will not meet unless we confirm our agent can read his webhook events, or he needs the answer to prepare for the meeting.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"Seven days of silence after a direct technical question, with a meeting two days away, signals either that the question was missed or that we are still investigating the answer.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"The meeting is at risk if we do not answer before 2026-10-09, because Varun framed the answer as a precondition.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"inference:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A technical question asked before a meeting, with a stated precondition, is usually answered within one to two days by a responsive counterparty.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Seven days of silence on a technical gate before a booked meeting is unusual and suggests either the question was not routed to the right person or the answer is blocked by a dependency.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A technical question framed as a precondition to a meeting should be answered or escalated within one business day, not left to age.\",\n      \"why\": \"Silence on a gate question reads as either incompetence or disinterest and erodes the counterparty's confidence before the meeting even starts.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a design partner asks a technical question before a first meeting, the answer often determines whether they see you as capable of integrating with them.\",\n      \"why\": \"A design partnership lives or dies on technical fit; the first exchange sets the tone for whether they believe you can do the work.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Waiting until the day before a meeting to answer a technical gate question is a costly mistake, even if the answer is yes.\",\n      \"why\": \"It signals that you do not prioritize their concerns and that you work reactively, not proactively.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The question was routed to the Founding AI Engineer hire or another technical person and is still being investigated.\",\n      \"needs\": \"A check with the person who would know the answer to whether they received the question and what the status is.\"\n    },\n    {\n      \"proposition\": \"The question was seen but the answer is blocked by a dependency \u2014 for example, the agent's webhook capability is not yet built or tested.\",\n      \"needs\": \"A technical review of the agent's current capabilities against Cleanwave's webhook spec.\"\n    },\n    {\n      \"proposition\": \"The question was missed entirely in the noise of the seed round and program applications.\",\n      \"needs\": \"A review of the inbox and Slack to confirm whether the mail was seen.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Can Nimbus's agent actually read Cleanwave's webhook events, or is this a capability that does not yet exist?\",\n      \"relevance\": \"If the answer is no, the meeting may be cancelled or repositioned; if yes, the answer should have been sent immediately. The technical reality determines whether this is a communication failure or a product gap.\"\n    },\n    {\n      \"question\": \"Who at Nimbus is responsible for answering technical questions from design partners, and did they receive this one?\",\n      \"relevance\": \"If the question was routed to the wrong person or not routed at all, the next move is to find the right person and get the answer. If it was routed correctly and ignored, the next move is different.\"\n    },\n    {\n      \"question\": \"What is Varun's tolerance for silence, and how firm is his precondition?\",\n      \"relevance\": \"If he is flexible and will meet regardless, the risk is lower. If he will cancel if we do not answer by a certain time, we need to know that deadline.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner has asked a technical gate question before a first meeting, we have not answered in seven days, and the meeting is two days away. The silence is either a communication failure or a product gap, and either way it puts the partnership at risk.\",\n    \"rivals\": [\n      \"This is a routine technical question that will be answered in time for the meeting, and the silence is normal process.\",\n      \"Varun is testing our responsiveness and the silence is already a signal that we are not the right partner for him.\",\n      \"The question was answered but the answer did not reach the dossier, so the file is stale.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The dossier names this as partner work, and the exchange is about design partnership integration, not vendor services or a transactional relationship.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#24\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"In a design partner conversation, a technical question asked before a first meeting should be answered before the meeting, so that both parties can come prepared and the meeting is productive.\",\n    \"actual\": \"The question was asked seven days ago and has not been answered. The meeting is two days away.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The meeting happens on 2026-10-09 with the question still unanswered. Varun either cancels, attends but is skeptical of our technical capability, or asks the question again in the meeting. Either way, the partnership starts with a deficit of trust.\",\n    \"act\": \"We answer the question today or tomorrow with either a yes, a no with a timeline, or a request for clarification. The meeting happens with the technical question resolved, and both parties can focus on partnership terms.\",\n    \"best\": \"We answer yes, we can read the webhooks, and we send a brief technical note showing we have looked at their spec. Varun arrives at the meeting confident we are technically competent. The partnership moves forward.\",\n    \"worst\": \"We answer no, we cannot read the webhooks yet, and Varun cancels the meeting. The partnership does not start, or starts with a significant technical gap that we must close before he will engage.\",\n    \"signals_to_watch\": [\n      \"Whether Varun replies to our answer and how quickly.\",\n      \"Whether he asks follow-up technical questions or moves to partnership terms.\",\n      \"Whether he attends the meeting on 2026-10-09 or cancels.\",\n      \"Whether he mentions the delay in his reply or in the meeting.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Cleanwave is a design partner, not a vendor; a failed first impression damages the relationship and makes it hard to recover.\",\n      \"The meeting is booked and Varun has set a technical precondition; silence on that precondition signals disrespect or incompetence.\",\n      \"A design partnership is part of the seed round narrative; losing a partner or starting with low trust weakens the story for investors.\",\n      \"The silence has already lasted seven days; one more day of silence before the meeting will be noticed and will be read as a failure to prioritize.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Find out whether Nimbus's agent can read Cleanwave's webhook events, and send Varun a clear answer today or tomorrow.\",\n    \"for_whom\": \"Varun Iyer at Cleanwave\",\n    \"by_when\": \"2026-10-08\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"varun@cleanwave.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If you cannot determine the answer by tomorrow morning, send Varun a brief note saying you are checking with the technical team and will have an answer by end of day tomorrow, with a specific time. This keeps the thread warm and shows you are taking the question seriously.\",\n  \"wait_or_stop\": \"Do not wait. The meeting is two days away and the question is a gate. Stop waiting after 2026-10-08 end of day; if you do not have an answer by then, send the alternative message. Do not let the meeting happen with the question unanswered.\",\n  \"done_when\": \"Varun has received a clear answer to his question \u2014 either yes with a brief technical note, or no with a timeline and a path forward \u2014 and has acknowledged it or moved the conversation forward.\",\n  \"draft\": \"Hi Varun, Thanks for the question. I've checked with the team on our webhook capability against your spec. [INSERT ANSWER: Yes, our agent can read your webhook events. / No, we don't yet support webhooks, but we can integrate via [ALTERNATIVE]. / We need to review your spec more carefully \u2014 can we do a quick call tomorrow to clarify?] Looking forward to Thursday. Cheers, Arjun\"\n}",
+  "site": "expert"
+ }
+}

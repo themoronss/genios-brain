@@ -1,0 +1,450 @@
+{
+ "0e95ed3b19471509d803a00d936edcb9e85a4cef535138d9852023fe7a3327fe": {
+  "framed": true,
+  "input_tokens": 7140,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3402,
+  "parsed": {
+   "alternative": "If you cannot make Tuesday 30 Sep, send a brief message proposing two alternative dates within the next week, with a note that you are excited to explore the integration. This keeps momentum while giving you flexibility.",
+   "appraisal": {
+    "reasons": [
+     "A design partner can accelerate product adoption and provide early user feedback, but it is not a funding round or a hiring decision.",
+     "Neha has proposed a specific date (Tuesday 30 Sep), which is less than a week away; a prompt response is expected.",
+     "A decision to pursue or decline the partnership can be reversed later; the call is exploratory, not binding.",
+     "The brief lists design partners as a goal, and Orbitly is a warm lead who initiated contact based on your public work.",
+     "The file shows no blocking dependencies or constraints; the move is entirely within your control."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "You have sent a message to Neha confirming the meeting or proposing an alternative, with clarity on who will attend from your side. The meeting is scheduled and on both calendars.",
+   "draft": "Hi Neha, thanks for reaching out. Tuesday 30 Sep at 11 am IST works great for me. I'll bring [name] from our team to discuss the integration. Looking forward to it. Arjun",
+   "expected_vs_actual": {
+    "actual": "Orbitly initiated on 2026-08-16, you did not respond in the dossier's record, and Neha followed up on 2026-09-22 with a specific meeting proposal. You have not yet confirmed or declined.",
+    "expected": "Without a playbook for partner work, the expectation comes from the brief: you are seeking design partners. A warm partner who initiates contact and follows up with a meeting proposal is at the stage where a call should happen to explore mutual fit.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Orbitly initiated contact on 2026-08-16, expressing interest in exploring an integration between their scheduling infrastructure and Nimbus Labs.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Loved your post on founder workflows. We build scheduling infrastructure and would like to explore an integration."
+    },
+    {
+     "claim": "Neha Kapoor, CEO of Orbitly, sent a follow-up message on 2026-09-22 requesting a call and proposing Tuesday 30 Sep, 11 am IST.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Can we do a call next week? Would Tuesday 30 Sep, 11 am IST work for you?"
+    },
+    {
+     "claim": "The file shows an open ask: they wait on us, open since 2026-09-22 07:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.46 days, within the gaps it closed before.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this kind of work.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is classified as partner work, but its role in the brief is none.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "We have not written in this file.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm design partner has followed up with a concrete meeting proposal after 37 days. The ball is in your court. This is a live opportunity to explore a mutually beneficial integration.",
+    "rivals": [
+     "A partner is testing your responsiveness and availability; a slow or vague response will signal disinterest.",
+     "A partner is working through their own roadmap and may not be ready to commit; the call is exploratory on both sides.",
+     "A partner is fishing for a quick feature request and may not be a strategic fit; the call will clarify whether this is worth your time."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A conversation with Neha would clarify their timeline and priority; their response to your confirmation will show whether they are serious.",
+     "proposition": "Orbitly's 37-day gap was deliberate: they were testing whether you would follow up, or they were working through their own roadmap."
+    },
+    {
+     "needs": "A call to understand their user base, their roadmap, and what they need from you would show whether this is a strategic partnership or a one-off feature request.",
+     "proposition": "The integration Orbitly proposes is a natural fit for Nimbus Labs and could accelerate your product adoption."
+    },
+    {
+     "needs": "Your response will show whether you treat partner opportunities as a priority; if you cannot make that date, a prompt alternative proposal matters more than the specific date.",
+     "proposition": "Neha's proposal of Tuesday 30 Sep is a test of your availability and responsiveness, not a firm commitment."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "loop:loop_#1"
+     ],
+     "claim": "The ball is in our court: Neha has made a concrete proposal (a specific date and time) and is waiting for confirmation."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "num:usual_gap"
+     ],
+     "claim": "This is a live opportunity, not a cold lead: Orbitly initiated based on your public work, expressed genuine interest in a specific integration, and followed up after 37 days with a meeting request."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "brief:cbl_#6"
+     ],
+     "claim": "The file's classification as partner work is correct: Orbitly is proposing a design partnership (integration of their scheduling infrastructure with your AI chief of staff), not an investment, hiring, or program relationship."
+    },
+    {
+     "based_on": [
+      "none:promises"
+     ],
+     "claim": "No commitment or promise has been made by either party yet; this is exploratory."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-23",
+    "for_whom": "Neha Kapoor, CEO of Orbitly",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "sig:admin.sit.live_account_admin",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "neha@orbitly.test",
+    "what": "confirm the meeting for Tuesday 30 Sep at 11 am IST, or propose an alternative date with a brief reason; clarify who will attend from Nimbus Labs",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting request with a specific date and time should be answered within 24 hours, even if only to confirm or propose an alternative.",
+     "kind": "practice",
+     "why": "Delay signals disinterest or disorganization; a prompt response keeps momentum and shows respect for the other party's time."
+    },
+    {
+     "claim": "Design partnerships in early-stage software are often the fastest path to product-market fit because they bring real users and feedback.",
+     "kind": "base_rate",
+     "why": "A partner who uses your product in their workflow becomes your best advocate and your best source of feature requests."
+    },
+    {
+     "claim": "When a partner proposes a meeting, the founder should attend or delegate to someone with decision authority; a generic acceptance without clarity on who will attend wastes the call.",
+     "kind": "practice",
+     "why": "Partners are evaluating whether to invest time and resources; a call with the wrong person signals that you are not serious."
+    },
+    {
+     "claim": "A long gap between first touch and follow-up can indicate that the partner is testing your responsiveness before committing deeper.",
+     "kind": "counter_pattern",
+     "why": "Some partners deliberately wait to see if you will follow up; a prompt response to their follow-up can reset the clock."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "num:usual_gap",
+      "evt_#1"
+     ],
+     "claim": "A follow-up after 37 days with a specific meeting proposal signals sustained interest and readiness to move forward.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "Design partners who propose concrete meeting times expect a response within days, not weeks.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "num:usual_gap",
+      "evt_#2",
+      "evt_#1"
+     ],
+     "claim": "A 37-day gap between first touch and follow-up is unusually long for a warm lead; it suggests either Orbitly's own constraints or a lower priority on their side.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#6",
+     "evt_#2",
+     "file:kind"
+    ],
+    "kind": "partner",
+    "why": "Orbitly is proposing a design partnership\u2014an integration of their scheduling infrastructure with your AI chief of staff product. This is not an investment, hiring, program, or compliance matter. The brief lists design partners as a goal."
+   },
+   "scenarios": {
+    "act": "You confirm the meeting for Tuesday 30 Sep at 11 am IST, or propose an alternative date with a clear reason. The call happens. You learn about Orbitly's product, user base, and integration needs. You decide whether to pursue the partnership.",
+    "best": "The call reveals a strong mutual fit. Orbitly has a large, engaged user base that would benefit from your AI chief of staff. You agree to a pilot integration. Orbitly becomes an early design partner and a source of product feedback and customer acquisition.",
+    "do_nothing": "Neha's message goes unanswered. After a few days, she may send a follow-up or move on to other opportunities. The partnership opportunity cools or dies. You miss a potential design partner and a source of early users and feedback.",
+    "signals_to_watch": [
+     "Neha's response time to your confirmation or counter-proposal",
+     "The tone and specificity of Neha's questions during the call",
+     "Whether Orbitly has a clear integration roadmap or is still exploring",
+     "Whether Orbitly's user base and use cases align with your product vision",
+     "Whether Orbitly is willing to commit to a pilot or is only exploring"
+    ],
+    "worst": "The call reveals that Orbitly's needs are misaligned with your roadmap, or their user base is too small to justify the effort. You politely decline to pursue the partnership. The relationship ends cordially, but you have spent time on a dead end."
+   },
+   "unknowns": [
+    {
+     "question": "What is Orbitly's user base, and how large is their addressable market?",
+     "relevance": "This determines whether the partnership is strategic (access to many potential customers) or tactical (a single integration for a small user base)."
+    },
+    {
+     "question": "What does Orbitly need from Nimbus Labs, and what can Nimbus Labs gain from Orbitly?",
+     "relevance": "Without clarity on mutual value, the call could be a waste of time or a missed opportunity; the call itself should answer this."
+    },
+    {
+     "question": "Is Tuesday 30 Sep a firm date or a proposal open to negotiation?",
+     "relevance": "If it is firm, you must confirm or propose an alternative immediately; if it is flexible, you have more room to coordinate."
+    },
+    {
+     "question": "Who should attend the call from Nimbus Labs?",
+     "relevance": "If you attend alone, you signal that this is exploratory; if you bring your AI engineer or product lead, you signal that you are ready to move fast."
+    }
+   ],
+   "wait_or_stop": "Do not wait. Neha has made a concrete proposal and is waiting for a response. A delay of more than a few days signals disinterest. Stop only if you decide that Orbitly is not a strategic fit; in that case, send a brief, respectful decline rather than letting the message go unanswered."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Orbitly initiated contact on 2026-08-16, expressing interest in exploring an integration between their scheduling infrastructure and Nimbus Labs.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Loved your post on founder workflows. We build scheduling infrastructure and would like to explore an integration.\"\n    },\n    {\n      \"claim\": \"Neha Kapoor, CEO of Orbitly, sent a follow-up message on 2026-09-22 requesting a call and proposing Tuesday 30 Sep, 11 am IST.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Can we do a call next week? Would Tuesday 30 Sep, 11 am IST work for you?\"\n    },\n    {\n      \"claim\": \"The file shows an open ask: they wait on us, open since 2026-09-22 07:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.46 days, within the gaps it closed before.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this kind of work.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is classified as partner work, but its role in the brief is none.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"We have not written in this file.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in our court: Neha has made a concrete proposal (a specific date and time) and is waiting for confirmation.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"loop:loop_#1\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live opportunity, not a cold lead: Orbitly initiated based on your public work, expressed genuine interest in a specific integration, and followed up after 37 days with a meeting request.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"num:usual_gap\"\n      ]\n    },\n    {\n      \"claim\": \"The file's classification as partner work is correct: Orbitly is proposing a design partnership (integration of their scheduling infrastructure with your AI chief of staff), not an investment, hiring, or program relationship.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"brief:cbl_#6\"\n      ]\n    },\n    {\n      \"claim\": \"No commitment or promise has been made by either party yet; this is exploratory.\",\n      \"based_on\": [\n        \"none:promises\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A follow-up after 37 days with a specific meeting proposal signals sustained interest and readiness to move forward.\",\n      \"based_on\": [\n        \"num:usual_gap\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partners who propose concrete meeting times expect a response within days, not weeks.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A 37-day gap between first touch and follow-up is unusually long for a warm lead; it suggests either Orbitly's own constraints or a lower priority on their side.\",\n      \"based_on\": [\n        \"num:usual_gap\",\n        \"evt_#2\",\n        \"evt_#1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting request with a specific date and time should be answered within 24 hours, even if only to confirm or propose an alternative.\",\n      \"why\": \"Delay signals disinterest or disorganization; a prompt response keeps momentum and shows respect for the other party's time.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partnerships in early-stage software are often the fastest path to product-market fit because they bring real users and feedback.\",\n      \"why\": \"A partner who uses your product in their workflow becomes your best advocate and your best source of feature requests.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a partner proposes a meeting, the founder should attend or delegate to someone with decision authority; a generic acceptance without clarity on who will attend wastes the call.\",\n      \"why\": \"Partners are evaluating whether to invest time and resources; a call with the wrong person signals that you are not serious.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A long gap between first touch and follow-up can indicate that the partner is testing your responsiveness before committing deeper.\",\n      \"why\": \"Some partners deliberately wait to see if you will follow up; a prompt response to their follow-up can reset the clock.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Orbitly's 37-day gap was deliberate: they were testing whether you would follow up, or they were working through their own roadmap.\",\n      \"needs\": \"A conversation with Neha would clarify their timeline and priority; their response to your confirmation will show whether they are serious.\"\n    },\n    {\n      \"proposition\": \"The integration Orbitly proposes is a natural fit for Nimbus Labs and could accelerate your product adoption.\",\n      \"needs\": \"A call to understand their user base, their roadmap, and what they need from you would show whether this is a strategic partnership or a one-off feature request.\"\n    },\n    {\n      \"proposition\": \"Neha's proposal of Tuesday 30 Sep is a test of your availability and responsiveness, not a firm commitment.\",\n      \"needs\": \"Your response will show whether you treat partner opportunities as a priority; if you cannot make that date, a prompt alternative proposal matters more than the specific date.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Orbitly's user base, and how large is their addressable market?\",\n      \"relevance\": \"This determines whether the partnership is strategic (access to many potential customers) or tactical (a single integration for a small user base).\"\n    },\n    {\n      \"question\": \"What does Orbitly need from Nimbus Labs, and what can Nimbus Labs gain from Orbitly?\",\n      \"relevance\": \"Without clarity on mutual value, the call could be a waste of time or a missed opportunity; the call itself should answer this.\"\n    },\n    {\n      \"question\": \"Is Tuesday 30 Sep a firm date or a proposal open to negotiation?\",\n      \"relevance\": \"If it is firm, you must confirm or propose an alternative immediately; if it is flexible, you have more room to coordinate.\"\n    },\n    {\n      \"question\": \"Who should attend the call from Nimbus Labs?\",\n      \"relevance\": \"If you attend alone, you signal that this is exploratory; if you bring your AI engineer or product lead, you signal that you are ready to move fast.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm design partner has followed up with a concrete meeting proposal after 37 days. The ball is in your court. This is a live opportunity to explore a mutually beneficial integration.\",\n    \"rivals\": [\n      \"A partner is testing your responsiveness and availability; a slow or vague response will signal disinterest.\",\n      \"A partner is working through their own roadmap and may not be ready to commit; the call is exploratory on both sides.\",\n      \"A partner is fishing for a quick feature request and may not be a strategic fit; the call will clarify whether this is worth your time.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"Orbitly is proposing a design partnership\u2014an integration of their scheduling infrastructure with your AI chief of staff product. This is not an investment, hiring, program, or compliance matter. The brief lists design partners as a goal.\",\n    \"evidence\": [\n      \"brief:cbl_#6\",\n      \"evt_#2\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook for partner work, the expectation comes from the brief: you are seeking design partners. A warm partner who initiates contact and follows up with a meeting proposal is at the stage where a call should happen to explore mutual fit.\",\n    \"actual\": \"Orbitly initiated on 2026-08-16, you did not respond in the dossier's record, and Neha followed up on 2026-09-22 with a specific meeting proposal. You have not yet confirmed or declined.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Neha's message goes unanswered. After a few days, she may send a follow-up or move on to other opportunities. The partnership opportunity cools or dies. You miss a potential design partner and a source of early users and feedback.\",\n    \"act\": \"You confirm the meeting for Tuesday 30 Sep at 11 am IST, or propose an alternative date with a clear reason. The call happens. You learn about Orbitly's product, user base, and integration needs. You decide whether to pursue the partnership.\",\n    \"best\": \"The call reveals a strong mutual fit. Orbitly has a large, engaged user base that would benefit from your AI chief of staff. You agree to a pilot integration. Orbitly becomes an early design partner and a source of product feedback and customer acquisition.\",\n    \"worst\": \"The call reveals that Orbitly's needs are misaligned with your roadmap, or their user base is too small to justify the effort. You politely decline to pursue the partnership. The relationship ends cordially, but you have spent time on a dead end.\",\n    \"signals_to_watch\": [\n      \"Neha's response time to your confirmation or counter-proposal\",\n      \"The tone and specificity of Neha's questions during the call\",\n      \"Whether Orbitly has a clear integration roadmap or is still exploring\",\n      \"Whether Orbitly's user base and use cases align with your product vision\",\n      \"Whether Orbitly is willing to commit to a pilot or is only exploring\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"A design partner can accelerate product adoption and provide early user feedback, but it is not a funding round or a hiring decision.\",\n      \"Neha has proposed a specific date (Tuesday 30 Sep), which is less than a week away; a prompt response is expected.\",\n      \"A decision to pursue or decline the partnership can be reversed later; the call is exploratory, not binding.\",\n      \"The brief lists design partners as a goal, and Orbitly is a warm lead who initiated contact based on your public work.\",\n      \"The file shows no blocking dependencies or constraints; the move is entirely within your control.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"confirm the meeting for Tuesday 30 Sep at 11 am IST, or propose an alternative date with a brief reason; clarify who will attend from Nimbus Labs\",\n    \"for_whom\": \"Neha Kapoor, CEO of Orbitly\",\n    \"by_when\": \"2026-09-23\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"sig:admin.sit.live_account_admin\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"neha@orbitly.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If you cannot make Tuesday 30 Sep, send a brief message proposing two alternative dates within the next week, with a note that you are excited to explore the integration. This keeps momentum while giving you flexibility.\",\n  \"wait_or_stop\": \"Do not wait. Neha has made a concrete proposal and is waiting for a response. A delay of more than a few days signals disinterest. Stop only if you decide that Orbitly is not a strategic fit; in that case, send a brief, respectful decline rather than letting the message go unanswered.\",\n  \"done_when\": \"You have sent a message to Neha confirming the meeting or proposing an alternative, with clarity on who will attend from your side. The meeting is scheduled and on both calendars.\",\n  \"draft\": \"Hi Neha, thanks for reaching out. Tuesday 30 Sep at 11 am IST works great for me. I'll bring [name] from our team to discuss the integration. Looking forward to it. Arjun\"\n}",
+  "site": "expert"
+ },
+ "d7393e6ee62e13f7384907976ed9a4629272589b5dc539c75d9dac809b0b47b1": {
+  "framed": true,
+  "input_tokens": 7308,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2880,
+  "parsed": {
+   "alternative": "If the founder decides not to pursue the partnership, send a polite decline to Orbitly, thanking them for the outreach and leaving the door open for future conversations. This is better than silence, which will be read as disorganization.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because a design partner can unlock distribution or product validation, but it is not capital or a hire.",
+     "The urgency is medium because the proposed call date is eight days away, but silence beyond one business day will be read as disinterest.",
+     "A wrong move is reversible: if the founder declines or does not reply, Orbitly may still be approached later, though the relationship will be cooler.",
+     "ru:core.risk shows risk as low, but this is because the reasoning units do not measure relationship damage from non-response; in practice, silence on a specific proposal damages the relationship."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Orbitly receives a reply from the founder confirming the call for Tuesday 30 Sep at 11 am IST, or proposing an alternative time, or politely declining the conversation.",
+   "draft": "Hi Neha, thanks for reaching out. Tuesday 30 Sep at 11 am IST works for me. Looking forward to exploring the integration. Arjun",
+   "expected_vs_actual": {
+    "actual": "Orbitly sent a specific meeting proposal on 2026-09-22 07:00 UTC; as of the dossier date (2026-09-22 18:00 UTC), no reply has been sent.",
+    "expected": "At the outset of a partner conversation, the founder should respond to a meeting proposal within one business day, either confirming, declining, or proposing an alternative time.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Orbitly initiated contact on the basis of the founder's public post about founder workflows, proposing an integration between their scheduling infrastructure and Nimbus Labs.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Loved your post on founder workflows. We build scheduling infrastructure and would like to explore an integration."
+    },
+    {
+     "claim": "Orbitly's contact person, Neha Kapoor, requested a call for the following week, proposing Tuesday 30 Sep at 11 am IST.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Can we do a call next week? Would Tuesday 30 Sep, 11 am IST work for you?"
+    },
+    {
+     "claim": "The file shows no reply from the founder to Orbitly's call request as of the dossier date.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for less than one day since Orbitly's last message, within the normal gap pattern for this correspondence.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The open ask in this file is a question awaiting the founder's response, open since Orbitly's message on 2026-09-22 07:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this kind of work.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner has made a specific, time-bound meeting proposal and is waiting for the founder's confirmation. The founder has not yet replied. The window to confirm or propose an alternative is closing.",
+    "rivals": [
+     "This is a low-priority intro that can be deferred indefinitely without consequence.",
+     "This is a test of whether the founder is organized and responsive; silence will be read as disorganization or lack of interest."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A conversation with the founder about whether this partnership fits the current roadmap and whether the call should be accepted, declined, or rescheduled.",
+     "proposition": "The founder has not yet decided whether to pursue the integration with Orbitly."
+    },
+    {
+     "needs": "A simple confirmation message sent to Orbitly within the next day.",
+     "proposition": "The founder intends to accept the call but has not yet confirmed."
+    },
+    {
+     "needs": "A decision about whether to defer the call to a later date, or to delegate the initial conversation to someone else.",
+     "proposition": "The founder is too busy with fundraising and hiring to prioritize this conversation."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "The ball is in the founder's court: Orbitly has made a specific, time-bound proposal and is waiting for confirmation."
+    },
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "The proposed call date (Tuesday 30 Sep) is eight days away from the dossier date (2026-09-22), leaving time to confirm or propose an alternative."
+    },
+    {
+     "based_on": [
+      "sit:sit_#1",
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "This is a live account administration situation: a counterparty has made a positive overture and is awaiting the founder's next step."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-23",
+    "for_whom": "Neha Kapoor at Orbitly",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "sig:admin.sit.live_account_admin",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "neha@orbitly.test",
+    "what": "confirm the call with Orbitly for Tuesday 30 Sep at 11 am IST, or propose an alternative time if that slot is not available",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting request with a specific time slot should be answered within one business day, even if only to propose an alternative. Delay beyond that signals either disorganization or lack of interest.",
+     "kind": "practice",
+     "why": "The counterparty has invested effort in a specific proposal and is holding that slot mentally; a prompt reply, even if negative, preserves the relationship and the option."
+    },
+    {
+     "claim": "Design partner conversations at seed stage often move slowly and are easily deprioritized against fundraising and hiring, but they can unlock distribution or product-market fit signals that investors value.",
+     "kind": "base_rate",
+     "why": "Partners are not capital, so they feel less urgent; but they are often the first test of whether the product solves a real problem for a real customer."
+    },
+    {
+     "claim": "A counterparty who opens with genuine enthusiasm and a specific proposal, then receives no reply, will not follow up a second time.",
+     "kind": "counter_pattern",
+     "why": "The first message is an offer; silence reads as rejection; a second message would be chasing, which most professionals will not do."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A specific meeting proposal with a named time and date, left unanswered, will be assumed declined if silence extends beyond a few days.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence from a counterparty is often process, not disinterest; but silence from the founder after a direct ask is read as disinterest or unavailability.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#6"
+    ],
+    "kind": "partner",
+    "why": "The dossier names this file as partner work, and Orbitly's message proposes an integration partnership, not a vendor relationship or an investment."
+   },
+   "scenarios": {
+    "act": "The founder confirms the call for Tuesday 30 Sep at 11 am IST, or proposes an alternative time. Orbitly receives the confirmation and the conversation proceeds as planned.",
+    "best": "The founder confirms the call. The conversation reveals a genuine product-market fit opportunity; Orbitly becomes a design partner and later a distribution channel. The partnership is mentioned in investor conversations and adds credibility to the product.",
+    "do_nothing": "Orbitly will wait through the weekend. By Monday 2026-09-25, if no reply has arrived, they will assume the founder is not interested. They will not send a follow-up. The opportunity to explore the integration will be lost, and Orbitly will move on to other founders.",
+    "signals_to_watch": [
+     "Whether Orbitly sends a follow-up message after the proposed date passes without confirmation.",
+     "Whether the founder's calendar shows availability on Tuesday 30 Sep at 11 am IST.",
+     "Whether the founder mentions Orbitly or scheduling integrations in conversations with investors or other partners."
+    ],
+    "worst": "The founder does not reply. Orbitly assumes disinterest and closes the file. Later, the founder learns that Orbitly was exploring integrations with several AI tools and would have been a valuable partner. The opportunity is gone."
+   },
+   "unknowns": [
+    {
+     "question": "Does the founder view Orbitly as a strategic partner, a nice-to-have, or a distraction at this stage?",
+     "relevance": "This determines whether the call should be accepted, declined, or rescheduled; and whether the file should remain active or be closed."
+    },
+    {
+     "question": "Is there a conflict with the proposed time (Tuesday 30 Sep, 11 am IST) in the founder's calendar?",
+     "relevance": "If yes, an alternative time should be proposed immediately; if no, the call should be confirmed."
+    },
+    {
+     "question": "Has the founder already evaluated Orbitly's product and decided it does not fit?",
+     "relevance": "If yes, a polite decline should be sent; if no, the call should proceed or be rescheduled."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The proposed call date is eight days away; a reply is needed within one business day to confirm or propose an alternative. If no reply is sent by end of business 2026-09-23, the opportunity will be lost. If the founder decides to decline, send the decline immediately rather than letting silence do the work."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Orbitly initiated contact on the basis of the founder's public post about founder workflows, proposing an integration between their scheduling infrastructure and Nimbus Labs.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Loved your post on founder workflows. We build scheduling infrastructure and would like to explore an integration.\"\n    },\n    {\n      \"claim\": \"Orbitly's contact person, Neha Kapoor, requested a call for the following week, proposing Tuesday 30 Sep at 11 am IST.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Can we do a call next week? Would Tuesday 30 Sep, 11 am IST work for you?\"\n    },\n    {\n      \"claim\": \"The file shows no reply from the founder to Orbitly's call request as of the dossier date.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for less than one day since Orbitly's last message, within the normal gap pattern for this correspondence.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The open ask in this file is a question awaiting the founder's response, open since Orbitly's message on 2026-09-22 07:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this kind of work.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in the founder's court: Orbitly has made a specific, time-bound proposal and is waiting for confirmation.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The proposed call date (Tuesday 30 Sep) is eight days away from the dossier date (2026-09-22), leaving time to confirm or propose an alternative.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live account administration situation: a counterparty has made a positive overture and is awaiting the founder's next step.\",\n      \"based_on\": [\n        \"sit:sit_#1\",\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A specific meeting proposal with a named time and date, left unanswered, will be assumed declined if silence extends beyond a few days.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Administrative silence from a counterparty is often process, not disinterest; but silence from the founder after a direct ask is read as disinterest or unavailability.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting request with a specific time slot should be answered within one business day, even if only to propose an alternative. Delay beyond that signals either disorganization or lack of interest.\",\n      \"why\": \"The counterparty has invested effort in a specific proposal and is holding that slot mentally; a prompt reply, even if negative, preserves the relationship and the option.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partner conversations at seed stage often move slowly and are easily deprioritized against fundraising and hiring, but they can unlock distribution or product-market fit signals that investors value.\",\n      \"why\": \"Partners are not capital, so they feel less urgent; but they are often the first test of whether the product solves a real problem for a real customer.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who opens with genuine enthusiasm and a specific proposal, then receives no reply, will not follow up a second time.\",\n      \"why\": \"The first message is an offer; silence reads as rejection; a second message would be chasing, which most professionals will not do.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The founder has not yet decided whether to pursue the integration with Orbitly.\",\n      \"needs\": \"A conversation with the founder about whether this partnership fits the current roadmap and whether the call should be accepted, declined, or rescheduled.\"\n    },\n    {\n      \"proposition\": \"The founder intends to accept the call but has not yet confirmed.\",\n      \"needs\": \"A simple confirmation message sent to Orbitly within the next day.\"\n    },\n    {\n      \"proposition\": \"The founder is too busy with fundraising and hiring to prioritize this conversation.\",\n      \"needs\": \"A decision about whether to defer the call to a later date, or to delegate the initial conversation to someone else.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the founder view Orbitly as a strategic partner, a nice-to-have, or a distraction at this stage?\",\n      \"relevance\": \"This determines whether the call should be accepted, declined, or rescheduled; and whether the file should remain active or be closed.\"\n    },\n    {\n      \"question\": \"Is there a conflict with the proposed time (Tuesday 30 Sep, 11 am IST) in the founder's calendar?\",\n      \"relevance\": \"If yes, an alternative time should be proposed immediately; if no, the call should be confirmed.\"\n    },\n    {\n      \"question\": \"Has the founder already evaluated Orbitly's product and decided it does not fit?\",\n      \"relevance\": \"If yes, a polite decline should be sent; if no, the call should proceed or be rescheduled.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner has made a specific, time-bound meeting proposal and is waiting for the founder's confirmation. The founder has not yet replied. The window to confirm or propose an alternative is closing.\",\n    \"rivals\": [\n      \"This is a low-priority intro that can be deferred indefinitely without consequence.\",\n      \"This is a test of whether the founder is organized and responsive; silence will be read as disorganization or lack of interest.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The dossier names this file as partner work, and Orbitly's message proposes an integration partnership, not a vendor relationship or an investment.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#6\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"At the outset of a partner conversation, the founder should respond to a meeting proposal within one business day, either confirming, declining, or proposing an alternative time.\",\n    \"actual\": \"Orbitly sent a specific meeting proposal on 2026-09-22 07:00 UTC; as of the dossier date (2026-09-22 18:00 UTC), no reply has been sent.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Orbitly will wait through the weekend. By Monday 2026-09-25, if no reply has arrived, they will assume the founder is not interested. They will not send a follow-up. The opportunity to explore the integration will be lost, and Orbitly will move on to other founders.\",\n    \"act\": \"The founder confirms the call for Tuesday 30 Sep at 11 am IST, or proposes an alternative time. Orbitly receives the confirmation and the conversation proceeds as planned.\",\n    \"best\": \"The founder confirms the call. The conversation reveals a genuine product-market fit opportunity; Orbitly becomes a design partner and later a distribution channel. The partnership is mentioned in investor conversations and adds credibility to the product.\",\n    \"worst\": \"The founder does not reply. Orbitly assumes disinterest and closes the file. Later, the founder learns that Orbitly was exploring integrations with several AI tools and would have been a valuable partner. The opportunity is gone.\",\n    \"signals_to_watch\": [\n      \"Whether Orbitly sends a follow-up message after the proposed date passes without confirmation.\",\n      \"Whether the founder's calendar shows availability on Tuesday 30 Sep at 11 am IST.\",\n      \"Whether the founder mentions Orbitly or scheduling integrations in conversations with investors or other partners.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because a design partner can unlock distribution or product validation, but it is not capital or a hire.\",\n      \"The urgency is medium because the proposed call date is eight days away, but silence beyond one business day will be read as disinterest.\",\n      \"A wrong move is reversible: if the founder declines or does not reply, Orbitly may still be approached later, though the relationship will be cooler.\",\n      \"ru:core.risk shows risk as low, but this is because the reasoning units do not measure relationship damage from non-response; in practice, silence on a specific proposal damages the relationship.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"confirm the call with Orbitly for Tuesday 30 Sep at 11 am IST, or propose an alternative time if that slot is not available\",\n    \"for_whom\": \"Neha Kapoor at Orbitly\",\n    \"by_when\": \"2026-09-23\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"sig:admin.sit.live_account_admin\",\n      \"own:1\"\n    ],\n    \"to\": \"neha@orbitly.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder decides not to pursue the partnership, send a polite decline to Orbitly, thanking them for the outreach and leaving the door open for future conversations. This is better than silence, which will be read as disorganization.\",\n  \"wait_or_stop\": \"Do not wait. The proposed call date is eight days away; a reply is needed within one business day to confirm or propose an alternative. If no reply is sent by end of business 2026-09-23, the opportunity will be lost. If the founder decides to decline, send the decline immediately rather than letting silence do the work.\",\n  \"done_when\": \"Orbitly receives a reply from the founder confirming the call for Tuesday 30 Sep at 11 am IST, or proposing an alternative time, or politely declining the conversation.\",\n  \"draft\": \"Hi Neha, thanks for reaching out. Tuesday 30 Sep at 11 am IST works for me. Looking forward to exploring the integration. Arjun\"\n}",
+  "site": "expert"
+ }
+}

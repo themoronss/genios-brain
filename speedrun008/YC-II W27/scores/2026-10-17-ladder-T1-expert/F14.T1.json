@@ -1,0 +1,1221 @@
+{
+ "03604c8b978066099ffa4e3e0dbcb6cb87e69da1994dceb1d1eb6382d6e479ea": {
+  "framed": true,
+  "input_tokens": 11369,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3102,
+  "parsed": {
+   "alternative": "Do nothing now and wait to hear back from other investors in the wave. Add Fjord to the update list and send them the monthly update with the rest. When a milestone is hit, write to them about it. This is slower but avoids a reply that might be unnecessary if the investor never looks at email again.",
+   "appraisal": {
+    "reasons": [
+     "The investor is one of several in a seed wave, not the only source of capital; losing this one does not end the round.",
+     "The pass is on timing or stage, not on the company itself, and the investor has left the door open.",
+     "The next move is to record and track, not to persuade or close; a wrong move here is a wasted email, not a lost relationship.",
+     "The investor is warm for future fundraising if the condition is met, and the founder can reopen the conversation at any time the condition is true."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "A reply from the investor confirming the condition back in their own words, or silence that shows the reply was received. The investor is then on the update list and the file moves to conditional deferral.",
+   "draft": "Thanks, Tara. We understand\u2014timing is everything. We'll keep you posted as we hit milestones. Looking forward to reconnecting when we do.",
+   "expected_vs_actual": {
+    "actual": "The investor replied to the first email with a pass on timing and a condition for reopening, without a meeting or call taking place.",
+    "expected": "A first meeting or call with the investor takes place, or the investor declines. Silence is the default; most first emails never become a meeting.",
+    "stage": "first_contact"
+   },
+   "facts": [
+    {
+     "claim": "Fjord Venture Partners declined to invest at this time via Tara Lindqvist on 2026-08-07 at 09:00 UTC.",
+     "evidence": [
+      "evt_#1",
+      "file:last_touch"
+     ],
+     "quote": "It's too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again."
+    },
+    {
+     "claim": "The investor named a condition for reopening: a real milestone.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "If you hit a real milestone, I'd be happy to look again."
+    },
+    {
+     "claim": "No promise was found in the investor's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.38 days since the last touch.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time the file has been reviewed.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@fundraising",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The investor's reply time and your reply time to them have not been measured.",
+     "evidence": [
+      "num:their_reply_time:tara@fjordvp.test",
+      "num:your_reply_time:tara@fjordvp.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file was written to in a seed wave, and no reply from your side has been recorded.",
+     "evidence": [
+      "brief:cbl_#11",
+      "none:we_wrote"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A pass on timing or stage, with a condition for reopening. The investor is warm but not ready now; the founder's job is to hit the milestone and tell them.",
+    "rivals": [
+     "A soft no disguised as a deferral. The investor is not actually interested and will not reopen.",
+     "A genuine deferral with no real condition. The investor said 'keep me posted' but meant 'I am not interested and do not want to hear from you again.'"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from the investor confirming what milestone they mean, or a pattern of what they have funded before that shows their bar.",
+     "proposition": "The investor's definition of 'a real milestone' is the same as yours."
+    },
+    {
+     "needs": "A reply when the milestone is hit, or a pattern of the investor reopening conversations after a pass.",
+     "proposition": "The investor will actually look again if the milestone is hit."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+     ],
+     "claim": "The investor has passed on this round, not declined the company itself."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.pb.investor_relations.reopen_after_a_pass"
+     ],
+     "claim": "The condition for reopening is a metric or milestone, not a date, and requires tracking progress against it."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "The next move is ours: to record the pass with its condition and add the investor to the update list."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+     ],
+     "claim": "The investor is warm for future fundraising if the condition is met, not closed off."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-08",
+    "for_whom": "Tara Lindqvist at Fjord Venture Partners",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.reopen_after_a_pass",
+     "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "tara@fjordvp.test",
+    "what": "Record the pass with the exact condition in writing, confirm it back to the investor in a brief reply, and add the investor to the monthly update list. Do not ask for anything; do not argue with the pass.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When an investor says 'keep me posted' with a named condition, the condition is the only thing that matters; checking in without it teaches them to skim.",
+     "kind": "practice",
+     "why": "An investor who has deferred is not waiting for reassurance; they are waiting for the fact that changes their answer. Anything else is noise."
+    },
+    {
+     "claim": "A seed-stage founder raising in parallel should treat a pass with a condition as a standing invitation, not a rejection, and update the investor monthly on progress toward the condition.",
+     "kind": "base_rate",
+     "why": "The investor has left the door open and named what would open it further. The founder's job is to hit that milestone and tell them when it happens."
+    },
+    {
+     "claim": "A founder who replies to a pass with 'thanks for the feedback' or 'we'll keep you posted' without naming the condition back in writing often loses the investor anyway.",
+     "kind": "counter_pattern",
+     "why": "The investor's words are the contract. Paraphrasing or omitting the condition means the founder and investor are no longer aligned on what would bring them back together."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "brief:cbl_#11"
+     ],
+     "claim": "In a seed wave, most first emails to investors do not produce a meeting; silence is the default rather than a signal of rejection.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+     ],
+     "claim": "An investor who replies to a cold email in a seed wave with a condition for reopening is a warm lead, not a closed door.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.reopen_after_a_pass"
+     ],
+     "claim": "A pass on timing or stage carries an implicit date on which it stops being true; recording the exact words of the condition is the asset.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:domains",
+     "brief:cbl_#11"
+    ],
+    "kind": "investor",
+    "why": "The file is about a venture capital firm and a fundraising conversation, which is the definition of investor work."
+   },
+   "scenarios": {
+    "act": "The founder records the pass with the exact condition in writing, confirms it back to the investor, and adds them to the monthly update list. When the milestone is hit, the founder writes to the investor about that and nothing else, and the investor either replies with a meeting or stays quiet.",
+    "best": "The founder hits the milestone, writes to the investor, and the investor replies with a meeting time or a clear next step. The conversation reopens at first call or first contact, and the investor moves forward.",
+    "do_nothing": "The investor remains on the file as active but quiet. Over time, without a record of the condition and without updates, the founder forgets what would bring them back. The investor drifts away, and the founder learns of it only when the round has moved on without them.",
+    "signals_to_watch": [
+     "Whether the investor replies when the milestone is hit",
+     "Whether the investor asks a question in response to an update, which would signal renewed interest",
+     "Whether the investor's condition is reachable before the round closes or the company's runway runs out"
+    ],
+    "worst": "The founder hits the milestone, writes to the investor, and the investor does not reply. The investor was never actually interested and used the condition as a polite way to close the door."
+   },
+   "unknowns": [
+    {
+     "question": "What does Tara Lindqvist mean by 'a real milestone'? Is it a revenue figure, a customer, a product launch, a team hire, or something else?",
+     "relevance": "The founder cannot know when to reach back out without knowing what the investor is waiting for. The exact words are the asset."
+    },
+    {
+     "question": "Has Fjord Venture Partners reopened conversations with other founders after a pass, and if so, what triggered it?",
+     "relevance": "This would show whether the investor's condition is genuine or a polite way to close the door. A pattern of reopening is a signal that the pass is real."
+    },
+    {
+     "question": "What is the founder's current traction, and how far is it from what might count as a 'real milestone' in Tara's eyes?",
+     "relevance": "This determines whether the condition is reachable in a timeframe that matters for this round, or whether it is a deferral that will not reopen in time."
+    }
+   ],
+   "wait_or_stop": "Wait until the milestone is hit or the round closes. Do not check in without the milestone. Do not send another email to this investor until the condition is met. Stop if the round closes without this investor's commitment."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Fjord Venture Partners declined to invest at this time via Tara Lindqvist on 2026-08-07 at 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"It's too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again.\"\n    },\n    {\n      \"claim\": \"The investor named a condition for reopening: a real milestone.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"If you hit a real milestone, I'd be happy to look again.\"\n    },\n    {\n      \"claim\": \"No promise was found in the investor's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.38 days since the last touch.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time the file has been reviewed.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@fundraising\",\n        \"hist:derived.history.times_seen@fundraising\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The investor's reply time and your reply time to them have not been measured.\",\n      \"evidence\": [\n        \"num:their_reply_time:tara@fjordvp.test\",\n        \"num:your_reply_time:tara@fjordvp.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file was written to in a seed wave, and no reply from your side has been recorded.\",\n      \"evidence\": [\n        \"brief:cbl_#11\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The investor has passed on this round, not declined the company itself.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"\n      ]\n    },\n    {\n      \"claim\": \"The condition for reopening is a metric or milestone, not a date, and requires tracking progress against it.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: to record the pass with its condition and add the investor to the update list.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\",\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"claim\": \"The investor is warm for future fundraising if the condition is met, not closed off.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"In a seed wave, most first emails to investors do not produce a meeting; silence is the default rather than a signal of rejection.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"brief:cbl_#11\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who replies to a cold email in a seed wave with a condition for reopening is a warm lead, not a closed door.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A pass on timing or stage carries an implicit date on which it stops being true; recording the exact words of the condition is the asset.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When an investor says 'keep me posted' with a named condition, the condition is the only thing that matters; checking in without it teaches them to skim.\",\n      \"why\": \"An investor who has deferred is not waiting for reassurance; they are waiting for the fact that changes their answer. Anything else is noise.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A seed-stage founder raising in parallel should treat a pass with a condition as a standing invitation, not a rejection, and update the investor monthly on progress toward the condition.\",\n      \"why\": \"The investor has left the door open and named what would open it further. The founder's job is to hit that milestone and tell them when it happens.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who replies to a pass with 'thanks for the feedback' or 'we'll keep you posted' without naming the condition back in writing often loses the investor anyway.\",\n      \"why\": \"The investor's words are the contract. Paraphrasing or omitting the condition means the founder and investor are no longer aligned on what would bring them back together.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The investor's definition of 'a real milestone' is the same as yours.\",\n      \"needs\": \"A reply from the investor confirming what milestone they mean, or a pattern of what they have funded before that shows their bar.\"\n    },\n    {\n      \"proposition\": \"The investor will actually look again if the milestone is hit.\",\n      \"needs\": \"A reply when the milestone is hit, or a pattern of the investor reopening conversations after a pass.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Tara Lindqvist mean by 'a real milestone'? Is it a revenue figure, a customer, a product launch, a team hire, or something else?\",\n      \"relevance\": \"The founder cannot know when to reach back out without knowing what the investor is waiting for. The exact words are the asset.\"\n    },\n    {\n      \"question\": \"Has Fjord Venture Partners reopened conversations with other founders after a pass, and if so, what triggered it?\",\n      \"relevance\": \"This would show whether the investor's condition is genuine or a polite way to close the door. A pattern of reopening is a signal that the pass is real.\"\n    },\n    {\n      \"question\": \"What is the founder's current traction, and how far is it from what might count as a 'real milestone' in Tara's eyes?\",\n      \"relevance\": \"This determines whether the condition is reachable in a timeframe that matters for this round, or whether it is a deferral that will not reopen in time.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A pass on timing or stage, with a condition for reopening. The investor is warm but not ready now; the founder's job is to hit the milestone and tell them.\",\n    \"rivals\": [\n      \"A soft no disguised as a deferral. The investor is not actually interested and will not reopen.\",\n      \"A genuine deferral with no real condition. The investor said 'keep me posted' but meant 'I am not interested and do not want to hear from you again.'\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is about a venture capital firm and a fundraising conversation, which is the definition of investor work.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:domains\",\n      \"brief:cbl_#11\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_contact\",\n    \"expected\": \"A first meeting or call with the investor takes place, or the investor declines. Silence is the default; most first emails never become a meeting.\",\n    \"actual\": \"The investor replied to the first email with a pass on timing and a condition for reopening, without a meeting or call taking place.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The investor remains on the file as active but quiet. Over time, without a record of the condition and without updates, the founder forgets what would bring them back. The investor drifts away, and the founder learns of it only when the round has moved on without them.\",\n    \"act\": \"The founder records the pass with the exact condition in writing, confirms it back to the investor, and adds them to the monthly update list. When the milestone is hit, the founder writes to the investor about that and nothing else, and the investor either replies with a meeting or stays quiet.\",\n    \"best\": \"The founder hits the milestone, writes to the investor, and the investor replies with a meeting time or a clear next step. The conversation reopens at first call or first contact, and the investor moves forward.\",\n    \"worst\": \"The founder hits the milestone, writes to the investor, and the investor does not reply. The investor was never actually interested and used the condition as a polite way to close the door.\",\n    \"signals_to_watch\": [\n      \"Whether the investor replies when the milestone is hit\",\n      \"Whether the investor asks a question in response to an update, which would signal renewed interest\",\n      \"Whether the investor's condition is reachable before the round closes or the company's runway runs out\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The investor is one of several in a seed wave, not the only source of capital; losing this one does not end the round.\",\n      \"The pass is on timing or stage, not on the company itself, and the investor has left the door open.\",\n      \"The next move is to record and track, not to persuade or close; a wrong move here is a wasted email, not a lost relationship.\",\n      \"The investor is warm for future fundraising if the condition is met, and the founder can reopen the conversation at any time the condition is true.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Record the pass with the exact condition in writing, confirm it back to the investor in a brief reply, and add the investor to the monthly update list. Do not ask for anything; do not argue with the pass.\",\n    \"for_whom\": \"Tara Lindqvist at Fjord Venture Partners\",\n    \"by_when\": \"2026-08-08\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\",\n      \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\",\n      \"own:1\"\n    ],\n    \"to\": \"tara@fjordvp.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Do nothing now and wait to hear back from other investors in the wave. Add Fjord to the update list and send them the monthly update with the rest. When a milestone is hit, write to them about it. This is slower but avoids a reply that might be unnecessary if the investor never looks at email again.\",\n  \"wait_or_stop\": \"Wait until the milestone is hit or the round closes. Do not check in without the milestone. Do not send another email to this investor until the condition is met. Stop if the round closes without this investor's commitment.\",\n  \"done_when\": \"A reply from the investor confirming the condition back in their own words, or silence that shows the reply was received. The investor is then on the update list and the file moves to conditional deferral.\",\n  \"draft\": \"Thanks, Tara. We understand\u2014timing is everything. We'll keep you posted as we hit milestones. Looking forward to reconnecting when we do.\"\n}",
+  "site": "expert"
+ },
+ "2e80f8ea080d8ccc742f2c9f7bc144fc054edb68cfd354c13ec7f04361e6062a": {
+  "framed": true,
+  "input_tokens": 11759,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4050,
+  "parsed": {
+   "alternative": "If you have not hit a genuine milestone, pause all updates to Fjord Venture Partners and move them to a watch list. Re-approach only when you have a milestone that meets the condition she named. This is the lower-risk move if you are uncertain whether the updates are addressing her threshold.",
+   "appraisal": {
+    "reasons": [
+     "Fjord Venture Partners is one of five investors in the seed wave, so losing this conversation does not kill the round, but it is one of a limited set.",
+     "The conversation is still open \u2014 a conditional deferral is not a pass \u2014 so a clear milestone or a direct question could rekindle it.",
+     "The move is low-cost: a single message asking for clarity or naming a milestone, then a pause in updates. If it does not work, you have lost nothing but the time already spent.",
+     "The urgency is medium because the round is active and other investors are also being pursued in parallel; this one needs clarity soon so you can allocate your attention accordingly."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Done when Tara Lindqvist either (a) replies with a meeting time or a clear next step, (b) clarifies what counts as a milestone, or (c) does not reply within seven days, at which point you have clarity that this investor is not moving in this round and you can allocate your attention elsewhere.",
+   "draft": "Hi Tara, I want to make sure I'm sending you updates that matter. When you said 'a real milestone,' what would that look like for you? A customer, a revenue number, a partnership, or something else? I'll pause the weekly notes until I know what would move the needle. Thanks, Arjun",
+   "expected_vs_actual": {
+    "actual": "You received a conditional deferral ('keep me posted, if you hit a real milestone') on day one, which is not a decline but a door left open. You then sent three identical updates over nineteen days without reply. No meeting has been scheduled. The conversation has not moved to the next stage.",
+    "expected": "At the first_contact stage, the playbook expects either a first meeting or call to be scheduled, or the investor to decline. The typical duration is fourteen days. Silence is the default at this stage, and most first emails never become a meeting. After a warm introduction, silence means the investor has not opted in.",
+    "stage": "first_contact"
+   },
+   "facts": [
+    {
+     "claim": "Fjord Venture Partners received an initial email on 2026-08-07 and replied the same day with a conditional pass.",
+     "evidence": [
+      "evt_#4"
+     ],
+     "quote": "It's too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again."
+    },
+    {
+     "claim": "You have sent three weekly updates to Fjord Venture Partners on 2026-08-12, 2026-08-19, and 2026-08-26, each with identical content about onboarding pilot teams and shipping calendar sync.",
+     "evidence": [
+      "evt_#3",
+      "evt_#2",
+      "evt_#1"
+     ],
+     "quote": "we onboarded two more pilot teams and shipped calendar sync"
+    },
+    {
+     "claim": "Tara Lindqvist at Fjord Venture Partners has not replied to any of the three updates sent over nineteen days.",
+     "evidence": [
+      "cov:last_mail",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows no promise was made by Fjord Venture Partners beyond the conditional deferral.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Your reply time to Fjord Venture Partners was five days on the one measured instance.",
+     "evidence": [
+      "num:your_reply_time:tara@fjordvp.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is nineteen days into a conversation that began with a conditional pass, and is quiet 0.38 days as of the mailbox read.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A conditional deferral that has been treated as an update list, with three identical updates sent over nineteen days to an investor who has not replied. The investor named a condition ('a real milestone') but you have not yet shown that the condition is met. The move is yours: you are sending without reply, and the playbook says to stop sending updates that do not address the condition.",
+    "rivals": [
+     "A soft no disguised as a deferral: Tara Lindqvist said 'keep me posted' but meant 'no, unless you become a hot deal,' and no update will reopen the conversation until the company's stage or traction changes dramatically.",
+     "A conversation that has simply drifted: Fjord Venture Partners is not actively reviewing updates, and the three you sent have been lost in their inbox. A single, high-signal message with a new fact might rekindle interest.",
+     "A mismatch between the condition and the updates: You have been sending product updates, but Tara Lindqvist was asking for a business milestone (revenue, customer, partnership), and the silence reflects that mismatch."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A direct question to her: 'What would count as a real milestone for you?' or a pause in updates until a genuine milestone is reached.",
+     "proposition": "Tara Lindqvist is reading the updates but has not seen a milestone that meets her threshold."
+    },
+    {
+     "needs": "A single, high-signal message that names a specific milestone or a new fact (a customer, a revenue number, a lead) that was not in the first email.",
+     "proposition": "Tara Lindqvist is not reading the updates at all, and the conversation has drifted into her low-priority queue."
+    },
+    {
+     "needs": "A change in the company's stage or traction that is so significant it warrants a new conversation, not an update to the old one.",
+     "proposition": "The condition 'a real milestone' was always a soft no, and no update will reopen the conversation."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "Tara Lindqvist's initial message is a conditional deferral, not a pass: she named a condition \u2014 'a real milestone' \u2014 on which she would reconsider."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "inference:1",
+      "own:1"
+     ],
+     "claim": "The three updates you sent do not appear to meet the condition she named: 'onboarded two more pilot teams and shipped calendar sync' is product progress, not a milestone that would typically move an investor who said 'it's too early.'"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Silence after three updates over nineteen days, with no reply to any, suggests either the updates do not meet her threshold or she is not actively monitoring them."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "The move is yours: you have sent three times without reply, and the playbook says to age conversations where we owe the reply before those where they do."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "Sending identical updates three times in a row is a pattern of activity mistaken for progress, and risks teaching the investor to skim."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "card:card_#1",
+    "by_when": "2026-08-28",
+    "for_whom": "Tara Lindqvist at Fjord Venture Partners",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "pb:founder_office.pb.investor_relations.reopen_after_a_pass",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:2",
+     "inference:4"
+    ],
+    "to": "tara@fjordvp.test",
+    "what": "Send a single message to Tara Lindqvist that either (a) names a genuine milestone you have hit since the first email and asks for a meeting, or (b) asks directly what would count as a 'real milestone' for her, and pauses updates until you know.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A conditional deferral is a door left open, but only for the condition named. Sending updates that do not address the condition is activity, not progress, and it trains the investor to ignore the next message.",
+     "kind": "practice",
+     "why": "The investor has already decided not to move now; the only thing that changes their mind is the condition being met. Anything else is noise."
+    },
+    {
+     "claim": "Founders often send weekly updates to deferred investors to stay top-of-mind, but this backfires when the updates do not show progress against the investor's stated condition.",
+     "kind": "counter_pattern",
+     "why": "An investor who said 'come back when you have a real milestone' reads 'we onboarded two more pilot teams' as 'we still don't have what you asked for,' and each update that does not meet the condition reinforces that reading."
+    },
+    {
+     "claim": "The right move after a conditional deferral is to stop sending updates until the condition is met, then send one message that names the condition and shows it is met.",
+     "kind": "practice",
+     "why": "This respects the investor's time, keeps the door open, and makes the re-approach a real conversation rather than a continuation of the one they already declined."
+    },
+    {
+     "claim": "An investor conversation that has not moved to a meeting or a clear next step in three weeks is usually not moving at all in this round.",
+     "kind": "base_rate",
+     "why": "The playbook's prior for first contact is fourteen days; if no meeting is scheduled by then, the investor is not prioritizing the company, and weekly updates will not change that."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+     ],
+     "claim": "An investor who says 'keep me posted' and names a condition usually expects updates only when the condition is met, not weekly updates on ordinary progress.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "An investor who does not reply to three updates in nineteen days may be signaling that the updates do not meet the threshold, rather than that they are not reading them.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.reopen_after_a_pass"
+     ],
+     "claim": "Most investors who defer with a condition do not reopen the conversation unless the condition is explicitly met and named in the re-approach.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#11"
+    ],
+    "kind": "investor",
+    "why": "The file is correctly classified as investor work. Fjord Venture Partners is a venture capital firm, Tara Lindqvist is a partner or associate, and the conversation is about a seed round."
+   },
+   "scenarios": {
+    "act": "You send one message that either (a) names a genuine milestone and asks for a meeting, or (b) asks directly what would count as a milestone and pauses updates until you know. The investor either replies with interest, clarifies the condition, or remains silent \u2014 in which case you have clarity that this investor is not moving in this round.",
+    "best": "Tara Lindqvist replies to a direct question about what counts as a milestone, you hit that milestone, and you re-approach with a meeting request. Or: you have hit a genuine milestone since the first email, you name it in a single message, and she agrees to a call.",
+    "do_nothing": "The file remains quiet. After ninety days of silence, the playbook calls the work dormant, and you will have spent nineteen days sending updates to an investor who is not moving. The investor's option remains open indefinitely, and you have no clarity on whether the condition is met or whether they are interested at all. The round moves on without a decision from Fjord Venture Partners.",
+    "signals_to_watch": [
+     "A reply from Tara Lindqvist to any message that clarifies what she means by 'a real milestone' or asks for a meeting.",
+     "A genuine milestone in your company (a customer, revenue, partnership, product launch) that you can name in a new message.",
+     "Silence past fourteen days from a new message: if she does not reply to a direct ask or a milestone announcement, the conversation is a soft no for this round."
+    ],
+    "worst": "You continue sending weekly updates that do not meet the condition, the investor's silence continues, and you waste time on a conversation that is not moving while other investors in the wave are also silent. By the time you realize this investor is not moving, the round has stalled."
+   },
+   "unknowns": [
+    {
+     "question": "What did Tara Lindqvist mean by 'a real milestone'? Was it a revenue number, a customer, a product launch, or something else?",
+     "relevance": "The next move depends on whether the updates you sent actually address her condition or miss it entirely. If you do not know what she meant, you cannot know whether to keep updating or stop."
+    },
+    {
+     "question": "Is Fjord Venture Partners actively reviewing updates from companies in their pipeline, or do they only respond when a founder writes with a specific ask?",
+     "relevance": "If they do not read unsolicited updates, the three you sent have been wasted effort. If they do, the silence means the updates do not meet the threshold."
+    },
+    {
+     "question": "Have you hit any genuine milestone since the first email \u2014 a customer, a revenue number, a partnership, a product launch \u2014 that would warrant a new conversation?",
+     "relevance": "If yes, the next move is a single message naming that milestone. If no, the next move is to stop updating and wait until you do."
+    }
+   ],
+   "wait_or_stop": "Wait for a reply for seven days. If Tara Lindqvist replies with a question or a meeting request, move to the next step. If she does not reply, treat the conversation as a soft no for this round and stop sending updates. Record the condition she named ('a real milestone') and re-approach when it is met."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Fjord Venture Partners received an initial email on 2026-08-07 and replied the same day with a conditional pass.\",\n      \"evidence\": [\n        \"evt_#4\"\n      ],\n      \"quote\": \"It's too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again.\"\n    },\n    {\n      \"claim\": \"You have sent three weekly updates to Fjord Venture Partners on 2026-08-12, 2026-08-19, and 2026-08-26, each with identical content about onboarding pilot teams and shipping calendar sync.\",\n      \"evidence\": [\n        \"evt_#3\",\n        \"evt_#2\",\n        \"evt_#1\"\n      ],\n      \"quote\": \"we onboarded two more pilot teams and shipped calendar sync\"\n    },\n    {\n      \"claim\": \"Tara Lindqvist at Fjord Venture Partners has not replied to any of the three updates sent over nineteen days.\",\n      \"evidence\": [\n        \"cov:last_mail\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows no promise was made by Fjord Venture Partners beyond the conditional deferral.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Your reply time to Fjord Venture Partners was five days on the one measured instance.\",\n      \"evidence\": [\n        \"num:your_reply_time:tara@fjordvp.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is nineteen days into a conversation that began with a conditional pass, and is quiet 0.38 days as of the mailbox read.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Tara Lindqvist's initial message is a conditional deferral, not a pass: she named a condition \u2014 'a real milestone' \u2014 on which she would reconsider.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"claim\": \"The three updates you sent do not appear to meet the condition she named: 'onboarded two more pilot teams and shipped calendar sync' is product progress, not a milestone that would typically move an investor who said 'it's too early.'\",\n      \"based_on\": [\n        \"fact:2\",\n        \"inference:1\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"claim\": \"Silence after three updates over nineteen days, with no reply to any, suggests either the updates do not meet her threshold or she is not actively monitoring them.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"claim\": \"The move is yours: you have sent three times without reply, and the playbook says to age conversations where we owe the reply before those where they do.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"claim\": \"Sending identical updates three times in a row is a pattern of activity mistaken for progress, and risks teaching the investor to skim.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who says 'keep me posted' and names a condition usually expects updates only when the condition is met, not weekly updates on ordinary progress.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An investor who does not reply to three updates in nineteen days may be signaling that the updates do not meet the threshold, rather than that they are not reading them.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most investors who defer with a condition do not reopen the conversation unless the condition is explicitly met and named in the re-approach.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A conditional deferral is a door left open, but only for the condition named. Sending updates that do not address the condition is activity, not progress, and it trains the investor to ignore the next message.\",\n      \"why\": \"The investor has already decided not to move now; the only thing that changes their mind is the condition being met. Anything else is noise.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Founders often send weekly updates to deferred investors to stay top-of-mind, but this backfires when the updates do not show progress against the investor's stated condition.\",\n      \"why\": \"An investor who said 'come back when you have a real milestone' reads 'we onboarded two more pilot teams' as 'we still don't have what you asked for,' and each update that does not meet the condition reinforces that reading.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The right move after a conditional deferral is to stop sending updates until the condition is met, then send one message that names the condition and shows it is met.\",\n      \"why\": \"This respects the investor's time, keeps the door open, and makes the re-approach a real conversation rather than a continuation of the one they already declined.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An investor conversation that has not moved to a meeting or a clear next step in three weeks is usually not moving at all in this round.\",\n      \"why\": \"The playbook's prior for first contact is fourteen days; if no meeting is scheduled by then, the investor is not prioritizing the company, and weekly updates will not change that.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tara Lindqvist is reading the updates but has not seen a milestone that meets her threshold.\",\n      \"needs\": \"A direct question to her: 'What would count as a real milestone for you?' or a pause in updates until a genuine milestone is reached.\"\n    },\n    {\n      \"proposition\": \"Tara Lindqvist is not reading the updates at all, and the conversation has drifted into her low-priority queue.\",\n      \"needs\": \"A single, high-signal message that names a specific milestone or a new fact (a customer, a revenue number, a lead) that was not in the first email.\"\n    },\n    {\n      \"proposition\": \"The condition 'a real milestone' was always a soft no, and no update will reopen the conversation.\",\n      \"needs\": \"A change in the company's stage or traction that is so significant it warrants a new conversation, not an update to the old one.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What did Tara Lindqvist mean by 'a real milestone'? Was it a revenue number, a customer, a product launch, or something else?\",\n      \"relevance\": \"The next move depends on whether the updates you sent actually address her condition or miss it entirely. If you do not know what she meant, you cannot know whether to keep updating or stop.\"\n    },\n    {\n      \"question\": \"Is Fjord Venture Partners actively reviewing updates from companies in their pipeline, or do they only respond when a founder writes with a specific ask?\",\n      \"relevance\": \"If they do not read unsolicited updates, the three you sent have been wasted effort. If they do, the silence means the updates do not meet the threshold.\"\n    },\n    {\n      \"question\": \"Have you hit any genuine milestone since the first email \u2014 a customer, a revenue number, a partnership, a product launch \u2014 that would warrant a new conversation?\",\n      \"relevance\": \"If yes, the next move is a single message naming that milestone. If no, the next move is to stop updating and wait until you do.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A conditional deferral that has been treated as an update list, with three identical updates sent over nineteen days to an investor who has not replied. The investor named a condition ('a real milestone') but you have not yet shown that the condition is met. The move is yours: you are sending without reply, and the playbook says to stop sending updates that do not address the condition.\",\n    \"rivals\": [\n      \"A soft no disguised as a deferral: Tara Lindqvist said 'keep me posted' but meant 'no, unless you become a hot deal,' and no update will reopen the conversation until the company's stage or traction changes dramatically.\",\n      \"A conversation that has simply drifted: Fjord Venture Partners is not actively reviewing updates, and the three you sent have been lost in their inbox. A single, high-signal message with a new fact might rekindle interest.\",\n      \"A mismatch between the condition and the updates: You have been sending product updates, but Tara Lindqvist was asking for a business milestone (revenue, customer, partnership), and the silence reflects that mismatch.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is correctly classified as investor work. Fjord Venture Partners is a venture capital firm, Tara Lindqvist is a partner or associate, and the conversation is about a seed round.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#11\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_contact\",\n    \"expected\": \"At the first_contact stage, the playbook expects either a first meeting or call to be scheduled, or the investor to decline. The typical duration is fourteen days. Silence is the default at this stage, and most first emails never become a meeting. After a warm introduction, silence means the investor has not opted in.\",\n    \"actual\": \"You received a conditional deferral ('keep me posted, if you hit a real milestone') on day one, which is not a decline but a door left open. You then sent three identical updates over nineteen days without reply. No meeting has been scheduled. The conversation has not moved to the next stage.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. After ninety days of silence, the playbook calls the work dormant, and you will have spent nineteen days sending updates to an investor who is not moving. The investor's option remains open indefinitely, and you have no clarity on whether the condition is met or whether they are interested at all. The round moves on without a decision from Fjord Venture Partners.\",\n    \"act\": \"You send one message that either (a) names a genuine milestone and asks for a meeting, or (b) asks directly what would count as a milestone and pauses updates until you know. The investor either replies with interest, clarifies the condition, or remains silent \u2014 in which case you have clarity that this investor is not moving in this round.\",\n    \"best\": \"Tara Lindqvist replies to a direct question about what counts as a milestone, you hit that milestone, and you re-approach with a meeting request. Or: you have hit a genuine milestone since the first email, you name it in a single message, and she agrees to a call.\",\n    \"worst\": \"You continue sending weekly updates that do not meet the condition, the investor's silence continues, and you waste time on a conversation that is not moving while other investors in the wave are also silent. By the time you realize this investor is not moving, the round has stalled.\",\n    \"signals_to_watch\": [\n      \"A reply from Tara Lindqvist to any message that clarifies what she means by 'a real milestone' or asks for a meeting.\",\n      \"A genuine milestone in your company (a customer, revenue, partnership, product launch) that you can name in a new message.\",\n      \"Silence past fourteen days from a new message: if she does not reply to a direct ask or a milestone announcement, the conversation is a soft no for this round.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Fjord Venture Partners is one of five investors in the seed wave, so losing this conversation does not kill the round, but it is one of a limited set.\",\n      \"The conversation is still open \u2014 a conditional deferral is not a pass \u2014 so a clear milestone or a direct question could rekindle it.\",\n      \"The move is low-cost: a single message asking for clarity or naming a milestone, then a pause in updates. If it does not work, you have lost nothing but the time already spent.\",\n      \"The urgency is medium because the round is active and other investors are also being pursued in parallel; this one needs clarity soon so you can allocate your attention accordingly.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send a single message to Tara Lindqvist that either (a) names a genuine milestone you have hit since the first email and asks for a meeting, or (b) asks directly what would count as a 'real milestone' for her, and pauses updates until you know.\",\n    \"for_whom\": \"Tara Lindqvist at Fjord Venture Partners\",\n    \"by_when\": \"2026-08-28\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:2\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"tara@fjordvp.test\",\n    \"answers\": \"card:card_#1\"\n  },\n  \"alternative\": \"If you have not hit a genuine milestone, pause all updates to Fjord Venture Partners and move them to a watch list. Re-approach only when you have a milestone that meets the condition she named. This is the lower-risk move if you are uncertain whether the updates are addressing her threshold.\",\n  \"wait_or_stop\": \"Wait for a reply for seven days. If Tara Lindqvist replies with a question or a meeting request, move to the next step. If she does not reply, treat the conversation as a soft no for this round and stop sending updates. Record the condition she named ('a real milestone') and re-approach when it is met.\",\n  \"done_when\": \"Done when Tara Lindqvist either (a) replies with a meeting time or a clear next step, (b) clarifies what counts as a milestone, or (c) does not reply within seven days, at which point you have clarity that this investor is not moving in this round and you can allocate your attention elsewhere.\",\n  \"draft\": \"Hi Tara, I want to make sure I'm sending you updates that matter. When you said 'a real milestone,' what would that look like for you? A customer, a revenue number, a partnership, or something else? I'll pause the weekly notes until I know what would move the needle. Thanks, Arjun\"\n}",
+  "site": "expert"
+ },
+ "43601a64f756baae77034611f93c1ccf29b9d656f3e26d37980c8d3f0afe356b": {
+  "framed": true,
+  "input_tokens": 11948,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4586,
+  "parsed": {
+   "alternative": "Send one final update that explicitly states the progress made (onboarding pilot teams and shipping calendar sync) and asks Tara directly whether this meets her condition for a meeting, with a clear ask for a yes or no answer by a specific date. If no reply comes within seven days, move Fjord to the update list and stop individual emails.",
+   "appraisal": {
+    "reasons": [
+     "Fjord is one of five investors written to in the seed wave, so the stakes are not on this one investor but on the round as a whole; if Fjord moves, it is a win, but if it does not, the round can close without them.",
+     "The conversation is in first contact, which typically takes fourteen days; nineteen days have passed, but silence at this stage is the default, not a signal of urgency.",
+     "The move is reversible: clarifying the condition or moving Fjord to the update list does not close any doors, and the investor can be re-approached later if the condition is met.",
+     "The file shows no blocking dependency and low risk, which means this conversation is not holding up the round.",
+     "The playbook says that a conversation run alone has no clock, and the momentum comes from other investors moving; the urgency depends on whether the round as a whole is moving, not on whether Fjord is."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "Done when Tara Lindqvist either confirms that the condition has been met and agrees to a meeting, or declines and the conversation is recorded as passed with her reason, or does not reply and is moved to the update list with a watch on the condition.",
+   "draft": "Hi Tara, Thanks for the encouragement to keep you posted. We've onboarded pilot teams and shipped calendar sync \u2014 I want to make sure this is the kind of milestone you meant. Is this the real milestone you were looking for, or is there something else you'd like to see before we talk? If this qualifies, I'd love to find time for a call. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "Tara Lindqvist replied on the first day with a conditional deferral ('too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again'). Arjun Rao then sent three updates over nineteen days, each describing the same milestone. Tara has not replied to any of the updates. No meeting has been held, no next step has been named in writing, and no confirmation of the condition has been captured.",
+    "expected": "At first contact, an investor typically takes fourteen days to respond or decline. Silence is the default rather than a signal. The stage ends when a first meeting or call is held, or the investor declines. The playbook says that after a warm introduction, silence means the investor has not opted in, and the move is to ask the connector, not the investor.",
+    "stage": "first_contact"
+   },
+   "facts": [
+    {
+     "claim": "Fjord Venture Partners received an initial email from Arjun Rao on 2026-08-07, and Tara Lindqvist replied the same day saying the timing was not right but asking to be kept posted if a real milestone was hit.",
+     "evidence": [
+      "evt_#4"
+     ],
+     "quote": "Thanks Arjun. It's too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again."
+    },
+    {
+     "claim": "Arjun Rao sent three weekly updates to Tara Lindqvist on 2026-08-12, 2026-08-19, and 2026-08-26, each describing the same progress: onboarding two more pilot teams and shipping calendar sync.",
+     "evidence": [
+      "evt_#3",
+      "evt_#2",
+      "evt_#1"
+     ],
+     "quote": "we onboarded two more pilot teams and shipped calendar sync"
+    },
+    {
+     "claim": "No reply has been received from Tara Lindqvist since the initial response on 2026-08-07, and the mailbox has been read through 2026-08-26 18:00 UTC.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows whose move it is as theirs, with no open asks recorded.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The conversation has been quiet for 0.38 days as of the dossier's timestamp, within the gaps that have closed before in this file.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is categorized as investor work in the domain of fundraising, with no role specified in the brief.",
+     "evidence": [
+      "file:kind",
+      "file:domains",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and engagement measured as healthy, but insufficient context for relationship status and opportunity assessment.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.temporal",
+      "ru:core.relationship",
+      "ru:core.opportunity"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A conditional deferral from an investor who asked to be kept posted, now receiving repetitive updates that do not appear to address her stated condition, with no reply over nineteen days. The conversation is in first contact, no meeting has been held, and the move is ours but we are sending noise instead of progress.",
+    "rivals": [
+     "A pass disguised as a deferral: Tara Lindqvist said 'too early' and 'keep me posted' but meant no, and the silence is the answer.",
+     "A stalled round: Fjord is one of many investors being approached in parallel, and the silence is not about Fjord but about the round as a whole not moving.",
+     "A delivery or filtering problem: the updates are not reaching Tara, or are being filtered, and the silence is not about interest but about visibility."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A record of what Tara Lindqvist said a real milestone would be, or a conversation with her or someone who knows her thesis to understand what she means by it.",
+     "proposition": "Tara Lindqvist's condition for re-engagement was 'a real milestone,' and the updates sent describe onboarding pilot teams and shipping calendar sync; the question is whether those constitute a real milestone in her eyes."
+    },
+    {
+     "needs": "Confirmation from Arjun Rao of what actually happened between 2026-08-12 and 2026-08-26, and whether the pilot teams and calendar sync are the same milestone or three separate ones.",
+     "proposition": "The three updates are duplicates or the same milestone reported three times, which means no new progress has been made."
+    },
+    {
+     "needs": "A check of whether the emails are being delivered and read, and a conversation with Tara or someone at Fjord to understand her actual position.",
+     "proposition": "Tara Lindqvist is not replying because she is not interested, or because she is waiting for something else, or because the updates are not reaching her or are being filtered."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "Tara Lindqvist's initial response was a conditional deferral, not a pass: she named a condition for re-engagement ('if you hit a real milestone') and asked to be kept posted, which commits her to nothing but leaves the door open."
+    },
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "The three updates sent by Arjun Rao describe the same milestone twice over (onboarding pilot teams and shipping calendar sync appear identically in all three), which means either the updates are duplicates or the same milestone is being reported as new progress three times."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "sit:sit_#1"
+     ],
+     "claim": "Tara Lindqvist has not replied to any of the three updates, and the silence now spans nineteen days from first touch to last touch, which is within the typical first-contact stage duration but approaching the point where silence begins to read as a soft no if no next step was named."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "file:whose_move",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "The move is recorded as theirs, but Tara Lindqvist asked to be kept posted and Arjun Rao has been sending updates; the move is actually ours, because we are the ones sending and she is the one not replying."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The stage is first_contact, because no meeting has been held and no next step beyond 'keep me posted' has been named or confirmed in writing."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "card:card_#1",
+    "by_when": "2026-09-02",
+    "for_whom": "Tara Lindqvist at Fjord Venture Partners",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:4"
+    ],
+    "to": "tara@fjordvp.test",
+    "what": "Clarify in writing what Tara Lindqvist meant by 'a real milestone' and confirm whether the progress made so far meets that condition, or move Fjord to the monthly update list and stop sending individual emails until the condition is met.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When an investor defers with a named condition, record the exact words of the condition and stop sending updates until that condition is met or substantially approached; sending updates before the condition is met reads as pressure and teaches the investor to ignore the next message.",
+     "kind": "practice",
+     "why": "An investor who has deferred is not in a decision cycle; they are waiting for a fact to change. Updates that do not address that fact are noise. The condition is the asset, and the asset here was not captured in writing."
+    },
+    {
+     "claim": "A founder who sends the same update three times in a row has usually not captured what the investor actually asked for, or has not made progress against it.",
+     "kind": "base_rate",
+     "why": "If progress were real and material, it would be different each time. Repetition signals either that the milestone is not real or that the founder is not tracking what matters to the investor."
+    },
+    {
+     "claim": "In a seed round, run every investor conversation in parallel, not in sequence; a conversation run alone has no clock and no momentum, and the investor holds a free option.",
+     "kind": "practice",
+     "why": "Momentum in a raise comes from investors seeing other investors move. A single investor conversation that is not moving is not a problem until the round as a whole is stalled. The problem here is not Fjord; it is that this conversation is being run in isolation and treated as if it needs to move on its own."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+     ],
+     "claim": "An investor who says 'keep me posted' and names a condition ('if you hit a real milestone') is deferring, not passing, and expects updates only when the condition is met or substantially approached.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.pb.investor_relations.reopen_after_a_pass"
+     ],
+     "claim": "Sending the same update three times in a row to an investor who has deferred is not keeping them posted; it is noise, and it teaches them to skim the next message.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "In the first-contact stage, silence after a warm introduction is the default rather than a signal; most first emails to investors do not become meetings.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "sit:sit_#1",
+      "pb:founder_office.pb.investor_relations.the_wave_gone_silent"
+     ],
+     "claim": "An investor who has not replied to three updates over nineteen days is not actively considering the company in this round, and further updates without a material change will not move them.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:domains",
+     "brief:cbl_#11"
+    ],
+    "kind": "investor",
+    "why": "The file is categorized as investor work in the domain of fundraising, and the counterparty is Fjord Venture Partners, an investor. The work is to raise the seed round."
+   },
+   "scenarios": {
+    "act": "The founder clarifies what Tara Lindqvist meant by 'a real milestone,' confirms whether the updates sent so far meet that condition, and either stops sending updates until the condition is met or sends one final update that explicitly addresses the condition and asks for a meeting if it has been met. Alternatively, the founder moves Fjord to the update list and stops sending individual emails until the condition is met or the round moves on.",
+    "best": "Tara Lindqvist replies to a clarifying email or a final update that addresses her condition, confirms that the milestone has been hit, and agrees to a meeting. The conversation moves to first call, and Fjord becomes an active investor in the round.",
+    "do_nothing": "The file remains in first contact, quiet, with Tara Lindqvist not replying. After ninety days of silence, the conversation decays into a no that nobody sends, and the founder learns of it only when the round has moved on without Fjord. The investor holds a free option on the company, and the founder has spent attention on a conversation that is not moving.",
+    "signals_to_watch": [
+     "A reply from Tara Lindqvist to any email, confirming her condition or asking for a meeting",
+     "A reply from Tara Lindqvist declining to meet or passing on the company",
+     "No reply after a final clarifying email, which after fourteen days reads as a soft no",
+     "Movement from other investors in the seed wave, which would indicate the round is moving and Fjord's silence is not a problem yet",
+     "A material change in the company's metrics or product that clearly meets or exceeds what Tara asked for"
+    ],
+    "worst": "Tara Lindqvist never replies, and the founder continues sending updates for weeks or months, spending attention on a conversation that is not moving. The round closes without Fjord, and the founder learns that Tara had moved on weeks earlier."
+   },
+   "unknowns": [
+    {
+     "question": "What did Tara Lindqvist mean by 'a real milestone'?",
+     "relevance": "The entire strategy of sending updates rests on understanding what condition would bring her back. Without that, the updates are guesses, and three guesses that do not move her suggest the guesses are wrong."
+    },
+    {
+     "question": "Has any material progress actually been made between 2026-08-12 and 2026-08-26, or are the three updates describing the same milestone?",
+     "relevance": "If the same milestone is being reported three times, the conversation is not moving and the updates are noise. If different milestones are being reported, the question is whether any of them meet Tara's condition."
+    },
+    {
+     "question": "Is Tara Lindqvist actively considering Nimbus Labs, or has she moved on to other companies?",
+     "relevance": "If she has moved on, further updates will not bring her back; the conversation needs to be reopened with a material change against her stated condition, or left alone until that change happens."
+    },
+    {
+     "question": "Are the other investors in the seed wave moving, or is the whole round stalled?",
+     "relevance": "If other investors are moving, Fjord's silence is not a problem yet; if the whole round is stalled, the problem is not Fjord but the round itself, and the move is to change the pitch, the list or the channel, not to send more updates to Fjord."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-02 for a reply from Tara Lindqvist. If no reply comes by then, move Fjord to the monthly update list and send nothing more until the condition is met or the round moves on. If Tara replies with a pass or a decline, record it as passed with the reason given. If Tara replies with a meeting time or a request for more information, move to first call."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Fjord Venture Partners received an initial email from Arjun Rao on 2026-08-07, and Tara Lindqvist replied the same day saying the timing was not right but asking to be kept posted if a real milestone was hit.\",\n      \"evidence\": [\n        \"evt_#4\"\n      ],\n      \"quote\": \"Thanks Arjun. It's too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again.\"\n    },\n    {\n      \"claim\": \"Arjun Rao sent three weekly updates to Tara Lindqvist on 2026-08-12, 2026-08-19, and 2026-08-26, each describing the same progress: onboarding two more pilot teams and shipping calendar sync.\",\n      \"evidence\": [\n        \"evt_#3\",\n        \"evt_#2\",\n        \"evt_#1\"\n      ],\n      \"quote\": \"we onboarded two more pilot teams and shipped calendar sync\"\n    },\n    {\n      \"claim\": \"No reply has been received from Tara Lindqvist since the initial response on 2026-08-07, and the mailbox has been read through 2026-08-26 18:00 UTC.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows whose move it is as theirs, with no open asks recorded.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The conversation has been quiet for 0.38 days as of the dossier's timestamp, within the gaps that have closed before in this file.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is categorized as investor work in the domain of fundraising, with no role specified in the brief.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:domains\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and engagement measured as healthy, but insufficient context for relationship status and opportunity assessment.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.temporal\",\n        \"ru:core.relationship\",\n        \"ru:core.opportunity\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Tara Lindqvist's initial response was a conditional deferral, not a pass: she named a condition for re-engagement ('if you hit a real milestone') and asked to be kept posted, which commits her to nothing but leaves the door open.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"claim\": \"The three updates sent by Arjun Rao describe the same milestone twice over (onboarding pilot teams and shipping calendar sync appear identically in all three), which means either the updates are duplicates or the same milestone is being reported as new progress three times.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"Tara Lindqvist has not replied to any of the three updates, and the silence now spans nineteen days from first touch to last touch, which is within the typical first-contact stage duration but approaching the point where silence begins to read as a soft no if no next step was named.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"sit:sit_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The move is recorded as theirs, but Tara Lindqvist asked to be kept posted and Arjun Rao has been sending updates; the move is actually ours, because we are the ones sending and she is the one not replying.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"file:whose_move\",\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"claim\": \"The stage is first_contact, because no meeting has been held and no next step beyond 'keep me posted' has been named or confirmed in writing.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who says 'keep me posted' and names a condition ('if you hit a real milestone') is deferring, not passing, and expects updates only when the condition is met or substantially approached.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Sending the same update three times in a row to an investor who has deferred is not keeping them posted; it is noise, and it teaches them to skim the next message.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"In the first-contact stage, silence after a warm introduction is the default rather than a signal; most first emails to investors do not become meetings.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who has not replied to three updates over nineteen days is not actively considering the company in this round, and further updates without a material change will not move them.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"sit:sit_#1\",\n        \"pb:founder_office.pb.investor_relations.the_wave_gone_silent\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When an investor defers with a named condition, record the exact words of the condition and stop sending updates until that condition is met or substantially approached; sending updates before the condition is met reads as pressure and teaches the investor to ignore the next message.\",\n      \"why\": \"An investor who has deferred is not in a decision cycle; they are waiting for a fact to change. Updates that do not address that fact are noise. The condition is the asset, and the asset here was not captured in writing.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A founder who sends the same update three times in a row has usually not captured what the investor actually asked for, or has not made progress against it.\",\n      \"why\": \"If progress were real and material, it would be different each time. Repetition signals either that the milestone is not real or that the founder is not tracking what matters to the investor.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"In a seed round, run every investor conversation in parallel, not in sequence; a conversation run alone has no clock and no momentum, and the investor holds a free option.\",\n      \"why\": \"Momentum in a raise comes from investors seeing other investors move. A single investor conversation that is not moving is not a problem until the round as a whole is stalled. The problem here is not Fjord; it is that this conversation is being run in isolation and treated as if it needs to move on its own.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tara Lindqvist's condition for re-engagement was 'a real milestone,' and the updates sent describe onboarding pilot teams and shipping calendar sync; the question is whether those constitute a real milestone in her eyes.\",\n      \"needs\": \"A record of what Tara Lindqvist said a real milestone would be, or a conversation with her or someone who knows her thesis to understand what she means by it.\"\n    },\n    {\n      \"proposition\": \"The three updates are duplicates or the same milestone reported three times, which means no new progress has been made.\",\n      \"needs\": \"Confirmation from Arjun Rao of what actually happened between 2026-08-12 and 2026-08-26, and whether the pilot teams and calendar sync are the same milestone or three separate ones.\"\n    },\n    {\n      \"proposition\": \"Tara Lindqvist is not replying because she is not interested, or because she is waiting for something else, or because the updates are not reaching her or are being filtered.\",\n      \"needs\": \"A check of whether the emails are being delivered and read, and a conversation with Tara or someone at Fjord to understand her actual position.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What did Tara Lindqvist mean by 'a real milestone'?\",\n      \"relevance\": \"The entire strategy of sending updates rests on understanding what condition would bring her back. Without that, the updates are guesses, and three guesses that do not move her suggest the guesses are wrong.\"\n    },\n    {\n      \"question\": \"Has any material progress actually been made between 2026-08-12 and 2026-08-26, or are the three updates describing the same milestone?\",\n      \"relevance\": \"If the same milestone is being reported three times, the conversation is not moving and the updates are noise. If different milestones are being reported, the question is whether any of them meet Tara's condition.\"\n    },\n    {\n      \"question\": \"Is Tara Lindqvist actively considering Nimbus Labs, or has she moved on to other companies?\",\n      \"relevance\": \"If she has moved on, further updates will not bring her back; the conversation needs to be reopened with a material change against her stated condition, or left alone until that change happens.\"\n    },\n    {\n      \"question\": \"Are the other investors in the seed wave moving, or is the whole round stalled?\",\n      \"relevance\": \"If other investors are moving, Fjord's silence is not a problem yet; if the whole round is stalled, the problem is not Fjord but the round itself, and the move is to change the pitch, the list or the channel, not to send more updates to Fjord.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A conditional deferral from an investor who asked to be kept posted, now receiving repetitive updates that do not appear to address her stated condition, with no reply over nineteen days. The conversation is in first contact, no meeting has been held, and the move is ours but we are sending noise instead of progress.\",\n    \"rivals\": [\n      \"A pass disguised as a deferral: Tara Lindqvist said 'too early' and 'keep me posted' but meant no, and the silence is the answer.\",\n      \"A stalled round: Fjord is one of many investors being approached in parallel, and the silence is not about Fjord but about the round as a whole not moving.\",\n      \"A delivery or filtering problem: the updates are not reaching Tara, or are being filtered, and the silence is not about interest but about visibility.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is categorized as investor work in the domain of fundraising, and the counterparty is Fjord Venture Partners, an investor. The work is to raise the seed round.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:domains\",\n      \"brief:cbl_#11\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_contact\",\n    \"expected\": \"At first contact, an investor typically takes fourteen days to respond or decline. Silence is the default rather than a signal. The stage ends when a first meeting or call is held, or the investor declines. The playbook says that after a warm introduction, silence means the investor has not opted in, and the move is to ask the connector, not the investor.\",\n    \"actual\": \"Tara Lindqvist replied on the first day with a conditional deferral ('too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again'). Arjun Rao then sent three updates over nineteen days, each describing the same milestone. Tara has not replied to any of the updates. No meeting has been held, no next step has been named in writing, and no confirmation of the condition has been captured.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains in first contact, quiet, with Tara Lindqvist not replying. After ninety days of silence, the conversation decays into a no that nobody sends, and the founder learns of it only when the round has moved on without Fjord. The investor holds a free option on the company, and the founder has spent attention on a conversation that is not moving.\",\n    \"act\": \"The founder clarifies what Tara Lindqvist meant by 'a real milestone,' confirms whether the updates sent so far meet that condition, and either stops sending updates until the condition is met or sends one final update that explicitly addresses the condition and asks for a meeting if it has been met. Alternatively, the founder moves Fjord to the update list and stops sending individual emails until the condition is met or the round moves on.\",\n    \"best\": \"Tara Lindqvist replies to a clarifying email or a final update that addresses her condition, confirms that the milestone has been hit, and agrees to a meeting. The conversation moves to first call, and Fjord becomes an active investor in the round.\",\n    \"worst\": \"Tara Lindqvist never replies, and the founder continues sending updates for weeks or months, spending attention on a conversation that is not moving. The round closes without Fjord, and the founder learns that Tara had moved on weeks earlier.\",\n    \"signals_to_watch\": [\n      \"A reply from Tara Lindqvist to any email, confirming her condition or asking for a meeting\",\n      \"A reply from Tara Lindqvist declining to meet or passing on the company\",\n      \"No reply after a final clarifying email, which after fourteen days reads as a soft no\",\n      \"Movement from other investors in the seed wave, which would indicate the round is moving and Fjord's silence is not a problem yet\",\n      \"A material change in the company's metrics or product that clearly meets or exceeds what Tara asked for\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Fjord is one of five investors written to in the seed wave, so the stakes are not on this one investor but on the round as a whole; if Fjord moves, it is a win, but if it does not, the round can close without them.\",\n      \"The conversation is in first contact, which typically takes fourteen days; nineteen days have passed, but silence at this stage is the default, not a signal of urgency.\",\n      \"The move is reversible: clarifying the condition or moving Fjord to the update list does not close any doors, and the investor can be re-approached later if the condition is met.\",\n      \"The file shows no blocking dependency and low risk, which means this conversation is not holding up the round.\",\n      \"The playbook says that a conversation run alone has no clock, and the momentum comes from other investors moving; the urgency depends on whether the round as a whole is moving, not on whether Fjord is.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Clarify in writing what Tara Lindqvist meant by 'a real milestone' and confirm whether the progress made so far meets that condition, or move Fjord to the monthly update list and stop sending individual emails until the condition is met.\",\n    \"for_whom\": \"Tara Lindqvist at Fjord Venture Partners\",\n    \"by_when\": \"2026-09-02\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:1\"\n    ],\n    \"to\": \"tara@fjordvp.test\",\n    \"answers\": \"card:card_#1\"\n  },\n  \"alternative\": \"Send one final update that explicitly states the progress made (onboarding pilot teams and shipping calendar sync) and asks Tara directly whether this meets her condition for a meeting, with a clear ask for a yes or no answer by a specific date. If no reply comes within seven days, move Fjord to the update list and stop individual emails.\",\n    \"wait_or_stop\": \"Wait until 2026-09-02 for a reply from Tara Lindqvist. If no reply comes by then, move Fjord to the monthly update list and send nothing more until the condition is met or the round moves on. If Tara replies with a pass or a decline, record it as passed with the reason given. If Tara replies with a meeting time or a request for more information, move to first call.\",\n    \"done_when\": \"Done when Tara Lindqvist either confirms that the condition has been met and agrees to a meeting, or declines and the conversation is recorded as passed with her reason, or does not reply and is moved to the update list with a watch on the condition.\",\n    \"draft\": \"Hi Tara, Thanks for the encouragement to keep you posted. We've onboarded pilot teams and shipped calendar sync \u2014 I want to make sure this is the kind of milestone you meant. Is this the real milestone you were looking for, or is there something else you'd like to see before we talk? If this qualifies, I'd love to find time for a call. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "5eb8400998ef8e49027c1d8edef2547309c3d3edab7cdeda9daa7bba50fec248": {
+  "framed": true,
+  "input_tokens": 11289,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3520,
+  "parsed": {
+   "alternative": "Do nothing and treat the pass as terminal for this round. File it as closed and move on to the other investors in the wave. This is appropriate only if the founder believes Fjord's 'too early' is structural (the fund's stage or check size does not fit) rather than timing-based. If the founder chooses this, the investor should be removed from the file and not contacted again unless the company's stage materially changes.",
+   "appraisal": {
+    "reasons": [
+     "The investor has not committed or declined finally; the pass is conditional and can be reopened if the condition is met.",
+     "This is one investor in a wave of five; the round's momentum does not depend on this one investor.",
+     "The file is at first contact, the earliest stage; there is no diligence, no term sheet, no commitment to lose.",
+     "The founder's move is to record and wait, not to act urgently. The cost of doing nothing is low; the cost of acting too soon or with the wrong milestone is higher."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The condition is recorded in the file with Tara Lindqvist's exact words. A confirmation email is sent to Tara Lindqvist thanking her and confirming the condition back in her own words. Fjord is added to the monthly update list. A watch is set to trigger a re-approach when the milestone is hit.",
+   "draft": "Thanks, Tara. I appreciate the clear feedback. You said come back with a real milestone\u2014we'll do that. I'll send you monthly updates on our progress, and we'll reach back when we hit one. Looking forward to talking again.",
+   "expected_vs_actual": {
+    "actual": "The investor replied with a pass on timing, not a meeting request. The pass came with a condition: 'If you hit a real milestone, I'd be happy to look again.' This is not a terminal no; it is a conditional deferral. The investor has not named a next step or a date, only a metric.",
+    "expected": "A first email to an investor typically receives no reply, a reply with a meeting request, or a pass. The playbook expects silence to be the default; a reply\u2014even a decline\u2014is engagement. If a reply comes, it should either name a next step (a call, a meeting) or decline. The playbook's prior is that most first emails do not produce meetings, and silence is the resting state, not decay.",
+    "stage": "first_contact"
+   },
+   "facts": [
+    {
+     "claim": "Fjord Venture Partners declined to invest at this time via Tara Lindqvist on 2026-08-07 at 09:00 UTC.",
+     "evidence": [
+      "evt_#1",
+      "file:last_touch"
+     ],
+     "quote": "It's too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again."
+    },
+    {
+     "claim": "The file has been quiet for 0.38 days since the investor's last message.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was made in the investor's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the only touch in the file; no prior history exists with this investor.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The investor was contacted as part of a seed-stage fundraising wave.",
+     "evidence": [
+      "brief:cbl_#11",
+      "brief:cbl_#2"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A pass on timing or stage from an investor who left a door open with a condition. The investor is not a no; it is a watch. The founder's move is to record the condition, add the investor to the update list, and reach back only when the condition is genuinely met.",
+    "rivals": [
+     "A soft no disguised as a deferral. The investor is being polite and does not intend to reconsider. The founder should treat this as closed for this round and move on.",
+     "A genuine deferral with no real condition. 'Keep me posted' with no named milestone is indistinguishable from having dropped it, and the founder should not expect this investor to reopen without a material change in the company's trajectory."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Clarity on what milestone Tara Lindqvist would consider 'real' in the context of an AI chief-of-staff product at seed stage. This could be inferred from Fjord's portfolio and thesis, or asked directly in a follow-up if the founder chooses to reopen.",
+     "proposition": "The investor's 'real milestone' refers to a specific metric\u2014revenue, users, a lead customer, or a product launch\u2014that the founder understands."
+    },
+    {
+     "needs": "Knowledge of Fjord's stage focus, typical check size, and current deployment pace. If Fjord typically invests at Series A or later, or writes checks larger than a seed round, the 'too early' is structural, not a verdict on the company.",
+     "proposition": "The investor's timing concern is about Fjord's own fund cycle or check size, not the company's readiness."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.reopen_after_a_pass"
+     ],
+     "claim": "The investor's message contains a conditional reopening: a real milestone would prompt reconsideration."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+      "file:whose_move"
+     ],
+     "claim": "The next move is ours: to record the pass with its condition and move the investor to the update list."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+     ],
+     "claim": "This is a pass on timing or stage, not on the company itself, based on the language 'too early' and the invitation to return."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-08",
+    "for_whom": "Tara Lindqvist and Fjord Venture Partners",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.reopen_after_a_pass",
+     "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "tara@fjordvp.test",
+    "what": "Record the pass with its condition in the file, confirm the condition back to Tara Lindqvist in writing, add Fjord to the monthly update list, and set a watch on the metric 'a real milestone' to trigger a re-approach when it is met.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A pass with a condition\u2014especially one as clear as 'a real milestone'\u2014should be recorded with the exact words and moved to a watch list, not filed as closed.",
+     "kind": "practice",
+     "why": "The investor has left a door open and named what would open it further. Treating this as terminal discards what may become a warm lead when the condition is met. The founder should track progress against this metric and reach back only when it is genuinely hit."
+    },
+    {
+     "claim": "In a seed round, most investors in a wave will not reply to a first email; a reply\u2014even a pass\u2014is engagement.",
+     "kind": "base_rate",
+     "why": "A response, even a decline, shows the investor read the email and took time to reply. This is rarer than silence and signals the investor is not dismissing the company out of hand."
+    },
+    {
+     "claim": "A founder who replies to a pass with 'just checking in' or argues with the condition teaches the investor to skim the next email and hardens the pass into a no.",
+     "kind": "counter_pattern",
+     "why": "The investor has already decided. The only move that preserves the relationship is to confirm the condition back in their words, thank them, and wait. Any other reply spends the relationship for nothing."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "brief:cbl_#11"
+     ],
+     "claim": "In a seed-stage fundraising wave, most first emails to investors do not produce meetings; silence after a first email is the default rather than a signal of decay.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict",
+      "pb:founder_office.pb.investor_relations.reopen_after_a_pass"
+     ],
+     "claim": "An investor who declines with a condition\u2014'come back when'\u2014is warmer than one who declines without one; the condition is the asset.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+     ],
+     "claim": "A pass on timing or stage carries an implicit date on which it stops being true; recording the date rather than the refusal preserves the relationship.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#11",
+     "brief:cbl_#2"
+    ],
+    "kind": "investor",
+    "why": "The file is correctly classified. Fjord Venture Partners is a venture capital firm, and the work is fundraising for a seed round."
+   },
+   "scenarios": {
+    "act": "The founder records the pass with the exact condition\u2014'a real milestone'\u2014and adds Fjord to the update list. The founder sends monthly updates on growth, cash, burn, and progress. When a milestone is hit that meets the condition, the founder writes to Tara Lindqvist about that and nothing else: 'You said come back with a real milestone; we have one.' This reopens the conversation with clarity and momentum.",
+    "best": "The company hits a genuine milestone\u2014a lead customer, a revenue threshold, a product launch\u2014that is material enough to satisfy Tara Lindqvist's condition. The founder reaches back with the news. Fjord reconsiders and moves to a first call or a meeting. The investor becomes a warm lead for this round or the next.",
+    "do_nothing": "The file remains open but dormant. The founder does not record the condition or add the investor to the update list. Over time, the pass is forgotten or treated as a no. If the company hits a real milestone, the founder does not reach back because the condition was never captured. The investor remains a missed opportunity.",
+    "signals_to_watch": [
+     "Whether the founder captures the exact words of the condition and adds Fjord to the update list.",
+     "Whether the company hits a milestone that is material enough to satisfy the condition.",
+     "Whether the founder reaches back only when the condition is met, not before.",
+     "Whether Tara Lindqvist replies to the re-approach with a meeting request or a question."
+    ],
+    "worst": "The founder misinterprets the condition or reaches back with a milestone that does not meet it. Tara Lindqvist does not reply or replies that it is still too early. The founder has spent the relationship and taught the investor to skim the next email. The pass hardens into a no."
+   },
+   "unknowns": [
+    {
+     "question": "What does Tara Lindqvist or Fjord Venture Partners consider a 'real milestone' for an AI chief-of-staff product?",
+     "relevance": "The condition is the asset. Without clarity on what would trigger a reconsideration, the founder cannot know whether to pursue this investor or treat the pass as terminal for this round. The exact words matter."
+    },
+    {
+     "question": "Was this a warm introduction or a cold email?",
+     "relevance": "The dossier does not show how the founder reached Fjord. A warm intro that produced a pass is warmer than a cold email that did. The relationship's future depends on whether the connector can be asked to follow up or whether the founder must wait for the condition to be met."
+    },
+    {
+     "question": "What is Fjord's typical check size and stage focus?",
+     "relevance": "If Fjord writes larger checks or focuses on later stages, the 'too early' is about the round structure, not the company. The founder should know whether to expect Fjord in a future round or whether this pass is unlikely to reopen."
+    }
+   ],
+   "wait_or_stop": "Wait until the company hits a milestone that is material enough to satisfy the condition. Do not send a check-in or a 'just bumping this' email; that spends the relationship. Stop if the company does not hit a real milestone within the next round's timeline, or if the founder learns that Fjord's stage or check size does not fit the company's needs."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Fjord Venture Partners declined to invest at this time via Tara Lindqvist on 2026-08-07 at 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"It's too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.38 days since the investor's last message.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was made in the investor's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the only touch in the file; no prior history exists with this investor.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"hist:derived.history.times_seen@fundraising\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The investor was contacted as part of a seed-stage fundraising wave.\",\n      \"evidence\": [\n        \"brief:cbl_#11\",\n        \"brief:cbl_#2\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The investor's message contains a conditional reopening: a real milestone would prompt reconsideration.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: to record the pass with its condition and move the investor to the update list.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"This is a pass on timing or stage, not on the company itself, based on the language 'too early' and the invitation to return.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"In a seed-stage fundraising wave, most first emails to investors do not produce meetings; silence after a first email is the default rather than a signal of decay.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"brief:cbl_#11\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who declines with a condition\u2014'come back when'\u2014is warmer than one who declines without one; the condition is the asset.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\",\n        \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A pass on timing or stage carries an implicit date on which it stops being true; recording the date rather than the refusal preserves the relationship.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A pass with a condition\u2014especially one as clear as 'a real milestone'\u2014should be recorded with the exact words and moved to a watch list, not filed as closed.\",\n      \"why\": \"The investor has left a door open and named what would open it further. Treating this as terminal discards what may become a warm lead when the condition is met. The founder should track progress against this metric and reach back only when it is genuinely hit.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"In a seed round, most investors in a wave will not reply to a first email; a reply\u2014even a pass\u2014is engagement.\",\n      \"why\": \"A response, even a decline, shows the investor read the email and took time to reply. This is rarer than silence and signals the investor is not dismissing the company out of hand.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who replies to a pass with 'just checking in' or argues with the condition teaches the investor to skim the next email and hardens the pass into a no.\",\n      \"why\": \"The investor has already decided. The only move that preserves the relationship is to confirm the condition back in their words, thank them, and wait. Any other reply spends the relationship for nothing.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The investor's 'real milestone' refers to a specific metric\u2014revenue, users, a lead customer, or a product launch\u2014that the founder understands.\",\n      \"needs\": \"Clarity on what milestone Tara Lindqvist would consider 'real' in the context of an AI chief-of-staff product at seed stage. This could be inferred from Fjord's portfolio and thesis, or asked directly in a follow-up if the founder chooses to reopen.\"\n    },\n    {\n      \"proposition\": \"The investor's timing concern is about Fjord's own fund cycle or check size, not the company's readiness.\",\n      \"needs\": \"Knowledge of Fjord's stage focus, typical check size, and current deployment pace. If Fjord typically invests at Series A or later, or writes checks larger than a seed round, the 'too early' is structural, not a verdict on the company.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Tara Lindqvist or Fjord Venture Partners consider a 'real milestone' for an AI chief-of-staff product?\",\n      \"relevance\": \"The condition is the asset. Without clarity on what would trigger a reconsideration, the founder cannot know whether to pursue this investor or treat the pass as terminal for this round. The exact words matter.\"\n    },\n    {\n      \"question\": \"Was this a warm introduction or a cold email?\",\n      \"relevance\": \"The dossier does not show how the founder reached Fjord. A warm intro that produced a pass is warmer than a cold email that did. The relationship's future depends on whether the connector can be asked to follow up or whether the founder must wait for the condition to be met.\"\n    },\n    {\n      \"question\": \"What is Fjord's typical check size and stage focus?\",\n      \"relevance\": \"If Fjord writes larger checks or focuses on later stages, the 'too early' is about the round structure, not the company. The founder should know whether to expect Fjord in a future round or whether this pass is unlikely to reopen.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A pass on timing or stage from an investor who left a door open with a condition. The investor is not a no; it is a watch. The founder's move is to record the condition, add the investor to the update list, and reach back only when the condition is genuinely met.\",\n    \"rivals\": [\n      \"A soft no disguised as a deferral. The investor is being polite and does not intend to reconsider. The founder should treat this as closed for this round and move on.\",\n      \"A genuine deferral with no real condition. 'Keep me posted' with no named milestone is indistinguishable from having dropped it, and the founder should not expect this investor to reopen without a material change in the company's trajectory.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is correctly classified. Fjord Venture Partners is a venture capital firm, and the work is fundraising for a seed round.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#11\",\n      \"brief:cbl_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_contact\",\n    \"expected\": \"A first email to an investor typically receives no reply, a reply with a meeting request, or a pass. The playbook expects silence to be the default; a reply\u2014even a decline\u2014is engagement. If a reply comes, it should either name a next step (a call, a meeting) or decline. The playbook's prior is that most first emails do not produce meetings, and silence is the resting state, not decay.\",\n    \"actual\": \"The investor replied with a pass on timing, not a meeting request. The pass came with a condition: 'If you hit a real milestone, I'd be happy to look again.' This is not a terminal no; it is a conditional deferral. The investor has not named a next step or a date, only a metric.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open but dormant. The founder does not record the condition or add the investor to the update list. Over time, the pass is forgotten or treated as a no. If the company hits a real milestone, the founder does not reach back because the condition was never captured. The investor remains a missed opportunity.\",\n    \"act\": \"The founder records the pass with the exact condition\u2014'a real milestone'\u2014and adds Fjord to the update list. The founder sends monthly updates on growth, cash, burn, and progress. When a milestone is hit that meets the condition, the founder writes to Tara Lindqvist about that and nothing else: 'You said come back with a real milestone; we have one.' This reopens the conversation with clarity and momentum.\",\n    \"best\": \"The company hits a genuine milestone\u2014a lead customer, a revenue threshold, a product launch\u2014that is material enough to satisfy Tara Lindqvist's condition. The founder reaches back with the news. Fjord reconsiders and moves to a first call or a meeting. The investor becomes a warm lead for this round or the next.\",\n    \"worst\": \"The founder misinterprets the condition or reaches back with a milestone that does not meet it. Tara Lindqvist does not reply or replies that it is still too early. The founder has spent the relationship and taught the investor to skim the next email. The pass hardens into a no.\",\n    \"signals_to_watch\": [\n      \"Whether the founder captures the exact words of the condition and adds Fjord to the update list.\",\n      \"Whether the company hits a milestone that is material enough to satisfy the condition.\",\n      \"Whether the founder reaches back only when the condition is met, not before.\",\n      \"Whether Tara Lindqvist replies to the re-approach with a meeting request or a question.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The investor has not committed or declined finally; the pass is conditional and can be reopened if the condition is met.\",\n      \"This is one investor in a wave of five; the round's momentum does not depend on this one investor.\",\n      \"The file is at first contact, the earliest stage; there is no diligence, no term sheet, no commitment to lose.\",\n      \"The founder's move is to record and wait, not to act urgently. The cost of doing nothing is low; the cost of acting too soon or with the wrong milestone is higher.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Record the pass with its condition in the file, confirm the condition back to Tara Lindqvist in writing, add Fjord to the monthly update list, and set a watch on the metric 'a real milestone' to trigger a re-approach when it is met.\",\n    \"for_whom\": \"Tara Lindqvist and Fjord Venture Partners\",\n    \"by_when\": \"2026-08-08\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\",\n      \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\",\n      \"own:1\"\n    ],\n    \"to\": \"tara@fjordvp.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Do nothing and treat the pass as terminal for this round. File it as closed and move on to the other investors in the wave. This is appropriate only if the founder believes Fjord's 'too early' is structural (the fund's stage or check size does not fit) rather than timing-based. If the founder chooses this, the investor should be removed from the file and not contacted again unless the company's stage materially changes.\",\n    \"wait_or_stop\": \"Wait until the company hits a milestone that is material enough to satisfy the condition. Do not send a check-in or a 'just bumping this' email; that spends the relationship. Stop if the company does not hit a real milestone within the next round's timeline, or if the founder learns that Fjord's stage or check size does not fit the company's needs.\",\n    \"done_when\": \"The condition is recorded in the file with Tara Lindqvist's exact words. A confirmation email is sent to Tara Lindqvist thanking her and confirming the condition back in her own words. Fjord is added to the monthly update list. A watch is set to trigger a re-approach when the milestone is hit.\",\n    \"draft\": \"Thanks, Tara. I appreciate the clear feedback. You said come back with a real milestone\u2014we'll do that. I'll send you monthly updates on our progress, and we'll reach back when we hit one. Looking forward to talking again.\"\n  }\n}",
+  "site": "expert"
+ },
+ "b9ea9ba3346a0c96212e6d2e5de70a5594c1ab33cb3bebcb9c9f4f5046272fcb": {
+  "framed": true,
+  "input_tokens": 11902,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4900,
+  "parsed": {
+   "alternative": "If you believe the three updates you sent do meet Tara's condition, call her directly to ask what she meant by 'a real milestone' and whether the pilot teams and calendar sync count. This will clarify the condition and either move the conversation forward or reveal that she has passed. A call is warmer than an email and will get a faster answer.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because Fjord Venture Partners is one of five investors in the seed wave, and losing one does not lose the round, but gaining one helps. The relationship is warm and can be reopened if the condition is met.",
+     "The urgency is low because the investor is in a deferral, not a live conversation. There is no clock running, and silence is the expected state. The founder should wait for a milestone, not chase the investor.",
+     "The move is reversible because a conditional deferral can be reopened at any time if the condition is met. Writing to Tara about a real milestone will not cost the relationship; it will warm it. The risk is in doing nothing and forgetting about her, not in acting when the condition is met."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "Done when you have defined what 'a real milestone' means for your company and for Fjord Venture Partners' thesis, and you have written to Tara about a real milestone that meets that condition, with a note that says 'You said come back with X; we have it.' Done also when the company has closed a seed round and Tara has not moved, in which case you record her as a pass and stop counting her.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The investor replied to the first contact with a conditional deferral, not silence. The founder then sent three updates in seven-day intervals, all reporting the same progress. The investor has not replied to any of the updates. The file has been quiet for 25 days since the last update.",
+    "expected": "At the first_contact stage, the playbook expects silence to be the default: most first emails never become a meeting, and after a warm introduction, silence means the investor has not opted in. The playbook calls for a follow-up after about 14 days if there is no reply, and then to treat the investor as a no for this round if the follow-up also draws no reply.",
+    "stage": "first_contact"
+   },
+   "facts": [
+    {
+     "claim": "Fjord Venture Partners' contact Tara Lindqvist wrote on 2026-08-07 that it was too early for them, but invited re-engagement if a real milestone was hit.",
+     "evidence": [
+      "evt_#4"
+     ],
+     "quote": "It's too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again."
+    },
+    {
+     "claim": "You sent three updates to Fjord Venture Partners on 2026-08-12, 2026-08-19, and 2026-08-26, each reporting the same progress: two more pilot teams onboarded and calendar sync shipped.",
+     "evidence": [
+      "evt_#3",
+      "evt_#2",
+      "evt_#1"
+     ],
+     "quote": "we onboarded two more pilot teams and shipped calendar sync"
+    },
+    {
+     "claim": "Tara Lindqvist has not replied to any of the three updates sent after her initial message.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 25.12 days as of the last mailbox read on 2026-08-26 18:00 UTC, longer than any gap closed before in this conversation.",
+     "evidence": [
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook for investor conversations names a conditional deferral as a stage where an investor invites updates against a stated condition, and calls for monthly updates until the condition is met.",
+     "evidence": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook states that silence in a conditional deferral, after updates in the window draw no reply and no question, means to stop expecting the investor to reopen the conversation by themselves, but to keep them on the update list and wait for the condition.",
+     "evidence": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook defines a real milestone as a fact that changes the investor's stated condition \u2014 a lead, a revenue figure, a launch \u2014 not a repetition of the same progress.",
+     "evidence": [
+      "pb:founder_office.pb.investor_relations.reopen_after_a_pass"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was recorded in Tara Lindqvist's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's reasoning units measured engagement as low, urgency as high, and risk as high, with do_nothing_exposure and relationship_unmeasured as reasons.",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.risk"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A conditional deferral: an investor who said it was too early but invited re-engagement on a named condition, and who is now in the resting state of a deferral, waiting for the condition to be met. The silence is not decay; it is the expected state. The three updates did not meet the condition, so the investor did not reply. The next move is to stop sending updates until a real milestone is hit, then to write to Tara about that milestone.",
+    "rivals": [
+     "A soft pass: an investor who said no politely and is now ignoring follow-ups, and who will not reconsider. The silence is decay, and the investor is lost.",
+     "A live conversation that has stalled: an investor who was interested but has gone quiet, and who needs a check-in or a new reason to engage. The silence is a signal that momentum has been lost.",
+     "A wave gone silent: one investor in a larger outreach wave who has not replied, and who should be treated as a no for this round and moved to the update list. The silence is the default for cold outreach."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The exact words of what Tara said would settle this; the dossier shows only 'hit a real milestone', which is vague. A call to Tara or a review of the original email thread would clarify what she meant.",
+     "proposition": "Tara Lindqvist's condition is a real milestone in product or traction, not a round milestone like a lead investor or a customer commitment."
+    },
+    {
+     "needs": "A conversation with you about what you thought 'real milestone' meant, and what Tara's silence signals. If the updates were sent in hope rather than in confidence that the condition was met, the hypothesis is false.",
+     "proposition": "The three updates were sent because you believed they met Tara's condition, and the silence means she disagreed."
+    },
+    {
+     "needs": "A real change in the company's metrics or product that meets the condition Tara named, sent to her with a note that says 'You said come back with X; we have it.' If she replies, the hypothesis is true. If she does not reply after a real milestone, the hypothesis is false.",
+     "proposition": "Tara Lindqvist is still engaged and will reply when a true milestone is hit."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "Tara Lindqvist's message is a conditional deferral, not a pass: she named a condition ('hit a real milestone') on which she would reconsider, and asked to be kept posted."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.reopen_after_a_pass"
+     ],
+     "claim": "The three updates sent do not meet the condition Tara named: onboarding pilot teams and shipping calendar sync are product progress, not a milestone that changes the investor's stage or timing assessment."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "The silence after three updates is not a signal of decay in the relationship, but the expected resting state of a conditional deferral: the investor is not deciding, and silence is the default until the condition is met."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "Sending three identical updates in seven-day intervals to an investor in a conditional deferral is a misreading of the move: the playbook calls for monthly updates, and each update should carry a dated reading of progress against the stated condition, not a repetition of the same fact."
+    },
+    {
+     "based_on": [
+      "inference:1",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "The next move is not to write to Tara Lindqvist again until the condition she named is met, or until a month has passed and there is new progress to report against that condition."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": "card:card_#1",
+    "by_when": null,
+    "for_whom": "Tara Lindqvist at Fjord Venture Partners",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+     "pb:founder_office.pb.investor_relations.reopen_after_a_pass",
+     "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:2",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "Stop sending updates to Tara Lindqvist until a real milestone is hit that meets her condition. Define what 'a real milestone' means for your company and for Fjord Venture Partners' thesis. Watch for that milestone. When it is hit, write to Tara with a note that says 'You said come back with X; we have it,' and offer to meet.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A conditional deferral is one of the warmest investor states: the investor has said yes to a future conversation, and the only work is to meet the condition they named.",
+     "kind": "practice",
+     "why": "An investor who defers on a named condition has already decided to reconsider; the relationship is open and the path is clear. This is far warmer than a pass with no condition, and warmer than most first-contact silences."
+    },
+    {
+     "claim": "Founders often mistake a deferral for a pass and treat it as closed, or mistake it for a live conversation and send updates too often, losing the investor's attention either way.",
+     "kind": "counter_pattern",
+     "why": "The deferral is a third state, neither live nor closed, and it requires a different cadence and a different kind of message. Most founders have not named it as a state and do not know how to work it."
+    },
+    {
+     "claim": "When an investor names a condition, write it down in their exact words, and watch for it, not for the investor's reply.",
+     "kind": "practice",
+     "why": "The investor will not tell you when the condition is met; you must tell them. A condition like 'hit a real milestone' is vague until you define what counts, and the founder must do that work, not the investor."
+    },
+    {
+     "claim": "Most founders in a seed round have five to ten investors in a conditional deferral at any time, and these are often the investors who move fastest once the condition is met.",
+     "kind": "base_rate",
+     "why": "A deferral is a low-cost way for an investor to stay warm without committing time, and it is also a low-cost way for a founder to keep an investor engaged without chasing them. The investors who defer are often the ones who will move when the round has momentum."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+     ],
+     "claim": "An investor who says 'keep me posted' and names a condition is deferring, not passing: the conversation is open, and silence is the resting state until the condition changes.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+      "fact:2"
+     ],
+     "claim": "Sending the same update three times in a row to a deferred investor does not move the conversation: it reads as a lack of progress and teaches the investor to skim.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "In a conditional deferral, the investor expects monthly updates, not weekly ones, and each update should carry a new fact against the stated condition.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "An investor who does not reply to updates in a conditional deferral is not lost: they are waiting for the condition to be met, and a check-in is the conversation they already deferred.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#11"
+    ],
+    "kind": "investor",
+    "why": "The file is about a venture capital firm and a conversation about funding. The dossier names it as investor, and the playbook is for investor relations."
+   },
+   "scenarios": {
+    "act": "If you act now by sending another update, you will repeat the mistake of the last three updates: sending the same progress again, which teaches the investor to skim and does not meet the condition she named. This will likely draw no reply and will waste the relationship.",
+    "best": "The best case is that the company hits a real milestone that meets Tara's condition \u2014 a lead customer, a revenue number, a product launch, or whatever she meant \u2014 and you write to her about that milestone with a note that says 'You said come back with X; we have it.' She replies with interest, a meeting is scheduled, and the conversation moves to the first_call stage.",
+    "do_nothing": "If nothing is done, the file will remain quiet. After 90 days of quiet, the playbook calls the work dormant, and the founder should record it as a pass with no reason given and stop counting it. The investor will remain on the update list, and the founder will write to them only if a real milestone is hit or the round changes. The risk is that the founder forgets about Tara Lindqvist and misses the opportunity to re-engage when the condition is met.",
+    "signals_to_watch": [
+     "A real milestone is hit: a lead customer, a revenue number, a product launch, or a metric that changes the company's stage or timing.",
+     "Tara Lindqvist replies to an update or a re-engagement message with a question or a request to meet.",
+     "The company closes a seed round with other investors, which may trigger Tara to move if she sees momentum.",
+     "Tara Lindqvist's firm announces a new fund or a new thesis that changes their stage or cheque size.",
+     "The company's metrics move significantly in a direction that would matter to a venture firm (revenue, growth rate, customer count, etc.)."
+    ],
+    "worst": "The worst case is that the company never hits a milestone that meets Tara's condition, or hits one but the founder forgets to tell her, or tells her but she has moved on or the fund has changed its thesis. The relationship is lost, and the founder learns of it only when the round has closed without Fjord Venture Partners."
+   },
+   "unknowns": [
+    {
+     "question": "What exactly did Tara Lindqvist mean by 'a real milestone'? Was it a product milestone, a traction milestone, a funding milestone, or something else?",
+     "relevance": "The next move depends on knowing what to watch for. If 'real milestone' means a lead customer or a revenue number, the company's current progress (pilot teams and calendar sync) does not meet it. If it means a product launch or a feature ship, it might. Without clarity, the founder cannot know when to re-engage."
+    },
+    {
+     "question": "Was the original email from Tara a response to a warm introduction, or a cold outreach?",
+     "relevance": "If it was a warm introduction, Tara's deferral is warmer than if it was cold. The playbook's guidance on conditional deferrals assumes a relationship; a cold deferral is rarer and may signal less engagement."
+    },
+    {
+     "question": "Has the company hit any milestone since 2026-08-07 that would meet Tara's condition, other than the pilot teams and calendar sync?",
+     "relevance": "If yes, the next move is to write to Tara about that milestone. If no, the next move is to wait and watch, and to stop sending updates until there is something new to report."
+    },
+    {
+     "question": "Is Tara Lindqvist the decision-maker at Fjord Venture Partners, or an associate or partner who sources deals?",
+     "relevance": "If Tara is an associate, the playbook warns against single-threading a fund: a conversation that never reaches a partner converts at approximately nothing. If she is a partner, the deferral is warmer."
+    }
+   ],
+   "wait_or_stop": "Wait until a real milestone is hit. Stop sending updates to Tara Lindqvist; they do not move the conversation and teach her to skim. If the company does not hit a milestone that meets her condition within the next three months, and no other signal arrives (a new fund, a new thesis, a new partner at Fjord), record the investor as a pass with the condition as the reason, and move on. Keep her on the update list if you choose, but do not expect her to reopen the conversation by herself."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Fjord Venture Partners' contact Tara Lindqvist wrote on 2026-08-07 that it was too early for them, but invited re-engagement if a real milestone was hit.\",\n      \"evidence\": [\n        \"evt_#4\"\n      ],\n      \"quote\": \"It's too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again.\"\n    },\n    {\n      \"claim\": \"You sent three updates to Fjord Venture Partners on 2026-08-12, 2026-08-19, and 2026-08-26, each reporting the same progress: two more pilot teams onboarded and calendar sync shipped.\",\n      \"evidence\": [\n        \"evt_#3\",\n        \"evt_#2\",\n        \"evt_#1\"\n      ],\n      \"quote\": \"we onboarded two more pilot teams and shipped calendar sync\"\n    },\n    {\n      \"claim\": \"Tara Lindqvist has not replied to any of the three updates sent after her initial message.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 25.12 days as of the last mailbox read on 2026-08-26 18:00 UTC, longer than any gap closed before in this conversation.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook for investor conversations names a conditional deferral as a stage where an investor invites updates against a stated condition, and calls for monthly updates until the condition is met.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook states that silence in a conditional deferral, after updates in the window draw no reply and no question, means to stop expecting the investor to reopen the conversation by themselves, but to keep them on the update list and wait for the condition.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook defines a real milestone as a fact that changes the investor's stated condition \u2014 a lead, a revenue figure, a launch \u2014 not a repetition of the same progress.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was recorded in Tara Lindqvist's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's reasoning units measured engagement as low, urgency as high, and risk as high, with do_nothing_exposure and relationship_unmeasured as reasons.\",\n      \"evidence\": [\n        \"ru:core.temporal\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Tara Lindqvist's message is a conditional deferral, not a pass: she named a condition ('hit a real milestone') on which she would reconsider, and asked to be kept posted.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"claim\": \"The three updates sent do not meet the condition Tara named: onboarding pilot teams and shipping calendar sync are product progress, not a milestone that changes the investor's stage or timing assessment.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\"\n      ]\n    },\n    {\n      \"claim\": \"The silence after three updates is not a signal of decay in the relationship, but the expected resting state of a conditional deferral: the investor is not deciding, and silence is the default until the condition is met.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"claim\": \"Sending three identical updates in seven-day intervals to an investor in a conditional deferral is a misreading of the move: the playbook calls for monthly updates, and each update should carry a dated reading of progress against the stated condition, not a repetition of the same fact.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is not to write to Tara Lindqvist again until the condition she named is met, or until a month has passed and there is new progress to report against that condition.\",\n      \"based_on\": [\n        \"inference:1\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who says 'keep me posted' and names a condition is deferring, not passing: the conversation is open, and silence is the resting state until the condition changes.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Sending the same update three times in a row to a deferred investor does not move the conversation: it reads as a lack of progress and teaches the investor to skim.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"In a conditional deferral, the investor expects monthly updates, not weekly ones, and each update should carry a new fact against the stated condition.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who does not reply to updates in a conditional deferral is not lost: they are waiting for the condition to be met, and a check-in is the conversation they already deferred.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A conditional deferral is one of the warmest investor states: the investor has said yes to a future conversation, and the only work is to meet the condition they named.\",\n      \"why\": \"An investor who defers on a named condition has already decided to reconsider; the relationship is open and the path is clear. This is far warmer than a pass with no condition, and warmer than most first-contact silences.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Founders often mistake a deferral for a pass and treat it as closed, or mistake it for a live conversation and send updates too often, losing the investor's attention either way.\",\n      \"why\": \"The deferral is a third state, neither live nor closed, and it requires a different cadence and a different kind of message. Most founders have not named it as a state and do not know how to work it.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When an investor names a condition, write it down in their exact words, and watch for it, not for the investor's reply.\",\n      \"why\": \"The investor will not tell you when the condition is met; you must tell them. A condition like 'hit a real milestone' is vague until you define what counts, and the founder must do that work, not the investor.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most founders in a seed round have five to ten investors in a conditional deferral at any time, and these are often the investors who move fastest once the condition is met.\",\n      \"why\": \"A deferral is a low-cost way for an investor to stay warm without committing time, and it is also a low-cost way for a founder to keep an investor engaged without chasing them. The investors who defer are often the ones who will move when the round has momentum.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tara Lindqvist's condition is a real milestone in product or traction, not a round milestone like a lead investor or a customer commitment.\",\n      \"needs\": \"The exact words of what Tara said would settle this; the dossier shows only 'hit a real milestone', which is vague. A call to Tara or a review of the original email thread would clarify what she meant.\"\n    },\n    {\n      \"proposition\": \"The three updates were sent because you believed they met Tara's condition, and the silence means she disagreed.\",\n      \"needs\": \"A conversation with you about what you thought 'real milestone' meant, and what Tara's silence signals. If the updates were sent in hope rather than in confidence that the condition was met, the hypothesis is false.\"\n    },\n    {\n      \"proposition\": \"Tara Lindqvist is still engaged and will reply when a true milestone is hit.\",\n      \"needs\": \"A real change in the company's metrics or product that meets the condition Tara named, sent to her with a note that says 'You said come back with X; we have it.' If she replies, the hypothesis is true. If she does not reply after a real milestone, the hypothesis is false.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What exactly did Tara Lindqvist mean by 'a real milestone'? Was it a product milestone, a traction milestone, a funding milestone, or something else?\",\n      \"relevance\": \"The next move depends on knowing what to watch for. If 'real milestone' means a lead customer or a revenue number, the company's current progress (pilot teams and calendar sync) does not meet it. If it means a product launch or a feature ship, it might. Without clarity, the founder cannot know when to re-engage.\"\n    },\n    {\n      \"question\": \"Was the original email from Tara a response to a warm introduction, or a cold outreach?\",\n      \"relevance\": \"If it was a warm introduction, Tara's deferral is warmer than if it was cold. The playbook's guidance on conditional deferrals assumes a relationship; a cold deferral is rarer and may signal less engagement.\"\n    },\n    {\n      \"question\": \"Has the company hit any milestone since 2026-08-07 that would meet Tara's condition, other than the pilot teams and calendar sync?\",\n      \"relevance\": \"If yes, the next move is to write to Tara about that milestone. If no, the next move is to wait and watch, and to stop sending updates until there is something new to report.\"\n    },\n    {\n      \"question\": \"Is Tara Lindqvist the decision-maker at Fjord Venture Partners, or an associate or partner who sources deals?\",\n      \"relevance\": \"If Tara is an associate, the playbook warns against single-threading a fund: a conversation that never reaches a partner converts at approximately nothing. If she is a partner, the deferral is warmer.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A conditional deferral: an investor who said it was too early but invited re-engagement on a named condition, and who is now in the resting state of a deferral, waiting for the condition to be met. The silence is not decay; it is the expected state. The three updates did not meet the condition, so the investor did not reply. The next move is to stop sending updates until a real milestone is hit, then to write to Tara about that milestone.\",\n    \"rivals\": [\n      \"A soft pass: an investor who said no politely and is now ignoring follow-ups, and who will not reconsider. The silence is decay, and the investor is lost.\",\n      \"A live conversation that has stalled: an investor who was interested but has gone quiet, and who needs a check-in or a new reason to engage. The silence is a signal that momentum has been lost.\",\n      \"A wave gone silent: one investor in a larger outreach wave who has not replied, and who should be treated as a no for this round and moved to the update list. The silence is the default for cold outreach.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is about a venture capital firm and a conversation about funding. The dossier names it as investor, and the playbook is for investor relations.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#11\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_contact\",\n    \"expected\": \"At the first_contact stage, the playbook expects silence to be the default: most first emails never become a meeting, and after a warm introduction, silence means the investor has not opted in. The playbook calls for a follow-up after about 14 days if there is no reply, and then to treat the investor as a no for this round if the follow-up also draws no reply.\",\n    \"actual\": \"The investor replied to the first contact with a conditional deferral, not silence. The founder then sent three updates in seven-day intervals, all reporting the same progress. The investor has not replied to any of the updates. The file has been quiet for 25 days since the last update.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If nothing is done, the file will remain quiet. After 90 days of quiet, the playbook calls the work dormant, and the founder should record it as a pass with no reason given and stop counting it. The investor will remain on the update list, and the founder will write to them only if a real milestone is hit or the round changes. The risk is that the founder forgets about Tara Lindqvist and misses the opportunity to re-engage when the condition is met.\",\n    \"act\": \"If you act now by sending another update, you will repeat the mistake of the last three updates: sending the same progress again, which teaches the investor to skim and does not meet the condition she named. This will likely draw no reply and will waste the relationship.\",\n    \"best\": \"The best case is that the company hits a real milestone that meets Tara's condition \u2014 a lead customer, a revenue number, a product launch, or whatever she meant \u2014 and you write to her about that milestone with a note that says 'You said come back with X; we have it.' She replies with interest, a meeting is scheduled, and the conversation moves to the first_call stage.\",\n    \"worst\": \"The worst case is that the company never hits a milestone that meets Tara's condition, or hits one but the founder forgets to tell her, or tells her but she has moved on or the fund has changed its thesis. The relationship is lost, and the founder learns of it only when the round has closed without Fjord Venture Partners.\",\n    \"signals_to_watch\": [\n      \"A real milestone is hit: a lead customer, a revenue number, a product launch, or a metric that changes the company's stage or timing.\",\n      \"Tara Lindqvist replies to an update or a re-engagement message with a question or a request to meet.\",\n      \"The company closes a seed round with other investors, which may trigger Tara to move if she sees momentum.\",\n      \"Tara Lindqvist's firm announces a new fund or a new thesis that changes their stage or cheque size.\",\n      \"The company's metrics move significantly in a direction that would matter to a venture firm (revenue, growth rate, customer count, etc.).\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because Fjord Venture Partners is one of five investors in the seed wave, and losing one does not lose the round, but gaining one helps. The relationship is warm and can be reopened if the condition is met.\",\n      \"The urgency is low because the investor is in a deferral, not a live conversation. There is no clock running, and silence is the expected state. The founder should wait for a milestone, not chase the investor.\",\n      \"The move is reversible because a conditional deferral can be reopened at any time if the condition is met. Writing to Tara about a real milestone will not cost the relationship; it will warm it. The risk is in doing nothing and forgetting about her, not in acting when the condition is met.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Stop sending updates to Tara Lindqvist until a real milestone is hit that meets her condition. Define what 'a real milestone' means for your company and for Fjord Venture Partners' thesis. Watch for that milestone. When it is hit, write to Tara with a note that says 'You said come back with X; we have it,' and offer to meet.\",\n    \"for_whom\": \"Tara Lindqvist at Fjord Venture Partners\",\n    \"by_when\": null,\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:2\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n      \"pb:founder_office.pb.investor_relations.reopen_after_a_pass\",\n      \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": \"card:card_#1\"\n  },\n  \"alternative\": \"If you believe the three updates you sent do meet Tara's condition, call her directly to ask what she meant by 'a real milestone' and whether the pilot teams and calendar sync count. This will clarify the condition and either move the conversation forward or reveal that she has passed. A call is warmer than an email and will get a faster answer.\",\n  \"wait_or_stop\": \"Wait until a real milestone is hit. Stop sending updates to Tara Lindqvist; they do not move the conversation and teach her to skim. If the company does not hit a milestone that meets her condition within the next three months, and no other signal arrives (a new fund, a new thesis, a new partner at Fjord), record the investor as a pass with the condition as the reason, and move on. Keep her on the update list if you choose, but do not expect her to reopen the conversation by herself.\",\n  \"done_when\": \"Done when you have defined what 'a real milestone' means for your company and for Fjord Venture Partners' thesis, and you have written to Tara about a real milestone that meets that condition, with a note that says 'You said come back with X; we have it.' Done also when the company has closed a seed round and Tara has not moved, in which case you record her as a pass and stop counting her.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

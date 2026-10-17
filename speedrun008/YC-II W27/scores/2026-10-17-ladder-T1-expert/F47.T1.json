@@ -1,0 +1,417 @@
+{
+ "6e33abd788f4e2b87037499c79aa1a33700900e809225679f4e3b75fce68dd4a": {
+  "framed": true,
+  "input_tokens": 8089,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2753,
+  "parsed": {
+   "alternative": "Close the file and remove Ardent Ridge from the active wave if the founder confirms it was added by mistake or does not fit the round's targets.",
+   "appraisal": {
+    "reasons": [
+     "Ardent Ridge is not named in the brief as a target, so it is not a core part of the raise.",
+     "The bounce is a delivery failure, not a rejection, and can be fixed with a corrected address.",
+     "The file is only half a day old, and there is time to verify the prospect and retry before moving on.",
+     "The cost of fixing the address is low; the cost of losing a real prospect is higher, but only if Ardent Ridge is a real fit."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "The founder confirms Ardent Ridge's fit and source; the correct contact address is found and verified; the message is resent; or the file is closed because the prospect does not belong in the active raise.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "An outbound message was sent to a generic address at Ardent Ridge, the message bounced, and no follow-up has been attempted.",
+    "expected": "Without a playbook, the expectation comes from the brief: Ardent Ridge is not named as an investor target, so it should not be in the active wave unless it was sourced by the founder or a connector and vetted for fit.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Nimbus Labs sent an outbound message to Ardent Ridge on 2026-08-14 at 06:00 UTC requesting a meeting to discuss the seed round.",
+     "evidence": [
+      "evt_#1",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": "Nimbus Labs is raising a seed round. Could we find 20 minutes? Arjun"
+    },
+    {
+     "claim": "The outbound message to Ardent Ridge bounced at the time of sending.",
+     "evidence": [
+      "num:their_reply_time:partners@ardentridge.test"
+     ],
+     "quote": "our mail to them BOUNCED at 2026-08-14 06:00 UTC"
+    },
+    {
+     "claim": "No reply has been received from Ardent Ridge since the message was sent, and the mailbox has been read through 2026-08-14 18:00 UTC.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Ardent Ridge is not named in the company brief as an investor target, program, or partner.",
+     "evidence": [
+      "file:role",
+      "brief:company"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no playbook because the brief names no kind of work for this counterparty.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found low risk and low urgency, with the relationship status unmeasured.",
+     "evidence": [
+      "ru:core.risk",
+      "ru:core.relationship",
+      "ru:core.priority"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A bounced outbound message to an unsourced prospect, with no relationship established and no clear fit to the brief.",
+    "rivals": [
+     "A temporary mail delivery failure that can be fixed with a corrected address and a retry.",
+     "A prospect that was added to the wave by mistake and should be removed from the active raise."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A search for Ardent Ridge's correct contact address, or a check of whether the founder or a connector has a direct line to a partner.",
+     "proposition": "Ardent Ridge is a real investor and the email address is wrong."
+    },
+    {
+     "needs": "A review of how the wave was built and whether Ardent Ridge was sourced by the founder, a connector, or an external list.",
+     "proposition": "Ardent Ridge was added to the wave by mistake or by an automated tool, and does not fit the round's targets."
+    },
+    {
+     "needs": "A retry of the message to the same address, or a test send to another address at the domain to confirm it is receiving mail.",
+     "proposition": "The bounce is a temporary mail server issue and a retry would succeed."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "The message never reached Ardent Ridge, so no relationship has been established and no reply is expected."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "brief:company"
+     ],
+     "claim": "Ardent Ridge appears to be an unsourced or cold outreach, not a warm introduction or a known investor in the brief."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "inference:1"
+     ],
+     "claim": "The next move is ours: either to verify the correct contact address or to decide whether this prospect belongs in the active raise at all."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-15",
+    "for_whom": "Ardent Ridge",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "cap:founder_office.fundraising.investor_relations#f6"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:4",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Verify whether Ardent Ridge is a real investor prospect that fits the round's targets, and if so, find the correct contact address and resend the message.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Before adding a prospect to an active raise, verify that the contact address is live and that the prospect fits the fund's stage, cheque size, and thesis.",
+     "kind": "practice",
+     "why": "A bounce on the first touch wastes a slot in the wave and signals that the prospect was not researched before outreach."
+    },
+    {
+     "claim": "Most bounces are fixable: a typo in the domain, a generic address that should be a partner's direct email, or a mail server that rejects first-time senders.",
+     "kind": "base_rate",
+     "why": "The cost of a follow-up is low; the cost of losing a real prospect to a bounce is high."
+    },
+    {
+     "claim": "A cold outreach to an investor not in the brief, with no warm connector and a bounced address, is a sign that the wave was not curated before sending.",
+     "kind": "counter_pattern",
+     "why": "The brief names five investors in the seed wave and six more in engaged or applied programs; Ardent Ridge appears in none of them, and the bounce suggests it was added without vetting."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "A bounced message to an investor means the contact address is wrong or the domain is not receiving mail.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+      "cap:founder_office.fundraising.investor_relations#f6"
+     ],
+     "claim": "Outbound investor waves sent to generic addresses or without warm introductions see lower response rates than warm intros.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "sit:sit_#1"
+     ],
+     "claim": "A bounce is not silence; it is a delivery failure, and the file should not be treated as a live investor relationship until the message reaches the recipient.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "file:domains"
+    ],
+    "kind": "investor",
+    "why": "The outbound message asks for a meeting to discuss the seed round, which is a fundraising ask; the counterparty is treated as an investor prospect."
+   },
+   "scenarios": {
+    "act": "The founder or the chief of staff verifies Ardent Ridge's fit, finds the correct contact address, and resends the message. If the address is wrong or the prospect does not fit, the file is closed or updated.",
+    "best": "Ardent Ridge is a real investor that fits the round's targets, the correct address is found, the message is resent and opens a conversation, and a meeting is scheduled.",
+    "do_nothing": "The file remains open with a bounced message and no path forward. Ardent Ridge is not contacted, and the slot in the wave is wasted. If Ardent Ridge is a real prospect, the opportunity is lost.",
+    "signals_to_watch": [
+     "A reply to a resent message with the corrected address.",
+     "Confirmation from the founder or a connector that Ardent Ridge was sourced and vetted.",
+     "A decision to remove Ardent Ridge from the wave if it does not fit the round's targets."
+    ],
+    "worst": "Ardent Ridge does not exist, the address cannot be corrected, or the prospect does not fit the round; time is wasted on a dead lead while other investors in the wave are not followed up."
+   },
+   "unknowns": [
+    {
+     "question": "How was Ardent Ridge sourced, and who added it to the wave?",
+     "relevance": "If it was added by the founder or a trusted connector, it deserves a corrected address and a retry; if it was added by an automated tool or a list, it may not belong in the active raise at all."
+    },
+    {
+     "question": "Is Ardent Ridge a real investor, and if so, what is its stage, cheque size, and thesis?",
+     "relevance": "If it does not fit the round's targets, the time spent fixing the address and retrying is wasted; if it does fit, the bounce is a fixable problem."
+    },
+    {
+     "question": "What is the correct contact address for Ardent Ridge?",
+     "relevance": "Without it, the message cannot be resent, and the prospect is lost."
+    }
+   ],
+   "wait_or_stop": "Wait until the founder confirms Ardent Ridge's source and fit. Stop if the prospect does not fit the round or if the correct address cannot be found within one day."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Nimbus Labs sent an outbound message to Ardent Ridge on 2026-08-14 at 06:00 UTC requesting a meeting to discuss the seed round.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"Nimbus Labs is raising a seed round. Could we find 20 minutes? Arjun\"\n    },\n    {\n      \"claim\": \"The outbound message to Ardent Ridge bounced at the time of sending.\",\n      \"evidence\": [\n        \"num:their_reply_time:partners@ardentridge.test\"\n      ],\n      \"quote\": \"our mail to them BOUNCED at 2026-08-14 06:00 UTC\"\n    },\n    {\n      \"claim\": \"No reply has been received from Ardent Ridge since the message was sent, and the mailbox has been read through 2026-08-14 18:00 UTC.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Ardent Ridge is not named in the company brief as an investor target, program, or partner.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:company\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no playbook because the brief names no kind of work for this counterparty.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found low risk and low urgency, with the relationship status unmeasured.\",\n      \"evidence\": [\n        \"ru:core.risk\",\n        \"ru:core.relationship\",\n        \"ru:core.priority\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The message never reached Ardent Ridge, so no relationship has been established and no reply is expected.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"Ardent Ridge appears to be an unsourced or cold outreach, not a warm introduction or a known investor in the brief.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"brief:company\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: either to verify the correct contact address or to decide whether this prospect belongs in the active raise at all.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"inference:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A bounced message to an investor means the contact address is wrong or the domain is not receiving mail.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Outbound investor waves sent to generic addresses or without warm introductions see lower response rates than warm intros.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\",\n        \"cap:founder_office.fundraising.investor_relations#f6\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A bounce is not silence; it is a delivery failure, and the file should not be treated as a live investor relationship until the message reaches the recipient.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"sit:sit_#1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Before adding a prospect to an active raise, verify that the contact address is live and that the prospect fits the fund's stage, cheque size, and thesis.\",\n      \"why\": \"A bounce on the first touch wastes a slot in the wave and signals that the prospect was not researched before outreach.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most bounces are fixable: a typo in the domain, a generic address that should be a partner's direct email, or a mail server that rejects first-time senders.\",\n      \"why\": \"The cost of a follow-up is low; the cost of losing a real prospect to a bounce is high.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A cold outreach to an investor not in the brief, with no warm connector and a bounced address, is a sign that the wave was not curated before sending.\",\n      \"why\": \"The brief names five investors in the seed wave and six more in engaged or applied programs; Ardent Ridge appears in none of them, and the bounce suggests it was added without vetting.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Ardent Ridge is a real investor and the email address is wrong.\",\n      \"needs\": \"A search for Ardent Ridge's correct contact address, or a check of whether the founder or a connector has a direct line to a partner.\"\n    },\n    {\n      \"proposition\": \"Ardent Ridge was added to the wave by mistake or by an automated tool, and does not fit the round's targets.\",\n      \"needs\": \"A review of how the wave was built and whether Ardent Ridge was sourced by the founder, a connector, or an external list.\"\n    },\n    {\n      \"proposition\": \"The bounce is a temporary mail server issue and a retry would succeed.\",\n      \"needs\": \"A retry of the message to the same address, or a test send to another address at the domain to confirm it is receiving mail.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"How was Ardent Ridge sourced, and who added it to the wave?\",\n      \"relevance\": \"If it was added by the founder or a trusted connector, it deserves a corrected address and a retry; if it was added by an automated tool or a list, it may not belong in the active raise at all.\"\n    },\n    {\n      \"question\": \"Is Ardent Ridge a real investor, and if so, what is its stage, cheque size, and thesis?\",\n      \"relevance\": \"If it does not fit the round's targets, the time spent fixing the address and retrying is wasted; if it does fit, the bounce is a fixable problem.\"\n    },\n    {\n      \"question\": \"What is the correct contact address for Ardent Ridge?\",\n      \"relevance\": \"Without it, the message cannot be resent, and the prospect is lost.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A bounced outbound message to an unsourced prospect, with no relationship established and no clear fit to the brief.\",\n    \"rivals\": [\n      \"A temporary mail delivery failure that can be fixed with a corrected address and a retry.\",\n      \"A prospect that was added to the wave by mistake and should be removed from the active raise.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The outbound message asks for a meeting to discuss the seed round, which is a fundraising ask; the counterparty is treated as an investor prospect.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief: Ardent Ridge is not named as an investor target, so it should not be in the active wave unless it was sourced by the founder or a connector and vetted for fit.\",\n    \"actual\": \"An outbound message was sent to a generic address at Ardent Ridge, the message bounced, and no follow-up has been attempted.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open with a bounced message and no path forward. Ardent Ridge is not contacted, and the slot in the wave is wasted. If Ardent Ridge is a real prospect, the opportunity is lost.\",\n    \"act\": \"The founder or the chief of staff verifies Ardent Ridge's fit, finds the correct contact address, and resends the message. If the address is wrong or the prospect does not fit, the file is closed or updated.\",\n    \"best\": \"Ardent Ridge is a real investor that fits the round's targets, the correct address is found, the message is resent and opens a conversation, and a meeting is scheduled.\",\n    \"worst\": \"Ardent Ridge does not exist, the address cannot be corrected, or the prospect does not fit the round; time is wasted on a dead lead while other investors in the wave are not followed up.\",\n    \"signals_to_watch\": [\n      \"A reply to a resent message with the corrected address.\",\n      \"Confirmation from the founder or a connector that Ardent Ridge was sourced and vetted.\",\n      \"A decision to remove Ardent Ridge from the wave if it does not fit the round's targets.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Ardent Ridge is not named in the brief as a target, so it is not a core part of the raise.\",\n      \"The bounce is a delivery failure, not a rejection, and can be fixed with a corrected address.\",\n      \"The file is only half a day old, and there is time to verify the prospect and retry before moving on.\",\n      \"The cost of fixing the address is low; the cost of losing a real prospect is higher, but only if Ardent Ridge is a real fit.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Verify whether Ardent Ridge is a real investor prospect that fits the round's targets, and if so, find the correct contact address and resend the message.\",\n    \"for_whom\": \"Ardent Ridge\",\n    \"by_when\": \"2026-08-15\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"cap:founder_office.fundraising.investor_relations#f6\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Close the file and remove Ardent Ridge from the active wave if the founder confirms it was added by mistake or does not fit the round's targets.\",\n  \"wait_or_stop\": \"Wait until the founder confirms Ardent Ridge's source and fit. Stop if the prospect does not fit the round or if the correct address cannot be found within one day.\",\n  \"done_when\": \"The founder confirms Ardent Ridge's fit and source; the correct contact address is found and verified; the message is resent; or the file is closed because the prospect does not belong in the active raise.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "eb1f497fc41e441eeb6bf88350b1cea2105c23b838aea29223e56f58568b15b8": {
+  "framed": true,
+  "input_tokens": 8239,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2565,
+  "parsed": {
+   "alternative": "Remove Ardent Ridge from the wave immediately if it is not named in the brief's investor list and was added without clear sourcing. This reduces noise and focuses the founder's attention on investors who fit the brief's criteria.",
+   "appraisal": {
+    "reasons": [
+     "Ardent Ridge is not named in the brief's investor list, so it is not a core target.",
+     "The message bounced, so no relationship has been damaged and no opportunity has been lost.",
+     "The file is only 0.5 days old, so there is time to correct the contact or remove the investor from the wave.",
+     "ru:core.risk shows low risk and do_nothing_exposure, meaning inaction does not create a blocking problem in the short term."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Either the message is resent to a verified correct address and a reply is received, or Ardent Ridge is removed from the wave and the file is closed.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The message bounced and never reached the investor. No relationship has been established, and no reply is possible.",
+    "expected": "No playbook is named for this file. In a typical investor wave, an outbound message to a new investor should land in their inbox and await a reply or a follow-up. The expectation is that the message reaches the investor and begins a conversation.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "We sent an outbound message to Ardent Ridge on 2026-08-14 at 06:00 UTC asking for a meeting to discuss our seed round.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Nimbus Labs is raising a seed round. Could we find 20 minutes? Arjun"
+    },
+    {
+     "claim": "Our message to Ardent Ridge bounced at the time it was sent.",
+     "evidence": [
+      "num:their_reply_time:partners@ardentridge.test"
+     ],
+     "quote": "our mail to them BOUNCED at 2026-08-14 06:00 UTC"
+    },
+    {
+     "claim": "Ardent Ridge is not named in the company brief as a target investor, program, partner, or connector.",
+     "evidence": [
+      "brief:company",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply has been received since our message was sent, and the mailbox has been read through 2026-08-14 18:00 UTC.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days since first touch.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A bounced outbound message to an investor in the seed wave, with no relationship established and no path forward until the contact information is verified or the investor is removed from the wave.",
+    "rivals": [
+     "A test of a new investor source that failed technically and should be retried with correct information.",
+     "An investor added to the wave without proper vetting, and the bounce is a signal to review the wave's composition."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A search of Ardent Ridge's website or a call to their main line to find the correct partners email or a named partner.",
+     "proposition": "Ardent Ridge is a real investor whose contact information is incorrect in our records."
+    },
+    {
+     "needs": "A review of how Ardent Ridge entered the wave and whether it meets the brief's investor criteria.",
+     "proposition": "Ardent Ridge was added to the wave by a connector or sourced from a list without verification that it is an active investor in our stage and thesis."
+    },
+    {
+     "needs": "Confirmation of whether this is a real domain and a real investor.",
+     "proposition": "The email address partners@ardentridge.test is a test or placeholder and was never meant to be used."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "The outbound message never reached Ardent Ridge, so no relationship has been established and no reply is expected."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "file:domains"
+     ],
+     "claim": "Ardent Ridge was added to the wave without being named in the brief's goals or investor list, suggesting it may have been sourced through a connector or added opportunistically."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "inference:1"
+     ],
+     "claim": "The next move is ours: we must either verify the correct contact address or decide whether to pursue this investor at all."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-16",
+    "for_whom": "Ardent Ridge (if the investor is a fit) or the wave (if it is not)",
+    "guided_by": [
+     "cap:founder_office.fundraising.investor_relations#f6",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:3",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Verify whether Ardent Ridge is a real investor in the brief's stage and thesis, find the correct contact address, and decide whether to resend the message or remove the investor from the wave.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a cold outbound to an investor bounces, the first move is to verify the correct contact before resending; sending to a generic address a second time wastes the opportunity.",
+     "kind": "practice",
+     "why": "A bounce signals either a wrong address or a defunct inbox; resending to the same address repeats the failure. The founder's attention is scarce in a raise, and each investor in the wave should receive a message that lands."
+    },
+    {
+     "claim": "Investors not named in the brief's goals or investor list should be questioned before they enter the wave.",
+     "kind": "base_rate",
+     "why": "A raise's momentum comes from parallel conversations with investors whose stage, thesis, and cheque size fit the company. Adding investors without that fit dilutes the founder's effort and produces noise in the file."
+    },
+    {
+     "claim": "A bounced message is not a pass and does not close the door; it is a technical failure that can be repaired.",
+     "kind": "counter_pattern",
+     "why": "Unlike a pass or a decline, a bounce means the investor never saw the message. The relationship has not been tested."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f6"
+     ],
+     "claim": "Outbound investor waves sent to generic addresses or incorrect email addresses produce no replies and waste founder attention.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "A bounced message to an investor means the contact information is wrong and must be corrected before any relationship can form.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "evt_#1"
+    ],
+    "kind": "investor",
+    "why": "The file records an outbound message asking for a meeting to discuss a seed round, which is the opening move in an investor conversation."
+   },
+   "scenarios": {
+    "act": "The founder or the team verifies Ardent Ridge's correct contact information, resends the message, or removes Ardent Ridge from the wave if it does not fit the brief's investor criteria. A reply or a follow-up becomes possible.",
+    "best": "Ardent Ridge is a fit investor, the correct contact is found, the message is resent and lands, and a meeting is scheduled within a week.",
+    "do_nothing": "The file remains open with a bounced message and no path forward. Ardent Ridge is never contacted, and the founder's attention is tied to a dead thread. After two weeks, the file should be closed or the contact information corrected.",
+    "signals_to_watch": [
+     "A reply from Ardent Ridge after the message is resent.",
+     "Confirmation that Ardent Ridge is or is not a fit investor for the round.",
+     "A decision to remove Ardent Ridge from the wave if it does not meet the brief's criteria."
+    ],
+    "worst": "Ardent Ridge is not a real investor or is not a fit for the round, and time is wasted verifying a contact that should never have been in the wave."
+   },
+   "unknowns": [
+    {
+     "question": "Is Ardent Ridge a real investor, and if so, what is the correct contact address?",
+     "relevance": "If Ardent Ridge is a fit investor, the correct address must be found and the message resent. If it is not a fit, it should be removed from the wave to reduce noise."
+    },
+    {
+     "question": "How did Ardent Ridge enter the wave, and who sourced it?",
+     "relevance": "Understanding the source will show whether this is a connector introduction (which would change the frame) or an opportunistic add (which would raise questions about wave discipline)."
+    },
+    {
+     "question": "What is Ardent Ridge's stage, thesis, and typical cheque size?",
+     "relevance": "If Ardent Ridge does not fit the brief's investor profile, pursuing it costs founder attention that should go to investors who do fit."
+    }
+   ],
+   "wait_or_stop": "Wait until the correct contact is verified or a decision is made to remove the investor. Stop pursuing Ardent Ridge if it is not a fit for the round or if the correct contact cannot be found within two days."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"We sent an outbound message to Ardent Ridge on 2026-08-14 at 06:00 UTC asking for a meeting to discuss our seed round.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Nimbus Labs is raising a seed round. Could we find 20 minutes? Arjun\"\n    },\n    {\n      \"claim\": \"Our message to Ardent Ridge bounced at the time it was sent.\",\n      \"evidence\": [\n        \"num:their_reply_time:partners@ardentridge.test\"\n      ],\n      \"quote\": \"our mail to them BOUNCED at 2026-08-14 06:00 UTC\"\n    },\n    {\n      \"claim\": \"Ardent Ridge is not named in the company brief as a target investor, program, partner, or connector.\",\n      \"evidence\": [\n        \"brief:company\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply has been received since our message was sent, and the mailbox has been read through 2026-08-14 18:00 UTC.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days since first touch.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The outbound message never reached Ardent Ridge, so no relationship has been established and no reply is expected.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"Ardent Ridge was added to the wave without being named in the brief's goals or investor list, suggesting it may have been sourced through a connector or added opportunistically.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"file:domains\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: we must either verify the correct contact address or decide whether to pursue this investor at all.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"inference:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Outbound investor waves sent to generic addresses or incorrect email addresses produce no replies and waste founder attention.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f6\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A bounced message to an investor means the contact information is wrong and must be corrected before any relationship can form.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a cold outbound to an investor bounces, the first move is to verify the correct contact before resending; sending to a generic address a second time wastes the opportunity.\",\n      \"why\": \"A bounce signals either a wrong address or a defunct inbox; resending to the same address repeats the failure. The founder's attention is scarce in a raise, and each investor in the wave should receive a message that lands.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investors not named in the brief's goals or investor list should be questioned before they enter the wave.\",\n      \"why\": \"A raise's momentum comes from parallel conversations with investors whose stage, thesis, and cheque size fit the company. Adding investors without that fit dilutes the founder's effort and produces noise in the file.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A bounced message is not a pass and does not close the door; it is a technical failure that can be repaired.\",\n      \"why\": \"Unlike a pass or a decline, a bounce means the investor never saw the message. The relationship has not been tested.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Ardent Ridge is a real investor whose contact information is incorrect in our records.\",\n      \"needs\": \"A search of Ardent Ridge's website or a call to their main line to find the correct partners email or a named partner.\"\n    },\n    {\n      \"proposition\": \"Ardent Ridge was added to the wave by a connector or sourced from a list without verification that it is an active investor in our stage and thesis.\",\n      \"needs\": \"A review of how Ardent Ridge entered the wave and whether it meets the brief's investor criteria.\"\n    },\n    {\n      \"proposition\": \"The email address partners@ardentridge.test is a test or placeholder and was never meant to be used.\",\n      \"needs\": \"Confirmation of whether this is a real domain and a real investor.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Ardent Ridge a real investor, and if so, what is the correct contact address?\",\n      \"relevance\": \"If Ardent Ridge is a fit investor, the correct address must be found and the message resent. If it is not a fit, it should be removed from the wave to reduce noise.\"\n    },\n    {\n      \"question\": \"How did Ardent Ridge enter the wave, and who sourced it?\",\n      \"relevance\": \"Understanding the source will show whether this is a connector introduction (which would change the frame) or an opportunistic add (which would raise questions about wave discipline).\"\n    },\n    {\n      \"question\": \"What is Ardent Ridge's stage, thesis, and typical cheque size?\",\n      \"relevance\": \"If Ardent Ridge does not fit the brief's investor profile, pursuing it costs founder attention that should go to investors who do fit.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A bounced outbound message to an investor in the seed wave, with no relationship established and no path forward until the contact information is verified or the investor is removed from the wave.\",\n    \"rivals\": [\n      \"A test of a new investor source that failed technically and should be retried with correct information.\",\n      \"An investor added to the wave without proper vetting, and the bounce is a signal to review the wave's composition.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file records an outbound message asking for a meeting to discuss a seed round, which is the opening move in an investor conversation.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook is named for this file. In a typical investor wave, an outbound message to a new investor should land in their inbox and await a reply or a follow-up. The expectation is that the message reaches the investor and begins a conversation.\",\n    \"actual\": \"The message bounced and never reached the investor. No relationship has been established, and no reply is possible.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open with a bounced message and no path forward. Ardent Ridge is never contacted, and the founder's attention is tied to a dead thread. After two weeks, the file should be closed or the contact information corrected.\",\n    \"act\": \"The founder or the team verifies Ardent Ridge's correct contact information, resends the message, or removes Ardent Ridge from the wave if it does not fit the brief's investor criteria. A reply or a follow-up becomes possible.\",\n    \"best\": \"Ardent Ridge is a fit investor, the correct contact is found, the message is resent and lands, and a meeting is scheduled within a week.\",\n    \"worst\": \"Ardent Ridge is not a real investor or is not a fit for the round, and time is wasted verifying a contact that should never have been in the wave.\",\n    \"signals_to_watch\": [\n      \"A reply from Ardent Ridge after the message is resent.\",\n      \"Confirmation that Ardent Ridge is or is not a fit investor for the round.\",\n      \"A decision to remove Ardent Ridge from the wave if it does not meet the brief's criteria.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Ardent Ridge is not named in the brief's investor list, so it is not a core target.\",\n      \"The message bounced, so no relationship has been damaged and no opportunity has been lost.\",\n      \"The file is only 0.5 days old, so there is time to correct the contact or remove the investor from the wave.\",\n      \"ru:core.risk shows low risk and do_nothing_exposure, meaning inaction does not create a blocking problem in the short term.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Verify whether Ardent Ridge is a real investor in the brief's stage and thesis, find the correct contact address, and decide whether to resend the message or remove the investor from the wave.\",\n    \"for_whom\": \"Ardent Ridge (if the investor is a fit) or the wave (if it is not)\",\n    \"by_when\": \"2026-08-16\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:founder_office.fundraising.investor_relations#f6\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Remove Ardent Ridge from the wave immediately if it is not named in the brief's investor list and was added without clear sourcing. This reduces noise and focuses the founder's attention on investors who fit the brief's criteria.\",\n  \"wait_or_stop\": \"Wait until the correct contact is verified or a decision is made to remove the investor. Stop pursuing Ardent Ridge if it is not a fit for the round or if the correct contact cannot be found within two days.\",\n  \"done_when\": \"Either the message is resent to a verified correct address and a reply is received, or Ardent Ridge is removed from the wave and the file is closed.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

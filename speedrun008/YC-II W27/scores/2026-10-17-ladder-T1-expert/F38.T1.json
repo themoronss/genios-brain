@@ -1,0 +1,261 @@
+{
+ "b8cda28c125a2254345be01301f7ca986762a7c3e7c9a840dd71f2f12c30bc76": {
+  "framed": true,
+  "input_tokens": 7126,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3496,
+  "parsed": {
+   "alternative": "Wait until 14 September, then send Greenleaf a brief message confirming they are ready to start the pilot on 15 September. This keeps the thread warm and gives Greenleaf a final chance to flag any issues before the start date.",
+   "appraisal": {
+    "reasons": [
+     "The file has no role in the brief and no named kind of work, suggesting it is not a core priority",
+     "Greenleaf has confirmed agreement and the next move is theirs, so the founder's obligation is discharged",
+     "The pilot is scheduled for 15 September, which is over a week away, so there is no immediate deadline",
+     "If the founder needs to take action before 15 September, that action can be clarified and assigned at any time",
+     "The file shows healthy engagement and no blocking dependency, so the relationship is not at risk"
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "The file is closed or moved to dormant status, with a clear note of the pilot's scheduled start date and Greenleaf's responsibility for execution. If the founder has a role in the pilot, that role is named and a task is assigned with a due date.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "Greenleaf has confirmed the pilot start date and said 'we're all set', which signals they are ready to execute. The file has been quiet for 0.5 days, which is normal after confirmation. No further action from the founder is evident.",
+    "expected": "The brief names no kind of work for this file, so there is no playbook and no stage. If this were a vendor relationship, the expected stage would be 'execution' or 'live', with the vendor preparing to deliver on the agreed date.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Greenleaf asked for confirmation of a pilot start date by Thursday 4 September",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Can you confirm the pilot start date by Thursday 4 Sep?"
+    },
+    {
+     "claim": "You confirmed the pilot start date as 15 September via WhatsApp on 3 September",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Thanks for confirming on WhatsApp yesterday - we're all set for 15 Sep."
+    },
+    {
+     "claim": "Greenleaf's last message arrived on 4 September at 06:00 UTC, confirming receipt and agreement",
+     "evidence": [
+      "evt_#1",
+      "file:last_touch"
+     ],
+     "quote": "we're all set for 15 Sep"
+    },
+    {
+     "claim": "The file has no kind of work named in the brief",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Greenleaf has no role in the brief",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is categorized as admin work",
+     "evidence": [
+      "file:domains"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "There is one open ask: a question they wait on us for, open since 2 September",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days, within the gaps it closed before",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises were found in Greenleaf's mail",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "We have not written in this file",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A vendor or partner relationship in its execution phase: Greenleaf has confirmed a pilot start date of 15 September, the negotiation is complete, and the next move is theirs to execute. The file should be closed or moved to dormant status, as the founder's open obligation has been discharged.",
+    "rivals": [
+     "A side project or distraction that does not belong in the founder's active ledger, and should be closed or delegated to an operational team",
+     "A pilot that requires founder involvement or oversight, and the file should remain open with a clear task assigned to the founder for the week of 15 September"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder or the brief that Greenleaf is a named partner or vendor; or a message from Greenleaf that names the product or service being piloted",
+     "proposition": "Greenleaf is a design partner or vendor for Nimbus Labs, and this pilot is part of the product development work"
+    },
+    {
+     "needs": "The founder's word on whether Greenleaf is a priority; or a review of the brief to see if Greenleaf should be added to the partners or vendors list",
+     "proposition": "This file was added to the ledger by mistake or as a side project, and does not belong in the founder's active tracking"
+    },
+    {
+     "needs": "Clarification from the founder on what the pilot is, who is responsible for delivery, and whether the founder needs to be involved",
+     "proposition": "The pilot on 15 September is a hard deadline that requires founder involvement or oversight"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "The open ask \u2014 confirmation of the pilot start date \u2014 has been answered and closed by your WhatsApp message on 3 September and Greenleaf's confirmation on 4 September"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3",
+      "inference:1"
+     ],
+     "claim": "The ball is now in Greenleaf's court: they have confirmed agreement and the next move is theirs \u2014 to execute the pilot on 15 September"
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "fact:5",
+      "fact:6",
+      "inference:2"
+     ],
+     "claim": "This file is a vendor or partner relationship in its execution phase, not a work item requiring founder action"
+    },
+    {
+     "based_on": [
+      "inference:1",
+      "cap:admin.executive_support.commitment_tracking#f2"
+     ],
+     "claim": "The file should be closed or moved to a dormant state, as the commitment has been discharged and no open obligation remains"
+    }
+   ],
+   "mode": "nothing",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-05",
+    "for_whom": "the founder's ledger",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f2",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:2",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "close the file or move it to dormant status, with a note that the pilot is scheduled for 15 September and Greenleaf is responsible for execution; or, if the founder has a role in the pilot, clarify that role and assign a task to yourself with a due date",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A pilot start date is a commitment to execute, not a commitment to decide. Once both parties have confirmed the date, the file's work is done and the next phase is operational delivery, which does not belong in the founder's commitment ledger",
+     "kind": "practice",
+     "why": "The ledger tracks what the founder owes or what is owed to the founder; once a date is set and confirmed, the obligation shifts to the operational team to deliver on that date"
+    },
+    {
+     "claim": "Files that appear in the founder's ledger but have no role in the brief and no named kind of work often signal that the file was added reactively and should be re-evaluated for whether it belongs in the founder's active tracking at all",
+     "kind": "counter_pattern",
+     "why": "The brief is the source of truth for what matters to the founder's goals; a file outside it is either a distraction or a task that should be delegated"
+    },
+    {
+     "claim": "When a counterparty goes quiet after confirming agreement, silence is not disinterest \u2014 it is normal process. The absence of a follow-up message is not a signal to chase",
+     "kind": "practice",
+     "why": "Greenleaf has confirmed and said 'we're all set'; they are now preparing their side. A reminder or check-in before 15 September reads as doubt in their competence"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:3",
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "When a counterparty confirms agreement on a date and says 'we're all set', the negotiation phase is complete and the file enters execution",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "fact:5"
+     ],
+     "claim": "A file with no named kind of work in the brief and no role in the company's stated goals may be a side project or a vendor relationship that does not require founder-level tracking",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f2",
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "Admin files that hold no open obligation and show positive_reply should be closed rather than carried, to avoid treating the ledger as the deliverable",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#2",
+     "evt_#1",
+     "file:domains"
+    ],
+    "kind": "vendor",
+    "why": "Greenleaf is a counterparty with whom you have negotiated a pilot start date. The file shows a transactional relationship with a defined deliverable (the pilot on 15 September). The brief does not name Greenleaf, but the pattern of communication \u2014 a request for confirmation, your response, and their confirmation \u2014 is consistent with vendor or partner execution work."
+   },
+   "scenarios": {
+    "act": "The founder closes the file or moves it to a dormant state, with a note that the pilot is scheduled for 15 September and Greenleaf is responsible for execution. Alternatively, the founder clarifies with Greenleaf what the founder's role is (if any) in the pilot, and assigns a task to themselves if needed.",
+    "best": "Greenleaf executes the pilot on 15 September as promised. The founder has no further involvement. The file is closed after the pilot is complete.",
+    "do_nothing": "The file remains in the ledger as an open item. On 15 September, the pilot begins. If Greenleaf executes as promised, the file can be closed. If Greenleaf does not execute, the founder will have no record of what was promised or when, and will be forced to chase retroactively.",
+    "signals_to_watch": [
+     "A message from Greenleaf in the week of 15 September confirming they are ready to start, or asking for a delay",
+     "Silence from Greenleaf after 15 September, which would signal either successful execution (no news is good news) or a problem",
+     "A message from the founder or the operational team about the pilot's progress or outcome"
+    ],
+    "worst": "Greenleaf does not execute on 15 September, or executes poorly. The founder has no clear record of what was promised, and the relationship deteriorates because the founder did not follow up or clarify expectations."
+   },
+   "unknowns": [
+    {
+     "question": "What is Greenleaf, and what is the pilot for?",
+     "relevance": "The file has no role in the brief and no named kind of work. Knowing what Greenleaf does and what the pilot is would clarify whether this file belongs in the founder's ledger at all, or whether it should be delegated to an operational team"
+    },
+    {
+     "question": "Is the founder responsible for any part of the pilot execution, or is it entirely Greenleaf's responsibility?",
+     "relevance": "If the founder has no role in the pilot, the file should be closed. If the founder is responsible for something, that obligation should be named and tracked separately"
+    },
+    {
+     "question": "Why is this file in the founder's ledger if it has no role in the brief?",
+     "relevance": "The brief names the founder's goals and work in motion. A file outside the brief suggests either a distraction or a task that was added reactively and should be re-evaluated"
+    }
+   ],
+   "wait_or_stop": "Stop tracking this file after 15 September, unless the founder has a specific role in the pilot or a follow-up task. If the pilot is successful, close the file. If the pilot is delayed or cancelled, update the file with the new date or status."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Greenleaf asked for confirmation of a pilot start date by Thursday 4 September\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Can you confirm the pilot start date by Thursday 4 Sep?\"\n    },\n    {\n      \"claim\": \"You confirmed the pilot start date as 15 September via WhatsApp on 3 September\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Thanks for confirming on WhatsApp yesterday - we're all set for 15 Sep.\"\n    },\n    {\n      \"claim\": \"Greenleaf's last message arrived on 4 September at 06:00 UTC, confirming receipt and agreement\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"we're all set for 15 Sep\"\n    },\n    {\n      \"claim\": \"The file has no kind of work named in the brief\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Greenleaf has no role in the brief\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is categorized as admin work\",\n      \"evidence\": [\n        \"file:domains\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"There is one open ask: a question they wait on us for, open since 2 September\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days, within the gaps it closed before\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises were found in Greenleaf's mail\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"We have not written in this file\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The open ask \u2014 confirmation of the pilot start date \u2014 has been answered and closed by your WhatsApp message on 3 September and Greenleaf's confirmation on 4 September\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is now in Greenleaf's court: they have confirmed agreement and the next move is theirs \u2014 to execute the pilot on 15 September\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"This file is a vendor or partner relationship in its execution phase, not a work item requiring founder action\",\n      \"based_on\": [\n        \"fact:4\",\n        \"fact:5\",\n        \"fact:6\",\n        \"inference:2\"\n      ]\n    },\n    {\n      \"claim\": \"The file should be closed or moved to a dormant state, as the commitment has been discharged and no open obligation remains\",\n      \"based_on\": [\n        \"inference:1\",\n        \"cap:admin.executive_support.commitment_tracking#f2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a counterparty confirms agreement on a date and says 'we're all set', the negotiation phase is complete and the file enters execution\",\n      \"based_on\": [\n        \"fact:3\",\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A file with no named kind of work in the brief and no role in the company's stated goals may be a side project or a vendor relationship that does not require founder-level tracking\",\n      \"based_on\": [\n        \"fact:4\",\n        \"fact:5\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Admin files that hold no open obligation and show positive_reply should be closed rather than carried, to avoid treating the ledger as the deliverable\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f2\",\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A pilot start date is a commitment to execute, not a commitment to decide. Once both parties have confirmed the date, the file's work is done and the next phase is operational delivery, which does not belong in the founder's commitment ledger\",\n      \"why\": \"The ledger tracks what the founder owes or what is owed to the founder; once a date is set and confirmed, the obligation shifts to the operational team to deliver on that date\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Files that appear in the founder's ledger but have no role in the brief and no named kind of work often signal that the file was added reactively and should be re-evaluated for whether it belongs in the founder's active tracking at all\",\n      \"why\": \"The brief is the source of truth for what matters to the founder's goals; a file outside it is either a distraction or a task that should be delegated\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a counterparty goes quiet after confirming agreement, silence is not disinterest \u2014 it is normal process. The absence of a follow-up message is not a signal to chase\",\n      \"why\": \"Greenleaf has confirmed and said 'we're all set'; they are now preparing their side. A reminder or check-in before 15 September reads as doubt in their competence\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Greenleaf is a design partner or vendor for Nimbus Labs, and this pilot is part of the product development work\",\n      \"needs\": \"Confirmation from the founder or the brief that Greenleaf is a named partner or vendor; or a message from Greenleaf that names the product or service being piloted\"\n    },\n    {\n      \"proposition\": \"This file was added to the ledger by mistake or as a side project, and does not belong in the founder's active tracking\",\n      \"needs\": \"The founder's word on whether Greenleaf is a priority; or a review of the brief to see if Greenleaf should be added to the partners or vendors list\"\n    },\n    {\n      \"proposition\": \"The pilot on 15 September is a hard deadline that requires founder involvement or oversight\",\n      \"needs\": \"Clarification from the founder on what the pilot is, who is responsible for delivery, and whether the founder needs to be involved\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Greenleaf, and what is the pilot for?\",\n      \"relevance\": \"The file has no role in the brief and no named kind of work. Knowing what Greenleaf does and what the pilot is would clarify whether this file belongs in the founder's ledger at all, or whether it should be delegated to an operational team\"\n    },\n    {\n      \"question\": \"Is the founder responsible for any part of the pilot execution, or is it entirely Greenleaf's responsibility?\",\n      \"relevance\": \"If the founder has no role in the pilot, the file should be closed. If the founder is responsible for something, that obligation should be named and tracked separately\"\n    },\n    {\n      \"question\": \"Why is this file in the founder's ledger if it has no role in the brief?\",\n      \"relevance\": \"The brief names the founder's goals and work in motion. A file outside the brief suggests either a distraction or a task that was added reactively and should be re-evaluated\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A vendor or partner relationship in its execution phase: Greenleaf has confirmed a pilot start date of 15 September, the negotiation is complete, and the next move is theirs to execute. The file should be closed or moved to dormant status, as the founder's open obligation has been discharged.\",\n    \"rivals\": [\n      \"A side project or distraction that does not belong in the founder's active ledger, and should be closed or delegated to an operational team\",\n      \"A pilot that requires founder involvement or oversight, and the file should remain open with a clear task assigned to the founder for the week of 15 September\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"vendor\",\n    \"why\": \"Greenleaf is a counterparty with whom you have negotiated a pilot start date. The file shows a transactional relationship with a defined deliverable (the pilot on 15 September). The brief does not name Greenleaf, but the pattern of communication \u2014 a request for confirmation, your response, and their confirmation \u2014 is consistent with vendor or partner execution work.\",\n    \"evidence\": [\n      \"evt_#2\",\n      \"evt_#1\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no kind of work for this file, so there is no playbook and no stage. If this were a vendor relationship, the expected stage would be 'execution' or 'live', with the vendor preparing to deliver on the agreed date.\",\n    \"actual\": \"Greenleaf has confirmed the pilot start date and said 'we're all set', which signals they are ready to execute. The file has been quiet for 0.5 days, which is normal after confirmation. No further action from the founder is evident.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains in the ledger as an open item. On 15 September, the pilot begins. If Greenleaf executes as promised, the file can be closed. If Greenleaf does not execute, the founder will have no record of what was promised or when, and will be forced to chase retroactively.\",\n    \"act\": \"The founder closes the file or moves it to a dormant state, with a note that the pilot is scheduled for 15 September and Greenleaf is responsible for execution. Alternatively, the founder clarifies with Greenleaf what the founder's role is (if any) in the pilot, and assigns a task to themselves if needed.\",\n    \"best\": \"Greenleaf executes the pilot on 15 September as promised. The founder has no further involvement. The file is closed after the pilot is complete.\",\n    \"worst\": \"Greenleaf does not execute on 15 September, or executes poorly. The founder has no clear record of what was promised, and the relationship deteriorates because the founder did not follow up or clarify expectations.\",\n    \"signals_to_watch\": [\n      \"A message from Greenleaf in the week of 15 September confirming they are ready to start, or asking for a delay\",\n      \"Silence from Greenleaf after 15 September, which would signal either successful execution (no news is good news) or a problem\",\n      \"A message from the founder or the operational team about the pilot's progress or outcome\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file has no role in the brief and no named kind of work, suggesting it is not a core priority\",\n      \"Greenleaf has confirmed agreement and the next move is theirs, so the founder's obligation is discharged\",\n      \"The pilot is scheduled for 15 September, which is over a week away, so there is no immediate deadline\",\n      \"If the founder needs to take action before 15 September, that action can be clarified and assigned at any time\",\n      \"The file shows healthy engagement and no blocking dependency, so the relationship is not at risk\"\n    ]\n  },\n  \"mode\": \"nothing\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"close the file or move it to dormant status, with a note that the pilot is scheduled for 15 September and Greenleaf is responsible for execution; or, if the founder has a role in the pilot, clarify that role and assign a task to yourself with a due date\",\n    \"for_whom\": \"the founder's ledger\",\n    \"by_when\": \"2026-09-05\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:2\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f2\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"Wait until 14 September, then send Greenleaf a brief message confirming they are ready to start the pilot on 15 September. This keeps the thread warm and gives Greenleaf a final chance to flag any issues before the start date.\",\n  \"wait_or_stop\": \"Stop tracking this file after 15 September, unless the founder has a specific role in the pilot or a follow-up task. If the pilot is successful, close the file. If the pilot is delayed or cancelled, update the file with the new date or status.\",\n  \"done_when\": \"The file is closed or moved to dormant status, with a clear note of the pilot's scheduled start date and Greenleaf's responsibility for execution. If the founder has a role in the pilot, that role is named and a task is assigned with a due date.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

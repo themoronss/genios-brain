@@ -1,0 +1,811 @@
+{
+ "36b0f650e99cad53dd0d78509ac17eaeed384def8b4380b7fc9cd303168ae232": {
+  "framed": true,
+  "input_tokens": 12382,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4307,
+  "parsed": {
+   "alternative": "If the founder is uncertain what to ask for, send a message to Leah asking what she needs in order to decide \u2014 'What would help you move forward?' \u2014 and offer to send it. This clarifies whether Leah is interested and what the next step is.",
+   "appraisal": {
+    "reasons": [
+     "Lumen Ventures is one of five investors written to in the seed wave, and one of six investors in active conversation. Losing this option costs the founder one of a limited set of warm leads.",
+     "The founder has already held a call with Leah, which is a rare event \u2014 most first emails never become a meeting. Letting this conversation drift wastes that rare event.",
+     "If the founder does not name a next step now, Leah will read silence as a company that lost momentum, and the conversation will be harder to revive later. A message sent now costs one line; a message sent after silence is an excuse.",
+     "The playbook says that after a first call that named no next step, silence usually means a soft no, and the founder should treat it as such. Waiting longer than a week to clarify costs the founder the option to keep the conversation alive."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Leah replies with a named next step and a date, or the founder has clarity that she is not moving forward and has recorded the reason.",
+   "draft": "Hi Leah, Thanks for the call on Thursday \u2014 I enjoyed it too. The calendar sync is close, and I'd like to show you the pilot results when it's ready. Would a call next week work to walk through the numbers and see if there's a fit? I'm free Tuesday or Wednesday afternoon. Let me know what works. \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "The call has ended with a warm but non-committal message: 'Let's stay in touch.' No next step or date has been named. The founder has not yet sent a follow-up confirming a next step in writing. The file is now 0.29 days quiet, well within the 14-day window, but the silence is already the default at this stage.",
+    "expected": "The investor is deciding whether to spend more time. The playbook expects the call to end with a named next step and a date, confirmed in writing the same day. If it does not, silence usually means a soft no. The typical duration is 14 days, and the call ends when a partners' meeting is booked, diligence material is requested, or the investor passes.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Leah Varma, a partner at Lumen Ventures, wrote to the founder on 2026-09-21 at 05:00 UTC thanking him for a call on Thursday and expressing interest in staying in touch.",
+     "evidence": [
+      "evt_#1",
+      "file:last_touch"
+     ],
+     "quote": "Thanks for the time on Thursday's call \u2014 I enjoyed hearing how the pilot teams use Nimbus Labs, and the calendar sync sounds close. Let's stay in touch."
+    },
+    {
+     "claim": "The file shows no promise or commitment in Leah Varma's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.29 days since the last touch on 2026-09-21 at 05:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time has been measured for Leah Varma or for the founder's replies to her.",
+     "evidence": [
+      "num:their_reply_time:leah@lumenvc.test",
+      "num:your_reply_time:leah@lumenvc.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's role in the brief is listed as 'engaged' under Raise \u00b7 Lumen Ventures.",
+     "evidence": [
+      "brief:cbl_#12"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and high engagement with low urgency.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.temporal"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's stage cannot be determined from the dossier's data.",
+     "evidence": [
+      "ru:core.relationship",
+      "ru:core.timeline"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook for investor conversations names seven stages: first_contact, first_call, partner_meeting, diligence, term_sheet, closed, and passed.",
+     "evidence": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A first call stage typically lasts 14 days, and silence after a first call that named no next step usually signals a soft no.",
+     "evidence": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A first call with an investor has ended without a named next step. The investor's message is warm but non-committal, and the founder must now either name a next step in writing or treat this as a soft no for this round.",
+    "rivals": [
+     "The investor is genuinely interested and is waiting for the founder to send something specific \u2014 a data room, customer references, or a demo \u2014 before moving forward.",
+     "The investor is deferring until the founder lands another investor or hits a milestone, and will follow up if that happens.",
+     "The call was exploratory and the investor has decided not to move forward, but is leaving the door open to avoid a hard no."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A message from Leah Varma naming a meeting, a data-room request, or a partners' meeting date.",
+     "proposition": "Leah Varma is genuinely interested and will follow up with a next step within a week."
+    },
+    {
+     "needs": "No message from Leah Varma within seven days, or a message that repeats 'stay in touch' without naming a step.",
+     "proposition": "Leah Varma is deferring and will not move forward unless the founder reaches out with a specific reason to meet again."
+    },
+    {
+     "needs": "A message from Leah Varma in response to a founder update that names a new investor, a customer, or a revenue milestone.",
+     "proposition": "The call was exploratory and Leah Varma is waiting to see if the founder lands other investors or hits a milestone before deciding."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#1"
+     ],
+     "claim": "The founder has held a call with Leah Varma on Thursday before 2026-09-21, and the call ended without a named next step or date."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "Leah Varma's message 'Let's stay in touch' is a deferral without conditions, not a commitment or a pass."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "inference:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The file is in the first_call stage, where the investor is deciding whether to spend more time, and most do not."
+    },
+    {
+     "based_on": [
+      "inference:2",
+      "file:whose_move",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "The next move is ours: the founder must either name a next step in writing or treat this as a soft no for this round."
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Silence from Leah Varma at this stage, if it continues past a week, will read as a no unless the founder has named a next step and a date in writing."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-21",
+    "for_whom": "Leah Varma",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": "leah@lumenvc.test",
+    "what": "send a message to Leah Varma naming a specific next step \u2014 a partners' meeting, a data-room request, or a follow-up call \u2014 and confirm it in writing with a date",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "After a first call with an investor, the founder must confirm the next step in writing the same day, naming what will happen and by when, or the conversation will drift.",
+     "kind": "practice",
+     "why": "An investor who does not hear a named next step reads silence as a company that lost momentum, and momentum is the one attribute a raise cannot afford to project. The asymmetry is structural: the founder's silence is informative to the investor; the investor's silence, before the stage says otherwise, is not informative to the founder."
+    },
+    {
+     "claim": "Most investor conversations that do not name a next step and a date within a week of a call do not advance to a partners' meeting.",
+     "kind": "base_rate",
+     "why": "Investors see far more companies than they can fund and lose nothing by dropping one. A partial reply left unanswered reads as a company that lost momentum."
+    },
+    {
+     "claim": "A deferral without conditions \u2014 'Let's stay in touch' \u2014 should be treated as a soft no for this round unless the founder can name a specific condition that would bring the investor back.",
+     "kind": "practice",
+     "why": "An open-ended deferral commits nobody and hands the investor an indefinite option. Recording it as a deferral without conditions and moving on is cleaner than treating it as a live conversation."
+    },
+    {
+     "claim": "An investor who says 'the calendar sync sounds close' may be signaling that they want to see progress on a specific feature before committing, not that they are ready to move forward.",
+     "kind": "counter_pattern",
+     "why": "Investors habitually sound more positive than they are, and a comment on a feature can mask a decision to wait for more traction."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "After a first call with an investor that ends without a named next step, silence usually means the investor is not moving forward.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+      "pb:founder_office.heu.investor_relations.only_an_offer_counts"
+     ],
+     "claim": "An investor's message 'Let's stay in touch' without a specific next step or date is a deferral, not a commitment.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "One in three investors whose management a venture firm meets is reviewed at a partners' meeting; the other two do not advance.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "brief:cbl_#12"
+     ],
+     "claim": "A warm introduction followed by a call that the investor initiated or confirmed is more likely to advance than a cold outreach.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#12",
+     "file:kind",
+     "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+    ],
+    "kind": "investor",
+    "why": "The file is about a venture capital firm and a conversation about funding. The brief names it as 'Raise \u00b7 Lumen Ventures \u2014 engaged', and the playbook is for investor relations."
+   },
+   "scenarios": {
+    "act": "The founder sends a message to Leah naming a specific next step \u2014 a partners' meeting, a data-room request, or a follow-up call with a date \u2014 and confirms it in writing. This either moves the conversation forward or clarifies that Leah is not moving forward, so the founder can treat it as a soft no and move on.",
+    "best": "Leah replies to the founder's message naming a next step, and a partners' meeting is booked within a week. The conversation moves to the partner_meeting stage, and the founder has clarity on whether Lumen is interested.",
+    "do_nothing": "The file drifts. Leah Varma does not follow up, and the founder learns weeks later that she has moved on. The conversation decays into a no that nobody sends. The founder has lost the option to name a next step and keep the conversation alive.",
+    "signals_to_watch": [
+     "A message from Leah Varma within seven days of the founder's follow-up, naming a next step or a date.",
+     "No message from Leah Varma within seven days, which signals a soft no.",
+     "A message from Leah that repeats 'stay in touch' without naming a step, which signals a deferral without conditions.",
+     "A message from Leah asking for specific material \u2014 a data room, customer references, a demo \u2014 which signals that the conversation is moving forward."
+    ],
+    "worst": "Leah does not reply to the founder's message, or replies that she is not moving forward. The founder has lost the option to keep the conversation alive, and Lumen is now a soft no for this round."
+   },
+   "unknowns": [
+    {
+     "question": "What exactly did the founder and Leah Varma discuss on Thursday's call, and what did Leah ask for or commit to?",
+     "relevance": "The dossier shows only Leah's reply, not the call itself. If Leah asked for something specific \u2014 a data room, customer references, a demo \u2014 the founder's next move is to send it. If she named a date for a partners' meeting, the founder should confirm it in writing. If she asked for nothing, the silence is more likely a soft no."
+    },
+    {
+     "question": "Did the founder send a follow-up message to Leah after the call, confirming a next step and a date?",
+     "relevance": "If the founder has already named a next step in writing, the file is waiting on Leah, not on the founder. If not, the founder must do so now, or treat this as a soft no and move on."
+    },
+    {
+     "question": "Is Leah Varma the decision-maker at Lumen Ventures, or does she need to bring the company to a partners' meeting?",
+     "relevance": "If Leah is a partner, she can commit. If she is an associate or a sourcer, the conversation has not yet reached the decision-maker, and silence is the default, not a signal."
+    },
+    {
+     "question": "What is the founder's current traction \u2014 customers, revenue, users \u2014 and how does it compare to Lumen Ventures' typical check size and stage?",
+     "relevance": "If the founder's traction is below Lumen's stage, Leah's deferral may be a pass on timing, not on the company. If it is above, the deferral is more likely a soft no."
+    }
+   ],
+   "wait_or_stop": "Wait seven days for a reply from Leah. If she does not reply, or replies that she is not moving forward, treat this as a soft no for this round and move Lumen to the update list. If she replies naming a next step or a date, move the file to the partner_meeting or diligence stage and follow the playbook for that stage. Do not send a second message to Leah unless she has asked for something specific and the founder has not yet sent it."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Leah Varma, a partner at Lumen Ventures, wrote to the founder on 2026-09-21 at 05:00 UTC thanking him for a call on Thursday and expressing interest in staying in touch.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"Thanks for the time on Thursday's call \u2014 I enjoyed hearing how the pilot teams use Nimbus Labs, and the calendar sync sounds close. Let's stay in touch.\"\n    },\n    {\n      \"claim\": \"The file shows no promise or commitment in Leah Varma's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.29 days since the last touch on 2026-09-21 at 05:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time has been measured for Leah Varma or for the founder's replies to her.\",\n      \"evidence\": [\n        \"num:their_reply_time:leah@lumenvc.test\",\n        \"num:your_reply_time:leah@lumenvc.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's role in the brief is listed as 'engaged' under Raise \u00b7 Lumen Ventures.\",\n      \"evidence\": [\n        \"brief:cbl_#12\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and high engagement with low urgency.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.temporal\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's stage cannot be determined from the dossier's data.\",\n      \"evidence\": [\n        \"ru:core.relationship\",\n        \"ru:core.timeline\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook for investor conversations names seven stages: first_contact, first_call, partner_meeting, diligence, term_sheet, closed, and passed.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A first call stage typically lasts 14 days, and silence after a first call that named no next step usually signals a soft no.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The founder has held a call with Leah Varma on Thursday before 2026-09-21, and the call ended without a named next step or date.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"Leah Varma's message 'Let's stay in touch' is a deferral without conditions, not a commitment or a pass.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"claim\": \"The file is in the first_call stage, where the investor is deciding whether to spend more time, and most do not.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"inference:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: the founder must either name a next step in writing or treat this as a soft no for this round.\",\n      \"based_on\": [\n        \"inference:2\",\n        \"file:whose_move\",\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"claim\": \"Silence from Leah Varma at this stage, if it continues past a week, will read as a no unless the founder has named a next step and a date in writing.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"After a first call with an investor that ends without a named next step, silence usually means the investor is not moving forward.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor's message 'Let's stay in touch' without a specific next step or date is a deferral, not a commitment.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n        \"pb:founder_office.heu.investor_relations.only_an_offer_counts\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"One in three investors whose management a venture firm meets is reviewed at a partners' meeting; the other two do not advance.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A warm introduction followed by a call that the investor initiated or confirmed is more likely to advance than a cold outreach.\",\n      \"based_on\": [\n        \"brief:cbl_#12\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"After a first call with an investor, the founder must confirm the next step in writing the same day, naming what will happen and by when, or the conversation will drift.\",\n      \"why\": \"An investor who does not hear a named next step reads silence as a company that lost momentum, and momentum is the one attribute a raise cannot afford to project. The asymmetry is structural: the founder's silence is informative to the investor; the investor's silence, before the stage says otherwise, is not informative to the founder.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most investor conversations that do not name a next step and a date within a week of a call do not advance to a partners' meeting.\",\n      \"why\": \"Investors see far more companies than they can fund and lose nothing by dropping one. A partial reply left unanswered reads as a company that lost momentum.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A deferral without conditions \u2014 'Let's stay in touch' \u2014 should be treated as a soft no for this round unless the founder can name a specific condition that would bring the investor back.\",\n      \"why\": \"An open-ended deferral commits nobody and hands the investor an indefinite option. Recording it as a deferral without conditions and moving on is cleaner than treating it as a live conversation.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An investor who says 'the calendar sync sounds close' may be signaling that they want to see progress on a specific feature before committing, not that they are ready to move forward.\",\n      \"why\": \"Investors habitually sound more positive than they are, and a comment on a feature can mask a decision to wait for more traction.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Leah Varma is genuinely interested and will follow up with a next step within a week.\",\n      \"needs\": \"A message from Leah Varma naming a meeting, a data-room request, or a partners' meeting date.\"\n    },\n    {\n      \"proposition\": \"Leah Varma is deferring and will not move forward unless the founder reaches out with a specific reason to meet again.\",\n      \"needs\": \"No message from Leah Varma within seven days, or a message that repeats 'stay in touch' without naming a step.\"\n    },\n    {\n      \"proposition\": \"The call was exploratory and Leah Varma is waiting to see if the founder lands other investors or hits a milestone before deciding.\",\n      \"needs\": \"A message from Leah Varma in response to a founder update that names a new investor, a customer, or a revenue milestone.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What exactly did the founder and Leah Varma discuss on Thursday's call, and what did Leah ask for or commit to?\",\n      \"relevance\": \"The dossier shows only Leah's reply, not the call itself. If Leah asked for something specific \u2014 a data room, customer references, a demo \u2014 the founder's next move is to send it. If she named a date for a partners' meeting, the founder should confirm it in writing. If she asked for nothing, the silence is more likely a soft no.\"\n    },\n    {\n      \"question\": \"Did the founder send a follow-up message to Leah after the call, confirming a next step and a date?\",\n      \"relevance\": \"If the founder has already named a next step in writing, the file is waiting on Leah, not on the founder. If not, the founder must do so now, or treat this as a soft no and move on.\"\n    },\n    {\n      \"question\": \"Is Leah Varma the decision-maker at Lumen Ventures, or does she need to bring the company to a partners' meeting?\",\n      \"relevance\": \"If Leah is a partner, she can commit. If she is an associate or a sourcer, the conversation has not yet reached the decision-maker, and silence is the default, not a signal.\"\n    },\n    {\n      \"question\": \"What is the founder's current traction \u2014 customers, revenue, users \u2014 and how does it compare to Lumen Ventures' typical check size and stage?\",\n      \"relevance\": \"If the founder's traction is below Lumen's stage, Leah's deferral may be a pass on timing, not on the company. If it is above, the deferral is more likely a soft no.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A first call with an investor has ended without a named next step. The investor's message is warm but non-committal, and the founder must now either name a next step in writing or treat this as a soft no for this round.\",\n    \"rivals\": [\n      \"The investor is genuinely interested and is waiting for the founder to send something specific \u2014 a data room, customer references, or a demo \u2014 before moving forward.\",\n      \"The investor is deferring until the founder lands another investor or hits a milestone, and will follow up if that happens.\",\n      \"The call was exploratory and the investor has decided not to move forward, but is leaving the door open to avoid a hard no.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is about a venture capital firm and a conversation about funding. The brief names it as 'Raise \u00b7 Lumen Ventures \u2014 engaged', and the playbook is for investor relations.\",\n    \"evidence\": [\n      \"brief:cbl_#12\",\n      \"file:kind\",\n      \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"The investor is deciding whether to spend more time. The playbook expects the call to end with a named next step and a date, confirmed in writing the same day. If it does not, silence usually means a soft no. The typical duration is 14 days, and the call ends when a partners' meeting is booked, diligence material is requested, or the investor passes.\",\n    \"actual\": \"The call has ended with a warm but non-committal message: 'Let's stay in touch.' No next step or date has been named. The founder has not yet sent a follow-up confirming a next step in writing. The file is now 0.29 days quiet, well within the 14-day window, but the silence is already the default at this stage.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file drifts. Leah Varma does not follow up, and the founder learns weeks later that she has moved on. The conversation decays into a no that nobody sends. The founder has lost the option to name a next step and keep the conversation alive.\",\n    \"act\": \"The founder sends a message to Leah naming a specific next step \u2014 a partners' meeting, a data-room request, or a follow-up call with a date \u2014 and confirms it in writing. This either moves the conversation forward or clarifies that Leah is not moving forward, so the founder can treat it as a soft no and move on.\",\n    \"best\": \"Leah replies to the founder's message naming a next step, and a partners' meeting is booked within a week. The conversation moves to the partner_meeting stage, and the founder has clarity on whether Lumen is interested.\",\n    \"worst\": \"Leah does not reply to the founder's message, or replies that she is not moving forward. The founder has lost the option to keep the conversation alive, and Lumen is now a soft no for this round.\",\n    \"signals_to_watch\": [\n      \"A message from Leah Varma within seven days of the founder's follow-up, naming a next step or a date.\",\n      \"No message from Leah Varma within seven days, which signals a soft no.\",\n      \"A message from Leah that repeats 'stay in touch' without naming a step, which signals a deferral without conditions.\",\n      \"A message from Leah asking for specific material \u2014 a data room, customer references, a demo \u2014 which signals that the conversation is moving forward.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Lumen Ventures is one of five investors written to in the seed wave, and one of six investors in active conversation. Losing this option costs the founder one of a limited set of warm leads.\",\n      \"The founder has already held a call with Leah, which is a rare event \u2014 most first emails never become a meeting. Letting this conversation drift wastes that rare event.\",\n      \"If the founder does not name a next step now, Leah will read silence as a company that lost momentum, and the conversation will be harder to revive later. A message sent now costs one line; a message sent after silence is an excuse.\",\n      \"The playbook says that after a first call that named no next step, silence usually means a soft no, and the founder should treat it as such. Waiting longer than a week to clarify costs the founder the option to keep the conversation alive.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a message to Leah Varma naming a specific next step \u2014 a partners' meeting, a data-room request, or a follow-up call \u2014 and confirm it in writing with a date\",\n    \"for_whom\": \"Leah Varma\",\n    \"by_when\": \"2026-09-21\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:1\"\n    ],\n    \"to\": \"leah@lumenvc.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder is uncertain what to ask for, send a message to Leah asking what she needs in order to decide \u2014 'What would help you move forward?' \u2014 and offer to send it. This clarifies whether Leah is interested and what the next step is.\",\n  \"wait_or_stop\": \"Wait seven days for a reply from Leah. If she does not reply, or replies that she is not moving forward, treat this as a soft no for this round and move Lumen to the update list. If she replies naming a next step or a date, move the file to the partner_meeting or diligence stage and follow the playbook for that stage. Do not send a second message to Leah unless she has asked for something specific and the founder has not yet sent it.\",\n  \"done_when\": \"Leah replies with a named next step and a date, or the founder has clarity that she is not moving forward and has recorded the reason.\",\n  \"draft\": \"Hi Leah, Thanks for the call on Thursday \u2014 I enjoyed it too. The calendar sync is close, and I'd like to show you the pilot results when it's ready. Would a call next week work to walk through the numbers and see if there's a fit? I'm free Tuesday or Wednesday afternoon. Let me know what works. \u2014 Arjun\"\n}",
+  "site": "expert"
+ },
+ "4237b48d22cd4d5c5182faed627420a4db87039851f1e3b34437fcb1516b6fb2": {
+  "framed": true,
+  "input_tokens": 12546,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4103,
+  "parsed": {
+   "alternative": "If the founder is uncertain whether Leah is genuinely interested or a soft no, ask the connector who introduced her (Introly) what Leah said after the call, or ask Leah directly what would bring her back. This risks reading as a push, but it clarifies the investor's intent and may uncover a condition the founder did not hear on the call.",
+   "appraisal": {
+    "reasons": [
+     "Lumen Ventures is one of five investors in the seed wave, and one of many programs and partners in motion; losing this investor is not fatal, but it is a loss.",
+     "The file is quiet and has no deadline; the next move is the founder's, and it is conditional on a milestone.",
+     "A check-in before the milestone is reached can be undone by a message about the milestone later, but it costs the relationship and the founder's credibility."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The founder has sent a message to Leah about a signed pilot or the round opening, and Leah has replied with interest or a meeting request, or the file has been quiet for 90 days and is moved to the update list.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The call ended with 'let's stay in touch' and no named next step. The founder has corrected the file to say that Leah asked for news only on real milestones \u2014 a signed pilot or the round opening \u2014 and the founder should not push before one. The file has been quiet for 3.29 days.",
+    "expected": "After a first call, the playbook expects either a named next step and a date (in which case silence is the firm's process), or no named next step (in which case silence is usually a soft no, and the founder should wait for the investor to opt in or pass). The playbook's default is to wait 14 days and then, if nothing has changed, treat the investor as a no for this round and move them to the update list.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Leah Varma at Lumen Ventures wrote on 2026-09-21 after a Thursday call, thanking the founder and saying 'Let's stay in touch.'",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Thanks for the time on Thursday's call \u2014 I enjoyed hearing how the pilot teams use Nimbus Labs, and the calendar sync sounds close. Let's stay in touch."
+    },
+    {
+     "claim": "The founder corrected the file on 2026-09-21 12:00 UTC, marking a card to send a message to Leah naming a next step as not_relevant.",
+     "evidence": [
+      "corr:fc_#1"
+     ],
+     "quote": "Leah asked on our call for news only on real milestones \u2014 a signed pilot or the round opening. Don't push me to write before one."
+    },
+    {
+     "claim": "No promise was found in Leah's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 3.29 days since the last touch on 2026-09-21 05:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is investor, and its role in the brief is none \u2014 it is not yet listed as engaged in the company brief.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Lumen Ventures is listed in the brief as engaged, not in the seed wave.",
+     "evidence": [
+      "brief:cbl_#12"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units measured engagement as high and drop as low, with no blocking dependency observed.",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.dependency"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook for investor conversations names first_call as the current stage, with a typical duration of 14 days and a quiet meaning that the investor is deciding whether to spend more time.",
+     "evidence": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook states that after a first call that ended without a named next step, silence is usually a soft no.",
+     "evidence": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook states that after a first call that named a step and a date, silence is the firm's process until that date passes.",
+     "evidence": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A first call with an investor that ended with 'let's stay in touch' and no named next step, where the founder has set a condition for outbound contact (only on real milestones), and the investor is now silent. The playbook reads this as a soft no, but the founder's correction treats it as a conditional deferral \u2014 a door left open until a milestone is reached.",
+    "rivals": [
+     "A genuine interest from the investor on a long cycle, waiting for the founder to reach a milestone before moving forward.",
+     "A soft no that will become a hard no unless the company becomes a hot deal that other investors are chasing.",
+     "A single-threaded conversation with an associate or partner who cannot fund the company without bringing it to a partners' meeting, and who is waiting for a reason to do so."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A signed pilot or the round opening, and a message from the founder about it.",
+     "proposition": "Leah is genuinely interested but on a long cycle, and will move forward if the founder reaches a milestone."
+    },
+    {
+     "needs": "Momentum from other investors, or a significant change in the company's traction.",
+     "proposition": "Leah is a soft no, and will not move forward unless the company becomes a hot deal that other investors are chasing."
+    },
+    {
+     "needs": "A conversation with Leah or the connector who introduced her, to clarify what would bring her back.",
+     "proposition": "Leah is waiting for a specific signal \u2014 a lead, a revenue number, a customer \u2014 that the founder has not yet named."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The call ended without a named next step or date, because Leah's mail says 'Let's stay in touch' and names no follow-up action or timeline."
+    },
+    {
+     "based_on": [
+      "inference:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "Under the playbook's reading, silence after a first call with no named next step is usually a soft no \u2014 the investor is deciding whether to spend more time, and most do not."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "corr:fc_#1"
+     ],
+     "claim": "The founder's correction overrides the playbook's default move: the founder has set a condition for outbound contact \u2014 only when a real milestone is reached (a signed pilot or the round opening)."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "inference:2"
+     ],
+     "claim": "The file is in the first_call stage, and the next move is ours only if we have a milestone to report; otherwise it is the investor's move to opt in or pass."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "The file should remain on the update list if the founder chooses to send monthly updates on growth, cash, burn and progress against Leah's condition, but should not receive a check-in or reminder before that condition is met."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": null,
+    "for_whom": "Leah Varma",
+    "guided_by": [
+     "corr:fc_#1",
+     "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "do nothing until the founder reaches a signed pilot or opens the round; then send a message to Leah about that milestone",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A founder who has explicitly told you not to push before a milestone should be held to that boundary, even when the playbook suggests a check-in would be normal.",
+     "kind": "practice",
+     "why": "The founder knows their own relationship with this investor and has set a clear condition; overriding it wastes the relationship and the founder's credibility with the investor."
+    },
+    {
+     "claim": "Most seed-stage investors who say 'let's stay in touch' after a first call are not moving forward, and a check-in before a milestone is reached usually reads as either desperation or a misunderstanding of what they asked for.",
+     "kind": "base_rate",
+     "why": "Investors see many companies and have no cost to silence; a founder who pushes before a milestone is reached teaches them to ignore the next message."
+    },
+    {
+     "claim": "A conditional deferral \u2014 'come back when you have X' \u2014 should be tracked as a watch on that metric, not as a pass, and the founder should send updates monthly if they choose to keep the investor warm.",
+     "kind": "practice",
+     "why": "A deferral is a door left open, and monthly updates on progress against the condition keep the investor informed without pushing; when the condition is met, a single message about that condition is the right move."
+    },
+    {
+     "claim": "A founder who has been burned by premature check-ins or who has a clear sense of an investor's preferences should be trusted over the playbook's default timing.",
+     "kind": "counter_pattern",
+     "why": "The founder is in the room; the playbook is a prior. A correction the founder makes is evidence that the playbook's stage-based timing does not fit this investor."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "A first call that ends with 'let's stay in touch' and no named next step or date is usually followed by investor silence, and that silence usually means the investor is not moving forward.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.only_an_offer_counts"
+     ],
+     "claim": "Investors habitually sound more positive than they are, and language like 'let's stay in touch' does not commit them.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "A founder who has set a condition for outbound contact \u2014 only on real milestones \u2014 is treating the investor as a conditional deferral, not a soft no, and should not send a check-in or reminder until the condition is met.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "An investor conversation takes an average of 83 days to close at early-stage firms, and a file is dormant after 90 days of quiet.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#12"
+    ],
+    "kind": "investor",
+    "why": "The file is about a venture capital firm and a conversation about funding. The brief names it as engaged, and the playbook is for investor relations."
+   },
+   "scenarios": {
+    "act": "The founder sends a message to Leah naming a milestone that is close (a signed pilot or the round opening), or asks the connector or Leah directly what would bring her back. This risks reading as a push before the condition is met, and the founder has said not to do it.",
+    "best": "The founder reaches a signed pilot or opens the round within the next few weeks, sends a message to Leah about it, and Leah replies with interest or a meeting request. The conversation moves to the next stage.",
+    "do_nothing": "The file remains quiet. The founder does not send a check-in or reminder. If the founder reaches a signed pilot or opens the round, the founder sends a message to Leah about that milestone. If the founder does not reach a milestone within the next few months, the file drifts into dormancy, and Leah becomes a no for this round unless the company becomes a hot deal.",
+    "signals_to_watch": [
+     "A signed pilot or the round opening \u2014 the conditions the founder named.",
+     "A message from Leah asking for an update or a meeting \u2014 a signal that she is still interested.",
+     "Silence past 90 days \u2014 a signal that the file is dormant and Leah is a no for this round."
+    ],
+    "worst": "The founder sends a check-in or reminder before a milestone is reached, Leah does not reply, and the file becomes a hard no. Or the founder reaches a milestone but forgets to tell Leah, and the opportunity is lost."
+   },
+   "unknowns": [
+    {
+     "question": "What exactly did Leah ask for on the Thursday call? Did she name a condition, a metric, a timeline, or did she simply say 'let's stay in touch'?",
+     "relevance": "The founder's correction says Leah asked for news only on real milestones \u2014 a signed pilot or the round opening \u2014 but the dossier does not show the call notes or the exact words. If the condition is different, the next move changes."
+    },
+    {
+     "question": "Is Leah the decision-maker at Lumen Ventures, or is she an associate or partner who would need to bring the company to a partners' meeting?",
+     "relevance": "If Leah is not the decision-maker, the file may be single-threaded, and the next move would be to ask the connector or Leah herself who the right partner is."
+    },
+    {
+     "question": "Did the founder send anything promised on the Thursday call, and if so, did Leah reply?",
+     "relevance": "If the founder promised something and did not send it, the file is waiting on us, and the move is to send it. If the founder sent it and Leah did not reply, that is a signal."
+    },
+    {
+     "question": "Is the founder planning to reach a signed pilot or open the round in the near term, or is that months away?",
+     "relevance": "If the milestone is months away, the file should go on the update list and be checked monthly. If it is weeks away, the file should be watched more closely."
+    }
+   ],
+   "wait_or_stop": "Wait until the founder reaches a signed pilot or opens the round. If the founder does not reach a milestone within the next few months, and the file has been quiet for 90 days, treat it as a no for this round and move Leah to the update list. If the founder reaches a milestone, send a message to Leah about it the same day."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Leah Varma at Lumen Ventures wrote on 2026-09-21 after a Thursday call, thanking the founder and saying 'Let's stay in touch.'\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Thanks for the time on Thursday's call \u2014 I enjoyed hearing how the pilot teams use Nimbus Labs, and the calendar sync sounds close. Let's stay in touch.\"\n    },\n    {\n      \"claim\": \"The founder corrected the file on 2026-09-21 12:00 UTC, marking a card to send a message to Leah naming a next step as not_relevant.\",\n      \"evidence\": [\n        \"corr:fc_#1\"\n      ],\n      \"quote\": \"Leah asked on our call for news only on real milestones \u2014 a signed pilot or the round opening. Don't push me to write before one.\"\n    },\n    {\n      \"claim\": \"No promise was found in Leah's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 3.29 days since the last touch on 2026-09-21 05:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is investor, and its role in the brief is none \u2014 it is not yet listed as engaged in the company brief.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Lumen Ventures is listed in the brief as engaged, not in the seed wave.\",\n      \"evidence\": [\n        \"brief:cbl_#12\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units measured engagement as high and drop as low, with no blocking dependency observed.\",\n      \"evidence\": [\n        \"ru:core.temporal\",\n        \"ru:core.dependency\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook for investor conversations names first_call as the current stage, with a typical duration of 14 days and a quiet meaning that the investor is deciding whether to spend more time.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook states that after a first call that ended without a named next step, silence is usually a soft no.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook states that after a first call that named a step and a date, silence is the firm's process until that date passes.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The call ended without a named next step or date, because Leah's mail says 'Let's stay in touch' and names no follow-up action or timeline.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"Under the playbook's reading, silence after a first call with no named next step is usually a soft no \u2014 the investor is deciding whether to spend more time, and most do not.\",\n      \"based_on\": [\n        \"inference:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"The founder's correction overrides the playbook's default move: the founder has set a condition for outbound contact \u2014 only when a real milestone is reached (a signed pilot or the round opening).\",\n      \"based_on\": [\n        \"fact:2\",\n        \"corr:fc_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The file is in the first_call stage, and the next move is ours only if we have a milestone to report; otherwise it is the investor's move to opt in or pass.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"inference:2\"\n      ]\n    },\n    {\n      \"claim\": \"The file should remain on the update list if the founder chooses to send monthly updates on growth, cash, burn and progress against Leah's condition, but should not receive a check-in or reminder before that condition is met.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A first call that ends with 'let's stay in touch' and no named next step or date is usually followed by investor silence, and that silence usually means the investor is not moving forward.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Investors habitually sound more positive than they are, and language like 'let's stay in touch' does not commit them.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.only_an_offer_counts\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who has set a condition for outbound contact \u2014 only on real milestones \u2014 is treating the investor as a conditional deferral, not a soft no, and should not send a check-in or reminder until the condition is met.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An investor conversation takes an average of 83 days to close at early-stage firms, and a file is dormant after 90 days of quiet.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A founder who has explicitly told you not to push before a milestone should be held to that boundary, even when the playbook suggests a check-in would be normal.\",\n      \"why\": \"The founder knows their own relationship with this investor and has set a clear condition; overriding it wastes the relationship and the founder's credibility with the investor.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most seed-stage investors who say 'let's stay in touch' after a first call are not moving forward, and a check-in before a milestone is reached usually reads as either desperation or a misunderstanding of what they asked for.\",\n      \"why\": \"Investors see many companies and have no cost to silence; a founder who pushes before a milestone is reached teaches them to ignore the next message.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A conditional deferral \u2014 'come back when you have X' \u2014 should be tracked as a watch on that metric, not as a pass, and the founder should send updates monthly if they choose to keep the investor warm.\",\n      \"why\": \"A deferral is a door left open, and monthly updates on progress against the condition keep the investor informed without pushing; when the condition is met, a single message about that condition is the right move.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who has been burned by premature check-ins or who has a clear sense of an investor's preferences should be trusted over the playbook's default timing.\",\n      \"why\": \"The founder is in the room; the playbook is a prior. A correction the founder makes is evidence that the playbook's stage-based timing does not fit this investor.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Leah is genuinely interested but on a long cycle, and will move forward if the founder reaches a milestone.\",\n      \"needs\": \"A signed pilot or the round opening, and a message from the founder about it.\"\n    },\n    {\n      \"proposition\": \"Leah is a soft no, and will not move forward unless the company becomes a hot deal that other investors are chasing.\",\n      \"needs\": \"Momentum from other investors, or a significant change in the company's traction.\"\n    },\n    {\n      \"proposition\": \"Leah is waiting for a specific signal \u2014 a lead, a revenue number, a customer \u2014 that the founder has not yet named.\",\n      \"needs\": \"A conversation with Leah or the connector who introduced her, to clarify what would bring her back.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What exactly did Leah ask for on the Thursday call? Did she name a condition, a metric, a timeline, or did she simply say 'let's stay in touch'?\",\n      \"relevance\": \"The founder's correction says Leah asked for news only on real milestones \u2014 a signed pilot or the round opening \u2014 but the dossier does not show the call notes or the exact words. If the condition is different, the next move changes.\"\n    },\n    {\n      \"question\": \"Is Leah the decision-maker at Lumen Ventures, or is she an associate or partner who would need to bring the company to a partners' meeting?\",\n      \"relevance\": \"If Leah is not the decision-maker, the file may be single-threaded, and the next move would be to ask the connector or Leah herself who the right partner is.\"\n    },\n    {\n      \"question\": \"Did the founder send anything promised on the Thursday call, and if so, did Leah reply?\",\n      \"relevance\": \"If the founder promised something and did not send it, the file is waiting on us, and the move is to send it. If the founder sent it and Leah did not reply, that is a signal.\"\n    },\n    {\n      \"question\": \"Is the founder planning to reach a signed pilot or open the round in the near term, or is that months away?\",\n      \"relevance\": \"If the milestone is months away, the file should go on the update list and be checked monthly. If it is weeks away, the file should be watched more closely.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A first call with an investor that ended with 'let's stay in touch' and no named next step, where the founder has set a condition for outbound contact (only on real milestones), and the investor is now silent. The playbook reads this as a soft no, but the founder's correction treats it as a conditional deferral \u2014 a door left open until a milestone is reached.\",\n    \"rivals\": [\n      \"A genuine interest from the investor on a long cycle, waiting for the founder to reach a milestone before moving forward.\",\n      \"A soft no that will become a hard no unless the company becomes a hot deal that other investors are chasing.\",\n      \"A single-threaded conversation with an associate or partner who cannot fund the company without bringing it to a partners' meeting, and who is waiting for a reason to do so.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is about a venture capital firm and a conversation about funding. The brief names it as engaged, and the playbook is for investor relations.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#12\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"After a first call, the playbook expects either a named next step and a date (in which case silence is the firm's process), or no named next step (in which case silence is usually a soft no, and the founder should wait for the investor to opt in or pass). The playbook's default is to wait 14 days and then, if nothing has changed, treat the investor as a no for this round and move them to the update list.\",\n    \"actual\": \"The call ended with 'let's stay in touch' and no named next step. The founder has corrected the file to say that Leah asked for news only on real milestones \u2014 a signed pilot or the round opening \u2014 and the founder should not push before one. The file has been quiet for 3.29 days.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. The founder does not send a check-in or reminder. If the founder reaches a signed pilot or opens the round, the founder sends a message to Leah about that milestone. If the founder does not reach a milestone within the next few months, the file drifts into dormancy, and Leah becomes a no for this round unless the company becomes a hot deal.\",\n    \"act\": \"The founder sends a message to Leah naming a milestone that is close (a signed pilot or the round opening), or asks the connector or Leah directly what would bring her back. This risks reading as a push before the condition is met, and the founder has said not to do it.\",\n    \"best\": \"The founder reaches a signed pilot or opens the round within the next few weeks, sends a message to Leah about it, and Leah replies with interest or a meeting request. The conversation moves to the next stage.\",\n    \"worst\": \"The founder sends a check-in or reminder before a milestone is reached, Leah does not reply, and the file becomes a hard no. Or the founder reaches a milestone but forgets to tell Leah, and the opportunity is lost.\",\n    \"signals_to_watch\": [\n      \"A signed pilot or the round opening \u2014 the conditions the founder named.\",\n      \"A message from Leah asking for an update or a meeting \u2014 a signal that she is still interested.\",\n      \"Silence past 90 days \u2014 a signal that the file is dormant and Leah is a no for this round.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Lumen Ventures is one of five investors in the seed wave, and one of many programs and partners in motion; losing this investor is not fatal, but it is a loss.\",\n      \"The file is quiet and has no deadline; the next move is the founder's, and it is conditional on a milestone.\",\n      \"A check-in before the milestone is reached can be undone by a message about the milestone later, but it costs the relationship and the founder's credibility.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"do nothing until the founder reaches a signed pilot or opens the round; then send a message to Leah about that milestone\",\n    \"for_whom\": \"Leah Varma\",\n    \"by_when\": null,\n    \"rests_on\": [\n      \"fact:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"corr:fc_#1\",\n      \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder is uncertain whether Leah is genuinely interested or a soft no, ask the connector who introduced her (Introly) what Leah said after the call, or ask Leah directly what would bring her back. This risks reading as a push, but it clarifies the investor's intent and may uncover a condition the founder did not hear on the call.\",\n    \"wait_or_stop\": \"Wait until the founder reaches a signed pilot or opens the round. If the founder does not reach a milestone within the next few months, and the file has been quiet for 90 days, treat it as a no for this round and move Leah to the update list. If the founder reaches a milestone, send a message to Leah about it the same day.\",\n    \"done_when\": \"The founder has sent a message to Leah about a signed pilot or the round opening, and Leah has replied with interest or a meeting request, or the file has been quiet for 90 days and is moved to the update list.\",\n    \"draft\": null\n}",
+  "site": "expert"
+ },
+ "ee40c9451cbce59514e5662b0c0581fb3d8ed3de71ad7bae662f9dfefd721268": {
+  "framed": true,
+  "input_tokens": 12261,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4532,
+  "parsed": {
+   "alternative": "If the founder believes the Thursday call did not go well or that Leah is not a strong fit, record Lumen Ventures as a pass with no reason given and move on to the other investors in the wave. This is reversible: if Lumen Ventures' condition changes (e.g., they raise a new fund or the founder's traction improves), the founder can reopen the conversation later.",
+   "appraisal": {
+    "reasons": [
+     "Lumen Ventures is one of five investors in the seed wave and one of six investors the founder is actively pursuing; a pass from Lumen Ventures does not end the round, but a commitment from them would accelerate it.",
+     "The conversation is at the first_call stage, which is early in the funnel; most first calls do not lead to a partners' meeting, so the probability of a commitment is low.",
+     "The founder's next move is reversible: a follow-up proposing a next step can be sent without burning the relationship, and if Leah declines, the founder can record it as a pass and move on.",
+     "The playbook's prior is that silence after a first call without a named next step usually means a soft no, but Leah's same-day warm reply suggests she is still engaged; the founder's move will clarify which is true.",
+     "The founder is running a parallel process with other investors, so Lumen Ventures' silence is not urgent; the founder should focus on moving other conversations forward while testing Lumen Ventures with a follow-up."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Leah confirms a date for a partners' meeting, a customer call, or a data room review, or she declines and the founder records it as a pass. Either way, the founder has a clear signal and can move on.",
+   "draft": "Hi Leah, Thanks for the call on Thursday \u2014 I'm glad the calendar sync resonated. I'd like to get your partners in front of our pilot customers so they can see the product in action. Would next week work for a brief call with two of them? I have Tuesday at 2pm or Thursday at 10am. Let me know what works. \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "Leah replied the same day with a warm message thanking the founder for the call and saying 'Let's stay in touch,' but she did not name a next step, request material, or book a meeting. No date was set. The founder has not yet sent a follow-up proposing a specific next step.",
+    "expected": "After a first call, the playbook expects either a partners' meeting to be booked, diligence material to be requested, or the investor to pass. The typical duration of this stage is 14 days. Silence after a first call without a named next step usually means the investor is deciding whether to spend more time, and most do not proceed.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Leah Varma at Lumen Ventures wrote to the founder on 2026-09-21 at 05:00 UTC thanking him for Thursday's call and saying 'Let's stay in touch.'",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Thanks for the time on Thursday's call \u2014 I enjoyed hearing how the pilot teams use Nimbus Labs, and the calendar sync sounds close. Let's stay in touch."
+    },
+    {
+     "claim": "No promise was found in Leah Varma's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows no open asks from Lumen Ventures.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.29 days since the last touch on 2026-09-21 at 05:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Lumen Ventures is listed in the brief as 'engaged' in the seed wave.",
+     "evidence": [
+      "brief:cbl_#12"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and high engagement.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.temporal"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is listed as 'investor' in the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's role in the brief is listed as 'none'.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A first call has taken place and the investor has replied warmly but without naming a next step or date. The founder now faces a choice: propose a specific next step to test whether the investor is genuinely interested, or wait for the investor to move. The playbook's prior is that silence after a first call without a named next step usually means a soft no, but the same-day warm reply suggests the investor is still engaged. The founder's move will determine whether the conversation advances or stalls.",
+    "rivals": [
+     "The investor is genuinely interested and is waiting for the founder to propose the next step, having signaled openness with 'Let's stay in touch.' The founder's job is to move the conversation forward by naming a specific ask.",
+     "The investor is politely declining and 'Let's stay in touch' is a standard soft-no closing. The founder should treat this as a pass and move on to other investors, or record it as a deferral if Leah indicated a condition for reopening.",
+     "The Thursday call did not go well, and Leah's warm reply is a courtesy that masks disinterest. The founder should ask for feedback or move on."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A follow-up from the founder naming a specific next step (e.g., a partners' meeting, a data room, references) and a date. If Leah confirms it, the hypothesis holds. If she does not reply or declines, it is false.",
+     "proposition": "Leah Varma intends to move the conversation forward and is waiting for the founder to propose the next step."
+    },
+    {
+     "needs": "A follow-up from the founder proposing a next step. If Leah does not confirm it within a week, or if she replies with a deferral or pass, the hypothesis holds.",
+     "proposition": "Leah Varma is politely declining to move forward and 'Let's stay in touch' is a soft no."
+    },
+    {
+     "needs": "A review of what was discussed on the call, what Leah asked for, and whether the founder answered her questions. If the founder's recollection differs from what Leah's mail suggests, the hypothesis may hold.",
+     "proposition": "The Thursday call did not go as well as the founder believes, and Leah is signaling disinterest by not naming a next step."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The conversation has reached the first_call stage: a call took place on Thursday, and the investor replied the same day with a warm but non-committal message."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "No next step was named in Leah's message, and no date was set for a follow-up."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The ball is now in the founder's court: Leah has replied warmly but without commitment, and the playbook's first_call stage expects either a partners' meeting to be booked, diligence material to be requested, or the investor to pass."
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "Silence at this stage, after a warm first call with no named next step, typically signals a soft no: the investor is deciding whether to spend more time, and most do not."
+    },
+    {
+     "based_on": [
+      "fact:7",
+      "fact:8",
+      "brief:cbl_#12"
+     ],
+     "claim": "The file's role listed as 'none' is inconsistent with the brief's listing of Lumen Ventures as 'engaged' in the seed wave and the file's kind as 'investor'; the role should reflect the investor's position in the round."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-21",
+    "for_whom": "Leah Varma at Lumen Ventures",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "cap:founder_office.fundraising.investor_relations#f3",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "leah@lumenvc.test",
+    "what": "Send Leah a follow-up message naming a specific next step you are asking for (a partners' meeting, a customer reference call, or a data room) and proposing two or three dates in the next one to two weeks. Keep it short and make it easy for her to say yes or no.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "After a first call, the founder should send a same-day follow-up confirming what was discussed, naming the next step the founder is asking for, and setting a date for it \u2014 even if the investor did not name one.",
+     "kind": "practice",
+     "why": "This move clarifies the founder's intent, creates a record of what was promised, and forces the investor to either commit to a next step or decline explicitly. A founder who waits for the investor to name the step often waits indefinitely."
+    },
+    {
+     "claim": "A warm but vague closing like 'Let's stay in touch' should be treated as a soft no unless the founder has already sent a follow-up naming a specific next step and date.",
+     "kind": "practice",
+     "why": "Investors use this language to leave the door open without committing. The founder's job is to test whether the door is actually open by proposing a concrete next step. If the investor does not confirm it, the conversation is stalled."
+    },
+    {
+     "claim": "In a parallel fundraising process, the founder should be running multiple investor conversations at the same stage simultaneously, not waiting for one to resolve before moving the others forward.",
+     "kind": "base_rate",
+     "why": "Momentum comes from investors seeing other investors move. A single conversation run in isolation has no clock and no pressure. The first commitment is the hard one; once one investor commits, others often follow quickly."
+    },
+    {
+     "claim": "A same-day reply from an investor, even a warm one, does not mean the investor is moving the conversation forward; it may mean the investor is being polite while deprioritizing the company.",
+     "kind": "counter_pattern",
+     "why": "Politeness and speed are not signals of intent. The signal is whether the investor names a next step, requests material, or books a meeting. Without one of those, the conversation is stalled."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "After a first call that ends without a named next step, investor silence usually means the investor is deciding whether to spend more time, and most do not proceed.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "A warm closing like 'Let's stay in touch' without a specific next step or date is often a soft no dressed in friendly language.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "At early-stage venture firms, about one company in three whose management the firm meets is reviewed at a partners' meeting.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "ru:core.temporal"
+     ],
+     "claim": "A same-day reply to a call, even without a named next step, shows the investor is still engaged and has not deprioritized the company.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#12",
+     "file:kind"
+    ],
+    "kind": "investor",
+    "why": "The brief lists Lumen Ventures as an investor in the seed wave, the file's kind is 'investor', and the work is to move the conversation toward a funding decision."
+   },
+   "scenarios": {
+    "act": "The founder sends a follow-up within one day naming a specific next step (e.g., 'I'd like to get you in front of our pilot customers' or 'Would a partners' meeting make sense in the next week?') and proposing two or three dates. Leah either confirms a date, declines, or asks for material. The conversation moves to a decision point.",
+    "best": "The founder sends a follow-up proposing a partners' meeting. Leah confirms a date. The meeting takes place. Lumen Ventures' partners review the company and either open diligence or pass. The founder has a clear signal and can move on to the next stage or the next investor.",
+    "do_nothing": "The founder waits for Leah to move. Leah does not reply again. After 14 days, the founder has no signal of whether Leah is still interested. After 90 days, the conversation is dormant and the founder has lost the option. The round moves on without Lumen Ventures' decision, and the founder learns only later that Leah had deprioritized the company.",
+    "signals_to_watch": [
+     "Leah's reply to the founder's follow-up: does she confirm a date, ask for material, or decline?",
+     "The timing of Leah's reply: a same-day reply suggests engagement; a reply after several days suggests deprioritization.",
+     "Whether Leah names a specific next step or date in her reply, or uses vague language like 'Let's stay in touch' again.",
+     "Whether other investors in the wave are moving faster, which would signal that Lumen Ventures is behind and the founder should focus elsewhere."
+    ],
+    "worst": "The founder sends a follow-up proposing a next step. Leah does not reply. After a week, the founder sends a reminder. Leah replies that she is not moving forward. The founder has spent two messages on a soft no and has no relationship left to reopen later. Alternatively, the founder waits and Leah never replies, and the founder never learns whether Leah was interested."
+   },
+   "unknowns": [
+    {
+     "question": "What was discussed on Thursday's call, and what did Leah ask for or indicate she needed in order to move forward?",
+     "relevance": "The founder's next move depends on whether Leah asked for material, a meeting with partners, references, or something else. Without knowing what she asked for, the founder cannot know whether to send material, propose a date, or wait for her to ask."
+    },
+    {
+     "question": "Did the founder send a follow-up to Leah after Thursday's call, and if so, what did it say?",
+     "relevance": "The dossier shows Leah's reply but not the founder's prior message. If the founder already proposed a next step and Leah's reply is her response to that, the situation is different than if Leah's reply was unsolicited. The file's mail shows only Leah's side."
+    },
+    {
+     "question": "What is Lumen Ventures' typical timeline for moving from a first call to a partners' meeting or a pass?",
+     "relevance": "The playbook's prior is that a first call stage typically lasts 14 days, but Lumen Ventures may have a different cycle. If they meet weekly and review companies on a specific day, the founder's timing for the next move should align with that cycle."
+    },
+    {
+     "question": "Is the founder running this round in parallel with other investors, or is Lumen Ventures the primary focus?",
+     "relevance": "If Lumen Ventures is the only investor the founder is actively pursuing, the founder has no momentum and no alternative. If the founder is running a parallel process with other investors, Lumen Ventures' silence is less urgent, and the founder should focus on moving other conversations forward."
+    }
+   ],
+   "wait_or_stop": "Wait for Leah's reply to the follow-up. If she confirms a date, move to the next stage. If she does not reply within seven days, send one reminder with a new proposed date. If she still does not reply or declines, record it as a pass and stop counting on Lumen Ventures for this round. Do not send a check-in or a 'just bumping this' message; those spend the relationship for nothing."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Leah Varma at Lumen Ventures wrote to the founder on 2026-09-21 at 05:00 UTC thanking him for Thursday's call and saying 'Let's stay in touch.'\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Thanks for the time on Thursday's call \u2014 I enjoyed hearing how the pilot teams use Nimbus Labs, and the calendar sync sounds close. Let's stay in touch.\"\n    },\n    {\n      \"claim\": \"No promise was found in Leah Varma's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows no open asks from Lumen Ventures.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.29 days since the last touch on 2026-09-21 at 05:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Lumen Ventures is listed in the brief as 'engaged' in the seed wave.\",\n      \"evidence\": [\n        \"brief:cbl_#12\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and high engagement.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.temporal\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is listed as 'investor' in the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's role in the brief is listed as 'none'.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The conversation has reached the first_call stage: a call took place on Thursday, and the investor replied the same day with a warm but non-committal message.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"No next step was named in Leah's message, and no date was set for a follow-up.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is now in the founder's court: Leah has replied warmly but without commitment, and the playbook's first_call stage expects either a partners' meeting to be booked, diligence material to be requested, or the investor to pass.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:3\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"Silence at this stage, after a warm first call with no named next step, typically signals a soft no: the investor is deciding whether to spend more time, and most do not.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"claim\": \"The file's role listed as 'none' is inconsistent with the brief's listing of Lumen Ventures as 'engaged' in the seed wave and the file's kind as 'investor'; the role should reflect the investor's position in the round.\",\n      \"based_on\": [\n        \"fact:7\",\n        \"fact:8\",\n        \"brief:cbl_#12\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"After a first call that ends without a named next step, investor silence usually means the investor is deciding whether to spend more time, and most do not proceed.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A warm closing like 'Let's stay in touch' without a specific next step or date is often a soft no dressed in friendly language.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"At early-stage venture firms, about one company in three whose management the firm meets is reviewed at a partners' meeting.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A same-day reply to a call, even without a named next step, shows the investor is still engaged and has not deprioritized the company.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"ru:core.temporal\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"After a first call, the founder should send a same-day follow-up confirming what was discussed, naming the next step the founder is asking for, and setting a date for it \u2014 even if the investor did not name one.\",\n      \"why\": \"This move clarifies the founder's intent, creates a record of what was promised, and forces the investor to either commit to a next step or decline explicitly. A founder who waits for the investor to name the step often waits indefinitely.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A warm but vague closing like 'Let's stay in touch' should be treated as a soft no unless the founder has already sent a follow-up naming a specific next step and date.\",\n      \"why\": \"Investors use this language to leave the door open without committing. The founder's job is to test whether the door is actually open by proposing a concrete next step. If the investor does not confirm it, the conversation is stalled.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"In a parallel fundraising process, the founder should be running multiple investor conversations at the same stage simultaneously, not waiting for one to resolve before moving the others forward.\",\n      \"why\": \"Momentum comes from investors seeing other investors move. A single conversation run in isolation has no clock and no pressure. The first commitment is the hard one; once one investor commits, others often follow quickly.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A same-day reply from an investor, even a warm one, does not mean the investor is moving the conversation forward; it may mean the investor is being polite while deprioritizing the company.\",\n      \"why\": \"Politeness and speed are not signals of intent. The signal is whether the investor names a next step, requests material, or books a meeting. Without one of those, the conversation is stalled.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Leah Varma intends to move the conversation forward and is waiting for the founder to propose the next step.\",\n      \"needs\": \"A follow-up from the founder naming a specific next step (e.g., a partners' meeting, a data room, references) and a date. If Leah confirms it, the hypothesis holds. If she does not reply or declines, it is false.\"\n    },\n    {\n      \"proposition\": \"Leah Varma is politely declining to move forward and 'Let's stay in touch' is a soft no.\",\n      \"needs\": \"A follow-up from the founder proposing a next step. If Leah does not confirm it within a week, or if she replies with a deferral or pass, the hypothesis holds.\"\n    },\n    {\n      \"proposition\": \"The Thursday call did not go as well as the founder believes, and Leah is signaling disinterest by not naming a next step.\",\n      \"needs\": \"A review of what was discussed on the call, what Leah asked for, and whether the founder answered her questions. If the founder's recollection differs from what Leah's mail suggests, the hypothesis may hold.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What was discussed on Thursday's call, and what did Leah ask for or indicate she needed in order to move forward?\",\n      \"relevance\": \"The founder's next move depends on whether Leah asked for material, a meeting with partners, references, or something else. Without knowing what she asked for, the founder cannot know whether to send material, propose a date, or wait for her to ask.\"\n    },\n    {\n      \"question\": \"Did the founder send a follow-up to Leah after Thursday's call, and if so, what did it say?\",\n      \"relevance\": \"The dossier shows Leah's reply but not the founder's prior message. If the founder already proposed a next step and Leah's reply is her response to that, the situation is different than if Leah's reply was unsolicited. The file's mail shows only Leah's side.\"\n    },\n    {\n      \"question\": \"What is Lumen Ventures' typical timeline for moving from a first call to a partners' meeting or a pass?\",\n      \"relevance\": \"The playbook's prior is that a first call stage typically lasts 14 days, but Lumen Ventures may have a different cycle. If they meet weekly and review companies on a specific day, the founder's timing for the next move should align with that cycle.\"\n    },\n    {\n      \"question\": \"Is the founder running this round in parallel with other investors, or is Lumen Ventures the primary focus?\",\n      \"relevance\": \"If Lumen Ventures is the only investor the founder is actively pursuing, the founder has no momentum and no alternative. If the founder is running a parallel process with other investors, Lumen Ventures' silence is less urgent, and the founder should focus on moving other conversations forward.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A first call has taken place and the investor has replied warmly but without naming a next step or date. The founder now faces a choice: propose a specific next step to test whether the investor is genuinely interested, or wait for the investor to move. The playbook's prior is that silence after a first call without a named next step usually means a soft no, but the same-day warm reply suggests the investor is still engaged. The founder's move will determine whether the conversation advances or stalls.\",\n    \"rivals\": [\n      \"The investor is genuinely interested and is waiting for the founder to propose the next step, having signaled openness with 'Let's stay in touch.' The founder's job is to move the conversation forward by naming a specific ask.\",\n      \"The investor is politely declining and 'Let's stay in touch' is a standard soft-no closing. The founder should treat this as a pass and move on to other investors, or record it as a deferral if Leah indicated a condition for reopening.\",\n      \"The Thursday call did not go well, and Leah's warm reply is a courtesy that masks disinterest. The founder should ask for feedback or move on.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The brief lists Lumen Ventures as an investor in the seed wave, the file's kind is 'investor', and the work is to move the conversation toward a funding decision.\",\n    \"evidence\": [\n      \"brief:cbl_#12\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"After a first call, the playbook expects either a partners' meeting to be booked, diligence material to be requested, or the investor to pass. The typical duration of this stage is 14 days. Silence after a first call without a named next step usually means the investor is deciding whether to spend more time, and most do not proceed.\",\n    \"actual\": \"Leah replied the same day with a warm message thanking the founder for the call and saying 'Let's stay in touch,' but she did not name a next step, request material, or book a meeting. No date was set. The founder has not yet sent a follow-up proposing a specific next step.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder waits for Leah to move. Leah does not reply again. After 14 days, the founder has no signal of whether Leah is still interested. After 90 days, the conversation is dormant and the founder has lost the option. The round moves on without Lumen Ventures' decision, and the founder learns only later that Leah had deprioritized the company.\",\n    \"act\": \"The founder sends a follow-up within one day naming a specific next step (e.g., 'I'd like to get you in front of our pilot customers' or 'Would a partners' meeting make sense in the next week?') and proposing two or three dates. Leah either confirms a date, declines, or asks for material. The conversation moves to a decision point.\",\n    \"best\": \"The founder sends a follow-up proposing a partners' meeting. Leah confirms a date. The meeting takes place. Lumen Ventures' partners review the company and either open diligence or pass. The founder has a clear signal and can move on to the next stage or the next investor.\",\n    \"worst\": \"The founder sends a follow-up proposing a next step. Leah does not reply. After a week, the founder sends a reminder. Leah replies that she is not moving forward. The founder has spent two messages on a soft no and has no relationship left to reopen later. Alternatively, the founder waits and Leah never replies, and the founder never learns whether Leah was interested.\",\n    \"signals_to_watch\": [\n      \"Leah's reply to the founder's follow-up: does she confirm a date, ask for material, or decline?\",\n      \"The timing of Leah's reply: a same-day reply suggests engagement; a reply after several days suggests deprioritization.\",\n      \"Whether Leah names a specific next step or date in her reply, or uses vague language like 'Let's stay in touch' again.\",\n      \"Whether other investors in the wave are moving faster, which would signal that Lumen Ventures is behind and the founder should focus elsewhere.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Lumen Ventures is one of five investors in the seed wave and one of six investors the founder is actively pursuing; a pass from Lumen Ventures does not end the round, but a commitment from them would accelerate it.\",\n      \"The conversation is at the first_call stage, which is early in the funnel; most first calls do not lead to a partners' meeting, so the probability of a commitment is low.\",\n      \"The founder's next move is reversible: a follow-up proposing a next step can be sent without burning the relationship, and if Leah declines, the founder can record it as a pass and move on.\",\n      \"The playbook's prior is that silence after a first call without a named next step usually means a soft no, but Leah's same-day warm reply suggests she is still engaged; the founder's move will clarify which is true.\",\n      \"The founder is running a parallel process with other investors, so Lumen Ventures' silence is not urgent; the founder should focus on moving other conversations forward while testing Lumen Ventures with a follow-up.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send Leah a follow-up message naming a specific next step you are asking for (a partners' meeting, a customer reference call, or a data room) and proposing two or three dates in the next one to two weeks. Keep it short and make it easy for her to say yes or no.\",\n    \"for_whom\": \"Leah Varma at Lumen Ventures\",\n    \"by_when\": \"2026-09-21\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"cap:founder_office.fundraising.investor_relations#f3\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"leah@lumenvc.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder believes the Thursday call did not go well or that Leah is not a strong fit, record Lumen Ventures as a pass with no reason given and move on to the other investors in the wave. This is reversible: if Lumen Ventures' condition changes (e.g., they raise a new fund or the founder's traction improves), the founder can reopen the conversation later.\",\n    \"wait_or_stop\": \"Wait for Leah's reply to the follow-up. If she confirms a date, move to the next stage. If she does not reply within seven days, send one reminder with a new proposed date. If she still does not reply or declines, record it as a pass and stop counting on Lumen Ventures for this round. Do not send a check-in or a 'just bumping this' message; those spend the relationship for nothing.\",\n    \"done_when\": \"Leah confirms a date for a partners' meeting, a customer call, or a data room review, or she declines and the founder records it as a pass. Either way, the founder has a clear signal and can move on.\",\n    \"draft\": \"Hi Leah, Thanks for the call on Thursday \u2014 I'm glad the calendar sync resonated. I'd like to get your partners in front of our pilot customers so they can see the product in action. Would next week work for a brief call with two of them? I have Tuesday at 2pm or Thursday at 10am. Let me know what works. \u2014 Arjun\"\n}",
+  "site": "expert"
+ }
+}

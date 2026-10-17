@@ -1,0 +1,246 @@
+{
+ "f5fe29f92965627bbc1a300bcac2cd877cfb05f2256c453ecc62a14c56f08c5b": {
+  "framed": true,
+  "input_tokens": 8247,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3369,
+  "parsed": {
+   "alternative": "If you decide Introly is not a fit or you have enough sources of introductions, you can close the file and move on. But this is not advised: a connector who can make introductions is a low-cost source of deal flow, and the cost of answering is one line.",
+   "appraisal": {
+    "reasons": [
+     "You are raising a seed round and have written to five investors in a wave; a connector who can make introductions is a source of deal flow that could accelerate the round.",
+     "The move is simple and costs nothing but a one-line reply; the cost of acting is low.",
+     "If Introly moves on, you can find another connector or source of introductions; the loss is not irreversible.",
+     "The silence is brief \u2014 only 0.33 days \u2014 but connectors work fast and expect fast replies; delay beyond a few days will signal that you are not ready to move.",
+     "Introly is one of several sources of introductions you are using (Lakshya Accelerator, programs, direct outreach); losing this one is not fatal, but it is a missed opportunity."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Introly has made at least one introduction to an investor, or has confirmed they are working on matches and will send introductions by a date they name.",
+   "draft": "Raising a $1-2M seed round, pre-launch. Looking for investors in AI tooling. Thanks for the help.",
+   "expected_vs_actual": {
+    "actual": "You replied with interest in AI tooling investors but did not answer the direct question about stage and amount. Introly is waiting for that answer, and no introductions have been made yet.",
+    "expected": "A connector who asks a qualifying question expects a direct answer before they move. The brief names no playbook for this kind of work, so the expectation comes from the file's own history and the nature of connector work: Introly asked for stage and amount, and you should have answered with those facts in one line.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly asked a direct question about the stage and amount being raised, waiting for a one-line reply to line up next introductions.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "To match you better, which stage are you raising at, and how much? Reply with one line and I'll line up the next introductions."
+    },
+    {
+     "claim": "You replied to Introly expressing interest in investors in AI tooling, but did not answer their direct question about stage and amount.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Thanks for the introductions so far. I'm especially keen on investors in AI tooling."
+    },
+    {
+     "claim": "The file shows Introly as a connector \u2014 an AI agent that introduces the founder to people \u2014 not named as a kind of work in the brief.",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#27"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The last touch was 2026-09-29 10:00 UTC, and the file has been quiet for 0.33 days, longer than any prior gap it closed.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "An open ask remains: Introly waits on you to answer their question about stage and amount, open since 2026-09-29 10:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No introductions have been made yet; the relationship is at the stage of Introly gathering information to make matches.",
+     "evidence": [
+      "num:introductions"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The company is raising a seed round and has written to five seed-stage investors in a wave, and is engaged with Lumen Ventures.",
+     "evidence": [
+      "brief:cbl_#2",
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9",
+      "brief:cbl_#10",
+      "brief:cbl_#11",
+      "brief:cbl_#12"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A connector is waiting for you to answer a direct question so they can make introductions; you have not answered, and the thread is open but not advanced.",
+    "rivals": [
+     "Introly is a low-priority vendor and the delay does not matter because you have other sources of introductions.",
+     "Your reply was sufficient and Introly is working on introductions in the background; the silence is normal.",
+     "Introly has moved on to other companies and will not follow up; the thread is effectively closed."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A signal from Introly that they are waiting, or a follow-up from them after a week of silence.",
+     "proposition": "Introly has other companies in their queue and will move on if you do not answer soon."
+    },
+    {
+     "needs": "An introduction from Introly, or a follow-up from them saying they are working on matches.",
+     "proposition": "Your reply was sufficient for Introly to begin matching, and they are working on introductions in the background."
+    },
+    {
+     "needs": "A follow-up from Introly asking for the stage and amount again, or silence that extends beyond a week.",
+     "proposition": "Introly's question was a test of your clarity and readiness; your reply may have signaled that you are not ready to move fast."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:5"
+     ],
+     "claim": "The move is ours: you have not answered Introly's direct question, and they are waiting for it before they can make introductions."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "Your reply to Introly was responsive to their offer but did not address their ask, leaving the thread open but not advanced."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "file:domains"
+     ],
+     "claim": "Introly is a connector, not an investor, and their value is in the introductions they can make once they understand your target."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "num:usual_gap"
+     ],
+     "claim": "The silence since your last reply, though brief, is unusual for a connector actively engaged in matching work."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop_#1",
+    "by_when": "2026-09-29",
+    "for_whom": "Introly",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "own:3",
+     "cap:founder_office.fundraising.investor_relations#f6"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:5",
+     "inference:1"
+    ],
+    "to": "hello@introly.test",
+    "what": "reply to Introly with your seed round size and stage in one line, answering their direct question",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A connector's value is in the speed and quality of the introductions they make; the faster you answer their qualifying questions, the faster they can work.",
+     "kind": "practice",
+     "why": "Connectors are intermediaries whose job is to match; they cannot do that job without the information they ask for, and every day of delay is a day the introductions do not happen."
+    },
+    {
+     "claim": "When a connector asks for stage and amount, they are asking for the two facts that determine which investors in their network are a fit; without them, they cannot make a move.",
+     "kind": "base_rate",
+     "why": "Stage and amount define the investor's cheque size and thesis; a connector who does not know these cannot match you to anyone."
+    },
+    {
+     "claim": "A one-line answer to a one-line ask is the right move; it shows you are serious and makes the connector's job easy.",
+     "kind": "practice",
+     "why": "Connectors work at scale and respect founders who respect their time; a brief, direct answer signals you are ready to move."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "cap:founder_office.fundraising.investor_relations#f6"
+     ],
+     "claim": "A connector who asks a direct question expects a direct answer before they move; a reply that does not answer the ask leaves them without the information they need to work.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f6"
+     ],
+     "claim": "Connectors and introduction bots are filed differently from investors; they need a different move or none, and each costs attention every time the set is reviewed.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:5",
+      "own:1"
+     ],
+     "claim": "A connector waiting on information will not move until they have it; delay in answering a direct ask from a connector delays the introductions they can make.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "file:domains",
+     "brief:cbl_#27"
+    ],
+    "kind": "intro",
+    "why": "Introly is a connector \u2014 an AI agent that introduces the founder to people \u2014 and the work is to get introductions to investors. The brief names this as a connector, not as a kind of work, but the dossier's domains list fundraising, and the file's role is to introduce people. This is intro work, not investor work."
+   },
+   "scenarios": {
+    "act": "You answer Introly's question with your seed round size and stage in one line. Introly makes introductions to investors in their network who fit your profile. You get meetings with investors you would not have found otherwise.",
+    "best": "Introly makes three to five introductions to investors who are actively looking for AI tooling companies at your stage and size. One or more of those investors move to a meeting, and one becomes a lead investor in your round.",
+    "do_nothing": "Introly will wait for a few more days, then move on to other companies. The introductions they could have made will not happen. You will have lost a source of investor introductions at a time when you are raising a seed round.",
+    "signals_to_watch": [
+     "Introly sends a follow-up asking for the stage and amount again \u2014 a sign they are still waiting and have not moved on.",
+     "Introly sends an introduction to an investor \u2014 a sign they are working and your reply was sufficient.",
+     "Introly goes silent for more than a week \u2014 a sign they have moved on.",
+     "An investor introduced by Introly asks for a meeting \u2014 a sign the introduction was a fit."
+    ],
+    "worst": "Introly makes introductions to investors who are not a fit, or who have already passed on similar companies. The introductions waste your time and signal to Introly that you are not a serious founder."
+   },
+   "unknowns": [
+    {
+     "question": "What is your target seed round size, and at what stage do you consider yourself?",
+     "relevance": "Introly cannot make introductions without this information; it is the core ask they are waiting on."
+    },
+    {
+     "question": "Has Introly made any introductions to other founders, and at what speed?",
+     "relevance": "This would tell you whether Introly is a fast connector or slow, and whether their silence is normal or a sign they have moved on."
+    },
+    {
+     "question": "Are there other connectors or sources of investor introductions you are using in parallel?",
+     "relevance": "If Introly is your only source of introductions, the urgency of answering them is higher; if you have other sources, the cost of delay is lower."
+    }
+   ],
+   "wait_or_stop": "Do not wait. Answer today. If Introly does not make an introduction within two weeks, follow up once to ask what they have found. If they do not reply, close the file."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly asked a direct question about the stage and amount being raised, waiting for a one-line reply to line up next introductions.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"To match you better, which stage are you raising at, and how much? Reply with one line and I'll line up the next introductions.\"\n    },\n    {\n      \"claim\": \"You replied to Introly expressing interest in investors in AI tooling, but did not answer their direct question about stage and amount.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Thanks for the introductions so far. I'm especially keen on investors in AI tooling.\"\n    },\n    {\n      \"claim\": \"The file shows Introly as a connector \u2014 an AI agent that introduces the founder to people \u2014 not named as a kind of work in the brief.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#27\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The last touch was 2026-09-29 10:00 UTC, and the file has been quiet for 0.33 days, longer than any prior gap it closed.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"An open ask remains: Introly waits on you to answer their question about stage and amount, open since 2026-09-29 10:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No introductions have been made yet; the relationship is at the stage of Introly gathering information to make matches.\",\n      \"evidence\": [\n        \"num:introductions\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The company is raising a seed round and has written to five seed-stage investors in a wave, and is engaged with Lumen Ventures.\",\n      \"evidence\": [\n        \"brief:cbl_#2\",\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\",\n        \"brief:cbl_#10\",\n        \"brief:cbl_#11\",\n        \"brief:cbl_#12\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The move is ours: you have not answered Introly's direct question, and they are waiting for it before they can make introductions.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:5\"\n      ]\n    },\n    {\n      \"claim\": \"Your reply to Introly was responsive to their offer but did not address their ask, leaving the thread open but not advanced.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"Introly is a connector, not an investor, and their value is in the introductions they can make once they understand your target.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"file:domains\"\n      ]\n    },\n    {\n      \"claim\": \"The silence since your last reply, though brief, is unusual for a connector actively engaged in matching work.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"num:usual_gap\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A connector who asks a direct question expects a direct answer before they move; a reply that does not answer the ask leaves them without the information they need to work.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"cap:founder_office.fundraising.investor_relations#f6\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Connectors and introduction bots are filed differently from investors; they need a different move or none, and each costs attention every time the set is reviewed.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f6\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A connector waiting on information will not move until they have it; delay in answering a direct ask from a connector delays the introductions they can make.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:5\",\n        \"own:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A connector's value is in the speed and quality of the introductions they make; the faster you answer their qualifying questions, the faster they can work.\",\n      \"why\": \"Connectors are intermediaries whose job is to match; they cannot do that job without the information they ask for, and every day of delay is a day the introductions do not happen.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a connector asks for stage and amount, they are asking for the two facts that determine which investors in their network are a fit; without them, they cannot make a move.\",\n      \"why\": \"Stage and amount define the investor's cheque size and thesis; a connector who does not know these cannot match you to anyone.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A one-line answer to a one-line ask is the right move; it shows you are serious and makes the connector's job easy.\",\n      \"why\": \"Connectors work at scale and respect founders who respect their time; a brief, direct answer signals you are ready to move.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Introly has other companies in their queue and will move on if you do not answer soon.\",\n      \"needs\": \"A signal from Introly that they are waiting, or a follow-up from them after a week of silence.\"\n    },\n    {\n      \"proposition\": \"Your reply was sufficient for Introly to begin matching, and they are working on introductions in the background.\",\n      \"needs\": \"An introduction from Introly, or a follow-up from them saying they are working on matches.\"\n    },\n    {\n      \"proposition\": \"Introly's question was a test of your clarity and readiness; your reply may have signaled that you are not ready to move fast.\",\n      \"needs\": \"A follow-up from Introly asking for the stage and amount again, or silence that extends beyond a week.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is your target seed round size, and at what stage do you consider yourself?\",\n      \"relevance\": \"Introly cannot make introductions without this information; it is the core ask they are waiting on.\"\n    },\n    {\n      \"question\": \"Has Introly made any introductions to other founders, and at what speed?\",\n      \"relevance\": \"This would tell you whether Introly is a fast connector or slow, and whether their silence is normal or a sign they have moved on.\"\n    },\n    {\n      \"question\": \"Are there other connectors or sources of investor introductions you are using in parallel?\",\n      \"relevance\": \"If Introly is your only source of introductions, the urgency of answering them is higher; if you have other sources, the cost of delay is lower.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A connector is waiting for you to answer a direct question so they can make introductions; you have not answered, and the thread is open but not advanced.\",\n    \"rivals\": [\n      \"Introly is a low-priority vendor and the delay does not matter because you have other sources of introductions.\",\n      \"Your reply was sufficient and Introly is working on introductions in the background; the silence is normal.\",\n      \"Introly has moved on to other companies and will not follow up; the thread is effectively closed.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"Introly is a connector \u2014 an AI agent that introduces the founder to people \u2014 and the work is to get introductions to investors. The brief names this as a connector, not as a kind of work, but the dossier's domains list fundraising, and the file's role is to introduce people. This is intro work, not investor work.\",\n    \"evidence\": [\n      \"file:role\",\n      \"file:domains\",\n      \"brief:cbl_#27\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"A connector who asks a qualifying question expects a direct answer before they move. The brief names no playbook for this kind of work, so the expectation comes from the file's own history and the nature of connector work: Introly asked for stage and amount, and you should have answered with those facts in one line.\",\n    \"actual\": \"You replied with interest in AI tooling investors but did not answer the direct question about stage and amount. Introly is waiting for that answer, and no introductions have been made yet.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Introly will wait for a few more days, then move on to other companies. The introductions they could have made will not happen. You will have lost a source of investor introductions at a time when you are raising a seed round.\",\n    \"act\": \"You answer Introly's question with your seed round size and stage in one line. Introly makes introductions to investors in their network who fit your profile. You get meetings with investors you would not have found otherwise.\",\n    \"best\": \"Introly makes three to five introductions to investors who are actively looking for AI tooling companies at your stage and size. One or more of those investors move to a meeting, and one becomes a lead investor in your round.\",\n    \"worst\": \"Introly makes introductions to investors who are not a fit, or who have already passed on similar companies. The introductions waste your time and signal to Introly that you are not a serious founder.\",\n    \"signals_to_watch\": [\n      \"Introly sends a follow-up asking for the stage and amount again \u2014 a sign they are still waiting and have not moved on.\",\n      \"Introly sends an introduction to an investor \u2014 a sign they are working and your reply was sufficient.\",\n      \"Introly goes silent for more than a week \u2014 a sign they have moved on.\",\n      \"An investor introduced by Introly asks for a meeting \u2014 a sign the introduction was a fit.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"You are raising a seed round and have written to five investors in a wave; a connector who can make introductions is a source of deal flow that could accelerate the round.\",\n      \"The move is simple and costs nothing but a one-line reply; the cost of acting is low.\",\n      \"If Introly moves on, you can find another connector or source of introductions; the loss is not irreversible.\",\n      \"The silence is brief \u2014 only 0.33 days \u2014 but connectors work fast and expect fast replies; delay beyond a few days will signal that you are not ready to move.\",\n      \"Introly is one of several sources of introductions you are using (Lakshya Accelerator, programs, direct outreach); losing this one is not fatal, but it is a missed opportunity.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"reply to Introly with your seed round size and stage in one line, answering their direct question\",\n    \"for_whom\": \"Introly\",\n    \"by_when\": \"2026-09-29\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:5\",\n      \"inference:1\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"own:3\",\n      \"cap:founder_office.fundraising.investor_relations#f6\"\n    ],\n    \"to\": \"hello@introly.test\",\n    \"answers\": \"loop_#1\"\n  },\n  \"alternative\": \"If you decide Introly is not a fit or you have enough sources of introductions, you can close the file and move on. But this is not advised: a connector who can make introductions is a low-cost source of deal flow, and the cost of answering is one line.\",\n  \"wait_or_stop\": \"Do not wait. Answer today. If Introly does not make an introduction within two weeks, follow up once to ask what they have found. If they do not reply, close the file.\",\n  \"done_when\": \"Introly has made at least one introduction to an investor, or has confirmed they are working on matches and will send introductions by a date they name.\",\n  \"draft\": \"Raising a $1-2M seed round, pre-launch. Looking for investors in AI tooling. Thanks for the help.\"\n}",
+  "site": "expert"
+ }
+}

@@ -1,0 +1,450 @@
+{
+ "46d410c9a81355d8a00f7671d15ad5039fd64fbf8751661e44da6e97b9d55114": {
+  "framed": true,
+  "input_tokens": 7088,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3010,
+  "parsed": {
+   "alternative": "If you choose to act now, send a gentle follow-up to Tarun on 2026-08-06 (three weeks after the introduction), referencing Mira's introduction and offering to share more or to schedule a brief call. This keeps the conversation warm but risks being perceived as impatient.",
+   "appraisal": {
+    "reasons": [
+     "This is a potential design partner or customer, not a committed investor or program. The stakes are real but not existential.",
+     "No deadline has been set, and no promise has been made. The urgency is low.",
+     "A follow-up can be sent at any time, and silence can be interpreted as a soft no. A wrong move here is easily corrected."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "Tarun replies with interest or disinterest, or four weeks have passed with no reply and a follow-up has been sent and ignored.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "Tarun has not replied after 14 days. No promise or deadline was made in the introduction. The founder has not written to Quillstack since the introduction.",
+    "expected": "After an introduction, the next move belongs to the introduced party. If they are interested, they reply within one to three weeks. If they are not interested, they may not reply at all. The founder should not chase before two to three weeks have passed, or before a clear deadline has been missed.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Mira Kapoor introduced Arjun to Tarun at Quillstack on 2026-07-16, stating that Tarun leads partnerships and is looking for workflow tools for their founder community.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Tarun leads partnerships at Quillstack and is looking for workflow tools for their founder community; Arjun runs Nimbus Labs. I'll let you two take it from here."
+    },
+    {
+     "claim": "No reply has been recorded from Tarun or Quillstack since the introduction on 2026-07-16.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 14.27 days as of the dossier date.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was made in the introduction mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "We have not written to Quillstack since the introduction.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A connector has made an introduction to a potential design partner or customer at a company; the counterparty has not yet replied, and we are in the normal quiet period after an introduction.",
+    "rivals": [
+     "The introduction was not received or was filtered to spam, and a re-send is needed.",
+     "Quillstack has evaluated the fit and determined it does not match their priorities, and silence is their way of declining.",
+     "Tarun is interested but is waiting for internal alignment before replying, and the conversation will resume when it does."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from Tarun, or a signal from Quillstack's website or public announcements about their partnership strategy.",
+     "proposition": "Tarun received the introduction and forwarded it internally for evaluation, and it is now in a queue waiting for a product or partnership review cycle."
+    },
+    {
+     "needs": "A second introduction from Mira, or a direct outreach to Tarun at a different email address or via LinkedIn.",
+     "proposition": "Tarun did not receive the introduction, or it was filtered to spam or a secondary inbox."
+    },
+    {
+     "needs": "A signal from Quillstack's public positioning or a direct question to Tarun about their partnership priorities.",
+     "proposition": "Tarun received the introduction but determined that Nimbus Labs does not fit Quillstack's current partnership criteria, and chose not to reply."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "evt_#1"
+     ],
+     "claim": "The ball is in Tarun's court: Mira made the introduction and explicitly handed off with 'I'll let you two take it from here,' which is a connector's signal that the next move belongs to the introduced party."
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3",
+      "num:days_quiet"
+     ],
+     "claim": "Silence from Quillstack after an introduction does not indicate disinterest; it is consistent with normal administrative process, especially for a partnership inquiry that may require internal review."
+    },
+    {
+     "based_on": [
+      "sit:sit_#1",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "claim": "This is a live account administration situation: an introduction has been made, the counterparty has not yet replied, and the file is in its first touch with no prior history."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-13",
+    "for_whom": "Tarun at Quillstack",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "wait for a reply from Tarun, and monitor for signals that the conversation is stalled",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An introduction that names a specific fit\u2014here, workflow tools for a founder community\u2014is more likely to generate a reply than a generic outreach, but only if the recipient's priorities align; silence does not mean rejection.",
+     "kind": "practice",
+     "why": "Partnership teams at companies operate on their own roadmaps and budget cycles; a good fit that arrives at the wrong time in their planning cycle will be shelved, not declined."
+    },
+    {
+     "claim": "Chasing an introduction before two to three weeks have passed, or before a clear deadline has been missed, damages the relationship by signaling either that you do not trust the connector's introduction or that you are impatient.",
+     "kind": "counter_pattern",
+     "why": "The connector has already vouched for you; a follow-up from you before the counterparty has had time to evaluate reads as doubt in the connector's judgment."
+    },
+    {
+     "claim": "Partnership conversations with companies often stall at the 'interested in principle' stage because the company's product roadmap or go-to-market strategy has not yet crystallized; the conversation resumes when it does.",
+     "kind": "base_rate",
+     "why": "Companies rarely commit to partnerships before they know what they are building; early-stage founders often mistake silence for rejection when it is actually deferral."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Introductions to partnership leads at companies typically see a reply within one to three weeks if the fit is relevant; silence beyond three weeks often means the inquiry was routed to a backlog or did not match their immediate priorities.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1",
+      "evt_#1"
+     ],
+     "claim": "A connector's explicit handoff ('I'll let you two take it from here') shifts the expectation: the introduced party is now responsible for the next move, and chasing before they have had time to respond reads as pressure rather than follow-up.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Partnership inquiries from early-stage founders to established companies often go quiet because they are evaluated asynchronously by multiple stakeholders; the absence of a reply is not a signal to escalate.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "brief:cbl_#6"
+    ],
+    "kind": "partner",
+    "why": "Mira's introduction explicitly states that Tarun is looking for workflow tools for Quillstack's founder community, and Nimbus Labs is an AI chief of staff for founders. This is a potential design partner or customer relationship, not an investor, program, compliance, hiring, or vendor relationship."
+   },
+   "scenarios": {
+    "act": "The founder sends a gentle follow-up to Tarun, referencing the introduction and offering to share more about Nimbus Labs or to schedule a brief call. This risks being perceived as impatient, but it also keeps the conversation warm and signals genuine interest.",
+    "best": "Tarun replies within a week with interest, and a partnership conversation begins. The fit is strong, and Quillstack becomes a design partner or customer.",
+    "do_nothing": "The file remains quiet. If Tarun is interested, he will reply when his internal process allows. If he is not interested, the file will eventually be closed as a non-starter. The risk is that a genuine opportunity is missed because Tarun's reply was delayed or lost.",
+    "signals_to_watch": [
+     "A reply from Tarun within the next week or two.",
+     "A public announcement from Quillstack about their partnership strategy or product roadmap.",
+     "A signal from Mira that Tarun has mentioned the introduction to her.",
+     "A change in Quillstack's website or LinkedIn that suggests they are actively seeking partnerships."
+    ],
+    "worst": "Tarun never replies, and the opportunity is lost. Alternatively, the founder chases too early and Tarun perceives it as pressure, damaging the relationship."
+   },
+   "unknowns": [
+    {
+     "question": "What is Quillstack's typical response time to partnership inquiries, and what is their current partnership roadmap?",
+     "relevance": "This would determine whether 14 days of silence is normal for them or a signal that the inquiry was deprioritized."
+    },
+    {
+     "question": "Did Tarun receive the introduction, and if so, did he forward it internally or set a reminder to follow up?",
+     "relevance": "This would determine whether the next move is to wait, to send a gentle re-introduction, or to move on."
+    },
+    {
+     "question": "Is there a fit between Nimbus Labs' AI chief of staff product and Quillstack's founder community offering?",
+     "relevance": "If the fit is weak, silence is expected; if it is strong, silence after two weeks may warrant a gentle follow-up."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-13 (four weeks after the introduction). If Tarun has not replied by then, send a gentle follow-up. If there is no reply to the follow-up within one week, close the file as a non-starter unless there is a public signal that Quillstack is actively seeking partnerships."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Mira Kapoor introduced Arjun to Tarun at Quillstack on 2026-07-16, stating that Tarun leads partnerships and is looking for workflow tools for their founder community.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Tarun leads partnerships at Quillstack and is looking for workflow tools for their founder community; Arjun runs Nimbus Labs. I'll let you two take it from here.\"\n    },\n    {\n      \"claim\": \"No reply has been recorded from Tarun or Quillstack since the introduction on 2026-07-16.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 14.27 days as of the dossier date.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was made in the introduction mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"We have not written to Quillstack since the introduction.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in Tarun's court: Mira made the introduction and explicitly handed off with 'I'll let you two take it from here,' which is a connector's signal that the next move belongs to the introduced party.\",\n      \"based_on\": [\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"Silence from Quillstack after an introduction does not indicate disinterest; it is consistent with normal administrative process, especially for a partnership inquiry that may require internal review.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\",\n        \"num:days_quiet\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live account administration situation: an introduction has been made, the counterparty has not yet replied, and the file is in its first touch with no prior history.\",\n      \"based_on\": [\n        \"sit:sit_#1\",\n        \"hist:derived.history.times_seen@admin\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions to partnership leads at companies typically see a reply within one to three weeks if the fit is relevant; silence beyond three weeks often means the inquiry was routed to a backlog or did not match their immediate priorities.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A connector's explicit handoff ('I'll let you two take it from here') shifts the expectation: the introduced party is now responsible for the next move, and chasing before they have had time to respond reads as pressure rather than follow-up.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Partnership inquiries from early-stage founders to established companies often go quiet because they are evaluated asynchronously by multiple stakeholders; the absence of a reply is not a signal to escalate.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction that names a specific fit\u2014here, workflow tools for a founder community\u2014is more likely to generate a reply than a generic outreach, but only if the recipient's priorities align; silence does not mean rejection.\",\n      \"why\": \"Partnership teams at companies operate on their own roadmaps and budget cycles; a good fit that arrives at the wrong time in their planning cycle will be shelved, not declined.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing an introduction before two to three weeks have passed, or before a clear deadline has been missed, damages the relationship by signaling either that you do not trust the connector's introduction or that you are impatient.\",\n      \"why\": \"The connector has already vouched for you; a follow-up from you before the counterparty has had time to evaluate reads as doubt in the connector's judgment.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Partnership conversations with companies often stall at the 'interested in principle' stage because the company's product roadmap or go-to-market strategy has not yet crystallized; the conversation resumes when it does.\",\n      \"why\": \"Companies rarely commit to partnerships before they know what they are building; early-stage founders often mistake silence for rejection when it is actually deferral.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tarun received the introduction and forwarded it internally for evaluation, and it is now in a queue waiting for a product or partnership review cycle.\",\n      \"needs\": \"A reply from Tarun, or a signal from Quillstack's website or public announcements about their partnership strategy.\"\n    },\n    {\n      \"proposition\": \"Tarun did not receive the introduction, or it was filtered to spam or a secondary inbox.\",\n      \"needs\": \"A second introduction from Mira, or a direct outreach to Tarun at a different email address or via LinkedIn.\"\n    },\n    {\n      \"proposition\": \"Tarun received the introduction but determined that Nimbus Labs does not fit Quillstack's current partnership criteria, and chose not to reply.\",\n      \"needs\": \"A signal from Quillstack's public positioning or a direct question to Tarun about their partnership priorities.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Quillstack's typical response time to partnership inquiries, and what is their current partnership roadmap?\",\n      \"relevance\": \"This would determine whether 14 days of silence is normal for them or a signal that the inquiry was deprioritized.\"\n    },\n    {\n      \"question\": \"Did Tarun receive the introduction, and if so, did he forward it internally or set a reminder to follow up?\",\n      \"relevance\": \"This would determine whether the next move is to wait, to send a gentle re-introduction, or to move on.\"\n    },\n    {\n      \"question\": \"Is there a fit between Nimbus Labs' AI chief of staff product and Quillstack's founder community offering?\",\n      \"relevance\": \"If the fit is weak, silence is expected; if it is strong, silence after two weeks may warrant a gentle follow-up.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A connector has made an introduction to a potential design partner or customer at a company; the counterparty has not yet replied, and we are in the normal quiet period after an introduction.\",\n    \"rivals\": [\n      \"The introduction was not received or was filtered to spam, and a re-send is needed.\",\n      \"Quillstack has evaluated the fit and determined it does not match their priorities, and silence is their way of declining.\",\n      \"Tarun is interested but is waiting for internal alignment before replying, and the conversation will resume when it does.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"Mira's introduction explicitly states that Tarun is looking for workflow tools for Quillstack's founder community, and Nimbus Labs is an AI chief of staff for founders. This is a potential design partner or customer relationship, not an investor, program, compliance, hiring, or vendor relationship.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"brief:cbl_#6\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"After an introduction, the next move belongs to the introduced party. If they are interested, they reply within one to three weeks. If they are not interested, they may not reply at all. The founder should not chase before two to three weeks have passed, or before a clear deadline has been missed.\",\n    \"actual\": \"Tarun has not replied after 14 days. No promise or deadline was made in the introduction. The founder has not written to Quillstack since the introduction.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. If Tarun is interested, he will reply when his internal process allows. If he is not interested, the file will eventually be closed as a non-starter. The risk is that a genuine opportunity is missed because Tarun's reply was delayed or lost.\",\n    \"act\": \"The founder sends a gentle follow-up to Tarun, referencing the introduction and offering to share more about Nimbus Labs or to schedule a brief call. This risks being perceived as impatient, but it also keeps the conversation warm and signals genuine interest.\",\n    \"best\": \"Tarun replies within a week with interest, and a partnership conversation begins. The fit is strong, and Quillstack becomes a design partner or customer.\",\n    \"worst\": \"Tarun never replies, and the opportunity is lost. Alternatively, the founder chases too early and Tarun perceives it as pressure, damaging the relationship.\",\n    \"signals_to_watch\": [\n      \"A reply from Tarun within the next week or two.\",\n      \"A public announcement from Quillstack about their partnership strategy or product roadmap.\",\n      \"A signal from Mira that Tarun has mentioned the introduction to her.\",\n      \"A change in Quillstack's website or LinkedIn that suggests they are actively seeking partnerships.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is a potential design partner or customer, not a committed investor or program. The stakes are real but not existential.\",\n      \"No deadline has been set, and no promise has been made. The urgency is low.\",\n      \"A follow-up can be sent at any time, and silence can be interpreted as a soft no. A wrong move here is easily corrected.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for a reply from Tarun, and monitor for signals that the conversation is stalled\",\n    \"for_whom\": \"Tarun at Quillstack\",\n    \"by_when\": \"2026-08-13\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If you choose to act now, send a gentle follow-up to Tarun on 2026-08-06 (three weeks after the introduction), referencing Mira's introduction and offering to share more or to schedule a brief call. This keeps the conversation warm but risks being perceived as impatient.\",\n    \"wait_or_stop\": \"Wait until 2026-08-13 (four weeks after the introduction). If Tarun has not replied by then, send a gentle follow-up. If there is no reply to the follow-up within one week, close the file as a non-starter unless there is a public signal that Quillstack is actively seeking partnerships.\",\n  \"done_when\": \"Tarun replies with interest or disinterest, or four weeks have passed with no reply and a follow-up has been sent and ignored.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "8d23ad9891f7ff17105143425abebefddcf7f3e6ec874d136df4984f5b2fa928": {
+  "framed": true,
+  "input_tokens": 7244,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3107,
+  "parsed": {
+   "alternative": "Send a follow-up message to Tarun now, adding value by sharing a specific use case or customer story relevant to Quillstack's founder community. This shortens the wait and gives Tarun a reason to reply, but risks appearing too eager if he is simply busy.",
+   "appraisal": {
+    "reasons": [
+     "This is a potential design partner or customer, not a committed investor or program. The stakes are real but not critical to the seed round.",
+     "The introduction is only two weeks old, well within the normal window for a business conversation to develop. There is no deadline and no urgency to act now.",
+     "If Arjun does nothing, the opportunity may be lost, but it can be recovered with a follow-up message. If Arjun chases too early, he may damage the relationship with Tarun or Mira, but this can also be recovered."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "Either Tarun replies with interest and a meeting is scheduled, or Tarun declines or defers and the file is closed. If Tarun does not reply by day 28, the file is closed as a non-convert.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "Arjun replied promptly to accept the introduction. Tarun has not replied in 14.2 days. No further communication has occurred.",
+    "expected": "After a warm introduction naming a specific need, the recipient typically replies within a few days if interested, or within two weeks if they need time to evaluate. Silence beyond two weeks suggests either low priority or low interest, but does not yet confirm either.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Mira Kapoor introduced Arjun to Tarun at Quillstack, stating that Tarun leads partnerships and is looking for workflow tools for their founder community.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Tarun leads partnerships at Quillstack and is looking for workflow tools for their founder community; Arjun runs Nimbus Labs. I'll let you two take it from here."
+    },
+    {
+     "claim": "Arjun replied to the introduction the same day, thanking Mira for the intro.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Thanks Mira, appreciate the intro! Arjun"
+    },
+    {
+     "claim": "No further communication has occurred in this thread for 14.2 days since the introduction.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no named kind of work in the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no role in the brief.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was made in the mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in Tarun's court; Arjun has made his move by accepting the introduction.",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction to a potential design partner or customer, made by a connector, where the recipient has not yet replied. The introduction names a specific need (workflow tools for founder community) and Arjun has accepted it promptly. The silence is now two weeks old, which is within the normal range for a business introduction to develop.",
+    "rivals": [
+     "A stalled opportunity that will not convert, and should be closed to avoid carrying dead weight.",
+     "A slow-burn opportunity that requires Arjun to add value or follow up with a specific proposal to move forward.",
+     "A successful introduction that is simply in the normal quiet phase before Tarun has time to act."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from Tarun, or a signal from Quillstack that they are evaluating tools.",
+     "proposition": "Tarun is interested but has not yet had time to prioritize the conversation."
+    },
+    {
+     "needs": "No reply after four weeks, or a negative signal from Quillstack.",
+     "proposition": "Tarun is not interested and will not reply."
+    },
+    {
+     "needs": "A follow-up from Arjun that adds value without asking for movement, or a signal that Quillstack is actively evaluating tools.",
+     "proposition": "Tarun is interested but needs a reason to move forward\u2014a specific use case, a trial, or a meeting with Arjun."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "none:promises"
+     ],
+     "claim": "This is a potential design partner or customer discovery conversation, not a commitment or obligation."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:7"
+     ],
+     "claim": "Arjun has discharged his part of the introduction by replying promptly; the next move belongs to Tarun."
+    },
+    {
+     "based_on": [
+      "none:promises",
+      "fact:3"
+     ],
+     "claim": "The silence does not indicate a broken promise or missed deadline, as none was established."
+    },
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin",
+      "fact:1"
+     ],
+     "claim": "This is a live account administration situation: an introduction that may or may not develop into a business relationship."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-06",
+    "for_whom": "Tarun at Quillstack",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:2",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:3",
+     "fact:7",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "wait for a reply from Tarun until day 21; if no reply by then, send a follow-up message that adds value without asking for movement",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An introduction to a potential partner should be tracked, but not chased, until a natural follow-up point arises\u2014either a meeting request from the other party, or a reason to add value without asking for movement.",
+     "kind": "practice",
+     "why": "Premature chasing converts a normal wait into a relationship event and signals either desperation or poor process discipline."
+    },
+    {
+     "claim": "Most introductions to potential customers or partners do not convert; those that do usually show early signals within two to three weeks.",
+     "kind": "base_rate",
+     "why": "If Tarun had immediate interest, he would have replied or scheduled a call within days. Silence at two weeks is not yet a signal of rejection."
+    },
+    {
+     "claim": "A founder should keep a list of introductions and their status, but should not treat silence as a task for the founder until the other party has had a reasonable time to respond\u2014typically three to four weeks for a business introduction.",
+     "kind": "practice",
+     "why": "Distinguishing between normal process delays and genuine disinterest prevents wasted effort and relationship damage."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Introductions to potential partners often go quiet after the initial exchange; silence in the first two weeks is not unusual and does not signal disinterest.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1",
+      "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball"
+     ],
+     "claim": "When the ball is in the other party's court and no promise was made, chasing before they have had time to act damages the relationship.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "A connector's introduction that names a specific need (workflow tools for founder community) is more likely to convert than a generic one, but conversion takes time.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#2",
+     "file:domains"
+    ],
+    "kind": "intro",
+    "why": "The file documents a connector's introduction to a potential partner. Mira Kapoor introduced Arjun to Tarun at Quillstack, naming a specific need. This is not a commitment, a hiring process, a compliance task, or a fundraising conversation; it is an introduction that may develop into a partnership or customer relationship."
+   },
+   "scenarios": {
+    "act": "Arjun sends a follow-up message to Tarun that adds value without asking for movement\u2014for example, a specific use case, a customer story, or an offer to share insights about workflow tools for founder communities. This keeps the door open and gives Tarun a reason to reply.",
+    "best": "Tarun replies within a few days with interest, and a meeting is scheduled. The introduction converts into a design partnership or customer relationship.",
+    "do_nothing": "The file remains open and quiet. If Tarun does not reply by day 21 or 28, the introduction will have aged beyond the normal window for conversion. Arjun will have lost the opportunity to add value or follow up with a specific proposal. The file will eventually be closed as a non-convert, with no learning about why.",
+    "signals_to_watch": [
+     "A reply from Tarun, with interest or a specific question.",
+     "A reply from Tarun declining or deferring.",
+     "No reply by day 21, suggesting low priority.",
+     "No reply by day 28, suggesting the introduction will not convert.",
+     "A message from Mira asking for an update, suggesting she is tracking the introduction."
+    ],
+    "worst": "Tarun never replies, and the introduction is a non-convert. Arjun has wasted time tracking it and may have damaged the relationship with Mira by chasing too early."
+   },
+   "unknowns": [
+    {
+     "question": "Has Tarun received the introduction and read it, or is it still in his inbox?",
+     "relevance": "If he has not read it, silence is expected. If he has read it and not replied, the silence is more meaningful."
+    },
+    {
+     "question": "Is Quillstack actively looking for workflow tools now, or is this a longer-term need?",
+     "relevance": "If it is a longer-term need, silence is normal. If it is urgent, silence suggests disinterest or a competing priority."
+    },
+    {
+     "question": "Does Nimbus Labs have a specific product or offering ready for Quillstack, or is this exploratory?",
+     "relevance": "If exploratory, Arjun may need to add value before asking for a meeting. If ready, a follow-up with a specific proposal might be warranted."
+    },
+    {
+     "question": "What is Mira's relationship to both parties, and how strong is her introduction?",
+     "relevance": "A strong introduction from a trusted connector carries more weight and is more likely to convert, even with silence."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-06 (day 21). If no reply by then, send a follow-up. If no reply by 2026-08-13 (day 28), close the file as a non-convert and move on. Do not chase before day 21, as this violates the rule against chasing while the ball is in the other party's court."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Mira Kapoor introduced Arjun to Tarun at Quillstack, stating that Tarun leads partnerships and is looking for workflow tools for their founder community.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Tarun leads partnerships at Quillstack and is looking for workflow tools for their founder community; Arjun runs Nimbus Labs. I'll let you two take it from here.\"\n    },\n    {\n      \"claim\": \"Arjun replied to the introduction the same day, thanking Mira for the intro.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Thanks Mira, appreciate the intro! Arjun\"\n    },\n    {\n      \"claim\": \"No further communication has occurred in this thread for 14.2 days since the introduction.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no named kind of work in the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no role in the brief.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was made in the mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in Tarun's court; Arjun has made his move by accepting the introduction.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a potential design partner or customer discovery conversation, not a commitment or obligation.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"Arjun has discharged his part of the introduction by replying promptly; the next move belongs to Tarun.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:7\"\n      ]\n    },\n    {\n      \"claim\": \"The silence does not indicate a broken promise or missed deadline, as none was established.\",\n      \"based_on\": [\n        \"none:promises\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live account administration situation: an introduction that may or may not develop into a business relationship.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\",\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions to potential partners often go quiet after the initial exchange; silence in the first two weeks is not unusual and does not signal disinterest.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When the ball is in the other party's court and no promise was made, chasing before they have had time to act damages the relationship.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\",\n        \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A connector's introduction that names a specific need (workflow tools for founder community) is more likely to convert than a generic one, but conversion takes time.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction to a potential partner should be tracked, but not chased, until a natural follow-up point arises\u2014either a meeting request from the other party, or a reason to add value without asking for movement.\",\n      \"why\": \"Premature chasing converts a normal wait into a relationship event and signals either desperation or poor process discipline.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most introductions to potential customers or partners do not convert; those that do usually show early signals within two to three weeks.\",\n      \"why\": \"If Tarun had immediate interest, he would have replied or scheduled a call within days. Silence at two weeks is not yet a signal of rejection.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A founder should keep a list of introductions and their status, but should not treat silence as a task for the founder until the other party has had a reasonable time to respond\u2014typically three to four weeks for a business introduction.\",\n      \"why\": \"Distinguishing between normal process delays and genuine disinterest prevents wasted effort and relationship damage.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tarun is interested but has not yet had time to prioritize the conversation.\",\n      \"needs\": \"A reply from Tarun, or a signal from Quillstack that they are evaluating tools.\"\n    },\n    {\n      \"proposition\": \"Tarun is not interested and will not reply.\",\n      \"needs\": \"No reply after four weeks, or a negative signal from Quillstack.\"\n    },\n    {\n      \"proposition\": \"Tarun is interested but needs a reason to move forward\u2014a specific use case, a trial, or a meeting with Arjun.\",\n      \"needs\": \"A follow-up from Arjun that adds value without asking for movement, or a signal that Quillstack is actively evaluating tools.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has Tarun received the introduction and read it, or is it still in his inbox?\",\n      \"relevance\": \"If he has not read it, silence is expected. If he has read it and not replied, the silence is more meaningful.\"\n    },\n    {\n      \"question\": \"Is Quillstack actively looking for workflow tools now, or is this a longer-term need?\",\n      \"relevance\": \"If it is a longer-term need, silence is normal. If it is urgent, silence suggests disinterest or a competing priority.\"\n    },\n    {\n      \"question\": \"Does Nimbus Labs have a specific product or offering ready for Quillstack, or is this exploratory?\",\n      \"relevance\": \"If exploratory, Arjun may need to add value before asking for a meeting. If ready, a follow-up with a specific proposal might be warranted.\"\n    },\n    {\n      \"question\": \"What is Mira's relationship to both parties, and how strong is her introduction?\",\n      \"relevance\": \"A strong introduction from a trusted connector carries more weight and is more likely to convert, even with silence.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction to a potential design partner or customer, made by a connector, where the recipient has not yet replied. The introduction names a specific need (workflow tools for founder community) and Arjun has accepted it promptly. The silence is now two weeks old, which is within the normal range for a business introduction to develop.\",\n    \"rivals\": [\n      \"A stalled opportunity that will not convert, and should be closed to avoid carrying dead weight.\",\n      \"A slow-burn opportunity that requires Arjun to add value or follow up with a specific proposal to move forward.\",\n      \"A successful introduction that is simply in the normal quiet phase before Tarun has time to act.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file documents a connector's introduction to a potential partner. Mira Kapoor introduced Arjun to Tarun at Quillstack, naming a specific need. This is not a commitment, a hiring process, a compliance task, or a fundraising conversation; it is an introduction that may develop into a partnership or customer relationship.\",\n    \"evidence\": [\n      \"evt_#2\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"After a warm introduction naming a specific need, the recipient typically replies within a few days if interested, or within two weeks if they need time to evaluate. Silence beyond two weeks suggests either low priority or low interest, but does not yet confirm either.\",\n    \"actual\": \"Arjun replied promptly to accept the introduction. Tarun has not replied in 14.2 days. No further communication has occurred.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open and quiet. If Tarun does not reply by day 21 or 28, the introduction will have aged beyond the normal window for conversion. Arjun will have lost the opportunity to add value or follow up with a specific proposal. The file will eventually be closed as a non-convert, with no learning about why.\",\n    \"act\": \"Arjun sends a follow-up message to Tarun that adds value without asking for movement\u2014for example, a specific use case, a customer story, or an offer to share insights about workflow tools for founder communities. This keeps the door open and gives Tarun a reason to reply.\",\n    \"best\": \"Tarun replies within a few days with interest, and a meeting is scheduled. The introduction converts into a design partnership or customer relationship.\",\n    \"worst\": \"Tarun never replies, and the introduction is a non-convert. Arjun has wasted time tracking it and may have damaged the relationship with Mira by chasing too early.\",\n    \"signals_to_watch\": [\n      \"A reply from Tarun, with interest or a specific question.\",\n      \"A reply from Tarun declining or deferring.\",\n      \"No reply by day 21, suggesting low priority.\",\n      \"No reply by day 28, suggesting the introduction will not convert.\",\n      \"A message from Mira asking for an update, suggesting she is tracking the introduction.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is a potential design partner or customer, not a committed investor or program. The stakes are real but not critical to the seed round.\",\n      \"The introduction is only two weeks old, well within the normal window for a business conversation to develop. There is no deadline and no urgency to act now.\",\n      \"If Arjun does nothing, the opportunity may be lost, but it can be recovered with a follow-up message. If Arjun chases too early, he may damage the relationship with Tarun or Mira, but this can also be recovered.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for a reply from Tarun until day 21; if no reply by then, send a follow-up message that adds value without asking for movement\",\n    \"for_whom\": \"Tarun at Quillstack\",\n    \"by_when\": \"2026-08-06\",\n    \"rests_on\": [\n      \"fact:3\",\n      \"fact:7\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:2\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Send a follow-up message to Tarun now, adding value by sharing a specific use case or customer story relevant to Quillstack's founder community. This shortens the wait and gives Tarun a reason to reply, but risks appearing too eager if he is simply busy.\",\n  \"wait_or_stop\": \"Wait until 2026-08-06 (day 21). If no reply by then, send a follow-up. If no reply by 2026-08-13 (day 28), close the file as a non-convert and move on. Do not chase before day 21, as this violates the rule against chasing while the ball is in the other party's court.\",\n  \"done_when\": \"Either Tarun replies with interest and a meeting is scheduled, or Tarun declines or defers and the file is closed. If Tarun does not reply by day 28, the file is closed as a non-convert.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

@@ -1,0 +1,477 @@
+{
+ "96afe881afdddf101c7c27046a539f1fc8a8012e01d2ad25b2502b09ffdc4c2e": {
+  "framed": true,
+  "input_tokens": 8203,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3559,
+  "parsed": {
+   "alternative": "Wait three more days for Owen to reply on his own. If he does not reply by 2026-08-21, send the follow-up then. This is slower and risks the thread going cold, but it gives Owen time to review the materials and come back with a meeting date on his own.",
+   "appraisal": {
+    "reasons": [
+     "This is a single investor conversation, not a blocker on your round. If it fails, you have other investors in motion.",
+     "The move is simple and low-cost: a direct answer to a direct question. If it works, you gain a meeting. If it does not, you lose nothing you did not already lose by not answering.",
+     "Owen's mention of a partner meeting suggests this could reach a decision-maker, making it worth a second move.",
+     "The silence is only 1.08 days, which is early. A follow-up now is timely, not desperate.",
+     "You are in Lakshya Accelerator and have other programs and investors in motion, so this is one thread among many."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Owen replies with a meeting date, a next step, or a clear pass. If he replies with a meeting date, the conversation moves to 'meeting_scheduled'. If he passes, record the reason and move the file to a watch list for reopening. If he does not reply for over a week after your follow-up, the thread is cold and you can deprioritize it.",
+   "draft": "Hi Owen, Thanks for the questions. To answer directly: our current monthly revenue is [X], and we have [Y] months of runway. Happy to discuss further. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "You sent materials (deck, one-pager, demo) instead of answering the two questions directly. Owen has not replied for 1.08 days. No meeting is scheduled. The stage is unclear because the loop is incomplete.",
+    "expected": "The brief names no playbook for this file. From the engine's lines on investor relations: after a first exchange that names a next step (partner meeting), the expected move is either a scheduled meeting or a direct answer to the investor's ask. The stage would be 'meeting_request' or 'next_step_agreed' if the playbook were applied.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Owen Park at Saltmarsh Ventures asked two specific questions about current monthly revenue and runway months before a partner meeting.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Two quick questions before our partner meeting: what is your current monthly revenue, and how many months of runway do you have?"
+    },
+    {
+     "claim": "You replied within 0.25 days with deck, one-pager, and demo link, but did not answer the two questions directly.",
+     "evidence": [
+      "evt_#1",
+      "num:your_reply_time:owen@saltmarshvc.test"
+     ],
+     "quote": "I am sharing a few details about Nimbus Labs: our deck and a one-pager are attached, and the demo is at demo.nimbuslabs.test."
+    },
+    {
+     "claim": "No reply has been received from Owen Park or Saltmarsh Ventures for 1.08 days since your last message.",
+     "evidence": [
+      "num:days_quiet",
+      "cov:last_mail",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Saltmarsh Ventures is not named in the brief as a target investor, and this file has no kind of work assigned to it.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time this file has been seen, and no prior outcome or verdict exists for it.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@fundraising",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and high engagement, but measured insufficient context for relationship status and opportunity assessment.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.relationship",
+      "ru:core.opportunity"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An investor asked a direct question before a partner meeting, you sent materials instead of answering, and now the thread is silent. The move is yours to complete the loop or lose the lead.",
+    "rivals": [
+     "Owen is still interested and is reviewing your materials before the partner meeting; silence is the work, not a soft no.",
+     "Saltmarsh Ventures is not a fit for your round, and this is a distraction from your planned wave of investors.",
+     "Owen will come back with a meeting date once he has reviewed the materials; no move is needed yet."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A follow-up from you that answers revenue and runway directly would settle this. If Owen replies with a meeting date, the hypothesis holds. If Owen does not reply or passes, it does not.",
+     "proposition": "Owen Park is still interested and is waiting for you to answer the two questions before scheduling the partner meeting."
+    },
+    {
+     "needs": "A follow-up that goes unanswered for over a week would suggest this. A pass or a deferral from Owen would confirm it.",
+     "proposition": "Owen has already decided this is not a fit for Saltmarsh Ventures and has moved on."
+    },
+    {
+     "needs": "Information about Saltmarsh's stage, cheque size, and portfolio would settle this. The dossier does not hold it.",
+     "proposition": "Saltmarsh Ventures is a real fit for your round, and this introduction is warm enough to warrant a second move."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "The move is yours: Owen asked a direct question and you sent materials instead of answering it, leaving the thread incomplete."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "cap:founder_office.fundraising.investor_relations#f4"
+     ],
+     "claim": "Owen's mention of a partner meeting suggests this conversation may reach a decision-maker, making the quality of your response material to whether it advances."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Silence at this stage \u2014 after a first exchange that named a next step (partner meeting) but before a meeting is scheduled \u2014 reads as a soft no or a stall, not as waiting."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "brief:cbl_#7",
+      "brief:cbl_#27"
+     ],
+     "claim": "The brief does not name Saltmarsh Ventures as a target, so this introduction came from outside your planned wave, likely from Introly or another connector."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-20",
+    "for_whom": "Owen Park at Saltmarsh Ventures",
+    "guided_by": [
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "owen@saltmarshvc.test",
+    "what": "Send a brief follow-up that answers Owen's two questions directly: your current monthly revenue and your runway in months. Do not send more materials. Answer the ask.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When an investor asks for a number before a partner meeting, they are testing whether you know your own metrics and whether you will answer directly. Sending materials instead signals either you do not have the answer or you are avoiding it.",
+     "kind": "practice",
+     "why": "A partner meeting is a gate; the associate is vetting you before escalating. A direct answer to a direct question is what moves you through that gate."
+    },
+    {
+     "claim": "Most investors who ask for revenue and runway before a partner meeting are checking whether the company is at their stage. If you do not answer, they assume you are not, and the conversation ends.",
+     "kind": "base_rate",
+     "why": "The question is a filter, not a request for materials. Materials come after the filter passes."
+    },
+    {
+     "claim": "An investor who goes silent after you send materials instead of answering their question rarely comes back without a prompt that answers what they asked.",
+     "kind": "counter_pattern",
+     "why": "Silence after an incomplete exchange is not waiting; it is a soft close. The next move is yours, and it must complete the loop."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "own:1"
+     ],
+     "claim": "When an investor asks a direct question before a partner meeting, answering it directly \u2014 not with materials \u2014 is the move that keeps the thread warm.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "own:2"
+     ],
+     "claim": "Sending a deck and demo without answering the specific ask often reads as evasion, especially when the ask is about traction metrics.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "num:usual_gap",
+      "num:longest_gap",
+      "num:days_quiet"
+     ],
+     "claim": "Silence longer than the usual gap between touches, after an incomplete exchange, usually means the investor has moved on or is waiting for you to complete the loop.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#2",
+     "file:domains"
+    ],
+    "kind": "investor",
+    "why": "Owen Park is an investor at Saltmarsh Ventures asking about traction before a partner meeting. This is a live investor conversation, not an intro or a connector."
+   },
+   "scenarios": {
+    "act": "You send a brief follow-up that answers the two questions directly: current monthly revenue and runway in months. If Owen replies with a meeting date or a next step, the conversation advances. If Owen passes or defers, you have a clear signal and can move on.",
+    "best": "Owen replies within a day with a meeting date. The partner meeting happens. Saltmarsh Ventures is interested and moves to diligence. This becomes a live investor in your round.",
+    "do_nothing": "Owen's silence continues. After a week, the thread is cold. After two weeks, it is dead. Saltmarsh Ventures moves to another company. You never know whether the conversation could have advanced.",
+    "signals_to_watch": [
+     "Owen replies with a meeting date or a next step within two days.",
+     "Owen replies with a pass or a deferral, naming the reason (stage, timing, traction, thesis).",
+     "Owen does not reply for over a week after a follow-up; the thread is cold.",
+     "Your deck or demo is viewed or forwarded within Saltmarsh Ventures (if you can track it)."
+    ],
+    "worst": "You send a follow-up, Owen does not reply, and the thread dies. You have spent time on an investor outside your planned wave and lost the lead."
+   },
+   "unknowns": [
+    {
+     "question": "What are your current monthly revenue and runway in months?",
+     "relevance": "Owen asked for these before a partner meeting. If you do not have them or they are weak, the conversation may be over. If they are strong, they are the move that restarts it."
+    },
+    {
+     "question": "Is Saltmarsh Ventures a fit for your stage, cheque size, and thesis?",
+     "relevance": "The brief does not name them as a target. If they are outside your stage or thesis, the time spent here is time not spent on investors who are a fit. If they are a fit, this is a warm lead worth pursuing."
+    },
+    {
+     "question": "Who introduced you to Owen Park, and how warm is that introduction?",
+     "relevance": "If this came from Introly or a cold wave, the bar for your response is higher. If it came from a founder or investor who knows Owen well, the relationship is warmer and worth more effort."
+    },
+    {
+     "question": "What does your deck say about revenue and runway?",
+     "relevance": "If the deck answers Owen's questions, you may have sent the right thing. If it does not, you sent the wrong thing, and a follow-up that answers directly is the only move."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-21 only if Owen replies in the meantime with a meeting date or a next step. If Owen does not reply by 2026-08-21, send the follow-up. Stop if Owen passes or defers with a clear reason (stage, timing, traction, thesis); record the reason and the date on which it might reopen. Do not stop if Owen says 'send me updates' or 'keep me posted'; that is a conditional deferral, not a pass."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Owen Park at Saltmarsh Ventures asked two specific questions about current monthly revenue and runway months before a partner meeting.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Two quick questions before our partner meeting: what is your current monthly revenue, and how many months of runway do you have?\"\n    },\n    {\n      \"claim\": \"You replied within 0.25 days with deck, one-pager, and demo link, but did not answer the two questions directly.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"num:your_reply_time:owen@saltmarshvc.test\"\n      ],\n      \"quote\": \"I am sharing a few details about Nimbus Labs: our deck and a one-pager are attached, and the demo is at demo.nimbuslabs.test.\"\n    },\n    {\n      \"claim\": \"No reply has been received from Owen Park or Saltmarsh Ventures for 1.08 days since your last message.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"cov:last_mail\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Saltmarsh Ventures is not named in the brief as a target investor, and this file has no kind of work assigned to it.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time this file has been seen, and no prior outcome or verdict exists for it.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@fundraising\",\n        \"hist:derived.history.times_seen@fundraising\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and high engagement, but measured insufficient context for relationship status and opportunity assessment.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.relationship\",\n        \"ru:core.opportunity\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The move is yours: Owen asked a direct question and you sent materials instead of answering it, leaving the thread incomplete.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"claim\": \"Owen's mention of a partner meeting suggests this conversation may reach a decision-maker, making the quality of your response material to whether it advances.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"cap:founder_office.fundraising.investor_relations#f4\"\n      ]\n    },\n    {\n      \"claim\": \"Silence at this stage \u2014 after a first exchange that named a next step (partner meeting) but before a meeting is scheduled \u2014 reads as a soft no or a stall, not as waiting.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"claim\": \"The brief does not name Saltmarsh Ventures as a target, so this introduction came from outside your planned wave, likely from Introly or another connector.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"brief:cbl_#7\",\n        \"brief:cbl_#27\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an investor asks a direct question before a partner meeting, answering it directly \u2014 not with materials \u2014 is the move that keeps the thread warm.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Sending a deck and demo without answering the specific ask often reads as evasion, especially when the ask is about traction metrics.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Silence longer than the usual gap between touches, after an incomplete exchange, usually means the investor has moved on or is waiting for you to complete the loop.\",\n      \"based_on\": [\n        \"num:usual_gap\",\n        \"num:longest_gap\",\n        \"num:days_quiet\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When an investor asks for a number before a partner meeting, they are testing whether you know your own metrics and whether you will answer directly. Sending materials instead signals either you do not have the answer or you are avoiding it.\",\n      \"why\": \"A partner meeting is a gate; the associate is vetting you before escalating. A direct answer to a direct question is what moves you through that gate.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most investors who ask for revenue and runway before a partner meeting are checking whether the company is at their stage. If you do not answer, they assume you are not, and the conversation ends.\",\n      \"why\": \"The question is a filter, not a request for materials. Materials come after the filter passes.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An investor who goes silent after you send materials instead of answering their question rarely comes back without a prompt that answers what they asked.\",\n      \"why\": \"Silence after an incomplete exchange is not waiting; it is a soft close. The next move is yours, and it must complete the loop.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Owen Park is still interested and is waiting for you to answer the two questions before scheduling the partner meeting.\",\n      \"needs\": \"A follow-up from you that answers revenue and runway directly would settle this. If Owen replies with a meeting date, the hypothesis holds. If Owen does not reply or passes, it does not.\"\n    },\n    {\n      \"proposition\": \"Owen has already decided this is not a fit for Saltmarsh Ventures and has moved on.\",\n      \"needs\": \"A follow-up that goes unanswered for over a week would suggest this. A pass or a deferral from Owen would confirm it.\"\n    },\n    {\n      \"proposition\": \"Saltmarsh Ventures is a real fit for your round, and this introduction is warm enough to warrant a second move.\",\n      \"needs\": \"Information about Saltmarsh's stage, cheque size, and portfolio would settle this. The dossier does not hold it.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What are your current monthly revenue and runway in months?\",\n      \"relevance\": \"Owen asked for these before a partner meeting. If you do not have them or they are weak, the conversation may be over. If they are strong, they are the move that restarts it.\"\n    },\n    {\n      \"question\": \"Is Saltmarsh Ventures a fit for your stage, cheque size, and thesis?\",\n      \"relevance\": \"The brief does not name them as a target. If they are outside your stage or thesis, the time spent here is time not spent on investors who are a fit. If they are a fit, this is a warm lead worth pursuing.\"\n    },\n    {\n      \"question\": \"Who introduced you to Owen Park, and how warm is that introduction?\",\n      \"relevance\": \"If this came from Introly or a cold wave, the bar for your response is higher. If it came from a founder or investor who knows Owen well, the relationship is warmer and worth more effort.\"\n    },\n    {\n      \"question\": \"What does your deck say about revenue and runway?\",\n      \"relevance\": \"If the deck answers Owen's questions, you may have sent the right thing. If it does not, you sent the wrong thing, and a follow-up that answers directly is the only move.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An investor asked a direct question before a partner meeting, you sent materials instead of answering, and now the thread is silent. The move is yours to complete the loop or lose the lead.\",\n    \"rivals\": [\n      \"Owen is still interested and is reviewing your materials before the partner meeting; silence is the work, not a soft no.\",\n      \"Saltmarsh Ventures is not a fit for your round, and this is a distraction from your planned wave of investors.\",\n      \"Owen will come back with a meeting date once he has reviewed the materials; no move is needed yet.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Owen Park is an investor at Saltmarsh Ventures asking about traction before a partner meeting. This is a live investor conversation, not an intro or a connector.\",\n    \"evidence\": [\n      \"evt_#2\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this file. From the engine's lines on investor relations: after a first exchange that names a next step (partner meeting), the expected move is either a scheduled meeting or a direct answer to the investor's ask. The stage would be 'meeting_request' or 'next_step_agreed' if the playbook were applied.\",\n    \"actual\": \"You sent materials (deck, one-pager, demo) instead of answering the two questions directly. Owen has not replied for 1.08 days. No meeting is scheduled. The stage is unclear because the loop is incomplete.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Owen's silence continues. After a week, the thread is cold. After two weeks, it is dead. Saltmarsh Ventures moves to another company. You never know whether the conversation could have advanced.\",\n    \"act\": \"You send a brief follow-up that answers the two questions directly: current monthly revenue and runway in months. If Owen replies with a meeting date or a next step, the conversation advances. If Owen passes or defers, you have a clear signal and can move on.\",\n    \"best\": \"Owen replies within a day with a meeting date. The partner meeting happens. Saltmarsh Ventures is interested and moves to diligence. This becomes a live investor in your round.\",\n    \"worst\": \"You send a follow-up, Owen does not reply, and the thread dies. You have spent time on an investor outside your planned wave and lost the lead.\",\n    \"signals_to_watch\": [\n      \"Owen replies with a meeting date or a next step within two days.\",\n      \"Owen replies with a pass or a deferral, naming the reason (stage, timing, traction, thesis).\",\n      \"Owen does not reply for over a week after a follow-up; the thread is cold.\",\n      \"Your deck or demo is viewed or forwarded within Saltmarsh Ventures (if you can track it).\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is a single investor conversation, not a blocker on your round. If it fails, you have other investors in motion.\",\n      \"The move is simple and low-cost: a direct answer to a direct question. If it works, you gain a meeting. If it does not, you lose nothing you did not already lose by not answering.\",\n      \"Owen's mention of a partner meeting suggests this could reach a decision-maker, making it worth a second move.\",\n      \"The silence is only 1.08 days, which is early. A follow-up now is timely, not desperate.\",\n      \"You are in Lakshya Accelerator and have other programs and investors in motion, so this is one thread among many.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send a brief follow-up that answers Owen's two questions directly: your current monthly revenue and your runway in months. Do not send more materials. Answer the ask.\",\n    \"for_whom\": \"Owen Park at Saltmarsh Ventures\",\n    \"by_when\": \"2026-08-20\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"owen@saltmarshvc.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Wait three more days for Owen to reply on his own. If he does not reply by 2026-08-21, send the follow-up then. This is slower and risks the thread going cold, but it gives Owen time to review the materials and come back with a meeting date on his own.\",\n  \"wait_or_stop\": \"Wait until 2026-08-21 only if Owen replies in the meantime with a meeting date or a next step. If Owen does not reply by 2026-08-21, send the follow-up. Stop if Owen passes or defers with a clear reason (stage, timing, traction, thesis); record the reason and the date on which it might reopen. Do not stop if Owen says 'send me updates' or 'keep me posted'; that is a conditional deferral, not a pass.\",\n  \"done_when\": \"Owen replies with a meeting date, a next step, or a clear pass. If he replies with a meeting date, the conversation moves to 'meeting_scheduled'. If he passes, record the reason and move the file to a watch list for reopening. If he does not reply for over a week after your follow-up, the thread is cold and you can deprioritize it.\",\n  \"draft\": \"Hi Owen, Thanks for the questions. To answer directly: our current monthly revenue is [X], and we have [Y] months of runway. Happy to discuss further. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "d51d132641feebc14e85b6730bf70f239b3078588eba2701451e9a3b8d592976": {
+  "framed": true,
+  "input_tokens": 8356,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3243,
+  "parsed": {
+   "alternative": "Send a brief follow-up to Owen on 2026-08-22 asking if his partner meeting has happened and whether he would like to schedule a call. This moves the conversation forward but risks reading as pressure if the meeting has not yet occurred.",
+   "appraisal": {
+    "reasons": [
+     "This is an inbound investor inquiry, not a core part of your planned seed wave, so the stakes are lower than your primary targets.",
+     "The silence is still within normal bounds for a first exchange, and no deadline has been missed.",
+     "If you wait and Owen does not follow up, you can reopen the conversation later with new traction. If you push now and he passes, you lose the option to reopen."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "Owen either schedules a call, passes with a clear reason, or defers with a condition. The conversation is done when you have a next step or a verdict, not when the last email was friendly.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "You provided the requested materials and offered a call. Owen has not replied. The file has been quiet for 1.08 days.",
+    "expected": "No playbook is named for this file. From the brief, the expected work is to raise the seed round. From the file's history, the expected next step is for Owen to follow up after his partner meeting with either a meeting request or a decision.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Owen Park at Saltmarsh Ventures asked two specific questions before a partner meeting: current monthly revenue and months of runway.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Two quick questions before our partner meeting: what is your current monthly revenue, and how many months of runway do you have?"
+    },
+    {
+     "claim": "You replied within 0.25 days with deck, one-pager, and demo link, offering to set up a call.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "I am sharing a few details about Nimbus Labs: our deck and a one-pager are attached, and the demo is at demo.nimbuslabs.test. Happy to set up a call."
+    },
+    {
+     "claim": "No reply has been received since your response on 2026-08-18 10:00 UTC, and the file has been quiet for 1.08 days as of the last mailbox read on 2026-08-19 12:00 UTC.",
+     "evidence": [
+      "file:whose_move",
+      "num:days_quiet",
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Saltmarsh Ventures is not named in the brief as a target investor, and this file has no kind of work assigned to it.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's domain is fundraising, and the counterparty is a company, not an individual connector.",
+     "evidence": [
+      "file:domains",
+      "Counterparty: saltmarshvc.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Owen Park's reply time has not been measured; this is the first exchange with this investor.",
+     "evidence": [
+      "num:their_reply_time:owen@saltmarshvc.test",
+      "hist:derived.history.prior_outcome@fundraising"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An inbound investor inquiry at an early stage of evaluation, where the investor has asked for specific information before a partner meeting and you have provided it. The next move is theirs, and the silence is within normal bounds for this stage.",
+    "rivals": [
+     "A soft no disguised as a process, where the investor is unlikely to move forward but has not said so.",
+     "A real opportunity that should be elevated in your raise strategy because it is inbound and warm.",
+     "A courtesy inquiry from an investor who is not seriously evaluating you but is gathering market data."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A follow-up from Owen after the partner meeting, or a date he mentioned for when the meeting would occur.",
+     "proposition": "Owen's partner meeting has not yet happened, and he is gathering facts to present to them."
+    },
+    {
+     "needs": "A follow-up from Owen with a decision or a condition, or a date that has passed without one.",
+     "proposition": "Owen's partner meeting has happened, and the silence is a soft no or a deferral pending traction."
+    },
+    {
+     "needs": "Information about how Owen found you, whether Saltmarsh is actively investing in your stage and sector, and whether they have a track record with companies like yours.",
+     "proposition": "Saltmarsh Ventures is a new opportunity that should be added to your core raise strategy, not treated as an outlier."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "file:whose_move"
+     ],
+     "claim": "The next move is theirs: Owen asked for information, you provided it, and he has not replied."
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "Owen's mention of a partner meeting suggests the conversation may advance to a decision-maker, but no meeting has been scheduled yet."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "The silence is still within normal bounds for a first exchange with an investor between partner meetings, and does not yet signal a pass."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "brief:cbl_#7",
+      "brief:cbl_#8"
+     ],
+     "claim": "This investor was not part of your planned seed wave, suggesting either a new opportunity or an inbound inquiry that should be tracked separately from your core raise strategy."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-25",
+    "for_whom": "Owen Park at Saltmarsh Ventures",
+    "guided_by": [
+     "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "wait for Owen to follow up after his partner meeting, or until a week has passed since your last reply without a response, whichever comes first",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When an investor asks for specific metrics before a partner meeting, the clock is their internal calendar, not yours. Silence until after the meeting is normal. Silence after the meeting is not.",
+     "kind": "practice",
+     "why": "Partner meetings are decision gates. Before one, an investor is gathering facts. After one, they have a verdict or a next step. The silence changes meaning at that boundary."
+    },
+    {
+     "claim": "An inbound inquiry from an investor not on your list is worth tracking but should not displace your core wave strategy.",
+     "kind": "base_rate",
+     "why": "Inbound investors are often exploratory or have a different thesis than your target. They can move in parallel, but they should not become the focus if your planned investors are still live."
+    },
+    {
+     "claim": "A founder who provides materials and offers a call has done the right thing. The next move is to wait for the investor's calendar to clear, or to follow up only if a promised timeline has passed.",
+     "kind": "practice",
+     "why": "Pushing after you have offered a call reads as pressure and often backfires. The investor knows how to reach you."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "An investor who asks specific questions before a partner meeting is signaling a real evaluation gate, not a courtesy inquiry.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "Silence after a founder provides requested materials and offers a call is often a soft no or a deferral, unless the investor explicitly named a timeline.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "An investor who mentions a partner meeting before asking questions may be running a real process, and silence between the question and the meeting is the default, not a signal.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "Counterparty: saltmarshvc.test"
+    ],
+    "kind": "investor",
+    "why": "The counterparty is a venture fund, the domain is fundraising, and the work is to move this conversation toward a meeting or a decision."
+   },
+   "scenarios": {
+    "act": "You send a brief follow-up asking if Owen's partner meeting happened and whether he would like to schedule a call. This risks reading as pressure but clarifies the timeline.",
+    "best": "Owen's partner meeting went well, he schedules a call, and Saltmarsh moves into diligence. The conversation becomes a real opportunity in parallel with your core wave.",
+    "do_nothing": "Owen's partner meeting happens, and he either follows up with a meeting request or a pass. If he passes, the conversation ends. If he requests a meeting, you move to the next stage. If he does not follow up within a week after the meeting, the conversation drifts and eventually closes.",
+    "signals_to_watch": [
+     "A reply from Owen within the next week, with either a meeting request or a decision.",
+     "A reply from Owen after a date he mentioned for his partner meeting, which would indicate the meeting has happened.",
+     "Silence beyond two weeks, which would indicate the conversation is drifting and should be deprioritized.",
+     "Movement in your core wave investors, which would determine whether this inbound investor should be prioritized or run in parallel."
+    ],
+    "worst": "Owen's partner meeting resulted in a pass, and he does not follow up. The conversation ends without a clear reason, and you lose the option to reopen it later."
+   },
+   "unknowns": [
+    {
+     "question": "When is Owen's partner meeting scheduled, and did he say when he would follow up?",
+     "relevance": "This determines whether the silence is expected or a signal. If the meeting is next week, silence is normal. If it was last week, silence is a soft no."
+    },
+    {
+     "question": "How did Owen find you, and is Saltmarsh Ventures actively sourcing in your space?",
+     "relevance": "This determines whether this is a real opportunity or a courtesy inquiry. An inbound from a partner who knows your space is different from a cold outreach."
+    },
+    {
+     "question": "What is Saltmarsh Ventures' stage, cheque size, and thesis?",
+     "relevance": "This determines whether they are a fit for your seed round and whether they should be prioritized against your planned wave."
+    },
+    {
+     "question": "Have any of your core wave investors replied, or are they also silent?",
+     "relevance": "If your core wave is silent too, the issue is the ask or the market, not this investor. If your core wave is moving, this investor's silence is more meaningful."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-25. If Owen has not replied by then, send a follow-up. If Owen replies before then with a meeting request, move to scheduling. If Owen replies with a pass or a deferral, record the reason and the date to reopen. If Owen does not reply by 2026-08-25 and your core wave is moving, deprioritize this conversation and check back only when you have new traction to share."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Owen Park at Saltmarsh Ventures asked two specific questions before a partner meeting: current monthly revenue and months of runway.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Two quick questions before our partner meeting: what is your current monthly revenue, and how many months of runway do you have?\"\n    },\n    {\n      \"claim\": \"You replied within 0.25 days with deck, one-pager, and demo link, offering to set up a call.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"I am sharing a few details about Nimbus Labs: our deck and a one-pager are attached, and the demo is at demo.nimbuslabs.test. Happy to set up a call.\"\n    },\n    {\n      \"claim\": \"No reply has been received since your response on 2026-08-18 10:00 UTC, and the file has been quiet for 1.08 days as of the last mailbox read on 2026-08-19 12:00 UTC.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"num:days_quiet\",\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Saltmarsh Ventures is not named in the brief as a target investor, and this file has no kind of work assigned to it.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's domain is fundraising, and the counterparty is a company, not an individual connector.\",\n      \"evidence\": [\n        \"file:domains\",\n        \"Counterparty: saltmarshvc.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Owen Park's reply time has not been measured; this is the first exchange with this investor.\",\n      \"evidence\": [\n        \"num:their_reply_time:owen@saltmarshvc.test\",\n        \"hist:derived.history.prior_outcome@fundraising\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The next move is theirs: Owen asked for information, you provided it, and he has not replied.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"Owen's mention of a partner meeting suggests the conversation may advance to a decision-maker, but no meeting has been scheduled yet.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The silence is still within normal bounds for a first exchange with an investor between partner meetings, and does not yet signal a pass.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"claim\": \"This investor was not part of your planned seed wave, suggesting either a new opportunity or an inbound inquiry that should be tracked separately from your core raise strategy.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An investor who asks specific questions before a partner meeting is signaling a real evaluation gate, not a courtesy inquiry.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Silence after a founder provides requested materials and offers a call is often a soft no or a deferral, unless the investor explicitly named a timeline.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An investor who mentions a partner meeting before asking questions may be running a real process, and silence between the question and the meeting is the default, not a signal.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When an investor asks for specific metrics before a partner meeting, the clock is their internal calendar, not yours. Silence until after the meeting is normal. Silence after the meeting is not.\",\n      \"why\": \"Partner meetings are decision gates. Before one, an investor is gathering facts. After one, they have a verdict or a next step. The silence changes meaning at that boundary.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An inbound inquiry from an investor not on your list is worth tracking but should not displace your core wave strategy.\",\n      \"why\": \"Inbound investors are often exploratory or have a different thesis than your target. They can move in parallel, but they should not become the focus if your planned investors are still live.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A founder who provides materials and offers a call has done the right thing. The next move is to wait for the investor's calendar to clear, or to follow up only if a promised timeline has passed.\",\n      \"why\": \"Pushing after you have offered a call reads as pressure and often backfires. The investor knows how to reach you.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Owen's partner meeting has not yet happened, and he is gathering facts to present to them.\",\n      \"needs\": \"A follow-up from Owen after the partner meeting, or a date he mentioned for when the meeting would occur.\"\n    },\n    {\n      \"proposition\": \"Owen's partner meeting has happened, and the silence is a soft no or a deferral pending traction.\",\n      \"needs\": \"A follow-up from Owen with a decision or a condition, or a date that has passed without one.\"\n    },\n    {\n      \"proposition\": \"Saltmarsh Ventures is a new opportunity that should be added to your core raise strategy, not treated as an outlier.\",\n      \"needs\": \"Information about how Owen found you, whether Saltmarsh is actively investing in your stage and sector, and whether they have a track record with companies like yours.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"When is Owen's partner meeting scheduled, and did he say when he would follow up?\",\n      \"relevance\": \"This determines whether the silence is expected or a signal. If the meeting is next week, silence is normal. If it was last week, silence is a soft no.\"\n    },\n    {\n      \"question\": \"How did Owen find you, and is Saltmarsh Ventures actively sourcing in your space?\",\n      \"relevance\": \"This determines whether this is a real opportunity or a courtesy inquiry. An inbound from a partner who knows your space is different from a cold outreach.\"\n    },\n    {\n      \"question\": \"What is Saltmarsh Ventures' stage, cheque size, and thesis?\",\n      \"relevance\": \"This determines whether they are a fit for your seed round and whether they should be prioritized against your planned wave.\"\n    },\n    {\n      \"question\": \"Have any of your core wave investors replied, or are they also silent?\",\n      \"relevance\": \"If your core wave is silent too, the issue is the ask or the market, not this investor. If your core wave is moving, this investor's silence is more meaningful.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An inbound investor inquiry at an early stage of evaluation, where the investor has asked for specific information before a partner meeting and you have provided it. The next move is theirs, and the silence is within normal bounds for this stage.\",\n    \"rivals\": [\n      \"A soft no disguised as a process, where the investor is unlikely to move forward but has not said so.\",\n      \"A real opportunity that should be elevated in your raise strategy because it is inbound and warm.\",\n      \"A courtesy inquiry from an investor who is not seriously evaluating you but is gathering market data.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The counterparty is a venture fund, the domain is fundraising, and the work is to move this conversation toward a meeting or a decision.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"Counterparty: saltmarshvc.test\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook is named for this file. From the brief, the expected work is to raise the seed round. From the file's history, the expected next step is for Owen to follow up after his partner meeting with either a meeting request or a decision.\",\n    \"actual\": \"You provided the requested materials and offered a call. Owen has not replied. The file has been quiet for 1.08 days.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Owen's partner meeting happens, and he either follows up with a meeting request or a pass. If he passes, the conversation ends. If he requests a meeting, you move to the next stage. If he does not follow up within a week after the meeting, the conversation drifts and eventually closes.\",\n    \"act\": \"You send a brief follow-up asking if Owen's partner meeting happened and whether he would like to schedule a call. This risks reading as pressure but clarifies the timeline.\",\n    \"best\": \"Owen's partner meeting went well, he schedules a call, and Saltmarsh moves into diligence. The conversation becomes a real opportunity in parallel with your core wave.\",\n    \"worst\": \"Owen's partner meeting resulted in a pass, and he does not follow up. The conversation ends without a clear reason, and you lose the option to reopen it later.\",\n    \"signals_to_watch\": [\n      \"A reply from Owen within the next week, with either a meeting request or a decision.\",\n      \"A reply from Owen after a date he mentioned for his partner meeting, which would indicate the meeting has happened.\",\n      \"Silence beyond two weeks, which would indicate the conversation is drifting and should be deprioritized.\",\n      \"Movement in your core wave investors, which would determine whether this inbound investor should be prioritized or run in parallel.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is an inbound investor inquiry, not a core part of your planned seed wave, so the stakes are lower than your primary targets.\",\n      \"The silence is still within normal bounds for a first exchange, and no deadline has been missed.\",\n      \"If you wait and Owen does not follow up, you can reopen the conversation later with new traction. If you push now and he passes, you lose the option to reopen.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for Owen to follow up after his partner meeting, or until a week has passed since your last reply without a response, whichever comes first\",\n    \"for_whom\": \"Owen Park at Saltmarsh Ventures\",\n    \"by_when\": \"2026-08-25\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Send a brief follow-up to Owen on 2026-08-22 asking if his partner meeting has happened and whether he would like to schedule a call. This moves the conversation forward but risks reading as pressure if the meeting has not yet occurred.\",\n  \"wait_or_stop\": \"Wait until 2026-08-25. If Owen has not replied by then, send a follow-up. If Owen replies before then with a meeting request, move to scheduling. If Owen replies with a pass or a deferral, record the reason and the date to reopen. If Owen does not reply by 2026-08-25 and your core wave is moving, deprioritize this conversation and check back only when you have new traction to share.\",\n  \"done_when\": \"Owen either schedules a call, passes with a clear reason, or defers with a condition. The conversation is done when you have a next step or a verdict, not when the last email was friendly.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

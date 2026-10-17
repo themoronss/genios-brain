@@ -1,0 +1,1246 @@
+{
+ "2f245e4ee57d81c33e161de06d613d56bebf7afe20eff683017bdfaa7dca5c8e": {
+  "framed": true,
+  "input_tokens": 8406,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3793,
+  "parsed": {
+   "alternative": "If the date of the call is not 2026-08-06, wait for Sana Qadri to clarify the date in a follow-up message before replying. This is lower-risk but costs time and may signal lack of interest.",
+   "appraisal": {
+    "reasons": [
+     "The file is a single introduction with no commitment or investment at stake yet; stakes are low.",
+     "The meeting request names a specific time (Wednesday at 2 pm) but the date is ambiguous; if it is 2026-08-06, the reply is urgent; if later, urgency is lower. Assuming the nearest Wednesday, urgency is medium.",
+     "A delayed reply costs the meeting but does not damage the relationship irreversibly; the founder can follow up later if needed. Reversibility is high.",
+     "The file is not on the watchlist, not a named goal in the brief, and not a blocking dependency for any other work. Stakes are low.",
+     "The file's domain is marked as fundraising, but the actual relationship is unclear; if Driftwood is not an investor, the stakes are even lower."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "medium"
+   },
+   "done_when": "The founder has sent a reply confirming the meeting date, time, and timezone, and naming what will be discussed (how Nimbus Labs manages investor updates). Sana Qadri has confirmed receipt or the meeting has been held.",
+   "draft": "Hi Sana, Thanks for reaching out. I'd be happy to walk you through how we handle investor updates. Wednesday at 2 pm works \u2014 just to confirm, that's 2026-08-06 at 2 pm your time? I'll send a Zoom link. Looking forward to it. Arjun",
+   "expected_vs_actual": {
+    "actual": "The meeting request was sent 2026-08-05 at 09:10 UTC. The file has been quiet for 0.37 days. A card was queued on 2026-08-04 at 18:00 UTC to reply, but it is not clear whether it was completed. No confirmation of the meeting has been sent.",
+    "expected": "Without a playbook, the expectation comes from the brief and the file's own history. The brief names no work for this file. The file's history shows an introduction made, a meeting request sent, and a card queued to reply. The expectation is that the founder would confirm the meeting within one business day of the request.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Sana Qadri, Head of Finance at Driftwood, was introduced to the founder by Introly on 2026-08-04 at 06:00 UTC.",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Sana Qadri, who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time."
+    },
+    {
+     "claim": "Sana Qadri requested a call on Wednesday at 2 pm to see how the founder handles monthly investor updates, in a message sent 2026-08-05 at 09:10 UTC.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could we do a short call on Wednesday at 2 pm? I'd like to see how you handle the monthly investor update."
+    },
+    {
+     "claim": "The file has been quiet for 0.37 days since the last message, within the usual gap of 1.13 days that closed before.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The next move is ours: the file is marked whose_move: ours with an open ask waiting since 2026-08-05 09:10 UTC.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for it.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card to reply to Sana Qadri was created and queued on 2026-08-04 at 18:00 UTC.",
+     "evidence": [
+      "card:card_#1",
+      "review:ffp-c506946cb10c0a3938e6ce7c"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Driftwood is not named in the brief as an investor, program, compliance body, hiring contact, or design partner.",
+     "evidence": [
+      "brief:company"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The introduction came through Introly, an AI agent that introduces the founder to people, listed as a connector in the brief.",
+     "evidence": [
+      "brief:cbl_#27",
+      "file:introduced_by"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction to a person at a company who wants to see how Nimbus Labs manages investor communication, with a meeting request pending confirmation.",
+    "rivals": [
+     "A potential customer or design partner evaluating Nimbus Labs' product for their own use.",
+     "An investor or fund conducting early-stage due diligence on the founder's operational practices.",
+     "A user research or discovery conversation, where Driftwood is learning how founders use tools like Nimbus Labs."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from Sana Qadri or Driftwood's website about what Driftwood does and why they want to see how investor updates are managed.",
+     "proposition": "Driftwood is a potential customer or design partner evaluating Nimbus Labs' product."
+    },
+    {
+     "needs": "Confirmation that Sana Qadri has decision-making authority or that the call is a first step toward a partner meeting.",
+     "proposition": "Driftwood is an investor or fund evaluating Nimbus Labs as a potential investment."
+    },
+    {
+     "needs": "Confirmation of the date from Sana Qadri in the reply.",
+     "proposition": "The call is scheduled for the Wednesday immediately following the message (2026-08-06)."
+    },
+    {
+     "needs": "Confirmation of whether the card was completed or remains pending.",
+     "proposition": "The card queued on 2026-08-04 was not acted on, and the file has been waiting for a reply since then."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "evt_#2"
+     ],
+     "claim": "Sana Qadri's interest is in how Nimbus Labs manages investor communication, not in investing in or partnering with the company."
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The file's domain is marked as fundraising, but Driftwood's role appears to be as a potential customer or user of Nimbus Labs' product, not as an investor."
+    },
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "The call request names a specific time (Wednesday at 2 pm) but does not name which Wednesday, creating ambiguity about the deadline."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "sit:sit_#1"
+     ],
+     "claim": "The file is in the earliest stage of a relationship: an introduction has been made, and a first meeting has been requested but not yet confirmed."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-05",
+    "for_whom": "Sana Qadri",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "own:2",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:3",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": "sana@driftwood.test",
+    "what": "Reply to Sana Qadri confirming the meeting, naming the date and time, and saying what will be discussed.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a connector introduces someone with a specific ask, the ask itself is the meeting's agenda and the reason for the introduction.",
+     "kind": "practice",
+     "why": "A named ask signals the introducer has done work to match the parties, and the recipient should treat it as the meeting's purpose, not as a pretext."
+    },
+    {
+     "claim": "A meeting request that names a time but not a date, sent late in the week, often means the sender expects a reply within one or two days.",
+     "kind": "base_rate",
+     "why": "The sender is likely planning their week and needs confirmation to hold the slot."
+    },
+    {
+     "claim": "A reply to a meeting request should confirm the time, add the date and timezone, and name what will be discussed.",
+     "kind": "practice",
+     "why": "Ambiguity about the date or time costs the meeting; naming the topic sets expectations and shows you understood the ask."
+    },
+    {
+     "claim": "Not all introductions from connectors are investor leads; some are customer discovery, partnership exploration, or user research.",
+     "kind": "counter_pattern",
+     "why": "A connector's role is to introduce people who might benefit each other, not only to source investors. The brief's domain label can mislead if the actual relationship is different."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "sig:founder_office.sit.live_investor_relationship"
+     ],
+     "claim": "A warm introduction followed by a meeting request within one day signals genuine interest and a live relationship.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor"
+     ],
+     "claim": "Introductions from connectors that name a specific use case or interest (here, how investor updates are managed) are more likely to convert to a meeting than generic intros.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "A request to see how the founder handles investor updates may indicate Driftwood is evaluating Nimbus Labs as a tool or service, not as an investment opportunity.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:introduced_by",
+     "brief:cbl_#27",
+     "file:domains",
+     "brief:company"
+    ],
+    "kind": "intro",
+    "why": "The file is an introduction made by Introly, a connector. The brief lists Introly as a connector, not as an investor or program. Driftwood is not named in the brief as an investor, program, or partner. The file's domain is marked as fundraising, but the actual relationship is unclear and may not be investor-related. The kind should be intro until the relationship is clarified."
+   },
+   "scenarios": {
+    "act": "The founder replies to Sana Qadri, confirms the meeting time and date, and names what will be discussed. The meeting is held. Depending on what Driftwood is, the outcome is a customer, a partner, an investor, or a user who can provide feedback.",
+    "best": "Sana Qadri is a decision-maker at a fund or a customer with budget. The call goes well. Driftwood becomes an investor, customer, or design partner. The relationship opens a new channel for the company.",
+    "do_nothing": "The file remains quiet. Sana Qadri does not receive a confirmation and may assume the founder is not interested or did not see the message. The meeting does not happen. The relationship cools. Driftwood moves on to another founder or tool. The introduction is wasted.",
+    "signals_to_watch": [
+     "Whether Sana Qadri sends a follow-up message if the founder does not reply within two days.",
+     "The tone and content of the call, if it happens: whether Driftwood is evaluating Nimbus Labs as a customer, investor, or partner.",
+     "Whether Sana Qadri asks for a demo, financial information, or references after the call.",
+     "Whether Driftwood's interest leads to a next step: a follow-up call, a trial, a term sheet, or silence."
+    ],
+    "worst": "The founder does not reply. The meeting does not happen. Driftwood concludes the founder is not responsive and does not pursue the relationship. The introduction is wasted, and Introly's credibility as a connector is damaged."
+   },
+   "unknowns": [
+    {
+     "question": "What does Driftwood do, and what is its relationship to Nimbus Labs?",
+     "relevance": "This determines whether the file is investor relations, customer discovery, or partnership exploration, and shapes the appropriate response."
+    },
+    {
+     "question": "Which Wednesday is Sana Qadri proposing?",
+     "relevance": "The deadline for confirming the call depends on the date; if it is 2026-08-06, the reply is urgent; if it is later, there is more time."
+    },
+    {
+     "question": "Does Sana Qadri have decision-making authority at Driftwood, or is she a user or operator?",
+     "relevance": "This determines whether the call is a sales conversation, a user interview, or a fund evaluation."
+    },
+    {
+     "question": "Was the card queued on 2026-08-04 completed, and if so, what was sent?",
+     "relevance": "If a reply was already sent, the next move is different; if not, the file has been waiting for over a day."
+    }
+   ],
+   "wait_or_stop": "Wait if Sana Qadri sends a follow-up message clarifying the date. Stop if no reply is received within seven days and no other signal of interest appears."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Sana Qadri, Head of Finance at Driftwood, was introduced to the founder by Introly on 2026-08-04 at 06:00 UTC.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Sana Qadri, who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time.\"\n    },\n    {\n      \"claim\": \"Sana Qadri requested a call on Wednesday at 2 pm to see how the founder handles monthly investor updates, in a message sent 2026-08-05 at 09:10 UTC.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could we do a short call on Wednesday at 2 pm? I'd like to see how you handle the monthly investor update.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.37 days since the last message, within the usual gap of 1.13 days that closed before.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The next move is ours: the file is marked whose_move: ours with an open ask waiting since 2026-08-05 09:10 UTC.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for it.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card to reply to Sana Qadri was created and queued on 2026-08-04 at 18:00 UTC.\",\n      \"evidence\": [\n        \"card:card_#1\",\n        \"review:ffp-c506946cb10c0a3938e6ce7c\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Driftwood is not named in the brief as an investor, program, compliance body, hiring contact, or design partner.\",\n      \"evidence\": [\n        \"brief:company\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The introduction came through Introly, an AI agent that introduces the founder to people, listed as a connector in the brief.\",\n      \"evidence\": [\n        \"brief:cbl_#27\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Sana Qadri's interest is in how Nimbus Labs manages investor communication, not in investing in or partnering with the company.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"The file's domain is marked as fundraising, but Driftwood's role appears to be as a potential customer or user of Nimbus Labs' product, not as an investor.\",\n      \"based_on\": [\n        \"file:domains\",\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The call request names a specific time (Wednesday at 2 pm) but does not name which Wednesday, creating ambiguity about the deadline.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The file is in the earliest stage of a relationship: an introduction has been made, and a first meeting has been requested but not yet confirmed.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"sit:sit_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A warm introduction followed by a meeting request within one day signals genuine interest and a live relationship.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"sig:founder_office.sit.live_investor_relationship\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions from connectors that name a specific use case or interest (here, how investor updates are managed) are more likely to convert to a meeting than generic intros.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A request to see how the founder handles investor updates may indicate Driftwood is evaluating Nimbus Labs as a tool or service, not as an investment opportunity.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a connector introduces someone with a specific ask, the ask itself is the meeting's agenda and the reason for the introduction.\",\n      \"why\": \"A named ask signals the introducer has done work to match the parties, and the recipient should treat it as the meeting's purpose, not as a pretext.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A meeting request that names a time but not a date, sent late in the week, often means the sender expects a reply within one or two days.\",\n      \"why\": \"The sender is likely planning their week and needs confirmation to hold the slot.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A reply to a meeting request should confirm the time, add the date and timezone, and name what will be discussed.\",\n      \"why\": \"Ambiguity about the date or time costs the meeting; naming the topic sets expectations and shows you understood the ask.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Not all introductions from connectors are investor leads; some are customer discovery, partnership exploration, or user research.\",\n      \"why\": \"A connector's role is to introduce people who might benefit each other, not only to source investors. The brief's domain label can mislead if the actual relationship is different.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Driftwood is a potential customer or design partner evaluating Nimbus Labs' product.\",\n      \"needs\": \"Confirmation from Sana Qadri or Driftwood's website about what Driftwood does and why they want to see how investor updates are managed.\"\n    },\n    {\n      \"proposition\": \"Driftwood is an investor or fund evaluating Nimbus Labs as a potential investment.\",\n      \"needs\": \"Confirmation that Sana Qadri has decision-making authority or that the call is a first step toward a partner meeting.\"\n    },\n    {\n      \"proposition\": \"The call is scheduled for the Wednesday immediately following the message (2026-08-06).\",\n      \"needs\": \"Confirmation of the date from Sana Qadri in the reply.\"\n    },\n    {\n      \"proposition\": \"The card queued on 2026-08-04 was not acted on, and the file has been waiting for a reply since then.\",\n      \"needs\": \"Confirmation of whether the card was completed or remains pending.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Driftwood do, and what is its relationship to Nimbus Labs?\",\n      \"relevance\": \"This determines whether the file is investor relations, customer discovery, or partnership exploration, and shapes the appropriate response.\"\n    },\n    {\n      \"question\": \"Which Wednesday is Sana Qadri proposing?\",\n      \"relevance\": \"The deadline for confirming the call depends on the date; if it is 2026-08-06, the reply is urgent; if it is later, there is more time.\"\n    },\n    {\n      \"question\": \"Does Sana Qadri have decision-making authority at Driftwood, or is she a user or operator?\",\n      \"relevance\": \"This determines whether the call is a sales conversation, a user interview, or a fund evaluation.\"\n    },\n    {\n      \"question\": \"Was the card queued on 2026-08-04 completed, and if so, what was sent?\",\n      \"relevance\": \"If a reply was already sent, the next move is different; if not, the file has been waiting for over a day.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction to a person at a company who wants to see how Nimbus Labs manages investor communication, with a meeting request pending confirmation.\",\n    \"rivals\": [\n      \"A potential customer or design partner evaluating Nimbus Labs' product for their own use.\",\n      \"An investor or fund conducting early-stage due diligence on the founder's operational practices.\",\n      \"A user research or discovery conversation, where Driftwood is learning how founders use tools like Nimbus Labs.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is an introduction made by Introly, a connector. The brief lists Introly as a connector, not as an investor or program. Driftwood is not named in the brief as an investor, program, or partner. The file's domain is marked as fundraising, but the actual relationship is unclear and may not be investor-related. The kind should be intro until the relationship is clarified.\",\n    \"evidence\": [\n      \"file:introduced_by\",\n      \"brief:cbl_#27\",\n      \"file:domains\",\n      \"brief:company\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief and the file's own history. The brief names no work for this file. The file's history shows an introduction made, a meeting request sent, and a card queued to reply. The expectation is that the founder would confirm the meeting within one business day of the request.\",\n    \"actual\": \"The meeting request was sent 2026-08-05 at 09:10 UTC. The file has been quiet for 0.37 days. A card was queued on 2026-08-04 at 18:00 UTC to reply, but it is not clear whether it was completed. No confirmation of the meeting has been sent.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. Sana Qadri does not receive a confirmation and may assume the founder is not interested or did not see the message. The meeting does not happen. The relationship cools. Driftwood moves on to another founder or tool. The introduction is wasted.\",\n    \"act\": \"The founder replies to Sana Qadri, confirms the meeting time and date, and names what will be discussed. The meeting is held. Depending on what Driftwood is, the outcome is a customer, a partner, an investor, or a user who can provide feedback.\",\n    \"best\": \"Sana Qadri is a decision-maker at a fund or a customer with budget. The call goes well. Driftwood becomes an investor, customer, or design partner. The relationship opens a new channel for the company.\",\n    \"worst\": \"The founder does not reply. The meeting does not happen. Driftwood concludes the founder is not responsive and does not pursue the relationship. The introduction is wasted, and Introly's credibility as a connector is damaged.\",\n    \"signals_to_watch\": [\n      \"Whether Sana Qadri sends a follow-up message if the founder does not reply within two days.\",\n      \"The tone and content of the call, if it happens: whether Driftwood is evaluating Nimbus Labs as a customer, investor, or partner.\",\n      \"Whether Sana Qadri asks for a demo, financial information, or references after the call.\",\n      \"Whether Driftwood's interest leads to a next step: a follow-up call, a trial, a term sheet, or silence.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is a single introduction with no commitment or investment at stake yet; stakes are low.\",\n      \"The meeting request names a specific time (Wednesday at 2 pm) but the date is ambiguous; if it is 2026-08-06, the reply is urgent; if later, urgency is lower. Assuming the nearest Wednesday, urgency is medium.\",\n      \"A delayed reply costs the meeting but does not damage the relationship irreversibly; the founder can follow up later if needed. Reversibility is high.\",\n      \"The file is not on the watchlist, not a named goal in the brief, and not a blocking dependency for any other work. Stakes are low.\",\n      \"The file's domain is marked as fundraising, but the actual relationship is unclear; if Driftwood is not an investor, the stakes are even lower.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Reply to Sana Qadri confirming the meeting, naming the date and time, and saying what will be discussed.\",\n    \"for_whom\": \"Sana Qadri\",\n    \"by_when\": \"2026-08-05\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"own:2\",\n      \"own:3\"\n    ],\n    \"to\": \"sana@driftwood.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the date of the call is not 2026-08-06, wait for Sana Qadri to clarify the date in a follow-up message before replying. This is lower-risk but costs time and may signal lack of interest.\",\n  \"wait_or_stop\": \"Wait if Sana Qadri sends a follow-up message clarifying the date. Stop if no reply is received within seven days and no other signal of interest appears.\",\n  \"done_when\": \"The founder has sent a reply confirming the meeting date, time, and timezone, and naming what will be discussed (how Nimbus Labs manages investor updates). Sana Qadri has confirmed receipt or the meeting has been held.\",\n  \"draft\": \"Hi Sana, Thanks for reaching out. I'd be happy to walk you through how we handle investor updates. Wednesday at 2 pm works \u2014 just to confirm, that's 2026-08-06 at 2 pm your time? I'll send a Zoom link. Looking forward to it. Arjun\"\n}",
+  "site": "expert"
+ },
+ "452739595c1175d118d0744289d65a6a2e991e7bd41dee0541d40b5a05609751": {
+  "framed": true,
+  "input_tokens": 8507,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3450,
+  "parsed": {
+   "alternative": "If the founder cannot meet on Wednesday, send a brief reply proposing two alternative times and asking what Driftwood does so the founder can prepare.",
+   "appraisal": {
+    "reasons": [
+     "The file is a single intro with no commitment or investment at stake; the worst case is a wasted hour.",
+     "The meeting is proposed for a specific day, so the founder must respond soon to confirm or propose an alternative.",
+     "If the call does not lead anywhere, the founder can simply end the conversation; there is no cost to declining or to a poor call."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "medium"
+   },
+   "done_when": "The founder has sent a reply confirming or proposing a time, and Sana Qadri has confirmed the call or proposed an alternative.",
+   "draft": "Hi Sana, Wednesday at 2 pm works great. Looking forward to talking about how we handle investor updates. Before we meet, I'd love to know a bit more about Driftwood and what you're working on. See you then. \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "A card to reply was queued on 2026-08-04 at 18:00 UTC, but the dossier does not say whether it was sent. The file shows the next move is ours, with an open ask since 2026-08-05 at 09:10 UTC.",
+    "expected": "Without a playbook, the expectation is that a warm intro followed by a specific meeting request should be answered with a confirmation or a counter-proposal within one business day.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Sana Qadri, Head of Finance at Driftwood, was introduced to the founder by Introly on 2026-08-04 at 06:00 UTC.",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Sana Qadri, who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time."
+    },
+    {
+     "claim": "Sana Qadri replied on 2026-08-05 at 09:10 UTC proposing a call on Wednesday at 2 pm to discuss how the founder handles monthly investor updates.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could we do a short call on Wednesday at 2 pm? I'd like to see how you handle the monthly investor update."
+    },
+    {
+     "claim": "The file has no playbook named by the brief.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as an intro introduced by Introly, an AI agent that introduces the founder to people.",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#27"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The next move is ours, with an open ask since 2026-08-05 at 09:10 UTC.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card to reply to Sana Qadri with a brief message was queued after the expert's review on 2026-08-04 at 18:00 UTC.",
+     "evidence": [
+      "card:card_#1",
+      "review:ffp-c506946cb10c0a3938e6ce7c"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows engagement is high and drop is low, with no blocking dependency observed.",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.dependency"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The relationship status is unmeasured and no deadline fields are present in the file.",
+     "evidence": [
+      "ru:core.relationship",
+      "ru:core.timeline"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction from a connector to someone at a company who has expressed interest in how Nimbus Labs handles investor updates, with a specific meeting request and a next move that is ours.",
+    "rivals": [
+     "A potential customer or design partner inquiry about Nimbus Labs' investor-relations process.",
+     "A potential investor using a soft inquiry to assess the founder's professionalism before committing to a deeper conversation.",
+     "A research inquiry with no direct business outcome, made out of courtesy or professional interest."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A conversation with Sana Qadri that asks what Driftwood does and why she is interested in how Nimbus Labs handles updates.",
+     "proposition": "Sana Qadri is evaluating Nimbus Labs as a potential customer or design partner for Driftwood's own investor-relations work."
+    },
+    {
+     "needs": "A conversation that reveals whether Driftwood has a fund, what stage it invests at, and whether it is considering Nimbus Labs as an investment.",
+     "proposition": "Sana Qadri is a potential investor or advisor who is using the investor-update question as a way to assess the founder's professionalism and communication skills."
+    },
+    {
+     "needs": "A conversation that asks whether Driftwood is considering an investment or partnership, or whether this is research only.",
+     "proposition": "Sana Qadri is gathering research on how startups manage investor relations and has no direct business interest in Nimbus Labs."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "evt_#2"
+     ],
+     "claim": "Sana Qadri's interest is in how Nimbus Labs manages investor communication, not in investing directly or evaluating the company as a potential investment."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "file:domains"
+     ],
+     "claim": "The file is mislabeled as an intro when it is actually a potential design partner or vendor inquiry about the founder's product."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:5"
+     ],
+     "claim": "The next move is to confirm or decline the Wednesday call and, if confirming, to prepare for a conversation about how Nimbus Labs handles investor updates."
+    },
+    {
+     "based_on": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "claim": "The file has been quiet for 0.37 days, which is within the normal gap observed in this thread, so silence does not yet signal disengagement."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-06",
+    "for_whom": "Sana Qadri",
+    "guided_by": [
+     "own:1",
+     "own:3",
+     "pb:founder_office.pb.investor_relations.before_an_investor_call"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:5",
+     "inference:3"
+    ],
+    "to": "sana@driftwood.test",
+    "what": "confirm the Wednesday call at 2 pm or propose an alternative time, and prepare for the call by learning what Driftwood does and what Sana Qadri's role is.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A specific meeting request with a time and topic should be answered within one business day to hold momentum and show respect for the other party's time.",
+     "kind": "practice",
+     "why": "Delay signals low priority and allows the other party's attention to drift; a prompt reply keeps the thread warm and the meeting likely."
+    },
+    {
+     "claim": "Introductions from connectors that name a specific interest or use case are more likely to lead to a meeting than generic intros.",
+     "kind": "base_rate",
+     "why": "Specificity signals that the connector has done work to match the parties, and that the other party has a concrete reason to meet."
+    },
+    {
+     "claim": "Before a call with someone from a company you do not know, learn what that company does, what Sana Qadri's role entails, and why she might be interested in how you handle investor updates.",
+     "kind": "practice",
+     "why": "Preparation prevents wasted time and shows respect; it also surfaces whether this is a genuine fit or a courtesy call."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "num:usual_gap"
+     ],
+     "claim": "A warm introduction followed by a specific meeting request within one day signals genuine interest and a ready next step.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "Investor relations conversations that name a specific time and topic are more likely to convert to a meeting than those that do not.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f1",
+      "fact:2"
+     ],
+     "claim": "A request to see how the founder handles investor updates is not a request to invest, and treating it as investor interest would misframe the relationship.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:introduced_by",
+     "brief:cbl_#27",
+     "file:role"
+    ],
+    "kind": "intro",
+    "why": "The file is introduced by Introly, an AI connector, and the brief names it as an intro. However, the actual work may be partner, vendor, or investor depending on what Driftwood does and what Sana Qadri's intent is."
+   },
+   "scenarios": {
+    "act": "The founder confirms the Wednesday call or proposes an alternative time. Sana Qadri confirms, and the call happens. The founder learns what Driftwood does and what Sana Qadri wants. A next step is agreed or the conversation ends.",
+    "best": "The call reveals that Driftwood is a potential customer or partner for Nimbus Labs, or that Sana Qadri is an investor or advisor who is impressed by the founder's communication and wants to invest or help. A follow-up meeting or next step is agreed.",
+    "do_nothing": "The file goes quiet. Sana Qadri does not hear back and assumes the founder is not interested or too busy. She does not follow up, and the opportunity is lost. The file drifts dormant.",
+    "signals_to_watch": [
+     "Whether Sana Qadri confirms the Wednesday call or goes silent.",
+     "What Driftwood does and what Sana Qadri's role is.",
+     "Whether Sana Qadri asks follow-up questions about Nimbus Labs or only asks about investor updates.",
+     "Whether Sana Qadri proposes a next step after the call or thanks the founder and ends the conversation."
+    ],
+    "worst": "The call reveals that Sana Qadri has no business interest in Nimbus Labs and was only gathering research. The founder has spent time on a courtesy call with no outcome. The file ends."
+   },
+   "unknowns": [
+    {
+     "question": "What does Driftwood do, and what is Sana Qadri's role in it?",
+     "relevance": "This determines whether the call is a sales opportunity, an investment opportunity, a partnership opportunity, or a courtesy call with no business outcome."
+    },
+    {
+     "question": "Why did Introly introduce Sana Qadri to the founder, and what did Sana Qadri ask Introly to do?",
+     "relevance": "The intro message says Sana Qadri 'asked to see how Nimbus Labs keeps investor updates on time,' but it does not say whether she asked Introly to make an introduction or whether Introly suggested it."
+    },
+    {
+     "question": "Is Wednesday 2026-08-07 or a later Wednesday?",
+     "relevance": "The dossier does not give the current date, so it is not clear whether the proposed Wednesday is imminent or weeks away, which affects urgency."
+    },
+    {
+     "question": "Has the founder already replied to Sana Qadri, or is the queued card still pending?",
+     "relevance": "The dossier says a card was queued but does not say whether it was sent; if it was sent, the next move is to prepare for the call; if it was not, the next move is to send it."
+    }
+   ],
+   "wait_or_stop": "Wait if the founder is traveling or unavailable on Wednesday and needs to propose a later date. Stop if Sana Qadri does not confirm the call within three days or if the call reveals no business interest."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Sana Qadri, Head of Finance at Driftwood, was introduced to the founder by Introly on 2026-08-04 at 06:00 UTC.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Sana Qadri, who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time.\"\n    },\n    {\n      \"claim\": \"Sana Qadri replied on 2026-08-05 at 09:10 UTC proposing a call on Wednesday at 2 pm to discuss how the founder handles monthly investor updates.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could we do a short call on Wednesday at 2 pm? I'd like to see how you handle the monthly investor update.\"\n    },\n    {\n      \"claim\": \"The file has no playbook named by the brief.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as an intro introduced by Introly, an AI agent that introduces the founder to people.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#27\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The next move is ours, with an open ask since 2026-08-05 at 09:10 UTC.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card to reply to Sana Qadri with a brief message was queued after the expert's review on 2026-08-04 at 18:00 UTC.\",\n      \"evidence\": [\n        \"card:card_#1\",\n        \"review:ffp-c506946cb10c0a3938e6ce7c\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows engagement is high and drop is low, with no blocking dependency observed.\",\n      \"evidence\": [\n        \"ru:core.temporal\",\n        \"ru:core.dependency\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The relationship status is unmeasured and no deadline fields are present in the file.\",\n      \"evidence\": [\n        \"ru:core.relationship\",\n        \"ru:core.timeline\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Sana Qadri's interest is in how Nimbus Labs manages investor communication, not in investing directly or evaluating the company as a potential investment.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"The file is mislabeled as an intro when it is actually a potential design partner or vendor inquiry about the founder's product.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"file:domains\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is to confirm or decline the Wednesday call and, if confirming, to prepare for a conversation about how Nimbus Labs handles investor updates.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:5\"\n      ]\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.37 days, which is within the normal gap observed in this thread, so silence does not yet signal disengagement.\",\n      \"based_on\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A warm introduction followed by a specific meeting request within one day signals genuine interest and a ready next step.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"num:usual_gap\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investor relations conversations that name a specific time and topic are more likely to convert to a meeting than those that do not.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A request to see how the founder handles investor updates is not a request to invest, and treating it as investor interest would misframe the relationship.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f1\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A specific meeting request with a time and topic should be answered within one business day to hold momentum and show respect for the other party's time.\",\n      \"why\": \"Delay signals low priority and allows the other party's attention to drift; a prompt reply keeps the thread warm and the meeting likely.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions from connectors that name a specific interest or use case are more likely to lead to a meeting than generic intros.\",\n      \"why\": \"Specificity signals that the connector has done work to match the parties, and that the other party has a concrete reason to meet.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Before a call with someone from a company you do not know, learn what that company does, what Sana Qadri's role entails, and why she might be interested in how you handle investor updates.\",\n      \"why\": \"Preparation prevents wasted time and shows respect; it also surfaces whether this is a genuine fit or a courtesy call.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Sana Qadri is evaluating Nimbus Labs as a potential customer or design partner for Driftwood's own investor-relations work.\",\n      \"needs\": \"A conversation with Sana Qadri that asks what Driftwood does and why she is interested in how Nimbus Labs handles updates.\"\n    },\n    {\n      \"proposition\": \"Sana Qadri is a potential investor or advisor who is using the investor-update question as a way to assess the founder's professionalism and communication skills.\",\n      \"needs\": \"A conversation that reveals whether Driftwood has a fund, what stage it invests at, and whether it is considering Nimbus Labs as an investment.\"\n    },\n    {\n      \"proposition\": \"Sana Qadri is gathering research on how startups manage investor relations and has no direct business interest in Nimbus Labs.\",\n      \"needs\": \"A conversation that asks whether Driftwood is considering an investment or partnership, or whether this is research only.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Driftwood do, and what is Sana Qadri's role in it?\",\n      \"relevance\": \"This determines whether the call is a sales opportunity, an investment opportunity, a partnership opportunity, or a courtesy call with no business outcome.\"\n    },\n    {\n      \"question\": \"Why did Introly introduce Sana Qadri to the founder, and what did Sana Qadri ask Introly to do?\",\n      \"relevance\": \"The intro message says Sana Qadri 'asked to see how Nimbus Labs keeps investor updates on time,' but it does not say whether she asked Introly to make an introduction or whether Introly suggested it.\"\n    },\n    {\n      \"question\": \"Is Wednesday 2026-08-07 or a later Wednesday?\",\n      \"relevance\": \"The dossier does not give the current date, so it is not clear whether the proposed Wednesday is imminent or weeks away, which affects urgency.\"\n    },\n    {\n      \"question\": \"Has the founder already replied to Sana Qadri, or is the queued card still pending?\",\n      \"relevance\": \"The dossier says a card was queued but does not say whether it was sent; if it was sent, the next move is to prepare for the call; if it was not, the next move is to send it.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction from a connector to someone at a company who has expressed interest in how Nimbus Labs handles investor updates, with a specific meeting request and a next move that is ours.\",\n    \"rivals\": [\n      \"A potential customer or design partner inquiry about Nimbus Labs' investor-relations process.\",\n      \"A potential investor using a soft inquiry to assess the founder's professionalism before committing to a deeper conversation.\",\n      \"A research inquiry with no direct business outcome, made out of courtesy or professional interest.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is introduced by Introly, an AI connector, and the brief names it as an intro. However, the actual work may be partner, vendor, or investor depending on what Driftwood does and what Sana Qadri's intent is.\",\n    \"evidence\": [\n      \"file:introduced_by\",\n      \"brief:cbl_#27\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation is that a warm intro followed by a specific meeting request should be answered with a confirmation or a counter-proposal within one business day.\",\n    \"actual\": \"A card to reply was queued on 2026-08-04 at 18:00 UTC, but the dossier does not say whether it was sent. The file shows the next move is ours, with an open ask since 2026-08-05 at 09:10 UTC.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file goes quiet. Sana Qadri does not hear back and assumes the founder is not interested or too busy. She does not follow up, and the opportunity is lost. The file drifts dormant.\",\n    \"act\": \"The founder confirms the Wednesday call or proposes an alternative time. Sana Qadri confirms, and the call happens. The founder learns what Driftwood does and what Sana Qadri wants. A next step is agreed or the conversation ends.\",\n    \"best\": \"The call reveals that Driftwood is a potential customer or partner for Nimbus Labs, or that Sana Qadri is an investor or advisor who is impressed by the founder's communication and wants to invest or help. A follow-up meeting or next step is agreed.\",\n    \"worst\": \"The call reveals that Sana Qadri has no business interest in Nimbus Labs and was only gathering research. The founder has spent time on a courtesy call with no outcome. The file ends.\",\n    \"signals_to_watch\": [\n      \"Whether Sana Qadri confirms the Wednesday call or goes silent.\",\n      \"What Driftwood does and what Sana Qadri's role is.\",\n      \"Whether Sana Qadri asks follow-up questions about Nimbus Labs or only asks about investor updates.\",\n      \"Whether Sana Qadri proposes a next step after the call or thanks the founder and ends the conversation.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is a single intro with no commitment or investment at stake; the worst case is a wasted hour.\",\n      \"The meeting is proposed for a specific day, so the founder must respond soon to confirm or propose an alternative.\",\n      \"If the call does not lead anywhere, the founder can simply end the conversation; there is no cost to declining or to a poor call.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"confirm the Wednesday call at 2 pm or propose an alternative time, and prepare for the call by learning what Driftwood does and what Sana Qadri's role is.\",\n    \"for_whom\": \"Sana Qadri\",\n    \"by_when\": \"2026-08-06\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:5\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:3\",\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\"\n    ],\n    \"to\": \"sana@driftwood.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder cannot meet on Wednesday, send a brief reply proposing two alternative times and asking what Driftwood does so the founder can prepare.\",\n  \"wait_or_stop\": \"Wait if the founder is traveling or unavailable on Wednesday and needs to propose a later date. Stop if Sana Qadri does not confirm the call within three days or if the call reveals no business interest.\",\n  \"done_when\": \"The founder has sent a reply confirming or proposing a time, and Sana Qadri has confirmed the call or proposed an alternative.\",\n  \"draft\": \"Hi Sana, Wednesday at 2 pm works great. Looking forward to talking about how we handle investor updates. Before we meet, I'd love to know a bit more about Driftwood and what you're working on. See you then. \u2014 Arjun\"\n}",
+  "site": "expert"
+ },
+ "53f41611b50edc7259da79abd43f16e844a89e96ac2d3ea9a577d5c4b6c58ae3": {
+  "framed": true,
+  "input_tokens": 8094,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3225,
+  "parsed": {
+   "alternative": "If the founder decides to apply, the next move is to reply to Tanvi Shah with interest and ask for the application details and timeline. If the founder decides not to apply, the next move is to reply to Tanvi with a polite decline and close the file.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because a founder programme can add value (mentorship, network, credibility) but is not as critical as closing the seed round or hiring a founding engineer.",
+     "The urgency is medium because the founder has not yet replied and Tanvi is waiting, but there is no stated deadline and the file is only 0.47 days old.",
+     "The move is reversible because the founder can reply to Tanvi at any time, and a late reply is better than no reply.",
+     "The file is a new opportunity that was not in the brief, so it is not yet prioritized against the other work in motion."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The founder has replied to Tanvi with interest and asked for the application details, or the founder has decided not to apply and the file is closed.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The founder has received a warm introduction from a programme lead who asked to meet and invited an application. The founder has not yet replied. No application has been submitted. No intake call has been scheduled.",
+    "expected": "If this were a programme application, the expected stage would be 'applied' or 'intake_call_scheduled'. The brief shows six other programmes with statuses ranging from 'the active cohort' (Lakshya) to 'applied' (Gulf Launchpad, DIT, TechBridge, Awadh, University Startup Cell, State Startup Mission). Copperleaf is not listed in the brief, so it is a new programme opportunity.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced Arjun to Tanvi Shah at Copperleaf, who leads their founder programme and asked whether Nimbus Labs would apply.",
+     "evidence": [
+      "evt_#1",
+      "file:introduced_by",
+      "file:role"
+     ],
+     "quote": "Arjun, meet Tanvi Shah, who leads the founder programme at Copperleaf and asked whether Nimbus Labs would apply."
+    },
+    {
+     "claim": "The introduction was sent on 2026-08-04 at 06:40 UTC and no reply has been received as of 2026-08-04 18:00 UTC.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "num:days_quiet",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for Copperleaf.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is classified as an intro from a connector, not as an investor relationship or other work type.",
+     "evidence": [
+      "file:role",
+      "file:introduced_by"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Copperleaf runs a founder programme, not a venture fund.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Tanvi Shah, who leads the founder programme at Copperleaf"
+    },
+    {
+     "claim": "The next move is ours: Introly handed off to the founder with 'Arjun, over to you.'",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": "Arjun, over to you. I'll let you two take it from here."
+    }
+   ],
+   "frames": {
+    "primary": "A programme lead at Copperleaf has asked to meet the founder and invited an application to their founder programme. The founder has not yet replied. The next move is to decide whether to apply and, if so, to reply to Tanvi with interest and ask for the application details.",
+    "rivals": [
+     "This is a low-priority introduction that can wait until after the seed round closes, because founder programmes are less urgent than fundraising.",
+     "This is a connector's introduction that has no follow-up obligation, and the founder can ignore it if the company is not interested.",
+     "This is a potential distraction from the seed round and should be declined to keep focus."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The founder's assessment of whether Copperleaf's programme aligns with the company's stage, needs and timeline.",
+     "proposition": "Copperleaf's founder programme is a fit for Nimbus Labs and would add value beyond fundraising."
+    },
+    {
+     "needs": "Confirmation in the first reply or a follow-up from Tanvi about the application process and timeline.",
+     "proposition": "Tanvi Shah is the decision-maker for admissions to the programme."
+    },
+    {
+     "needs": "Tanvi's reply or the programme's website to show the timeline.",
+     "proposition": "The programme has an application deadline or cohort start date that matters."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:5",
+      "brief:cbl_#4"
+     ],
+     "claim": "This is not an investor conversation but an application opportunity to a founder programme."
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "Tanvi Shah initiated the introduction by asking Introly whether Nimbus Labs would apply, meaning she has already qualified the company as a fit for Copperleaf's programme."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4",
+      "inference:1"
+     ],
+     "claim": "The file should be reclassified as a programme application, not an intro, because the work is to apply to Copperleaf's founder programme."
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+      "fact:2"
+     ],
+     "claim": "Silence at this stage\u2014before a first reply to an introduction\u2014is the default and carries no signal."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-05",
+    "for_whom": "the founder",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:6",
+     "inference:1",
+     "inference:3",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "find out whether the founder wants to apply to Copperleaf's founder programme, and if so, what Copperleaf's programme is, what it offers, and what the timeline is.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A warm introduction that names a specific person and a specific next step (apply to our programme) should be answered within one business day, because the person on the other end is waiting and has already committed attention.",
+     "kind": "practice",
+     "why": "Delay signals either that the founder is not interested or that the company is disorganized; either way, it costs the relationship and the opportunity."
+    },
+    {
+     "claim": "Founder programmes, accelerators and incubators move faster than venture funds and expect faster replies because they are not making capital decisions and have less to lose.",
+     "kind": "base_rate",
+     "why": "A programme lead is evaluating fit and momentum, not risk; a slow reply reads as low interest."
+    },
+    {
+     "claim": "When a programme lead asks a connector to make an introduction, the lead has already done the screening and is ready to move to the application or intake call; the founder's job is to confirm interest and move to the next step.",
+     "kind": "practice",
+     "why": "The introduction is not a cold outreach; it is a handoff from someone who has already qualified the company."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A warm introduction from a connector that names a specific person and a specific ask (apply to our programme) converts to a first reply within one to three days in most cases.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "inference:2"
+     ],
+     "claim": "When a programme lead asks a connector to introduce a founder, the lead has already decided the company fits and is waiting for the founder to move.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "cap:founder_office.fundraising.investor_relations#q"
+     ],
+     "claim": "A founder programme is not a fundraising conversation and does not follow investor-relations timing or signals.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "brief:cbl_#13",
+     "brief:cbl_#14",
+     "brief:cbl_#15"
+    ],
+    "kind": "program",
+    "why": "Copperleaf runs a founder programme, not a venture fund. The brief lists Copperleaf under no work in motion, but the brief does list six other programmes under 'Program' with their status. This file should be classified as a programme application, not an intro."
+   },
+   "scenarios": {
+    "act": "The founder replies to Tanvi with interest, asks for the application details and timeline, and either applies or schedules an intake call. If the programme is a fit, the company gains access to mentorship, network and resources. If the programme has a cohort start date, the founder learns the timeline and can plan accordingly.",
+    "best": "Copperleaf's founder programme is a strong fit for Nimbus Labs, offers valuable mentorship and network, and has a cohort start date that aligns with the company's timeline. The founder applies, is accepted, and gains resources and credibility that help with fundraising and hiring.",
+    "do_nothing": "Tanvi Shah will assume the founder is not interested and will move on to other companies. The opportunity to apply to Copperleaf's founder programme will be lost. If the programme would have been valuable, the company will have missed it.",
+    "signals_to_watch": [
+     "Tanvi's reply to the founder's interest: does she send application details, ask for a call, or defer?",
+     "The application process: is it simple or complex, and how long does it take?",
+     "The cohort timeline: when does the next cohort start, and is there a deadline?",
+     "The programme's value: does it offer mentorship, network, funding, or other resources that matter to the company?"
+    ],
+    "worst": "The founder replies too late, Tanvi has already filled the cohort or moved on, and the opportunity is lost. Or the founder applies, is rejected, and the file becomes a closed loss."
+   },
+   "unknowns": [
+    {
+     "question": "Does the founder want to apply to Copperleaf's founder programme, or is this a lower priority than the fundraising round and the other programmes already in motion?",
+     "relevance": "If the founder does not want to apply, the next move is to decline politely and close the file. If the founder does want to apply, the move is to reply to Tanvi immediately with interest and ask for the application details."
+    },
+    {
+     "question": "What is Copperleaf's founder programme, what does it offer, and what is its timeline?",
+     "relevance": "The founder needs to know what the programme is before deciding whether to apply and what to say in the reply."
+    },
+    {
+     "question": "Is there a deadline or cohort start date for Copperleaf's programme?",
+     "relevance": "If there is a deadline, the founder needs to know it to prioritize the application. If there is no deadline, the file can wait until after the seed round is closed."
+    }
+   ],
+   "wait_or_stop": "Wait until the founder has decided whether to apply. Stop if the founder declines or if Tanvi does not reply within one week."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced Arjun to Tanvi Shah at Copperleaf, who leads their founder programme and asked whether Nimbus Labs would apply.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:introduced_by\",\n        \"file:role\"\n      ],\n      \"quote\": \"Arjun, meet Tanvi Shah, who leads the founder programme at Copperleaf and asked whether Nimbus Labs would apply.\"\n    },\n    {\n      \"claim\": \"The introduction was sent on 2026-08-04 at 06:40 UTC and no reply has been received as of 2026-08-04 18:00 UTC.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"num:days_quiet\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for Copperleaf.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is classified as an intro from a connector, not as an investor relationship or other work type.\",\n      \"evidence\": [\n        \"file:role\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Copperleaf runs a founder programme, not a venture fund.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Tanvi Shah, who leads the founder programme at Copperleaf\"\n    },\n    {\n      \"claim\": \"The next move is ours: Introly handed off to the founder with 'Arjun, over to you.'\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": \"Arjun, over to you. I'll let you two take it from here.\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is not an investor conversation but an application opportunity to a founder programme.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"brief:cbl_#4\"\n      ]\n    },\n    {\n      \"claim\": \"Tanvi Shah initiated the introduction by asking Introly whether Nimbus Labs would apply, meaning she has already qualified the company as a fit for Copperleaf's programme.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The file should be reclassified as a programme application, not an intro, because the work is to apply to Copperleaf's founder programme.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"Silence at this stage\u2014before a first reply to an introduction\u2014is the default and carries no signal.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A warm introduction from a connector that names a specific person and a specific ask (apply to our programme) converts to a first reply within one to three days in most cases.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a programme lead asks a connector to introduce a founder, the lead has already decided the company fits and is waiting for the founder to move.\",\n      \"based_on\": [\n        \"inference:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder programme is not a fundraising conversation and does not follow investor-relations timing or signals.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"cap:founder_office.fundraising.investor_relations#q\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A warm introduction that names a specific person and a specific next step (apply to our programme) should be answered within one business day, because the person on the other end is waiting and has already committed attention.\",\n      \"why\": \"Delay signals either that the founder is not interested or that the company is disorganized; either way, it costs the relationship and the opportunity.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founder programmes, accelerators and incubators move faster than venture funds and expect faster replies because they are not making capital decisions and have less to lose.\",\n      \"why\": \"A programme lead is evaluating fit and momentum, not risk; a slow reply reads as low interest.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a programme lead asks a connector to make an introduction, the lead has already done the screening and is ready to move to the application or intake call; the founder's job is to confirm interest and move to the next step.\",\n      \"why\": \"The introduction is not a cold outreach; it is a handoff from someone who has already qualified the company.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Copperleaf's founder programme is a fit for Nimbus Labs and would add value beyond fundraising.\",\n      \"needs\": \"The founder's assessment of whether Copperleaf's programme aligns with the company's stage, needs and timeline.\"\n    },\n    {\n      \"proposition\": \"Tanvi Shah is the decision-maker for admissions to the programme.\",\n      \"needs\": \"Confirmation in the first reply or a follow-up from Tanvi about the application process and timeline.\"\n    },\n    {\n      \"proposition\": \"The programme has an application deadline or cohort start date that matters.\",\n      \"needs\": \"Tanvi's reply or the programme's website to show the timeline.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the founder want to apply to Copperleaf's founder programme, or is this a lower priority than the fundraising round and the other programmes already in motion?\",\n      \"relevance\": \"If the founder does not want to apply, the next move is to decline politely and close the file. If the founder does want to apply, the move is to reply to Tanvi immediately with interest and ask for the application details.\"\n    },\n    {\n      \"question\": \"What is Copperleaf's founder programme, what does it offer, and what is its timeline?\",\n      \"relevance\": \"The founder needs to know what the programme is before deciding whether to apply and what to say in the reply.\"\n    },\n    {\n      \"question\": \"Is there a deadline or cohort start date for Copperleaf's programme?\",\n      \"relevance\": \"If there is a deadline, the founder needs to know it to prioritize the application. If there is no deadline, the file can wait until after the seed round is closed.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A programme lead at Copperleaf has asked to meet the founder and invited an application to their founder programme. The founder has not yet replied. The next move is to decide whether to apply and, if so, to reply to Tanvi with interest and ask for the application details.\",\n    \"rivals\": [\n      \"This is a low-priority introduction that can wait until after the seed round closes, because founder programmes are less urgent than fundraising.\",\n      \"This is a connector's introduction that has no follow-up obligation, and the founder can ignore it if the company is not interested.\",\n      \"This is a potential distraction from the seed round and should be declined to keep focus.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"Copperleaf runs a founder programme, not a venture fund. The brief lists Copperleaf under no work in motion, but the brief does list six other programmes under 'Program' with their status. This file should be classified as a programme application, not an intro.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"brief:cbl_#13\",\n      \"brief:cbl_#14\",\n      \"brief:cbl_#15\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"If this were a programme application, the expected stage would be 'applied' or 'intake_call_scheduled'. The brief shows six other programmes with statuses ranging from 'the active cohort' (Lakshya) to 'applied' (Gulf Launchpad, DIT, TechBridge, Awadh, University Startup Cell, State Startup Mission). Copperleaf is not listed in the brief, so it is a new programme opportunity.\",\n    \"actual\": \"The founder has received a warm introduction from a programme lead who asked to meet and invited an application. The founder has not yet replied. No application has been submitted. No intake call has been scheduled.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Tanvi Shah will assume the founder is not interested and will move on to other companies. The opportunity to apply to Copperleaf's founder programme will be lost. If the programme would have been valuable, the company will have missed it.\",\n    \"act\": \"The founder replies to Tanvi with interest, asks for the application details and timeline, and either applies or schedules an intake call. If the programme is a fit, the company gains access to mentorship, network and resources. If the programme has a cohort start date, the founder learns the timeline and can plan accordingly.\",\n    \"best\": \"Copperleaf's founder programme is a strong fit for Nimbus Labs, offers valuable mentorship and network, and has a cohort start date that aligns with the company's timeline. The founder applies, is accepted, and gains resources and credibility that help with fundraising and hiring.\",\n    \"worst\": \"The founder replies too late, Tanvi has already filled the cohort or moved on, and the opportunity is lost. Or the founder applies, is rejected, and the file becomes a closed loss.\",\n    \"signals_to_watch\": [\n      \"Tanvi's reply to the founder's interest: does she send application details, ask for a call, or defer?\",\n      \"The application process: is it simple or complex, and how long does it take?\",\n      \"The cohort timeline: when does the next cohort start, and is there a deadline?\",\n      \"The programme's value: does it offer mentorship, network, funding, or other resources that matter to the company?\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because a founder programme can add value (mentorship, network, credibility) but is not as critical as closing the seed round or hiring a founding engineer.\",\n      \"The urgency is medium because the founder has not yet replied and Tanvi is waiting, but there is no stated deadline and the file is only 0.47 days old.\",\n      \"The move is reversible because the founder can reply to Tanvi at any time, and a late reply is better than no reply.\",\n      \"The file is a new opportunity that was not in the brief, so it is not yet prioritized against the other work in motion.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"find out whether the founder wants to apply to Copperleaf's founder programme, and if so, what Copperleaf's programme is, what it offers, and what the timeline is.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-08-05\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:6\",\n      \"inference:1\",\n      \"inference:3\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder decides to apply, the next move is to reply to Tanvi Shah with interest and ask for the application details and timeline. If the founder decides not to apply, the next move is to reply to Tanvi with a polite decline and close the file.\",\n  \"wait_or_stop\": \"Wait until the founder has decided whether to apply. Stop if the founder declines or if Tanvi does not reply within one week.\",\n  \"done_when\": \"The founder has replied to Tanvi with interest and asked for the application details, or the founder has decided not to apply and the file is closed.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "aa8765837c42131ca04387c3024daee50832ae58dff44a87806758b1af2b0799": {
+  "framed": true,
+  "input_tokens": 7101,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3926,
+  "parsed": {
+   "alternative": "If you decide to engage, write to Omkar today (2026-08-04) rather than waiting until tomorrow. A same-day reply signals that you are responsive and that the introduction landed. If you decide not to engage, close the file now and ask Introly to remove you from topic-based introductions that do not map to your stated goals.",
+   "appraisal": {
+    "reasons": [
+     "The introduction does not map to any of the founder's stated goals (fundraise, hiring, programs, compliance, design partners). It is exploratory.",
+     "No promise was made, and no deadline was set. The founder is not at risk of breaking a commitment.",
+     "The file is only 0.49 days old. There is no time pressure.",
+     "A reply can be sent at any time in the next week without damage. A non-reply is also reversible: the founder can write later if priorities change.",
+     "The upside is uncertain: Redfern Labs may or may not be relevant to Nimbus Labs' work. The downside is minimal: a wasted message or two.",
+     "The founder's time is scarce, and the file is not blocking any of the stated goals. It is a discretionary engagement."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Done when you have either (a) had a conversation with Omkar and decided whether to pursue a partnership, design partnership, or customer relationship; or (b) decided that the introduction is not relevant and closed the file.",
+   "draft": "Hi Omkar, thanks for the intro through Introly. Agent tooling is directly relevant to what we're building at Nimbus Labs \u2014 we're working on an AI chief of staff that needs to orchestrate multiple tools and agents. I'd be curious to hear what problems you're solving on the agent side at Redfern Labs, and whether there's overlap. Are you free for a quick call this week? \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "The introduction was received 0.49 days ago. No reply has been sent. The ball is in the founder's court. No promise was made, and no deadline was set.",
+    "expected": "The brief does not name a playbook for introductions, and the file's kind of work is not named by the brief. Without a playbook, the expectation comes from the file's own history and the founder's stated goals. The founder's goals include raising the seed round, hiring a Founding AI Engineer, landing design partners, and getting into accelerator programs. An introduction to a CTO at an unknown company does not map to any of these goals explicitly. The expectation is that the founder would either engage if the topic is relevant, or close the file if it is not.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced Arjun to Omkar Joshi, CTO of Redfern Labs, on 2026-08-04 at 06:20 UTC, stating that Omkar asked to compare notes on agent tooling.",
+     "evidence": [
+      "evt_#1",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Omkar Joshi, the CTO of Redfern Labs, who asked to compare notes on agent tooling. Omkar, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. Arjun, over to you."
+    },
+    {
+     "claim": "No reply has been received from Omkar Joshi since the introduction.",
+     "evidence": [
+      "file:last_touch",
+      "file:whose_move",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.49 days since first touch.",
+     "evidence": [
+      "num:days_quiet",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: Introly handed off to Arjun with 'Arjun, over to you.'",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": "Arjun, over to you."
+    },
+    {
+     "claim": "No promise was made in the introduction mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A topic-based introduction from a connector, where the founder has been handed the ball and must decide whether to engage. The topic (agent tooling) is adjacent to the founder's work, but the business relevance is unknown. The file is waiting for the founder's first move.",
+    "rivals": [
+     "A low-priority introduction that Introly included in a batch, with no expectation of conversion. The founder's silence is acceptable.",
+     "A test of the founder's responsiveness by Introly, where the quality of the reply matters more than whether a deal results.",
+     "A potential design partner or customer lead that the founder should prioritize because it is adjacent to the roadmap."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A conversation with Omkar to understand what Redfern Labs does, what agent tooling problems they face, and whether there is overlap with Nimbus Labs' roadmap.",
+     "proposition": "Omkar Joshi is a potential design partner or customer for Nimbus Labs' AI chief of staff."
+    },
+    {
+     "needs": "A conversation to establish whether the topic overlap is deep enough to warrant ongoing engagement, or whether this is a one-off technical discussion.",
+     "proposition": "Omkar is a peer researcher or engineer interested in agent tooling as a topic, with no immediate business relevance to Nimbus Labs."
+    },
+    {
+     "needs": "Observation of whether Introly sends follow-up mail if Arjun does not reply, or whether the introduction is treated as closed.",
+     "proposition": "Introly's introduction was a test of Arjun's responsiveness, or a low-priority match that Introly included in a batch of introductions."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "evt_#1",
+      "file:introduced_by"
+     ],
+     "claim": "This is a cold introduction from a connector, not a warm lead or a response to an outbound ask."
+    },
+    {
+     "based_on": [
+      "evt_#1"
+     ],
+     "claim": "Omkar initiated the introduction request through Introly, suggesting some level of interest in the topic, but no commitment to engage with Nimbus Labs specifically."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "evt_#1"
+     ],
+     "claim": "The file is waiting for Arjun to make the first substantive move: to write to Omkar and establish whether there is mutual interest."
+    },
+    {
+     "based_on": [
+      "brief:cbl_#2",
+      "brief:cbl_#3",
+      "brief:cbl_#4",
+      "brief:cbl_#5",
+      "brief:cbl_#6",
+      "file:kind"
+     ],
+     "claim": "The introduction does not map to any of the founder's stated goals in the brief: it is not a fundraise, a program application, a compliance step, a hire, or a design partner."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-05",
+    "for_whom": "yourself, to clarify whether this introduction is worth your time",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "own:3",
+     "cap:admin.executive_support.commitment_tracking#f1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:5",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "decide whether to engage with Omkar Joshi on agent tooling, and if so, write a reply within one business day. If you decide not to engage, close the file.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A connector introduction should be answered within one business day, even if only to acknowledge and propose a time to talk. Delay beyond that signals either disinterest or disorganization to the recipient.",
+     "kind": "practice",
+     "why": "The connector has already done the work of introduction; the founder's silence wastes that goodwill and makes the recipient wonder whether the introduction was worth their time."
+    },
+    {
+     "claim": "Topic-based introductions ('compare notes on X') are exploratory, not transactional. They succeed when the founder can articulate why the topic matters to their work and what they would learn from the conversation.",
+     "kind": "base_rate",
+     "why": "The recipient is not being asked to do something for you; they are being invited to a peer conversation. The frame must be mutual benefit, not extraction."
+    },
+    {
+     "claim": "An introduction that does not map to a stated goal should still be answered if the topic is adjacent to the company's work. It may open a door that was not on the roadmap.",
+     "kind": "practice",
+     "why": "Nimbus Labs is building AI tooling for founders; agent tooling is adjacent. Omkar may become a design partner, a customer, or a source of technical insight. The cost of a reply is low; the upside is uncertain but real."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Introductions from connectors that name a specific topic of mutual interest have a higher conversion rate than cold outreach, but only if the recipient's side is followed up within one to two days.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "cap:admin.executive_support.commitment_tracking#f1"
+     ],
+     "claim": "When a connector hands off with 'over to you,' the expectation is that the founder writes first, not that the other party writes back to the connector.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "evt_#1"
+     ],
+     "claim": "A connector introduction that names a specific topic ('compare notes on agent tooling') is not the same as a warm introduction to a potential investor or partner; it is a topic-based match, and the founder must establish relevance to their own work.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "brief:cbl_#27",
+     "evt_#1"
+    ],
+    "kind": "intro",
+    "why": "The file is an introduction from a connector (Introly) to a person (Omkar Joshi) at a company (Redfern Labs). The brief names Introly as a connector whose mail is an introduction, not a stranger. The file's role is explicitly 'intro' in the brief."
+   },
+   "scenarios": {
+    "act": "The founder writes to Omkar within one business day, acknowledging the introduction, stating why agent tooling is relevant to Nimbus Labs' work, and proposing a time to talk. Omkar replies with interest or disinterest. If interest, a conversation happens and the founder learns whether there is a business opportunity. If disinterest, the file closes. If no reply, the founder can follow up once after one week.",
+    "best": "Omkar is a CTO at a well-funded company building products that use agent tooling. He is interested in Nimbus Labs' approach and becomes a design partner, early customer, or source of technical feedback. The conversation leads to a partnership or a customer reference.",
+    "do_nothing": "The file remains open and quiet. After one week, it will be 7.5 days quiet. Introly may or may not follow up. Omkar may assume the introduction did not land, or may not expect a reply. The founder loses the opportunity to explore whether Redfern Labs is a design partner, customer, or source of insight. The thread goes cold.",
+    "signals_to_watch": [
+     "Omkar's reply time to the founder's first message (within one week is engaged; after one week is low priority or disinterested)",
+     "The content of Omkar's reply (does he ask questions about Nimbus Labs, or does he only discuss agent tooling in general?)",
+     "Whether Introly sends a follow-up message if the founder does not reply (signals whether Introly is tracking the introduction)",
+     "Whether the founder's reply is answered by Omkar or by someone else at Redfern Labs (signals whether Omkar is the right person or a gatekeeper)"
+    ],
+    "worst": "The founder writes, Omkar does not reply. The founder follows up once, Omkar still does not reply. The file closes with no outcome. The founder has spent two messages on a low-priority lead."
+   },
+   "unknowns": [
+    {
+     "question": "What does Redfern Labs do, and what is their stage and size?",
+     "relevance": "This determines whether they are a potential customer, partner, investor, or peer. The founder's approach to the conversation depends on this."
+    },
+    {
+     "question": "What is Omkar's seniority and decision-making authority at Redfern Labs?",
+     "relevance": "A CTO may be a technical peer, a potential hire, or a gatekeeper to a larger partnership. The founder's pitch and tone depend on this."
+    },
+    {
+     "question": "Why did Omkar ask Introly for an introduction to someone building an AI chief of staff? What problem is he trying to solve?",
+     "relevance": "This determines whether the conversation is exploratory or problem-driven, and whether there is a real opportunity or just a topic match."
+    },
+    {
+     "question": "Is Introly tracking this introduction, and will it follow up if Arjun does not reply?",
+     "relevance": "If Introly is passive, the founder owns the thread. If Introly is active, the founder may be judged on responsiveness by the connector."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-05 to decide. If you decide to engage, write within one business day of the introduction (by 2026-08-05). If you decide not to engage, close the file now. Do not wait beyond one week to reply; after one week, silence reads as disinterest. If Omkar replies to your message, respond within one business day. If Omkar does not reply to your first message, follow up once after one week (by 2026-08-11). If he does not reply to the follow-up, close the file."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced Arjun to Omkar Joshi, CTO of Redfern Labs, on 2026-08-04 at 06:20 UTC, stating that Omkar asked to compare notes on agent tooling.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Omkar Joshi, the CTO of Redfern Labs, who asked to compare notes on agent tooling. Omkar, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. Arjun, over to you.\"\n    },\n    {\n      \"claim\": \"No reply has been received from Omkar Joshi since the introduction.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"file:whose_move\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.49 days since first touch.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: Introly handed off to Arjun with 'Arjun, over to you.'\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": \"Arjun, over to you.\"\n    },\n    {\n      \"claim\": \"No promise was made in the introduction mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a cold introduction from a connector, not a warm lead or a response to an outbound ask.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"file:introduced_by\"\n      ]\n    },\n    {\n      \"claim\": \"Omkar initiated the introduction request through Introly, suggesting some level of interest in the topic, but no commitment to engage with Nimbus Labs specifically.\",\n      \"based_on\": [\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The file is waiting for Arjun to make the first substantive move: to write to Omkar and establish whether there is mutual interest.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The introduction does not map to any of the founder's stated goals in the brief: it is not a fundraise, a program application, a compliance step, a hire, or a design partner.\",\n      \"based_on\": [\n        \"brief:cbl_#2\",\n        \"brief:cbl_#3\",\n        \"brief:cbl_#4\",\n        \"brief:cbl_#5\",\n        \"brief:cbl_#6\",\n        \"file:kind\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions from connectors that name a specific topic of mutual interest have a higher conversion rate than cold outreach, but only if the recipient's side is followed up within one to two days.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a connector hands off with 'over to you,' the expectation is that the founder writes first, not that the other party writes back to the connector.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"cap:admin.executive_support.commitment_tracking#f1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A connector introduction that names a specific topic ('compare notes on agent tooling') is not the same as a warm introduction to a potential investor or partner; it is a topic-based match, and the founder must establish relevance to their own work.\",\n      \"based_on\": [\n        \"evt_#1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A connector introduction should be answered within one business day, even if only to acknowledge and propose a time to talk. Delay beyond that signals either disinterest or disorganization to the recipient.\",\n      \"why\": \"The connector has already done the work of introduction; the founder's silence wastes that goodwill and makes the recipient wonder whether the introduction was worth their time.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Topic-based introductions ('compare notes on X') are exploratory, not transactional. They succeed when the founder can articulate why the topic matters to their work and what they would learn from the conversation.\",\n      \"why\": \"The recipient is not being asked to do something for you; they are being invited to a peer conversation. The frame must be mutual benefit, not extraction.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction that does not map to a stated goal should still be answered if the topic is adjacent to the company's work. It may open a door that was not on the roadmap.\",\n      \"why\": \"Nimbus Labs is building AI tooling for founders; agent tooling is adjacent. Omkar may become a design partner, a customer, or a source of technical insight. The cost of a reply is low; the upside is uncertain but real.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Omkar Joshi is a potential design partner or customer for Nimbus Labs' AI chief of staff.\",\n      \"needs\": \"A conversation with Omkar to understand what Redfern Labs does, what agent tooling problems they face, and whether there is overlap with Nimbus Labs' roadmap.\"\n    },\n    {\n      \"proposition\": \"Omkar is a peer researcher or engineer interested in agent tooling as a topic, with no immediate business relevance to Nimbus Labs.\",\n      \"needs\": \"A conversation to establish whether the topic overlap is deep enough to warrant ongoing engagement, or whether this is a one-off technical discussion.\"\n    },\n    {\n      \"proposition\": \"Introly's introduction was a test of Arjun's responsiveness, or a low-priority match that Introly included in a batch of introductions.\",\n      \"needs\": \"Observation of whether Introly sends follow-up mail if Arjun does not reply, or whether the introduction is treated as closed.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Redfern Labs do, and what is their stage and size?\",\n      \"relevance\": \"This determines whether they are a potential customer, partner, investor, or peer. The founder's approach to the conversation depends on this.\"\n    },\n    {\n      \"question\": \"What is Omkar's seniority and decision-making authority at Redfern Labs?\",\n      \"relevance\": \"A CTO may be a technical peer, a potential hire, or a gatekeeper to a larger partnership. The founder's pitch and tone depend on this.\"\n    },\n    {\n      \"question\": \"Why did Omkar ask Introly for an introduction to someone building an AI chief of staff? What problem is he trying to solve?\",\n      \"relevance\": \"This determines whether the conversation is exploratory or problem-driven, and whether there is a real opportunity or just a topic match.\"\n    },\n    {\n      \"question\": \"Is Introly tracking this introduction, and will it follow up if Arjun does not reply?\",\n      \"relevance\": \"If Introly is passive, the founder owns the thread. If Introly is active, the founder may be judged on responsiveness by the connector.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A topic-based introduction from a connector, where the founder has been handed the ball and must decide whether to engage. The topic (agent tooling) is adjacent to the founder's work, but the business relevance is unknown. The file is waiting for the founder's first move.\",\n    \"rivals\": [\n      \"A low-priority introduction that Introly included in a batch, with no expectation of conversion. The founder's silence is acceptable.\",\n      \"A test of the founder's responsiveness by Introly, where the quality of the reply matters more than whether a deal results.\",\n      \"A potential design partner or customer lead that the founder should prioritize because it is adjacent to the roadmap.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is an introduction from a connector (Introly) to a person (Omkar Joshi) at a company (Redfern Labs). The brief names Introly as a connector whose mail is an introduction, not a stranger. The file's role is explicitly 'intro' in the brief.\",\n    \"evidence\": [\n      \"file:role\",\n      \"brief:cbl_#27\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief does not name a playbook for introductions, and the file's kind of work is not named by the brief. Without a playbook, the expectation comes from the file's own history and the founder's stated goals. The founder's goals include raising the seed round, hiring a Founding AI Engineer, landing design partners, and getting into accelerator programs. An introduction to a CTO at an unknown company does not map to any of these goals explicitly. The expectation is that the founder would either engage if the topic is relevant, or close the file if it is not.\",\n    \"actual\": \"The introduction was received 0.49 days ago. No reply has been sent. The ball is in the founder's court. No promise was made, and no deadline was set.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open and quiet. After one week, it will be 7.5 days quiet. Introly may or may not follow up. Omkar may assume the introduction did not land, or may not expect a reply. The founder loses the opportunity to explore whether Redfern Labs is a design partner, customer, or source of insight. The thread goes cold.\",\n    \"act\": \"The founder writes to Omkar within one business day, acknowledging the introduction, stating why agent tooling is relevant to Nimbus Labs' work, and proposing a time to talk. Omkar replies with interest or disinterest. If interest, a conversation happens and the founder learns whether there is a business opportunity. If disinterest, the file closes. If no reply, the founder can follow up once after one week.\",\n    \"best\": \"Omkar is a CTO at a well-funded company building products that use agent tooling. He is interested in Nimbus Labs' approach and becomes a design partner, early customer, or source of technical feedback. The conversation leads to a partnership or a customer reference.\",\n    \"worst\": \"The founder writes, Omkar does not reply. The founder follows up once, Omkar still does not reply. The file closes with no outcome. The founder has spent two messages on a low-priority lead.\",\n    \"signals_to_watch\": [\n      \"Omkar's reply time to the founder's first message (within one week is engaged; after one week is low priority or disinterested)\",\n      \"The content of Omkar's reply (does he ask questions about Nimbus Labs, or does he only discuss agent tooling in general?)\",\n      \"Whether Introly sends a follow-up message if the founder does not reply (signals whether Introly is tracking the introduction)\",\n      \"Whether the founder's reply is answered by Omkar or by someone else at Redfern Labs (signals whether Omkar is the right person or a gatekeeper)\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The introduction does not map to any of the founder's stated goals (fundraise, hiring, programs, compliance, design partners). It is exploratory.\",\n      \"No promise was made, and no deadline was set. The founder is not at risk of breaking a commitment.\",\n      \"The file is only 0.49 days old. There is no time pressure.\",\n      \"A reply can be sent at any time in the next week without damage. A non-reply is also reversible: the founder can write later if priorities change.\",\n      \"The upside is uncertain: Redfern Labs may or may not be relevant to Nimbus Labs' work. The downside is minimal: a wasted message or two.\",\n      \"The founder's time is scarce, and the file is not blocking any of the stated goals. It is a discretionary engagement.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"decide whether to engage with Omkar Joshi on agent tooling, and if so, write a reply within one business day. If you decide not to engage, close the file.\",\n    \"for_whom\": \"yourself, to clarify whether this introduction is worth your time\",\n    \"by_when\": \"2026-08-05\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:5\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"own:3\",\n      \"cap:admin.executive_support.commitment_tracking#f1\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If you decide to engage, write to Omkar today (2026-08-04) rather than waiting until tomorrow. A same-day reply signals that you are responsive and that the introduction landed. If you decide not to engage, close the file now and ask Introly to remove you from topic-based introductions that do not map to your stated goals.\",\n  \"wait_or_stop\": \"Wait until 2026-08-05 to decide. If you decide to engage, write within one business day of the introduction (by 2026-08-05). If you decide not to engage, close the file now. Do not wait beyond one week to reply; after one week, silence reads as disinterest. If Omkar replies to your message, respond within one business day. If Omkar does not reply to your first message, follow up once after one week (by 2026-08-11). If he does not reply to the follow-up, close the file.\",\n  \"done_when\": \"Done when you have either (a) had a conversation with Omkar and decided whether to pursue a partnership, design partnership, or customer relationship; or (b) decided that the introduction is not relevant and closed the file.\",\n  \"draft\": \"Hi Omkar, thanks for the intro through Introly. Agent tooling is directly relevant to what we're building at Nimbus Labs \u2014 we're working on an AI chief of staff that needs to orchestrate multiple tools and agents. I'd be curious to hear what problems you're solving on the agent side at Redfern Labs, and whether there's overlap. Are you free for a quick call this week? \u2014 Arjun\"\n}",
+  "site": "expert"
+ },
+ "c09d6b17d39ff3feb2e353a8e712e638906f6277e3e5cce0c38cd0b86a44bcf5": {
+  "framed": true,
+  "input_tokens": 8108,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4324,
+  "parsed": {
+   "alternative": "If the founder is uncertain whether Driftwood is an active investor or whether Sana is a decision-maker, send a brief reply that asks a clarifying question \u2014 e.g., 'Thanks for the intro. Is Driftwood actively investing in founder tools right now?' \u2014 before proposing a meeting. This reduces the risk of investing time in a misdirected conversation, but it also delays the reply and may signal uncertainty.",
+   "appraisal": {
+    "reasons": [
+     "The introduction is warm and names a specific interest, which increases the likelihood of a positive response if the founder acts quickly.",
+     "Driftwood is not yet in the active investor set, so this is a new prospect, not a stalled conversation.",
+     "The window for a strong first impression is narrow \u2014 a reply within hours is much more effective than a reply days later.",
+     "If the founder does not reply, the opportunity is lost, but it is not irreversible \u2014 a re-engagement through a human connector later could revive it.",
+     "The founder is in the middle of a seed round with multiple investors in motion, so this introduction is one of many, not the only prospect.",
+     "Sana Qadri's actual decision-making authority is unknown, so the upside is uncertain."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Sana replies with a meeting time or a clear next step, or she declines and names a reason. If she declines, record the reason and the date, and assess whether it is a timing, stage, or thesis pass \u2014 only the first two reopen.",
+   "draft": "Hi Sana, thanks for the intro. Nimbus Labs is an AI chief of staff for founders \u2014 we help them stay on top of investor updates, hiring, and fundraising without the overhead. Founders using us cut their admin time by half and close rounds faster. I'd love to show you how it works and hear what drew you to it. Are you free for a quick call this week? \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "The introduction was made at 06:00 UTC on 2026-08-04. As of 18:00 UTC on the same day, the founder has not replied. The file shows no open asks and no next step named by either party.",
+    "expected": "The brief names no playbook for this file, so no stage is defined. If this is an investor relationship, the expected stage would be 'introduction' or 'intro_made' \u2014 the first stage of a live investor relationship. At this stage, the playbook expects the founder to reply within hours with a clear statement of what the company does, the one number that matters, and a proposed next step.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly, an AI introduction agent, introduced Arjun to Sana Qadri at Driftwood on 2026-08-04 at 06:00 UTC.",
+     "evidence": [
+      "evt_#1",
+      "file:introduced_by",
+      "file:first_touch"
+     ],
+     "quote": "Arjun, meet Sana Qadri, who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time. Sana, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. Arjun, over to you."
+    },
+    {
+     "claim": "Sana Qadri's stated interest is in how Nimbus Labs keeps investor updates on time.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "asked to see how Nimbus Labs keeps investor updates on time"
+    },
+    {
+     "claim": "No reply has been received from Sana Qadri or Driftwood since the introduction.",
+     "evidence": [
+      "file:last_touch",
+      "file:whose_move",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days as of the dossier timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is classified as an intro in the brief, introduced by Introly, a connector.",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#27"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Driftwood's domain is fundraising according to the file.",
+     "evidence": [
+      "file:domains"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The move is ours \u2014 no open asks are recorded.",
+     "evidence": [
+      "file:whose_move",
+      "file:open_asks"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction from an AI agent to a finance operator at a potential investor, with a stated interest in operational practices, where the founder has not yet replied and the recipient has not yet followed up. The situation is early-stage and reversible, but the window for a strong first impression is narrow.",
+    "rivals": [
+     "A misdirected introduction to a non-investor or a non-decision-maker, where the founder's reply will be wasted effort.",
+     "An informational inquiry from a competitor or a peer, where the recipient is gathering intelligence rather than evaluating an investment.",
+     "A low-priority introduction that will be forgotten unless the founder creates urgency, in which case silence now signals disorganization."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from Sana that names a meeting, a diligence process, or a decision timeline; or a check of Driftwood's investment thesis and stage focus against Nimbus Labs' profile.",
+     "proposition": "Sana Qadri is evaluating Nimbus Labs as a potential investment for Driftwood."
+    },
+    {
+     "needs": "A reply that asks for a demo, a case study, or a reference; or a follow-up that does not name investment interest.",
+     "proposition": "Sana Qadri is gathering competitive intelligence on founder operations tools for Driftwood's own use."
+    },
+    {
+     "needs": "A follow-up from the founder that names a specific value or a time-bound opportunity; or a check of Driftwood's investment activity and stage focus to assess whether they are an active investor.",
+     "proposition": "Sana Qadri received the introduction but has not prioritized it, and silence will continue unless the founder creates urgency."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "Sana Qadri's interest in investor update practices suggests Driftwood may be evaluating Nimbus Labs as a potential investment or partnership, or seeking to understand the founder's operational discipline."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "brief:cbl_#27"
+     ],
+     "claim": "The introduction was made by an AI agent (Introly) rather than a human connector, which may affect the warmth and follow-through dynamics of the introduction."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "file:domains",
+      "cap:founder_office.fundraising.investor_relations#q"
+     ],
+     "claim": "This file should be classified as an investor relationship, not merely an intro, because Sana Qadri runs finance at Driftwood and the stated interest aligns with due diligence or investment evaluation."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The next move is ours because the introduction was made to Arjun with the phrase 'Arjun, over to you,' placing the burden of response on the founder."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-04",
+    "for_whom": "Sana Qadri at Driftwood",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+     "own:1",
+     "own:3",
+     "cap:founder_office.fundraising.investor_relations#f3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:4",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": "sana@driftwood.test",
+    "what": "Reply to Sana Qadri with a brief message that names what Nimbus Labs does, the one metric that matters, and a proposed next step \u2014 a call or a meeting.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A warm introduction that names a specific interest should be answered within hours, not days, to capture the recipient's attention while the introducer's message is still in their inbox.",
+     "kind": "practice",
+     "why": "The window of attention after an introduction is narrow; delay signals either disinterest or disorganization, both of which damage the founder's positioning."
+    },
+    {
+     "claim": "Finance operators at companies are rarely the decision-makers on venture investment, and their interest in operational practices is often informational rather than transactional.",
+     "kind": "base_rate",
+     "why": "Finance roles focus on internal operations and reporting; investment decisions flow through business development, strategy, or the founder's office."
+    },
+    {
+     "claim": "An introduction that asks the founder to 'take it from here' without naming a next step or a meeting time leaves the founder to guess what the recipient wants and when they expect to hear back.",
+     "kind": "practice",
+     "why": "Ambiguity about the ask and the timeline creates friction; the founder must either over-invest in a speculative reply or risk appearing unresponsive."
+    },
+    {
+     "claim": "An AI introduction agent that sources introductions based on stated interests may produce mismatches between the stated interest and the recipient's actual decision-making authority or timeline.",
+     "kind": "counter_pattern",
+     "why": "AI agents optimize for interest signals, not for relationship depth or organizational position; a person interested in a topic is not the same as a person who can act on it."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Introductions made by AI agents without human relationship context have lower conversion rates than those made by known connectors, because the introducer carries no reputation stake.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+      "own:2"
+     ],
+     "claim": "When an introduction names a specific interest or use case, the founder's first reply should address that interest directly to establish relevance.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "cap:founder_office.fundraising.investor_relations#f4"
+     ],
+     "claim": "A finance person at a company asking to see how another founder runs investor updates may be seeking operational intelligence rather than investment opportunity, and may not be a decision-maker on capital allocation.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:3"
+     ],
+     "claim": "Silence after an introduction for more than a few hours often signals the recipient did not prioritize the introduction or the introducer lacked credibility to create urgency.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "fact:2",
+     "cap:founder_office.fundraising.investor_relations#q"
+    ],
+    "kind": "investor",
+    "why": "The file is classified as an intro, but the stated interest in investor update practices, the finance role of the recipient, and the domain of fundraising all point to an investor relationship. The brief lists Driftwood in no investor wave, but the introduction suggests Driftwood may be an investor prospect. The file should be reclassified to track it as a live investor relationship, not merely as an introduction."
+   },
+   "scenarios": {
+    "act": "The founder replies to Sana Qadri within hours, naming what Nimbus Labs does, the one metric that matters (e.g., founder adoption, retention, or revenue), and a proposed next step (e.g., a 20-minute call to explore fit). If Sana is a decision-maker or a trusted advisor, this reply opens a conversation that could lead to a meeting, diligence, or an offer. If she is an operator, the reply establishes the founder's responsiveness and may lead to a referral or a future opportunity.",
+    "best": "Sana replies within a day with enthusiasm and a proposed meeting time. The founder and Sana meet, and Sana introduces the founder to Driftwood's investment partner. Driftwood's investment thesis aligns with Nimbus Labs' stage and market. A partner meeting is scheduled, and Driftwood enters the active investor set for the seed round.",
+    "do_nothing": "Sana Qadri's attention will drift. By 2026-08-05, the introduction will be buried in her inbox. By 2026-08-08, she will have moved on to other priorities. The introduction will be lost, and Driftwood will not be contacted again unless the founder or a connector re-engages. If Driftwood is an active investor aligned with Nimbus Labs' stage and thesis, this is a missed opportunity.",
+    "signals_to_watch": [
+     "Sana's reply time and tone \u2014 does she respond within a day, and does she name a next step or a meeting?",
+     "Whether Sana asks for a demo, a deck, or a data room \u2014 signals of deeper interest.",
+     "Whether Sana introduces the founder to a partner or a decision-maker at Driftwood \u2014 a signal that she is a connector, not just an operator.",
+     "Driftwood's investment activity and stage focus \u2014 do they have recent seed investments in AI or founder tools?",
+     "Whether other investors in the round show interest in Nimbus Labs \u2014 a signal that the round is gaining momentum, which may influence Driftwood's urgency."
+    ],
+    "worst": "The founder does not reply, or replies days later with a generic message. Sana does not respond. Driftwood is lost as a prospect. Alternatively, the founder replies promptly, but Sana's interest was informational, not transactional. She thanks the founder, asks a few questions about the product, and does not follow up. The founder invests time in a conversation that does not advance the round."
+   },
+   "unknowns": [
+    {
+     "question": "Is Driftwood an active investor in seed-stage AI companies, and what is their typical check size and investment thesis?",
+     "relevance": "If Driftwood is not an investor or focuses on a different stage or sector, this introduction is a misdirect and the founder's time is better spent elsewhere. If they are active and aligned, the introduction is valuable and warrants a prompt, substantive reply."
+    },
+    {
+     "question": "What is Sana Qadri's actual role in Driftwood's investment decisions \u2014 is she a decision-maker, a screener, or an operator gathering intelligence?",
+     "relevance": "If she is a decision-maker or a trusted advisor to one, the introduction is high-value and should be treated as an investor conversation. If she is an operator, the conversation may be informational and lower-priority."
+    },
+    {
+     "question": "Did Sana Qadri actively request this introduction, or did Introly infer her interest from her profile or activity?",
+     "relevance": "If she requested it, she is likely to be receptive to a reply. If Introly inferred it, her actual interest may be lower, and the introduction may be a false positive."
+    },
+    {
+     "question": "What is the founder's current investor update cadence and quality, and is it a strength or a weakness to highlight?",
+     "relevance": "If investor updates are a competitive advantage, the reply should lead with that. If they are a work in progress, the founder should either improve them before replying or frame the reply around other strengths."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The window for a strong first impression is hours, not days. If the founder does not reply by end of day 2026-08-04, the introduction's value decays rapidly. If Sana does not reply to the founder's message within three days, follow up once with a brief note that names a specific value or a time-bound opportunity. If there is no reply after the follow-up, move Driftwood to a watch list and re-engage only if the founder hears from Driftwood or a human connector vouches for them."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly, an AI introduction agent, introduced Arjun to Sana Qadri at Driftwood on 2026-08-04 at 06:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:introduced_by\",\n        \"file:first_touch\"\n      ],\n      \"quote\": \"Arjun, meet Sana Qadri, who runs finance at Driftwood and asked to see how Nimbus Labs keeps investor updates on time. Sana, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. Arjun, over to you.\"\n    },\n    {\n      \"claim\": \"Sana Qadri's stated interest is in how Nimbus Labs keeps investor updates on time.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"asked to see how Nimbus Labs keeps investor updates on time\"\n    },\n    {\n      \"claim\": \"No reply has been received from Sana Qadri or Driftwood since the introduction.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"file:whose_move\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days as of the dossier timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is classified as an intro in the brief, introduced by Introly, a connector.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#27\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Driftwood's domain is fundraising according to the file.\",\n      \"evidence\": [\n        \"file:domains\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The move is ours \u2014 no open asks are recorded.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"file:open_asks\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Sana Qadri's interest in investor update practices suggests Driftwood may be evaluating Nimbus Labs as a potential investment or partnership, or seeking to understand the founder's operational discipline.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The introduction was made by an AI agent (Introly) rather than a human connector, which may affect the warmth and follow-through dynamics of the introduction.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"brief:cbl_#27\"\n      ]\n    },\n    {\n      \"claim\": \"This file should be classified as an investor relationship, not merely an intro, because Sana Qadri runs finance at Driftwood and the stated interest aligns with due diligence or investment evaluation.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:domains\",\n        \"cap:founder_office.fundraising.investor_relations#q\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours because the introduction was made to Arjun with the phrase 'Arjun, over to you,' placing the burden of response on the founder.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions made by AI agents without human relationship context have lower conversion rates than those made by known connectors, because the introducer carries no reputation stake.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an introduction names a specific interest or use case, the founder's first reply should address that interest directly to establish relevance.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\",\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A finance person at a company asking to see how another founder runs investor updates may be seeking operational intelligence rather than investment opportunity, and may not be a decision-maker on capital allocation.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"cap:founder_office.fundraising.investor_relations#f4\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Silence after an introduction for more than a few hours often signals the recipient did not prioritize the introduction or the introducer lacked credibility to create urgency.\",\n      \"based_on\": [\n        \"own:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A warm introduction that names a specific interest should be answered within hours, not days, to capture the recipient's attention while the introducer's message is still in their inbox.\",\n      \"why\": \"The window of attention after an introduction is narrow; delay signals either disinterest or disorganization, both of which damage the founder's positioning.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Finance operators at companies are rarely the decision-makers on venture investment, and their interest in operational practices is often informational rather than transactional.\",\n      \"why\": \"Finance roles focus on internal operations and reporting; investment decisions flow through business development, strategy, or the founder's office.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction that asks the founder to 'take it from here' without naming a next step or a meeting time leaves the founder to guess what the recipient wants and when they expect to hear back.\",\n      \"why\": \"Ambiguity about the ask and the timeline creates friction; the founder must either over-invest in a speculative reply or risk appearing unresponsive.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An AI introduction agent that sources introductions based on stated interests may produce mismatches between the stated interest and the recipient's actual decision-making authority or timeline.\",\n      \"why\": \"AI agents optimize for interest signals, not for relationship depth or organizational position; a person interested in a topic is not the same as a person who can act on it.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Sana Qadri is evaluating Nimbus Labs as a potential investment for Driftwood.\",\n      \"needs\": \"A reply from Sana that names a meeting, a diligence process, or a decision timeline; or a check of Driftwood's investment thesis and stage focus against Nimbus Labs' profile.\"\n    },\n    {\n      \"proposition\": \"Sana Qadri is gathering competitive intelligence on founder operations tools for Driftwood's own use.\",\n      \"needs\": \"A reply that asks for a demo, a case study, or a reference; or a follow-up that does not name investment interest.\"\n    },\n    {\n      \"proposition\": \"Sana Qadri received the introduction but has not prioritized it, and silence will continue unless the founder creates urgency.\",\n      \"needs\": \"A follow-up from the founder that names a specific value or a time-bound opportunity; or a check of Driftwood's investment activity and stage focus to assess whether they are an active investor.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Driftwood an active investor in seed-stage AI companies, and what is their typical check size and investment thesis?\",\n      \"relevance\": \"If Driftwood is not an investor or focuses on a different stage or sector, this introduction is a misdirect and the founder's time is better spent elsewhere. If they are active and aligned, the introduction is valuable and warrants a prompt, substantive reply.\"\n    },\n    {\n      \"question\": \"What is Sana Qadri's actual role in Driftwood's investment decisions \u2014 is she a decision-maker, a screener, or an operator gathering intelligence?\",\n      \"relevance\": \"If she is a decision-maker or a trusted advisor to one, the introduction is high-value and should be treated as an investor conversation. If she is an operator, the conversation may be informational and lower-priority.\"\n    },\n    {\n      \"question\": \"Did Sana Qadri actively request this introduction, or did Introly infer her interest from her profile or activity?\",\n      \"relevance\": \"If she requested it, she is likely to be receptive to a reply. If Introly inferred it, her actual interest may be lower, and the introduction may be a false positive.\"\n    },\n    {\n      \"question\": \"What is the founder's current investor update cadence and quality, and is it a strength or a weakness to highlight?\",\n      \"relevance\": \"If investor updates are a competitive advantage, the reply should lead with that. If they are a work in progress, the founder should either improve them before replying or frame the reply around other strengths.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction from an AI agent to a finance operator at a potential investor, with a stated interest in operational practices, where the founder has not yet replied and the recipient has not yet followed up. The situation is early-stage and reversible, but the window for a strong first impression is narrow.\",\n    \"rivals\": [\n      \"A misdirected introduction to a non-investor or a non-decision-maker, where the founder's reply will be wasted effort.\",\n      \"An informational inquiry from a competitor or a peer, where the recipient is gathering intelligence rather than evaluating an investment.\",\n      \"A low-priority introduction that will be forgotten unless the founder creates urgency, in which case silence now signals disorganization.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is classified as an intro, but the stated interest in investor update practices, the finance role of the recipient, and the domain of fundraising all point to an investor relationship. The brief lists Driftwood in no investor wave, but the introduction suggests Driftwood may be an investor prospect. The file should be reclassified to track it as a live investor relationship, not merely as an introduction.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"fact:2\",\n      \"cap:founder_office.fundraising.investor_relations#q\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this file, so no stage is defined. If this is an investor relationship, the expected stage would be 'introduction' or 'intro_made' \u2014 the first stage of a live investor relationship. At this stage, the playbook expects the founder to reply within hours with a clear statement of what the company does, the one number that matters, and a proposed next step.\",\n    \"actual\": \"The introduction was made at 06:00 UTC on 2026-08-04. As of 18:00 UTC on the same day, the founder has not replied. The file shows no open asks and no next step named by either party.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Sana Qadri's attention will drift. By 2026-08-05, the introduction will be buried in her inbox. By 2026-08-08, she will have moved on to other priorities. The introduction will be lost, and Driftwood will not be contacted again unless the founder or a connector re-engages. If Driftwood is an active investor aligned with Nimbus Labs' stage and thesis, this is a missed opportunity.\",\n    \"act\": \"The founder replies to Sana Qadri within hours, naming what Nimbus Labs does, the one metric that matters (e.g., founder adoption, retention, or revenue), and a proposed next step (e.g., a 20-minute call to explore fit). If Sana is a decision-maker or a trusted advisor, this reply opens a conversation that could lead to a meeting, diligence, or an offer. If she is an operator, the reply establishes the founder's responsiveness and may lead to a referral or a future opportunity.\",\n    \"best\": \"Sana replies within a day with enthusiasm and a proposed meeting time. The founder and Sana meet, and Sana introduces the founder to Driftwood's investment partner. Driftwood's investment thesis aligns with Nimbus Labs' stage and market. A partner meeting is scheduled, and Driftwood enters the active investor set for the seed round.\",\n    \"worst\": \"The founder does not reply, or replies days later with a generic message. Sana does not respond. Driftwood is lost as a prospect. Alternatively, the founder replies promptly, but Sana's interest was informational, not transactional. She thanks the founder, asks a few questions about the product, and does not follow up. The founder invests time in a conversation that does not advance the round.\",\n    \"signals_to_watch\": [\n      \"Sana's reply time and tone \u2014 does she respond within a day, and does she name a next step or a meeting?\",\n      \"Whether Sana asks for a demo, a deck, or a data room \u2014 signals of deeper interest.\",\n      \"Whether Sana introduces the founder to a partner or a decision-maker at Driftwood \u2014 a signal that she is a connector, not just an operator.\",\n      \"Driftwood's investment activity and stage focus \u2014 do they have recent seed investments in AI or founder tools?\",\n      \"Whether other investors in the round show interest in Nimbus Labs \u2014 a signal that the round is gaining momentum, which may influence Driftwood's urgency.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The introduction is warm and names a specific interest, which increases the likelihood of a positive response if the founder acts quickly.\",\n      \"Driftwood is not yet in the active investor set, so this is a new prospect, not a stalled conversation.\",\n      \"The window for a strong first impression is narrow \u2014 a reply within hours is much more effective than a reply days later.\",\n      \"If the founder does not reply, the opportunity is lost, but it is not irreversible \u2014 a re-engagement through a human connector later could revive it.\",\n      \"The founder is in the middle of a seed round with multiple investors in motion, so this introduction is one of many, not the only prospect.\",\n      \"Sana Qadri's actual decision-making authority is unknown, so the upside is uncertain.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Reply to Sana Qadri with a brief message that names what Nimbus Labs does, the one metric that matters, and a proposed next step \u2014 a call or a meeting.\",\n    \"for_whom\": \"Sana Qadri at Driftwood\",\n    \"by_when\": \"2026-08-04\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\",\n      \"own:1\",\n      \"own:3\",\n      \"cap:founder_office.fundraising.investor_relations#f3\"\n    ],\n    \"to\": \"sana@driftwood.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder is uncertain whether Driftwood is an active investor or whether Sana is a decision-maker, send a brief reply that asks a clarifying question \u2014 e.g., 'Thanks for the intro. Is Driftwood actively investing in founder tools right now?' \u2014 before proposing a meeting. This reduces the risk of investing time in a misdirected conversation, but it also delays the reply and may signal uncertainty.\",\n  \"wait_or_stop\": \"Do not wait. The window for a strong first impression is hours, not days. If the founder does not reply by end of day 2026-08-04, the introduction's value decays rapidly. If Sana does not reply to the founder's message within three days, follow up once with a brief note that names a specific value or a time-bound opportunity. If there is no reply after the follow-up, move Driftwood to a watch list and re-engage only if the founder hears from Driftwood or a human connector vouches for them.\",\n  \"done_when\": \"Sana replies with a meeting time or a clear next step, or she declines and names a reason. If she declines, record the reason and the date, and assess whether it is a timing, stage, or thesis pass \u2014 only the first two reopen.\",\n  \"draft\": \"Hi Sana, thanks for the intro. Nimbus Labs is an AI chief of staff for founders \u2014 we help them stay on top of investor updates, hiring, and fundraising without the overhead. Founders using us cut their admin time by half and close rounds faster. I'd love to show you how it works and hear what drew you to it. Are you free for a quick call this week? \u2014 Arjun\"\n}",
+  "site": "expert"
+ }
+}

@@ -1,0 +1,256 @@
+{
+ "95dc371cd28af2e2617e2b3f31cc619441aa2af5185cf501fb20c70934c77a86": {
+  "framed": true,
+  "input_tokens": 7091,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3532,
+  "parsed": {
+   "alternative": "If the founder has a warm introduction to someone at harbourvc.test, send a brief follow-up message on 2026-09-08 (one week after the initial update) asking if they have had a chance to review the metrics and offering to schedule a call. This is appropriate only if the founder has a prior relationship with the VC.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because this is one of multiple VCs in the seed wave, and the founder's success does not depend on this single VC's response.",
+     "The urgency is low because the file is only 1.29 days old, and silence in the first few days is normal and expected for VC outreach.",
+     "A wrong move (chasing too early) is reversible: the founder can apologize and move on, though it may damage the relationship.",
+     "The reasoning units found low risk and low urgency, with engagement measured as healthy, which aligns with the assessment that this is a normal part of the seed fundraising process."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The VC responds with interest, requests a call, or explicitly passes on the opportunity. If the VC does not respond within three weeks, the file is closed as a dead lead.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "One VC (harbourvc.test) has received an August update with strong metrics (14 clinics live, 30% month-on-month revenue growth, 61% of appointments booked by the assistant). No reply has been received in 1.29 days.",
+    "expected": "Without a playbook, the expectation comes from the brief: the founder is raising a seed round and has written to multiple VCs. The expected pattern is that some VCs will respond within days, others within weeks, and some will not respond at all. A response rate of 10-20% is typical for cold outreach.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "We sent an August update to harbourvc.test on 2026-09-01 at 05:00 UTC with operational metrics and revenue growth.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Kitebird - August update Hi Dev, As promised, the August update: 14 clinics are live, revenue is up 30% month on month, and the scheduling assistant now books 61% of appointments without staff. Meera"
+    },
+    {
+     "claim": "No reply has been received from harbourvc.test since we sent the August update.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.29 days as of the dossier timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No kind of work is named for this file in the company brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for it.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows no promises made by harbourvc.test or by us to them.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Harbourvc.test is not listed in the brief as a counterparty in any work in motion.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found low risk and low urgency, with engagement measured as healthy.",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.risk"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A seed-stage founder has sent an operational update to a venture capital firm as part of a seed wave outreach. The VC has not yet responded. The file is tracking the outbound pitch and waiting for the VC's reply.",
+    "rivals": [
+     "This is a warm introduction to a VC who is actively reviewing the founder's company, and the update was sent as a follow-up to an earlier conversation or meeting.",
+     "This is a cold outreach to a VC who is not actively reviewing new deals, and the silence is expected and normal.",
+     "This is a follow-up to a prior rejection or pass, and the founder is trying to re-engage the VC with new metrics."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The founder's own notes on how this contact was made, or a prior message in the thread that the dossier does not show.",
+     "proposition": "Harbourvc.test is a warm introduction or a VC the founder has met before, and the August update was sent as a follow-up to an earlier conversation."
+    },
+    {
+     "needs": "Confirmation from the founder that this was a cold outreach, and whether the VC was on a target list.",
+     "proposition": "Harbourvc.test is a cold outreach target, and the August update was part of a seed wave blast to multiple VCs."
+    },
+    {
+     "needs": "A signal from the VC: a calendar invite, a request for more information, or a message from the VC's team.",
+     "proposition": "The VC is interested but is in a slow review cycle, and will respond in the coming weeks."
+    },
+    {
+     "needs": "Passage of time (two to three weeks) without a response, or a signal that the VC has moved on to other deals.",
+     "proposition": "The VC is not interested and will not respond."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:7",
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9"
+     ],
+     "claim": "This file represents an outbound introduction or pitch to a venture capital firm that is not yet tracked as an active investor relationship in the brief."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:6"
+     ],
+     "claim": "The August update was sent as a courtesy or as part of a seed wave outreach, not in response to a specific request or commitment."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "fact:1"
+     ],
+     "claim": "The ball is in their court: we have sent information and are waiting for their response."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The quiet period of 1.29 days is well within normal processing time for a venture capital firm receiving an unsolicited update."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-15",
+    "for_whom": "harbourvc.test",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:3",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "do nothing; wait for the VC to respond",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A seed-stage founder sending updates to multiple VCs in a wave should expect a staggered response pattern, with some firms responding within days and others taking weeks or not responding at all.",
+     "kind": "practice",
+     "why": "VCs receive hundreds of updates monthly; response time correlates with their current deal flow and fund cycle, not with the quality of the update or the founder's merit."
+    },
+    {
+     "claim": "The first touch to a new VC contact should not be chased until at least two weeks have passed, unless the VC explicitly requested a follow-up.",
+     "kind": "base_rate",
+     "why": "Early chasing reads as either desperation or pressure and damages the relationship before it forms; VCs expect founders to respect their process."
+    },
+    {
+     "claim": "A VC who is genuinely interested will often respond to a strong update within three to five business days; silence beyond that usually means the firm is not a fit or is not actively reviewing new deals.",
+     "kind": "counter_pattern",
+     "why": "Interested VCs move quickly to schedule a call or ask clarifying questions; lack of response is often more informative than a polite rejection."
+    },
+    {
+     "claim": "Tracking outbound pitches to VCs should distinguish between warm introductions (where a response is expected) and cold outreach (where silence is normal and does not require action).",
+     "kind": "practice",
+     "why": "The founder's next move depends entirely on whether the VC has a reason to prioritize this founder's message over others."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Venture capital firms typically take one to two weeks to respond to unsolicited founder updates, and silence in the first few days is not a signal of disinterest.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence from grant reviewers, programme committees, and finance departments is a matter of process, not sentiment.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Escalating on quietness alone converts a normal wait into a relationship event and damages the relationship.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "brief:cbl_#7",
+     "brief:cbl_#8",
+     "brief:cbl_#9",
+     "brief:cbl_#10",
+     "brief:cbl_#11"
+    ],
+    "kind": "investor",
+    "why": "The file shows an outbound message to a venture capital firm with operational metrics and revenue growth, which is the form of a seed-stage pitch or update. The brief lists multiple VCs as targets for the seed round, and harbourvc.test fits that pattern, even though it is not explicitly named in the brief."
+   },
+   "scenarios": {
+    "act": "The founder sends a follow-up message to the VC, asking for feedback or requesting a call. This risks being perceived as pushy and may damage the relationship before it forms, especially if the VC is in a slow review cycle.",
+    "best": "The VC responds within one to two weeks with interest, requests a call, and moves the founder into their review process. The file becomes an active investor relationship.",
+    "do_nothing": "The file remains open and quiet. If the VC does not respond within two to three weeks, the founder will have to decide whether to chase or move on. The file will age and may be flagged as overdue if a playbook is later assigned to it.",
+    "signals_to_watch": [
+     "A reply from the VC within two weeks, indicating interest or a request for more information.",
+     "A calendar invite from the VC's team, indicating a meeting has been scheduled.",
+     "A message from the VC declining to invest or passing on the opportunity.",
+     "Silence beyond three weeks, indicating the VC is not interested and will not respond."
+    ],
+    "worst": "The VC does not respond, and the founder has wasted time tracking this contact. The file becomes a dead lead and should be closed."
+   },
+   "unknowns": [
+    {
+     "question": "Is harbourvc.test a warm introduction or a cold outreach target?",
+     "relevance": "This determines whether silence is expected and normal, or whether it signals disinterest. A warm introduction expects a response within days; a cold outreach expects silence or a response within weeks."
+    },
+    {
+     "question": "Was the August update sent as part of a deliberate seed wave strategy, or as a one-off outreach?",
+     "relevance": "If it was part of a wave, the founder should expect a staggered response pattern and should not chase individual VCs. If it was one-off, the founder may want to follow up sooner."
+    },
+    {
+     "question": "Does the founder have a prior relationship with anyone at harbourvc.test?",
+     "relevance": "A prior relationship changes the expected response time and the appropriateness of a follow-up. A cold contact should wait longer before chasing."
+    },
+    {
+     "question": "What is the VC's typical response time to unsolicited updates?",
+     "relevance": "If the VC is known to be slow, silence is not a signal. If the VC is known to be responsive, silence may indicate disinterest."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-15 (two weeks after the initial update). If no response has been received by then, the founder may send a single follow-up message asking for feedback. If no response is received by 2026-09-22 (three weeks), close the file and move on to other VCs. Do not chase before two weeks have passed."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"We sent an August update to harbourvc.test on 2026-09-01 at 05:00 UTC with operational metrics and revenue growth.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Kitebird - August update Hi Dev, As promised, the August update: 14 clinics are live, revenue is up 30% month on month, and the scheduling assistant now books 61% of appointments without staff. Meera\"\n    },\n    {\n      \"claim\": \"No reply has been received from harbourvc.test since we sent the August update.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.29 days as of the dossier timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No kind of work is named for this file in the company brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for it.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows no promises made by harbourvc.test or by us to them.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Harbourvc.test is not listed in the brief as a counterparty in any work in motion.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found low risk and low urgency, with engagement measured as healthy.\",\n      \"evidence\": [\n        \"ru:core.temporal\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This file represents an outbound introduction or pitch to a venture capital firm that is not yet tracked as an active investor relationship in the brief.\",\n      \"based_on\": [\n        \"fact:7\",\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\"\n      ]\n    },\n    {\n      \"claim\": \"The August update was sent as a courtesy or as part of a seed wave outreach, not in response to a specific request or commitment.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in their court: we have sent information and are waiting for their response.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The quiet period of 1.29 days is well within normal processing time for a venture capital firm receiving an unsolicited update.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Venture capital firms typically take one to two weeks to respond to unsolicited founder updates, and silence in the first few days is not a signal of disinterest.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Administrative silence from grant reviewers, programme committees, and finance departments is a matter of process, not sentiment.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Escalating on quietness alone converts a normal wait into a relationship event and damages the relationship.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A seed-stage founder sending updates to multiple VCs in a wave should expect a staggered response pattern, with some firms responding within days and others taking weeks or not responding at all.\",\n      \"why\": \"VCs receive hundreds of updates monthly; response time correlates with their current deal flow and fund cycle, not with the quality of the update or the founder's merit.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"The first touch to a new VC contact should not be chased until at least two weeks have passed, unless the VC explicitly requested a follow-up.\",\n      \"why\": \"Early chasing reads as either desperation or pressure and damages the relationship before it forms; VCs expect founders to respect their process.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A VC who is genuinely interested will often respond to a strong update within three to five business days; silence beyond that usually means the firm is not a fit or is not actively reviewing new deals.\",\n      \"why\": \"Interested VCs move quickly to schedule a call or ask clarifying questions; lack of response is often more informative than a polite rejection.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Tracking outbound pitches to VCs should distinguish between warm introductions (where a response is expected) and cold outreach (where silence is normal and does not require action).\",\n      \"why\": \"The founder's next move depends entirely on whether the VC has a reason to prioritize this founder's message over others.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Harbourvc.test is a warm introduction or a VC the founder has met before, and the August update was sent as a follow-up to an earlier conversation.\",\n      \"needs\": \"The founder's own notes on how this contact was made, or a prior message in the thread that the dossier does not show.\"\n    },\n    {\n      \"proposition\": \"Harbourvc.test is a cold outreach target, and the August update was part of a seed wave blast to multiple VCs.\",\n      \"needs\": \"Confirmation from the founder that this was a cold outreach, and whether the VC was on a target list.\"\n    },\n    {\n      \"proposition\": \"The VC is interested but is in a slow review cycle, and will respond in the coming weeks.\",\n      \"needs\": \"A signal from the VC: a calendar invite, a request for more information, or a message from the VC's team.\"\n    },\n    {\n      \"proposition\": \"The VC is not interested and will not respond.\",\n      \"needs\": \"Passage of time (two to three weeks) without a response, or a signal that the VC has moved on to other deals.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is harbourvc.test a warm introduction or a cold outreach target?\",\n      \"relevance\": \"This determines whether silence is expected and normal, or whether it signals disinterest. A warm introduction expects a response within days; a cold outreach expects silence or a response within weeks.\"\n    },\n    {\n      \"question\": \"Was the August update sent as part of a deliberate seed wave strategy, or as a one-off outreach?\",\n      \"relevance\": \"If it was part of a wave, the founder should expect a staggered response pattern and should not chase individual VCs. If it was one-off, the founder may want to follow up sooner.\"\n    },\n    {\n      \"question\": \"Does the founder have a prior relationship with anyone at harbourvc.test?\",\n      \"relevance\": \"A prior relationship changes the expected response time and the appropriateness of a follow-up. A cold contact should wait longer before chasing.\"\n    },\n    {\n      \"question\": \"What is the VC's typical response time to unsolicited updates?\",\n      \"relevance\": \"If the VC is known to be slow, silence is not a signal. If the VC is known to be responsive, silence may indicate disinterest.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A seed-stage founder has sent an operational update to a venture capital firm as part of a seed wave outreach. The VC has not yet responded. The file is tracking the outbound pitch and waiting for the VC's reply.\",\n    \"rivals\": [\n      \"This is a warm introduction to a VC who is actively reviewing the founder's company, and the update was sent as a follow-up to an earlier conversation or meeting.\",\n      \"This is a cold outreach to a VC who is not actively reviewing new deals, and the silence is expected and normal.\",\n      \"This is a follow-up to a prior rejection or pass, and the founder is trying to re-engage the VC with new metrics.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file shows an outbound message to a venture capital firm with operational metrics and revenue growth, which is the form of a seed-stage pitch or update. The brief lists multiple VCs as targets for the seed round, and harbourvc.test fits that pattern, even though it is not explicitly named in the brief.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"brief:cbl_#7\",\n      \"brief:cbl_#8\",\n      \"brief:cbl_#9\",\n      \"brief:cbl_#10\",\n      \"brief:cbl_#11\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief: the founder is raising a seed round and has written to multiple VCs. The expected pattern is that some VCs will respond within days, others within weeks, and some will not respond at all. A response rate of 10-20% is typical for cold outreach.\",\n    \"actual\": \"One VC (harbourvc.test) has received an August update with strong metrics (14 clinics live, 30% month-on-month revenue growth, 61% of appointments booked by the assistant). No reply has been received in 1.29 days.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open and quiet. If the VC does not respond within two to three weeks, the founder will have to decide whether to chase or move on. The file will age and may be flagged as overdue if a playbook is later assigned to it.\",\n    \"act\": \"The founder sends a follow-up message to the VC, asking for feedback or requesting a call. This risks being perceived as pushy and may damage the relationship before it forms, especially if the VC is in a slow review cycle.\",\n    \"best\": \"The VC responds within one to two weeks with interest, requests a call, and moves the founder into their review process. The file becomes an active investor relationship.\",\n    \"worst\": \"The VC does not respond, and the founder has wasted time tracking this contact. The file becomes a dead lead and should be closed.\",\n    \"signals_to_watch\": [\n      \"A reply from the VC within two weeks, indicating interest or a request for more information.\",\n      \"A calendar invite from the VC's team, indicating a meeting has been scheduled.\",\n      \"A message from the VC declining to invest or passing on the opportunity.\",\n      \"Silence beyond three weeks, indicating the VC is not interested and will not respond.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because this is one of multiple VCs in the seed wave, and the founder's success does not depend on this single VC's response.\",\n      \"The urgency is low because the file is only 1.29 days old, and silence in the first few days is normal and expected for VC outreach.\",\n      \"A wrong move (chasing too early) is reversible: the founder can apologize and move on, though it may damage the relationship.\",\n      \"The reasoning units found low risk and low urgency, with engagement measured as healthy, which aligns with the assessment that this is a normal part of the seed fundraising process.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"do nothing; wait for the VC to respond\",\n    \"for_whom\": \"harbourvc.test\",\n    \"by_when\": \"2026-09-15\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder has a warm introduction to someone at harbourvc.test, send a brief follow-up message on 2026-09-08 (one week after the initial update) asking if they have had a chance to review the metrics and offering to schedule a call. This is appropriate only if the founder has a prior relationship with the VC.\",\n  \"wait_or_stop\": \"Wait until 2026-09-15 (two weeks after the initial update). If no response has been received by then, the founder may send a single follow-up message asking for feedback. If no response is received by 2026-09-22 (three weeks), close the file and move on to other VCs. Do not chase before two weeks have passed.\",\n  \"done_when\": \"The VC responds with interest, requests a call, or explicitly passes on the opportunity. If the VC does not respond within three weeks, the file is closed as a dead lead.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

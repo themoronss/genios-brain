@@ -1,0 +1,221 @@
+{
+ "61e203e8c3613a557118678fdda32412f0bf261b92fb2155f7cb04cf5481ee51": {
+  "framed": true,
+  "input_tokens": 7036,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3216,
+  "parsed": {
+   "alternative": "Before replying, send a message to the connector or to your team asking what Brightloop is and why they reached out. This delays the reply by a day but ensures you know what you are walking into. If you cannot find the context quickly, reply to Sana anyway and ask her to tell you more about Brightloop in the meeting.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because Brightloop is unknown and may or may not be relevant to your goals, but a meeting is a low-cost way to find out.",
+     "The urgency is high because the proposed meeting dates are within a few days, and a delay of over three days on a meeting request is already a signal of disinterest that may be irreversible.",
+     "A wrong move (not replying, or replying too late) is reversible in principle\u2014you can always reach out later\u2014but the cost is high: you lose the initiative and the counterparty's goodwill.",
+     "The file has been quiet for 3.25 days, and the proposed dates are 4 Aug and 5 Aug, leaving only a day or two to confirm before the meeting is imminent."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "Sana sends the calendar invite for one of the two proposed times, and you have accepted it.",
+   "draft": "Hi Sana, thanks for reaching out. Wednesday 5 Aug at 11am IST works well for me. Looking forward to it. Please send the invite when you have a moment.",
+   "expected_vs_actual": {
+    "actual": "No reply has been sent for over three days. The proposed meeting dates are now within a few days, and the window to confirm is closing.",
+    "expected": "The brief names no work with Brightloop, so there is no playbook and no expected stage. From the file's own history: a counterparty has made a positive reply with a meeting request, and the next step is to confirm the time. The expected move is a prompt reply within a day.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Sana Qureshi from Brightloop wrote on 2026-07-30 proposing two meeting times: Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST, and asked for confirmation before sending an invite.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Happy to chat. Does Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST work? I will send an invite once you confirm."
+    },
+    {
+     "claim": "The file has been quiet for 3.25 days as of the dossier date 2026-08-02 12:00 UTC, with no response sent to Sana's meeting proposal.",
+     "evidence": [
+      "file:whose_move",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Brightloop is not named in the company brief as a counterparty for any work in motion.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The kind of work for this file is not named by the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in Sana's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in your court: you must confirm which meeting time works before Sana will send the invite.",
+     "evidence": [
+      "file:whose_move",
+      "evt_#1"
+     ],
+     "quote": "I will send an invite once you confirm"
+    }
+   ],
+   "frames": {
+    "primary": "A counterparty has made a positive reply with a specific meeting request and is waiting for your confirmation. The ball is in your court, and the proposed dates are imminent. This is a live account administration situation where a prompt reply is expected.",
+    "rivals": [
+     "This is a cold outreach from a vendor or service provider, and you are deciding whether to engage at all.",
+     "This is a follow-up to an earlier conversation that you have forgotten or that the dossier does not show, and you are waiting for context before replying.",
+     "This is a low-priority introduction that has been overlooked, and the counterparty is about to withdraw the offer due to your silence."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A record in the brief or in earlier mail showing how Brightloop came to know you, or what they do.",
+     "proposition": "Brightloop is a potential design partner, investor, or vendor that was introduced by Introly or another connector."
+    },
+    {
+     "needs": "A search of mail before 2026-07-30 for any earlier contact with Brightloop or Sana Qureshi.",
+     "proposition": "This is a follow-up to an earlier conversation or introduction that the dossier does not show because the mail was not captured or the file was created after the initial touch."
+    },
+    {
+     "needs": "A statement from you or from the brief about what Brightloop does and why they are relevant.",
+     "proposition": "Brightloop is a vendor or service provider offering something relevant to Nimbus Labs' work."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin",
+      "fact:1",
+      "fact:6"
+     ],
+     "claim": "This is a live account administration situation: a counterparty has made a positive reply with a meeting request, and the next step is agreed in principle but awaits your confirmation."
+    },
+    {
+     "based_on": [
+      "file:role",
+      "file:kind"
+     ],
+     "claim": "The file's purpose is not yet clear from the dossier: Brightloop appears in no stated goal or work stream, so the reason for this meeting is unknown."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:first_touch"
+     ],
+     "claim": "The meeting dates (4 Aug and 5 Aug) are within the next few days from the dossier date of 2 Aug, making this time-sensitive."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-02",
+    "for_whom": "Sana Qureshi at Brightloop",
+    "guided_by": [
+     "sig:admin.sit.live_account_admin",
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:6",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "sana@brightloop.test",
+    "what": "reply to Sana confirming which of the two meeting times works, and ask her to send the invite",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting request with two specific times offered is the easiest ask to answer: it requires only a one-line reply and costs nothing to grant.",
+     "kind": "practice",
+     "why": "The counterparty has done the work of finding times; you need only pick one. Delay on this kind of ask is disproportionately costly to the relationship."
+    },
+    {
+     "claim": "When a counterparty you do not yet know proposes a meeting and you do not reply within a day, they assume you are not interested and move on.",
+     "kind": "base_rate",
+     "why": "A meeting request is a low-friction ask; a slow reply signals that the meeting is not a priority, which the counterparty reads as low interest in them."
+    },
+    {
+     "claim": "The reason for a meeting should be known before you confirm the time, or the meeting will be awkward and may waste both parties' time.",
+     "kind": "practice",
+     "why": "If you do not know why Brightloop wants to meet, you cannot prepare, and the meeting may be a mismatch of expectations."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A counterparty who proposes specific meeting times and asks for confirmation before sending an invite is signalling genuine interest and expects a prompt reply.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "num:days_quiet",
+      "fact:1"
+     ],
+     "claim": "Silence on a meeting proposal for over three days, when the proposed dates are imminent, reads as either disinterest or disorganisation and risks the counterparty withdrawing the offer.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence from a counterparty is usually process, not sentiment; but silence from the founder on a meeting request is usually read as a signal.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "file:kind",
+     "evt_#1"
+    ],
+    "kind": "intro",
+    "why": "Brightloop is a counterparty unknown to the brief, and Sana Qureshi is proposing a first meeting. This is the shape of an introduction or a new business development opportunity. The file's domain is admin, and the work is account administration around a meeting request, but the underlying kind of work (what Brightloop is for) is not yet named. If Brightloop is a design partner, investor, or vendor, the kind would be partner, investor, or vendor respectively; but the dossier does not say. An intro is the safest classification until the purpose is clear."
+   },
+   "scenarios": {
+    "act": "You confirm one of the two meeting times, Sana sends the invite, and the meeting happens as scheduled. You learn what Brightloop wants and can decide whether to pursue the relationship.",
+    "best": "Brightloop is a valuable design partner, investor, or customer, and the meeting leads to a productive relationship. Your prompt reply signals professionalism and interest, and Sana is impressed.",
+    "do_nothing": "Sana will assume you are not interested and will not send the invite. The meeting will not happen. If Brightloop is a genuine opportunity, it will be lost. The counterparty may reach out once more, or may move on to other prospects.",
+    "signals_to_watch": [
+     "Whether Sana sends the invite after you confirm a time (signal: the meeting is real).",
+     "Whether Sana reaches out again if you do not reply by 2026-08-03 (signal: she is still interested but losing patience).",
+     "What Brightloop's business is and how they found you (signal: whether this is a warm introduction or a cold outreach)."
+    ],
+    "worst": "You confirm a meeting time without knowing what Brightloop wants, the meeting is a mismatch of expectations, and you waste time. Or you do not reply, the opportunity is lost, and Sana tells others that you are unresponsive."
+   },
+   "unknowns": [
+    {
+     "question": "What is Brightloop, and why did they reach out to you?",
+     "relevance": "You cannot decide whether to take the meeting or how to prepare for it without knowing what they want. This is the most important unknown."
+    },
+    {
+     "question": "How did Sana Qureshi get your contact, and was there an introduction or prior conversation?",
+     "relevance": "If this is a cold outreach, the meeting may be a sales pitch; if it is a warm introduction, it may be a genuine opportunity. The source changes the priority."
+    },
+    {
+     "question": "Is there a reason you have not yet replied to Sana's message?",
+     "relevance": "If you are waiting for information or a decision before confirming, the next move is to get that information. If you simply have not seen the message, the move is to reply now."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The proposed dates are imminent, and a delay of over three days is already a risk. If you do not know what Brightloop is, reply anyway and ask them to tell you more. Stop if Sana does not send the invite within a day of your confirmation, or if she reaches out again to ask whether you are still interested."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Sana Qureshi from Brightloop wrote on 2026-07-30 proposing two meeting times: Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST, and asked for confirmation before sending an invite.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Happy to chat. Does Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST work? I will send an invite once you confirm.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 3.25 days as of the dossier date 2026-08-02 12:00 UTC, with no response sent to Sana's meeting proposal.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Brightloop is not named in the company brief as a counterparty for any work in motion.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The kind of work for this file is not named by the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in Sana's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in your court: you must confirm which meeting time works before Sana will send the invite.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"evt_#1\"\n      ],\n      \"quote\": \"I will send an invite once you confirm\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a live account administration situation: a counterparty has made a positive reply with a meeting request, and the next step is agreed in principle but awaits your confirmation.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\",\n        \"fact:1\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"claim\": \"The file's purpose is not yet clear from the dossier: Brightloop appears in no stated goal or work stream, so the reason for this meeting is unknown.\",\n      \"based_on\": [\n        \"file:role\",\n        \"file:kind\"\n      ]\n    },\n    {\n      \"claim\": \"The meeting dates (4 Aug and 5 Aug) are within the next few days from the dossier date of 2 Aug, making this time-sensitive.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:first_touch\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A counterparty who proposes specific meeting times and asks for confirmation before sending an invite is signalling genuine interest and expects a prompt reply.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence on a meeting proposal for over three days, when the proposed dates are imminent, reads as either disinterest or disorganisation and risks the counterparty withdrawing the offer.\",\n      \"based_on\": [\n        \"num:days_quiet\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Administrative silence from a counterparty is usually process, not sentiment; but silence from the founder on a meeting request is usually read as a signal.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting request with two specific times offered is the easiest ask to answer: it requires only a one-line reply and costs nothing to grant.\",\n      \"why\": \"The counterparty has done the work of finding times; you need only pick one. Delay on this kind of ask is disproportionately costly to the relationship.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a counterparty you do not yet know proposes a meeting and you do not reply within a day, they assume you are not interested and move on.\",\n      \"why\": \"A meeting request is a low-friction ask; a slow reply signals that the meeting is not a priority, which the counterparty reads as low interest in them.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The reason for a meeting should be known before you confirm the time, or the meeting will be awkward and may waste both parties' time.\",\n      \"why\": \"If you do not know why Brightloop wants to meet, you cannot prepare, and the meeting may be a mismatch of expectations.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Brightloop is a potential design partner, investor, or vendor that was introduced by Introly or another connector.\",\n      \"needs\": \"A record in the brief or in earlier mail showing how Brightloop came to know you, or what they do.\"\n    },\n    {\n      \"proposition\": \"This is a follow-up to an earlier conversation or introduction that the dossier does not show because the mail was not captured or the file was created after the initial touch.\",\n      \"needs\": \"A search of mail before 2026-07-30 for any earlier contact with Brightloop or Sana Qureshi.\"\n    },\n    {\n      \"proposition\": \"Brightloop is a vendor or service provider offering something relevant to Nimbus Labs' work.\",\n      \"needs\": \"A statement from you or from the brief about what Brightloop does and why they are relevant.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Brightloop, and why did they reach out to you?\",\n      \"relevance\": \"You cannot decide whether to take the meeting or how to prepare for it without knowing what they want. This is the most important unknown.\"\n    },\n    {\n      \"question\": \"How did Sana Qureshi get your contact, and was there an introduction or prior conversation?\",\n      \"relevance\": \"If this is a cold outreach, the meeting may be a sales pitch; if it is a warm introduction, it may be a genuine opportunity. The source changes the priority.\"\n    },\n    {\n      \"question\": \"Is there a reason you have not yet replied to Sana's message?\",\n      \"relevance\": \"If you are waiting for information or a decision before confirming, the next move is to get that information. If you simply have not seen the message, the move is to reply now.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A counterparty has made a positive reply with a specific meeting request and is waiting for your confirmation. The ball is in your court, and the proposed dates are imminent. This is a live account administration situation where a prompt reply is expected.\",\n    \"rivals\": [\n      \"This is a cold outreach from a vendor or service provider, and you are deciding whether to engage at all.\",\n      \"This is a follow-up to an earlier conversation that you have forgotten or that the dossier does not show, and you are waiting for context before replying.\",\n      \"This is a low-priority introduction that has been overlooked, and the counterparty is about to withdraw the offer due to your silence.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"Brightloop is a counterparty unknown to the brief, and Sana Qureshi is proposing a first meeting. This is the shape of an introduction or a new business development opportunity. The file's domain is admin, and the work is account administration around a meeting request, but the underlying kind of work (what Brightloop is for) is not yet named. If Brightloop is a design partner, investor, or vendor, the kind would be partner, investor, or vendor respectively; but the dossier does not say. An intro is the safest classification until the purpose is clear.\",\n    \"evidence\": [\n      \"file:role\",\n      \"file:kind\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no work with Brightloop, so there is no playbook and no expected stage. From the file's own history: a counterparty has made a positive reply with a meeting request, and the next step is to confirm the time. The expected move is a prompt reply within a day.\",\n    \"actual\": \"No reply has been sent for over three days. The proposed meeting dates are now within a few days, and the window to confirm is closing.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Sana will assume you are not interested and will not send the invite. The meeting will not happen. If Brightloop is a genuine opportunity, it will be lost. The counterparty may reach out once more, or may move on to other prospects.\",\n    \"act\": \"You confirm one of the two meeting times, Sana sends the invite, and the meeting happens as scheduled. You learn what Brightloop wants and can decide whether to pursue the relationship.\",\n    \"best\": \"Brightloop is a valuable design partner, investor, or customer, and the meeting leads to a productive relationship. Your prompt reply signals professionalism and interest, and Sana is impressed.\",\n    \"worst\": \"You confirm a meeting time without knowing what Brightloop wants, the meeting is a mismatch of expectations, and you waste time. Or you do not reply, the opportunity is lost, and Sana tells others that you are unresponsive.\",\n    \"signals_to_watch\": [\n      \"Whether Sana sends the invite after you confirm a time (signal: the meeting is real).\",\n      \"Whether Sana reaches out again if you do not reply by 2026-08-03 (signal: she is still interested but losing patience).\",\n      \"What Brightloop's business is and how they found you (signal: whether this is a warm introduction or a cold outreach).\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because Brightloop is unknown and may or may not be relevant to your goals, but a meeting is a low-cost way to find out.\",\n      \"The urgency is high because the proposed meeting dates are within a few days, and a delay of over three days on a meeting request is already a signal of disinterest that may be irreversible.\",\n      \"A wrong move (not replying, or replying too late) is reversible in principle\u2014you can always reach out later\u2014but the cost is high: you lose the initiative and the counterparty's goodwill.\",\n      \"The file has been quiet for 3.25 days, and the proposed dates are 4 Aug and 5 Aug, leaving only a day or two to confirm before the meeting is imminent.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"reply to Sana confirming which of the two meeting times works, and ask her to send the invite\",\n    \"for_whom\": \"Sana Qureshi at Brightloop\",\n    \"by_when\": \"2026-08-02\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:6\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"sig:admin.sit.live_account_admin\",\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"sana@brightloop.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Before replying, send a message to the connector or to your team asking what Brightloop is and why they reached out. This delays the reply by a day but ensures you know what you are walking into. If you cannot find the context quickly, reply to Sana anyway and ask her to tell you more about Brightloop in the meeting.\",\n  \"wait_or_stop\": \"Do not wait. The proposed dates are imminent, and a delay of over three days is already a risk. If you do not know what Brightloop is, reply anyway and ask them to tell you more. Stop if Sana does not send the invite within a day of your confirmation, or if she reaches out again to ask whether you are still interested.\",\n  \"done_when\": \"Sana sends the calendar invite for one of the two proposed times, and you have accepted it.\",\n  \"draft\": \"Hi Sana, thanks for reaching out. Wednesday 5 Aug at 11am IST works well for me. Looking forward to it. Please send the invite when you have a moment.\"\n}",
+  "site": "expert"
+ }
+}

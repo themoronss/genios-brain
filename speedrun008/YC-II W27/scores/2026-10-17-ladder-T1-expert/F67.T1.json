@@ -1,0 +1,273 @@
+{
+ "7e3d2c4f48591e78d795b31f42b9115798c632e78485b3338aeac9489b9a633b": {
+  "framed": true,
+  "input_tokens": 13410,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3846,
+  "parsed": {
+   "alternative": "If the founder is not available by Friday, write to Vikram Sole immediately to ask whether a later slot is possible, and explain the constraint. Do not wait past Wednesday to ask, as the programme may not have slots available after Friday.",
+   "appraisal": {
+    "reasons": [
+     "The deadline is Friday, which is five days away; missing it means losing the interview slot and the application",
+     "The file is not in the company brief, which suggests the founder may not know the application exists or may not be prepared",
+     "An interview is a live decision point; a poor interview cannot be undone",
+     "The programme is in motion and has set a hard date; the founder's move is time-critical",
+     "If the founder does not book by Friday, the application is lost without the founder knowing it was offered"
+    ],
+    "reversibility": "irreversible",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The founder has booked an interview slot by Friday, confirmed the date and time on both clocks, knows the format and the questions the programme typically asks, has listed what has changed since the application was submitted, and is prepared to attend with every co-founder present.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The programme has sent an invitation to book a slot by Friday, with a calendar link. The founder has not yet booked (the file shows no booking). The file does not show the format, the questions the programme typically asks, or what the founder will say has changed since the application was submitted. The file does not show whether the founder is aware of the application or prepared for the interview.",
+    "expected": "At the interview stage, the playbook expects the founder to book a slot by the date the programme gives, prepare for the format the programme uses, know what has changed since the application was submitted, and attend with every co-founder present. The programme typically gives a date to book by and may give a format (Zoom, in-person, panel). The founder should note the questions asked and any numbers stated, and be ready to verify them afterwards.",
+    "stage": "interview"
+   },
+   "facts": [
+    {
+     "claim": "Awadh Enterprise Centre wrote on 2026-09-21 at 05:30 UTC to say the application has moved to the interview round and asks you to pick an interview slot by Friday",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Your application has moved to the interview round. Please pick an interview slot on the calendar link by Friday."
+    },
+    {
+     "claim": "This is the first and only touch on this file; the file was created on 2026-09-21 at 05:30 UTC",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is program, and its role in the brief is none \u2014 it is not listed among the active programmes in the company brief",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in the mail from Awadh Enterprise Centre",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.27 days since the invitation arrived",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found the file's context complete and engagement healthy, with low urgency and low risk",
+     "evidence": [
+      "ru:core.context",
+      "ru:core.temporal",
+      "ru:core.risk"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The company brief lists six programmes to which applications have been made, but Awadh Enterprise Centre is not among them",
+     "evidence": [
+      "brief:cbl_#14",
+      "brief:cbl_#15",
+      "brief:cbl_#16",
+      "brief:cbl_#17",
+      "brief:cbl_#18",
+      "brief:cbl_#19"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The mail came from Vikram Sole, Coordinator at Awadh Enterprise Centre, with no prior history of contact on this file",
+     "evidence": [
+      "evt_#1",
+      "num:their_reply_time:vikram@awadhec.test"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A programme has invited the founder to interview and set a short deadline to book a slot. The next move is the founder's: to book by Friday. The file is not in the company brief, which suggests a gap in process or coordination.",
+    "rivals": [
+     "This is a confirmation of a slot already booked, not a new ask \u2014 the founder may have already booked and the mail is just a reminder",
+     "This is a rolling intake programme with a fast decision cycle, not a cohort programme \u2014 the interview may be the final round and the decision may come within days",
+     "This application was submitted without the founder's full awareness or coordination, and the founder may not be prepared to interview"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A check with the founder on whether they submitted this application and when",
+     "proposition": "This application was submitted by someone on the team other than the founder, or the founder submitted it without updating the brief"
+    },
+    {
+     "needs": "A read of Awadh Enterprise Centre's own published process and timeline",
+     "proposition": "Awadh Enterprise Centre is a rolling intake programme, not a cohort programme, which means the interview is a live decision point and the decision may come the same day or within days"
+    },
+    {
+     "needs": "A check of the founder's calendar and the programme's calendar link to see if a slot is already booked",
+     "proposition": "The founder has already booked a slot and the mail is a confirmation, not a new ask"
+    },
+    {
+     "needs": "Confirmation of which Friday the programme means, in the programme's time zone",
+     "proposition": "Friday refers to the coming Friday, which is 2026-09-26, giving the founder five days to book"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.program_applications.prepare_for_the_interview"
+     ],
+     "claim": "The next move is yours: you must book an interview slot by Friday, which is the deadline the programme has set"
+    },
+    {
+     "based_on": [
+      "fact:7",
+      "brief:company"
+     ],
+     "claim": "This application was made without being tracked in the company brief, which means it may have been submitted by someone other than the founder, or the brief was not updated when it went in"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "The file is now in the interview stage, having moved from applied to under_review to interview in the time since the application was submitted"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "The deadline 'by Friday' is a hard date that will not move; missing it means losing the interview slot and likely the application"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-26",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:7",
+     "inference:1",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "Check with the founder immediately whether they submitted this application to Awadh Enterprise Centre, whether they are aware of the interview invitation, and whether they are available to interview by Friday. If yes, book a slot on the calendar link by Friday, prepare for the interview format, and brief the founder on what to expect and what to say has changed since the application was submitted.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a programme sends an interview invitation with a short booking window, the founder should book within one business day to signal seriousness and to avoid the slot being filled by another applicant",
+     "kind": "practice",
+     "why": "Programmes often release slots on a first-come basis, and a delay of even one day can result in no availability by Friday"
+    },
+    {
+     "claim": "Programmes that are not in the founder's active tracking system are often ones the founder applied to without full coordination, or ones that were added to the pipeline after the brief was last updated",
+     "kind": "base_rate",
+     "why": "A founder's brief is the source of truth for what is in motion; an application outside it suggests a gap in process"
+    },
+    {
+     "claim": "Before booking an interview slot, the founder should know the programme's format, the questions it typically asks, and what has changed in the company since the application was submitted",
+     "kind": "practice",
+     "why": "An unprepared interview is a wasted slot and a missed signal to the programme"
+    },
+    {
+     "claim": "A programme that invites to interview without a prior status update \u2014 no 'under review' mail, no eligibility check \u2014 may indicate a rolling intake rather than a cohort, which changes the timeline and the decision process",
+     "kind": "counter_pattern",
+     "why": "Rolling programmes decide faster and may have already made a preliminary decision before the interview; cohort programmes read all applications together"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A programme that invites to interview expects the founder to book within a short window \u2014 typically a few days \u2014 and silence past that window is read as a no",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "An application that reaches interview stage has passed the programme's initial filter and is now in the selection rounds; the interview is a live decision point",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:7",
+      "brief:company"
+     ],
+     "claim": "An application not tracked in the company brief may indicate it was submitted without full founder awareness or coordination, which raises the risk that the interview will be missed or poorly prepared",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "evt_#1"
+    ],
+    "kind": "program",
+    "why": "The file is an application to an accelerator or incubator programme, and the mail is an invitation to interview as part of the programme's selection process"
+   },
+   "scenarios": {
+    "act": "If you act now, you book a slot by Friday, prepare for the interview format, and attend with every co-founder. The interview is held and the programme moves to its decision round. The founder has a chance to advance.",
+    "best": "The founder books a slot, prepares well, attends with all co-founders, and the programme invites them to the next round or makes an offer. The interview is a success and the application advances.",
+    "do_nothing": "If nothing is done, the Friday deadline passes, no slot is booked, and the programme moves on to other applicants. The application is lost. The founder may not even know the interview was offered.",
+    "signals_to_watch": [
+     "Whether the founder has booked a slot by Friday",
+     "Whether the founder is aware of the application and the interview",
+     "What the programme's format is and how many rounds it has",
+     "Whether the founder attends the interview with all co-founders",
+     "What the programme asks and what the founder says has changed since the application",
+     "Whether the programme invites to a next round or makes a decision the same day"
+    ],
+    "worst": "The founder books a slot but is unprepared, attends alone or with incomplete co-founder presence, and the programme rejects the application. Or the founder does not book a slot and the application is lost without the founder knowing it was offered."
+   },
+   "unknowns": [
+    {
+     "question": "Was this application submitted by the founder, and if so, when and why is it not in the company brief?",
+     "relevance": "If the founder did not submit it, someone else may not have the context to prepare for the interview, and the founder may not know the application exists"
+    },
+    {
+     "question": "What is Awadh Enterprise Centre's published timeline and decision process \u2014 is it a cohort or rolling intake?",
+     "relevance": "A cohort programme's interview is one of several rounds; a rolling programme's may be the final round, and the decision may come within days"
+    },
+    {
+     "question": "What is the format of the interview \u2014 how long, how many founders, what will they ask?",
+     "relevance": "The preparation required depends on the format; a ten-minute Zoom call requires different prep than a panel interview"
+    },
+    {
+     "question": "What has changed in the company since the application was submitted?",
+     "relevance": "The playbook says the strongest signal to a programme is progress since the last application; the founder should have this ready to say"
+    },
+    {
+     "question": "Is there a calendar link in the mail, and if so, what slots are available?",
+     "relevance": "The mail says 'Please pick an interview slot on the calendar link by Friday', but the dossier does not show the link or the available slots"
+    },
+    {
+     "question": "What is the founder's availability between now and Friday?",
+     "relevance": "If the founder is traveling or unavailable, the slot may need to be booked for a later date, which may not be possible if the programme's window closes Friday"
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline is Friday and the founder must book by then. If the founder does not book by end of day Thursday, the slot is lost. If the founder is not aware of the application, find out immediately \u2014 do not assume they will see the mail. If the founder is not available by Friday, ask the programme for a later slot by Wednesday at the latest."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Awadh Enterprise Centre wrote on 2026-09-21 at 05:30 UTC to say the application has moved to the interview round and asks you to pick an interview slot by Friday\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Your application has moved to the interview round. Please pick an interview slot on the calendar link by Friday.\"\n    },\n    {\n      \"claim\": \"This is the first and only touch on this file; the file was created on 2026-09-21 at 05:30 UTC\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is program, and its role in the brief is none \u2014 it is not listed among the active programmes in the company brief\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in the mail from Awadh Enterprise Centre\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.27 days since the invitation arrived\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found the file's context complete and engagement healthy, with low urgency and low risk\",\n      \"evidence\": [\n        \"ru:core.context\",\n        \"ru:core.temporal\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The company brief lists six programmes to which applications have been made, but Awadh Enterprise Centre is not among them\",\n      \"evidence\": [\n        \"brief:cbl_#14\",\n        \"brief:cbl_#15\",\n        \"brief:cbl_#16\",\n        \"brief:cbl_#17\",\n        \"brief:cbl_#18\",\n        \"brief:cbl_#19\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The mail came from Vikram Sole, Coordinator at Awadh Enterprise Centre, with no prior history of contact on this file\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"num:their_reply_time:vikram@awadhec.test\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The next move is yours: you must book an interview slot by Friday, which is the deadline the programme has set\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.program_applications.prepare_for_the_interview\"\n      ]\n    },\n    {\n      \"claim\": \"This application was made without being tracked in the company brief, which means it may have been submitted by someone other than the founder, or the brief was not updated when it went in\",\n      \"based_on\": [\n        \"fact:7\",\n        \"brief:company\"\n      ]\n    },\n    {\n      \"claim\": \"The file is now in the interview stage, having moved from applied to under_review to interview in the time since the application was submitted\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"claim\": \"The deadline 'by Friday' is a hard date that will not move; missing it means losing the interview slot and likely the application\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme that invites to interview expects the founder to book within a short window \u2014 typically a few days \u2014 and silence past that window is read as a no\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.prepare_for_the_interview\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An application that reaches interview stage has passed the programme's initial filter and is now in the selection rounds; the interview is a live decision point\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An application not tracked in the company brief may indicate it was submitted without full founder awareness or coordination, which raises the risk that the interview will be missed or poorly prepared\",\n      \"based_on\": [\n        \"fact:7\",\n        \"brief:company\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a programme sends an interview invitation with a short booking window, the founder should book within one business day to signal seriousness and to avoid the slot being filled by another applicant\",\n      \"why\": \"Programmes often release slots on a first-come basis, and a delay of even one day can result in no availability by Friday\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Programmes that are not in the founder's active tracking system are often ones the founder applied to without full coordination, or ones that were added to the pipeline after the brief was last updated\",\n      \"why\": \"A founder's brief is the source of truth for what is in motion; an application outside it suggests a gap in process\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Before booking an interview slot, the founder should know the programme's format, the questions it typically asks, and what has changed in the company since the application was submitted\",\n      \"why\": \"An unprepared interview is a wasted slot and a missed signal to the programme\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A programme that invites to interview without a prior status update \u2014 no 'under review' mail, no eligibility check \u2014 may indicate a rolling intake rather than a cohort, which changes the timeline and the decision process\",\n      \"why\": \"Rolling programmes decide faster and may have already made a preliminary decision before the interview; cohort programmes read all applications together\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"This application was submitted by someone on the team other than the founder, or the founder submitted it without updating the brief\",\n      \"needs\": \"A check with the founder on whether they submitted this application and when\"\n    },\n    {\n      \"proposition\": \"Awadh Enterprise Centre is a rolling intake programme, not a cohort programme, which means the interview is a live decision point and the decision may come the same day or within days\",\n      \"needs\": \"A read of Awadh Enterprise Centre's own published process and timeline\"\n    },\n    {\n      \"proposition\": \"The founder has already booked a slot and the mail is a confirmation, not a new ask\",\n      \"needs\": \"A check of the founder's calendar and the programme's calendar link to see if a slot is already booked\"\n    },\n    {\n      \"proposition\": \"Friday refers to the coming Friday, which is 2026-09-26, giving the founder five days to book\",\n      \"needs\": \"Confirmation of which Friday the programme means, in the programme's time zone\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Was this application submitted by the founder, and if so, when and why is it not in the company brief?\",\n      \"relevance\": \"If the founder did not submit it, someone else may not have the context to prepare for the interview, and the founder may not know the application exists\"\n    },\n    {\n      \"question\": \"What is Awadh Enterprise Centre's published timeline and decision process \u2014 is it a cohort or rolling intake?\",\n      \"relevance\": \"A cohort programme's interview is one of several rounds; a rolling programme's may be the final round, and the decision may come within days\"\n    },\n    {\n      \"question\": \"What is the format of the interview \u2014 how long, how many founders, what will they ask?\",\n      \"relevance\": \"The preparation required depends on the format; a ten-minute Zoom call requires different prep than a panel interview\"\n    },\n    {\n      \"question\": \"What has changed in the company since the application was submitted?\",\n      \"relevance\": \"The playbook says the strongest signal to a programme is progress since the last application; the founder should have this ready to say\"\n    },\n    {\n      \"question\": \"Is there a calendar link in the mail, and if so, what slots are available?\",\n      \"relevance\": \"The mail says 'Please pick an interview slot on the calendar link by Friday', but the dossier does not show the link or the available slots\"\n    },\n    {\n      \"question\": \"What is the founder's availability between now and Friday?\",\n      \"relevance\": \"If the founder is traveling or unavailable, the slot may need to be booked for a later date, which may not be possible if the programme's window closes Friday\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A programme has invited the founder to interview and set a short deadline to book a slot. The next move is the founder's: to book by Friday. The file is not in the company brief, which suggests a gap in process or coordination.\",\n    \"rivals\": [\n      \"This is a confirmation of a slot already booked, not a new ask \u2014 the founder may have already booked and the mail is just a reminder\",\n      \"This is a rolling intake programme with a fast decision cycle, not a cohort programme \u2014 the interview may be the final round and the decision may come within days\",\n      \"This application was submitted without the founder's full awareness or coordination, and the founder may not be prepared to interview\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is an application to an accelerator or incubator programme, and the mail is an invitation to interview as part of the programme's selection process\",\n    \"evidence\": [\n      \"file:kind\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"interview\",\n    \"expected\": \"At the interview stage, the playbook expects the founder to book a slot by the date the programme gives, prepare for the format the programme uses, know what has changed since the application was submitted, and attend with every co-founder present. The programme typically gives a date to book by and may give a format (Zoom, in-person, panel). The founder should note the questions asked and any numbers stated, and be ready to verify them afterwards.\",\n    \"actual\": \"The programme has sent an invitation to book a slot by Friday, with a calendar link. The founder has not yet booked (the file shows no booking). The file does not show the format, the questions the programme typically asks, or what the founder will say has changed since the application was submitted. The file does not show whether the founder is aware of the application or prepared for the interview.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If nothing is done, the Friday deadline passes, no slot is booked, and the programme moves on to other applicants. The application is lost. The founder may not even know the interview was offered.\",\n    \"act\": \"If you act now, you book a slot by Friday, prepare for the interview format, and attend with every co-founder. The interview is held and the programme moves to its decision round. The founder has a chance to advance.\",\n    \"best\": \"The founder books a slot, prepares well, attends with all co-founders, and the programme invites them to the next round or makes an offer. The interview is a success and the application advances.\",\n    \"worst\": \"The founder books a slot but is unprepared, attends alone or with incomplete co-founder presence, and the programme rejects the application. Or the founder does not book a slot and the application is lost without the founder knowing it was offered.\",\n    \"signals_to_watch\": [\n      \"Whether the founder has booked a slot by Friday\",\n      \"Whether the founder is aware of the application and the interview\",\n      \"What the programme's format is and how many rounds it has\",\n      \"Whether the founder attends the interview with all co-founders\",\n      \"What the programme asks and what the founder says has changed since the application\",\n      \"Whether the programme invites to a next round or makes a decision the same day\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"irreversible\",\n    \"reasons\": [\n      \"The deadline is Friday, which is five days away; missing it means losing the interview slot and the application\",\n      \"The file is not in the company brief, which suggests the founder may not know the application exists or may not be prepared\",\n      \"An interview is a live decision point; a poor interview cannot be undone\",\n      \"The programme is in motion and has set a hard date; the founder's move is time-critical\",\n      \"If the founder does not book by Friday, the application is lost without the founder knowing it was offered\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Check with the founder immediately whether they submitted this application to Awadh Enterprise Centre, whether they are aware of the interview invitation, and whether they are available to interview by Friday. If yes, book a slot on the calendar link by Friday, prepare for the interview format, and brief the founder on what to expect and what to say has changed since the application was submitted.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-26\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:7\",\n      \"inference:1\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.prepare_for_the_interview\",\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder is not available by Friday, write to Vikram Sole immediately to ask whether a later slot is possible, and explain the constraint. Do not wait past Wednesday to ask, as the programme may not have slots available after Friday.\",\n  \"wait_or_stop\": \"Do not wait. The deadline is Friday and the founder must book by then. If the founder does not book by end of day Thursday, the slot is lost. If the founder is not aware of the application, find out immediately \u2014 do not assume they will see the mail. If the founder is not available by Friday, ask the programme for a later slot by Wednesday at the latest.\",\n  \"done_when\": \"The founder has booked an interview slot by Friday, confirmed the date and time on both clocks, knows the format and the questions the programme typically asks, has listed what has changed since the application was submitted, and is prepared to attend with every co-founder present.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

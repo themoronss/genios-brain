@@ -1,0 +1,437 @@
+{
+ "b0cbe40c2334afa2982403ca965b16f0672741d0b04529369f6d3238b10df81a": {
+  "framed": true,
+  "input_tokens": 7273,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2559,
+  "parsed": {
+   "alternative": "Wait one more day to gather more context about Corvane or to align on positioning with your team, then write. This is lower risk if you are uncertain about your pitch, but it costs momentum.",
+   "appraisal": {
+    "reasons": [
+     "The introduction is warm and the prospect has stated interest, so the stakes are higher than a cold lead but not yet a committed deal.",
+     "The prospect mentioned a timeline\u2014this quarter\u2014which creates a window; if you wait too long, the window closes.",
+     "A delayed response is reversible; you can still write later. But each day of delay reduces the probability of a positive outcome.",
+     "This is one of many work streams in motion; it is not blocking anything else, but it is also not the only priority."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "You have sent a message to the introduced person proposing a call, and they have either accepted, proposed a time, or asked for more information. The introduction has moved from pending to in conversation.",
+   "draft": "Hi\u2014thanks for the intro. I'm interested in exploring how an AI chief of staff could help Corvane's sales team this quarter. Would you have time for a quick call this week or next to talk through your use case? Let me know what works for you.",
+   "expected_vs_actual": {
+    "actual": "An introduction has arrived; we have not yet responded.",
+    "expected": "The brief lists no playbook for this kind of work, so no stage is defined. However, the brief's goals include raising the seed round and landing design partners. An introduction to a prospect interested in piloting the product is a step toward both.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly, an AI connector agent, introduced a sales leader from another company who wants to pilot an AI chief of staff this quarter.",
+     "evidence": [
+      "evt_#1",
+      "file:role"
+     ],
+     "quote": "Arjun, meet Ishaan Mehra (Corvane) Arjun, meet Ishaan Mehra, who runs sales at Corvane and wants to pilot an AI chief of staff with his team this quarter. He asked me to put you two in touch, so write to him when you can."
+    },
+    {
+     "claim": "The introduction arrived on 2026-08-12 at 06:00 UTC and has not been replied to.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "num:introductions"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days since the introduction arrived.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we have an open ask to write to the introduced person.",
+     "evidence": [
+      "loop:loop_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction to a prospect with stated interest and a near-term timeline, where the next move is ours and the window to respond is narrow.",
+    "rivals": [
+     "A connector-generated lead that may be exploratory on the other side and not require immediate action.",
+     "An administrative task to log and track, rather than a sales opportunity to pursue now."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A response from them after you write, confirming availability for a call this week or next.",
+     "proposition": "The introduced person is a genuine prospect ready to move forward."
+    },
+    {
+     "needs": "Their response to your outreach; if they defer or ask for more information before committing time, the signal is weaker.",
+     "proposition": "The introduction is exploratory on their side, not a committed pilot."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "file:role",
+      "evt_#1"
+     ],
+     "claim": "This is a live introduction from a trusted connector, not a cold outreach, which raises the probability of engagement."
+    },
+    {
+     "based_on": [
+      "evt_#1"
+     ],
+     "claim": "The introduced person has already expressed interest in the product and asked to be put in touch, so the introduction carries a warm signal."
+    },
+    {
+     "based_on": [
+      "num:replied",
+      "none:we_wrote"
+     ],
+     "claim": "No reply has been measured from the introduced person because we have not yet written to them."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-13",
+    "for_whom": "the sales leader at Corvane introduced by Introly",
+    "guided_by": [
+     "sig:admin.sit.live_account_admin",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "write to the introduced person to confirm receipt of the introduction, express interest in their use case, and propose a call.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An introduction that names a specific use case and timeline\u2014here, a pilot this quarter\u2014is a signal of readiness, not just interest.",
+     "kind": "practice",
+     "why": "Specificity about timing and scope indicates the other party has already thought through how they would use the product, which shortens the sales cycle."
+    },
+    {
+     "claim": "A response to a warm introduction should go out the same day or the next, before the person's attention moves elsewhere.",
+     "kind": "practice",
+     "why": "The window of active interest after an introduction is narrow; delay converts warm to cold."
+    },
+    {
+     "claim": "Waiting for perfect positioning or messaging before responding to a warm introduction often costs the deal.",
+     "kind": "counter_pattern",
+     "why": "The introduced person is already sold on the concept; the first message need only confirm you received the intro and propose a time to talk."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "file:role",
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "Introductions from trusted connectors convert to meetings at higher rates than cold outreach.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "A warm introduction where the other party has already asked to be put in touch requires a response from us within days, not weeks, to preserve momentum.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "brief:cbl_#27"
+    ],
+    "kind": "intro",
+    "why": "The brief explicitly names Introly as a connector whose role is to introduce the founder to people. This file records one such introduction."
+   },
+   "scenarios": {
+    "act": "You write to the introduced person today or tomorrow, confirm receipt of the introduction, and propose a call this week. They respond with availability. You have a conversation about their use case and timeline. If they are serious, you move toward a pilot agreement.",
+    "best": "The introduced person is ready to move fast. You schedule a call within days. They see the product, like it, and commit to a pilot within the quarter. The pilot generates a case study and a reference customer, both valuable for fundraising.",
+    "do_nothing": "The introduced person waits for contact. After a few days, they assume you are not interested or too busy. They move on to other options. The warm signal cools and the opportunity is lost.",
+    "signals_to_watch": [
+     "Whether the introduced person replies to your outreach within two business days.",
+     "Whether they propose a specific time to talk, or ask for more information first.",
+     "Whether they mention budget, timeline, or team size in their reply\u2014signals of seriousness.",
+     "Whether they ask about pricing or contract terms early, or focus first on fit and use case."
+    ],
+    "worst": "You respond, but the introduced person does not reply, or replies weeks later to say they have moved on or chosen another solution. The introduction yields no meeting and no deal."
+   },
+   "unknowns": [
+    {
+     "question": "What is the current state of Corvane's need for an AI chief of staff? Is this a budget-approved initiative or exploratory?",
+     "relevance": "This determines whether the pilot is likely to close quickly or requires a longer sales cycle."
+    },
+    {
+     "question": "Has the introduced person been told anything about your product, pricing, or use cases before the introduction?",
+     "relevance": "If they have context, your first message can be shorter and more direct; if not, you need to provide enough to justify a call."
+    },
+    {
+     "question": "What is Introly's track record with introductions? Do people they introduce typically respond and meet?",
+     "relevance": "This would inform how much weight to place on the warmth of the introduction."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The introduction is warm and the prospect has a stated timeline. Waiting beyond tomorrow risks losing the signal. Stop if the introduced person does not reply within a week; at that point, follow up once, and if still no reply, move the file to dormant."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly, an AI connector agent, introduced a sales leader from another company who wants to pilot an AI chief of staff this quarter.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:role\"\n      ],\n      \"quote\": \"Arjun, meet Ishaan Mehra (Corvane) Arjun, meet Ishaan Mehra, who runs sales at Corvane and wants to pilot an AI chief of staff with his team this quarter. He asked me to put you two in touch, so write to him when you can.\"\n    },\n    {\n      \"claim\": \"The introduction arrived on 2026-08-12 at 06:00 UTC and has not been replied to.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"num:introductions\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days since the introduction arrived.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we have an open ask to write to the introduced person.\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a live introduction from a trusted connector, not a cold outreach, which raises the probability of engagement.\",\n      \"based_on\": [\n        \"file:role\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The introduced person has already expressed interest in the product and asked to be put in touch, so the introduction carries a warm signal.\",\n      \"based_on\": [\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"No reply has been measured from the introduced person because we have not yet written to them.\",\n      \"based_on\": [\n        \"num:replied\",\n        \"none:we_wrote\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions from trusted connectors convert to meetings at higher rates than cold outreach.\",\n      \"based_on\": [\n        \"file:role\",\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A warm introduction where the other party has already asked to be put in touch requires a response from us within days, not weeks, to preserve momentum.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction that names a specific use case and timeline\u2014here, a pilot this quarter\u2014is a signal of readiness, not just interest.\",\n      \"why\": \"Specificity about timing and scope indicates the other party has already thought through how they would use the product, which shortens the sales cycle.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A response to a warm introduction should go out the same day or the next, before the person's attention moves elsewhere.\",\n      \"why\": \"The window of active interest after an introduction is narrow; delay converts warm to cold.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Waiting for perfect positioning or messaging before responding to a warm introduction often costs the deal.\",\n      \"why\": \"The introduced person is already sold on the concept; the first message need only confirm you received the intro and propose a time to talk.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The introduced person is a genuine prospect ready to move forward.\",\n      \"needs\": \"A response from them after you write, confirming availability for a call this week or next.\"\n    },\n    {\n      \"proposition\": \"The introduction is exploratory on their side, not a committed pilot.\",\n      \"needs\": \"Their response to your outreach; if they defer or ask for more information before committing time, the signal is weaker.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the current state of Corvane's need for an AI chief of staff? Is this a budget-approved initiative or exploratory?\",\n      \"relevance\": \"This determines whether the pilot is likely to close quickly or requires a longer sales cycle.\"\n    },\n    {\n      \"question\": \"Has the introduced person been told anything about your product, pricing, or use cases before the introduction?\",\n      \"relevance\": \"If they have context, your first message can be shorter and more direct; if not, you need to provide enough to justify a call.\"\n    },\n    {\n      \"question\": \"What is Introly's track record with introductions? Do people they introduce typically respond and meet?\",\n      \"relevance\": \"This would inform how much weight to place on the warmth of the introduction.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction to a prospect with stated interest and a near-term timeline, where the next move is ours and the window to respond is narrow.\",\n    \"rivals\": [\n      \"A connector-generated lead that may be exploratory on the other side and not require immediate action.\",\n      \"An administrative task to log and track, rather than a sales opportunity to pursue now.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The brief explicitly names Introly as a connector whose role is to introduce the founder to people. This file records one such introduction.\",\n    \"evidence\": [\n      \"file:role\",\n      \"brief:cbl_#27\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief lists no playbook for this kind of work, so no stage is defined. However, the brief's goals include raising the seed round and landing design partners. An introduction to a prospect interested in piloting the product is a step toward both.\",\n    \"actual\": \"An introduction has arrived; we have not yet responded.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The introduced person waits for contact. After a few days, they assume you are not interested or too busy. They move on to other options. The warm signal cools and the opportunity is lost.\",\n    \"act\": \"You write to the introduced person today or tomorrow, confirm receipt of the introduction, and propose a call this week. They respond with availability. You have a conversation about their use case and timeline. If they are serious, you move toward a pilot agreement.\",\n    \"best\": \"The introduced person is ready to move fast. You schedule a call within days. They see the product, like it, and commit to a pilot within the quarter. The pilot generates a case study and a reference customer, both valuable for fundraising.\",\n    \"worst\": \"You respond, but the introduced person does not reply, or replies weeks later to say they have moved on or chosen another solution. The introduction yields no meeting and no deal.\",\n    \"signals_to_watch\": [\n      \"Whether the introduced person replies to your outreach within two business days.\",\n      \"Whether they propose a specific time to talk, or ask for more information first.\",\n      \"Whether they mention budget, timeline, or team size in their reply\u2014signals of seriousness.\",\n      \"Whether they ask about pricing or contract terms early, or focus first on fit and use case.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The introduction is warm and the prospect has stated interest, so the stakes are higher than a cold lead but not yet a committed deal.\",\n      \"The prospect mentioned a timeline\u2014this quarter\u2014which creates a window; if you wait too long, the window closes.\",\n      \"A delayed response is reversible; you can still write later. But each day of delay reduces the probability of a positive outcome.\",\n      \"This is one of many work streams in motion; it is not blocking anything else, but it is also not the only priority.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"write to the introduced person to confirm receipt of the introduction, express interest in their use case, and propose a call.\",\n    \"for_whom\": \"the sales leader at Corvane introduced by Introly\",\n    \"by_when\": \"2026-08-13\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"sig:admin.sit.live_account_admin\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"Wait one more day to gather more context about Corvane or to align on positioning with your team, then write. This is lower risk if you are uncertain about your pitch, but it costs momentum.\",\n  \"wait_or_stop\": \"Do not wait. The introduction is warm and the prospect has a stated timeline. Waiting beyond tomorrow risks losing the signal. Stop if the introduced person does not reply within a week; at that point, follow up once, and if still no reply, move the file to dormant.\",\n  \"done_when\": \"You have sent a message to the introduced person proposing a call, and they have either accepted, proposed a time, or asked for more information. The introduction has moved from pending to in conversation.\",\n  \"draft\": \"Hi\u2014thanks for the intro. I'm interested in exploring how an AI chief of staff could help Corvane's sales team this quarter. Would you have time for a quick call this week or next to talk through your use case? Let me know what works for you.\"\n}",
+  "site": "expert"
+ },
+ "dc80132be6dc02d4a1e65ed73421ef075331fc2ec0c1070db45f76bc2a6da6de": {
+  "framed": true,
+  "input_tokens": 7122,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3901,
+  "parsed": {
+   "alternative": "If you cannot reply by tomorrow, send a brief message to Introly asking for Ishaan Mehra's direct email and a bit more context about Corvane and his role. Then reply to Ishaan Mehra directly within 24 hours of receiving that information. This buys you a day if you are blocked, but it risks looking slow.",
+   "appraisal": {
+    "reasons": [
+     "A pilot customer is a high-value asset for a seed-stage AI company, because it provides both validation and a reference case for fundraising. The stakes are medium because one pilot is not a make-or-break outcome, but it is a significant win.",
+     "The urgency is high because the window to reply is narrow. A reply sent today or tomorrow will be received as responsive and interested. A reply sent in three days will be received as slow. A reply sent in a week will be received as disinterested.",
+     "A wrong move\u2014replying too late, or replying with a message that signals disinterest\u2014is reversible, because you can always follow up later. But the cost of reversing it is high, because you will have to rebuild the relationship.",
+     "The file has been quiet for only 0.5 days, so there is still time to act without appearing negligent. But the clock is ticking."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "You have sent a reply to Ishaan Mehra (via Introly or directly) that thanks him for the introduction, asks about the pilot scope and timeline, and proposes a call. He has replied with details, and you have scheduled a call for the following week. The file is then updated with the call date and moved to the partner work stream.",
+   "draft": "Thanks for the intro, Introly. Ishaan, I'd love to explore a pilot with Corvane. A few quick questions: What's the scope of the pilot\u2014which team or function would use the AI chief of staff? And what's your timeline? I'm free for a call next week if that works. Let me know what day suits you best.",
+   "expected_vs_actual": {
+    "actual": "No reply has been sent. The file has been quiet for 0.5 days. The introduction has not been categorized as partner work, so it has no playbook and no reminder. The open ask sits in the file with no next move assigned.",
+    "expected": "The brief names design partner talks as an active work stream with four companies: Orbitly, Cleanwave, Novacore, and Memloop. A new design partner introduction should be routed into that stream, with a first reply sent within one business day, and a call scheduled within a week. The expectation is that you will reply to Ishaan Mehra and ask clarifying questions about the pilot scope and timeline.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly, an AI connector agent, introduced Ishaan Mehra from Corvane as a potential design partner or pilot customer on 2026-08-12 at 06:00 UTC.",
+     "evidence": [
+      "evt_#1",
+      "file:role"
+     ],
+     "quote": "Arjun, meet Ishaan Mehra (Corvane) Arjun, meet Ishaan Mehra, who runs sales at Corvane and wants to pilot an AI chief of staff with his team this quarter. He asked me to put you two in touch, so write to him when you can."
+    },
+    {
+     "claim": "The file records an open ask: we are waiting on you to write to Ishaan Mehra, open since 2026-08-12 06:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply has been sent to Introly or to Ishaan Mehra; the file shows we have not written in this file.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days since the introduction was sent.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file; it is not categorized as investor, program, compliance, hiring, partner, or vendor work.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Ishaan Mehra explicitly asked Introly to introduce him and requested that you write to him when you can.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "He asked me to put you two in touch, so write to him when you can."
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction to a potential pilot customer who has explicitly asked you to write to him. The ball is in your court, and the window to reply is narrow\u2014a few days at most before the introducer's credibility is spent and the prospect moves on.",
+    "rivals": [
+     "A low-priority exploratory conversation that can wait until you have more bandwidth, because the prospect has not yet committed to anything.",
+     "A stale file that you have already acted on, and the dossier is out of date.",
+     "A connector test to see whether you are responsive, with no real prospect behind it."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from you that asks clarifying questions about the pilot scope, timeline, and team size. His response will show whether he is serious or exploratory.",
+     "proposition": "Ishaan Mehra is a genuine prospect who is ready to pilot your product this quarter."
+    },
+    {
+     "needs": "A reply from you that asks about his current pain points and why he thinks an AI chief of staff would help. His answer will show whether he has thought this through.",
+     "proposition": "Ishaan Mehra is a tire-kicker or a connector's courtesy introduction, not a real prospect."
+    },
+    {
+     "needs": "A check of your sent mail and calendar to see whether a meeting or reply has already happened. If so, the file should be closed or updated.",
+     "proposition": "You have already replied to Ishaan Mehra outside this file, and the file is stale."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:6"
+     ],
+     "claim": "The ball is in your court: Ishaan Mehra has made a request through Introly and is waiting for you to initiate contact."
+    },
+    {
+     "based_on": [
+      "file:role",
+      "fact:1"
+     ],
+     "claim": "This is a warm introduction from a trusted connector, not a cold outreach, which raises the probability of engagement."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "brief:cbl_#6"
+     ],
+     "claim": "The introduction offers a concrete use case\u2014a pilot of your AI chief of staff product\u2014which aligns with your goal to land design partners and validate product-market fit."
+    },
+    {
+     "based_on": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "claim": "The file's lack of a named kind of work suggests it has not been routed into your standard workflow, which increases the risk of it being overlooked."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-13",
+    "for_whom": "Ishaan Mehra, via Introly or directly if you have his email",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "cap:admin.executive_support.commitment_tracking#f1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:6",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "introly.test",
+    "what": "Reply to Ishaan Mehra with a brief message that thanks him for the introduction, asks about the pilot scope and timeline, and proposes a call.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A warm introduction that names a specific person, a concrete use case, and an explicit request to write should be answered the same day or the next morning, before the introducer's credibility is spent.",
+     "kind": "practice",
+     "why": "The introducer has staked their reputation on the match; delay reads as disinterest and teaches them not to make introductions to you again."
+    },
+    {
+     "claim": "Pilot customers and design partners are among the highest-value early signals for a seed-stage product company, because they provide both validation and reference customers.",
+     "kind": "base_rate",
+     "why": "A pilot that works becomes a case study; a pilot that fails teaches you what to fix before you raise. Either way, the learning is worth more than the time."
+    },
+    {
+     "claim": "Founders often delay replies to introductions when they are uncertain whether the person is a good fit, or when they are busy with fundraising or hiring.",
+     "kind": "counter_pattern",
+     "why": "The cost of a five-minute reply is low; the cost of a missed pilot customer is high. Uncertainty is not a reason to wait; it is a reason to reply and ask questions."
+    },
+    {
+     "claim": "A file without a named kind of work should be immediately categorized and routed, or it will be forgotten.",
+     "kind": "practice",
+     "why": "The brief names seven kinds of work; this introduction does not fit neatly into any of them, which means it has no playbook and no reminder. It will age silently."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Introductions from trusted connectors that name a specific use case and request a direct reply have high conversion rates when the reply is sent within one business day.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "A warm introduction left unanswered for more than a few days signals to the introducer that the founder is not interested, which damages the connector relationship and reduces the likelihood of future introductions.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f2",
+      "own:3"
+     ],
+     "claim": "Files without a named kind of work and without a playbook are more likely to drift into administrative silence, especially when the next move is clearly ours.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "brief:cbl_#6"
+    ],
+    "kind": "partner",
+    "why": "The introduction explicitly names Ishaan Mehra as someone who wants to pilot your AI chief of staff product with his team. This is a design partner or pilot customer relationship, not an investor, program, compliance, hiring, or vendor relationship. The brief lists design partner talks as an active work stream."
+   },
+   "scenarios": {
+    "act": "You reply to Ishaan Mehra within the next 24 hours with a brief message that thanks him for the introduction, asks about the pilot scope and timeline, and proposes a call. He replies with details, and you schedule a call for the following week. The call goes well, and you agree on a pilot scope. The pilot runs for six to eight weeks, and you learn what works and what does not. You either land a reference customer or learn what to fix before you raise.",
+    "best": "Ishaan Mehra is a senior decision-maker at a well-known company. The pilot is successful and becomes a case study. He introduces you to other companies in his network. You land two or three more pilots from his introductions. One of them becomes a paying customer before your seed round closes. You cite the pilots in your pitch deck and use them to raise at a higher valuation.",
+    "do_nothing": "The file drifts into administrative silence. After three days, Ishaan Mehra assumes you are not interested and moves on to another tool. Introly learns that you do not respond to introductions and stops sending them. You miss a potential pilot customer and a reference case for your seed round. The opportunity cost is high because a pilot customer is a high-signal asset for a seed-stage AI company.",
+    "signals_to_watch": [
+     "Whether Ishaan Mehra replies to your first message within 24 hours. A quick reply signals genuine interest.",
+     "Whether he can articulate a specific pain point that your product addresses. Vague interest is a warning sign.",
+     "Whether he has budget authority or needs to get approval from someone else. If he needs approval, the pilot will be slower.",
+     "Whether he can commit to a specific timeline for the pilot. A vague timeline signals low priority.",
+     "Whether Introly sends you more introductions after this one. If it does, the connector relationship is working."
+    ],
+    "worst": "Ishaan Mehra is a junior person with no budget authority. The pilot is delayed by internal politics and never launches. You spend time on it and get nothing in return. Or, you reply too late, and he has already moved on to another tool. Introly stops introducing you to people because you do not respond."
+   },
+   "unknowns": [
+    {
+     "question": "Have you already replied to Ishaan Mehra or scheduled a call with him, outside this file?",
+     "relevance": "If you have, the file is stale and should be closed. If you have not, the file is active and urgent. The dossier does not show your sent mail to Ishaan Mehra, only that you have not written in this file."
+    },
+    {
+     "question": "What is Corvane, and what is Ishaan Mehra's actual role and seniority?",
+     "relevance": "The introduction names him as running sales at Corvane, but does not say whether Corvane is a startup, a scale-up, or an enterprise. His ability to commit to a pilot depends on his authority and his company's stage."
+    },
+    {
+     "question": "What does Introly know about your product, and why did it match you with Ishaan Mehra specifically?",
+     "relevance": "If Introly has a high hit rate on introductions, this match is more likely to be good. If Introly is a generic connector with no domain knowledge, the match is more speculative."
+    },
+    {
+     "question": "Is a pilot customer a higher priority for you right now than fundraising or hiring?",
+     "relevance": "If you are in the middle of a fundraising push, you may want to defer this until you have closed a lead investor. If you are not, a pilot customer is a high-value use of your time."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The window to reply is narrow, and every day of silence costs you credibility with both Ishaan Mehra and Introly. Stop waiting after 24 hours and send the reply, even if you are not sure whether the pilot is a good fit. Uncertainty is not a reason to wait; it is a reason to ask questions."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly, an AI connector agent, introduced Ishaan Mehra from Corvane as a potential design partner or pilot customer on 2026-08-12 at 06:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:role\"\n      ],\n      \"quote\": \"Arjun, meet Ishaan Mehra (Corvane) Arjun, meet Ishaan Mehra, who runs sales at Corvane and wants to pilot an AI chief of staff with his team this quarter. He asked me to put you two in touch, so write to him when you can.\"\n    },\n    {\n      \"claim\": \"The file records an open ask: we are waiting on you to write to Ishaan Mehra, open since 2026-08-12 06:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply has been sent to Introly or to Ishaan Mehra; the file shows we have not written in this file.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days since the introduction was sent.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file; it is not categorized as investor, program, compliance, hiring, partner, or vendor work.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Ishaan Mehra explicitly asked Introly to introduce him and requested that you write to him when you can.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"He asked me to put you two in touch, so write to him when you can.\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in your court: Ishaan Mehra has made a request through Introly and is waiting for you to initiate contact.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"claim\": \"This is a warm introduction from a trusted connector, not a cold outreach, which raises the probability of engagement.\",\n      \"based_on\": [\n        \"file:role\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The introduction offers a concrete use case\u2014a pilot of your AI chief of staff product\u2014which aligns with your goal to land design partners and validate product-market fit.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"brief:cbl_#6\"\n      ]\n    },\n    {\n      \"claim\": \"The file's lack of a named kind of work suggests it has not been routed into your standard workflow, which increases the risk of it being overlooked.\",\n      \"based_on\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions from trusted connectors that name a specific use case and request a direct reply have high conversion rates when the reply is sent within one business day.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A warm introduction left unanswered for more than a few days signals to the introducer that the founder is not interested, which damages the connector relationship and reduces the likelihood of future introductions.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Files without a named kind of work and without a playbook are more likely to drift into administrative silence, especially when the next move is clearly ours.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f2\",\n        \"own:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A warm introduction that names a specific person, a concrete use case, and an explicit request to write should be answered the same day or the next morning, before the introducer's credibility is spent.\",\n      \"why\": \"The introducer has staked their reputation on the match; delay reads as disinterest and teaches them not to make introductions to you again.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Pilot customers and design partners are among the highest-value early signals for a seed-stage product company, because they provide both validation and reference customers.\",\n      \"why\": \"A pilot that works becomes a case study; a pilot that fails teaches you what to fix before you raise. Either way, the learning is worth more than the time.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Founders often delay replies to introductions when they are uncertain whether the person is a good fit, or when they are busy with fundraising or hiring.\",\n      \"why\": \"The cost of a five-minute reply is low; the cost of a missed pilot customer is high. Uncertainty is not a reason to wait; it is a reason to reply and ask questions.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A file without a named kind of work should be immediately categorized and routed, or it will be forgotten.\",\n      \"why\": \"The brief names seven kinds of work; this introduction does not fit neatly into any of them, which means it has no playbook and no reminder. It will age silently.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Ishaan Mehra is a genuine prospect who is ready to pilot your product this quarter.\",\n      \"needs\": \"A reply from you that asks clarifying questions about the pilot scope, timeline, and team size. His response will show whether he is serious or exploratory.\"\n    },\n    {\n      \"proposition\": \"Ishaan Mehra is a tire-kicker or a connector's courtesy introduction, not a real prospect.\",\n      \"needs\": \"A reply from you that asks about his current pain points and why he thinks an AI chief of staff would help. His answer will show whether he has thought this through.\"\n    },\n    {\n      \"proposition\": \"You have already replied to Ishaan Mehra outside this file, and the file is stale.\",\n      \"needs\": \"A check of your sent mail and calendar to see whether a meeting or reply has already happened. If so, the file should be closed or updated.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Have you already replied to Ishaan Mehra or scheduled a call with him, outside this file?\",\n      \"relevance\": \"If you have, the file is stale and should be closed. If you have not, the file is active and urgent. The dossier does not show your sent mail to Ishaan Mehra, only that you have not written in this file.\"\n    },\n    {\n      \"question\": \"What is Corvane, and what is Ishaan Mehra's actual role and seniority?\",\n      \"relevance\": \"The introduction names him as running sales at Corvane, but does not say whether Corvane is a startup, a scale-up, or an enterprise. His ability to commit to a pilot depends on his authority and his company's stage.\"\n    },\n    {\n      \"question\": \"What does Introly know about your product, and why did it match you with Ishaan Mehra specifically?\",\n      \"relevance\": \"If Introly has a high hit rate on introductions, this match is more likely to be good. If Introly is a generic connector with no domain knowledge, the match is more speculative.\"\n    },\n    {\n      \"question\": \"Is a pilot customer a higher priority for you right now than fundraising or hiring?\",\n      \"relevance\": \"If you are in the middle of a fundraising push, you may want to defer this until you have closed a lead investor. If you are not, a pilot customer is a high-value use of your time.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction to a potential pilot customer who has explicitly asked you to write to him. The ball is in your court, and the window to reply is narrow\u2014a few days at most before the introducer's credibility is spent and the prospect moves on.\",\n    \"rivals\": [\n      \"A low-priority exploratory conversation that can wait until you have more bandwidth, because the prospect has not yet committed to anything.\",\n      \"A stale file that you have already acted on, and the dossier is out of date.\",\n      \"A connector test to see whether you are responsive, with no real prospect behind it.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The introduction explicitly names Ishaan Mehra as someone who wants to pilot your AI chief of staff product with his team. This is a design partner or pilot customer relationship, not an investor, program, compliance, hiring, or vendor relationship. The brief lists design partner talks as an active work stream.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"brief:cbl_#6\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names design partner talks as an active work stream with four companies: Orbitly, Cleanwave, Novacore, and Memloop. A new design partner introduction should be routed into that stream, with a first reply sent within one business day, and a call scheduled within a week. The expectation is that you will reply to Ishaan Mehra and ask clarifying questions about the pilot scope and timeline.\",\n    \"actual\": \"No reply has been sent. The file has been quiet for 0.5 days. The introduction has not been categorized as partner work, so it has no playbook and no reminder. The open ask sits in the file with no next move assigned.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file drifts into administrative silence. After three days, Ishaan Mehra assumes you are not interested and moves on to another tool. Introly learns that you do not respond to introductions and stops sending them. You miss a potential pilot customer and a reference case for your seed round. The opportunity cost is high because a pilot customer is a high-signal asset for a seed-stage AI company.\",\n    \"act\": \"You reply to Ishaan Mehra within the next 24 hours with a brief message that thanks him for the introduction, asks about the pilot scope and timeline, and proposes a call. He replies with details, and you schedule a call for the following week. The call goes well, and you agree on a pilot scope. The pilot runs for six to eight weeks, and you learn what works and what does not. You either land a reference customer or learn what to fix before you raise.\",\n    \"best\": \"Ishaan Mehra is a senior decision-maker at a well-known company. The pilot is successful and becomes a case study. He introduces you to other companies in his network. You land two or three more pilots from his introductions. One of them becomes a paying customer before your seed round closes. You cite the pilots in your pitch deck and use them to raise at a higher valuation.\",\n    \"worst\": \"Ishaan Mehra is a junior person with no budget authority. The pilot is delayed by internal politics and never launches. You spend time on it and get nothing in return. Or, you reply too late, and he has already moved on to another tool. Introly stops introducing you to people because you do not respond.\",\n    \"signals_to_watch\": [\n      \"Whether Ishaan Mehra replies to your first message within 24 hours. A quick reply signals genuine interest.\",\n      \"Whether he can articulate a specific pain point that your product addresses. Vague interest is a warning sign.\",\n      \"Whether he has budget authority or needs to get approval from someone else. If he needs approval, the pilot will be slower.\",\n      \"Whether he can commit to a specific timeline for the pilot. A vague timeline signals low priority.\",\n      \"Whether Introly sends you more introductions after this one. If it does, the connector relationship is working.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"A pilot customer is a high-value asset for a seed-stage AI company, because it provides both validation and a reference case for fundraising. The stakes are medium because one pilot is not a make-or-break outcome, but it is a significant win.\",\n      \"The urgency is high because the window to reply is narrow. A reply sent today or tomorrow will be received as responsive and interested. A reply sent in three days will be received as slow. A reply sent in a week will be received as disinterested.\",\n      \"A wrong move\u2014replying too late, or replying with a message that signals disinterest\u2014is reversible, because you can always follow up later. But the cost of reversing it is high, because you will have to rebuild the relationship.\",\n      \"The file has been quiet for only 0.5 days, so there is still time to act without appearing negligent. But the clock is ticking.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Reply to Ishaan Mehra with a brief message that thanks him for the introduction, asks about the pilot scope and timeline, and proposes a call.\",\n    \"for_whom\": \"Ishaan Mehra, via Introly or directly if you have his email\",\n    \"by_when\": \"2026-08-13\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:6\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"cap:admin.executive_support.commitment_tracking#f1\"\n    ],\n    \"to\": \"introly.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If you cannot reply by tomorrow, send a brief message to Introly asking for Ishaan Mehra's direct email and a bit more context about Corvane and his role. Then reply to Ishaan Mehra directly within 24 hours of receiving that information. This buys you a day if you are blocked, but it risks looking slow.\",\n  \"wait_or_stop\": \"Do not wait. The window to reply is narrow, and every day of silence costs you credibility with both Ishaan Mehra and Introly. Stop waiting after 24 hours and send the reply, even if you are not sure whether the pilot is a good fit. Uncertainty is not a reason to wait; it is a reason to ask questions.\",\n  \"done_when\": \"You have sent a reply to Ishaan Mehra (via Introly or directly) that thanks him for the introduction, asks about the pilot scope and timeline, and proposes a call. He has replied with details, and you have scheduled a call for the following week. The file is then updated with the call date and moved to the partner work stream.\",\n  \"draft\": \"Thanks for the intro, Introly. Ishaan, I'd love to explore a pilot with Corvane. A few quick questions: What's the scope of the pilot\u2014which team or function would use the AI chief of staff? And what's your timeline? I'm free for a call next week if that works. Let me know what day suits you best.\"\n}",
+  "site": "expert"
+ }
+}

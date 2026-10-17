@@ -1,0 +1,241 @@
+{
+ "5fbf3b6820585e9d9f0cbb2a16eed7c1dc9f4862dd05d2c7ab35179f729d5d3f": {
+  "framed": true,
+  "input_tokens": 8102,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2913,
+  "parsed": {
+   "alternative": "If a working address cannot be found and no connector exists, drop Lattice Capital from the list and focus on the named investors in the wave and other sourced leads with confirmed contact information.",
+   "appraisal": {
+    "reasons": [
+     "Lattice Capital is not a named investor in the brief's seed wave, so they are exploratory.",
+     "The bounce is a technical problem, not a relationship problem, and can be fixed by finding a working address.",
+     "You have five named investors in the wave and one engaged; this is one of many outreaches.",
+     "A wrong move here \u2014 resending to a bad address or pursuing a poor fit \u2014 costs only time and attention, not capital or a relationship."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "A working email address for Lattice Capital is confirmed, or a connector has agreed to introduce you, or you have decided to drop them from the list.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The first touch bounced and never reached the investor. No stage of engagement has been entered.",
+    "expected": "In a normal investor outreach, the first touch is a cold or warm introduction that reaches the investor and names a meeting request. The investor either replies with interest, declines, or goes silent. If they reply with interest, a meeting is scheduled. If they go silent, a follow-up is sent after a week.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You wrote to Lattice Capital on 2026-08-11 at 06:00 UTC with a seed round pitch.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Nimbus Labs is raising a seed round. Could we find 20 minutes? Arjun"
+    },
+    {
+     "claim": "The mail to Lattice Capital bounced at the time of sending.",
+     "evidence": [
+      "num:their_reply_time:partners@lattice-capital.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time has been measured because the mail did not reach them.",
+     "evidence": [
+      "num:their_reply_time:partners@lattice-capital.test",
+      "num:your_reply_time:partners@lattice-capital.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no kind of work named in the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Lattice Capital has no role in the brief's stated work in motion.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is classified as an investor_relationship in the active situation.",
+     "evidence": [
+      "sit:sit_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time this file has been seen or judged.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@fundraising",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A technical delivery failure on an exploratory outreach to an investor outside your named wave. The relationship has not formed because the message never arrived.",
+    "rivals": [
+     "A signal that Lattice Capital is not a fit and should be dropped from the list.",
+     "An opportunity to find a warm path to Lattice Capital through a connector, if they are a fit."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation of their stage, cheque size, sector focus, and whether they have backed companies in your space.",
+     "proposition": "Lattice Capital is a real investor fund that fits your stage and thesis."
+    },
+    {
+     "needs": "A correct email address for Lattice Capital's partners or business development contact.",
+     "proposition": "The bounce was a typo in the email address or a temporary delivery failure."
+    },
+    {
+     "needs": "A record of how this investor was sourced and who recommended them.",
+     "proposition": "Lattice Capital was added to the outreach list by a connector or research, not by the brief."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "The outreach failed at the technical level before any relationship could form."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:1"
+     ],
+     "claim": "No stage of investor engagement has been reached because the introduction never arrived."
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "fact:1",
+      "file:kind"
+     ],
+     "claim": "The file should be classified as investor work, not as an unknown kind, because the brief lists fundraising as a domain and the outreach was a seed round pitch."
+    },
+    {
+     "based_on": [
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9",
+      "brief:cbl_#10",
+      "brief:cbl_#11",
+      "brief:cbl_#12",
+      "file:role"
+     ],
+     "claim": "Lattice Capital was not part of the named seed wave and appears to have been added outside the brief's stated investor set."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-15",
+    "for_whom": "Lattice Capital",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "cap:founder_office.pb.investor_relations.a_warm_intro_to_an_investor"
+    ],
+    "rests_on": [
+     "fact:2",
+     "inference:1",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "Find a working email address for Lattice Capital's partners or business development contact, or identify a connector who can introduce you warmly. Confirm that Lattice Capital fits your stage, cheque size, and sector before resending.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A bounced mail to an investor should be treated as a technical problem to solve, not as a relationship event.",
+     "kind": "practice",
+     "why": "The investor never saw the message, so no inference about their interest or stage can be drawn. The work is to resend or find a working address."
+    },
+    {
+     "claim": "Investors added to a round outside the main wave are often lower-priority or exploratory, and a bounce on one of them is lower-stakes than a bounce on a named partner.",
+     "kind": "base_rate",
+     "why": "The brief names five investors in the seed wave and one engaged; Lattice Capital is neither, suggesting it was a secondary outreach."
+    },
+    {
+     "claim": "A file with no kind of work named in the brief should be classified by its content and domain before any judgment is made.",
+     "kind": "practice",
+     "why": "The brief's kind field is a record of what was planned, not a constraint on what the file actually is. The dossier shows this is investor work."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "A bounced mail to an investor means the outreach never happened and no relationship exists.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "inference:4",
+      "cap:founder_office.fundraising.investor_relations#f6"
+     ],
+     "claim": "Investors added outside a named wave are often sourced through connectors or research and carry higher uncertainty about fit and receptiveness.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "ru:core.relationship"
+     ],
+     "claim": "A bounced mail is not a pass or a soft no; it is a delivery failure and leaves the relationship unmeasured.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "fact:1",
+     "sit:sit_#1"
+    ],
+    "kind": "investor",
+    "why": "The outreach is a seed round pitch to a capital provider, the domain is fundraising, and the situation is classified as an investor_relationship. The brief's kind field is empty, but the file's content is unambiguous."
+   },
+   "scenarios": {
+    "act": "You find a working email address or a warm connector for Lattice Capital. You resend the pitch or ask the connector to introduce you. If they are a fit, you enter the normal investor conversation flow.",
+    "best": "Lattice Capital is a strong fit for your stage and thesis. A connector introduces you warmly. They reply within a few days and agree to a meeting. The conversation moves to the next stage.",
+    "do_nothing": "The file remains dormant. Lattice Capital never receives your pitch. No relationship forms. The opportunity is lost unless you find a working address or a warm connector later.",
+    "signals_to_watch": [
+     "Whether a working email address for Lattice Capital can be found.",
+     "Whether a connector can introduce you to Lattice Capital.",
+     "Whether Lattice Capital's stage, cheque size, and sector match your profile.",
+     "If you resend or get introduced, whether they reply within a week."
+    ],
+    "worst": "Lattice Capital is not a fit, or they are a fit but the bounce was a sign of a bad address and no working contact exists. You spend time trying to reach them and never do. The attention is wasted."
+   },
+   "unknowns": [
+    {
+     "question": "What is the correct contact address for Lattice Capital?",
+     "relevance": "Without a working address, no outreach can be made and no relationship can form. This is the immediate blocker."
+    },
+    {
+     "question": "Does Lattice Capital fit your stage, sector, and cheque size?",
+     "relevance": "If they do not, resending to them is a waste of attention. If they do, they belong in the active wave."
+    },
+    {
+     "question": "Who sourced Lattice Capital and why?",
+     "relevance": "This determines whether they should be in the round at all, and whether a connector should make a warm introduction instead of a cold email."
+    },
+    {
+     "question": "Is there a connector who knows Lattice Capital and could introduce you?",
+     "relevance": "A warm intro is far more likely to reach a partner and get a meeting than a cold email, even with a working address."
+    }
+   ],
+   "wait_or_stop": "Wait until you have a working address or a warm connector. Stop if Lattice Capital does not fit your stage or cheque size, or if the time to find a contact exceeds the value of the outreach."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You wrote to Lattice Capital on 2026-08-11 at 06:00 UTC with a seed round pitch.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Nimbus Labs is raising a seed round. Could we find 20 minutes? Arjun\"\n    },\n    {\n      \"claim\": \"The mail to Lattice Capital bounced at the time of sending.\",\n      \"evidence\": [\n        \"num:their_reply_time:partners@lattice-capital.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time has been measured because the mail did not reach them.\",\n      \"evidence\": [\n        \"num:their_reply_time:partners@lattice-capital.test\",\n        \"num:your_reply_time:partners@lattice-capital.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no kind of work named in the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Lattice Capital has no role in the brief's stated work in motion.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is classified as an investor_relationship in the active situation.\",\n      \"evidence\": [\n        \"sit:sit_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time this file has been seen or judged.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@fundraising\",\n        \"hist:derived.history.times_seen@fundraising\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The outreach failed at the technical level before any relationship could form.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"No stage of investor engagement has been reached because the introduction never arrived.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The file should be classified as investor work, not as an unknown kind, because the brief lists fundraising as a domain and the outreach was a seed round pitch.\",\n      \"based_on\": [\n        \"file:domains\",\n        \"fact:1\",\n        \"file:kind\"\n      ]\n    },\n    {\n      \"claim\": \"Lattice Capital was not part of the named seed wave and appears to have been added outside the brief's stated investor set.\",\n      \"based_on\": [\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\",\n        \"brief:cbl_#10\",\n        \"brief:cbl_#11\",\n        \"brief:cbl_#12\",\n        \"file:role\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A bounced mail to an investor means the outreach never happened and no relationship exists.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Investors added outside a named wave are often sourced through connectors or research and carry higher uncertainty about fit and receptiveness.\",\n      \"based_on\": [\n        \"inference:4\",\n        \"cap:founder_office.fundraising.investor_relations#f6\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A bounced mail is not a pass or a soft no; it is a delivery failure and leaves the relationship unmeasured.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"ru:core.relationship\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A bounced mail to an investor should be treated as a technical problem to solve, not as a relationship event.\",\n      \"why\": \"The investor never saw the message, so no inference about their interest or stage can be drawn. The work is to resend or find a working address.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investors added to a round outside the main wave are often lower-priority or exploratory, and a bounce on one of them is lower-stakes than a bounce on a named partner.\",\n      \"why\": \"The brief names five investors in the seed wave and one engaged; Lattice Capital is neither, suggesting it was a secondary outreach.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A file with no kind of work named in the brief should be classified by its content and domain before any judgment is made.\",\n      \"why\": \"The brief's kind field is a record of what was planned, not a constraint on what the file actually is. The dossier shows this is investor work.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Lattice Capital is a real investor fund that fits your stage and thesis.\",\n      \"needs\": \"Confirmation of their stage, cheque size, sector focus, and whether they have backed companies in your space.\"\n    },\n    {\n      \"proposition\": \"The bounce was a typo in the email address or a temporary delivery failure.\",\n      \"needs\": \"A correct email address for Lattice Capital's partners or business development contact.\"\n    },\n    {\n      \"proposition\": \"Lattice Capital was added to the outreach list by a connector or research, not by the brief.\",\n      \"needs\": \"A record of how this investor was sourced and who recommended them.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the correct contact address for Lattice Capital?\",\n      \"relevance\": \"Without a working address, no outreach can be made and no relationship can form. This is the immediate blocker.\"\n    },\n    {\n      \"question\": \"Does Lattice Capital fit your stage, sector, and cheque size?\",\n      \"relevance\": \"If they do not, resending to them is a waste of attention. If they do, they belong in the active wave.\"\n    },\n    {\n      \"question\": \"Who sourced Lattice Capital and why?\",\n      \"relevance\": \"This determines whether they should be in the round at all, and whether a connector should make a warm introduction instead of a cold email.\"\n    },\n    {\n      \"question\": \"Is there a connector who knows Lattice Capital and could introduce you?\",\n      \"relevance\": \"A warm intro is far more likely to reach a partner and get a meeting than a cold email, even with a working address.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A technical delivery failure on an exploratory outreach to an investor outside your named wave. The relationship has not formed because the message never arrived.\",\n    \"rivals\": [\n      \"A signal that Lattice Capital is not a fit and should be dropped from the list.\",\n      \"An opportunity to find a warm path to Lattice Capital through a connector, if they are a fit.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The outreach is a seed round pitch to a capital provider, the domain is fundraising, and the situation is classified as an investor_relationship. The brief's kind field is empty, but the file's content is unambiguous.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"fact:1\",\n      \"sit:sit_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"In a normal investor outreach, the first touch is a cold or warm introduction that reaches the investor and names a meeting request. The investor either replies with interest, declines, or goes silent. If they reply with interest, a meeting is scheduled. If they go silent, a follow-up is sent after a week.\",\n    \"actual\": \"The first touch bounced and never reached the investor. No stage of engagement has been entered.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains dormant. Lattice Capital never receives your pitch. No relationship forms. The opportunity is lost unless you find a working address or a warm connector later.\",\n    \"act\": \"You find a working email address or a warm connector for Lattice Capital. You resend the pitch or ask the connector to introduce you. If they are a fit, you enter the normal investor conversation flow.\",\n    \"best\": \"Lattice Capital is a strong fit for your stage and thesis. A connector introduces you warmly. They reply within a few days and agree to a meeting. The conversation moves to the next stage.\",\n    \"worst\": \"Lattice Capital is not a fit, or they are a fit but the bounce was a sign of a bad address and no working contact exists. You spend time trying to reach them and never do. The attention is wasted.\",\n    \"signals_to_watch\": [\n      \"Whether a working email address for Lattice Capital can be found.\",\n      \"Whether a connector can introduce you to Lattice Capital.\",\n      \"Whether Lattice Capital's stage, cheque size, and sector match your profile.\",\n      \"If you resend or get introduced, whether they reply within a week.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Lattice Capital is not a named investor in the brief's seed wave, so they are exploratory.\",\n      \"The bounce is a technical problem, not a relationship problem, and can be fixed by finding a working address.\",\n      \"You have five named investors in the wave and one engaged; this is one of many outreaches.\",\n      \"A wrong move here \u2014 resending to a bad address or pursuing a poor fit \u2014 costs only time and attention, not capital or a relationship.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Find a working email address for Lattice Capital's partners or business development contact, or identify a connector who can introduce you warmly. Confirm that Lattice Capital fits your stage, cheque size, and sector before resending.\",\n    \"for_whom\": \"Lattice Capital\",\n    \"by_when\": \"2026-08-15\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"inference:1\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"cap:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If a working address cannot be found and no connector exists, drop Lattice Capital from the list and focus on the named investors in the wave and other sourced leads with confirmed contact information.\",\n  \"wait_or_stop\": \"Wait until you have a working address or a warm connector. Stop if Lattice Capital does not fit your stage or cheque size, or if the time to find a contact exceeds the value of the outreach.\",\n  \"done_when\": \"A working email address for Lattice Capital is confirmed, or a connector has agreed to introduce you, or you have decided to drop them from the list.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

@@ -1,0 +1,986 @@
+{
+ "04093a36192cd2e9e70d12beb8952f776c4bf7620260a6e8fee52541650e252f": {
+  "framed": true,
+  "input_tokens": 7052,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3275,
+  "parsed": {
+   "alternative": "If the founder recalls initiating this meeting or knows Tallgrass already, skip the find_out and prepare a brief for the meeting instead. If meera@tallgrass.test sends a mail before the meeting explaining the purpose, use that to prepare. If neither happens, the founder should open the meeting by asking meera@tallgrass.test to set the agenda.",
+   "appraisal": {
+    "reasons": [
+     "The meeting is less than a day away, so urgency is high to clarify before it happens",
+     "The stakes are medium because the meeting could be valuable or a waste of time, depending on what Tallgrass is",
+     "A wrong move \u2014 arriving unprepared or making a commitment without understanding \u2014 is reversible but costly to the founder's reputation and time",
+     "The file shows no blocking dependency, so the next move is ours",
+     "The reasoning units found low risk, but that is because the file is incomplete; the real risk is unknown"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The file is updated with Tallgrass's business, meera@tallgrass.test's role, the meeting's purpose, and the work type (investor, partner, vendor, customer, or other). The founder has a one-page brief for the meeting, or confirms they already know the context. The meeting happens and a next step is recorded.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "A meeting is booked with no prior touch, no mail thread, no promises, and no context recorded. The file exists only as a calendar event.",
+    "expected": "Without a named kind of work, no playbook applies. The brief's general expectation is that all work in motion is tracked with context, promises, and next steps. This file has none of those.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "A meeting is booked with meera@tallgrass.test for 2026-08-13 10:00 UTC, titled 'Tallgrass x Nimbus Labs'",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No prior touch with this counterparty is recorded in the file",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no kind of work named by the brief",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises are recorded in any mail from this counterparty",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's role in the brief is none",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No mailbox is shown to have read this file's mail",
+     "evidence": [
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency and low risk",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time the file has been seen",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@admin",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An uncontextualized meeting booked for tomorrow with a counterparty whose business and intent are unknown, requiring urgent clarification before the founder arrives",
+    "rivals": [
+     "A routine exploratory meeting that the founder initiated and understands, but the file has not captured the context",
+     "An introduction from a connector that the file has not yet linked to the meeting",
+     "A follow-up to a prior conversation that is recorded elsewhere but not in this file"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A message from meera@tallgrass.test or a calendar note explaining the meeting's origin and purpose",
+     "proposition": "Tallgrass is a potential investor, partner, or customer"
+    },
+    {
+     "needs": "A mail thread showing the introduction, or a note in the file linking it to a connector",
+     "proposition": "This meeting was introduced by Introly or another connector"
+    },
+    {
+     "needs": "A search of the founder's mail for prior exchanges with meera@tallgrass.test or Tallgrass",
+     "proposition": "The meeting is a follow-up to an earlier conversation not yet recorded in this file"
+    },
+    {
+     "needs": "Context on what Tallgrass does and why it was approached or approached the founder",
+     "proposition": "Tallgrass is a design partner or vendor being evaluated"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "cov:last_mail"
+     ],
+     "claim": "The meeting is imminent \u2014 booked for 0.7 days ahead \u2014 and no preparation or context has been recorded"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:domains",
+      "file:whose_move"
+     ],
+     "claim": "The counterparty's domain and intent are unknown; the meeting title suggests a business discussion but the file holds no background on Tallgrass, its business, or why this meeting was scheduled"
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "file:whose_move"
+     ],
+     "claim": "No commitment or promise has been made by either party, so the next move is to understand what this meeting is about before it occurs"
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "file:kind",
+      "file:role"
+     ],
+     "claim": "The file's administrative domain and the absence of any named work type suggest this may be an inbound inquiry or introduction that has not yet been classified"
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-13",
+    "for_whom": "the founder",
+    "guided_by": [
+     "own:1",
+     "own:3",
+     "cap:admin.executive_support.inbox_and_correspondence#q"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "find out what Tallgrass is, who meera@tallgrass.test is, and why this meeting was scheduled, before the founder arrives",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting booked without context in the file is a risk: the founder may arrive unprepared, or the meeting may be a mismatch with current priorities",
+     "kind": "practice",
+     "why": "Thirty years shows that uncontextualized meetings waste time and damage relationships when the founder is surprised or cannot engage meaningfully"
+    },
+    {
+     "claim": "When a counterparty's domain is listed as 'admin' and no work type is named, the file is often incomplete \u2014 the real work type has not been identified or the meeting is exploratory",
+     "kind": "base_rate",
+     "why": "Admin is a catch-all; it signals that the file was created to track a touch but not yet classified into the company's work streams"
+    },
+    {
+     "claim": "A meeting less than a day away with no preparation note is a signal to find out what it is about before it happens, not after",
+     "kind": "practice",
+     "why": "The founder's time is the scarcest resource; a meeting without context is a liability, not an asset"
+    },
+    {
+     "claim": "Not every meeting needs a pre-call brief; some are exploratory and benefit from going in open-minded",
+     "kind": "counter_pattern",
+     "why": "Over-preparation can signal defensiveness; some counterparties prefer to set the agenda themselves"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:2",
+      "file:first_touch"
+     ],
+     "claim": "A booked meeting with no prior touch and no recorded context is often an introduction or cold outreach that has not been triaged",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cov:last_mail",
+      "fact:1"
+     ],
+     "claim": "When a meeting is booked but no mail is shown to have been read, the founder may not yet know why the meeting exists or what is expected",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "A meeting titled with both parties' names suggests mutual agreement, not a cold outreach; yet the file shows no negotiation or confirmation thread",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:role"
+    ],
+    "kind": null,
+    "why": "The file's kind is not named by the brief, and the meeting title alone does not indicate whether Tallgrass is an investor, partner, vendor, customer, or something else. The kind cannot be proposed without knowing what Tallgrass does and why the meeting was scheduled."
+   },
+   "scenarios": {
+    "act": "The founder or the chief of staff reaches out to meera@tallgrass.test or searches the mail for prior context. The meeting's purpose, Tallgrass's business, and any expectations are clarified. The founder arrives prepared, the meeting is productive, and the file is updated with the work type and next steps.",
+    "best": "Tallgrass is a high-value partner or investor aligned with the brief's goals. The meeting is productive, a commitment is made, and the file is updated with a clear next step and timeline. The founder's time is well spent.",
+    "do_nothing": "The founder arrives at the meeting tomorrow unprepared. If meera@tallgrass.test has an agenda or expectation, the founder may miss it or appear disengaged. The meeting may be wasted, or a commitment may be made without full understanding. The file remains incomplete and the work type remains unknown.",
+    "signals_to_watch": [
+     "A mail from meera@tallgrass.test before the meeting, explaining the purpose",
+     "A calendar note or prior mail thread showing the meeting's origin",
+     "The founder's own recollection of why this meeting was scheduled",
+     "Tallgrass's website or LinkedIn profile, showing what they do",
+     "The tone and content of the meeting itself \u2014 whether meera@tallgrass.test is pitching, asking, or exploring"
+    ],
+    "worst": "The meeting is a mismatch \u2014 Tallgrass's business or intent has nothing to do with Nimbus Labs' goals. The founder wastes time, or a commitment is made under false pretenses. The file remains incomplete and the work type is never clarified."
+   },
+   "unknowns": [
+    {
+     "question": "Who initiated this meeting, and when?",
+     "relevance": "If the founder initiated it, they know the context; if Tallgrass did, the founder may not, and preparation is urgent"
+    },
+    {
+     "question": "What is Tallgrass, and what does it do?",
+     "relevance": "The founder cannot engage meaningfully without knowing whether Tallgrass is a potential investor, customer, partner, or vendor"
+    },
+    {
+     "question": "What does meera@tallgrass.test expect from this meeting?",
+     "relevance": "If there is an unmet expectation, the meeting will fail; if there is a decision to be made, the founder needs to know it in advance"
+    },
+    {
+     "question": "Is there a mail thread with meera@tallgrass.test that the file has not captured?",
+     "relevance": "The file shows no mail, but the meeting is booked; the mail thread would explain the context and any promises made"
+    },
+    {
+     "question": "Does this meeting relate to any of the brief's active goals \u2014 raising, hiring, partnerships, or programs?",
+     "relevance": "If it does, it may be high-priority; if it does not, it may be a distraction or a new opportunity that needs to be evaluated"
+    }
+   ],
+   "wait_or_stop": "Wait until the founder confirms they know what this meeting is about, or until a mail from meera@tallgrass.test arrives. Stop if the meeting is cancelled or rescheduled. Do not wait past the meeting time; if context is not found by then, the founder should ask meera@tallgrass.test to explain at the start of the call."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"A meeting is booked with meera@tallgrass.test for 2026-08-13 10:00 UTC, titled 'Tallgrass x Nimbus Labs'\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No prior touch with this counterparty is recorded in the file\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no kind of work named by the brief\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises are recorded in any mail from this counterparty\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's role in the brief is none\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No mailbox is shown to have read this file's mail\",\n      \"evidence\": [\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency and low risk\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time the file has been seen\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@admin\",\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The meeting is imminent \u2014 booked for 0.7 days ahead \u2014 and no preparation or context has been recorded\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"cov:last_mail\"\n      ]\n    },\n    {\n      \"claim\": \"The counterparty's domain and intent are unknown; the meeting title suggests a business discussion but the file holds no background on Tallgrass, its business, or why this meeting was scheduled\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:domains\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"No commitment or promise has been made by either party, so the next move is to understand what this meeting is about before it occurs\",\n      \"based_on\": [\n        \"fact:4\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The file's administrative domain and the absence of any named work type suggest this may be an inbound inquiry or introduction that has not yet been classified\",\n      \"based_on\": [\n        \"file:domains\",\n        \"file:kind\",\n        \"file:role\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A booked meeting with no prior touch and no recorded context is often an introduction or cold outreach that has not been triaged\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:first_touch\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a meeting is booked but no mail is shown to have been read, the founder may not yet know why the meeting exists or what is expected\",\n      \"based_on\": [\n        \"cov:last_mail\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A meeting titled with both parties' names suggests mutual agreement, not a cold outreach; yet the file shows no negotiation or confirmation thread\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting booked without context in the file is a risk: the founder may arrive unprepared, or the meeting may be a mismatch with current priorities\",\n      \"why\": \"Thirty years shows that uncontextualized meetings waste time and damage relationships when the founder is surprised or cannot engage meaningfully\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a counterparty's domain is listed as 'admin' and no work type is named, the file is often incomplete \u2014 the real work type has not been identified or the meeting is exploratory\",\n      \"why\": \"Admin is a catch-all; it signals that the file was created to track a touch but not yet classified into the company's work streams\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting less than a day away with no preparation note is a signal to find out what it is about before it happens, not after\",\n      \"why\": \"The founder's time is the scarcest resource; a meeting without context is a liability, not an asset\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Not every meeting needs a pre-call brief; some are exploratory and benefit from going in open-minded\",\n      \"why\": \"Over-preparation can signal defensiveness; some counterparties prefer to set the agenda themselves\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tallgrass is a potential investor, partner, or customer\",\n      \"needs\": \"A message from meera@tallgrass.test or a calendar note explaining the meeting's origin and purpose\"\n    },\n    {\n      \"proposition\": \"This meeting was introduced by Introly or another connector\",\n      \"needs\": \"A mail thread showing the introduction, or a note in the file linking it to a connector\"\n    },\n    {\n      \"proposition\": \"The meeting is a follow-up to an earlier conversation not yet recorded in this file\",\n      \"needs\": \"A search of the founder's mail for prior exchanges with meera@tallgrass.test or Tallgrass\"\n    },\n    {\n      \"proposition\": \"Tallgrass is a design partner or vendor being evaluated\",\n      \"needs\": \"Context on what Tallgrass does and why it was approached or approached the founder\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Who initiated this meeting, and when?\",\n      \"relevance\": \"If the founder initiated it, they know the context; if Tallgrass did, the founder may not, and preparation is urgent\"\n    },\n    {\n      \"question\": \"What is Tallgrass, and what does it do?\",\n      \"relevance\": \"The founder cannot engage meaningfully without knowing whether Tallgrass is a potential investor, customer, partner, or vendor\"\n    },\n    {\n      \"question\": \"What does meera@tallgrass.test expect from this meeting?\",\n      \"relevance\": \"If there is an unmet expectation, the meeting will fail; if there is a decision to be made, the founder needs to know it in advance\"\n    },\n    {\n      \"question\": \"Is there a mail thread with meera@tallgrass.test that the file has not captured?\",\n      \"relevance\": \"The file shows no mail, but the meeting is booked; the mail thread would explain the context and any promises made\"\n    },\n    {\n      \"question\": \"Does this meeting relate to any of the brief's active goals \u2014 raising, hiring, partnerships, or programs?\",\n      \"relevance\": \"If it does, it may be high-priority; if it does not, it may be a distraction or a new opportunity that needs to be evaluated\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An uncontextualized meeting booked for tomorrow with a counterparty whose business and intent are unknown, requiring urgent clarification before the founder arrives\",\n    \"rivals\": [\n      \"A routine exploratory meeting that the founder initiated and understands, but the file has not captured the context\",\n      \"An introduction from a connector that the file has not yet linked to the meeting\",\n      \"A follow-up to a prior conversation that is recorded elsewhere but not in this file\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The file's kind is not named by the brief, and the meeting title alone does not indicate whether Tallgrass is an investor, partner, vendor, customer, or something else. The kind cannot be proposed without knowing what Tallgrass does and why the meeting was scheduled.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a named kind of work, no playbook applies. The brief's general expectation is that all work in motion is tracked with context, promises, and next steps. This file has none of those.\",\n    \"actual\": \"A meeting is booked with no prior touch, no mail thread, no promises, and no context recorded. The file exists only as a calendar event.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder arrives at the meeting tomorrow unprepared. If meera@tallgrass.test has an agenda or expectation, the founder may miss it or appear disengaged. The meeting may be wasted, or a commitment may be made without full understanding. The file remains incomplete and the work type remains unknown.\",\n    \"act\": \"The founder or the chief of staff reaches out to meera@tallgrass.test or searches the mail for prior context. The meeting's purpose, Tallgrass's business, and any expectations are clarified. The founder arrives prepared, the meeting is productive, and the file is updated with the work type and next steps.\",\n    \"best\": \"Tallgrass is a high-value partner or investor aligned with the brief's goals. The meeting is productive, a commitment is made, and the file is updated with a clear next step and timeline. The founder's time is well spent.\",\n    \"worst\": \"The meeting is a mismatch \u2014 Tallgrass's business or intent has nothing to do with Nimbus Labs' goals. The founder wastes time, or a commitment is made under false pretenses. The file remains incomplete and the work type is never clarified.\",\n    \"signals_to_watch\": [\n      \"A mail from meera@tallgrass.test before the meeting, explaining the purpose\",\n      \"A calendar note or prior mail thread showing the meeting's origin\",\n      \"The founder's own recollection of why this meeting was scheduled\",\n      \"Tallgrass's website or LinkedIn profile, showing what they do\",\n      \"The tone and content of the meeting itself \u2014 whether meera@tallgrass.test is pitching, asking, or exploring\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The meeting is less than a day away, so urgency is high to clarify before it happens\",\n      \"The stakes are medium because the meeting could be valuable or a waste of time, depending on what Tallgrass is\",\n      \"A wrong move \u2014 arriving unprepared or making a commitment without understanding \u2014 is reversible but costly to the founder's reputation and time\",\n      \"The file shows no blocking dependency, so the next move is ours\",\n      \"The reasoning units found low risk, but that is because the file is incomplete; the real risk is unknown\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"find out what Tallgrass is, who meera@tallgrass.test is, and why this meeting was scheduled, before the founder arrives\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-08-13\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:3\",\n      \"cap:admin.executive_support.inbox_and_correspondence#q\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder recalls initiating this meeting or knows Tallgrass already, skip the find_out and prepare a brief for the meeting instead. If meera@tallgrass.test sends a mail before the meeting explaining the purpose, use that to prepare. If neither happens, the founder should open the meeting by asking meera@tallgrass.test to set the agenda.\",\n  \"wait_or_stop\": \"Wait until the founder confirms they know what this meeting is about, or until a mail from meera@tallgrass.test arrives. Stop if the meeting is cancelled or rescheduled. Do not wait past the meeting time; if context is not found by then, the founder should ask meera@tallgrass.test to explain at the start of the call.\",\n  \"done_when\": \"The file is updated with Tallgrass's business, meera@tallgrass.test's role, the meeting's purpose, and the work type (investor, partner, vendor, customer, or other). The founder has a one-page brief for the meeting, or confirms they already know the context. The meeting happens and a next step is recorded.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "2c5411fac6e6a0484f1fc8b288420cab21b31dd3d16058c16c7fef96b00877f9": {
+  "framed": true,
+  "input_tokens": 7121,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3146,
+  "parsed": {
+   "alternative": "If the founder cannot find context about Tallgrass before the meeting, send a brief message to meera@tallgrass.test asking what the meeting is about and what they would like to discuss. This gives the founder time to prepare and signals that the founder is engaged.",
+   "appraisal": {
+    "reasons": [
+     "The meeting is booked for tomorrow (2026-08-13), so the founder must prepare today or attend unprepared.",
+     "The file holds no context, so the founder cannot assess whether this is a business opportunity or a distraction.",
+     "A meeting attended unprepared can damage the founder's credibility or lead to an unwanted commitment, but the damage is reversible if the founder follows up with clarity.",
+     "The brief names no kind of work for this file, so it is not yet integrated into the company's tracked work.",
+     "The counterparty is unknown, so the stakes depend on what Tallgrass does and why they asked for the meeting."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The founder attends the meeting prepared, with knowledge of what Tallgrass does and why they asked for the meeting. After the meeting, the file is updated with the context, what was discussed, and what the next step is. If a next step is agreed, it is tracked in the file with a date and an owner.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The file holds only the meeting booking. No context, no prior touch, no promises, no mail. The founder has no information to prepare.",
+    "expected": "The brief names no kind of work for this file, so no playbook applies. Without a playbook, the expectation is that the file should hold enough context for the founder to prepare for the meeting: who Tallgrass is, what they do, why they asked for the meeting, and what the founder should be ready to discuss.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "A meeting is booked with meera@tallgrass.test for 2026-08-13 10:00 UTC, titled 'Tallgrass x Nimbus Labs'.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No prior touch with this counterparty is recorded in the file.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no kind of work named by the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises are recorded in any mail from this counterparty.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No mailbox has read this file's mail, so whether the founder wrote in this file cannot be determined.",
+     "evidence": [
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is classified as admin domain work.",
+     "evidence": [
+      "file:domains"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The situation is marked active with no end recorded, last seen at the booking 0.7 days ahead.",
+     "evidence": [
+      "sit:sit_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A first meeting with an unknown counterparty, booked but not yet contextualized. The file is blank; the meeting is the only fact. The founder must prepare by learning what Tallgrass is and why they asked for the meeting.",
+    "rivals": [
+     "A courtesy meeting or support request that does not advance the brief's goals and may be a distraction from the founder's priorities.",
+     "An inbound inquiry from a potential investor, partner, or vendor that could be relevant to one of the brief's goals, but the file has not yet captured the context.",
+     "A meeting that was booked by the team without the founder's full awareness, and the founder needs to decide whether to attend or delegate."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The founder's own knowledge of how this meeting came about, or a message from Tallgrass or the connector who introduced them.",
+     "proposition": "Tallgrass is a potential investor, partner, or vendor relevant to one of the brief's goals."
+    },
+    {
+     "needs": "A message from Tallgrass or meera@tallgrass.test explaining their interest.",
+     "proposition": "Tallgrass is an inbound inquiry from someone who found the company and wants to explore a relationship."
+    },
+    {
+     "needs": "The founder's assessment after the meeting, or a message from Tallgrass before it that clarifies their intent.",
+     "proposition": "This is a courtesy meeting or a support request that does not advance the brief's goals."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "This is a first contact with Tallgrass; the meeting is inbound or the result of an introduction not yet recorded in the file."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4"
+     ],
+     "claim": "The counterparty's intent and Tallgrass's role in the company's work are unknown; the meeting itself is the only signal."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "rule:admin.rule.inbox_and_correspondence.a_draft_may_not_commit_the_principal"
+     ],
+     "claim": "No commitment or obligation has been created yet; the meeting is a listening opportunity."
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "file:role"
+     ],
+     "claim": "The file's administrative classification suggests this may be operational or support work, not a core business development track."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-13",
+    "for_whom": "yourself, to prepare for the meeting",
+    "guided_by": [
+     "cap:admin.executive_support.inbox_and_correspondence#q",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "Find out what Tallgrass does, who meera is, and why they asked for the meeting. Update the file with this context before the meeting. If the meeting is not yet confirmed, confirm it. If it is confirmed, prepare talking points aligned with the brief's goals.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting booked without context is a risk: the founder may walk in unprepared, or the meeting may be about something the company is not ready to discuss.",
+     "kind": "practice",
+     "why": "Thirty years shows that the cost of a wasted meeting is high when the founder does not know what is being asked or offered."
+    },
+    {
+     "claim": "The file should be updated before the meeting with what is known about Tallgrass, what they do, and why they asked for the meeting.",
+     "kind": "practice",
+     "why": "A file that is blank at meeting time is a file that was not used; the founder walks in blind and the meeting is not tracked."
+    },
+    {
+     "claim": "Not every meeting is a business opportunity; some are vendor pitches, support requests, or courtesy calls that do not belong in the founder's calendar.",
+     "kind": "counter_pattern",
+     "why": "A founder's time is the scarcest resource; a meeting that does not advance one of the brief's goals is a meeting that should not have been booked."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "A booked meeting with no prior recorded touch is often an inbound inquiry, a connector's introduction, or a follow-up to an outbound approach not yet logged.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.inbox_and_correspondence#q",
+      "own:1"
+     ],
+     "claim": "When a meeting is booked but the file holds no context, the founder's move is to prepare by learning what Tallgrass does and why they asked for the meeting.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "evt_#1"
+    ],
+    "kind": "vendor",
+    "why": "The file is classified as admin domain work, and the meeting is titled 'Tallgrass x Nimbus Labs' with no other context. This suggests a potential vendor, service provider, or operational partner. Without more information, vendor is the most conservative classification; it could also be partner, intro, or program depending on what Tallgrass does."
+   },
+   "scenarios": {
+    "act": "The founder or the team researches Tallgrass before the meeting, updates the file with what is known, and prepares talking points aligned with the brief's goals. The founder attends the meeting informed and can make a strategic decision about whether to pursue the relationship. After the meeting, the file is updated with what was discussed and what the next step is.",
+    "best": "Tallgrass is a potential investor, partner, or vendor relevant to one of the brief's goals. The founder prepares, the meeting is productive, and a clear next step is agreed. The relationship is tracked in the file and moves forward.",
+    "do_nothing": "The founder attends the meeting unprepared. Tallgrass explains their interest or pitch, and the founder responds without context or strategy. The meeting may be wasted, or the founder may commit to something without full understanding. The file remains blank after the meeting, and no follow-up is tracked.",
+    "signals_to_watch": [
+     "Whether Tallgrass sends a message before the meeting explaining their interest.",
+     "Whether the founder or team can identify how this meeting came to be booked.",
+     "What Tallgrass says in the meeting about their interest in Nimbus Labs.",
+     "Whether a clear next step is agreed at the end of the meeting.",
+     "Whether the file is updated after the meeting with what was discussed and what is owed."
+    ],
+    "worst": "The meeting is a distraction or a courtesy call that does not advance the brief's goals. The founder attends unprepared and wastes time. Or, the founder commits to something without understanding the implications, and the file does not track it."
+   },
+   "unknowns": [
+    {
+     "question": "How did this meeting come to be booked? Was it an inbound inquiry, a connector's introduction, or an outbound approach by the founder or team?",
+     "relevance": "The source of the meeting determines whether it is a business opportunity, a distraction, or a relationship to nurture. Without it, the founder cannot prepare or decide whether to attend."
+    },
+    {
+     "question": "What does Tallgrass do, and what is their interest in Nimbus Labs?",
+     "relevance": "The founder needs to know what Tallgrass offers or seeks before the meeting, to decide whether it is relevant to the brief's goals and to prepare an informed response."
+    },
+    {
+     "question": "Who at Tallgrass is meera, and what is her role?",
+     "relevance": "The seniority and role of the person on the other side determines the weight of the meeting and what decisions or commitments might be expected."
+    },
+    {
+     "question": "Is this meeting already on the founder's calendar, or is it a booking that has not yet been confirmed?",
+     "relevance": "If the meeting is not yet confirmed, the founder may need to accept or decline; if it is confirmed, the founder needs to prepare."
+    }
+   ],
+   "wait_or_stop": "Wait until the meeting is held. After the meeting, update the file with what was discussed, what Tallgrass does, and what the next step is. If the meeting is not relevant to the brief's goals, close the file and do not track it further. If it is relevant, move it to the appropriate category (investor, partner, vendor, etc.) and assign it a playbook."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"A meeting is booked with meera@tallgrass.test for 2026-08-13 10:00 UTC, titled 'Tallgrass x Nimbus Labs'.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No prior touch with this counterparty is recorded in the file.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no kind of work named by the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises are recorded in any mail from this counterparty.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No mailbox has read this file's mail, so whether the founder wrote in this file cannot be determined.\",\n      \"evidence\": [\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is classified as admin domain work.\",\n      \"evidence\": [\n        \"file:domains\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The situation is marked active with no end recorded, last seen at the booking 0.7 days ahead.\",\n      \"evidence\": [\n        \"sit:sit_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a first contact with Tallgrass; the meeting is inbound or the result of an introduction not yet recorded in the file.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The counterparty's intent and Tallgrass's role in the company's work are unknown; the meeting itself is the only signal.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"No commitment or obligation has been created yet; the meeting is a listening opportunity.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"rule:admin.rule.inbox_and_correspondence.a_draft_may_not_commit_the_principal\"\n      ]\n    },\n    {\n      \"claim\": \"The file's administrative classification suggests this may be operational or support work, not a core business development track.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"file:role\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A booked meeting with no prior recorded touch is often an inbound inquiry, a connector's introduction, or a follow-up to an outbound approach not yet logged.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a meeting is booked but the file holds no context, the founder's move is to prepare by learning what Tallgrass does and why they asked for the meeting.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.inbox_and_correspondence#q\",\n        \"own:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting booked without context is a risk: the founder may walk in unprepared, or the meeting may be about something the company is not ready to discuss.\",\n      \"why\": \"Thirty years shows that the cost of a wasted meeting is high when the founder does not know what is being asked or offered.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The file should be updated before the meeting with what is known about Tallgrass, what they do, and why they asked for the meeting.\",\n      \"why\": \"A file that is blank at meeting time is a file that was not used; the founder walks in blind and the meeting is not tracked.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Not every meeting is a business opportunity; some are vendor pitches, support requests, or courtesy calls that do not belong in the founder's calendar.\",\n      \"why\": \"A founder's time is the scarcest resource; a meeting that does not advance one of the brief's goals is a meeting that should not have been booked.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tallgrass is a potential investor, partner, or vendor relevant to one of the brief's goals.\",\n      \"needs\": \"The founder's own knowledge of how this meeting came about, or a message from Tallgrass or the connector who introduced them.\"\n    },\n    {\n      \"proposition\": \"Tallgrass is an inbound inquiry from someone who found the company and wants to explore a relationship.\",\n      \"needs\": \"A message from Tallgrass or meera@tallgrass.test explaining their interest.\"\n    },\n    {\n      \"proposition\": \"This is a courtesy meeting or a support request that does not advance the brief's goals.\",\n      \"needs\": \"The founder's assessment after the meeting, or a message from Tallgrass before it that clarifies their intent.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"How did this meeting come to be booked? Was it an inbound inquiry, a connector's introduction, or an outbound approach by the founder or team?\",\n      \"relevance\": \"The source of the meeting determines whether it is a business opportunity, a distraction, or a relationship to nurture. Without it, the founder cannot prepare or decide whether to attend.\"\n    },\n    {\n      \"question\": \"What does Tallgrass do, and what is their interest in Nimbus Labs?\",\n      \"relevance\": \"The founder needs to know what Tallgrass offers or seeks before the meeting, to decide whether it is relevant to the brief's goals and to prepare an informed response.\"\n    },\n    {\n      \"question\": \"Who at Tallgrass is meera, and what is her role?\",\n      \"relevance\": \"The seniority and role of the person on the other side determines the weight of the meeting and what decisions or commitments might be expected.\"\n    },\n    {\n      \"question\": \"Is this meeting already on the founder's calendar, or is it a booking that has not yet been confirmed?\",\n      \"relevance\": \"If the meeting is not yet confirmed, the founder may need to accept or decline; if it is confirmed, the founder needs to prepare.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A first meeting with an unknown counterparty, booked but not yet contextualized. The file is blank; the meeting is the only fact. The founder must prepare by learning what Tallgrass is and why they asked for the meeting.\",\n    \"rivals\": [\n      \"A courtesy meeting or support request that does not advance the brief's goals and may be a distraction from the founder's priorities.\",\n      \"An inbound inquiry from a potential investor, partner, or vendor that could be relevant to one of the brief's goals, but the file has not yet captured the context.\",\n      \"A meeting that was booked by the team without the founder's full awareness, and the founder needs to decide whether to attend or delegate.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"vendor\",\n    \"why\": \"The file is classified as admin domain work, and the meeting is titled 'Tallgrass x Nimbus Labs' with no other context. This suggests a potential vendor, service provider, or operational partner. Without more information, vendor is the most conservative classification; it could also be partner, intro, or program depending on what Tallgrass does.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no kind of work for this file, so no playbook applies. Without a playbook, the expectation is that the file should hold enough context for the founder to prepare for the meeting: who Tallgrass is, what they do, why they asked for the meeting, and what the founder should be ready to discuss.\",\n    \"actual\": \"The file holds only the meeting booking. No context, no prior touch, no promises, no mail. The founder has no information to prepare.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder attends the meeting unprepared. Tallgrass explains their interest or pitch, and the founder responds without context or strategy. The meeting may be wasted, or the founder may commit to something without full understanding. The file remains blank after the meeting, and no follow-up is tracked.\",\n    \"act\": \"The founder or the team researches Tallgrass before the meeting, updates the file with what is known, and prepares talking points aligned with the brief's goals. The founder attends the meeting informed and can make a strategic decision about whether to pursue the relationship. After the meeting, the file is updated with what was discussed and what the next step is.\",\n    \"best\": \"Tallgrass is a potential investor, partner, or vendor relevant to one of the brief's goals. The founder prepares, the meeting is productive, and a clear next step is agreed. The relationship is tracked in the file and moves forward.\",\n    \"worst\": \"The meeting is a distraction or a courtesy call that does not advance the brief's goals. The founder attends unprepared and wastes time. Or, the founder commits to something without understanding the implications, and the file does not track it.\",\n    \"signals_to_watch\": [\n      \"Whether Tallgrass sends a message before the meeting explaining their interest.\",\n      \"Whether the founder or team can identify how this meeting came to be booked.\",\n      \"What Tallgrass says in the meeting about their interest in Nimbus Labs.\",\n      \"Whether a clear next step is agreed at the end of the meeting.\",\n      \"Whether the file is updated after the meeting with what was discussed and what is owed.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The meeting is booked for tomorrow (2026-08-13), so the founder must prepare today or attend unprepared.\",\n      \"The file holds no context, so the founder cannot assess whether this is a business opportunity or a distraction.\",\n      \"A meeting attended unprepared can damage the founder's credibility or lead to an unwanted commitment, but the damage is reversible if the founder follows up with clarity.\",\n      \"The brief names no kind of work for this file, so it is not yet integrated into the company's tracked work.\",\n      \"The counterparty is unknown, so the stakes depend on what Tallgrass does and why they asked for the meeting.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Find out what Tallgrass does, who meera is, and why they asked for the meeting. Update the file with this context before the meeting. If the meeting is not yet confirmed, confirm it. If it is confirmed, prepare talking points aligned with the brief's goals.\",\n    \"for_whom\": \"yourself, to prepare for the meeting\",\n    \"by_when\": \"2026-08-13\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.inbox_and_correspondence#q\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder cannot find context about Tallgrass before the meeting, send a brief message to meera@tallgrass.test asking what the meeting is about and what they would like to discuss. This gives the founder time to prepare and signals that the founder is engaged.\",\n    \"wait_or_stop\": \"Wait until the meeting is held. After the meeting, update the file with what was discussed, what Tallgrass does, and what the next step is. If the meeting is not relevant to the brief's goals, close the file and do not track it further. If it is relevant, move it to the appropriate category (investor, partner, vendor, etc.) and assign it a playbook.\",\n  \"done_when\": \"The founder attends the meeting prepared, with knowledge of what Tallgrass does and why they asked for the meeting. After the meeting, the file is updated with the context, what was discussed, and what the next step is. If a next step is agreed, it is tracked in the file with a date and an owner.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "9c7b230d15c96537e7bb8415985c92b16bbdf67a22ce81e7c01b9263dcd271c6": {
+  "framed": true,
+  "input_tokens": 7330,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3744,
+  "parsed": {
+   "alternative": "If the founder does not respond to the clarification request within 3 days, send a follow-up asking whether the file should be closed. If the founder confirms that the relationship is worth pursuing, log it in the brief with a kind of work and a next step, and move the file to the appropriate playbook.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because the meeting may represent a new opportunity (a design partner, an investor, a customer) that could advance the founder's goals, or it may be a distraction. The file's silence suggests it is not yet critical, but the longer it remains undocumented, the more likely it is to become a liability.",
+     "The urgency is medium because the meeting occurred only 2 days ago, and the founder may still be processing it. However, if meera is waiting for something, the urgency will increase quickly. The queued card indicates the expert already recognized that clarification is needed.",
+     "A wrong move is reversible: if the founder decides to close the file, the relationship can be reopened later if circumstances change. If the founder decides to pursue it, the relationship can be deprioritized if it does not develop. The cost of inaction is higher than the cost of a wrong decision, because inaction creates ambiguity and invisible obligations."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The file is either closed with a note explaining why the relationship is not being pursued, or it is updated with a kind of work, a stage, and a next step, and the founder has either sent a message to meera or scheduled a follow-up meeting.",
+   "draft": "I need to understand what came out of your meeting with Tallgrass. What does Meera's company do, how did the meeting come about, and what did you agree to next? Once I know that, I can log it properly and make sure nothing falls through the cracks.",
+   "expected_vs_actual": {
+    "actual": "None of these expectations are met. The meeting is undocumented, uncategorized, and has produced no written outcome or next step. The file contains only a calendar entry and a queued card asking for clarification.",
+    "expected": "If this is a partner relationship, the playbook would expect: (1) a clear statement of what Tallgrass does and why they are a fit; (2) a documented outcome from the meeting\u2014either a decision to pursue the relationship or a decision to close it; (3) a next step, if the relationship is to be pursued. If this is an investor relationship, the playbook would expect the founder to have logged it in the 'Raise' section of the brief. If this is a program or compliance matter, it would appear in those sections.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "A meeting was held with meera@tallgrass.test on 2026-08-13 at 10:00 UTC, titled 'Tallgrass x Nimbus Labs' in the calendar.",
+     "evidence": [
+      "evt_#1",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No mail from this counterparty is held in the file; no promises, asks, or commitments appear in any correspondence.",
+     "evidence": [
+      "none:promises",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 2.08 days since the meeting, with no follow-up contact.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file; it does not appear in any of the founder's stated goals or work in motion.",
+     "evidence": [
+      "file:kind",
+      "file:role",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time this file has been reviewed; no prior card verdict or outcome exists.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@admin",
+      "hist:derived.history.prior_outcome@admin",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was queued asking how this meeting came to be booked\u2014whether inbound, via connector, or outbound.",
+     "evidence": [
+      "card:card_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An undocumented meeting with an unknown counterparty, whose purpose, origin, and next step are all unclear. The file is a placeholder for a conversation that has not yet been categorized or acted upon.",
+    "rivals": [
+     "A new opportunity\u2014a potential partner, investor, or customer\u2014that the founder is exploring and has not yet decided how to pursue.",
+     "A distraction or a low-priority exploratory meeting that the founder has already decided not to pursue but has not formally closed.",
+     "A meeting booked by a connector or an inbound inquiry that arrived through an informal channel and was not logged in the normal flow."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A message from meera@tallgrass.test, or a note from the founder, saying what Tallgrass does and why the meeting was held.",
+     "proposition": "Tallgrass is a potential design partner, investor, or customer, and the meeting was exploratory."
+    },
+    {
+     "needs": "The founder's own assessment of whether this relationship is worth developing, and if so, what the next step should be.",
+     "proposition": "The meeting was booked by a connector (possibly Introly) and the founder has not yet decided whether to pursue it."
+    },
+    {
+     "needs": "The founder's recollection of what was agreed, and whether meera@tallgrass.test is waiting for something from the founder.",
+     "proposition": "The meeting produced a commitment or a next step that was discussed verbally but not written down."
+    },
+    {
+     "needs": "Confirmation from the founder that the file can be closed, or a note explaining why.",
+     "proposition": "This is a low-priority exploratory meeting that the founder has already decided not to pursue."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The meeting occurred but left no trace in writing\u2014no agenda, no outcome, no next step recorded."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3"
+     ],
+     "claim": "The file's silence for over two days suggests either the meeting produced no actionable outcome, or an outcome was discussed but not documented."
+    },
+    {
+     "based_on": [
+      "fact:4"
+     ],
+     "claim": "Without a stated kind of work, the file cannot be triaged against the founder's priorities or playbooks."
+    },
+    {
+     "based_on": [
+      "fact:6"
+     ],
+     "claim": "The queued card indicates the expert already recognized that the meeting's origin and purpose are unknown."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "card:card_#1",
+    "by_when": "2026-08-16",
+    "for_whom": "the founder",
+    "guided_by": [
+     "cap:admin.executive_support.inbox_and_correspondence#f6",
+     "pb:admin.pb.inbox_and_correspondence.triage_to_five_outcomes",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:4",
+     "fact:6",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Ask the founder to clarify the meeting's purpose, origin, and outcome, and to decide whether the relationship is worth pursuing.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting without a documented purpose or next step is a liability, not an asset. The founder's time is the scarcest resource; every meeting must earn its place in the file by producing either a decision, a commitment, or a clear reason to meet again.",
+     "kind": "practice",
+     "why": "Undocumented meetings create invisible obligations and consume attention without returning value. They also create ambiguity about whether the founder or the counterparty is responsible for the next move."
+    },
+    {
+     "claim": "When a meeting is booked but its origin is unknown, it is often the result of a connector's introduction that was not logged, or an inbound inquiry that arrived through a channel outside the normal flow.",
+     "kind": "base_rate",
+     "why": "Founders often accept meetings through informal channels\u2014a text, a warm introduction at an event, a referral from an advisor\u2014that do not leave a clear trail in the file system."
+    },
+    {
+     "claim": "The first question after a meeting is always: what happens next, and who is responsible? If that question is not answered in writing within a day, the meeting's value decays rapidly.",
+     "kind": "practice",
+     "why": "Clarity about next steps is what converts a meeting into work. Without it, both parties assume the other will move, and nothing happens."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.inbox_and_correspondence#f6"
+     ],
+     "claim": "Meetings that produce no written outcome or next step often result in lost momentum and forgotten commitments.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "sig:admin.sit.live_admin_contact"
+     ],
+     "claim": "A meeting with no follow-up mail within two days typically means either the meeting was exploratory with no decision, or the responsible party has not yet acted on it.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:4"
+     ],
+     "claim": "A meeting that does not appear in the founder's stated goals or work in motion may be a distraction, or it may be a new opportunity not yet categorized.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#6",
+     "evt_#1",
+     "file:domains"
+    ],
+    "kind": "partner",
+    "why": "The calendar title 'Tallgrass x Nimbus Labs' suggests a potential partnership or collaboration. The file's domain is 'admin' and its role is 'none', which indicates it has not yet been categorized. Given the founder's stated goals include landing design partners, and the meeting was held with an external party, the most likely kind of work is a partner relationship. However, this is a hypothesis pending confirmation from the founder."
+   },
+   "scenarios": {
+    "act": "The founder clarifies the meeting's purpose, origin, and outcome. If the relationship is worth pursuing, the founder documents it in the brief, assigns it a kind of work, and sets a next step. If the relationship is not worth pursuing, the founder closes the file. Either way, the file moves from 'unknown' to 'known', and the founder's work becomes visible and actionable.",
+    "best": "The meeting was a warm introduction to a potential design partner who is genuinely interested in working with Nimbus Labs. The founder clarifies the fit, sets a next step (a follow-up call, a proposal, a pilot project), and logs it in the brief. The relationship develops into a valuable partnership.",
+    "do_nothing": "The file remains open and undocumented. After 3 days, it will have been quiet for over 5 days. After 7 days, over 9 days. Without a playbook or a stated kind of work, the file will not be reviewed again unless the founder or meera@tallgrass.test sends mail. The meeting's value decays; if a commitment was made, it will be forgotten. If meera is waiting for something, the founder's standing with her will suffer.",
+    "signals_to_watch": [
+     "Mail from meera@tallgrass.test asking about next steps or following up on the meeting.",
+     "A note from the founder clarifying the meeting's purpose and outcome.",
+     "The file being updated with a kind of work, a stage, and a next step.",
+     "Silence from both meera and the founder for over a week, suggesting the meeting was exploratory and has been deprioritized."
+    ],
+    "worst": "The meeting was a distraction or a low-priority exploratory conversation that the founder has already decided not to pursue. The file remains open and undocumented, creating an invisible obligation. Weeks later, meera sends a follow-up asking about the next step, and the founder has to awkwardly explain that the relationship is not a priority. The founder's standing with meera and any connectors who introduced her suffers."
+   },
+   "unknowns": [
+    {
+     "question": "How did this meeting come to be booked? Was it an inbound inquiry, a connector's introduction, or an outbound approach by the founder or team?",
+     "relevance": "The origin determines whether this is a lead the founder actively pursued, a warm introduction worth developing, or a distraction. It also determines whose move it is next."
+    },
+    {
+     "question": "What does Tallgrass do, and what is the nature of the relationship the founder is exploring with them?",
+     "relevance": "Without knowing Tallgrass's business, the file cannot be categorized as investor, partner, vendor, or customer. This determines whether it belongs in the founder's active work or should be closed."
+    },
+    {
+     "question": "What was discussed in the meeting, and what outcome was agreed?",
+     "relevance": "If a commitment was made\u2014a follow-up meeting, a document to be sent, an introduction to be made\u2014then the file has an open loop and a deadline. If no commitment was made, the file may be closed."
+    },
+    {
+     "question": "Is meera@tallgrass.test waiting for something from the founder, or is the founder waiting for something from Tallgrass?",
+     "relevance": "This determines whose move it is. If the founder is waiting, the file should be marked as a wait. If meera is waiting, the founder may need to send something or follow up."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-16 for the founder's response. If no response by 2026-08-19, send a follow-up. If no response by 2026-08-22, close the file and mark it as 'no decision'. If meera sends mail before the founder responds, forward it to the founder with the same clarification request, asking them to respond to meera directly."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"A meeting was held with meera@tallgrass.test on 2026-08-13 at 10:00 UTC, titled 'Tallgrass x Nimbus Labs' in the calendar.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No mail from this counterparty is held in the file; no promises, asks, or commitments appear in any correspondence.\",\n      \"evidence\": [\n        \"none:promises\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 2.08 days since the meeting, with no follow-up contact.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file; it does not appear in any of the founder's stated goals or work in motion.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time this file has been reviewed; no prior card verdict or outcome exists.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@admin\",\n        \"hist:derived.history.prior_outcome@admin\",\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was queued asking how this meeting came to be booked\u2014whether inbound, via connector, or outbound.\",\n      \"evidence\": [\n        \"card:card_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The meeting occurred but left no trace in writing\u2014no agenda, no outcome, no next step recorded.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The file's silence for over two days suggests either the meeting produced no actionable outcome, or an outcome was discussed but not documented.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"Without a stated kind of work, the file cannot be triaged against the founder's priorities or playbooks.\",\n      \"based_on\": [\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"The queued card indicates the expert already recognized that the meeting's origin and purpose are unknown.\",\n      \"based_on\": [\n        \"fact:6\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Meetings that produce no written outcome or next step often result in lost momentum and forgotten commitments.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.inbox_and_correspondence#f6\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A meeting with no follow-up mail within two days typically means either the meeting was exploratory with no decision, or the responsible party has not yet acted on it.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"sig:admin.sit.live_admin_contact\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A meeting that does not appear in the founder's stated goals or work in motion may be a distraction, or it may be a new opportunity not yet categorized.\",\n      \"based_on\": [\n        \"fact:4\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting without a documented purpose or next step is a liability, not an asset. The founder's time is the scarcest resource; every meeting must earn its place in the file by producing either a decision, a commitment, or a clear reason to meet again.\",\n      \"why\": \"Undocumented meetings create invisible obligations and consume attention without returning value. They also create ambiguity about whether the founder or the counterparty is responsible for the next move.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a meeting is booked but its origin is unknown, it is often the result of a connector's introduction that was not logged, or an inbound inquiry that arrived through a channel outside the normal flow.\",\n      \"why\": \"Founders often accept meetings through informal channels\u2014a text, a warm introduction at an event, a referral from an advisor\u2014that do not leave a clear trail in the file system.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The first question after a meeting is always: what happens next, and who is responsible? If that question is not answered in writing within a day, the meeting's value decays rapidly.\",\n      \"why\": \"Clarity about next steps is what converts a meeting into work. Without it, both parties assume the other will move, and nothing happens.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tallgrass is a potential design partner, investor, or customer, and the meeting was exploratory.\",\n      \"needs\": \"A message from meera@tallgrass.test, or a note from the founder, saying what Tallgrass does and why the meeting was held.\"\n    },\n    {\n      \"proposition\": \"The meeting was booked by a connector (possibly Introly) and the founder has not yet decided whether to pursue it.\",\n      \"needs\": \"The founder's own assessment of whether this relationship is worth developing, and if so, what the next step should be.\"\n    },\n    {\n      \"proposition\": \"The meeting produced a commitment or a next step that was discussed verbally but not written down.\",\n      \"needs\": \"The founder's recollection of what was agreed, and whether meera@tallgrass.test is waiting for something from the founder.\"\n    },\n    {\n      \"proposition\": \"This is a low-priority exploratory meeting that the founder has already decided not to pursue.\",\n      \"needs\": \"Confirmation from the founder that the file can be closed, or a note explaining why.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"How did this meeting come to be booked? Was it an inbound inquiry, a connector's introduction, or an outbound approach by the founder or team?\",\n      \"relevance\": \"The origin determines whether this is a lead the founder actively pursued, a warm introduction worth developing, or a distraction. It also determines whose move it is next.\"\n    },\n    {\n      \"question\": \"What does Tallgrass do, and what is the nature of the relationship the founder is exploring with them?\",\n      \"relevance\": \"Without knowing Tallgrass's business, the file cannot be categorized as investor, partner, vendor, or customer. This determines whether it belongs in the founder's active work or should be closed.\"\n    },\n    {\n      \"question\": \"What was discussed in the meeting, and what outcome was agreed?\",\n      \"relevance\": \"If a commitment was made\u2014a follow-up meeting, a document to be sent, an introduction to be made\u2014then the file has an open loop and a deadline. If no commitment was made, the file may be closed.\"\n    },\n    {\n      \"question\": \"Is meera@tallgrass.test waiting for something from the founder, or is the founder waiting for something from Tallgrass?\",\n      \"relevance\": \"This determines whose move it is. If the founder is waiting, the file should be marked as a wait. If meera is waiting, the founder may need to send something or follow up.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An undocumented meeting with an unknown counterparty, whose purpose, origin, and next step are all unclear. The file is a placeholder for a conversation that has not yet been categorized or acted upon.\",\n    \"rivals\": [\n      \"A new opportunity\u2014a potential partner, investor, or customer\u2014that the founder is exploring and has not yet decided how to pursue.\",\n      \"A distraction or a low-priority exploratory meeting that the founder has already decided not to pursue but has not formally closed.\",\n      \"A meeting booked by a connector or an inbound inquiry that arrived through an informal channel and was not logged in the normal flow.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The calendar title 'Tallgrass x Nimbus Labs' suggests a potential partnership or collaboration. The file's domain is 'admin' and its role is 'none', which indicates it has not yet been categorized. Given the founder's stated goals include landing design partners, and the meeting was held with an external party, the most likely kind of work is a partner relationship. However, this is a hypothesis pending confirmation from the founder.\",\n    \"evidence\": [\n      \"brief:cbl_#6\",\n      \"evt_#1\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"If this is a partner relationship, the playbook would expect: (1) a clear statement of what Tallgrass does and why they are a fit; (2) a documented outcome from the meeting\u2014either a decision to pursue the relationship or a decision to close it; (3) a next step, if the relationship is to be pursued. If this is an investor relationship, the playbook would expect the founder to have logged it in the 'Raise' section of the brief. If this is a program or compliance matter, it would appear in those sections.\",\n    \"actual\": \"None of these expectations are met. The meeting is undocumented, uncategorized, and has produced no written outcome or next step. The file contains only a calendar entry and a queued card asking for clarification.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open and undocumented. After 3 days, it will have been quiet for over 5 days. After 7 days, over 9 days. Without a playbook or a stated kind of work, the file will not be reviewed again unless the founder or meera@tallgrass.test sends mail. The meeting's value decays; if a commitment was made, it will be forgotten. If meera is waiting for something, the founder's standing with her will suffer.\",\n    \"act\": \"The founder clarifies the meeting's purpose, origin, and outcome. If the relationship is worth pursuing, the founder documents it in the brief, assigns it a kind of work, and sets a next step. If the relationship is not worth pursuing, the founder closes the file. Either way, the file moves from 'unknown' to 'known', and the founder's work becomes visible and actionable.\",\n    \"best\": \"The meeting was a warm introduction to a potential design partner who is genuinely interested in working with Nimbus Labs. The founder clarifies the fit, sets a next step (a follow-up call, a proposal, a pilot project), and logs it in the brief. The relationship develops into a valuable partnership.\",\n    \"worst\": \"The meeting was a distraction or a low-priority exploratory conversation that the founder has already decided not to pursue. The file remains open and undocumented, creating an invisible obligation. Weeks later, meera sends a follow-up asking about the next step, and the founder has to awkwardly explain that the relationship is not a priority. The founder's standing with meera and any connectors who introduced her suffers.\",\n    \"signals_to_watch\": [\n      \"Mail from meera@tallgrass.test asking about next steps or following up on the meeting.\",\n      \"A note from the founder clarifying the meeting's purpose and outcome.\",\n      \"The file being updated with a kind of work, a stage, and a next step.\",\n      \"Silence from both meera and the founder for over a week, suggesting the meeting was exploratory and has been deprioritized.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because the meeting may represent a new opportunity (a design partner, an investor, a customer) that could advance the founder's goals, or it may be a distraction. The file's silence suggests it is not yet critical, but the longer it remains undocumented, the more likely it is to become a liability.\",\n      \"The urgency is medium because the meeting occurred only 2 days ago, and the founder may still be processing it. However, if meera is waiting for something, the urgency will increase quickly. The queued card indicates the expert already recognized that clarification is needed.\",\n      \"A wrong move is reversible: if the founder decides to close the file, the relationship can be reopened later if circumstances change. If the founder decides to pursue it, the relationship can be deprioritized if it does not develop. The cost of inaction is higher than the cost of a wrong decision, because inaction creates ambiguity and invisible obligations.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Ask the founder to clarify the meeting's purpose, origin, and outcome, and to decide whether the relationship is worth pursuing.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-08-16\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:4\",\n      \"fact:6\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.inbox_and_correspondence#f6\",\n      \"pb:admin.pb.inbox_and_correspondence.triage_to_five_outcomes\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": \"card:card_#1\"\n  },\n  \"alternative\": \"If the founder does not respond to the clarification request within 3 days, send a follow-up asking whether the file should be closed. If the founder confirms that the relationship is worth pursuing, log it in the brief with a kind of work and a next step, and move the file to the appropriate playbook.\",\n  \"wait_or_stop\": \"Wait until 2026-08-16 for the founder's response. If no response by 2026-08-19, send a follow-up. If no response by 2026-08-22, close the file and mark it as 'no decision'. If meera sends mail before the founder responds, forward it to the founder with the same clarification request, asking them to respond to meera directly.\",\n  \"done_when\": \"The file is either closed with a note explaining why the relationship is not being pursued, or it is updated with a kind of work, a stage, and a next step, and the founder has either sent a message to meera or scheduled a follow-up meeting.\",\n  \"draft\": \"I need to understand what came out of your meeting with Tallgrass. What does Meera's company do, how did the meeting come about, and what did you agree to next? Once I know that, I can log it properly and make sure nothing falls through the cracks.\"\n}",
+  "site": "expert"
+ },
+ "cee4ea66216f356c2e8fb3873d8de42fed784320cd596f1b9e2bbc844c9a303a": {
+  "framed": true,
+  "input_tokens": 7261,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3526,
+  "parsed": {
+   "alternative": "Wait three more days for Meera to send a follow-up message. If no message arrives by 2026-08-16, ask the founder to clarify the file's status. This approach assumes the founder is waiting for Meera to move, but it risks losing momentum if Meera was expecting the founder to follow up.",
+   "appraisal": {
+    "reasons": [
+     "The file has no recorded commitment, promise, or deadline, so the stakes are low.",
+     "The silence is only two days old, and the file's kind of work is unknown, so there is no clear urgency.",
+     "If the founder decides to close the file or deprioritize it, the decision can be reversed if Meera reaches out or the founder's priorities change.",
+     "ru:core.risk indicates low risk and low blocking dependency.",
+     "ru:core.priority indicates low urgency."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "The founder has clarified what the meeting was about, what Tallgrass does, and what the next step is. The file is either closed with a reason, or it is reclassified by kind of work (investor, partner, vendor, intro, etc.) and assigned to the appropriate playbook with a clear next move and owner.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "A meeting occurred, but no follow-up, decision, or next step has been recorded. The file has been quiet for over two days, with no message from Meera and no recorded action from the founder.",
+    "expected": "Without a named kind of work or playbook, there is no stage to reference. However, if this is an investor or partner file, the expected stage would be 'initial contact' or 'exploratory meeting,' with the expectation that a follow-up message or meeting would be scheduled within a few days. If this is an intro, the expected stage would be 'introduction received,' with the expectation that the founder would assess fit and decide whether to engage.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "A meeting was held with meera@tallgrass.test on 2026-08-13 at 10:00 UTC, titled 'Tallgrass x Nimbus Labs'.",
+     "evidence": [
+      "evt_#1",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No mail from this counterparty has been read or is shown in the dossier.",
+     "evidence": [
+      "cov:last_mail",
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 2.08 days since the meeting.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "file:role",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No open asks, promises, or commitments are recorded in this file.",
+     "evidence": [
+      "none:promises",
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is classified as an admin contact situation, active since the meeting.",
+     "evidence": [
+      "sit:sit_#1",
+      "file:domains"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was queued asking how the meeting came to be booked.",
+     "evidence": [
+      "card:card_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A meeting with an unknown counterparty that has produced no recorded outcome, decision, or next step, leaving the file in an ambiguous state where it is unclear whether follow-up is owed, pending, or unnecessary.",
+    "rivals": [
+     "A successful exploratory meeting that concluded with a mutual decision to wait or a low-priority follow-up that the founder is not yet ready to pursue.",
+     "An inbound inquiry that the founder has not yet decided how to respond to, and the file is waiting for the founder's own assessment.",
+     "A connector's introduction that the founder is evaluating, with the next move depending on the founder's interest and Tallgrass's fit to the stated goals."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The founder's own notes on the meeting, or a message from Meera stating what Tallgrass does and what they want.",
+     "proposition": "The meeting was an inbound inquiry or introduction from Tallgrass, and the founder is evaluating whether to pursue it."
+    },
+    {
+     "needs": "A message from Meera, or a note in the founder's calendar about what was discussed and who should move next.",
+     "proposition": "The meeting was a connector's introduction (possibly Introly), and the founder is waiting for Meera to send a follow-up or proposal."
+    },
+    {
+     "needs": "Clarity on whether Tallgrass is a potential investor, partner, customer, or vendor, and what the founder's assessment is.",
+     "proposition": "The meeting was exploratory and both parties are waiting to see if there is mutual interest before investing more time."
+    },
+    {
+     "needs": "The founder's confirmation that the relationship is not a priority or fit.",
+     "proposition": "The meeting concluded with a decision not to pursue the relationship, and the file should be closed."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "none:promises"
+     ],
+     "claim": "The meeting occurred but its purpose, outcome, and next steps are not recorded."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "file:whose_move"
+     ],
+     "claim": "The silence since the meeting suggests either the meeting resolved the matter, or follow-up is pending and not yet tracked."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "none:playbook"
+     ],
+     "claim": "Without a playbook or named kind of work, the file cannot be triaged by standard process."
+    },
+    {
+     "based_on": [
+      "fact:7",
+      "review:ffp-d15dbf1c4a134c36c75d90e1"
+     ],
+     "claim": "The queued card indicates the expert already flagged this file as needing clarification on its origin and purpose."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "card:card_#1",
+    "by_when": "2026-08-16",
+    "for_whom": "the founder",
+    "guided_by": [
+     "cap:admin.executive_support.inbox_and_correspondence#q",
+     "cap:admin.executive_support.inbox_and_correspondence#f6",
+     "pb:admin.pb.inbox_and_correspondence.triage_to_five_outcomes",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:4",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Ask the founder to clarify what the meeting with Tallgrass was about, what was discussed, what Meera's role and company do, and what the next step should be \u2014 or confirm that the file should be closed.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting without a recorded decision, action item, or next date is a meeting that did not happen from a workflow perspective.",
+     "kind": "practice",
+     "why": "The founder's time and attention are only captured in the file if they produce a commitment, a question, or a clear next step. A meeting that leaves none of these is invisible to the system and will be lost."
+    },
+    {
+     "claim": "When a meeting's purpose is unclear, the person who attended it usually remembers more than the file shows.",
+     "kind": "base_rate",
+     "why": "The founder carries context in their head that the file does not hold. Without that context written down, the file becomes a stub that cannot be acted on."
+    },
+    {
+     "claim": "A meeting with a potential partner or investor that produces no follow-up within two days often signals either a poor fit or a low priority on both sides.",
+     "kind": "counter_pattern",
+     "why": "In seed-stage fundraising and partnership work, momentum is the signal. Silence after a meeting is usually not a good sign."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.inbox_and_correspondence#f6",
+      "own:1"
+     ],
+     "claim": "A meeting with no recorded outcome or follow-up typically indicates either a successful close or a stalled thread.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.sit.meeting_left_open",
+      "own:2"
+     ],
+     "claim": "A meeting left open without a recorded next step or owner is often forgotten rather than resolved.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "whatif:3",
+      "whatif:7",
+      "whatif:14"
+     ],
+     "claim": "Admin contacts that lack a clear purpose or outcome tend to drift into dormancy without intervention.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:role",
+     "none:playbook"
+    ],
+    "kind": null,
+    "why": "The brief names no kind of work for this file, and the dossier provides no information about what Tallgrass does, what Meera's role is, or how the meeting relates to the founder's stated goals. Without this context, the file cannot be classified as investor, partner, vendor, intro, or any other category. The proposed kind should be determined by the founder's own notes on the meeting."
+   },
+   "scenarios": {
+    "act": "The founder clarifies what the meeting was about, what was discussed, and what the next step should be. This produces either a follow-up message to Meera, a decision to close the file, or a clear action item with a date. The file becomes actionable and the founder's time is accounted for.",
+    "best": "The meeting was a successful exploratory conversation with a potential investor or partner who is a good fit for the founder's goals. The founder sends a brief follow-up message confirming interest and proposing a next step. Meera responds positively, and the relationship moves forward into the founder's pipeline.",
+    "do_nothing": "The file remains a stub with no recorded purpose or outcome. After a week or two, it will be forgotten. If Meera was expecting a follow-up, the silence will signal disinterest or poor prioritization. If the founder was waiting for Meera to move, the file will drift into dormancy and the opportunity (if there was one) will be lost.",
+    "signals_to_watch": [
+     "A message from Meera asking for a follow-up or proposing a next step.",
+     "The founder's own notes or calendar entry clarifying what the meeting was about and what was agreed.",
+     "A message from the founder to Meera, indicating the founder has decided to engage or to pass.",
+     "Silence beyond a week, which would suggest the file is dormant and should be closed."
+    ],
+    "worst": "The meeting was with a low-priority or poor-fit contact, and the founder's silence is interpreted as disinterest. Meera does not follow up, and the opportunity is lost. Alternatively, Meera was expecting a follow-up and the founder's silence damages the relationship or signals poor execution."
+   },
+   "unknowns": [
+    {
+     "question": "What is Tallgrass, and what does Meera do there?",
+     "relevance": "This determines whether the file belongs in investor, partner, vendor, or another category, and what the founder's next move should be."
+    },
+    {
+     "question": "How did the meeting come to be booked \u2014 was it an inbound inquiry, a connector's introduction, or an outbound approach by the founder?",
+     "relevance": "This determines the founder's obligation to follow up and the likely next move. An inbound inquiry requires a response; an outbound approach requires the founder to drive it forward."
+    },
+    {
+     "question": "What was discussed in the meeting, and what did both parties agree to do next?",
+     "relevance": "Without this, the file cannot be acted on. The meeting may have resolved the matter, or it may have created an obligation that is not yet recorded."
+    },
+    {
+     "question": "Is Meera expecting a follow-up from the founder, or is the founder waiting for Meera to send something?",
+     "relevance": "This determines whose move it is and whether the silence is a problem or expected."
+    },
+    {
+     "question": "Does Tallgrass fit into any of the founder's stated goals \u2014 raising seed, getting into accelerators, hiring, or finding design partners?",
+     "relevance": "This determines the priority and urgency of the file. If Tallgrass is irrelevant to the goals, the file can be closed. If it is relevant, it may be high priority."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-16 for the founder's response. If the founder does not clarify the file's status by then, send a reminder. If the founder confirms the file should be closed, close it. If the founder confirms the file is active, classify it by kind of work and assign it to the appropriate playbook. Stop waiting if Meera sends a message that clarifies the meeting's purpose and next steps."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"A meeting was held with meera@tallgrass.test on 2026-08-13 at 10:00 UTC, titled 'Tallgrass x Nimbus Labs'.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No mail from this counterparty has been read or is shown in the dossier.\",\n      \"evidence\": [\n        \"cov:last_mail\",\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 2.08 days since the meeting.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No open asks, promises, or commitments are recorded in this file.\",\n      \"evidence\": [\n        \"none:promises\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is classified as an admin contact situation, active since the meeting.\",\n      \"evidence\": [\n        \"sit:sit_#1\",\n        \"file:domains\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was queued asking how the meeting came to be booked.\",\n      \"evidence\": [\n        \"card:card_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The meeting occurred but its purpose, outcome, and next steps are not recorded.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"The silence since the meeting suggests either the meeting resolved the matter, or follow-up is pending and not yet tracked.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"Without a playbook or named kind of work, the file cannot be triaged by standard process.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"none:playbook\"\n      ]\n    },\n    {\n      \"claim\": \"The queued card indicates the expert already flagged this file as needing clarification on its origin and purpose.\",\n      \"based_on\": [\n        \"fact:7\",\n        \"review:ffp-d15dbf1c4a134c36c75d90e1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A meeting with no recorded outcome or follow-up typically indicates either a successful close or a stalled thread.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.inbox_and_correspondence#f6\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A meeting left open without a recorded next step or owner is often forgotten rather than resolved.\",\n      \"based_on\": [\n        \"cap:admin.sit.meeting_left_open\",\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Admin contacts that lack a clear purpose or outcome tend to drift into dormancy without intervention.\",\n      \"based_on\": [\n        \"whatif:3\",\n        \"whatif:7\",\n        \"whatif:14\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting without a recorded decision, action item, or next date is a meeting that did not happen from a workflow perspective.\",\n      \"why\": \"The founder's time and attention are only captured in the file if they produce a commitment, a question, or a clear next step. A meeting that leaves none of these is invisible to the system and will be lost.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a meeting's purpose is unclear, the person who attended it usually remembers more than the file shows.\",\n      \"why\": \"The founder carries context in their head that the file does not hold. Without that context written down, the file becomes a stub that cannot be acted on.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A meeting with a potential partner or investor that produces no follow-up within two days often signals either a poor fit or a low priority on both sides.\",\n      \"why\": \"In seed-stage fundraising and partnership work, momentum is the signal. Silence after a meeting is usually not a good sign.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The meeting was an inbound inquiry or introduction from Tallgrass, and the founder is evaluating whether to pursue it.\",\n      \"needs\": \"The founder's own notes on the meeting, or a message from Meera stating what Tallgrass does and what they want.\"\n    },\n    {\n      \"proposition\": \"The meeting was a connector's introduction (possibly Introly), and the founder is waiting for Meera to send a follow-up or proposal.\",\n      \"needs\": \"A message from Meera, or a note in the founder's calendar about what was discussed and who should move next.\"\n    },\n    {\n      \"proposition\": \"The meeting was exploratory and both parties are waiting to see if there is mutual interest before investing more time.\",\n      \"needs\": \"Clarity on whether Tallgrass is a potential investor, partner, customer, or vendor, and what the founder's assessment is.\"\n    },\n    {\n      \"proposition\": \"The meeting concluded with a decision not to pursue the relationship, and the file should be closed.\",\n      \"needs\": \"The founder's confirmation that the relationship is not a priority or fit.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Tallgrass, and what does Meera do there?\",\n      \"relevance\": \"This determines whether the file belongs in investor, partner, vendor, or another category, and what the founder's next move should be.\"\n    },\n    {\n      \"question\": \"How did the meeting come to be booked \u2014 was it an inbound inquiry, a connector's introduction, or an outbound approach by the founder?\",\n      \"relevance\": \"This determines the founder's obligation to follow up and the likely next move. An inbound inquiry requires a response; an outbound approach requires the founder to drive it forward.\"\n    },\n    {\n      \"question\": \"What was discussed in the meeting, and what did both parties agree to do next?\",\n      \"relevance\": \"Without this, the file cannot be acted on. The meeting may have resolved the matter, or it may have created an obligation that is not yet recorded.\"\n    },\n    {\n      \"question\": \"Is Meera expecting a follow-up from the founder, or is the founder waiting for Meera to send something?\",\n      \"relevance\": \"This determines whose move it is and whether the silence is a problem or expected.\"\n    },\n    {\n      \"question\": \"Does Tallgrass fit into any of the founder's stated goals \u2014 raising seed, getting into accelerators, hiring, or finding design partners?\",\n      \"relevance\": \"This determines the priority and urgency of the file. If Tallgrass is irrelevant to the goals, the file can be closed. If it is relevant, it may be high priority.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A meeting with an unknown counterparty that has produced no recorded outcome, decision, or next step, leaving the file in an ambiguous state where it is unclear whether follow-up is owed, pending, or unnecessary.\",\n    \"rivals\": [\n      \"A successful exploratory meeting that concluded with a mutual decision to wait or a low-priority follow-up that the founder is not yet ready to pursue.\",\n      \"An inbound inquiry that the founder has not yet decided how to respond to, and the file is waiting for the founder's own assessment.\",\n      \"A connector's introduction that the founder is evaluating, with the next move depending on the founder's interest and Tallgrass's fit to the stated goals.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The brief names no kind of work for this file, and the dossier provides no information about what Tallgrass does, what Meera's role is, or how the meeting relates to the founder's stated goals. Without this context, the file cannot be classified as investor, partner, vendor, intro, or any other category. The proposed kind should be determined by the founder's own notes on the meeting.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:role\",\n      \"none:playbook\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a named kind of work or playbook, there is no stage to reference. However, if this is an investor or partner file, the expected stage would be 'initial contact' or 'exploratory meeting,' with the expectation that a follow-up message or meeting would be scheduled within a few days. If this is an intro, the expected stage would be 'introduction received,' with the expectation that the founder would assess fit and decide whether to engage.\",\n    \"actual\": \"A meeting occurred, but no follow-up, decision, or next step has been recorded. The file has been quiet for over two days, with no message from Meera and no recorded action from the founder.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains a stub with no recorded purpose or outcome. After a week or two, it will be forgotten. If Meera was expecting a follow-up, the silence will signal disinterest or poor prioritization. If the founder was waiting for Meera to move, the file will drift into dormancy and the opportunity (if there was one) will be lost.\",\n    \"act\": \"The founder clarifies what the meeting was about, what was discussed, and what the next step should be. This produces either a follow-up message to Meera, a decision to close the file, or a clear action item with a date. The file becomes actionable and the founder's time is accounted for.\",\n    \"best\": \"The meeting was a successful exploratory conversation with a potential investor or partner who is a good fit for the founder's goals. The founder sends a brief follow-up message confirming interest and proposing a next step. Meera responds positively, and the relationship moves forward into the founder's pipeline.\",\n    \"worst\": \"The meeting was with a low-priority or poor-fit contact, and the founder's silence is interpreted as disinterest. Meera does not follow up, and the opportunity is lost. Alternatively, Meera was expecting a follow-up and the founder's silence damages the relationship or signals poor execution.\",\n    \"signals_to_watch\": [\n      \"A message from Meera asking for a follow-up or proposing a next step.\",\n      \"The founder's own notes or calendar entry clarifying what the meeting was about and what was agreed.\",\n      \"A message from the founder to Meera, indicating the founder has decided to engage or to pass.\",\n      \"Silence beyond a week, which would suggest the file is dormant and should be closed.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file has no recorded commitment, promise, or deadline, so the stakes are low.\",\n      \"The silence is only two days old, and the file's kind of work is unknown, so there is no clear urgency.\",\n      \"If the founder decides to close the file or deprioritize it, the decision can be reversed if Meera reaches out or the founder's priorities change.\",\n      \"ru:core.risk indicates low risk and low blocking dependency.\",\n      \"ru:core.priority indicates low urgency.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Ask the founder to clarify what the meeting with Tallgrass was about, what was discussed, what Meera's role and company do, and what the next step should be \u2014 or confirm that the file should be closed.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-08-16\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.inbox_and_correspondence#q\",\n      \"cap:admin.executive_support.inbox_and_correspondence#f6\",\n      \"pb:admin.pb.inbox_and_correspondence.triage_to_five_outcomes\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": \"card:card_#1\"\n  },\n  \"alternative\": \"Wait three more days for Meera to send a follow-up message. If no message arrives by 2026-08-16, ask the founder to clarify the file's status. This approach assumes the founder is waiting for Meera to move, but it risks losing momentum if Meera was expecting the founder to follow up.\",\n    \"wait_or_stop\": \"Wait until 2026-08-16 for the founder's response. If the founder does not clarify the file's status by then, send a reminder. If the founder confirms the file should be closed, close it. If the founder confirms the file is active, classify it by kind of work and assign it to the appropriate playbook. Stop waiting if Meera sends a message that clarifies the meeting's purpose and next steps.\",\n  \"done_when\": \"The founder has clarified what the meeting was about, what Tallgrass does, and what the next step is. The file is either closed with a reason, or it is reclassified by kind of work (investor, partner, vendor, intro, etc.) and assigned to the appropriate playbook with a clear next move and owner.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

@@ -1,0 +1,673 @@
+{
+ "c6d3edbeec670afa022cadec832f7324f6891e2a9fbaf32f72bce3412877fcb6": {
+  "framed": true,
+  "input_tokens": 7327,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3192,
+  "parsed": {
+   "alternative": "Wait until the day before the meeting to confirm attendance, and prepare the demo in parallel. This reduces the risk of over-committing if something changes, but it also signals less enthusiasm to Farhan.",
+   "appraisal": {
+    "reasons": [
+     "A design partner could become a distribution channel or a reference customer, which is valuable but not critical to seed funding.",
+     "The meeting is three days away; there is time to prepare without rushing.",
+     "If the meeting produces no fit, you can move on with no cost; if it produces fit, you can pursue it at your pace."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The meeting has occurred, you have learned what problem Farhan is trying to solve, and you have a clear signal of whether he sees fit (a follow-up request, a question about pricing, or an introduction to a client) or no fit (silence or a polite goodbye).",
+   "draft": "Hi Farhan, Thanks for the invite \u2014 looking forward to seeing what you're building at Bluewater. I'll be there Thursday at 4 pm IST. I'll bring a demo of how Nimbus could help a founder like you manage the work. See you then. Arjun",
+   "expected_vs_actual": {
+    "actual": "Introduction completed; meeting booked; no terms or fit assessment yet.",
+    "expected": "The brief names no playbook for this kind of work, so no stage is defined. From the brief's goals, the expected path is: introduction \u2192 meeting \u2192 product fit assessment \u2192 partnership terms or customer agreement.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to Farhan Ali, founder of Bluewater Studio, a design agency of twenty people.",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Farhan Ali, who runs Bluewater Studio, a design agency of twenty. Farhan, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "Farhan Ali sent you an invite for a product demo on Thursday 14 August at 4 pm IST.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "I've sent you an invite for Thursday 14 August at 4 pm IST to see the product. Looking forward to it."
+    },
+    {
+     "claim": "A meeting is booked for 2026-08-14 10:30 UTC, titled 'Nimbus Labs demo \u2014 Farhan Ali (Bluewater Studio)'.",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.38 days, longer than any gap it closed before, which was 0.12 days.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was made in the mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief does not name a kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in their court: they sent the invite and are waiting for you to attend or respond.",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction to a design agency founder who is interested enough to book a demo meeting three days out. The next move is to prepare and attend, not to chase or confirm.",
+    "rivals": [
+     "A courtesy meeting from a connector's introduction, with low probability of follow-up or partnership.",
+     "An exploratory conversation where Farhan is gathering information about AI tools but has not yet decided whether Nimbus fits his needs.",
+     "A potential customer or design partner who sees a real use case and is moving quickly to evaluate."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The demo will show what problem he is trying to solve; his questions during the demo will reveal whether he sees Nimbus as a tool for his own work or for his clients.",
+     "proposition": "Farhan Ali is exploring whether Nimbus Labs could help Bluewater Studio manage founder work or client projects."
+    },
+    {
+     "needs": "The demo outcome and Farhan's follow-up will show whether he sees a fit; a request for pricing or a second meeting signals serious interest.",
+     "proposition": "Bluewater Studio could become a design partner by integrating Nimbus into their client offerings or by using it internally."
+    },
+    {
+     "needs": "Introly's reasoning is not visible; the quality of the match will be tested by whether Farhan sees a real use case.",
+     "proposition": "This introduction came from Introly because Introly's algorithm matched a design agency founder with an AI chief of staff founder."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "brief:cbl_#6"
+     ],
+     "claim": "This is a design partner prospect, not a vendor or a compliance matter: Bluewater Studio is a design agency, and the brief lists design partners as a goal."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:5"
+     ],
+     "claim": "The meeting is a soft commitment: Farhan sent an invite and said 'looking forward to it', which signals genuine interest but carries no obligation if you do not attend."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "The file is in early relationship formation: introduction, immediate positive response, and a meeting booked \u2014 no negotiation, no terms, no deliverables yet."
+    },
+    {
+     "based_on": [
+      "fact:7",
+      "cap:admin.executive_support.commitment_tracking#f1",
+      "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball"
+     ],
+     "claim": "Your move is to confirm attendance or to reschedule before the meeting date, not to chase or follow up now."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-14",
+    "for_whom": "Farhan Ali",
+    "guided_by": [
+     "own:2",
+     "own:3",
+     "sig:admin.sit.live_account_admin"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:3",
+     "inference:3"
+    ],
+    "to": "farhan@bluewater.test",
+    "what": "Prepare a demo for Farhan that shows how Nimbus Labs could help a design agency founder or their clients manage founder work, and confirm your attendance at the meeting.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A warm intro from a connector followed by a meeting request is the highest-quality lead signal in early-stage work: the connector has already filtered, and the counterparty has already decided to spend time.",
+     "kind": "practice",
+     "why": "Connectors do not introduce people who are not interested, and a meeting request sent the same day shows the counterparty is not waiting for more information."
+    },
+    {
+     "claim": "Design partners are most valuable when they have existing client relationships and can become distribution channels or reference customers.",
+     "kind": "base_rate",
+     "why": "A design agency with twenty people has clients; if they adopt your product, those clients see it in use."
+    },
+    {
+     "claim": "The move before a design partner meeting is to prepare a demo that shows how the product solves a problem they see in their own work, not to chase or confirm.",
+     "kind": "practice",
+     "why": "Preparation is the only move that changes the outcome; confirmation is noise."
+    },
+    {
+     "claim": "Do not send a confirmation message three days before a meeting unless the counterparty has asked for one or the meeting is at risk.",
+     "kind": "counter_pattern",
+     "why": "A confirmation sent now reads as anxiety and can make the counterparty question whether you are serious about the meeting."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "An introduction followed by an immediate meeting request signals genuine interest and a warm introduction.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Design agencies often become design partners when they see a product that fits their workflow or their clients' needs.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A meeting booked three days ahead with no follow-up from either side is normal and does not signal disinterest.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#6",
+     "evt_#2",
+     "file:role"
+    ],
+    "kind": "partner",
+    "why": "The brief lists design partners as a goal, Bluewater Studio is a design agency, and the introduction came through a connector with no vendor or customer context."
+   },
+   "scenarios": {
+    "act": "You prepare a demo tailored to a design agency's workflow, attend the meeting, and learn what Farhan is trying to solve. If there is fit, you move to a second conversation about partnership or customer terms.",
+    "best": "Farhan sees a clear use case in his own work or his clients' work, asks for pricing or a trial, and becomes either a customer or a design partner who refers you to other agencies.",
+    "do_nothing": "The meeting date passes. If you do not attend or reschedule, Farhan will assume you are not serious and will not follow up. The introduction is wasted.",
+    "signals_to_watch": [
+     "Farhan's questions during the demo: specific questions about features signal real interest; generic questions signal exploration.",
+     "Farhan's follow-up after the demo: a request for pricing, a second meeting, or an introduction to a client signals serious interest; silence signals no fit.",
+     "Farhan's engagement with the product during the demo: does he ask how it would work for his team, or does he ask how it works in general?"
+    ],
+    "worst": "Farhan attends the meeting out of politeness, sees no fit, and does not follow up. The meeting produces no lead."
+   },
+   "unknowns": [
+    {
+     "question": "What problem is Farhan trying to solve, and does he see Nimbus as a solution for his own work or for his clients?",
+     "relevance": "The answer determines whether this is a design partner, a customer, or a one-time meeting with no follow-up."
+    },
+    {
+     "question": "Has Farhan used AI tools before, and is he skeptical or enthusiastic about them?",
+     "relevance": "His prior experience shapes how he will interpret the demo and whether he will see value in a chief of staff product."
+    },
+    {
+     "question": "Does Bluewater Studio have the budget or the client base to become a paying customer or a distribution partner?",
+     "relevance": "The answer determines whether this is a strategic partnership or a reference customer."
+    },
+    {
+     "question": "Why did Introly introduce you to Farhan, and what signal did Introly have that this was a good match?",
+     "relevance": "Understanding Introly's reasoning could reveal whether Farhan is a high-quality lead or a broad match."
+    }
+   ],
+   "wait_or_stop": "Wait until after the meeting to decide whether to pursue a partnership or customer relationship. Do not follow up or chase before the meeting date. If Farhan does not attend or reschedule, close the file."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to Farhan Ali, founder of Bluewater Studio, a design agency of twenty people.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Farhan Ali, who runs Bluewater Studio, a design agency of twenty. Farhan, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"Farhan Ali sent you an invite for a product demo on Thursday 14 August at 4 pm IST.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"I've sent you an invite for Thursday 14 August at 4 pm IST to see the product. Looking forward to it.\"\n    },\n    {\n      \"claim\": \"A meeting is booked for 2026-08-14 10:30 UTC, titled 'Nimbus Labs demo \u2014 Farhan Ali (Bluewater Studio)'.\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.38 days, longer than any gap it closed before, which was 0.12 days.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was made in the mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief does not name a kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in their court: they sent the invite and are waiting for you to attend or respond.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a design partner prospect, not a vendor or a compliance matter: Bluewater Studio is a design agency, and the brief lists design partners as a goal.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"brief:cbl_#6\"\n      ]\n    },\n    {\n      \"claim\": \"The meeting is a soft commitment: Farhan sent an invite and said 'looking forward to it', which signals genuine interest but carries no obligation if you do not attend.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:5\"\n      ]\n    },\n    {\n      \"claim\": \"The file is in early relationship formation: introduction, immediate positive response, and a meeting booked \u2014 no negotiation, no terms, no deliverables yet.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"Your move is to confirm attendance or to reschedule before the meeting date, not to chase or follow up now.\",\n      \"based_on\": [\n        \"fact:7\",\n        \"cap:admin.executive_support.commitment_tracking#f1\",\n        \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An introduction followed by an immediate meeting request signals genuine interest and a warm introduction.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design agencies often become design partners when they see a product that fits their workflow or their clients' needs.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A meeting booked three days ahead with no follow-up from either side is normal and does not signal disinterest.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A warm intro from a connector followed by a meeting request is the highest-quality lead signal in early-stage work: the connector has already filtered, and the counterparty has already decided to spend time.\",\n      \"why\": \"Connectors do not introduce people who are not interested, and a meeting request sent the same day shows the counterparty is not waiting for more information.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partners are most valuable when they have existing client relationships and can become distribution channels or reference customers.\",\n      \"why\": \"A design agency with twenty people has clients; if they adopt your product, those clients see it in use.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The move before a design partner meeting is to prepare a demo that shows how the product solves a problem they see in their own work, not to chase or confirm.\",\n      \"why\": \"Preparation is the only move that changes the outcome; confirmation is noise.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Do not send a confirmation message three days before a meeting unless the counterparty has asked for one or the meeting is at risk.\",\n      \"why\": \"A confirmation sent now reads as anxiety and can make the counterparty question whether you are serious about the meeting.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Farhan Ali is exploring whether Nimbus Labs could help Bluewater Studio manage founder work or client projects.\",\n      \"needs\": \"The demo will show what problem he is trying to solve; his questions during the demo will reveal whether he sees Nimbus as a tool for his own work or for his clients.\"\n    },\n    {\n      \"proposition\": \"Bluewater Studio could become a design partner by integrating Nimbus into their client offerings or by using it internally.\",\n      \"needs\": \"The demo outcome and Farhan's follow-up will show whether he sees a fit; a request for pricing or a second meeting signals serious interest.\"\n    },\n    {\n      \"proposition\": \"This introduction came from Introly because Introly's algorithm matched a design agency founder with an AI chief of staff founder.\",\n      \"needs\": \"Introly's reasoning is not visible; the quality of the match will be tested by whether Farhan sees a real use case.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What problem is Farhan trying to solve, and does he see Nimbus as a solution for his own work or for his clients?\",\n      \"relevance\": \"The answer determines whether this is a design partner, a customer, or a one-time meeting with no follow-up.\"\n    },\n    {\n      \"question\": \"Has Farhan used AI tools before, and is he skeptical or enthusiastic about them?\",\n      \"relevance\": \"His prior experience shapes how he will interpret the demo and whether he will see value in a chief of staff product.\"\n    },\n    {\n      \"question\": \"Does Bluewater Studio have the budget or the client base to become a paying customer or a distribution partner?\",\n      \"relevance\": \"The answer determines whether this is a strategic partnership or a reference customer.\"\n    },\n    {\n      \"question\": \"Why did Introly introduce you to Farhan, and what signal did Introly have that this was a good match?\",\n      \"relevance\": \"Understanding Introly's reasoning could reveal whether Farhan is a high-quality lead or a broad match.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction to a design agency founder who is interested enough to book a demo meeting three days out. The next move is to prepare and attend, not to chase or confirm.\",\n    \"rivals\": [\n      \"A courtesy meeting from a connector's introduction, with low probability of follow-up or partnership.\",\n      \"An exploratory conversation where Farhan is gathering information about AI tools but has not yet decided whether Nimbus fits his needs.\",\n      \"A potential customer or design partner who sees a real use case and is moving quickly to evaluate.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The brief lists design partners as a goal, Bluewater Studio is a design agency, and the introduction came through a connector with no vendor or customer context.\",\n    \"evidence\": [\n      \"brief:cbl_#6\",\n      \"evt_#2\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this kind of work, so no stage is defined. From the brief's goals, the expected path is: introduction \u2192 meeting \u2192 product fit assessment \u2192 partnership terms or customer agreement.\",\n    \"actual\": \"Introduction completed; meeting booked; no terms or fit assessment yet.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The meeting date passes. If you do not attend or reschedule, Farhan will assume you are not serious and will not follow up. The introduction is wasted.\",\n    \"act\": \"You prepare a demo tailored to a design agency's workflow, attend the meeting, and learn what Farhan is trying to solve. If there is fit, you move to a second conversation about partnership or customer terms.\",\n    \"best\": \"Farhan sees a clear use case in his own work or his clients' work, asks for pricing or a trial, and becomes either a customer or a design partner who refers you to other agencies.\",\n    \"worst\": \"Farhan attends the meeting out of politeness, sees no fit, and does not follow up. The meeting produces no lead.\",\n    \"signals_to_watch\": [\n      \"Farhan's questions during the demo: specific questions about features signal real interest; generic questions signal exploration.\",\n      \"Farhan's follow-up after the demo: a request for pricing, a second meeting, or an introduction to a client signals serious interest; silence signals no fit.\",\n      \"Farhan's engagement with the product during the demo: does he ask how it would work for his team, or does he ask how it works in general?\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"A design partner could become a distribution channel or a reference customer, which is valuable but not critical to seed funding.\",\n      \"The meeting is three days away; there is time to prepare without rushing.\",\n      \"If the meeting produces no fit, you can move on with no cost; if it produces fit, you can pursue it at your pace.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Prepare a demo for Farhan that shows how Nimbus Labs could help a design agency founder or their clients manage founder work, and confirm your attendance at the meeting.\",\n    \"for_whom\": \"Farhan Ali\",\n    \"by_when\": \"2026-08-14\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:2\",\n      \"own:3\",\n      \"sig:admin.sit.live_account_admin\"\n    ],\n    \"to\": \"farhan@bluewater.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Wait until the day before the meeting to confirm attendance, and prepare the demo in parallel. This reduces the risk of over-committing if something changes, but it also signals less enthusiasm to Farhan.\",\n  \"wait_or_stop\": \"Wait until after the meeting to decide whether to pursue a partnership or customer relationship. Do not follow up or chase before the meeting date. If Farhan does not attend or reschedule, close the file.\",\n  \"done_when\": \"The meeting has occurred, you have learned what problem Farhan is trying to solve, and you have a clear signal of whether he sees fit (a follow-up request, a question about pricing, or an introduction to a client) or no fit (silence or a polite goodbye).\",\n  \"draft\": \"Hi Farhan, Thanks for the invite \u2014 looking forward to seeing what you're building at Bluewater. I'll be there Thursday at 4 pm IST. I'll bring a demo of how Nimbus could help a founder like you manage the work. See you then. Arjun\"\n}",
+  "site": "expert"
+ },
+ "eda9b2d5bc19280b87cc8d5b9b47440a40b021b63387d346392f4ceafcadc9e2": {
+  "framed": true,
+  "input_tokens": 7283,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3139,
+  "parsed": {
+   "alternative": "If you cannot confirm Tuesday 12 August at 11 am, send a brief message proposing two alternative times within the next two days, with a calendar invite for one of them. This keeps the thread warm and signals engagement without overcommitting.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are low because this is an exploratory meeting with an unknown counterparty; the outcome is not yet clear.",
+     "The urgency is medium because the meeting is proposed for Tuesday 12 August, which is within two days, and a non-response will signal disinterest.",
+     "A non-response is reversible: you can reach out later to reschedule, but it will cost credibility with Ira and Introly.",
+     "The file has been quiet for 0.27 days, which is still within a normal response window, so there is no immediate escalation risk."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "medium"
+   },
+   "done_when": "Done when you have sent a response to Ira confirming the Tuesday 12 August meeting at 11 am, or proposing an alternative time with a calendar invite. The file should then move to a meeting_scheduled state, with a reminder to prepare before the call.",
+   "draft": "Hi Ira, thanks for the intro and the meeting proposal. Tuesday 12 August at 11 am works for me. I'll send a calendar invite. Looking forward to the call. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "Ira proposed a meeting for Tuesday 12 August at 11 am and asked you to confirm or suggest an alternative. You have not yet responded, and the file has been quiet for 0.27 days.",
+    "expected": "A connector introduction typically moves to a meeting proposal within one to three days; the expected next step is confirmation or rescheduling from you.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Ira Menon at Lanternfish proposed a meeting for Tuesday 12 August at 11 am and asked you to confirm or suggest an alternative time.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Would Tuesday 12 August at 11 am work for a call? If not, send me a time that suits you."
+    },
+    {
+     "claim": "You were introduced to Ira Menon by Introly, an AI agent that introduces the founder to people.",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Ira Menon, a product lead at Lanternfish. Ira, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "The file has been quiet for 0.27 days, longer than any gap it closed before, which was 0.22 days.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in your court: you have an open ask to respond to Ira's meeting proposal.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook has been named for this file in the brief.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's role in the brief is intro \u2014 a connector introduction.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A connector introduction that has moved to a meeting proposal, with the ball in your court to confirm or reschedule. This is a live account admin situation with a clear next step agreed (the meeting), but no response yet from you.",
+    "rivals": [
+     "A low-priority intro that you have not yet decided whether to pursue, and the silence reflects uncertainty rather than neglect.",
+     "A meeting proposal that you have already answered, but the file has not been updated to reflect it."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The brief or a prior conversation would name Lanternfish's business, stage, or relevance to your goals.",
+     "proposition": "Lanternfish is a potential design partner, investor, or customer for Nimbus Labs."
+    },
+    {
+     "needs": "Confirmation from Introly or Ira of what Lanternfish does and why the introduction was made.",
+     "proposition": "Ira Menon is reaching out on behalf of Lanternfish to explore a partnership or investment opportunity."
+    },
+    {
+     "needs": "A check of your calendar and sent mail to confirm whether a response was sent after 2026-08-11 11:30 UTC.",
+     "proposition": "You have already confirmed or declined the Tuesday 12 August meeting, but the file has not been updated."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "Ira's message is a direct ask for confirmation or counter-proposal, not a statement of intent; it requires a response from you."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The silence since Ira's message (0.27 days) is still within a normal response window for a meeting proposal, and does not yet signal disinterest."
+    },
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin",
+      "fact:2"
+     ],
+     "claim": "This is a live account admin situation: a meeting request from a connector introduction, with next_step_agreed as the progress signal."
+    },
+    {
+     "based_on": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "claim": "The brief does not name what kind of work Lanternfish represents \u2014 whether they are a potential investor, partner, customer, or other stakeholder \u2014 so the strategic purpose of this meeting is not yet clear."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-12",
+    "for_whom": "Ira Menon at Lanternfish",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:4",
+     "inference:1"
+    ],
+    "to": "ira@lanternfish.test",
+    "what": "Respond to Ira's meeting proposal with a confirmation or alternative time, and send a calendar invite.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting proposal from a connector introduction should be answered the same day or the next morning, even if only to confirm or suggest an alternative; delay reads as either disinterest or disorganization.",
+     "kind": "practice",
+     "why": "The connector has already invested credibility in the introduction; a slow response wastes that capital and signals low engagement to the other party."
+    },
+    {
+     "claim": "Most founder-to-founder or founder-to-stakeholder meetings that come through connectors are exploratory; the strategic purpose is often not clear until the call.",
+     "kind": "base_rate",
+     "why": "Connectors introduce based on pattern-matching and relationship, not on a specific deal or need; the value emerges in conversation."
+    },
+    {
+     "claim": "A meeting confirmed or rescheduled should be followed by a calendar invite within the same response, to eliminate ambiguity and reduce no-shows.",
+     "kind": "practice",
+     "why": "A verbal confirmation without a calendar entry often leads to one party preparing and the other forgetting; the invite is the commitment."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "A meeting proposal from a connector introduction typically expects a response within one business day.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "file:introduced_by",
+      "cap:admin.executive_support.commitment_tracking#q"
+     ],
+     "claim": "Connector introductions that move to a meeting proposal have a higher close rate than cold outreach, because the connector has already vouched for mutual relevance.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A meeting proposal that receives no response within three days often signals either low priority or a scheduling conflict the recipient has not yet resolved.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "file:introduced_by",
+     "brief:cbl_#27"
+    ],
+    "kind": "intro",
+    "why": "The file is a connector introduction from Introly, and the work in motion is to have a meeting with Ira Menon. The brief names Introly as a connector whose mail is an introduction, not a stranger."
+   },
+   "scenarios": {
+    "act": "If you respond today or tomorrow with a confirmation or alternative time, the meeting is likely to happen. You will have a conversation with Ira to understand what Lanternfish does and why the introduction was made. The outcome depends on the strategic fit and the quality of the conversation.",
+    "best": "You confirm the Tuesday 12 August meeting, send a calendar invite, and prepare by learning about Lanternfish. The call reveals a valuable partnership, investment, or customer opportunity that advances one of your goals (fundraising, design partners, or hiring). Ira becomes a stakeholder or advocate.",
+    "do_nothing": "If you do not respond by end of day 2026-08-12, Ira will likely assume you are not interested or have a scheduling conflict. The meeting will not happen, and the connector introduction will have been wasted. Introly may note that the introduction did not convert.",
+    "signals_to_watch": [
+     "Whether Ira sends a follow-up message if you do not respond by end of day 2026-08-12.",
+     "The tone and content of Ira's first message on the call \u2014 whether it is exploratory, transactional, or urgent.",
+     "Whether Lanternfish is mentioned in your brief as a potential partner, investor, or customer."
+    ],
+    "worst": "You do not respond, Ira assumes you are not interested, and the introduction is lost. Introly notes the failed conversion and is less likely to introduce you to others. The opportunity cost is unknown but non-zero."
+   },
+   "unknowns": [
+    {
+     "question": "What does Lanternfish do, and why did Introly introduce you to Ira Menon?",
+     "relevance": "The strategic purpose of the meeting \u2014 whether it is a fundraising opportunity, a partnership, a customer reference, or something else \u2014 determines how to prepare and what to ask."
+    },
+    {
+     "question": "Have you already responded to Ira's meeting proposal, or is the file out of date?",
+     "relevance": "If you have already confirmed or declined, the file should be closed or updated; if not, the next move is to respond now."
+    },
+    {
+     "question": "Is Tuesday 12 August at 11 am a time that works for you, or do you need to propose an alternative?",
+     "relevance": "Your availability determines whether the response is a confirmation or a counter-proposal, which affects the tone and the next step."
+    }
+   ],
+   "wait_or_stop": "Wait until you have confirmed or declined the meeting. Do not wait beyond end of day 2026-08-12, or Ira will assume you are not interested. Stop if Lanternfish is not relevant to any of your stated goals (fundraising, design partners, hiring, accelerator programs, or compliance)."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Ira Menon at Lanternfish proposed a meeting for Tuesday 12 August at 11 am and asked you to confirm or suggest an alternative time.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Would Tuesday 12 August at 11 am work for a call? If not, send me a time that suits you.\"\n    },\n    {\n      \"claim\": \"You were introduced to Ira Menon by Introly, an AI agent that introduces the founder to people.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Ira Menon, a product lead at Lanternfish. Ira, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.27 days, longer than any gap it closed before, which was 0.22 days.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in your court: you have an open ask to respond to Ira's meeting proposal.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook has been named for this file in the brief.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's role in the brief is intro \u2014 a connector introduction.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Ira's message is a direct ask for confirmation or counter-proposal, not a statement of intent; it requires a response from you.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The silence since Ira's message (0.27 days) is still within a normal response window for a meeting proposal, and does not yet signal disinterest.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live account admin situation: a meeting request from a connector introduction, with next_step_agreed as the progress signal.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The brief does not name what kind of work Lanternfish represents \u2014 whether they are a potential investor, partner, customer, or other stakeholder \u2014 so the strategic purpose of this meeting is not yet clear.\",\n      \"based_on\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A meeting proposal from a connector introduction typically expects a response within one business day.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Connector introductions that move to a meeting proposal have a higher close rate than cold outreach, because the connector has already vouched for mutual relevance.\",\n      \"based_on\": [\n        \"file:introduced_by\",\n        \"cap:admin.executive_support.commitment_tracking#q\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A meeting proposal that receives no response within three days often signals either low priority or a scheduling conflict the recipient has not yet resolved.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting proposal from a connector introduction should be answered the same day or the next morning, even if only to confirm or suggest an alternative; delay reads as either disinterest or disorganization.\",\n      \"why\": \"The connector has already invested credibility in the introduction; a slow response wastes that capital and signals low engagement to the other party.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most founder-to-founder or founder-to-stakeholder meetings that come through connectors are exploratory; the strategic purpose is often not clear until the call.\",\n      \"why\": \"Connectors introduce based on pattern-matching and relationship, not on a specific deal or need; the value emerges in conversation.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting confirmed or rescheduled should be followed by a calendar invite within the same response, to eliminate ambiguity and reduce no-shows.\",\n      \"why\": \"A verbal confirmation without a calendar entry often leads to one party preparing and the other forgetting; the invite is the commitment.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Lanternfish is a potential design partner, investor, or customer for Nimbus Labs.\",\n      \"needs\": \"The brief or a prior conversation would name Lanternfish's business, stage, or relevance to your goals.\"\n    },\n    {\n      \"proposition\": \"Ira Menon is reaching out on behalf of Lanternfish to explore a partnership or investment opportunity.\",\n      \"needs\": \"Confirmation from Introly or Ira of what Lanternfish does and why the introduction was made.\"\n    },\n    {\n      \"proposition\": \"You have already confirmed or declined the Tuesday 12 August meeting, but the file has not been updated.\",\n      \"needs\": \"A check of your calendar and sent mail to confirm whether a response was sent after 2026-08-11 11:30 UTC.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Lanternfish do, and why did Introly introduce you to Ira Menon?\",\n      \"relevance\": \"The strategic purpose of the meeting \u2014 whether it is a fundraising opportunity, a partnership, a customer reference, or something else \u2014 determines how to prepare and what to ask.\"\n    },\n    {\n      \"question\": \"Have you already responded to Ira's meeting proposal, or is the file out of date?\",\n      \"relevance\": \"If you have already confirmed or declined, the file should be closed or updated; if not, the next move is to respond now.\"\n    },\n    {\n      \"question\": \"Is Tuesday 12 August at 11 am a time that works for you, or do you need to propose an alternative?\",\n      \"relevance\": \"Your availability determines whether the response is a confirmation or a counter-proposal, which affects the tone and the next step.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A connector introduction that has moved to a meeting proposal, with the ball in your court to confirm or reschedule. This is a live account admin situation with a clear next step agreed (the meeting), but no response yet from you.\",\n    \"rivals\": [\n      \"A low-priority intro that you have not yet decided whether to pursue, and the silence reflects uncertainty rather than neglect.\",\n      \"A meeting proposal that you have already answered, but the file has not been updated to reflect it.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is a connector introduction from Introly, and the work in motion is to have a meeting with Ira Menon. The brief names Introly as a connector whose mail is an introduction, not a stranger.\",\n    \"evidence\": [\n      \"file:role\",\n      \"file:introduced_by\",\n      \"brief:cbl_#27\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"A connector introduction typically moves to a meeting proposal within one to three days; the expected next step is confirmation or rescheduling from you.\",\n    \"actual\": \"Ira proposed a meeting for Tuesday 12 August at 11 am and asked you to confirm or suggest an alternative. You have not yet responded, and the file has been quiet for 0.27 days.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If you do not respond by end of day 2026-08-12, Ira will likely assume you are not interested or have a scheduling conflict. The meeting will not happen, and the connector introduction will have been wasted. Introly may note that the introduction did not convert.\",\n    \"act\": \"If you respond today or tomorrow with a confirmation or alternative time, the meeting is likely to happen. You will have a conversation with Ira to understand what Lanternfish does and why the introduction was made. The outcome depends on the strategic fit and the quality of the conversation.\",\n    \"best\": \"You confirm the Tuesday 12 August meeting, send a calendar invite, and prepare by learning about Lanternfish. The call reveals a valuable partnership, investment, or customer opportunity that advances one of your goals (fundraising, design partners, or hiring). Ira becomes a stakeholder or advocate.\",\n    \"worst\": \"You do not respond, Ira assumes you are not interested, and the introduction is lost. Introly notes the failed conversion and is less likely to introduce you to others. The opportunity cost is unknown but non-zero.\",\n    \"signals_to_watch\": [\n      \"Whether Ira sends a follow-up message if you do not respond by end of day 2026-08-12.\",\n      \"The tone and content of Ira's first message on the call \u2014 whether it is exploratory, transactional, or urgent.\",\n      \"Whether Lanternfish is mentioned in your brief as a potential partner, investor, or customer.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are low because this is an exploratory meeting with an unknown counterparty; the outcome is not yet clear.\",\n      \"The urgency is medium because the meeting is proposed for Tuesday 12 August, which is within two days, and a non-response will signal disinterest.\",\n      \"A non-response is reversible: you can reach out later to reschedule, but it will cost credibility with Ira and Introly.\",\n      \"The file has been quiet for 0.27 days, which is still within a normal response window, so there is no immediate escalation risk.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Respond to Ira's meeting proposal with a confirmation or alternative time, and send a calendar invite.\",\n    \"for_whom\": \"Ira Menon at Lanternfish\",\n    \"by_when\": \"2026-08-12\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:4\",\n      \"inference:1\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"ira@lanternfish.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If you cannot confirm Tuesday 12 August at 11 am, send a brief message proposing two alternative times within the next two days, with a calendar invite for one of them. This keeps the thread warm and signals engagement without overcommitting.\",\n  \"wait_or_stop\": \"Wait until you have confirmed or declined the meeting. Do not wait beyond end of day 2026-08-12, or Ira will assume you are not interested. Stop if Lanternfish is not relevant to any of your stated goals (fundraising, design partners, hiring, accelerator programs, or compliance).\",\n  \"done_when\": \"Done when you have sent a response to Ira confirming the Tuesday 12 August meeting at 11 am, or proposing an alternative time with a calendar invite. The file should then move to a meeting_scheduled state, with a reminder to prepare before the call.\",\n  \"draft\": \"Hi Ira, thanks for the intro and the meeting proposal. Tuesday 12 August at 11 am works for me. I'll send a calendar invite. Looking forward to the call. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "f3aee402d39ccaa37c222f0acebea7fa767bf32bcecf7ae9a1ebe0ca1ca14ad2": {
+  "framed": true,
+  "input_tokens": 7430,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2812,
+  "parsed": {
+   "alternative": "If the founder cannot meet on Tuesday 12 August at 11 am, respond immediately with an alternative time and a brief note on why the meeting matters. This keeps the thread warm and shows respect for Ira's time.",
+   "appraisal": {
+    "reasons": [
+     "The file is a first introduction with no named work stream in the brief; if the fit is poor, the meeting can be declined or rescheduled.",
+     "The meeting was proposed for a specific date; if that date passes without a response, the relationship cools but is not broken.",
+     "A response is owed now because Ira asked a direct question and is waiting; silence beyond the proposed date will be read as disinterest.",
+     "The file is one of many in motion; it is not blocking any of the founder's stated goals, but it could support them if the fit is right."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "medium"
+   },
+   "done_when": "Ira has received a response confirming, proposing an alternative, or declining the meeting. If confirmed, the meeting is on the calendar and the founder has prepared.",
+   "draft": "Hi Ira, thanks for reaching out. Tuesday 12 August at 11 am works for me. Looking forward to the call. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "An introduction was made; the introduced party asked for a meeting; the founder has not yet responded.",
+    "expected": "Without a playbook, the expectation comes from the brief and the file's own history. The brief lists introductions as a means to raise seed, enter programs, hire, and land partners. An introduction should be evaluated for fit, and if fit, a meeting should be scheduled or declined promptly.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Ira Menon from Lanternfish proposed a meeting on Tuesday 12 August at 11 am, asking if that time works or requesting an alternative.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Would Tuesday 12 August at 11 am work for a call? If not, send me a time that suits you."
+    },
+    {
+     "claim": "The introduction came from Introly, an AI agent that introduces the founder to people.",
+     "evidence": [
+      "evt_#2",
+      "brief:cbl_#27"
+     ],
+     "quote": "Arjun, meet Ira Menon, a product lead at Lanternfish. Ira, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "The file has been quiet for longer than any gap it closed before.",
+     "evidence": [
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: the file shows whose_move is ours.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for it.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's situation is account_admin, active, with no end recorded.",
+     "evidence": [
+      "sit:sit_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction from a connector, awaiting a response to a meeting proposal. The fit and purpose are not yet clear.",
+    "rivals": [
+     "A low-priority introduction that can be declined or deferred if the founder's time is constrained.",
+     "A potential opportunity that requires research before responding, to avoid wasting time on a poor fit."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Introly's reasoning for the introduction, or Ira's role and Lanternfish's business model.",
+     "proposition": "Lanternfish is a potential design partner, investor, or customer for Nimbus Labs."
+    },
+    {
+     "needs": "A brief on Lanternfish's relevance to one of the goals in the brief: raising seed, getting recognition, entering programs, hiring, or landing design partners.",
+     "proposition": "The meeting is worth your time and fits the founder's priorities."
+    },
+    {
+     "needs": "A check of the founder's calendar.",
+     "proposition": "Tuesday 12 August at 11 am is a time the founder can keep."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "A response is owed: Ira Menon asked a direct question about meeting availability and is waiting for an answer."
+    },
+    {
+     "based_on": [
+      "file:role",
+      "none:playbook"
+     ],
+     "claim": "The file is an introduction, not a named work stream in the brief, so its purpose and fit are not yet established."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "num:usual_gap"
+     ],
+     "claim": "The quiet period of 0.27 days exceeds the longest gap the file has closed before, signalling a potential stall if no move is made."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop_#1",
+    "by_when": "2026-08-12",
+    "for_whom": "Ira Menon",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "sig:admin.sit.live_account_admin",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:4",
+     "inference:1"
+    ],
+    "to": "ira@lanternfish.test",
+    "what": "respond to Ira Menon's meeting proposal: either confirm Tuesday 12 August at 11 am, propose an alternative time, or decline with a reason. Before responding, research Lanternfish and Ira's role to decide whether the meeting is worth the founder's time.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting request from an introduction should be answered within one business day, whether to accept, decline, or propose an alternative.",
+     "kind": "practice",
+     "why": "The introduced party has made themselves available and is waiting; delay signals low priority and cools the relationship before it forms."
+    },
+    {
+     "claim": "An introduction without context about why the two parties should meet often stalls because neither side knows what to prepare or whether the fit is real.",
+     "kind": "counter_pattern",
+     "why": "Introly's introduction names only that you build an AI chief of staff; it does not say why Lanternfish matters to you or what Ira might want from you."
+    },
+    {
+     "claim": "A meeting accepted without knowing the counterparty's intent or business can waste time if the fit is poor.",
+     "kind": "practice",
+     "why": "Thirty years of introductions show that the best meetings are those where both sides know in advance what they are exploring."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "An introduction from a connector is followed by a direct question from the introduced party, which requires a timely response to maintain momentum.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "When a meeting time is proposed with a fallback option, silence beyond the proposed date reads as disinterest or disorganisation.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "brief:cbl_#27",
+     "evt_#2"
+    ],
+    "kind": "intro",
+    "why": "The file is explicitly an introduction from Introly, a connector. It has not yet become a partner, investor, program, or other work stream; it is a first touch from a third party."
+   },
+   "scenarios": {
+    "act": "The founder responds to Ira, either confirming the meeting, proposing an alternative time, or declining with a reason. The relationship moves forward or is closed cleanly.",
+    "best": "The founder confirms the meeting, prepares by learning about Lanternfish and Ira's role, and the call reveals a strong fit\u2014either a design partner, an investor, or a customer. A next step is agreed.",
+    "do_nothing": "Ira Menon waits past Tuesday 12 August without a response. The introduction cools. Ira may follow up once, or may assume the founder is not interested and move on. The relationship does not form.",
+    "signals_to_watch": [
+     "Whether Ira follows up after Tuesday 12 August passes without a response.",
+     "The tone and content of Ira's follow-up, if one comes: polite persistence, or a cooling-off.",
+     "Whether the founder learns about Lanternfish before responding, or responds without preparation."
+    ],
+    "worst": "The founder confirms the meeting but is unprepared. The call is awkward, the fit is unclear, and time is wasted. Or the founder does not respond, and Ira concludes the founder is disorganised or uninterested."
+   },
+   "unknowns": [
+    {
+     "question": "Why did Introly introduce Ira Menon to the founder? What is Lanternfish, and what does Ira do there?",
+     "relevance": "Without this, you cannot judge whether the meeting is worth the founder's time or how to prepare for it."
+    },
+    {
+     "question": "Is the founder available on Tuesday 12 August at 11 am, or does a conflict exist?",
+     "relevance": "If the founder is not available, the response must propose an alternative; if available, the response should confirm and prepare."
+    },
+    {
+     "question": "Does the founder want to take introductions from Introly, or should they be screened or declined?",
+     "relevance": "If introductions are not wanted, the file should be closed; if wanted, each one should be evaluated for fit before responding."
+    }
+   ],
+   "wait_or_stop": "Wait only if the founder needs to research Lanternfish first; do not wait past Tuesday 12 August. Stop if the founder decides introductions from Introly are not wanted, or if Lanternfish is clearly not a fit for any of the founder's stated goals."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Ira Menon from Lanternfish proposed a meeting on Tuesday 12 August at 11 am, asking if that time works or requesting an alternative.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Would Tuesday 12 August at 11 am work for a call? If not, send me a time that suits you.\"\n    },\n    {\n      \"claim\": \"The introduction came from Introly, an AI agent that introduces the founder to people.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"brief:cbl_#27\"\n      ],\n      \"quote\": \"Arjun, meet Ira Menon, a product lead at Lanternfish. Ira, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for longer than any gap it closed before.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: the file shows whose_move is ours.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for it.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's situation is account_admin, active, with no end recorded.\",\n      \"evidence\": [\n        \"sit:sit_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"A response is owed: Ira Menon asked a direct question about meeting availability and is waiting for an answer.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The file is an introduction, not a named work stream in the brief, so its purpose and fit are not yet established.\",\n      \"based_on\": [\n        \"file:role\",\n        \"none:playbook\"\n      ]\n    },\n    {\n      \"claim\": \"The quiet period of 0.27 days exceeds the longest gap the file has closed before, signalling a potential stall if no move is made.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"num:usual_gap\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An introduction from a connector is followed by a direct question from the introduced party, which requires a timely response to maintain momentum.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a meeting time is proposed with a fallback option, silence beyond the proposed date reads as disinterest or disorganisation.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting request from an introduction should be answered within one business day, whether to accept, decline, or propose an alternative.\",\n      \"why\": \"The introduced party has made themselves available and is waiting; delay signals low priority and cools the relationship before it forms.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An introduction without context about why the two parties should meet often stalls because neither side knows what to prepare or whether the fit is real.\",\n      \"why\": \"Introly's introduction names only that you build an AI chief of staff; it does not say why Lanternfish matters to you or what Ira might want from you.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting accepted without knowing the counterparty's intent or business can waste time if the fit is poor.\",\n      \"why\": \"Thirty years of introductions show that the best meetings are those where both sides know in advance what they are exploring.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Lanternfish is a potential design partner, investor, or customer for Nimbus Labs.\",\n      \"needs\": \"Introly's reasoning for the introduction, or Ira's role and Lanternfish's business model.\"\n    },\n    {\n      \"proposition\": \"The meeting is worth your time and fits the founder's priorities.\",\n      \"needs\": \"A brief on Lanternfish's relevance to one of the goals in the brief: raising seed, getting recognition, entering programs, hiring, or landing design partners.\"\n    },\n    {\n      \"proposition\": \"Tuesday 12 August at 11 am is a time the founder can keep.\",\n      \"needs\": \"A check of the founder's calendar.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Why did Introly introduce Ira Menon to the founder? What is Lanternfish, and what does Ira do there?\",\n      \"relevance\": \"Without this, you cannot judge whether the meeting is worth the founder's time or how to prepare for it.\"\n    },\n    {\n      \"question\": \"Is the founder available on Tuesday 12 August at 11 am, or does a conflict exist?\",\n      \"relevance\": \"If the founder is not available, the response must propose an alternative; if available, the response should confirm and prepare.\"\n    },\n    {\n      \"question\": \"Does the founder want to take introductions from Introly, or should they be screened or declined?\",\n      \"relevance\": \"If introductions are not wanted, the file should be closed; if wanted, each one should be evaluated for fit before responding.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction from a connector, awaiting a response to a meeting proposal. The fit and purpose are not yet clear.\",\n    \"rivals\": [\n      \"A low-priority introduction that can be declined or deferred if the founder's time is constrained.\",\n      \"A potential opportunity that requires research before responding, to avoid wasting time on a poor fit.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is explicitly an introduction from Introly, a connector. It has not yet become a partner, investor, program, or other work stream; it is a first touch from a third party.\",\n    \"evidence\": [\n      \"file:role\",\n      \"brief:cbl_#27\",\n      \"evt_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief and the file's own history. The brief lists introductions as a means to raise seed, enter programs, hire, and land partners. An introduction should be evaluated for fit, and if fit, a meeting should be scheduled or declined promptly.\",\n    \"actual\": \"An introduction was made; the introduced party asked for a meeting; the founder has not yet responded.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Ira Menon waits past Tuesday 12 August without a response. The introduction cools. Ira may follow up once, or may assume the founder is not interested and move on. The relationship does not form.\",\n    \"act\": \"The founder responds to Ira, either confirming the meeting, proposing an alternative time, or declining with a reason. The relationship moves forward or is closed cleanly.\",\n    \"best\": \"The founder confirms the meeting, prepares by learning about Lanternfish and Ira's role, and the call reveals a strong fit\u2014either a design partner, an investor, or a customer. A next step is agreed.\",\n    \"worst\": \"The founder confirms the meeting but is unprepared. The call is awkward, the fit is unclear, and time is wasted. Or the founder does not respond, and Ira concludes the founder is disorganised or uninterested.\",\n    \"signals_to_watch\": [\n      \"Whether Ira follows up after Tuesday 12 August passes without a response.\",\n      \"The tone and content of Ira's follow-up, if one comes: polite persistence, or a cooling-off.\",\n      \"Whether the founder learns about Lanternfish before responding, or responds without preparation.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is a first introduction with no named work stream in the brief; if the fit is poor, the meeting can be declined or rescheduled.\",\n      \"The meeting was proposed for a specific date; if that date passes without a response, the relationship cools but is not broken.\",\n      \"A response is owed now because Ira asked a direct question and is waiting; silence beyond the proposed date will be read as disinterest.\",\n      \"The file is one of many in motion; it is not blocking any of the founder's stated goals, but it could support them if the fit is right.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"respond to Ira Menon's meeting proposal: either confirm Tuesday 12 August at 11 am, propose an alternative time, or decline with a reason. Before responding, research Lanternfish and Ira's role to decide whether the meeting is worth the founder's time.\",\n    \"for_whom\": \"Ira Menon\",\n    \"by_when\": \"2026-08-12\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:4\",\n      \"inference:1\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"sig:admin.sit.live_account_admin\",\n      \"own:1\"\n    ],\n    \"to\": \"ira@lanternfish.test\",\n    \"answers\": \"loop_#1\"\n  },\n  \"alternative\": \"If the founder cannot meet on Tuesday 12 August at 11 am, respond immediately with an alternative time and a brief note on why the meeting matters. This keeps the thread warm and shows respect for Ira's time.\",\n  \"wait_or_stop\": \"Wait only if the founder needs to research Lanternfish first; do not wait past Tuesday 12 August. Stop if the founder decides introductions from Introly are not wanted, or if Lanternfish is clearly not a fit for any of the founder's stated goals.\",\n  \"done_when\": \"Ira has received a response confirming, proposing an alternative, or declining the meeting. If confirmed, the meeting is on the calendar and the founder has prepared.\",\n  \"draft\": \"Hi Ira, thanks for reaching out. Tuesday 12 August at 11 am works for me. Looking forward to the call. Best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

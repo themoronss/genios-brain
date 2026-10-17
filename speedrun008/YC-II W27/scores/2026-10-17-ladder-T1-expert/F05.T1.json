@@ -1,0 +1,901 @@
+{
+ "0c4642ce6691b60b02d1fffbff65499ab1393b46444a0112ec851ec75b95c21d": {
+  "framed": true,
+  "input_tokens": 7219,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2886,
+  "parsed": {
+   "alternative": "Wait until the founder has confirmed whether they have already written to Altavia Partners. If they have not, write today. If they have, check how long it has been since that outreach and decide whether to follow up.",
+   "appraisal": {
+    "reasons": [
+     "This is one of five investor targets in the seed wave; missing this one does not block the round, but it is a potential source of capital.",
+     "The introduction is fresh and warm, so the cost of acting now is low and the benefit is high.",
+     "A poorly written first message can damage the relationship, but a good one can open a conversation; the move is reversible in the sense that a bad outcome does not prevent future outreach to other investors.",
+     "The file is too new to judge urgency from silence; the real urgency is that the founder should write while the introduction is still fresh."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The founder has written to Altavia Partners with a clear, brief message that introduces Nimbus Labs and asks for a meeting or call. Altavia Partners has either replied (expressing interest or passing) or the founder has decided to follow up or move on based on the timeline.",
+   "draft": "Hi Marco, thanks for the intro. I'm building Nimbus Labs, an AI chief of staff for founders\u2014it helps with the operational work that takes up most of a founder's time. I'd love to tell you more about what we're doing and see if it's interesting to you. Are you free for a quick call next week? Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The introduction was sent 0.44 days ago and no outreach from the founder has been recorded in the file.",
+    "expected": "After a connector introduction, the founder is expected to write within one to three days with a brief, specific message that establishes context and asks for a meeting or conversation.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "An introduction was sent by Introly connecting the founder to someone at Altavia Partners on 2026-08-06 at 07:30 UTC.",
+     "evidence": [
+      "evt_#1",
+      "file:introduced_by",
+      "file:first_touch"
+     ],
+     "quote": "Arjun, meet Marco Ruiz, who backs B2B software at Altavia Partners. Marco, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here."
+    },
+    {
+     "claim": "No reply has been received from Altavia Partners since the introduction.",
+     "evidence": [
+      "file:last_touch",
+      "file:whose_move",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.44 days since first contact.",
+     "evidence": [
+      "num:days_quiet",
+      "file:first_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise or commitment was made in the introduction mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief does not name a kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The move is ours: we have not yet written to Altavia Partners.",
+     "evidence": [
+      "file:whose_move",
+      "none:we_wrote"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A connector has introduced the founder to an investor at Altavia Partners who backs B2B software. The founder has not yet written. This is a live opportunity to open a conversation with a potential seed investor, and the next move is ours.",
+    "rivals": [
+     "This is a low-priority exploratory introduction that can wait until the founder has more pressing investor conversations underway.",
+     "The founder has already written to this contact and the file is incomplete; the next move depends on what was said and when."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation that Altavia Partners invests in AI/SaaS at seed stage, and that they are actively reviewing new opportunities.",
+     "proposition": "Altavia Partners backs B2B software companies and may be a fit for Nimbus Labs' seed round."
+    },
+    {
+     "needs": "Confirmation from the founder of whether they have already reached out to this contact.",
+     "proposition": "The founder has already written to Altavia Partners but the mail is not in the file because it was sent outside the 60-day window or through a channel not synced to the file."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "evt_#1",
+      "file:introduced_by",
+      "none:promises"
+     ],
+     "claim": "This is a cold introduction from a connector, not a warm lead with an existing relationship or prior commitment."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "evt_#1"
+     ],
+     "claim": "The ball is in our court: Introly made the introduction and said 'I'll let you two take it from here,' which means the founder is expected to write first."
+    },
+    {
+     "based_on": [
+      "num:days_quiet",
+      "file:first_touch",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The file is too new to judge whether Altavia Partners is interested or unresponsive; 0.44 days is within normal silence for an unsolicited introduction."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-07",
+    "for_whom": "Altavia Partners",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "cap:admin.executive_support.commitment_tracking#f1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "marco@altavia.test",
+    "what": "write to Altavia Partners with a brief introduction of Nimbus Labs, why you are reaching out to them specifically, and a specific ask for a call or meeting",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A connector introduction requires the founder to write first; the connector has done their job by making the introduction, and the founder's opening message sets the tone for whether the relationship develops.",
+     "kind": "practice",
+     "why": "The connector's role ends at the introduction; the founder must demonstrate initiative and clarity about what they want from the conversation."
+    },
+    {
+     "claim": "Investor introductions that come through connectors have a higher conversion rate when the founder writes within 24 hours with a specific, brief ask or context.",
+     "kind": "base_rate",
+     "why": "Early engagement signals seriousness and keeps the introduction fresh in the recipient's mind before other priorities crowd it out."
+    },
+    {
+     "claim": "The founder should not chase an introduction until at least five to seven days have passed since their own outreach, and only then if there is a specific reason to believe the recipient is engaged.",
+     "kind": "practice",
+     "why": "Chasing before the recipient has had time to read and consider the initial message reads as pressure and damages the relationship before it starts."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "Introductions from connectors are typically followed by the founder's outreach within one to three days to establish the conversation.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Reading silence in the first day after an introduction as disinterest converts a normal wait into a relationship event.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "brief:cbl_#7",
+     "brief:cbl_#8"
+    ],
+    "kind": "investor",
+    "why": "The introduction names Altavia Partners as someone who 'backs B2B software' and the brief lists this file under 'Raise' work, which is investor outreach. The connector introduced the founder to a potential seed investor."
+   },
+   "scenarios": {
+    "act": "The founder writes to Altavia Partners today with a brief introduction of Nimbus Labs, why they are reaching out, and a specific ask (a call, a meeting, or a question). This keeps the introduction warm and signals seriousness.",
+    "best": "Altavia Partners replies within two to three days expressing interest in a call. The founder and Altavia Partners have a conversation that leads to a meeting or a follow-up. This becomes an active investor conversation.",
+    "do_nothing": "The file remains quiet. After seven to ten days, Altavia Partners will have moved on to other priorities and the introduction will be cold. The founder will have missed a potential seed investor conversation.",
+    "signals_to_watch": [
+     "Whether the founder has already written to Altavia Partners (check with the founder directly).",
+     "Whether Altavia Partners replies to the founder's outreach within three to five days.",
+     "Whether the reply expresses interest in a meeting or is a polite pass.",
+     "Whether the founder's message is specific and brief, or generic and long."
+    ],
+    "worst": "The founder writes but Altavia Partners does not reply, or replies weeks later with a polite pass. The introduction does not convert to a meeting."
+   },
+   "unknowns": [
+    {
+     "question": "Has the founder already written to Altavia Partners, and if so, what did they say and when?",
+     "relevance": "If the founder has already written, the file's 'whose_move' is wrong and the next move depends on how long it has been since that outreach and whether a follow-up is warranted. If they have not, the next move is to write now."
+    },
+    {
+     "question": "What is Altavia Partners' investment thesis, stage focus, and typical response time to introductions?",
+     "relevance": "This would determine whether this is a high-priority outreach and what the founder should emphasize in their opening message."
+    },
+    {
+     "question": "Is Nimbus Labs a fit for Altavia Partners' portfolio, or is this introduction exploratory?",
+     "relevance": "If there is a clear fit, the founder should write with urgency and specificity. If exploratory, the tone and ask should be different."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The introduction is fresh and the founder should write within one day. Do not stop; this is a live investor opportunity. If Altavia Partners does not reply within five to seven days after the founder's outreach, a single follow-up is warranted. After that, move on to other investors."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"An introduction was sent by Introly connecting the founder to someone at Altavia Partners on 2026-08-06 at 07:30 UTC.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:introduced_by\",\n        \"file:first_touch\"\n      ],\n      \"quote\": \"Arjun, meet Marco Ruiz, who backs B2B software at Altavia Partners. Marco, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\"\n    },\n    {\n      \"claim\": \"No reply has been received from Altavia Partners since the introduction.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"file:whose_move\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.44 days since first contact.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"file:first_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise or commitment was made in the introduction mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief does not name a kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The move is ours: we have not yet written to Altavia Partners.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a cold introduction from a connector, not a warm lead with an existing relationship or prior commitment.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"file:introduced_by\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in our court: Introly made the introduction and said 'I'll let you two take it from here,' which means the founder is expected to write first.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The file is too new to judge whether Altavia Partners is interested or unresponsive; 0.44 days is within normal silence for an unsolicited introduction.\",\n      \"based_on\": [\n        \"num:days_quiet\",\n        \"file:first_touch\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions from connectors are typically followed by the founder's outreach within one to three days to establish the conversation.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Reading silence in the first day after an introduction as disinterest converts a normal wait into a relationship event.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A connector introduction requires the founder to write first; the connector has done their job by making the introduction, and the founder's opening message sets the tone for whether the relationship develops.\",\n      \"why\": \"The connector's role ends at the introduction; the founder must demonstrate initiative and clarity about what they want from the conversation.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investor introductions that come through connectors have a higher conversion rate when the founder writes within 24 hours with a specific, brief ask or context.\",\n      \"why\": \"Early engagement signals seriousness and keeps the introduction fresh in the recipient's mind before other priorities crowd it out.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The founder should not chase an introduction until at least five to seven days have passed since their own outreach, and only then if there is a specific reason to believe the recipient is engaged.\",\n      \"why\": \"Chasing before the recipient has had time to read and consider the initial message reads as pressure and damages the relationship before it starts.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Altavia Partners backs B2B software companies and may be a fit for Nimbus Labs' seed round.\",\n      \"needs\": \"Confirmation that Altavia Partners invests in AI/SaaS at seed stage, and that they are actively reviewing new opportunities.\"\n    },\n    {\n      \"proposition\": \"The founder has already written to Altavia Partners but the mail is not in the file because it was sent outside the 60-day window or through a channel not synced to the file.\",\n      \"needs\": \"Confirmation from the founder of whether they have already reached out to this contact.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the founder already written to Altavia Partners, and if so, what did they say and when?\",\n      \"relevance\": \"If the founder has already written, the file's 'whose_move' is wrong and the next move depends on how long it has been since that outreach and whether a follow-up is warranted. If they have not, the next move is to write now.\"\n    },\n    {\n      \"question\": \"What is Altavia Partners' investment thesis, stage focus, and typical response time to introductions?\",\n      \"relevance\": \"This would determine whether this is a high-priority outreach and what the founder should emphasize in their opening message.\"\n    },\n    {\n      \"question\": \"Is Nimbus Labs a fit for Altavia Partners' portfolio, or is this introduction exploratory?\",\n      \"relevance\": \"If there is a clear fit, the founder should write with urgency and specificity. If exploratory, the tone and ask should be different.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A connector has introduced the founder to an investor at Altavia Partners who backs B2B software. The founder has not yet written. This is a live opportunity to open a conversation with a potential seed investor, and the next move is ours.\",\n    \"rivals\": [\n      \"This is a low-priority exploratory introduction that can wait until the founder has more pressing investor conversations underway.\",\n      \"The founder has already written to this contact and the file is incomplete; the next move depends on what was said and when.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The introduction names Altavia Partners as someone who 'backs B2B software' and the brief lists this file under 'Raise' work, which is investor outreach. The connector introduced the founder to a potential seed investor.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"brief:cbl_#7\",\n      \"brief:cbl_#8\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"After a connector introduction, the founder is expected to write within one to three days with a brief, specific message that establishes context and asks for a meeting or conversation.\",\n    \"actual\": \"The introduction was sent 0.44 days ago and no outreach from the founder has been recorded in the file.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. After seven to ten days, Altavia Partners will have moved on to other priorities and the introduction will be cold. The founder will have missed a potential seed investor conversation.\",\n    \"act\": \"The founder writes to Altavia Partners today with a brief introduction of Nimbus Labs, why they are reaching out, and a specific ask (a call, a meeting, or a question). This keeps the introduction warm and signals seriousness.\",\n    \"best\": \"Altavia Partners replies within two to three days expressing interest in a call. The founder and Altavia Partners have a conversation that leads to a meeting or a follow-up. This becomes an active investor conversation.\",\n    \"worst\": \"The founder writes but Altavia Partners does not reply, or replies weeks later with a polite pass. The introduction does not convert to a meeting.\",\n    \"signals_to_watch\": [\n      \"Whether the founder has already written to Altavia Partners (check with the founder directly).\",\n      \"Whether Altavia Partners replies to the founder's outreach within three to five days.\",\n      \"Whether the reply expresses interest in a meeting or is a polite pass.\",\n      \"Whether the founder's message is specific and brief, or generic and long.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is one of five investor targets in the seed wave; missing this one does not block the round, but it is a potential source of capital.\",\n      \"The introduction is fresh and warm, so the cost of acting now is low and the benefit is high.\",\n      \"A poorly written first message can damage the relationship, but a good one can open a conversation; the move is reversible in the sense that a bad outcome does not prevent future outreach to other investors.\",\n      \"The file is too new to judge urgency from silence; the real urgency is that the founder should write while the introduction is still fresh.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"write to Altavia Partners with a brief introduction of Nimbus Labs, why you are reaching out to them specifically, and a specific ask for a call or meeting\",\n    \"for_whom\": \"Altavia Partners\",\n    \"by_when\": \"2026-08-07\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"cap:admin.executive_support.commitment_tracking#f1\"\n    ],\n    \"to\": \"marco@altavia.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Wait until the founder has confirmed whether they have already written to Altavia Partners. If they have not, write today. If they have, check how long it has been since that outreach and decide whether to follow up.\",\n  \"wait_or_stop\": \"Do not wait. The introduction is fresh and the founder should write within one day. Do not stop; this is a live investor opportunity. If Altavia Partners does not reply within five to seven days after the founder's outreach, a single follow-up is warranted. After that, move on to other investors.\",\n  \"done_when\": \"The founder has written to Altavia Partners with a clear, brief message that introduces Nimbus Labs and asks for a meeting or call. Altavia Partners has either replied (expressing interest or passing) or the founder has decided to follow up or move on based on the timeline.\",\n  \"draft\": \"Hi Marco, thanks for the intro. I'm building Nimbus Labs, an AI chief of staff for founders\u2014it helps with the operational work that takes up most of a founder's time. I'd love to tell you more about what we're doing and see if it's interesting to you. Are you free for a quick call next week? Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "0f3f5443f54f493879ae779db32911128839009f5a80b5cb357e0ccd51923617": {
+  "framed": true,
+  "input_tokens": 7061,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2952,
+  "parsed": {
+   "alternative": "Wait until 2026-08-09 (three days from now) to see if Marco replies on his own. If he does not, send a follow-up then. This gives him time to respond to the introduction without a prompt, but risks losing momentum.",
+   "appraisal": {
+    "reasons": [
+     "This is one of five seed-stage investors you have written to; a missed opportunity here does not block your fundraising, but it reduces your options.",
+     "A warm introduction is a valuable asset; letting it go cold is a cost, but re-engaging is still possible within the next few days.",
+     "The follow-up is a low-cost move \u2014 a brief message \u2014 and the risk of a wrong move is low; Marco can simply not reply or say no.",
+     "The timing is critical: the window for a warm follow-up is narrow, and waiting more than a week makes re-engagement harder."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Done when Marco replies with interest or a specific next step, or when he politely declines and you have a clear signal that Altavia is not a fit.",
+   "draft": "Hi Marco, thanks for the intro via Introly. I saw that Altavia backs B2B software \u2014 Nimbus Labs is building an AI chief of staff for founders, which helps them manage their time and decisions. I'd love to show you what we're building and hear if it's something Altavia would consider. Are you free for a quick call next week? Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "No follow-up has been sent. The file shows the introduction was made, but the founder has not yet moved the conversation forward. It has been quiet for 0.44 days since the introduction.",
+    "expected": "After a warm introduction, the founder typically follows up within one to three days with a specific ask or meeting request. If the introduction is to a potential investor, the follow-up should reference the investor's focus and explain why Nimbus Labs is relevant.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to Marco Ruiz at Altavia Partners on 2026-08-06 at 07:30 UTC",
+     "evidence": [
+      "evt_#1",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Marco Ruiz, who backs B2B software at Altavia Partners. Marco, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here."
+    },
+    {
+     "claim": "No reply has been received from Marco Ruiz or Altavia Partners since the introduction",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in your court \u2014 no open ask from them, and no promise made by either party",
+     "evidence": [
+      "file:whose_move",
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first touch with Altavia Partners; no prior history exists",
+     "evidence": [
+      "file:first_touch",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief does not name a kind of work for this file",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction from a connector that has not yet moved to a substantive conversation; the founder must decide whether to follow up and how.",
+    "rivals": [
+     "A failed introduction that did not resonate and should be abandoned.",
+     "A successful introduction that is simply waiting for the right moment or signal from the founder to move forward."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A follow-up from you that gives him a reason to reply \u2014 a specific ask, a demo, or a meeting request.",
+     "proposition": "Marco Ruiz is interested but waiting for you to make the first substantive move"
+    },
+    {
+     "needs": "A follow-up that tests this: a brief, low-pressure message that makes it easy for him to say no or defer without guilt.",
+     "proposition": "Marco Ruiz is not interested or the introduction did not resonate"
+    },
+    {
+     "needs": "Waiting another few days and then a follow-up that assumes he is busy and offers a specific time or format for a conversation.",
+     "proposition": "Marco Ruiz is interested but has not yet had time to respond"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "This is an introduction that has not yet moved to a substantive conversation"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "inference:1"
+     ],
+     "claim": "The next move is yours \u2014 you must decide whether and how to engage Marco Ruiz"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Marco Ruiz's silence does not signal disinterest; it is consistent with normal post-introduction timing"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-07",
+    "for_whom": "Marco Ruiz at Altavia Partners",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "own:3",
+     "cap:admin.executive_support.commitment_tracking#f1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:2"
+    ],
+    "to": "marco@altavia.test",
+    "what": "Send a brief follow-up to Marco Ruiz that references his focus on B2B software, explains why Nimbus Labs is relevant, and asks for a specific next step \u2014 a call or a meeting.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An introduction from a trusted connector is a gift; the founder's first move sets the tone for whether it becomes a real conversation",
+     "kind": "practice",
+     "why": "The connector has already vouched for both parties. A prompt, specific follow-up signals seriousness and respect for the introduction."
+    },
+    {
+     "claim": "Most founder-to-investor introductions that go cold do so because the founder did not follow up within the first week",
+     "kind": "base_rate",
+     "why": "Investors see hundreds of introductions; the ones that move are the ones the founder treats as urgent."
+    },
+    {
+     "claim": "The follow-up should be brief, specific to Marco's focus, and ask for a concrete next step \u2014 not a general coffee chat",
+     "kind": "practice",
+     "why": "A vague follow-up reads as low priority and gives Marco an easy reason to defer or ignore it."
+    },
+    {
+     "claim": "Waiting more than a week to follow up after an introduction can work if the founder has something new to show or a specific reason to reach out",
+     "kind": "counter_pattern",
+     "why": "A re-engagement with news or a concrete ask is stronger than a generic follow-up after silence."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Introductions from connectors typically require a follow-up from the founder within one to three days to establish momentum",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "When an introduction is made and the ball is in your court, silence beyond a week often means the introduction did not land or the timing was wrong",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "A VC who backs B2B software may take longer to respond if they are in a review cycle or between fund closes",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "file:introduced_by",
+     "brief:cbl_#27"
+    ],
+    "kind": "intro",
+    "why": "The dossier shows this was introduced by Introly, a connector. The brief lists Introly as a connector whose mail is an introduction, not a stranger. The file's role is explicitly intro."
+   },
+   "scenarios": {
+    "act": "You send a brief, specific follow-up that references Marco's focus on B2B software and explains why Nimbus Labs is relevant to him. You ask for a specific next step \u2014 a call, a demo, or a meeting. This re-engages the introduction and gives Marco a clear reason to reply.",
+    "best": "Marco replies within a few days, expresses interest, and agrees to a call. The conversation moves to a substantive discussion about Nimbus Labs, Altavia's investment thesis, and a potential path to funding.",
+    "do_nothing": "The introduction goes cold. Marco Ruiz may assume you are not interested or not serious. After one to two weeks, the window for a warm follow-up closes, and re-engaging becomes harder. The introduction becomes a missed opportunity.",
+    "signals_to_watch": [
+     "Whether Marco replies to a follow-up within three to five days.",
+     "The tone and specificity of his reply \u2014 interest, curiosity, or a polite pass.",
+     "Whether he asks for more information, a demo, or a meeting.",
+     "Whether he introduces you to others at Altavia or elsewhere."
+    ],
+    "worst": "Marco does not reply to the follow-up, or replies to say Altavia is not a fit. The introduction yields no outcome, and the time spent on follow-up is wasted."
+   },
+   "unknowns": [
+    {
+     "question": "What is Marco Ruiz's typical response time to introductions?",
+     "relevance": "If he is a slow responder by nature, silence does not signal disinterest. If he is usually quick, silence may mean the introduction did not land."
+    },
+    {
+     "question": "Does Altavia Partners have a specific investment thesis or stage focus that aligns with Nimbus Labs?",
+     "relevance": "If there is a strong fit, a follow-up should emphasize it. If the fit is weak, the follow-up should either be skipped or reframed."
+    },
+    {
+     "question": "Is Altavia Partners currently in a fund close, review cycle, or other period that would delay responses?",
+     "relevance": "If they are in a cycle, waiting is appropriate. If they are open, a follow-up is overdue."
+    },
+    {
+     "question": "What is your strategy for this investor relative to your other seed-stage outreach?",
+     "relevance": "If Altavia is a top-tier target, a follow-up is urgent. If they are exploratory, you can afford to wait or deprioritize."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-09 if you choose the alternative. Stop if Marco replies with a polite pass or if Altavia is not a fit for your strategy. Do not wait more than one week from the introduction to follow up; after that, the window closes."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to Marco Ruiz at Altavia Partners on 2026-08-06 at 07:30 UTC\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Marco Ruiz, who backs B2B software at Altavia Partners. Marco, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\"\n    },\n    {\n      \"claim\": \"No reply has been received from Marco Ruiz or Altavia Partners since the introduction\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in your court \u2014 no open ask from them, and no promise made by either party\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first touch with Altavia Partners; no prior history exists\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief does not name a kind of work for this file\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is an introduction that has not yet moved to a substantive conversation\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is yours \u2014 you must decide whether and how to engage Marco Ruiz\",\n      \"based_on\": [\n        \"fact:3\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"Marco Ruiz's silence does not signal disinterest; it is consistent with normal post-introduction timing\",\n      \"based_on\": [\n        \"fact:2\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions from connectors typically require a follow-up from the founder within one to three days to establish momentum\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an introduction is made and the ball is in your court, silence beyond a week often means the introduction did not land or the timing was wrong\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A VC who backs B2B software may take longer to respond if they are in a review cycle or between fund closes\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction from a trusted connector is a gift; the founder's first move sets the tone for whether it becomes a real conversation\",\n      \"why\": \"The connector has already vouched for both parties. A prompt, specific follow-up signals seriousness and respect for the introduction.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most founder-to-investor introductions that go cold do so because the founder did not follow up within the first week\",\n      \"why\": \"Investors see hundreds of introductions; the ones that move are the ones the founder treats as urgent.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The follow-up should be brief, specific to Marco's focus, and ask for a concrete next step \u2014 not a general coffee chat\",\n      \"why\": \"A vague follow-up reads as low priority and gives Marco an easy reason to defer or ignore it.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Waiting more than a week to follow up after an introduction can work if the founder has something new to show or a specific reason to reach out\",\n      \"why\": \"A re-engagement with news or a concrete ask is stronger than a generic follow-up after silence.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Marco Ruiz is interested but waiting for you to make the first substantive move\",\n      \"needs\": \"A follow-up from you that gives him a reason to reply \u2014 a specific ask, a demo, or a meeting request.\"\n    },\n    {\n      \"proposition\": \"Marco Ruiz is not interested or the introduction did not resonate\",\n      \"needs\": \"A follow-up that tests this: a brief, low-pressure message that makes it easy for him to say no or defer without guilt.\"\n    },\n    {\n      \"proposition\": \"Marco Ruiz is interested but has not yet had time to respond\",\n      \"needs\": \"Waiting another few days and then a follow-up that assumes he is busy and offers a specific time or format for a conversation.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Marco Ruiz's typical response time to introductions?\",\n      \"relevance\": \"If he is a slow responder by nature, silence does not signal disinterest. If he is usually quick, silence may mean the introduction did not land.\"\n    },\n    {\n      \"question\": \"Does Altavia Partners have a specific investment thesis or stage focus that aligns with Nimbus Labs?\",\n      \"relevance\": \"If there is a strong fit, a follow-up should emphasize it. If the fit is weak, the follow-up should either be skipped or reframed.\"\n    },\n    {\n      \"question\": \"Is Altavia Partners currently in a fund close, review cycle, or other period that would delay responses?\",\n      \"relevance\": \"If they are in a cycle, waiting is appropriate. If they are open, a follow-up is overdue.\"\n    },\n    {\n      \"question\": \"What is your strategy for this investor relative to your other seed-stage outreach?\",\n      \"relevance\": \"If Altavia is a top-tier target, a follow-up is urgent. If they are exploratory, you can afford to wait or deprioritize.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction from a connector that has not yet moved to a substantive conversation; the founder must decide whether to follow up and how.\",\n    \"rivals\": [\n      \"A failed introduction that did not resonate and should be abandoned.\",\n      \"A successful introduction that is simply waiting for the right moment or signal from the founder to move forward.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The dossier shows this was introduced by Introly, a connector. The brief lists Introly as a connector whose mail is an introduction, not a stranger. The file's role is explicitly intro.\",\n    \"evidence\": [\n      \"file:role\",\n      \"file:introduced_by\",\n      \"brief:cbl_#27\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"After a warm introduction, the founder typically follows up within one to three days with a specific ask or meeting request. If the introduction is to a potential investor, the follow-up should reference the investor's focus and explain why Nimbus Labs is relevant.\",\n    \"actual\": \"No follow-up has been sent. The file shows the introduction was made, but the founder has not yet moved the conversation forward. It has been quiet for 0.44 days since the introduction.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The introduction goes cold. Marco Ruiz may assume you are not interested or not serious. After one to two weeks, the window for a warm follow-up closes, and re-engaging becomes harder. The introduction becomes a missed opportunity.\",\n    \"act\": \"You send a brief, specific follow-up that references Marco's focus on B2B software and explains why Nimbus Labs is relevant to him. You ask for a specific next step \u2014 a call, a demo, or a meeting. This re-engages the introduction and gives Marco a clear reason to reply.\",\n    \"best\": \"Marco replies within a few days, expresses interest, and agrees to a call. The conversation moves to a substantive discussion about Nimbus Labs, Altavia's investment thesis, and a potential path to funding.\",\n    \"worst\": \"Marco does not reply to the follow-up, or replies to say Altavia is not a fit. The introduction yields no outcome, and the time spent on follow-up is wasted.\",\n    \"signals_to_watch\": [\n      \"Whether Marco replies to a follow-up within three to five days.\",\n      \"The tone and specificity of his reply \u2014 interest, curiosity, or a polite pass.\",\n      \"Whether he asks for more information, a demo, or a meeting.\",\n      \"Whether he introduces you to others at Altavia or elsewhere.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is one of five seed-stage investors you have written to; a missed opportunity here does not block your fundraising, but it reduces your options.\",\n      \"A warm introduction is a valuable asset; letting it go cold is a cost, but re-engaging is still possible within the next few days.\",\n      \"The follow-up is a low-cost move \u2014 a brief message \u2014 and the risk of a wrong move is low; Marco can simply not reply or say no.\",\n      \"The timing is critical: the window for a warm follow-up is narrow, and waiting more than a week makes re-engagement harder.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send a brief follow-up to Marco Ruiz that references his focus on B2B software, explains why Nimbus Labs is relevant, and asks for a specific next step \u2014 a call or a meeting.\",\n    \"for_whom\": \"Marco Ruiz at Altavia Partners\",\n    \"by_when\": \"2026-08-07\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"own:3\",\n      \"cap:admin.executive_support.commitment_tracking#f1\"\n    ],\n    \"to\": \"marco@altavia.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Wait until 2026-08-09 (three days from now) to see if Marco replies on his own. If he does not, send a follow-up then. This gives him time to respond to the introduction without a prompt, but risks losing momentum.\",\n  \"wait_or_stop\": \"Wait until 2026-08-09 if you choose the alternative. Stop if Marco replies with a polite pass or if Altavia is not a fit for your strategy. Do not wait more than one week from the introduction to follow up; after that, the window closes.\",\n  \"done_when\": \"Done when Marco replies with interest or a specific next step, or when he politely declines and you have a clear signal that Altavia is not a fit.\",\n  \"draft\": \"Hi Marco, thanks for the intro via Introly. I saw that Altavia backs B2B software \u2014 Nimbus Labs is building an AI chief of staff for founders, which helps them manage their time and decisions. I'd love to show you what we're building and hear if it's something Altavia would consider. Are you free for a quick call next week? Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "e7c07fa4fb2cddd6995d89afab62e1457a2b5bbc1bb97190eba2350e718a75fe": {
+  "framed": true,
+  "input_tokens": 7336,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3296,
+  "parsed": {
+   "alternative": "If a tailored deck cannot be prepared by 2026-08-12, send a brief reply to Marco acknowledging his request, sharing a high-level overview of how Nimbus thinks about investor pipelines, and proposing a call to discuss the deck in detail. This keeps the thread warm while buying time to prepare the full deck.",
+   "appraisal": {
+    "reasons": [
+     "Altavia Partners backs B2B software, which is aligned with Nimbus Labs' product, so this is a qualified prospect",
+     "The founder is actively raising a seed round, and investor prospects are a core part of that work",
+     "A deck request is a low-cost ask that can be answered quickly; the cost of not answering is the loss of momentum and the prospect",
+     "A late reply can be recovered with a good deck and a clear next step, so the move is reversible",
+     "The file has been quiet for less than a day, so there is still time to act before Marco's interest cools"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The deck is sent to Marco, Marco receives it, and Marco either schedules a call or asks a follow-up question within three days.",
+   "draft": "Hi Marco, Thanks for the intro and for your interest. I'd like to walk you through how Nimbus thinks about investor pipelines\u2014it's core to what we're building. I'm attaching a short deck that covers our approach. I'm free for a call on [propose two times] if you'd like to dig in. Looking forward to it. Arjun",
+   "expected_vs_actual": {
+    "actual": "The introduction occurred on 2026-08-06; Marco asked for a deck on 2026-08-11; no deck has been sent as of 2026-08-11 18:00 UTC",
+    "expected": "In a typical investor intro, the introduction is followed by a call or a request for materials; if materials are requested, they should be sent within one business day to preserve momentum",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Marco Ruiz at Altavia Partners introduced by Introly on 2026-08-06 asked for a short deck before setting up a call",
+     "evidence": [
+      "evt_#1",
+      "evt_#2"
+     ],
+     "quote": "I'd like to understand how Nimbus handles investor pipelines. Could you send a short deck before we set up a call?"
+    },
+    {
+     "claim": "The file shows no reply from us to Marco's request as of 2026-08-11 18:00 UTC",
+     "evidence": [
+      "none:we_wrote",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: Marco has asked for something and is waiting",
+     "evidence": [
+      "file:whose_move",
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.36 days, within the normal gap of 5.08 days that closed before",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Altavia Partners backs B2B software, which aligns with Nimbus Labs' product category",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Marco Ruiz, who backs B2B software at Altavia Partners"
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for it",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is categorized as an intro, introduced by Introly",
+     "evidence": [
+      "file:role",
+      "file:introduced_by"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A qualified investor prospect has asked for a deck and is waiting; the ball is in our court, and a timely response is a test of how the founder operates",
+    "rivals": [
+     "A soft introduction that has not yet moved to serious interest; Marco is exploring and may not be a real prospect",
+     "An administrative task that has been deprioritized because it is not urgent; the file is dormant until Marco follows up"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The deck is sent within one business day and Marco replies with a meeting time within three days",
+     "proposition": "Marco is a serious prospect who will move to a call if the deck is strong and arrives soon"
+    },
+    {
+     "needs": "No reply from Marco after a deck is sent, or a reply that delays the call indefinitely",
+     "proposition": "Marco is testing responsiveness and will deprioritize Nimbus if the deck does not arrive within a week"
+    },
+    {
+     "needs": "Marco does not reply to the deck, or replies with a polite decline after reviewing it",
+     "proposition": "The deck request is a soft pass and Marco is unlikely to move forward regardless of the deck's quality"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#1"
+     ],
+     "claim": "This is a live investor prospect, not merely an introduction, because Marco has moved from introduction to a specific ask about the company's investor pipeline handling"
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The request for a deck is a qualification gate: Marco wants to see how Nimbus thinks about investor pipelines before committing time to a call"
+    },
+    {
+     "based_on": [
+      "file:first_touch",
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "claim": "Five days have passed since the introduction without a response, which is within normal gaps but long enough that Marco may interpret silence as low priority or unavailability"
+    },
+    {
+     "based_on": [
+      "brief:cbl_#2",
+      "fact:5"
+     ],
+     "claim": "The file should be reclassified as investor work, not admin intro work, because the brief lists raising the seed round as an active goal and Marco is a potential investor"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-12",
+    "for_whom": "Marco Ruiz at Altavia Partners",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "own:3",
+     "cap:admin.executive_support.commitment_tracking#f1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "marco@altavia.test",
+    "what": "send a tailored deck to Marco that leads with how Nimbus handles investor pipelines, and propose a call time",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A deck request from an investor should be answered within one business day, ideally the same day, to preserve the person's attention and signal that you move fast",
+     "kind": "practice",
+     "why": "Investors evaluate founders partly on responsiveness; a slow reply to a simple ask reads as a signal about how the founder operates"
+    },
+    {
+     "claim": "Investor intros that reach the stage of a specific ask have moved past the introduction phase and should be tracked as live prospects, not as admin work",
+     "kind": "base_rate",
+     "why": "The introduction is complete once both parties have engaged; the work now is to convert interest into a meeting"
+    },
+    {
+     "claim": "A deck sent in response to an investor's ask should be tailored to the ask, not generic; Marco asked specifically about investor pipeline handling, so the deck should lead with that",
+     "kind": "practice",
+     "why": "A generic deck reads as a form letter and signals that you did not listen to what the investor asked for"
+    },
+    {
+     "claim": "Silence on a deck request is often not disinterest but rather the founder's competing priorities; the investor is waiting, not gone",
+     "kind": "counter_pattern",
+     "why": "Investors expect founders to be busy; a late reply is forgiven if it comes with a good deck and a clear next step"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "When an investor asks for a deck before a call, the ask is a commitment to review it if sent; delay in sending it signals either disorganization or lack of interest",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "Investor intros that move to a specific ask have a higher conversion rate than those that remain at introduction stage",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "own:3"
+     ],
+     "claim": "A five-day gap on a deck request is not yet overdue by venture standards, but it is long enough to lose momentum",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#2",
+     "brief:cbl_#2",
+     "evt_#1"
+    ],
+    "kind": "investor",
+    "why": "Marco Ruiz is explicitly described as someone who backs B2B software, the file is part of the seed round raising work, and Marco has moved from introduction to a specific ask about the company's investor pipeline handling, which is a qualifier for investor conversations"
+   },
+   "scenarios": {
+    "act": "A tailored deck is sent to Marco within one business day. Marco reviews it and either schedules a call or asks follow-up questions. The file moves to a call stage or a deeper conversation.",
+    "best": "The deck is strong and directly addresses Marco's question about investor pipeline handling. Marco schedules a call within three days. The call goes well and Marco expresses interest in a follow-on meeting or a term sheet discussion.",
+    "do_nothing": "Marco's interest cools over the next week; he may follow up once more, but if no deck arrives, he will move on to other prospects. The file drifts into dormancy and the opportunity is lost.",
+    "signals_to_watch": [
+     "Marco's reply time to the deck: if he replies within two days, he is engaged; if he does not reply within a week, he has moved on",
+     "The tone of Marco's reply: if he asks follow-up questions, he is interested; if he thanks you and declines, he is not",
+     "Whether Marco proposes a call time or asks for one: if he proposes, he is serious; if he asks, he is testing"
+    ],
+    "worst": "The deck is generic or does not address Marco's specific question. Marco replies politely but does not schedule a call, or does not reply at all. The opportunity is lost and Altavia Partners is no longer a prospect."
+   },
+   "unknowns": [
+    {
+     "question": "Does Nimbus have a deck ready to send, or does one need to be created or updated?",
+     "relevance": "If a deck exists, the move is to send it today; if not, the move is to create one, which changes the timeline and the urgency"
+    },
+    {
+     "question": "What is Marco's typical response time, and how does he usually move from a deck request to a call?",
+     "relevance": "This would indicate whether five days of silence from us is normal or whether Marco is already losing interest"
+    },
+    {
+     "question": "Is Altavia Partners actively investing in AI tools for founders, or is Marco exploring the space?",
+     "relevance": "This would indicate whether Marco is a qualified investor or a curious contact, which changes the priority of the response"
+    },
+    {
+     "question": "What is the founder's current capacity to prepare a tailored deck and follow up on investor calls?",
+     "relevance": "If capacity is constrained, the move might be to delegate or to set a realistic timeline; if capacity is available, the move is immediate"
+    }
+   ],
+   "wait_or_stop": "Wait if the deck is not ready by end of day 2026-08-12; in that case, send the brief reply instead. Stop if Marco does not reply to the deck within seven days; at that point, the prospect has cooled and should be deprioritized unless Marco reaches out again."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Marco Ruiz at Altavia Partners introduced by Introly on 2026-08-06 asked for a short deck before setting up a call\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"evt_#2\"\n      ],\n      \"quote\": \"I'd like to understand how Nimbus handles investor pipelines. Could you send a short deck before we set up a call?\"\n    },\n    {\n      \"claim\": \"The file shows no reply from us to Marco's request as of 2026-08-11 18:00 UTC\",\n      \"evidence\": [\n        \"none:we_wrote\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: Marco has asked for something and is waiting\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.36 days, within the normal gap of 5.08 days that closed before\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Altavia Partners backs B2B software, which aligns with Nimbus Labs' product category\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Marco Ruiz, who backs B2B software at Altavia Partners\"\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for it\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is categorized as an intro, introduced by Introly\",\n      \"evidence\": [\n        \"file:role\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a live investor prospect, not merely an introduction, because Marco has moved from introduction to a specific ask about the company's investor pipeline handling\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The request for a deck is a qualification gate: Marco wants to see how Nimbus thinks about investor pipelines before committing time to a call\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"Five days have passed since the introduction without a response, which is within normal gaps but long enough that Marco may interpret silence as low priority or unavailability\",\n      \"based_on\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ]\n    },\n    {\n      \"claim\": \"The file should be reclassified as investor work, not admin intro work, because the brief lists raising the seed round as an active goal and Marco is a potential investor\",\n      \"based_on\": [\n        \"brief:cbl_#2\",\n        \"fact:5\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an investor asks for a deck before a call, the ask is a commitment to review it if sent; delay in sending it signals either disorganization or lack of interest\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investor intros that move to a specific ask have a higher conversion rate than those that remain at introduction stage\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A five-day gap on a deck request is not yet overdue by venture standards, but it is long enough to lose momentum\",\n      \"based_on\": [\n        \"own:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A deck request from an investor should be answered within one business day, ideally the same day, to preserve the person's attention and signal that you move fast\",\n      \"why\": \"Investors evaluate founders partly on responsiveness; a slow reply to a simple ask reads as a signal about how the founder operates\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investor intros that reach the stage of a specific ask have moved past the introduction phase and should be tracked as live prospects, not as admin work\",\n      \"why\": \"The introduction is complete once both parties have engaged; the work now is to convert interest into a meeting\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A deck sent in response to an investor's ask should be tailored to the ask, not generic; Marco asked specifically about investor pipeline handling, so the deck should lead with that\",\n      \"why\": \"A generic deck reads as a form letter and signals that you did not listen to what the investor asked for\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence on a deck request is often not disinterest but rather the founder's competing priorities; the investor is waiting, not gone\",\n      \"why\": \"Investors expect founders to be busy; a late reply is forgiven if it comes with a good deck and a clear next step\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Marco is a serious prospect who will move to a call if the deck is strong and arrives soon\",\n      \"needs\": \"The deck is sent within one business day and Marco replies with a meeting time within three days\"\n    },\n    {\n      \"proposition\": \"Marco is testing responsiveness and will deprioritize Nimbus if the deck does not arrive within a week\",\n      \"needs\": \"No reply from Marco after a deck is sent, or a reply that delays the call indefinitely\"\n    },\n    {\n      \"proposition\": \"The deck request is a soft pass and Marco is unlikely to move forward regardless of the deck's quality\",\n      \"needs\": \"Marco does not reply to the deck, or replies with a polite decline after reviewing it\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does Nimbus have a deck ready to send, or does one need to be created or updated?\",\n      \"relevance\": \"If a deck exists, the move is to send it today; if not, the move is to create one, which changes the timeline and the urgency\"\n    },\n    {\n      \"question\": \"What is Marco's typical response time, and how does he usually move from a deck request to a call?\",\n      \"relevance\": \"This would indicate whether five days of silence from us is normal or whether Marco is already losing interest\"\n    },\n    {\n      \"question\": \"Is Altavia Partners actively investing in AI tools for founders, or is Marco exploring the space?\",\n      \"relevance\": \"This would indicate whether Marco is a qualified investor or a curious contact, which changes the priority of the response\"\n    },\n    {\n      \"question\": \"What is the founder's current capacity to prepare a tailored deck and follow up on investor calls?\",\n      \"relevance\": \"If capacity is constrained, the move might be to delegate or to set a realistic timeline; if capacity is available, the move is immediate\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A qualified investor prospect has asked for a deck and is waiting; the ball is in our court, and a timely response is a test of how the founder operates\",\n    \"rivals\": [\n      \"A soft introduction that has not yet moved to serious interest; Marco is exploring and may not be a real prospect\",\n      \"An administrative task that has been deprioritized because it is not urgent; the file is dormant until Marco follows up\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Marco Ruiz is explicitly described as someone who backs B2B software, the file is part of the seed round raising work, and Marco has moved from introduction to a specific ask about the company's investor pipeline handling, which is a qualifier for investor conversations\",\n    \"evidence\": [\n      \"evt_#2\",\n      \"brief:cbl_#2\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"In a typical investor intro, the introduction is followed by a call or a request for materials; if materials are requested, they should be sent within one business day to preserve momentum\",\n    \"actual\": \"The introduction occurred on 2026-08-06; Marco asked for a deck on 2026-08-11; no deck has been sent as of 2026-08-11 18:00 UTC\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Marco's interest cools over the next week; he may follow up once more, but if no deck arrives, he will move on to other prospects. The file drifts into dormancy and the opportunity is lost.\",\n    \"act\": \"A tailored deck is sent to Marco within one business day. Marco reviews it and either schedules a call or asks follow-up questions. The file moves to a call stage or a deeper conversation.\",\n    \"best\": \"The deck is strong and directly addresses Marco's question about investor pipeline handling. Marco schedules a call within three days. The call goes well and Marco expresses interest in a follow-on meeting or a term sheet discussion.\",\n    \"worst\": \"The deck is generic or does not address Marco's specific question. Marco replies politely but does not schedule a call, or does not reply at all. The opportunity is lost and Altavia Partners is no longer a prospect.\",\n    \"signals_to_watch\": [\n      \"Marco's reply time to the deck: if he replies within two days, he is engaged; if he does not reply within a week, he has moved on\",\n      \"The tone of Marco's reply: if he asks follow-up questions, he is interested; if he thanks you and declines, he is not\",\n      \"Whether Marco proposes a call time or asks for one: if he proposes, he is serious; if he asks, he is testing\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Altavia Partners backs B2B software, which is aligned with Nimbus Labs' product, so this is a qualified prospect\",\n      \"The founder is actively raising a seed round, and investor prospects are a core part of that work\",\n      \"A deck request is a low-cost ask that can be answered quickly; the cost of not answering is the loss of momentum and the prospect\",\n      \"A late reply can be recovered with a good deck and a clear next step, so the move is reversible\",\n      \"The file has been quiet for less than a day, so there is still time to act before Marco's interest cools\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a tailored deck to Marco that leads with how Nimbus handles investor pipelines, and propose a call time\",\n    \"for_whom\": \"Marco Ruiz at Altavia Partners\",\n    \"by_when\": \"2026-08-12\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"own:3\",\n      \"cap:admin.executive_support.commitment_tracking#f1\"\n    ],\n    \"to\": \"marco@altavia.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If a tailored deck cannot be prepared by 2026-08-12, send a brief reply to Marco acknowledging his request, sharing a high-level overview of how Nimbus thinks about investor pipelines, and proposing a call to discuss the deck in detail. This keeps the thread warm while buying time to prepare the full deck.\",\n  \"wait_or_stop\": \"Wait if the deck is not ready by end of day 2026-08-12; in that case, send the brief reply instead. Stop if Marco does not reply to the deck within seven days; at that point, the prospect has cooled and should be deprioritized unless Marco reaches out again.\",\n  \"done_when\": \"The deck is sent to Marco, Marco receives it, and Marco either schedules a call or asks a follow-up question within three days.\",\n  \"draft\": \"Hi Marco, Thanks for the intro and for your interest. I'd like to walk you through how Nimbus thinks about investor pipelines\u2014it's core to what we're building. I'm attaching a short deck that covers our approach. I'm free for a call on [propose two times] if you'd like to dig in. Looking forward to it. Arjun\"\n}",
+  "site": "expert"
+ },
+ "f884f1b932e5f153928dac5b361cb4287a91f5f069d85f007e26fcd57c89c0d6": {
+  "framed": true,
+  "input_tokens": 7547,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3091,
+  "parsed": {
+   "alternative": "If no investor-ready deck exists, send a brief message to Marco acknowledging his request, offering to schedule a call to discuss his specific interests, and proposing a time. This buys time to prepare a better deck and signals responsiveness. However, this is weaker than sending the deck itself, because it delays the filter and risks Marco losing interest.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because Altavia is one of many investors and partners in motion; a single relationship does not determine the outcome of the seed round, but a strong introduction from Introly is valuable and worth pursuing.",
+     "The urgency is medium because Marco has asked for something concrete and is waiting, but the gap is still short and no deadline was named; however, delay beyond a few business days will signal disorganization.",
+     "A wrong move is reversible: a weak deck can be followed by a better one, or a delayed response can be explained. However, the cost of delay or a poor deck is the loss of this relationship and a small damage to Introly's credibility."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The deck is sent to Marco, and he either schedules a call, asks a follow-up question, or goes silent for five business days. Any of these outcomes closes the open ask and moves the file to the next stage.",
+   "draft": "Hi Marco, thanks for the introduction from Introly. I'd be happy to share how Nimbus handles investor pipelines\u2014it's core to what we're building. I'm attaching a short deck that walks through the product and how founders use it to manage their investor relationships. Let me know if you'd like to dig into any of it on a call. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The introduction has moved to a concrete ask: a deck before a call. We have not yet responded.",
+    "expected": "No playbook exists for this file. From the brief's goals, an introduction is expected to move toward one of: investor outreach, program application, hiring, or partnership. Marco's request for a deck suggests investor or partnership evaluation.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Marco Ruiz at Altavia Partners introduced by Introly asked for a short deck before setting up a call.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "I'd like to understand how Nimbus handles investor pipelines. Could you send a short deck before we set up a call?"
+    },
+    {
+     "claim": "The introduction from Introly described Nimbus Labs as building an AI chief of staff for founders.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders"
+    },
+    {
+     "claim": "The file has been quiet for 0.36 days since the last message on 2026-08-11 09:20 UTC.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we have an open ask to respond to Marco's request for a deck.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for Altavia Partners.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "We have not yet written to Altavia Partners in this file.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction has moved to a concrete ask: Marco wants a deck before committing to a call. The ball is in our court. This is a live account administration situation where the next move determines whether the relationship advances.",
+    "rivals": [
+     "Marco is running a standard information-gathering process and may not be a serious prospect; the deck is a filter that will likely end the conversation.",
+     "Marco is testing our responsiveness and operational speed; the deck is secondary to how fast and professionally we reply.",
+     "Altavia is not an investor but a potential design partner or vendor, and Marco's question about investor pipelines is exploratory rather than evaluative."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from Marco or from Introly about Altavia's investment thesis or partnership model.",
+     "proposition": "Marco is evaluating Nimbus as a potential investor or strategic partner."
+    },
+    {
+     "needs": "Context from Introly about why Marco was introduced to Arjun, or clarification in the deck conversation.",
+     "proposition": "Marco is gathering information for a different purpose\u2014research, due diligence on a competitor, or a referral."
+    },
+    {
+     "needs": "Observation of whether Marco follows up after receiving the deck, or feedback from Introly on his typical pattern.",
+     "proposition": "The deck Marco wants is a standard filter he applies to all introductions."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "cap:admin.executive_support.commitment_tracking#q"
+     ],
+     "claim": "Marco's request for a deck is a conditional commitment to a call, not a promise of one."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "sit:sit_#1"
+     ],
+     "claim": "The file's situation is live account administration: an introduction has moved to a concrete next step."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "brief:cbl_#27"
+     ],
+     "claim": "The work is not yet named in the brief, but Marco's interest in how Nimbus handles investor pipelines suggests he may be evaluating us as a potential investor or partner."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-12",
+    "for_whom": "Marco Ruiz at Altavia Partners",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:4",
+     "inference:2"
+    ],
+    "to": "marco@altavia.test",
+    "what": "send a deck tailored to Marco's question about how Nimbus handles investor pipelines, positioning the product as a tool for founder operations and investor relations",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A deck sent within one business day of a request keeps the thread warm and signals operational competence.",
+     "kind": "practice",
+     "why": "Founders who move fast on asks from potential investors or partners establish credibility; delay reads as either disorganization or low priority."
+    },
+    {
+     "claim": "When a counterparty asks for a deck before a call, the deck is the real ask; the call is contingent on the deck's quality.",
+     "kind": "base_rate",
+     "why": "The request is a gate, not a courtesy. Sending a weak deck or a generic one closes the door more surely than sending nothing."
+    },
+    {
+     "claim": "Chasing a counterparty who has asked for something from us is the error that damages relationships most reliably.",
+     "kind": "counter_pattern",
+     "why": "It reads as pressure or incompetence. The rule holds even when the ask is overdue."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:1",
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "When an introducer connects two parties, the first substantive message from the counterparty usually names a concrete ask or condition.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "cap:admin.executive_support.commitment_tracking#q"
+     ],
+     "claim": "A request for materials before a call is a filter: the counterparty is deciding whether to invest time in a conversation.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "num:usual_gap",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A five-day gap between introduction and follow-up is within normal bounds for a first outreach; it does not signal disinterest.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "file:introduced_by",
+     "evt_#2"
+    ],
+    "kind": "intro",
+    "why": "The file is an introduction made by Introly. However, Marco's question about investor pipelines and his request for a deck suggest the work may evolve into investor outreach or partnership development. The brief does not name a kind for this file, so the kind remains intro until the relationship clarifies."
+   },
+   "scenarios": {
+    "act": "We send a deck within one business day. Marco reviews it. If it resonates, he schedules a call. If it does not, he declines politely or goes silent. Either way, we have moved the relationship forward and demonstrated competence.",
+    "best": "The deck is strong and specific to Altavia's interests. Marco schedules a call within two days. The call leads to a term sheet, a partnership, or a warm referral to another investor.",
+    "do_nothing": "Marco's message sits unanswered. After a week, Marco may assume we are not interested or not organized. The introduction cools. Altavia moves on. The relationship ends without a call.",
+    "signals_to_watch": [
+     "Whether Marco responds to the deck within three business days.",
+     "Whether his response is a scheduled call, a follow-up question, or silence.",
+     "Whether Introly provides any feedback on Marco's reaction or Altavia's interest level.",
+     "Whether Marco's question about investor pipelines is answered in the deck conversation or remains open."
+    ],
+    "worst": "The deck is generic or poorly tailored. Marco reviews it, finds it uncompelling, and does not respond. The relationship ends. Introly's credibility with Marco is slightly damaged."
+   },
+   "unknowns": [
+    {
+     "question": "What is Altavia Partners' investment stage, thesis, and typical check size?",
+     "relevance": "This determines whether Altavia is a fit for Nimbus's seed round and how much effort to invest in the relationship."
+    },
+    {
+     "question": "What does Marco mean by 'how Nimbus handles investor pipelines'\u2014is he asking about our product, our process, or our own fundraising?",
+     "relevance": "The deck's focus and depth depend on what Marco actually wants to understand."
+    },
+    {
+     "question": "Has Introly provided any context about Marco's background, Altavia's stage, or why this introduction was made?",
+     "relevance": "This would clarify whether Marco is a warm lead or a cold introduction, and how much time to spend on the deck."
+    },
+    {
+     "question": "What deck does Nimbus currently have, and is it investor-ready?",
+     "relevance": "If no deck exists or the existing one is not polished, the timeline for response changes."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The ask is clear and the gap is short. Send the deck by end of business tomorrow. If Marco does not respond within five business days of receiving the deck, send one follow-up message asking if he has questions or if a call would be useful. If he does not respond to that, close the file and move on; Altavia is not a live prospect."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Marco Ruiz at Altavia Partners introduced by Introly asked for a short deck before setting up a call.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"I'd like to understand how Nimbus handles investor pipelines. Could you send a short deck before we set up a call?\"\n    },\n    {\n      \"claim\": \"The introduction from Introly described Nimbus Labs as building an AI chief of staff for founders.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.36 days since the last message on 2026-08-11 09:20 UTC.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we have an open ask to respond to Marco's request for a deck.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for Altavia Partners.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"We have not yet written to Altavia Partners in this file.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Marco's request for a deck is a conditional commitment to a call, not a promise of one.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"cap:admin.executive_support.commitment_tracking#q\"\n      ]\n    },\n    {\n      \"claim\": \"The file's situation is live account administration: an introduction has moved to a concrete next step.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"sit:sit_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The work is not yet named in the brief, but Marco's interest in how Nimbus handles investor pipelines suggests he may be evaluating us as a potential investor or partner.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"brief:cbl_#27\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an introducer connects two parties, the first substantive message from the counterparty usually names a concrete ask or condition.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A request for materials before a call is a filter: the counterparty is deciding whether to invest time in a conversation.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"cap:admin.executive_support.commitment_tracking#q\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A five-day gap between introduction and follow-up is within normal bounds for a first outreach; it does not signal disinterest.\",\n      \"based_on\": [\n        \"num:usual_gap\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A deck sent within one business day of a request keeps the thread warm and signals operational competence.\",\n      \"why\": \"Founders who move fast on asks from potential investors or partners establish credibility; delay reads as either disorganization or low priority.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a counterparty asks for a deck before a call, the deck is the real ask; the call is contingent on the deck's quality.\",\n      \"why\": \"The request is a gate, not a courtesy. Sending a weak deck or a generic one closes the door more surely than sending nothing.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing a counterparty who has asked for something from us is the error that damages relationships most reliably.\",\n      \"why\": \"It reads as pressure or incompetence. The rule holds even when the ask is overdue.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Marco is evaluating Nimbus as a potential investor or strategic partner.\",\n      \"needs\": \"Confirmation from Marco or from Introly about Altavia's investment thesis or partnership model.\"\n    },\n    {\n      \"proposition\": \"Marco is gathering information for a different purpose\u2014research, due diligence on a competitor, or a referral.\",\n      \"needs\": \"Context from Introly about why Marco was introduced to Arjun, or clarification in the deck conversation.\"\n    },\n    {\n      \"proposition\": \"The deck Marco wants is a standard filter he applies to all introductions.\",\n      \"needs\": \"Observation of whether Marco follows up after receiving the deck, or feedback from Introly on his typical pattern.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Altavia Partners' investment stage, thesis, and typical check size?\",\n      \"relevance\": \"This determines whether Altavia is a fit for Nimbus's seed round and how much effort to invest in the relationship.\"\n    },\n    {\n      \"question\": \"What does Marco mean by 'how Nimbus handles investor pipelines'\u2014is he asking about our product, our process, or our own fundraising?\",\n      \"relevance\": \"The deck's focus and depth depend on what Marco actually wants to understand.\"\n    },\n    {\n      \"question\": \"Has Introly provided any context about Marco's background, Altavia's stage, or why this introduction was made?\",\n      \"relevance\": \"This would clarify whether Marco is a warm lead or a cold introduction, and how much time to spend on the deck.\"\n    },\n    {\n      \"question\": \"What deck does Nimbus currently have, and is it investor-ready?\",\n      \"relevance\": \"If no deck exists or the existing one is not polished, the timeline for response changes.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction has moved to a concrete ask: Marco wants a deck before committing to a call. The ball is in our court. This is a live account administration situation where the next move determines whether the relationship advances.\",\n    \"rivals\": [\n      \"Marco is running a standard information-gathering process and may not be a serious prospect; the deck is a filter that will likely end the conversation.\",\n      \"Marco is testing our responsiveness and operational speed; the deck is secondary to how fast and professionally we reply.\",\n      \"Altavia is not an investor but a potential design partner or vendor, and Marco's question about investor pipelines is exploratory rather than evaluative.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is an introduction made by Introly. However, Marco's question about investor pipelines and his request for a deck suggest the work may evolve into investor outreach or partnership development. The brief does not name a kind for this file, so the kind remains intro until the relationship clarifies.\",\n    \"evidence\": [\n      \"file:role\",\n      \"file:introduced_by\",\n      \"evt_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook exists for this file. From the brief's goals, an introduction is expected to move toward one of: investor outreach, program application, hiring, or partnership. Marco's request for a deck suggests investor or partnership evaluation.\",\n    \"actual\": \"The introduction has moved to a concrete ask: a deck before a call. We have not yet responded.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Marco's message sits unanswered. After a week, Marco may assume we are not interested or not organized. The introduction cools. Altavia moves on. The relationship ends without a call.\",\n    \"act\": \"We send a deck within one business day. Marco reviews it. If it resonates, he schedules a call. If it does not, he declines politely or goes silent. Either way, we have moved the relationship forward and demonstrated competence.\",\n    \"best\": \"The deck is strong and specific to Altavia's interests. Marco schedules a call within two days. The call leads to a term sheet, a partnership, or a warm referral to another investor.\",\n    \"worst\": \"The deck is generic or poorly tailored. Marco reviews it, finds it uncompelling, and does not respond. The relationship ends. Introly's credibility with Marco is slightly damaged.\",\n    \"signals_to_watch\": [\n      \"Whether Marco responds to the deck within three business days.\",\n      \"Whether his response is a scheduled call, a follow-up question, or silence.\",\n      \"Whether Introly provides any feedback on Marco's reaction or Altavia's interest level.\",\n      \"Whether Marco's question about investor pipelines is answered in the deck conversation or remains open.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because Altavia is one of many investors and partners in motion; a single relationship does not determine the outcome of the seed round, but a strong introduction from Introly is valuable and worth pursuing.\",\n      \"The urgency is medium because Marco has asked for something concrete and is waiting, but the gap is still short and no deadline was named; however, delay beyond a few business days will signal disorganization.\",\n      \"A wrong move is reversible: a weak deck can be followed by a better one, or a delayed response can be explained. However, the cost of delay or a poor deck is the loss of this relationship and a small damage to Introly's credibility.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a deck tailored to Marco's question about how Nimbus handles investor pipelines, positioning the product as a tool for founder operations and investor relations\",\n    \"for_whom\": \"Marco Ruiz at Altavia Partners\",\n    \"by_when\": \"2026-08-12\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:4\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"marco@altavia.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If no investor-ready deck exists, send a brief message to Marco acknowledging his request, offering to schedule a call to discuss his specific interests, and proposing a time. This buys time to prepare a better deck and signals responsiveness. However, this is weaker than sending the deck itself, because it delays the filter and risks Marco losing interest.\",\n  \"wait_or_stop\": \"Do not wait. The ask is clear and the gap is short. Send the deck by end of business tomorrow. If Marco does not respond within five business days of receiving the deck, send one follow-up message asking if he has questions or if a call would be useful. If he does not respond to that, close the file and move on; Altavia is not a live prospect.\",\n  \"done_when\": \"The deck is sent to Marco, and he either schedules a call, asks a follow-up question, or goes silent for five business days. Any of these outcomes closes the open ask and moves the file to the next stage.\",\n  \"draft\": \"Hi Marco, thanks for the introduction from Introly. I'd be happy to share how Nimbus handles investor pipelines\u2014it's core to what we're building. I'm attaching a short deck that walks through the product and how founders use it to manage their investor relationships. Let me know if you'd like to dig into any of it on a call. Best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

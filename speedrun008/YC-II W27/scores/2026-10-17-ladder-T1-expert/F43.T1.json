@@ -1,0 +1,251 @@
+{
+ "ffd100820aaa9d856d61b6f51891deb69b03e1b948505fc2b364d82ae6378030": {
+  "framed": true,
+  "input_tokens": 8143,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3659,
+  "parsed": {
+   "alternative": "Wait until 2026-08-18 (one week from the outreach) for a reply from Northwind. If no reply comes, close the file or move it to a conditional deferral. If a reply comes, assess the stage and the next move. This approach avoids a clarification conversation and lets the file's status emerge from Northwind's reply.",
+   "appraisal": {
+    "reasons": [
+     "The file is a single cold outreach with no prior relationship, not a named target in the brief, and no meeting or commitment yet.",
+     "Silence before a first meeting is the default and carries no urgency.",
+     "The founder can close or defer the file at any time without cost, and can reopen it if Northwind replies or if circumstances change.",
+     "The file's impact on the round is minimal if it is a prospecting touch, and only material if it is a named target that should be in the brief."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "The founder has clarified whether Northwind is a named target or a prospecting touch, and has decided on the next move: add it to the brief and plan a warm introduction or a follow-up, or remove it from the active set and focus on the named targets.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "A single outreach sent less than a day ago, with no reply, and no next step named.",
+    "expected": "No playbook is named for this file in the brief, so no stage is established. If this is a live investor relationship, the expected stage is 'introduction' \u2014 a first outreach with no reply yet. If this is a prospecting touch, no stage applies.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You wrote to Ira at Northwind on 2026-08-11 at 05:00 UTC asking them to review your deck this week.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Kitebird is raising a seed round to bring AI scheduling to small clinics - 14 are live. Would you take a look at our deck this week?"
+    },
+    {
+     "claim": "Northwind is not named in the brief as a target investor, program, partner, or connector.",
+     "evidence": [
+      "brief:company",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply has been received from Northwind since the outreach on 2026-08-11 at 05:00 UTC, and the mailbox was read through 2026-08-11 at 12:00 UTC.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is 0.29 days old and has been quiet for 0.29 days as of the dossier timestamp.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise, deadline, or next step was named in the outreach.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Ira's reply time and your reply time to Ira have not been measured.",
+     "evidence": [
+      "num:their_reply_time:ira@northwind.test",
+      "num:your_reply_time:ira@northwind.test"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A cold or weakly-sourced prospecting outreach to an investor not in the brief's named set, sent less than a day ago, with no reply yet \u2014 which is the default at this stage and carries no signal.",
+    "rivals": [
+     "A warm introduction to a named target investor that is not yet recorded in the brief, where silence before a first meeting is normal.",
+     "A live investor relationship that is stalled because the outreach did not carry enough traction or fit to move them.",
+     "A prospecting touch that should not be tracked as a live investor relationship at all, and should be removed from the active set to avoid distraction from the parallel process."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder that Northwind was intentionally added to the seed wave, or that it is a priority target.",
+     "proposition": "Northwind is a target investor that should be in the brief's named set."
+    },
+    {
+     "needs": "Confirmation from the founder that this outreach was part of a broader prospecting campaign, or that it should be removed from the active set.",
+     "proposition": "Northwind is a prospecting touch that should not be tracked as a live investor relationship."
+    },
+    {
+     "needs": "A note from the founder on how Northwind was sourced and who introduced it.",
+     "proposition": "The outreach was sourced through a connector or a warm introduction that is not recorded in the file."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "brief:company",
+      "file:role",
+      "brief:cbl_#27"
+     ],
+     "claim": "The outreach was a cold or weakly-sourced introduction, not a warm connector introduction, because Northwind does not appear in the brief's named investors, programs, or connectors."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "The move is ours: you asked for a reply by a named time ('this week'), and the time has not yet passed, so silence at this stage is the default, not a signal."
+    },
+    {
+     "based_on": [
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9",
+      "brief:cbl_#10",
+      "brief:cbl_#11",
+      "brief:cbl_#12",
+      "file:role"
+     ],
+     "claim": "This file should not be in the brief's investor set because it was not part of the seed wave and does not appear in the named targets."
+    },
+    {
+     "based_on": [
+      "file:kind",
+      "file:domains",
+      "file:role"
+     ],
+     "claim": "The file's kind of work is not named by the brief, but the domain is fundraising and the counterparty is a company, so it is an investor outreach."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-12",
+    "for_whom": "the founder",
+    "guided_by": [
+     "cap:founder_office.fundraising.investor_relations#f6",
+     "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:2",
+     "inference:3",
+     "unknown:1",
+     "unknown:2"
+    ],
+    "to": null,
+    "what": "clarify with the founder whether Northwind is a named target investor in the seed round, or a prospecting touch; if it is a named target, confirm how it was sourced and whether a warm introduction is available; if it is prospecting, decide whether to track it as a live relationship or remove it from the active set.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A cold outreach to an investor with no prior relationship and no connector introduction has a reply rate of roughly one in ten to one in twenty, and silence in the first week is not a signal.",
+     "kind": "practice",
+     "why": "Investors see far more companies than they can fund and lose nothing by dropping one; a founder's job is to run the round in parallel, not to wait on any single cold path."
+    },
+    {
+     "claim": "An outreach that asks for a review 'this week' without naming a specific day or a follow-up date is a soft ask and does not create a deadline.",
+     "kind": "base_rate",
+     "why": "Vague timing language ('this week', 'soon') is not a commitment and does not bind the recipient; a founder should name a specific date or a follow-up trigger."
+    },
+    {
+     "claim": "A file that is not in the brief's named set should be reviewed for whether it belongs there at all, or whether it is a distraction from the parallel process.",
+     "kind": "practice",
+     "why": "The brief names the investors, programs, and partners the founder is running; a file outside that set is either a new opportunity that should be added to the brief, or a cold path that should not be tracked as a live investor relationship."
+    },
+    {
+     "claim": "A single cold outreach to an investor who has not been sourced or warmed is not a live investor relationship; it is a prospecting touch.",
+     "kind": "counter_pattern",
+     "why": "A live relationship requires a prior connection, a warm introduction, or a meeting scheduled; a cold email is a prospecting activity, not a relationship, and should not be tracked as one."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Before a first meeting, investor silence is the default and carries no signal.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_wave_gone_silent"
+     ],
+     "claim": "A wave gone silent everywhere is usually about the ask, not the investors \u2014 a check on whether the first email carried the traction and fit that would move them.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "Mistaking activity for progress: a pleasant outreach email is not progress; progress is a meeting booked, diligence opened, or an offer with terms.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f6"
+     ],
+     "claim": "Letting the wrong parties into the investor set \u2014 a company not sourced through a connector, not in the named targets, not part of the wave \u2014 costs attention every time the set is reviewed.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "evt_#1"
+    ],
+    "kind": "investor",
+    "why": "The domain is fundraising, the counterparty is a company, and the outreach asks for a deck review for a seed round."
+   },
+   "scenarios": {
+    "act": "The founder clarifies whether Northwind is a named target or a prospecting touch. If it is a named target, the founder adds it to the brief and decides whether to follow up with a warm introduction or a second touch. If it is prospecting, the founder removes it from the active set and focuses on the parallel process with named targets.",
+    "best": "Northwind replies within a week with interest, a meeting is scheduled, and the conversation moves to the next stage. The outreach was well-targeted and the timing was right.",
+    "do_nothing": "The file remains open and quiet. After a week, if no reply has come, the silence reads as a soft no or a pass, and the file should be closed or moved to a conditional deferral. The founder's attention is consumed by tracking a cold path that is not in the brief's named set.",
+    "signals_to_watch": [
+     "A reply from Ira within a week, naming a meeting or a next step.",
+     "A reply that passes or defers, naming a reason (stage, timing, traction, thesis, team) and an implicit date to reopen.",
+     "Silence after a week, which reads as a soft no and should trigger a decision to close or defer the file.",
+     "A warm introduction or a connector note that changes the frame from cold to sourced."
+    ],
+    "worst": "Northwind never replies, the file consumes attention for weeks, and the founder realizes too late that it was a cold path that should not have been tracked as a live relationship. The distraction costs focus on the named targets in the parallel process."
+   },
+   "unknowns": [
+    {
+     "question": "Was Northwind sourced through a connector or a warm introduction, or is this a cold outreach?",
+     "relevance": "A warm introduction changes the frame from prospecting to investor relations, and changes what the silence means and what the next move should be."
+    },
+    {
+     "question": "Is Northwind a named target in the seed round, or a prospecting touch?",
+     "relevance": "If it is a named target, it should be in the brief and tracked as a live investor relationship; if it is prospecting, it should not be tracked as a live relationship and should not consume attention in the round's parallel process."
+    },
+    {
+     "question": "What is Northwind's stage, cheque size, sector focus, and portfolio?",
+     "relevance": "Without this context, it is not possible to judge whether the outreach was well-targeted or whether silence is a soft no or the default."
+    },
+    {
+     "question": "Who at Northwind is Ira, and what is their role?",
+     "relevance": "If Ira is a partner, the outreach is to the right person; if Ira is an associate or a generic address, the outreach may not reach a decision-maker, and silence is expected."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-18 for a reply from Northwind if the founder confirms it is a named target. If no reply comes by then, close the file or move it to a conditional deferral. Stop tracking the file as a live investor relationship if the founder confirms it is a prospecting touch and decides not to pursue it."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You wrote to Ira at Northwind on 2026-08-11 at 05:00 UTC asking them to review your deck this week.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Kitebird is raising a seed round to bring AI scheduling to small clinics - 14 are live. Would you take a look at our deck this week?\"\n    },\n    {\n      \"claim\": \"Northwind is not named in the brief as a target investor, program, partner, or connector.\",\n      \"evidence\": [\n        \"brief:company\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply has been received from Northwind since the outreach on 2026-08-11 at 05:00 UTC, and the mailbox was read through 2026-08-11 at 12:00 UTC.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is 0.29 days old and has been quiet for 0.29 days as of the dossier timestamp.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise, deadline, or next step was named in the outreach.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Ira's reply time and your reply time to Ira have not been measured.\",\n      \"evidence\": [\n        \"num:their_reply_time:ira@northwind.test\",\n        \"num:your_reply_time:ira@northwind.test\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The outreach was a cold or weakly-sourced introduction, not a warm connector introduction, because Northwind does not appear in the brief's named investors, programs, or connectors.\",\n      \"based_on\": [\n        \"brief:company\",\n        \"file:role\",\n        \"brief:cbl_#27\"\n      ]\n    },\n    {\n      \"claim\": \"The move is ours: you asked for a reply by a named time ('this week'), and the time has not yet passed, so silence at this stage is the default, not a signal.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"claim\": \"This file should not be in the brief's investor set because it was not part of the seed wave and does not appear in the named targets.\",\n      \"based_on\": [\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\",\n        \"brief:cbl_#10\",\n        \"brief:cbl_#11\",\n        \"brief:cbl_#12\",\n        \"file:role\"\n      ]\n    },\n    {\n      \"claim\": \"The file's kind of work is not named by the brief, but the domain is fundraising and the counterparty is a company, so it is an investor outreach.\",\n      \"based_on\": [\n        \"file:kind\",\n        \"file:domains\",\n        \"file:role\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Before a first meeting, investor silence is the default and carries no signal.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A wave gone silent everywhere is usually about the ask, not the investors \u2014 a check on whether the first email carried the traction and fit that would move them.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_wave_gone_silent\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Mistaking activity for progress: a pleasant outreach email is not progress; progress is a meeting booked, diligence opened, or an offer with terms.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Letting the wrong parties into the investor set \u2014 a company not sourced through a connector, not in the named targets, not part of the wave \u2014 costs attention every time the set is reviewed.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f6\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A cold outreach to an investor with no prior relationship and no connector introduction has a reply rate of roughly one in ten to one in twenty, and silence in the first week is not a signal.\",\n      \"why\": \"Investors see far more companies than they can fund and lose nothing by dropping one; a founder's job is to run the round in parallel, not to wait on any single cold path.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An outreach that asks for a review 'this week' without naming a specific day or a follow-up date is a soft ask and does not create a deadline.\",\n      \"why\": \"Vague timing language ('this week', 'soon') is not a commitment and does not bind the recipient; a founder should name a specific date or a follow-up trigger.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A file that is not in the brief's named set should be reviewed for whether it belongs there at all, or whether it is a distraction from the parallel process.\",\n      \"why\": \"The brief names the investors, programs, and partners the founder is running; a file outside that set is either a new opportunity that should be added to the brief, or a cold path that should not be tracked as a live investor relationship.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A single cold outreach to an investor who has not been sourced or warmed is not a live investor relationship; it is a prospecting touch.\",\n      \"why\": \"A live relationship requires a prior connection, a warm introduction, or a meeting scheduled; a cold email is a prospecting activity, not a relationship, and should not be tracked as one.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Northwind is a target investor that should be in the brief's named set.\",\n      \"needs\": \"Confirmation from the founder that Northwind was intentionally added to the seed wave, or that it is a priority target.\"\n    },\n    {\n      \"proposition\": \"Northwind is a prospecting touch that should not be tracked as a live investor relationship.\",\n      \"needs\": \"Confirmation from the founder that this outreach was part of a broader prospecting campaign, or that it should be removed from the active set.\"\n    },\n    {\n      \"proposition\": \"The outreach was sourced through a connector or a warm introduction that is not recorded in the file.\",\n      \"needs\": \"A note from the founder on how Northwind was sourced and who introduced it.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Was Northwind sourced through a connector or a warm introduction, or is this a cold outreach?\",\n      \"relevance\": \"A warm introduction changes the frame from prospecting to investor relations, and changes what the silence means and what the next move should be.\"\n    },\n    {\n      \"question\": \"Is Northwind a named target in the seed round, or a prospecting touch?\",\n      \"relevance\": \"If it is a named target, it should be in the brief and tracked as a live investor relationship; if it is prospecting, it should not be tracked as a live relationship and should not consume attention in the round's parallel process.\"\n    },\n    {\n      \"question\": \"What is Northwind's stage, cheque size, sector focus, and portfolio?\",\n      \"relevance\": \"Without this context, it is not possible to judge whether the outreach was well-targeted or whether silence is a soft no or the default.\"\n    },\n    {\n      \"question\": \"Who at Northwind is Ira, and what is their role?\",\n      \"relevance\": \"If Ira is a partner, the outreach is to the right person; if Ira is an associate or a generic address, the outreach may not reach a decision-maker, and silence is expected.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A cold or weakly-sourced prospecting outreach to an investor not in the brief's named set, sent less than a day ago, with no reply yet \u2014 which is the default at this stage and carries no signal.\",\n    \"rivals\": [\n      \"A warm introduction to a named target investor that is not yet recorded in the brief, where silence before a first meeting is normal.\",\n      \"A live investor relationship that is stalled because the outreach did not carry enough traction or fit to move them.\",\n      \"A prospecting touch that should not be tracked as a live investor relationship at all, and should be removed from the active set to avoid distraction from the parallel process.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The domain is fundraising, the counterparty is a company, and the outreach asks for a deck review for a seed round.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook is named for this file in the brief, so no stage is established. If this is a live investor relationship, the expected stage is 'introduction' \u2014 a first outreach with no reply yet. If this is a prospecting touch, no stage applies.\",\n    \"actual\": \"A single outreach sent less than a day ago, with no reply, and no next step named.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open and quiet. After a week, if no reply has come, the silence reads as a soft no or a pass, and the file should be closed or moved to a conditional deferral. The founder's attention is consumed by tracking a cold path that is not in the brief's named set.\",\n    \"act\": \"The founder clarifies whether Northwind is a named target or a prospecting touch. If it is a named target, the founder adds it to the brief and decides whether to follow up with a warm introduction or a second touch. If it is prospecting, the founder removes it from the active set and focuses on the parallel process with named targets.\",\n    \"best\": \"Northwind replies within a week with interest, a meeting is scheduled, and the conversation moves to the next stage. The outreach was well-targeted and the timing was right.\",\n    \"worst\": \"Northwind never replies, the file consumes attention for weeks, and the founder realizes too late that it was a cold path that should not have been tracked as a live relationship. The distraction costs focus on the named targets in the parallel process.\",\n    \"signals_to_watch\": [\n      \"A reply from Ira within a week, naming a meeting or a next step.\",\n      \"A reply that passes or defers, naming a reason (stage, timing, traction, thesis, team) and an implicit date to reopen.\",\n      \"Silence after a week, which reads as a soft no and should trigger a decision to close or defer the file.\",\n      \"A warm introduction or a connector note that changes the frame from cold to sourced.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is a single cold outreach with no prior relationship, not a named target in the brief, and no meeting or commitment yet.\",\n      \"Silence before a first meeting is the default and carries no urgency.\",\n      \"The founder can close or defer the file at any time without cost, and can reopen it if Northwind replies or if circumstances change.\",\n      \"The file's impact on the round is minimal if it is a prospecting touch, and only material if it is a named target that should be in the brief.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"clarify with the founder whether Northwind is a named target investor in the seed round, or a prospecting touch; if it is a named target, confirm how it was sourced and whether a warm introduction is available; if it is prospecting, decide whether to track it as a live relationship or remove it from the active set.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-08-12\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"inference:3\",\n      \"unknown:1\",\n      \"unknown:2\"\n    ],\n    \"guided_by\": [\n      \"cap:founder_office.fundraising.investor_relations#f6\",\n      \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Wait until 2026-08-18 (one week from the outreach) for a reply from Northwind. If no reply comes, close the file or move it to a conditional deferral. If a reply comes, assess the stage and the next move. This approach avoids a clarification conversation and lets the file's status emerge from Northwind's reply.\",\n    \"wait_or_stop\": \"Wait until 2026-08-18 for a reply from Northwind if the founder confirms it is a named target. If no reply comes by then, close the file or move it to a conditional deferral. Stop tracking the file as a live investor relationship if the founder confirms it is a prospecting touch and decides not to pursue it.\",\n    \"done_when\": \"The founder has clarified whether Northwind is a named target or a prospecting touch, and has decided on the next move: add it to the brief and plan a warm introduction or a follow-up, or remove it from the active set and focus on the named targets.\",\n    \"draft\": null\n}",
+  "site": "expert"
+ }
+}

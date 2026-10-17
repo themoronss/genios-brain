@@ -1,0 +1,249 @@
+{
+ "028fd4aa1b75bb4c5c5dfc4e96722b2edd19f792fb43e136dc01d24c395b44c5": {
+  "framed": true,
+  "input_tokens": 12329,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4109,
+  "parsed": {
+   "alternative": "If the founder does not have the metrics ready or is uncertain about them, call Mohit Sethi by end of day Friday to confirm what he needs and to ask whether he would prefer the metrics by Friday evening or Saturday morning. This buys time and signals responsiveness. Do not delay beyond Saturday morning.",
+   "appraisal": {
+    "reasons": [
+     "Tusker Capital is one of five seed investors the founder is actively pursuing; a strong performance here could lead to a commitment or a lead investor.",
+     "The request is time-bound to Monday; missing the deadline will read as disorganization or weakness and will likely result in a pass.",
+     "A poor answer now \u2014 weak metrics, late delivery, or a defensive tone \u2014 will damage the relationship and make it hard to reopen later.",
+     "The founder is in a seed round and needs momentum; a pass from Tusker Capital is a loss of momentum, and a commitment is a gain.",
+     "The playbook says that silence after a partners' meeting usually means no, and that a pass on stage or timing can be reopened later; but a pass based on the founder's responsiveness or the quality of the metrics is harder to reopen."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "Mohit Sethi has received the metrics and confirmed receipt, or has presented them to the partnership and the founder has heard back from Tusker Capital with a next step \u2014 a request for diligence, a pass with a reason, or a deferral with a condition.",
+   "draft": "Hi Mohit,\n\nThanks for the opportunity to present to your partnership. Here are the current traction metrics you asked for:\n\n\u2022 Monthly active teams: [number]\n\u2022 Revenue run-rate: [number]\n\u2022 Pilot pipeline: [number]\n\nAs of [date].\n\nHappy to answer any questions before Monday. Looking forward to it.\n\nBest,\nArjun",
+   "expected_vs_actual": {
+    "actual": "Mohit Sethi has asked for specific traction metrics before a Monday partners' meeting. This is a high-signal request that suggests the company has passed an initial screen and is being prepared for internal review. The request is time-bound and specific, which is a strong positive signal.",
+    "expected": "After a first call, the investor is deciding whether to spend more time. The playbook says: 'The investor is deciding whether to spend more time, and most do not.' A request for metrics before a partners' meeting is a signal that they have decided to spend more time and are moving to the next stage. The playbook expects silence or a pass; a metric request is a gate to a partners' meeting.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Tusker Capital's partner Mohit Sethi wrote on 2026-08-08 at 06:30 UTC asking for traction metrics before their Monday partners' meeting.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Before our Monday partners' meeting, could you share your current traction metrics \u2014 monthly active teams, revenue run-rate and the pilot pipeline? A one-pager is fine."
+    },
+    {
+     "claim": "This is the first and only contact from Tusker Capital; the file was opened at 2026-08-08 06:30 UTC and has been quiet for 0.23 days.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file records an open ask: a question they wait on us to answer, open since 2026-08-08 06:30 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Tusker Capital was written to in the seed wave; the file's role in the brief is none, meaning it was not previously tracked.",
+     "evidence": [
+      "brief:cbl_#10",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in Tusker Capital's mail; the reasoning units found no blocking dependency and low risk.",
+     "evidence": [
+      "none:promises",
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we owe the answer to their question.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A partner at a seed-stage investor has screened the company and is preparing to present it to their partnership for a decision; they are asking for the metrics they need to make that pitch. The founder has a narrow window to answer before the meeting, and the quality and speed of the answer will shape the partner's confidence in the company.",
+    "rivals": [
+     "A cold email from an investor who has not yet met the founder and is using a metric request as a filter to see if the company is worth a call.",
+     "A follow-up from a partner who met the founder weeks ago and is now checking in to see if the company is still alive before deciding whether to move forward.",
+     "A request from a partner who is skeptical and is asking for metrics as a way to find a reason to pass without a meeting."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A record of a first call with Tusker Capital, or a note from the founder that one took place.",
+     "proposition": "Tusker Capital has already held a first call with the founder and is now preparing for a partners' meeting."
+    },
+    {
+     "needs": "The founder's confirmation of what the current numbers are for monthly active teams, revenue run-rate, and pilot pipeline.",
+     "proposition": "The traction metrics are strong enough to present to the partnership, and the founder has them ready."
+    },
+    {
+     "needs": "Confirmation from Mohit Sethi or the founder's notes on what Tusker Capital's typical timeline is after a partners' meeting.",
+     "proposition": "Monday's partners' meeting is the actual decision point, and a pass or a request for diligence will follow within a week."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "Mohit Sethi's request signals that Tusker Capital has moved the company to a partners' meeting stage, or is considering it for one."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.before_an_investor_call"
+     ],
+     "claim": "The Monday partners' meeting is the decision point; the traction metrics are the gate to that meeting."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "brief:cbl_#10"
+     ],
+     "claim": "This is not a cold email but a warm request from a partner who has already decided to review the company internally; the ask is specific and time-bound."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "Silence on this ask past Monday will read to Tusker Capital as a company that lost momentum or does not take their process seriously."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-09",
+    "for_whom": "Mohit Sethi at Tusker Capital",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "inference:1",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "mohit@tuskercap.test",
+    "what": "send Mohit Sethi a one-pager with the current traction metrics \u2014 monthly active teams, revenue run-rate, and pilot pipeline \u2014 with the date they are current as of, and a brief note thanking him for the opportunity and confirming that you are available for any questions before Monday.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A request for metrics before a partners' meeting should be answered the same day or the next morning, with the exact numbers they asked for and nothing more.",
+     "kind": "practice",
+     "why": "A partner preparing for an internal meeting is on a tight clock; a delayed answer reads as either disorganization or a company that does not have its numbers ready, both of which are red flags at this stage."
+    },
+    {
+     "claim": "Most founders delay on metric requests because the numbers are not as strong as they wish, or because they are uncertain which numbers matter most.",
+     "kind": "base_rate",
+     "why": "The delay itself is informative to the investor: it signals either weakness or confusion, and either one is a reason to pass."
+    },
+    {
+     "claim": "A one-pager of metrics should be a single sheet with the three numbers they asked for, the date they are current as of, and nothing else \u2014 no narrative, no caveats, no context.",
+     "kind": "practice",
+     "why": "A partner reading it before a meeting has no time for prose; they need to know the three numbers and whether they are strong enough to mention to the partnership."
+    },
+    {
+     "claim": "A partner who asks for metrics before a partners' meeting is not always a signal of high interest; sometimes it is a gate to filter out companies that cannot produce basic numbers.",
+     "kind": "counter_pattern",
+     "why": "The ask is low-cost for the investor and high-cost for the founder; a founder who cannot or will not answer it has already failed the test."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "Gompers, Gornall, Kaplan & Strebulaev, NBER Working Paper 22587, 2016, section 3.2"
+     ],
+     "claim": "A partner's request for traction metrics before a partners' meeting is a high-signal moment: the company has passed an initial screen and is being considered for internal review.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.before_an_investor_call"
+     ],
+     "claim": "A request for a one-pager of metrics is a signal that the partner is preparing to pitch the company to their partnership; the one-pager is the artifact they will use.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "Gompers, Gornall, Kaplan & Strebulaev, NBER Working Paper 22587, 2016, section 3.2"
+     ],
+     "claim": "About one company in four whose management a venture firm meets is reviewed at a partners' meeting; about one in three of those reviewed at a partners' meeting goes on to diligence.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "A partners' meeting typically happens within a week of a first call; silence more than a week after the meeting usually means no.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#10",
+     "evt_#1"
+    ],
+    "kind": "investor",
+    "why": "Tusker Capital is a seed-stage investor; Mohit Sethi is a partner; the request is for traction metrics before a partners' meeting. This is investor relations work, not a program application or a compliance task."
+   },
+   "scenarios": {
+    "act": "The founder sends the metrics to Mohit Sethi by end of day Friday or Saturday morning, with a brief note thanking him for the opportunity and confirming the Monday meeting. Mohit Sethi has the numbers he needs to pitch the company to the partnership. The company is presented at the Monday meeting. Within a week, Tusker Capital either requests diligence, passes with a reason, or defers with a condition.",
+    "best": "The founder sends strong metrics by Friday. Mohit Sethi pitches the company to the partnership on Monday and they decide to move to diligence. By end of week, Tusker Capital requests a data room or customer references. The company is now in a formal process with a seed investor.",
+    "do_nothing": "The founder does not send the metrics by Monday. Mohit Sethi goes to the partners' meeting without them, or with a note that the founder did not respond. The company is either not presented, or is presented as disorganized or weak. Tusker Capital passes or defers. The founder learns of the pass weeks later, if at all, and the relationship is damaged.",
+    "signals_to_watch": [
+     "Whether Mohit Sethi confirms receipt of the metrics and thanks the founder, or goes silent.",
+     "Whether Tusker Capital requests diligence, passes, or defers within a week of Monday.",
+     "Whether the founder hears from Mohit Sethi or from another partner at Tusker Capital.",
+     "Whether Tusker Capital's next message names a next step and a date, or is vague about timing."
+    ],
+    "worst": "The founder sends weak metrics or sends them late. Mohit Sethi either does not present the company to the partnership, or presents it with a caveat about the metrics or the founder's responsiveness. The partnership passes. Tusker Capital sends a soft no or no message at all. The founder learns weeks later that the company was not reviewed, and the relationship is closed."
+   },
+   "unknowns": [
+    {
+     "question": "Has the founder already spoken to Mohit Sethi or another partner at Tusker Capital before this email?",
+     "relevance": "If this is a first contact, the request for metrics is a strong signal; if it follows a call, it is a gate to a partners' meeting. The stage and the urgency depend on this."
+    },
+    {
+     "question": "What are the current traction metrics \u2014 monthly active teams, revenue run-rate, and pilot pipeline \u2014 and are they strong enough to present?",
+     "relevance": "If the numbers are weak or uncertain, the founder may need to decide whether to send them as-is or to delay and improve them first. A weak answer now may be worse than no answer."
+    },
+    {
+     "question": "What is Tusker Capital's typical timeline after a partners' meeting \u2014 how long until they decide, and what are the next steps if they pass?",
+     "relevance": "This determines how to read silence after Monday and whether to follow up, and it shapes the founder's expectations for the round."
+    },
+    {
+     "question": "Is Tusker Capital a lead investor or a follow-on investor in this round?",
+     "relevance": "If they are a lead, their decision is high-stakes; if they are a follow-on, their decision depends on other investors' moves. The urgency and the strategy differ."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The Monday partners' meeting is the deadline. Send the metrics by end of day Friday or Saturday morning at the latest. If Mohit Sethi does not acknowledge receipt by Sunday evening, send a brief follow-up confirming that he has them and that you are available for questions. After Monday, wait for Tusker Capital's next move. If they do not respond within a week, assume they are in their internal process and do not follow up until at least seven days have passed. If they pass, record the reason and the condition for reopening, if any."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Tusker Capital's partner Mohit Sethi wrote on 2026-08-08 at 06:30 UTC asking for traction metrics before their Monday partners' meeting.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Before our Monday partners' meeting, could you share your current traction metrics \u2014 monthly active teams, revenue run-rate and the pilot pipeline? A one-pager is fine.\"\n    },\n    {\n      \"claim\": \"This is the first and only contact from Tusker Capital; the file was opened at 2026-08-08 06:30 UTC and has been quiet for 0.23 days.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file records an open ask: a question they wait on us to answer, open since 2026-08-08 06:30 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Tusker Capital was written to in the seed wave; the file's role in the brief is none, meaning it was not previously tracked.\",\n      \"evidence\": [\n        \"brief:cbl_#10\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in Tusker Capital's mail; the reasoning units found no blocking dependency and low risk.\",\n      \"evidence\": [\n        \"none:promises\",\n        \"ru:core.dependency\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we owe the answer to their question.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Mohit Sethi's request signals that Tusker Capital has moved the company to a partners' meeting stage, or is considering it for one.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"The Monday partners' meeting is the decision point; the traction metrics are the gate to that meeting.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\"\n      ]\n    },\n    {\n      \"claim\": \"This is not a cold email but a warm request from a partner who has already decided to review the company internally; the ask is specific and time-bound.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"brief:cbl_#10\"\n      ]\n    },\n    {\n      \"claim\": \"Silence on this ask past Monday will read to Tusker Capital as a company that lost momentum or does not take their process seriously.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A partner's request for traction metrics before a partners' meeting is a high-signal moment: the company has passed an initial screen and is being considered for internal review.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"Gompers, Gornall, Kaplan & Strebulaev, NBER Working Paper 22587, 2016, section 3.2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A request for a one-pager of metrics is a signal that the partner is preparing to pitch the company to their partnership; the one-pager is the artifact they will use.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"About one company in four whose management a venture firm meets is reviewed at a partners' meeting; about one in three of those reviewed at a partners' meeting goes on to diligence.\",\n      \"based_on\": [\n        \"Gompers, Gornall, Kaplan & Strebulaev, NBER Working Paper 22587, 2016, section 3.2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A partners' meeting typically happens within a week of a first call; silence more than a week after the meeting usually means no.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A request for metrics before a partners' meeting should be answered the same day or the next morning, with the exact numbers they asked for and nothing more.\",\n      \"why\": \"A partner preparing for an internal meeting is on a tight clock; a delayed answer reads as either disorganization or a company that does not have its numbers ready, both of which are red flags at this stage.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most founders delay on metric requests because the numbers are not as strong as they wish, or because they are uncertain which numbers matter most.\",\n      \"why\": \"The delay itself is informative to the investor: it signals either weakness or confusion, and either one is a reason to pass.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A one-pager of metrics should be a single sheet with the three numbers they asked for, the date they are current as of, and nothing else \u2014 no narrative, no caveats, no context.\",\n      \"why\": \"A partner reading it before a meeting has no time for prose; they need to know the three numbers and whether they are strong enough to mention to the partnership.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A partner who asks for metrics before a partners' meeting is not always a signal of high interest; sometimes it is a gate to filter out companies that cannot produce basic numbers.\",\n      \"why\": \"The ask is low-cost for the investor and high-cost for the founder; a founder who cannot or will not answer it has already failed the test.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tusker Capital has already held a first call with the founder and is now preparing for a partners' meeting.\",\n      \"needs\": \"A record of a first call with Tusker Capital, or a note from the founder that one took place.\"\n    },\n    {\n      \"proposition\": \"The traction metrics are strong enough to present to the partnership, and the founder has them ready.\",\n      \"needs\": \"The founder's confirmation of what the current numbers are for monthly active teams, revenue run-rate, and pilot pipeline.\"\n    },\n    {\n      \"proposition\": \"Monday's partners' meeting is the actual decision point, and a pass or a request for diligence will follow within a week.\",\n      \"needs\": \"Confirmation from Mohit Sethi or the founder's notes on what Tusker Capital's typical timeline is after a partners' meeting.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the founder already spoken to Mohit Sethi or another partner at Tusker Capital before this email?\",\n      \"relevance\": \"If this is a first contact, the request for metrics is a strong signal; if it follows a call, it is a gate to a partners' meeting. The stage and the urgency depend on this.\"\n    },\n    {\n      \"question\": \"What are the current traction metrics \u2014 monthly active teams, revenue run-rate, and pilot pipeline \u2014 and are they strong enough to present?\",\n      \"relevance\": \"If the numbers are weak or uncertain, the founder may need to decide whether to send them as-is or to delay and improve them first. A weak answer now may be worse than no answer.\"\n    },\n    {\n      \"question\": \"What is Tusker Capital's typical timeline after a partners' meeting \u2014 how long until they decide, and what are the next steps if they pass?\",\n      \"relevance\": \"This determines how to read silence after Monday and whether to follow up, and it shapes the founder's expectations for the round.\"\n    },\n    {\n      \"question\": \"Is Tusker Capital a lead investor or a follow-on investor in this round?\",\n      \"relevance\": \"If they are a lead, their decision is high-stakes; if they are a follow-on, their decision depends on other investors' moves. The urgency and the strategy differ.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A partner at a seed-stage investor has screened the company and is preparing to present it to their partnership for a decision; they are asking for the metrics they need to make that pitch. The founder has a narrow window to answer before the meeting, and the quality and speed of the answer will shape the partner's confidence in the company.\",\n    \"rivals\": [\n      \"A cold email from an investor who has not yet met the founder and is using a metric request as a filter to see if the company is worth a call.\",\n      \"A follow-up from a partner who met the founder weeks ago and is now checking in to see if the company is still alive before deciding whether to move forward.\",\n      \"A request from a partner who is skeptical and is asking for metrics as a way to find a reason to pass without a meeting.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Tusker Capital is a seed-stage investor; Mohit Sethi is a partner; the request is for traction metrics before a partners' meeting. This is investor relations work, not a program application or a compliance task.\",\n    \"evidence\": [\n      \"brief:cbl_#10\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"After a first call, the investor is deciding whether to spend more time. The playbook says: 'The investor is deciding whether to spend more time, and most do not.' A request for metrics before a partners' meeting is a signal that they have decided to spend more time and are moving to the next stage. The playbook expects silence or a pass; a metric request is a gate to a partners' meeting.\",\n    \"actual\": \"Mohit Sethi has asked for specific traction metrics before a Monday partners' meeting. This is a high-signal request that suggests the company has passed an initial screen and is being prepared for internal review. The request is time-bound and specific, which is a strong positive signal.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not send the metrics by Monday. Mohit Sethi goes to the partners' meeting without them, or with a note that the founder did not respond. The company is either not presented, or is presented as disorganized or weak. Tusker Capital passes or defers. The founder learns of the pass weeks later, if at all, and the relationship is damaged.\",\n    \"act\": \"The founder sends the metrics to Mohit Sethi by end of day Friday or Saturday morning, with a brief note thanking him for the opportunity and confirming the Monday meeting. Mohit Sethi has the numbers he needs to pitch the company to the partnership. The company is presented at the Monday meeting. Within a week, Tusker Capital either requests diligence, passes with a reason, or defers with a condition.\",\n    \"best\": \"The founder sends strong metrics by Friday. Mohit Sethi pitches the company to the partnership on Monday and they decide to move to diligence. By end of week, Tusker Capital requests a data room or customer references. The company is now in a formal process with a seed investor.\",\n    \"worst\": \"The founder sends weak metrics or sends them late. Mohit Sethi either does not present the company to the partnership, or presents it with a caveat about the metrics or the founder's responsiveness. The partnership passes. Tusker Capital sends a soft no or no message at all. The founder learns weeks later that the company was not reviewed, and the relationship is closed.\",\n    \"signals_to_watch\": [\n      \"Whether Mohit Sethi confirms receipt of the metrics and thanks the founder, or goes silent.\",\n      \"Whether Tusker Capital requests diligence, passes, or defers within a week of Monday.\",\n      \"Whether the founder hears from Mohit Sethi or from another partner at Tusker Capital.\",\n      \"Whether Tusker Capital's next message names a next step and a date, or is vague about timing.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Tusker Capital is one of five seed investors the founder is actively pursuing; a strong performance here could lead to a commitment or a lead investor.\",\n      \"The request is time-bound to Monday; missing the deadline will read as disorganization or weakness and will likely result in a pass.\",\n      \"A poor answer now \u2014 weak metrics, late delivery, or a defensive tone \u2014 will damage the relationship and make it hard to reopen later.\",\n      \"The founder is in a seed round and needs momentum; a pass from Tusker Capital is a loss of momentum, and a commitment is a gain.\",\n      \"The playbook says that silence after a partners' meeting usually means no, and that a pass on stage or timing can be reopened later; but a pass based on the founder's responsiveness or the quality of the metrics is harder to reopen.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send Mohit Sethi a one-pager with the current traction metrics \u2014 monthly active teams, revenue run-rate, and pilot pipeline \u2014 with the date they are current as of, and a brief note thanking him for the opportunity and confirming that you are available for any questions before Monday.\",\n    \"for_whom\": \"Mohit Sethi at Tusker Capital\",\n    \"by_when\": \"2026-08-09\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"mohit@tuskercap.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder does not have the metrics ready or is uncertain about them, call Mohit Sethi by end of day Friday to confirm what he needs and to ask whether he would prefer the metrics by Friday evening or Saturday morning. This buys time and signals responsiveness. Do not delay beyond Saturday morning.\",\n  \"wait_or_stop\": \"Do not wait. The Monday partners' meeting is the deadline. Send the metrics by end of day Friday or Saturday morning at the latest. If Mohit Sethi does not acknowledge receipt by Sunday evening, send a brief follow-up confirming that he has them and that you are available for questions. After Monday, wait for Tusker Capital's next move. If they do not respond within a week, assume they are in their internal process and do not follow up until at least seven days have passed. If they pass, record the reason and the condition for reopening, if any.\",\n  \"done_when\": \"Mohit Sethi has received the metrics and confirmed receipt, or has presented them to the partnership and the founder has heard back from Tusker Capital with a next step \u2014 a request for diligence, a pass with a reason, or a deferral with a condition.\",\n  \"draft\": \"Hi Mohit,\\n\\nThanks for the opportunity to present to your partnership. Here are the current traction metrics you asked for:\\n\\n\u2022 Monthly active teams: [number]\\n\u2022 Revenue run-rate: [number]\\n\u2022 Pilot pipeline: [number]\\n\\nAs of [date].\\n\\nHappy to answer any questions before Monday. Looking forward to it.\\n\\nBest,\\nArjun\"\n}",
+  "site": "expert"
+ }
+}

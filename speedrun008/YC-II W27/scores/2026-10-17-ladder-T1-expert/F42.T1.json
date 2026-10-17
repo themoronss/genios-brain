@@ -1,0 +1,263 @@
+{
+ "123214c2b23b7f8314c48a1ffd8263796709ff6f5be5e890a5581b1ad908a18f": {
+  "framed": true,
+  "input_tokens": 12367,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4766,
+  "parsed": {
+   "alternative": "If the founder does not have the metrics ready, or is uncertain about how to frame them, the alternative is to call Manav Rao today and ask for a brief conversation about what the one-pager should include. This unblocks the ask and signals urgency and respect for the deadline. The call should take no more than 15 minutes. The founder should then send the one-pager by Friday.",
+   "appraisal": {
+    "reasons": [
+     "Lumen Ventures is marked as 'engaged,' not just 'written to in the seed wave,' suggesting it is a warm lead and a priority investor for the round.",
+     "Manav Rao has already committed credibility to the company at the partnership level by telling the partners the founder would send a one-pager. A failure to deliver damages his credibility and the company's chances.",
+     "The deadline is real and specific: before Monday's partners' meeting. Missing it is not a soft signal; it is a hard failure.",
+     "The playbook notes that 'momentum is a parallel process' and that 'the biggest factor in most investors' opinions of you is the opinion of other investors.' A warm lead that decays into a no removes momentum from the round and signals weakness to other investors.",
+     "A failure to deliver on a specific ask to a warm investor is costly to reverse. The investor may give the company a second chance, but the credibility cost is high, and the founder's reputation for follow-through is damaged."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "The one-pager has been sent to Manav Rao and he has confirmed receipt. The metrics are clear, the narrative is compelling, and the ask is specific. Manav Rao presents the one-pager to the partnership on Monday. Within a week of the Monday meeting, Manav Rao sends a follow-up message with a next step (a call, a diligence request, or a pass with a reason).",
+   "draft": "Hi Manav, Thanks for the clear ask. Here's the one-pager with our current traction\u2014clinics live, revenue run-rate, and pilot pipeline. Looking forward to your partners' meeting on Monday. Let me know if you need anything else before then. Best, Meera",
+   "expected_vs_actual": {
+    "actual": "A warm introduction has occurred (Manav Rao met the founder last week). The investor has not declined; instead, he has asked for specific materials before a partners' meeting. This is a gate, not a decline. The founder owes a deliverable. The stage has not ended; it has moved to a conditional next step. The file is not silent; it is waiting on the founder.",
+    "expected": "At first_contact, the playbook expects either a first meeting or call to be scheduled, or the investor to decline. The typical duration is 14 days. Silence is the default; after a warm introduction, silence means the investor has not opted in. The stage ends when a first meeting or call takes place, or the investor declines.",
+    "stage": "first_contact"
+   },
+   "facts": [
+    {
+     "claim": "Manav Rao, a partner at Lumen Ventures, wrote on 2026-08-08 06:30 UTC asking for traction metrics before a Monday partners' meeting.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Before our Monday partners' meeting, could you share your current traction metrics - clinics live, revenue run-rate and the pilot pipeline? I told the partners Meera Iyer would send a one-pager."
+    },
+    {
+     "claim": "This is the first contact with Lumen Ventures; the file was opened at 2026-08-08 06:30 UTC and has not been touched since.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file records an open ask: Manav Rao waits on us to send traction metrics, open since 2026-08-08 06:30 UTC.",
+     "evidence": [
+      "loop:loop_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Lumen Ventures is marked as 'engaged' in the company brief, distinguishing it from other investors who were only 'written to in the seed wave'.",
+     "evidence": [
+      "brief:cbl_#12"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.23 days as of the dossier timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in Manav Rao's mail; he made a request, not a commitment.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units assessed this file as low risk, with high engagement and low urgency, and found no blocking dependency.",
+     "evidence": [
+      "ru:core.risk",
+      "ru:core.temporal",
+      "ru:core.dependency"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm investor has asked for specific materials before a partners' meeting and has committed credibility to the company at the partnership level. The founder owes a specific deliverable by a specific deadline. The ball is in the founder's court, and the deadline is real.",
+    "rivals": [
+     "A soft inquiry from an investor who is testing interest before committing time. The metrics are optional, and the deadline is flexible.",
+     "A gating question that will determine whether the investor moves forward. The metrics are a filter, and weak metrics will end the conversation.",
+     "A routine administrative request that the founder can batch with other investor asks. The deadline is not urgent relative to other work."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A message from the founder to Manav Rao with the one-pager, or a note in the file that the metrics have been sent.",
+     "proposition": "The founder has the traction metrics ready and will send them today or tomorrow."
+    },
+    {
+     "needs": "A conversation with the founder about what the metrics are, what they should say, and when they can be ready.",
+     "proposition": "The founder does not have the metrics ready, or does not know how to frame them, and is blocked."
+    },
+    {
+     "needs": "A conversation with the founder about the priority of this ask and the signal it sends.",
+     "proposition": "The founder has deprioritized this ask because other work is more urgent, or because the founder is uncertain about Lumen Ventures' seriousness."
+    },
+    {
+     "needs": "Confirmation of the date of Monday's meeting and how much time remains.",
+     "proposition": "Monday's partners' meeting is still several days away, and the founder has time to send the metrics without urgency."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "claim": "The ball is in our court: Manav Rao has named a specific ask (traction metrics in a one-pager), a specific deadline (before Monday's partners' meeting), and a specific use (to present to the partnership). This is not a soft inquiry but a gating condition for the next stage."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The Monday partners' meeting is the next stage gate. If the metrics arrive in time and are strong, the conversation moves to partner_meeting stage; if they do not arrive, or arrive weak, the conversation stalls or decays."
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "Manav Rao's framing\u2014'I told the partners Meera Iyer would send a one-pager'\u2014signals he has already committed his credibility to the company at the partnership level. This is a warm signal, not a cold filter."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:first_touch",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The file's stage is first_contact, not first_call. A first call has not yet occurred; what has occurred is a warm introduction (Manav Rao met the founder last week) followed by a specific ask. The next stage gate is the partners' meeting, conditional on delivery of the metrics."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-09",
+    "for_whom": "Manav Rao at Lumen Ventures",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "manav@lumenvc.test",
+    "what": "send a one-pager with traction metrics (clinics live, revenue run-rate, pilot pipeline) to Manav Rao",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When an investor names a specific deadline and a specific use, the deadline is real. 'Before Monday' means before Monday, not 'sometime this week.' A one-pager sent Tuesday reads as late, even if Monday was only two days away.",
+     "kind": "practice",
+     "why": "An investor who has committed to present to the partnership has already scheduled the meeting and set the agenda. A late submission either does not make the meeting or arrives after the partners have already formed an opinion from the partner's summary."
+    },
+    {
+     "claim": "A one-pager for a partners' meeting is not a data dump. It is a narrative: what the company does, why it matters, what the traction is, what the ask is, and why this fund. The metrics are the proof, not the story.",
+     "kind": "practice",
+     "why": "Partners do not have time to read a long document before a weekly meeting. A one-pager that is actually a three-pager, or that buries the metrics in a wall of text, reads as either inexperience or a lack of respect for the partners' time."
+    },
+    {
+     "claim": "A founder who has been asked for metrics and does not send them within a day is either blocked (does not have the numbers, does not know how to frame them, or is waiting on someone else) or has deprioritized the ask. Either way, the investor reads it as a signal.",
+     "kind": "base_rate",
+     "why": "Metrics are the founder's own data. There is no reason to wait, and every reason to send them fast. A delay reads as either incompetence or a loss of momentum."
+    },
+    {
+     "claim": "A partner who vouches for a company to the partnership and then does not receive the promised materials is put in a difficult position. He has credibility on the line. If the company does not deliver, his next ask to the partnership will be harder to make.",
+     "kind": "counter_pattern",
+     "why": "A partner's reputation is his capital. A company that makes him look bad once makes him hesitant to vouch for the next one."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:1",
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "cap:admin.executive_support.commitment_tracking#f1"
+     ],
+     "claim": "When an investor names a specific ask, a specific deadline, and a specific use, and has already committed credibility to the partnership, silence on the founder's side reads as either incompetence or a loss of momentum. The ask is a gate, not a courtesy.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.before_an_investor_call"
+     ],
+     "claim": "A partner who has already vouched for the company at the partnership meeting is a warm lead and a potential champion. Delivering what he asked for, on time and strong, converts that vouching into momentum; missing the deadline converts it into a liability for him.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "At early-stage firms, one in three companies whose management the firm meets is reviewed at a partners' meeting (Gompers et al.). Manav Rao has already vouched for the company to his partners; the metrics are the condition for that vouching to convert into a formal review.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "A request for metrics before a partners' meeting is not a soft signal of interest; it is a hard gate. Investors do not ask for materials they will not use, and they do not name a partners' meeting unless they intend to present.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#12",
+     "evt_#1",
+     "file:kind"
+    ],
+    "kind": "investor",
+    "why": "The file is about an investor conversation in the seed round. Manav Rao is a partner at Lumen Ventures, a seed-stage fund. The ask is for traction metrics before a partners' meeting, which is a standard step in the investor decision process. The file's kind is correctly marked as 'investor.'"
+   },
+   "scenarios": {
+    "act": "If the founder sends strong traction metrics in a clear one-pager by Friday or Saturday, Manav Rao presents to the partnership with the promised materials. The conversation moves to partner_meeting stage. The partnership reviews the company with the metrics in hand. One in three companies reviewed at a partners' meeting moves to the next stage (diligence or a second meeting with a decision-maker).",
+    "best": "The founder sends the metrics by Friday. Manav Rao presents to the partnership on Monday. The metrics are strong enough to warrant a deeper look. The partnership asks for diligence materials or a second meeting with a decision-maker. The conversation moves to diligence or a second call. Manav Rao becomes a champion for the company inside the fund.",
+    "do_nothing": "If the founder does not send the metrics by Monday's partners' meeting, Manav Rao will either present the company without the promised materials (damaging his credibility and the company's chances) or will not present at all (ending the conversation). Either way, the warm lead decays into a no that nobody sends, and the founder learns of it only when the round has moved on without Lumen Ventures.",
+    "signals_to_watch": [
+     "Whether the founder sends the metrics by Friday or Saturday (before the Monday meeting).",
+     "Whether the metrics are strong (revenue run-rate, pilot pipeline, clinics live) or weak.",
+     "Whether Manav Rao sends a follow-up message after Monday's meeting, asking for a call or a next step.",
+     "Whether the partnership asks for diligence materials or a second meeting within a week of the Monday meeting.",
+     "Whether Manav Rao's tone changes after the Monday meeting (warmer or cooler)."
+    ],
+    "worst": "The founder does not send the metrics by Monday. Manav Rao either does not present, or presents without the promised materials. The partnership does not review the company, or reviews it without the metrics and forms a negative opinion. The conversation ends. Manav Rao's credibility with the partnership is damaged, and he is less likely to vouch for the company again."
+   },
+   "unknowns": [
+    {
+     "question": "What is the date of Monday's partners' meeting? Is it 2026-08-11, or is 'Monday' a reference to a meeting that has already passed?",
+     "relevance": "If the meeting is 2026-08-11, the founder has three days to send the metrics. If the meeting has already passed, the ask is moot and the file should be closed or moved to a new stage. The dossier does not give the calendar date of 'Monday.'"
+    },
+    {
+     "question": "Does the founder have the traction metrics ready? What are 'clinics live, revenue run-rate and the pilot pipeline'\u2014are these numbers the founder tracks, or does the founder need to gather them?",
+     "relevance": "If the metrics are ready, the move is to send them today. If they are not ready, the move is to find out what is blocking and to unblock it. The dossier does not say whether the founder has these numbers."
+    },
+    {
+     "question": "What is the founder's assessment of Lumen Ventures' likelihood to invest? Is this a warm lead or a long shot?",
+     "relevance": "If Lumen Ventures is a warm lead, the priority of this ask is high. If it is a long shot, the founder might deprioritize it in favor of other investors. The dossier marks Lumen Ventures as 'engaged,' which suggests warmth, but does not quantify it."
+    },
+    {
+     "question": "Has the founder sent the metrics, and the file has not been updated? Or has the founder not sent them?",
+     "relevance": "The file's last touch is 2026-08-08 06:30 UTC, the same as the first touch. If the founder sent the metrics, the file should have been updated. The dossier does not say whether the founder has acted since the ask arrived."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline is Monday's partners' meeting, which is in three days. Send the metrics by Friday at the latest. If the founder does not have the metrics ready, call Manav Rao today to unblock. If the founder has not sent the metrics by Friday, send a note to Manav Rao on Friday evening explaining the delay and offering to send them Monday morning before the meeting (though this is a weak option and should be avoided). If the founder has not sent the metrics by Monday morning, the ask is moot and the file should be moved to 'passed' with the reason 'failed to deliver on committed materials.'"
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Manav Rao, a partner at Lumen Ventures, wrote on 2026-08-08 06:30 UTC asking for traction metrics before a Monday partners' meeting.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Before our Monday partners' meeting, could you share your current traction metrics - clinics live, revenue run-rate and the pilot pipeline? I told the partners Meera Iyer would send a one-pager.\"\n    },\n    {\n      \"claim\": \"This is the first contact with Lumen Ventures; the file was opened at 2026-08-08 06:30 UTC and has not been touched since.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file records an open ask: Manav Rao waits on us to send traction metrics, open since 2026-08-08 06:30 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Lumen Ventures is marked as 'engaged' in the company brief, distinguishing it from other investors who were only 'written to in the seed wave'.\",\n      \"evidence\": [\n        \"brief:cbl_#12\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.23 days as of the dossier timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in Manav Rao's mail; he made a request, not a commitment.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units assessed this file as low risk, with high engagement and low urgency, and found no blocking dependency.\",\n      \"evidence\": [\n        \"ru:core.risk\",\n        \"ru:core.temporal\",\n        \"ru:core.dependency\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in our court: Manav Rao has named a specific ask (traction metrics in a one-pager), a specific deadline (before Monday's partners' meeting), and a specific use (to present to the partnership). This is not a soft inquiry but a gating condition for the next stage.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The Monday partners' meeting is the next stage gate. If the metrics arrive in time and are strong, the conversation moves to partner_meeting stage; if they do not arrive, or arrive weak, the conversation stalls or decays.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"Manav Rao's framing\u2014'I told the partners Meera Iyer would send a one-pager'\u2014signals he has already committed his credibility to the company at the partnership level. This is a warm signal, not a cold filter.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The file's stage is first_contact, not first_call. A first call has not yet occurred; what has occurred is a warm introduction (Manav Rao met the founder last week) followed by a specific ask. The next stage gate is the partners' meeting, conditional on delivery of the metrics.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:first_touch\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an investor names a specific ask, a specific deadline, and a specific use, and has already committed credibility to the partnership, silence on the founder's side reads as either incompetence or a loss of momentum. The ask is a gate, not a courtesy.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"cap:admin.executive_support.commitment_tracking#f1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A partner who has already vouched for the company at the partnership meeting is a warm lead and a potential champion. Delivering what he asked for, on time and strong, converts that vouching into momentum; missing the deadline converts it into a liability for him.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"At early-stage firms, one in three companies whose management the firm meets is reviewed at a partners' meeting (Gompers et al.). Manav Rao has already vouched for the company to his partners; the metrics are the condition for that vouching to convert into a formal review.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A request for metrics before a partners' meeting is not a soft signal of interest; it is a hard gate. Investors do not ask for materials they will not use, and they do not name a partners' meeting unless they intend to present.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When an investor names a specific deadline and a specific use, the deadline is real. 'Before Monday' means before Monday, not 'sometime this week.' A one-pager sent Tuesday reads as late, even if Monday was only two days away.\",\n      \"why\": \"An investor who has committed to present to the partnership has already scheduled the meeting and set the agenda. A late submission either does not make the meeting or arrives after the partners have already formed an opinion from the partner's summary.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A one-pager for a partners' meeting is not a data dump. It is a narrative: what the company does, why it matters, what the traction is, what the ask is, and why this fund. The metrics are the proof, not the story.\",\n      \"why\": \"Partners do not have time to read a long document before a weekly meeting. A one-pager that is actually a three-pager, or that buries the metrics in a wall of text, reads as either inexperience or a lack of respect for the partners' time.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A founder who has been asked for metrics and does not send them within a day is either blocked (does not have the numbers, does not know how to frame them, or is waiting on someone else) or has deprioritized the ask. Either way, the investor reads it as a signal.\",\n      \"why\": \"Metrics are the founder's own data. There is no reason to wait, and every reason to send them fast. A delay reads as either incompetence or a loss of momentum.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A partner who vouches for a company to the partnership and then does not receive the promised materials is put in a difficult position. He has credibility on the line. If the company does not deliver, his next ask to the partnership will be harder to make.\",\n      \"why\": \"A partner's reputation is his capital. A company that makes him look bad once makes him hesitant to vouch for the next one.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The founder has the traction metrics ready and will send them today or tomorrow.\",\n      \"needs\": \"A message from the founder to Manav Rao with the one-pager, or a note in the file that the metrics have been sent.\"\n    },\n    {\n      \"proposition\": \"The founder does not have the metrics ready, or does not know how to frame them, and is blocked.\",\n      \"needs\": \"A conversation with the founder about what the metrics are, what they should say, and when they can be ready.\"\n    },\n    {\n      \"proposition\": \"The founder has deprioritized this ask because other work is more urgent, or because the founder is uncertain about Lumen Ventures' seriousness.\",\n      \"needs\": \"A conversation with the founder about the priority of this ask and the signal it sends.\"\n    },\n    {\n      \"proposition\": \"Monday's partners' meeting is still several days away, and the founder has time to send the metrics without urgency.\",\n      \"needs\": \"Confirmation of the date of Monday's meeting and how much time remains.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the date of Monday's partners' meeting? Is it 2026-08-11, or is 'Monday' a reference to a meeting that has already passed?\",\n      \"relevance\": \"If the meeting is 2026-08-11, the founder has three days to send the metrics. If the meeting has already passed, the ask is moot and the file should be closed or moved to a new stage. The dossier does not give the calendar date of 'Monday.'\"\n    },\n    {\n      \"question\": \"Does the founder have the traction metrics ready? What are 'clinics live, revenue run-rate and the pilot pipeline'\u2014are these numbers the founder tracks, or does the founder need to gather them?\",\n      \"relevance\": \"If the metrics are ready, the move is to send them today. If they are not ready, the move is to find out what is blocking and to unblock it. The dossier does not say whether the founder has these numbers.\"\n    },\n    {\n      \"question\": \"What is the founder's assessment of Lumen Ventures' likelihood to invest? Is this a warm lead or a long shot?\",\n      \"relevance\": \"If Lumen Ventures is a warm lead, the priority of this ask is high. If it is a long shot, the founder might deprioritize it in favor of other investors. The dossier marks Lumen Ventures as 'engaged,' which suggests warmth, but does not quantify it.\"\n    },\n    {\n      \"question\": \"Has the founder sent the metrics, and the file has not been updated? Or has the founder not sent them?\",\n      \"relevance\": \"The file's last touch is 2026-08-08 06:30 UTC, the same as the first touch. If the founder sent the metrics, the file should have been updated. The dossier does not say whether the founder has acted since the ask arrived.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm investor has asked for specific materials before a partners' meeting and has committed credibility to the company at the partnership level. The founder owes a specific deliverable by a specific deadline. The ball is in the founder's court, and the deadline is real.\",\n    \"rivals\": [\n      \"A soft inquiry from an investor who is testing interest before committing time. The metrics are optional, and the deadline is flexible.\",\n      \"A gating question that will determine whether the investor moves forward. The metrics are a filter, and weak metrics will end the conversation.\",\n      \"A routine administrative request that the founder can batch with other investor asks. The deadline is not urgent relative to other work.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is about an investor conversation in the seed round. Manav Rao is a partner at Lumen Ventures, a seed-stage fund. The ask is for traction metrics before a partners' meeting, which is a standard step in the investor decision process. The file's kind is correctly marked as 'investor.'\",\n    \"evidence\": [\n      \"brief:cbl_#12\",\n      \"evt_#1\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_contact\",\n    \"expected\": \"At first_contact, the playbook expects either a first meeting or call to be scheduled, or the investor to decline. The typical duration is 14 days. Silence is the default; after a warm introduction, silence means the investor has not opted in. The stage ends when a first meeting or call takes place, or the investor declines.\",\n    \"actual\": \"A warm introduction has occurred (Manav Rao met the founder last week). The investor has not declined; instead, he has asked for specific materials before a partners' meeting. This is a gate, not a decline. The founder owes a deliverable. The stage has not ended; it has moved to a conditional next step. The file is not silent; it is waiting on the founder.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If the founder does not send the metrics by Monday's partners' meeting, Manav Rao will either present the company without the promised materials (damaging his credibility and the company's chances) or will not present at all (ending the conversation). Either way, the warm lead decays into a no that nobody sends, and the founder learns of it only when the round has moved on without Lumen Ventures.\",\n    \"act\": \"If the founder sends strong traction metrics in a clear one-pager by Friday or Saturday, Manav Rao presents to the partnership with the promised materials. The conversation moves to partner_meeting stage. The partnership reviews the company with the metrics in hand. One in three companies reviewed at a partners' meeting moves to the next stage (diligence or a second meeting with a decision-maker).\",\n    \"best\": \"The founder sends the metrics by Friday. Manav Rao presents to the partnership on Monday. The metrics are strong enough to warrant a deeper look. The partnership asks for diligence materials or a second meeting with a decision-maker. The conversation moves to diligence or a second call. Manav Rao becomes a champion for the company inside the fund.\",\n    \"worst\": \"The founder does not send the metrics by Monday. Manav Rao either does not present, or presents without the promised materials. The partnership does not review the company, or reviews it without the metrics and forms a negative opinion. The conversation ends. Manav Rao's credibility with the partnership is damaged, and he is less likely to vouch for the company again.\",\n    \"signals_to_watch\": [\n      \"Whether the founder sends the metrics by Friday or Saturday (before the Monday meeting).\",\n      \"Whether the metrics are strong (revenue run-rate, pilot pipeline, clinics live) or weak.\",\n      \"Whether Manav Rao sends a follow-up message after Monday's meeting, asking for a call or a next step.\",\n      \"Whether the partnership asks for diligence materials or a second meeting within a week of the Monday meeting.\",\n      \"Whether Manav Rao's tone changes after the Monday meeting (warmer or cooler).\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Lumen Ventures is marked as 'engaged,' not just 'written to in the seed wave,' suggesting it is a warm lead and a priority investor for the round.\",\n      \"Manav Rao has already committed credibility to the company at the partnership level by telling the partners the founder would send a one-pager. A failure to deliver damages his credibility and the company's chances.\",\n      \"The deadline is real and specific: before Monday's partners' meeting. Missing it is not a soft signal; it is a hard failure.\",\n      \"The playbook notes that 'momentum is a parallel process' and that 'the biggest factor in most investors' opinions of you is the opinion of other investors.' A warm lead that decays into a no removes momentum from the round and signals weakness to other investors.\",\n      \"A failure to deliver on a specific ask to a warm investor is costly to reverse. The investor may give the company a second chance, but the credibility cost is high, and the founder's reputation for follow-through is damaged.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a one-pager with traction metrics (clinics live, revenue run-rate, pilot pipeline) to Manav Rao\",\n    \"for_whom\": \"Manav Rao at Lumen Ventures\",\n    \"by_when\": \"2026-08-09\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"manav@lumenvc.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder does not have the metrics ready, or is uncertain about how to frame them, the alternative is to call Manav Rao today and ask for a brief conversation about what the one-pager should include. This unblocks the ask and signals urgency and respect for the deadline. The call should take no more than 15 minutes. The founder should then send the one-pager by Friday.\",\n  \"wait_or_stop\": \"Do not wait. The deadline is Monday's partners' meeting, which is in three days. Send the metrics by Friday at the latest. If the founder does not have the metrics ready, call Manav Rao today to unblock. If the founder has not sent the metrics by Friday, send a note to Manav Rao on Friday evening explaining the delay and offering to send them Monday morning before the meeting (though this is a weak option and should be avoided). If the founder has not sent the metrics by Monday morning, the ask is moot and the file should be moved to 'passed' with the reason 'failed to deliver on committed materials.'\",\n  \"done_when\": \"The one-pager has been sent to Manav Rao and he has confirmed receipt. The metrics are clear, the narrative is compelling, and the ask is specific. Manav Rao presents the one-pager to the partnership on Monday. Within a week of the Monday meeting, Manav Rao sends a follow-up message with a next step (a call, a diligence request, or a pass with a reason).\",\n  \"draft\": \"Hi Manav, Thanks for the clear ask. Here's the one-pager with our current traction\u2014clinics live, revenue run-rate, and pilot pipeline. Looking forward to your partners' meeting on Monday. Let me know if you need anything else before then. Best, Meera\"\n}",
+  "site": "expert"
+ }
+}

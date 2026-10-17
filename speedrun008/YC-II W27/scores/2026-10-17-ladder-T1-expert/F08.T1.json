@@ -1,0 +1,456 @@
+{
+ "b31b94444c1a8c7e3e86abf6b69cbc596987d53d003abc816a118e7e40c80ea8": {
+  "framed": true,
+  "input_tokens": 7088,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2953,
+  "parsed": {
+   "alternative": "If you have a specific reason to connect with Simon Hart (a design partnership ask, a customer reference, or an investor intro), send a brief follow-up message within three days that states the reason and proposes a next step. This accelerates the timeline but risks appearing pushy. Only do this if the reason is clear and the ask is specific.",
+   "appraisal": {
+    "reasons": [
+     "No commitment was made, so there is no deadline or obligation",
+     "The introduction is one of many in motion; the brief lists five investors, seven programs, and four design partners",
+     "A wrong move now (chasing too early) is reversible but costly to the relationship",
+     "The file has been quiet for only 0.5 days, which is within the normal window for silence after an introduction",
+     "ru:core.risk shows risk as low and momentum as unmeasured"
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Done when Simon Hart replies with interest, a question, or a meeting request; or when you have sent one follow-up and received no reply after one week, at which point you close the file and move on.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "An introduction was sent 0.5 days ago. No reply has been received. This is within the normal window for silence.",
+    "expected": "The brief does not name a kind of work for this file, so no playbook applies. Without a playbook, the expectation is that an introduction generates either a reply or silence within one to two weeks.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to Simon Hart at Lumenpath on 2026-08-04 at 06:00 UTC",
+     "evidence": [
+      "evt_#1",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Simon Hart, who runs partnerships at Lumenpath. Simon, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here."
+    },
+    {
+     "claim": "No reply has been received from Simon Hart or Lumenpath since the introduction",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days since first touch",
+     "evidence": [
+      "num:days_quiet",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise or commitment was made in the introduction mail",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief does not name a kind of work for this file",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in their court \u2014 you have not written to them since the introduction",
+     "evidence": [
+      "none:we_wrote",
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A cold introduction from a trusted connector that has not yet generated a response. The recipient has not replied, and the file has been quiet for half a day. This is normal; most introductions do not generate immediate replies.",
+    "rivals": [
+     "A missed opportunity that requires immediate follow-up to keep the thread warm",
+     "A partnership or business development lead that should be tracked and followed up on a schedule",
+     "An administrative task that has been assigned to you and is now overdue"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from simon@lumenpath.test with a question, a meeting request, or a statement of interest",
+     "proposition": "Simon Hart is interested and will reply within the next week"
+    },
+    {
+     "needs": "Silence for more than two weeks, or a signal from another source that Lumenpath is not pursuing partnerships in your space",
+     "proposition": "Simon Hart is not interested and will not reply"
+    },
+    {
+     "needs": "A reply after one to three weeks, or a reply to a follow-up message you send after waiting",
+     "proposition": "Simon Hart received the introduction but has not yet prioritized it"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:4"
+     ],
+     "claim": "This is a cold introduction that has not yet generated a response or a next step"
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "fact:4",
+      "none:promises"
+     ],
+     "claim": "The file's domain is admin, but it lacks the structure of a tracked commitment \u2014 no promise was made, no date was set, no ask was stated"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:6"
+     ],
+     "claim": "The introduction itself is the entire work product so far; what happens next depends on whether Simon Hart chooses to engage"
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-11",
+    "for_whom": "Simon Hart at Lumenpath",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:2",
+     "own:3",
+     "own:4"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:4",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "wait for a reply from Simon Hart; do not send a follow-up message before one week has passed",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An introduction from a trusted connector is a gift, not a commitment; the recipient owes nothing but attention, and the introducer has done their work",
+     "kind": "practice",
+     "why": "The connector's role ends when both parties have each other's name and context. What happens next is between the two people, not between either and the connector."
+    },
+    {
+     "claim": "Most cold introductions to partnership or business development contacts do not generate a reply within the first week",
+     "kind": "base_rate",
+     "why": "Partnership conversations are discretionary, not urgent. The recipient is not waiting on you; they are managing their own pipeline."
+    },
+    {
+     "claim": "The first move after an introduction should come from the recipient, not from you, unless you have a specific reason to write",
+     "kind": "practice",
+     "why": "Writing first after an introduction reads as either needing something or not trusting the connector's work. Silence from you signals confidence and respect for their time."
+    },
+    {
+     "claim": "Chasing an introduction before a week has passed damages the relationship more than waiting does",
+     "kind": "counter_pattern",
+     "why": "The recipient interprets an early chase as pressure or incompetence. A week is the minimum window to assume they have not yet read the introduction or decided whether to engage."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Cold introductions from connectors generate a reply within one to three days if the recipient is interested, or silence if they are not",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "num:their_reply_time:simon@lumenpath.test",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A reply time of zero days is not measured because the introduction itself is not a message to which a reply is owed \u2014 it is a handoff",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence in the first few days after an introduction is process, not disinterest; escalating on quietness alone converts a normal wait into a relationship event",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:introduced_by",
+     "brief:cbl_#27",
+     "evt_#1"
+    ],
+    "kind": "intro",
+    "why": "The brief names Introly as a connector whose mail is an introduction, not a stranger. The file records the introduction itself, not a subsequent commitment or ask. The work is the handoff, not a follow-up."
+   },
+   "scenarios": {
+    "act": "You send a follow-up message to Simon Hart within the next three days, stating a specific reason to connect (a design partnership ask, a customer reference, an investor intro, or a meeting to explore fit). This accelerates the timeline but risks appearing pushy if Simon has not yet read the introduction.",
+    "best": "Simon Hart replies within one week with interest, a question, or a meeting request. You have a conversation that leads to a partnership, a customer reference, or a warm intro to an investor. The introduction has done its work.",
+    "do_nothing": "The file remains quiet. If Simon Hart is interested, he will reply within one to three weeks. If he is not, the file will go dormant after two weeks of silence. You will have lost no relationship and spent no time.",
+    "signals_to_watch": [
+     "A reply from simon@lumenpath.test within one week",
+     "A reply after two weeks of silence (suggests lower priority but still interest)",
+     "No reply after three weeks (suggests no interest)",
+     "A message from Introly asking for an update (suggests Introly is tracking the introduction)"
+    ],
+    "worst": "Simon Hart does not reply, and you send a follow-up that reads as needy or pushy. He deprioritizes the conversation, or the thread dies. You have damaged the relationship and wasted time on a low-probability lead."
+   },
+   "unknowns": [
+    {
+     "question": "What is Lumenpath's business, and does it align with Nimbus Labs' product or market?",
+     "relevance": "If Lumenpath is a design partner, investor, or customer prospect, the urgency and mode of follow-up change. The brief does not name Lumenpath's role."
+    },
+    {
+     "question": "Why did Introly introduce you to Simon Hart specifically?",
+     "relevance": "If Introly had a reason \u2014 a stated fit, a warm introduction, a specific ask \u2014 that context would guide whether to follow up and how. The introduction mail does not explain the reasoning."
+    },
+    {
+     "question": "Is there a natural next step you should propose, or should you wait for Simon to suggest one?",
+     "relevance": "If you have a specific ask (design partnership, investor intro, customer reference), you should state it in a follow-up. If this is exploratory, silence is the right move."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-11 (one week from first touch). If Simon Hart has not replied by then, send a single follow-up message with a specific ask or reason to connect. If he does not reply to the follow-up within one week, close the file and move on. Do not send more than one follow-up; multiple chases damage the relationship and waste time on a low-probability lead."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to Simon Hart at Lumenpath on 2026-08-04 at 06:00 UTC\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Simon Hart, who runs partnerships at Lumenpath. Simon, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\"\n    },\n    {\n      \"claim\": \"No reply has been received from Simon Hart or Lumenpath since the introduction\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days since first touch\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise or commitment was made in the introduction mail\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief does not name a kind of work for this file\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in their court \u2014 you have not written to them since the introduction\",\n      \"evidence\": [\n        \"none:we_wrote\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a cold introduction that has not yet generated a response or a next step\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"The file's domain is admin, but it lacks the structure of a tracked commitment \u2014 no promise was made, no date was set, no ask was stated\",\n      \"based_on\": [\n        \"file:domains\",\n        \"fact:4\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"The introduction itself is the entire work product so far; what happens next depends on whether Simon Hart chooses to engage\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:6\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Cold introductions from connectors generate a reply within one to three days if the recipient is interested, or silence if they are not\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A reply time of zero days is not measured because the introduction itself is not a message to which a reply is owed \u2014 it is a handoff\",\n      \"based_on\": [\n        \"num:their_reply_time:simon@lumenpath.test\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Administrative silence in the first few days after an introduction is process, not disinterest; escalating on quietness alone converts a normal wait into a relationship event\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction from a trusted connector is a gift, not a commitment; the recipient owes nothing but attention, and the introducer has done their work\",\n      \"why\": \"The connector's role ends when both parties have each other's name and context. What happens next is between the two people, not between either and the connector.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most cold introductions to partnership or business development contacts do not generate a reply within the first week\",\n      \"why\": \"Partnership conversations are discretionary, not urgent. The recipient is not waiting on you; they are managing their own pipeline.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The first move after an introduction should come from the recipient, not from you, unless you have a specific reason to write\",\n      \"why\": \"Writing first after an introduction reads as either needing something or not trusting the connector's work. Silence from you signals confidence and respect for their time.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing an introduction before a week has passed damages the relationship more than waiting does\",\n      \"why\": \"The recipient interprets an early chase as pressure or incompetence. A week is the minimum window to assume they have not yet read the introduction or decided whether to engage.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Simon Hart is interested and will reply within the next week\",\n      \"needs\": \"A reply from simon@lumenpath.test with a question, a meeting request, or a statement of interest\"\n    },\n    {\n      \"proposition\": \"Simon Hart is not interested and will not reply\",\n      \"needs\": \"Silence for more than two weeks, or a signal from another source that Lumenpath is not pursuing partnerships in your space\"\n    },\n    {\n      \"proposition\": \"Simon Hart received the introduction but has not yet prioritized it\",\n      \"needs\": \"A reply after one to three weeks, or a reply to a follow-up message you send after waiting\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Lumenpath's business, and does it align with Nimbus Labs' product or market?\",\n      \"relevance\": \"If Lumenpath is a design partner, investor, or customer prospect, the urgency and mode of follow-up change. The brief does not name Lumenpath's role.\"\n    },\n    {\n      \"question\": \"Why did Introly introduce you to Simon Hart specifically?\",\n      \"relevance\": \"If Introly had a reason \u2014 a stated fit, a warm introduction, a specific ask \u2014 that context would guide whether to follow up and how. The introduction mail does not explain the reasoning.\"\n    },\n    {\n      \"question\": \"Is there a natural next step you should propose, or should you wait for Simon to suggest one?\",\n      \"relevance\": \"If you have a specific ask (design partnership, investor intro, customer reference), you should state it in a follow-up. If this is exploratory, silence is the right move.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A cold introduction from a trusted connector that has not yet generated a response. The recipient has not replied, and the file has been quiet for half a day. This is normal; most introductions do not generate immediate replies.\",\n    \"rivals\": [\n      \"A missed opportunity that requires immediate follow-up to keep the thread warm\",\n      \"A partnership or business development lead that should be tracked and followed up on a schedule\",\n      \"An administrative task that has been assigned to you and is now overdue\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The brief names Introly as a connector whose mail is an introduction, not a stranger. The file records the introduction itself, not a subsequent commitment or ask. The work is the handoff, not a follow-up.\",\n    \"evidence\": [\n      \"file:introduced_by\",\n      \"brief:cbl_#27\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief does not name a kind of work for this file, so no playbook applies. Without a playbook, the expectation is that an introduction generates either a reply or silence within one to two weeks.\",\n    \"actual\": \"An introduction was sent 0.5 days ago. No reply has been received. This is within the normal window for silence.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. If Simon Hart is interested, he will reply within one to three weeks. If he is not, the file will go dormant after two weeks of silence. You will have lost no relationship and spent no time.\",\n    \"act\": \"You send a follow-up message to Simon Hart within the next three days, stating a specific reason to connect (a design partnership ask, a customer reference, an investor intro, or a meeting to explore fit). This accelerates the timeline but risks appearing pushy if Simon has not yet read the introduction.\",\n    \"best\": \"Simon Hart replies within one week with interest, a question, or a meeting request. You have a conversation that leads to a partnership, a customer reference, or a warm intro to an investor. The introduction has done its work.\",\n    \"worst\": \"Simon Hart does not reply, and you send a follow-up that reads as needy or pushy. He deprioritizes the conversation, or the thread dies. You have damaged the relationship and wasted time on a low-probability lead.\",\n    \"signals_to_watch\": [\n      \"A reply from simon@lumenpath.test within one week\",\n      \"A reply after two weeks of silence (suggests lower priority but still interest)\",\n      \"No reply after three weeks (suggests no interest)\",\n      \"A message from Introly asking for an update (suggests Introly is tracking the introduction)\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"No commitment was made, so there is no deadline or obligation\",\n      \"The introduction is one of many in motion; the brief lists five investors, seven programs, and four design partners\",\n      \"A wrong move now (chasing too early) is reversible but costly to the relationship\",\n      \"The file has been quiet for only 0.5 days, which is within the normal window for silence after an introduction\",\n      \"ru:core.risk shows risk as low and momentum as unmeasured\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for a reply from Simon Hart; do not send a follow-up message before one week has passed\",\n    \"for_whom\": \"Simon Hart at Lumenpath\",\n    \"by_when\": \"2026-08-11\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:2\",\n      \"own:3\",\n      \"own:4\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If you have a specific reason to connect with Simon Hart (a design partnership ask, a customer reference, or an investor intro), send a brief follow-up message within three days that states the reason and proposes a next step. This accelerates the timeline but risks appearing pushy. Only do this if the reason is clear and the ask is specific.\",\n  \"wait_or_stop\": \"Wait until 2026-08-11 (one week from first touch). If Simon Hart has not replied by then, send a single follow-up message with a specific ask or reason to connect. If he does not reply to the follow-up within one week, close the file and move on. Do not send more than one follow-up; multiple chases damage the relationship and waste time on a low-probability lead.\",\n  \"done_when\": \"Done when Simon Hart replies with interest, a question, or a meeting request; or when you have sent one follow-up and received no reply after one week, at which point you close the file and move on.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "bf95abdd18d5e971d10b1a3511530c8ff86c742cfdfa269881acbcca9bccef65": {
+  "framed": true,
+  "input_tokens": 7107,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2715,
+  "parsed": {
+   "alternative": "Write to Omar Haddad now with a specific reason to connect \u2014 a shared problem, a potential collaboration, or an insight about developer tools and founder support. This move has a higher reply rate than waiting, but it risks appearing too eager if Omar is simply slow to respond.",
+   "appraisal": {
+    "reasons": [
+     "No commitment was made, so there is no obligation to follow up",
+     "The introduction is one of many in motion; it is not blocking any of your current goals",
+     "A follow-up can be made at any time without cost",
+     "The file has been quiet for only 1.5 days, which is within normal bounds for a cold introduction"
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Either Omar replies with interest in a conversation, or you have waited seven days and decided not to follow up, or you have followed up with a specific reason to connect and received no reply after five more days.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The introduction was made. No reply has been received. No follow-up has been sent by you.",
+    "expected": "An introduction from a connector is complete when made. The expectation is that one of the two parties will write next with a specific reason to connect, or that the recipient will reply if interested.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to Omar Haddad of Tidewell on 2026-08-06 at 06:00 UTC",
+     "evidence": [
+      "evt_#1",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Omar Haddad, a founder building in developer tools. Omar, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here."
+    },
+    {
+     "claim": "No reply has been received from Omar Haddad since the introduction",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.5 days since first touch",
+     "evidence": [
+      "num:days_quiet",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise or commitment was made in the introduction mail",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in their court \u2014 you have not written since the introduction",
+     "evidence": [
+      "none:we_wrote",
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A cold founder-to-founder introduction from a trusted connector, made one and a half days ago, awaiting the recipient's response. No commitment was made, no ask was stated, and the introduction is complete as written.",
+    "rivals": [
+     "A potential partnership or collaboration opportunity that requires you to take the next step to move forward",
+     "A low-priority introduction that may not warrant follow-up if the recipient does not engage within a normal window"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from Omar within the next five to seven days, or a signal from Introly that he engaged with the introduction",
+     "proposition": "Omar Haddad is interested in connecting but has not yet read the introduction or prioritized a reply"
+    },
+    {
+     "needs": "Silence beyond seven days, or a direct message saying so",
+     "proposition": "Omar Haddad is not interested in connecting with you at this time"
+    },
+    {
+     "needs": "A reply to a follow-up message from you that names a concrete reason to talk \u2014 a shared problem, a potential collaboration, or a specific insight",
+     "proposition": "Omar Haddad is interested but waiting to see if you will write with a specific reason to connect"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "This is a cold introduction that has not yet generated a response or a next step"
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "none:playbook"
+     ],
+     "claim": "The file's status is uncertain because no playbook exists to define what success looks like or when to escalate"
+    },
+    {
+     "based_on": [
+      "num:days_quiet",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The silence is within normal bounds for a cold introduction and does not yet signal disinterest"
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-13",
+    "for_whom": "Omar Haddad",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:3",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "wait for a reply from Omar Haddad; if no reply arrives within seven days, decide whether to write with a specific reason to connect",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A founder-to-founder introduction from a trusted connector should not be chased before five to seven days have passed",
+     "kind": "practice",
+     "why": "Chasing a cold intro before the recipient has had time to read and think reads as pressure and damages the relationship before it starts"
+    },
+    {
+     "claim": "When a connector makes an introduction and says 'I'll let you two take it from here,' the expectation is that one of you will write next \u2014 usually the person being introduced to",
+     "kind": "base_rate",
+     "why": "The connector has done their work; the next move belongs to the parties, and the recipient often waits to see if the introducer's judgment was sound by observing whether the other person writes"
+    },
+    {
+     "claim": "Developer tools founders often have longer response cycles than founders in other domains, because they are deep in code",
+     "kind": "counter_pattern",
+     "why": "The brief says Omar is building in developer tools; this is a known pattern in the ecosystem"
+    },
+    {
+     "claim": "An introduction with no explicit ask or promise is complete when made; the next move is to wait for the recipient to engage or to write with a specific, valuable reason to connect",
+     "kind": "practice",
+     "why": "A generic 'let's talk' follow-up after a connector intro often goes unanswered; a follow-up with a specific insight or ask has higher reply rates"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Cold introductions from connectors typically see a response within three to five days if the recipient is interested",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence after a connector introduction is not always disinterest; many founders batch replies or are in execution mode",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "A connector introduction that names mutual relevance \u2014 as this one does, naming both founders' domains \u2014 has higher reply rates than generic intros",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "file:introduced_by",
+     "brief:cbl_#27"
+    ],
+    "kind": "intro",
+    "why": "The brief explicitly names Introly as a connector whose mail is an introduction, not a stranger. This file is the result of that introduction."
+   },
+   "scenarios": {
+    "act": "You write to Omar with a specific reason to connect \u2014 a shared problem, a potential collaboration, or an insight about his work. This move has a higher reply rate than a generic follow-up and signals that you are serious about the connection.",
+    "best": "Omar replies within three days with interest in a conversation. You schedule a call and discover a valuable partnership or collaboration opportunity.",
+    "do_nothing": "The file remains quiet. If Omar is interested, he may write within the next few days. If he is not, the introduction will fade. After seven to ten days of silence, the introduction will be effectively closed unless you write with a specific reason to connect.",
+    "signals_to_watch": [
+     "A reply from Omar within five to seven days",
+     "A message from Introly indicating that Omar engaged with the introduction",
+     "Your own sense of whether a follow-up would be valuable given your current priorities"
+    ],
+    "worst": "Omar does not reply, and you invest time in a follow-up that also goes unanswered. The introduction yields no relationship."
+   },
+   "unknowns": [
+    {
+     "question": "What is the nature of the potential connection between Nimbus Labs and Tidewell? Are they potential customers, partners, investors, or peers?",
+     "relevance": "This would determine whether the introduction is strategic to your current goals and whether a follow-up is worth making"
+    },
+    {
+     "question": "Has Omar Haddad received and read the introduction, or is it still in his inbox?",
+     "relevance": "If he has not read it, waiting is the right move; if he has read it and not replied, a follow-up may be warranted"
+    },
+    {
+     "question": "What is Introly's track record with you? Do introductions from Introly typically convert to relationships?",
+     "relevance": "This would inform how much weight to give to this introduction and whether to invest time in a follow-up"
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-13 (seven days from first touch). If Omar has not replied by then, decide whether to write with a specific reason to connect. If you do write, wait another five days for a reply. If there is still no reply, close the file unless a new signal arrives."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to Omar Haddad of Tidewell on 2026-08-06 at 06:00 UTC\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Omar Haddad, a founder building in developer tools. Omar, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\"\n    },\n    {\n      \"claim\": \"No reply has been received from Omar Haddad since the introduction\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.5 days since first touch\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise or commitment was made in the introduction mail\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in their court \u2014 you have not written since the introduction\",\n      \"evidence\": [\n        \"none:we_wrote\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a cold introduction that has not yet generated a response or a next step\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The file's status is uncertain because no playbook exists to define what success looks like or when to escalate\",\n      \"based_on\": [\n        \"fact:6\",\n        \"none:playbook\"\n      ]\n    },\n    {\n      \"claim\": \"The silence is within normal bounds for a cold introduction and does not yet signal disinterest\",\n      \"based_on\": [\n        \"num:days_quiet\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Cold introductions from connectors typically see a response within three to five days if the recipient is interested\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence after a connector introduction is not always disinterest; many founders batch replies or are in execution mode\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A connector introduction that names mutual relevance \u2014 as this one does, naming both founders' domains \u2014 has higher reply rates than generic intros\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A founder-to-founder introduction from a trusted connector should not be chased before five to seven days have passed\",\n      \"why\": \"Chasing a cold intro before the recipient has had time to read and think reads as pressure and damages the relationship before it starts\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a connector makes an introduction and says 'I'll let you two take it from here,' the expectation is that one of you will write next \u2014 usually the person being introduced to\",\n      \"why\": \"The connector has done their work; the next move belongs to the parties, and the recipient often waits to see if the introducer's judgment was sound by observing whether the other person writes\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Developer tools founders often have longer response cycles than founders in other domains, because they are deep in code\",\n      \"why\": \"The brief says Omar is building in developer tools; this is a known pattern in the ecosystem\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction with no explicit ask or promise is complete when made; the next move is to wait for the recipient to engage or to write with a specific, valuable reason to connect\",\n      \"why\": \"A generic 'let's talk' follow-up after a connector intro often goes unanswered; a follow-up with a specific insight or ask has higher reply rates\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Omar Haddad is interested in connecting but has not yet read the introduction or prioritized a reply\",\n      \"needs\": \"A reply from Omar within the next five to seven days, or a signal from Introly that he engaged with the introduction\"\n    },\n    {\n      \"proposition\": \"Omar Haddad is not interested in connecting with you at this time\",\n      \"needs\": \"Silence beyond seven days, or a direct message saying so\"\n    },\n    {\n      \"proposition\": \"Omar Haddad is interested but waiting to see if you will write with a specific reason to connect\",\n      \"needs\": \"A reply to a follow-up message from you that names a concrete reason to talk \u2014 a shared problem, a potential collaboration, or a specific insight\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the nature of the potential connection between Nimbus Labs and Tidewell? Are they potential customers, partners, investors, or peers?\",\n      \"relevance\": \"This would determine whether the introduction is strategic to your current goals and whether a follow-up is worth making\"\n    },\n    {\n      \"question\": \"Has Omar Haddad received and read the introduction, or is it still in his inbox?\",\n      \"relevance\": \"If he has not read it, waiting is the right move; if he has read it and not replied, a follow-up may be warranted\"\n    },\n    {\n      \"question\": \"What is Introly's track record with you? Do introductions from Introly typically convert to relationships?\",\n      \"relevance\": \"This would inform how much weight to give to this introduction and whether to invest time in a follow-up\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A cold founder-to-founder introduction from a trusted connector, made one and a half days ago, awaiting the recipient's response. No commitment was made, no ask was stated, and the introduction is complete as written.\",\n    \"rivals\": [\n      \"A potential partnership or collaboration opportunity that requires you to take the next step to move forward\",\n      \"A low-priority introduction that may not warrant follow-up if the recipient does not engage within a normal window\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The brief explicitly names Introly as a connector whose mail is an introduction, not a stranger. This file is the result of that introduction.\",\n    \"evidence\": [\n      \"file:role\",\n      \"file:introduced_by\",\n      \"brief:cbl_#27\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"An introduction from a connector is complete when made. The expectation is that one of the two parties will write next with a specific reason to connect, or that the recipient will reply if interested.\",\n    \"actual\": \"The introduction was made. No reply has been received. No follow-up has been sent by you.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. If Omar is interested, he may write within the next few days. If he is not, the introduction will fade. After seven to ten days of silence, the introduction will be effectively closed unless you write with a specific reason to connect.\",\n    \"act\": \"You write to Omar with a specific reason to connect \u2014 a shared problem, a potential collaboration, or an insight about his work. This move has a higher reply rate than a generic follow-up and signals that you are serious about the connection.\",\n    \"best\": \"Omar replies within three days with interest in a conversation. You schedule a call and discover a valuable partnership or collaboration opportunity.\",\n    \"worst\": \"Omar does not reply, and you invest time in a follow-up that also goes unanswered. The introduction yields no relationship.\",\n    \"signals_to_watch\": [\n      \"A reply from Omar within five to seven days\",\n      \"A message from Introly indicating that Omar engaged with the introduction\",\n      \"Your own sense of whether a follow-up would be valuable given your current priorities\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"No commitment was made, so there is no obligation to follow up\",\n      \"The introduction is one of many in motion; it is not blocking any of your current goals\",\n      \"A follow-up can be made at any time without cost\",\n      \"The file has been quiet for only 1.5 days, which is within normal bounds for a cold introduction\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for a reply from Omar Haddad; if no reply arrives within seven days, decide whether to write with a specific reason to connect\",\n    \"for_whom\": \"Omar Haddad\",\n    \"by_when\": \"2026-08-13\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Write to Omar Haddad now with a specific reason to connect \u2014 a shared problem, a potential collaboration, or an insight about developer tools and founder support. This move has a higher reply rate than waiting, but it risks appearing too eager if Omar is simply slow to respond.\",\n  \"wait_or_stop\": \"Wait until 2026-08-13 (seven days from first touch). If Omar has not replied by then, decide whether to write with a specific reason to connect. If you do write, wait another five days for a reply. If there is still no reply, close the file unless a new signal arrives.\",\n  \"done_when\": \"Either Omar replies with interest in a conversation, or you have waited seven days and decided not to follow up, or you have followed up with a specific reason to connect and received no reply after five more days.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

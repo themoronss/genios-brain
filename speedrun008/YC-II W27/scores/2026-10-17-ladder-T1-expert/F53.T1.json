@@ -1,0 +1,528 @@
+{
+ "3e52879d2b40689a3e530c9944816a762fd2e075d52894288715bba4d33c9f4b": {
+  "framed": true,
+  "input_tokens": 6333,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3380,
+  "parsed": {
+   "alternative": "Send a re-engagement message now that acknowledges the time that has passed, updates Larkspur on progress (design partners, traction, or milestones achieved since March), and offers a fresh reason to reconnect. This is lower-risk than waiting and may surface whether Larkspur is still interested. Use this approach if you have achieved a significant milestone or if you want to test the waters before the quarter ends.",
+   "appraisal": {
+    "reasons": [
+     "Larkspur is one of many investors in your seed wave; losing this opportunity does not block your fundraising",
+     "The conversation was warm but not a commitment; re-engagement is possible but not urgent",
+     "A re-engagement message can be sent at any time and does not foreclose other options",
+     "The file has been dormant for over six months, suggesting it is not a near-term priority"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "Either Larkspur responds to a re-engagement message and a meeting is scheduled, or you close the file after confirming they are not interested or have moved on.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "No follow-up occurred for 188 days. Your last message offered to join a meeting, which is a low-friction gesture that does not require a response and may have inadvertently closed the loop from your side.",
+    "expected": "In a typical seed fundraising cycle, after a prospect says they will discuss internally, the founder should expect either a follow-up meeting request within one to two weeks, or a polite pass within a month. If neither occurs, a light re-engagement after a week or two is standard practice.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Larkspur Ventures initiated contact after seeing a demo of Nimbus Labs",
+     "evidence": [
+      "evt_#4"
+     ],
+     "quote": "Loved the demo. How many design partners do you have live today?"
+    },
+    {
+     "claim": "You reported three live design partners and two more starting in April",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": "Three are live, and two more start in April. Happy to walk you through them."
+    },
+    {
+     "claim": "Ira Bose said they would take the information to their Monday meeting",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Let me take it to our Monday meeting."
+    },
+    {
+     "claim": "You offered to join a meeting if it would help",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "happy to join the meeting if it helps"
+    },
+    {
+     "claim": "No reply has been received for 188 days since your last message on 2026-03-11",
+     "evidence": [
+      "num:days_quiet",
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no kind of work named in the brief",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no role in the brief",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as a sales opportunity, but the corpus for sales opportunities is switched off for your company",
+     "evidence": [
+      "sit:sit_#1",
+      "not_run"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "An expert review on 2026-03-12 set the mode to wait",
+     "evidence": [
+      "review:ffp-cf769c2de3c7100894042955"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm sales conversation that ended with a prospect's commitment to discuss internally, followed by six months of silence \u2014 a stalled opportunity that may be dead, dormant, or waiting for a re-trigger",
+    "rivals": [
+     "A prospect who gathered information and moved on, with no intention to re-engage",
+     "A prospect who remains interested but has deprioritized due to market conditions or internal changes",
+     "A prospect who is waiting for a specific signal or milestone from Nimbus Labs before re-engaging"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A direct message from Ira or another Larkspur partner stating their decision, or confirmation from a mutual connection",
+     "proposition": "Larkspur's Monday meeting resulted in a decision not to pursue Nimbus Labs"
+    },
+    {
+     "needs": "A response from Ira to a re-engagement message, or a signal from another source that Larkspur is still evaluating",
+     "proposition": "Larkspur remains interested but has deprioritized the conversation due to other commitments or market conditions"
+    },
+    {
+     "needs": "A re-send of the offer with a different framing, or a call to Ira to confirm receipt",
+     "proposition": "The message offering to join a meeting was not received or was lost in Ira's inbox"
+    },
+    {
+     "needs": "A conversation with Ira about what would trigger their next step, or observation of whether Larkspur has engaged with other portfolio companies in the same space",
+     "proposition": "Larkspur is interested but waiting for a specific milestone or signal from Nimbus Labs before re-engaging"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:3",
+      "fact:5"
+     ],
+     "claim": "The conversation ended with a clear next step \u2014 Ira taking it to their Monday meeting \u2014 but no follow-up occurred"
+    },
+    {
+     "based_on": [
+      "num:longest_gap",
+      "num:days_quiet"
+     ],
+     "claim": "The silence is longer than any gap this file has closed before, suggesting the thread may have stalled at Larkspur's end"
+    },
+    {
+     "based_on": [
+      "fact:4"
+     ],
+     "claim": "Your last move was to offer availability, which is a low-friction gesture that does not require a response"
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "file:role",
+      "file:kind"
+     ],
+     "claim": "The file's classification as sales is inconsistent with its actual content and the brief's structure, which lists it under no category"
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-12-15",
+    "for_whom": "yourself",
+    "guided_by": [
+     "own:2",
+     "own:4",
+     "ru:core.risk"
+    ],
+    "rests_on": [
+     "fact:5",
+     "inference:2",
+     "own:2",
+     "own:4"
+    ],
+    "to": null,
+    "what": "Hold this file in wait status. Do not re-engage Larkspur now. Instead, focus on the active investors in your seed wave (Banyan, Northfield, Harbor Point, Tusker, Fjord, Lumen) and the accelerators you are in or have applied to. If you achieve a significant milestone \u2014 a major design partner, strong traction, or a term sheet from another investor \u2014 then re-engage Larkspur with that news as a fresh hook. If you do not hear from Larkspur within the next quarter, close this file.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A prospect's statement that they will take something to an internal meeting is a soft commitment, not a hard one; the founder should plan a light follow-up one week after the stated meeting date",
+     "kind": "practice",
+     "why": "Internal meetings often slip, get rescheduled, or deprioritize items; a gentle check-in keeps the thread warm without being pushy"
+    },
+    {
+     "claim": "In venture capital, silence longer than a quarter after a warm touch usually means the prospect has moved on or the deal is not a priority",
+     "kind": "base_rate",
+     "why": "VCs operate on short decision cycles; if they were interested, they would have responded or scheduled a follow-up within weeks"
+    },
+    {
+     "claim": "A prospect who asks a specific, detailed question about your product and then goes silent may have been gathering information for a competitive analysis or internal evaluation that did not result in a decision to engage",
+     "kind": "counter_pattern",
+     "why": "Not all interest signals lead to investment; some are exploratory"
+    },
+    {
+     "claim": "When re-engaging a silent prospect after a long gap, the founder should acknowledge the time that has passed and offer a fresh reason to reconnect, rather than referencing the old conversation",
+     "kind": "practice",
+     "why": "A long silence often means the prospect's context has changed; a new hook is more effective than a callback"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "When a prospect says they will take something to an internal meeting, a follow-up after the meeting date is standard practice",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "claim": "A silence of over six months after a warm conversation and a clear next step is unusual and suggests either a decision against moving forward or an internal deprioritization",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "In seed-stage fundraising, a prospect who goes silent after expressing interest and saying they will discuss internally rarely re-engages without a re-initiation from the founder",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#4",
+     "brief:cbl_#7",
+     "file:domains"
+    ],
+    "kind": "investor",
+    "why": "Larkspur Ventures is a venture capital firm; the conversation was about design partners and product maturity, which are typical seed-stage investor diligence questions; the file's classification as sales is a mischaracterization"
+   },
+   "scenarios": {
+    "act": "You send a re-engagement message that acknowledges the time that has passed, updates Larkspur on progress (design partners, traction, or milestones), and offers a fresh reason to reconnect. This gives Larkspur a low-friction way to re-engage if they remain interested.",
+    "best": "Larkspur responds positively to a re-engagement message, indicating they are still interested and were simply waiting for a signal or milestone. A meeting is scheduled, and the conversation moves forward.",
+    "do_nothing": "The file remains dormant. Larkspur does not re-engage. If they were interested, the lack of follow-up from you may have signaled that you moved on. The opportunity is effectively lost unless Larkspur re-initiates, which is unlikely after this long a silence.",
+    "signals_to_watch": [
+     "A response from Ira or another Larkspur partner within one week of a re-engagement message",
+     "A meeting request or a request for updated materials",
+     "A polite pass or a statement of their decision",
+     "Silence beyond one week, which would indicate a low probability of re-engagement"
+    ],
+    "worst": "Larkspur does not respond to a re-engagement message, confirming that they have moved on or are not interested. The opportunity is closed."
+   },
+   "unknowns": [
+    {
+     "question": "What was the outcome of Larkspur's Monday meeting on or around 2026-03-13?",
+     "relevance": "This would determine whether the silence is a rejection, a deprioritization, or a genuine delay"
+    },
+    {
+     "question": "Has Larkspur Ventures invested in or engaged with any competing AI chief-of-staff products since March 2026?",
+     "relevance": "This would indicate whether they are still active in the space or have moved on"
+    },
+    {
+     "question": "What is Larkspur's typical decision cycle for seed investments, and where does Nimbus Labs fall in their current portfolio focus?",
+     "relevance": "This would contextualize whether the silence is normal for them or a signal of disinterest"
+    },
+    {
+     "question": "Has your company received any indirect feedback from Larkspur through other investors, accelerators, or connectors?",
+     "relevance": "This would provide a signal of Larkspur's sentiment without requiring direct re-engagement"
+    }
+   ],
+   "wait_or_stop": "Wait until you have a significant milestone to share (a major design partner, strong traction, or a term sheet from another investor). If you do not hear from Larkspur by 2026-12-15 and you have not re-engaged them with a milestone, close this file and move on."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Larkspur Ventures initiated contact after seeing a demo of Nimbus Labs\",\n      \"evidence\": [\n        \"evt_#4\"\n      ],\n      \"quote\": \"Loved the demo. How many design partners do you have live today?\"\n    },\n    {\n      \"claim\": \"You reported three live design partners and two more starting in April\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": \"Three are live, and two more start in April. Happy to walk you through them.\"\n    },\n    {\n      \"claim\": \"Ira Bose said they would take the information to their Monday meeting\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Let me take it to our Monday meeting.\"\n    },\n    {\n      \"claim\": \"You offered to join a meeting if it would help\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"happy to join the meeting if it helps\"\n    },\n    {\n      \"claim\": \"No reply has been received for 188 days since your last message on 2026-03-11\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no kind of work named in the brief\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no role in the brief\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as a sales opportunity, but the corpus for sales opportunities is switched off for your company\",\n      \"evidence\": [\n        \"sit:sit_#1\",\n        \"not_run\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"An expert review on 2026-03-12 set the mode to wait\",\n      \"evidence\": [\n        \"review:ffp-cf769c2de3c7100894042955\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The conversation ended with a clear next step \u2014 Ira taking it to their Monday meeting \u2014 but no follow-up occurred\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:5\"\n      ]\n    },\n    {\n      \"claim\": \"The silence is longer than any gap this file has closed before, suggesting the thread may have stalled at Larkspur's end\",\n      \"based_on\": [\n        \"num:longest_gap\",\n        \"num:days_quiet\"\n      ]\n    },\n    {\n      \"claim\": \"Your last move was to offer availability, which is a low-friction gesture that does not require a response\",\n      \"based_on\": [\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"The file's classification as sales is inconsistent with its actual content and the brief's structure, which lists it under no category\",\n      \"based_on\": [\n        \"file:domains\",\n        \"file:role\",\n        \"file:kind\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a prospect says they will take something to an internal meeting, a follow-up after the meeting date is standard practice\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A silence of over six months after a warm conversation and a clear next step is unusual and suggests either a decision against moving forward or an internal deprioritization\",\n      \"based_on\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"In seed-stage fundraising, a prospect who goes silent after expressing interest and saying they will discuss internally rarely re-engages without a re-initiation from the founder\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A prospect's statement that they will take something to an internal meeting is a soft commitment, not a hard one; the founder should plan a light follow-up one week after the stated meeting date\",\n      \"why\": \"Internal meetings often slip, get rescheduled, or deprioritize items; a gentle check-in keeps the thread warm without being pushy\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"In venture capital, silence longer than a quarter after a warm touch usually means the prospect has moved on or the deal is not a priority\",\n      \"why\": \"VCs operate on short decision cycles; if they were interested, they would have responded or scheduled a follow-up within weeks\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A prospect who asks a specific, detailed question about your product and then goes silent may have been gathering information for a competitive analysis or internal evaluation that did not result in a decision to engage\",\n      \"why\": \"Not all interest signals lead to investment; some are exploratory\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When re-engaging a silent prospect after a long gap, the founder should acknowledge the time that has passed and offer a fresh reason to reconnect, rather than referencing the old conversation\",\n      \"why\": \"A long silence often means the prospect's context has changed; a new hook is more effective than a callback\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Larkspur's Monday meeting resulted in a decision not to pursue Nimbus Labs\",\n      \"needs\": \"A direct message from Ira or another Larkspur partner stating their decision, or confirmation from a mutual connection\"\n    },\n    {\n      \"proposition\": \"Larkspur remains interested but has deprioritized the conversation due to other commitments or market conditions\",\n      \"needs\": \"A response from Ira to a re-engagement message, or a signal from another source that Larkspur is still evaluating\"\n    },\n    {\n      \"proposition\": \"The message offering to join a meeting was not received or was lost in Ira's inbox\",\n      \"needs\": \"A re-send of the offer with a different framing, or a call to Ira to confirm receipt\"\n    },\n    {\n      \"proposition\": \"Larkspur is interested but waiting for a specific milestone or signal from Nimbus Labs before re-engaging\",\n      \"needs\": \"A conversation with Ira about what would trigger their next step, or observation of whether Larkspur has engaged with other portfolio companies in the same space\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What was the outcome of Larkspur's Monday meeting on or around 2026-03-13?\",\n      \"relevance\": \"This would determine whether the silence is a rejection, a deprioritization, or a genuine delay\"\n    },\n    {\n      \"question\": \"Has Larkspur Ventures invested in or engaged with any competing AI chief-of-staff products since March 2026?\",\n      \"relevance\": \"This would indicate whether they are still active in the space or have moved on\"\n    },\n    {\n      \"question\": \"What is Larkspur's typical decision cycle for seed investments, and where does Nimbus Labs fall in their current portfolio focus?\",\n      \"relevance\": \"This would contextualize whether the silence is normal for them or a signal of disinterest\"\n    },\n    {\n      \"question\": \"Has your company received any indirect feedback from Larkspur through other investors, accelerators, or connectors?\",\n      \"relevance\": \"This would provide a signal of Larkspur's sentiment without requiring direct re-engagement\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm sales conversation that ended with a prospect's commitment to discuss internally, followed by six months of silence \u2014 a stalled opportunity that may be dead, dormant, or waiting for a re-trigger\",\n    \"rivals\": [\n      \"A prospect who gathered information and moved on, with no intention to re-engage\",\n      \"A prospect who remains interested but has deprioritized due to market conditions or internal changes\",\n      \"A prospect who is waiting for a specific signal or milestone from Nimbus Labs before re-engaging\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Larkspur Ventures is a venture capital firm; the conversation was about design partners and product maturity, which are typical seed-stage investor diligence questions; the file's classification as sales is a mischaracterization\",\n    \"evidence\": [\n      \"evt_#4\",\n      \"brief:cbl_#7\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"In a typical seed fundraising cycle, after a prospect says they will discuss internally, the founder should expect either a follow-up meeting request within one to two weeks, or a polite pass within a month. If neither occurs, a light re-engagement after a week or two is standard practice.\",\n    \"actual\": \"No follow-up occurred for 188 days. Your last message offered to join a meeting, which is a low-friction gesture that does not require a response and may have inadvertently closed the loop from your side.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains dormant. Larkspur does not re-engage. If they were interested, the lack of follow-up from you may have signaled that you moved on. The opportunity is effectively lost unless Larkspur re-initiates, which is unlikely after this long a silence.\",\n    \"act\": \"You send a re-engagement message that acknowledges the time that has passed, updates Larkspur on progress (design partners, traction, or milestones), and offers a fresh reason to reconnect. This gives Larkspur a low-friction way to re-engage if they remain interested.\",\n    \"best\": \"Larkspur responds positively to a re-engagement message, indicating they are still interested and were simply waiting for a signal or milestone. A meeting is scheduled, and the conversation moves forward.\",\n    \"worst\": \"Larkspur does not respond to a re-engagement message, confirming that they have moved on or are not interested. The opportunity is closed.\",\n    \"signals_to_watch\": [\n      \"A response from Ira or another Larkspur partner within one week of a re-engagement message\",\n      \"A meeting request or a request for updated materials\",\n      \"A polite pass or a statement of their decision\",\n      \"Silence beyond one week, which would indicate a low probability of re-engagement\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Larkspur is one of many investors in your seed wave; losing this opportunity does not block your fundraising\",\n      \"The conversation was warm but not a commitment; re-engagement is possible but not urgent\",\n      \"A re-engagement message can be sent at any time and does not foreclose other options\",\n      \"The file has been dormant for over six months, suggesting it is not a near-term priority\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Hold this file in wait status. Do not re-engage Larkspur now. Instead, focus on the active investors in your seed wave (Banyan, Northfield, Harbor Point, Tusker, Fjord, Lumen) and the accelerators you are in or have applied to. If you achieve a significant milestone \u2014 a major design partner, strong traction, or a term sheet from another investor \u2014 then re-engage Larkspur with that news as a fresh hook. If you do not hear from Larkspur within the next quarter, close this file.\",\n    \"for_whom\": \"yourself\",\n    \"by_when\": \"2026-12-15\",\n    \"rests_on\": [\n      \"fact:5\",\n      \"inference:2\",\n      \"own:2\",\n      \"own:4\"\n    ],\n    \"guided_by\": [\n      \"own:2\",\n      \"own:4\",\n      \"ru:core.risk\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Send a re-engagement message now that acknowledges the time that has passed, updates Larkspur on progress (design partners, traction, or milestones achieved since March), and offers a fresh reason to reconnect. This is lower-risk than waiting and may surface whether Larkspur is still interested. Use this approach if you have achieved a significant milestone or if you want to test the waters before the quarter ends.\",\n  \"wait_or_stop\": \"Wait until you have a significant milestone to share (a major design partner, strong traction, or a term sheet from another investor). If you do not hear from Larkspur by 2026-12-15 and you have not re-engaged them with a milestone, close this file and move on.\",\n  \"done_when\": \"Either Larkspur responds to a re-engagement message and a meeting is scheduled, or you close the file after confirming they are not interested or have moved on.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "fccda79c5bdbf919cce26303062b3b3586f05e643be7356e5f0f216356c0d71a": {
+  "framed": true,
+  "input_tokens": 6327,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3606,
+  "parsed": {
+   "alternative": "If you choose to act now, send a brief message to Ira asking how the Monday meeting went and whether she would like to schedule a call. Keep it short and friendly, and do not oversell. This risks appearing pushy but may accelerate the conversation if Larkspur is genuinely interested.",
+   "appraisal": {
+    "reasons": [
+     "Larkspur Ventures is one of several investors Arjun is pursuing; a pass from them does not block the seed round.",
+     "The conversation is exploratory and has not yet reached a stage where a wrong move would be costly.",
+     "Arjun has already made a strong move by offering to join a meeting; further action is optional and can be reversed.",
+     "The file shows no blocking dependency or high risk; the reasoning units assessed this as low urgency.",
+     "If Arjun follows up too soon and cools interest, he can still reach out again later or through a connector."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "Done when Larkspur either requests a meeting, asks for more information, or sends a clear pass. If they go silent for over three weeks, consider the conversation closed unless they reach out again.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "Larkspur asked about design partners, Arjun provided a detailed answer with a timeline for growth, Ira said she would take it to an internal meeting, Arjun offered to join, and the conversation has been quiet for over a day. No promise of a next step was made, and no timeline was given.",
+    "expected": "For an exploratory investor conversation at seed stage: initial interest, a qualifying question, a response with traction signals, and a decision to move forward or pass. The brief names no playbook for this work, so expectations come from the file's own history and the founder's goals.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Larkspur Ventures first contacted Arjun on 2026-03-02 after seeing a demo, asking how many design partners are live.",
+     "evidence": [
+      "evt_#4"
+     ],
+     "quote": "Loved the demo. How many design partners do you have live today?"
+    },
+    {
+     "claim": "Arjun replied on 2026-03-03 that three design partners are live and two more start in April, offering to walk through them.",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": "Three are live, and two more start in April. Happy to walk you through them."
+    },
+    {
+     "claim": "Ira Bose replied on 2026-03-10 saying the information was helpful and that she would take it to their Monday meeting.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "this is helpful. Let me take it to our Monday meeting."
+    },
+    {
+     "claim": "Arjun replied on 2026-03-11 offering to join a meeting if it helps.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "happy to join the meeting if it helps"
+    },
+    {
+     "claim": "No reply has been received from Larkspur since 2026-03-11, and the mailbox has been read through 2026-03-12 12:00 UTC.",
+     "evidence": [
+      "cov:last_mail",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no kind of work named in the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Larkspur Ventures is not listed as a connector, investor, program, partner, or other category in the brief.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is categorized as sales domain work.",
+     "evidence": [
+      "file:domains"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Ira Bose took over a week to reply once before, with a gap of 6.96 days.",
+     "evidence": [
+      "num:their_reply_time:ira@larkspurvc.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and healthy engagement.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.temporal"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A VC has shown exploratory interest in Nimbus Labs' design partner network, asked a qualifying question, received a detailed answer, and said they would take it to an internal meeting. Arjun has offered to join. The conversation is now waiting for Larkspur to move, and the silence so far is within the normal range for this correspondent.",
+    "rivals": [
+     "Larkspur Ventures is conducting serious diligence and will come back with a substantive follow-up or a meeting request.",
+     "Larkspur Ventures found the information interesting but not a fit, and the conversation will go dormant without a clear signal.",
+     "Larkspur Ventures is a tire-kicker exploring the space, and this conversation was never likely to convert to investment."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from Ira within the next week or two, or a request to speak with one of the design partners.",
+     "proposition": "Larkspur Ventures is conducting diligence on Nimbus Labs' design partners and will come back with a follow-up question or a meeting request."
+    },
+    {
+     "needs": "A follow-up conversation that moves toward a pitch meeting, term sheet discussion, or a clear pass.",
+     "proposition": "Larkspur Ventures is exploring whether to invest in Nimbus Labs and the design partner network is one of several signals they are evaluating."
+    },
+    {
+     "needs": "No reply for over two weeks, or a polite decline email.",
+     "proposition": "Larkspur Ventures found the design partner information interesting but not a fit for their current focus, and the conversation will go dormant."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "Larkspur Ventures appears interested in Nimbus Labs' design partner network, as evidenced by the initial demo question and the decision to bring the information to an internal meeting."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4",
+      "file:whose_move"
+     ],
+     "claim": "The next move is theirs: Ira said she would take the information to a Monday meeting, and Arjun has offered to join if needed, leaving the ball in Larkspur's court."
+    },
+    {
+     "based_on": [
+      "num:days_quiet",
+      "num:usual_gap",
+      "num:longest_gap"
+     ],
+     "claim": "The current quiet period of 1.25 days is within the normal gaps this correspondent has shown before, so silence does not yet signal disengagement."
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "This work is likely a sales opportunity \u2014 Larkspur is exploring whether Nimbus Labs' design partner model could be relevant to their portfolio or investment thesis."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-03-25",
+    "for_whom": "Larkspur Ventures",
+    "guided_by": [
+     "own:1",
+     "own:4",
+     "pattern:2"
+    ],
+    "rests_on": [
+     "fact:3",
+     "fact:4",
+     "fact:5",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "wait for Larkspur to reply, and do not follow up unless over two weeks have passed without a response",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a VC says they will take something to an internal meeting and you offer to join, the courteous move is to wait for them to come back with a time or a decision, not to follow up immediately.",
+     "kind": "practice",
+     "why": "Pushing too soon signals desperation and can cool interest; VCs control the pace at this stage."
+    },
+    {
+     "claim": "Design partner networks are a common signal of product-market fit and customer validation; VCs often ask about them early in conversations.",
+     "kind": "base_rate",
+     "why": "It is a quick proxy for whether the founder has real traction and customer relationships."
+    },
+    {
+     "claim": "A VC who asks about design partners and then goes quiet may be checking references or doing diligence on those partners, not losing interest.",
+     "kind": "counter_pattern",
+     "why": "The question itself is a sign of serious interest; silence during diligence is normal."
+    },
+    {
+     "claim": "Offering to join a meeting is a strong move, but only if the VC has asked for it or hinted at a specific time; an open offer can be ignored without awkwardness.",
+     "kind": "practice",
+     "why": "It leaves the VC room to say yes or no without committing, and it shows you are responsive."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "When a VC takes information to an internal meeting, the reply typically comes within one to two weeks as the meeting is scheduled and discussed.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "num:their_reply_time:ira@larkspurvc.test"
+     ],
+     "claim": "Ira Bose has shown a long reply time before (6.96 days), so a slower cadence may be her norm rather than a signal of lost interest.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "Early-stage founders often receive exploratory interest from VCs that does not convert to investment; many such conversations go quiet after the initial exchange.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "evt_#4",
+     "brief:cbl_#2"
+    ],
+    "kind": "investor",
+    "why": "Larkspur Ventures is a VC firm asking about design partners as a signal of traction, and the conversation is exploratory in nature. This is a seed-stage investor conversation, not a partner, program, or other category."
+   },
+   "scenarios": {
+    "act": "Arjun sends a follow-up message to Ira, either asking how the Monday meeting went or offering additional information. This risks appearing pushy and may cool interest, but it keeps the conversation warm and signals urgency.",
+    "best": "Ira comes back with a request to meet with Arjun and one or more of the design partners, or with a request for a pitch meeting. This signals serious interest and moves the conversation toward a potential investment.",
+    "do_nothing": "Larkspur comes back in one to two weeks with either a follow-up question, a meeting request, or a polite pass. The conversation either advances or ends without Arjun's further input. If it ends, the opportunity is lost; if it advances, Arjun will have had time to prepare.",
+    "signals_to_watch": [
+     "A reply from Ira within one to two weeks",
+     "A request to speak with one of the design partners",
+     "A request for a pitch meeting or a call with the Larkspur team",
+     "A polite pass email",
+     "Continued silence beyond two weeks"
+    ],
+    "worst": "Larkspur goes silent for over two weeks and never replies, or sends a polite pass email. The opportunity is lost, and Arjun has no clear reason why."
+   },
+   "unknowns": [
+    {
+     "question": "What is Larkspur Ventures' investment thesis and stage focus? Are they a seed-stage investor, and do they typically invest in AI tools for founders?",
+     "relevance": "This would clarify whether Larkspur is a realistic investor for Nimbus Labs or whether this is exploratory interest that is unlikely to convert."
+    },
+    {
+     "question": "Did Ira Bose's Monday meeting (the week of 2026-03-10) actually happen, and if so, what was the outcome?",
+     "relevance": "This would explain the silence: if the meeting happened and Larkspur decided to pass, the conversation may be over; if it did not happen or was postponed, the silence is just delay."
+    },
+    {
+     "question": "Is Larkspur Ventures a known firm in Arjun's network, or did they come through an introduction or cold outreach?",
+     "relevance": "If they came through a connector, there may be a relationship to leverage; if cold, the interest is less predictable."
+    },
+    {
+     "question": "How many other VCs is Arjun in active conversation with at this stage, and what is the conversion rate so far?",
+     "relevance": "This would help judge whether Larkspur is a priority or one of many exploratory conversations, and whether the time spent waiting is well-allocated."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-03-25 (two weeks from the last message). If no reply by then, send a single follow-up message. If no reply within one week of the follow-up, mark the file as dormant and move on to other investors. Do not follow up more than once."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Larkspur Ventures first contacted Arjun on 2026-03-02 after seeing a demo, asking how many design partners are live.\",\n      \"evidence\": [\n        \"evt_#4\"\n      ],\n      \"quote\": \"Loved the demo. How many design partners do you have live today?\"\n    },\n    {\n      \"claim\": \"Arjun replied on 2026-03-03 that three design partners are live and two more start in April, offering to walk through them.\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": \"Three are live, and two more start in April. Happy to walk you through them.\"\n    },\n    {\n      \"claim\": \"Ira Bose replied on 2026-03-10 saying the information was helpful and that she would take it to their Monday meeting.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"this is helpful. Let me take it to our Monday meeting.\"\n    },\n    {\n      \"claim\": \"Arjun replied on 2026-03-11 offering to join a meeting if it helps.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"happy to join the meeting if it helps\"\n    },\n    {\n      \"claim\": \"No reply has been received from Larkspur since 2026-03-11, and the mailbox has been read through 2026-03-12 12:00 UTC.\",\n      \"evidence\": [\n        \"cov:last_mail\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no kind of work named in the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Larkspur Ventures is not listed as a connector, investor, program, partner, or other category in the brief.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is categorized as sales domain work.\",\n      \"evidence\": [\n        \"file:domains\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Ira Bose took over a week to reply once before, with a gap of 6.96 days.\",\n      \"evidence\": [\n        \"num:their_reply_time:ira@larkspurvc.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and healthy engagement.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.temporal\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Larkspur Ventures appears interested in Nimbus Labs' design partner network, as evidenced by the initial demo question and the decision to bring the information to an internal meeting.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is theirs: Ira said she would take the information to a Monday meeting, and Arjun has offered to join if needed, leaving the ball in Larkspur's court.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The current quiet period of 1.25 days is within the normal gaps this correspondent has shown before, so silence does not yet signal disengagement.\",\n      \"based_on\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\",\n        \"num:longest_gap\"\n      ]\n    },\n    {\n      \"claim\": \"This work is likely a sales opportunity \u2014 Larkspur is exploring whether Nimbus Labs' design partner model could be relevant to their portfolio or investment thesis.\",\n      \"based_on\": [\n        \"file:domains\",\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a VC takes information to an internal meeting, the reply typically comes within one to two weeks as the meeting is scheduled and discussed.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Ira Bose has shown a long reply time before (6.96 days), so a slower cadence may be her norm rather than a signal of lost interest.\",\n      \"based_on\": [\n        \"num:their_reply_time:ira@larkspurvc.test\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Early-stage founders often receive exploratory interest from VCs that does not convert to investment; many such conversations go quiet after the initial exchange.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a VC says they will take something to an internal meeting and you offer to join, the courteous move is to wait for them to come back with a time or a decision, not to follow up immediately.\",\n      \"why\": \"Pushing too soon signals desperation and can cool interest; VCs control the pace at this stage.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partner networks are a common signal of product-market fit and customer validation; VCs often ask about them early in conversations.\",\n      \"why\": \"It is a quick proxy for whether the founder has real traction and customer relationships.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A VC who asks about design partners and then goes quiet may be checking references or doing diligence on those partners, not losing interest.\",\n      \"why\": \"The question itself is a sign of serious interest; silence during diligence is normal.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Offering to join a meeting is a strong move, but only if the VC has asked for it or hinted at a specific time; an open offer can be ignored without awkwardness.\",\n      \"why\": \"It leaves the VC room to say yes or no without committing, and it shows you are responsive.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Larkspur Ventures is conducting diligence on Nimbus Labs' design partners and will come back with a follow-up question or a meeting request.\",\n      \"needs\": \"A reply from Ira within the next week or two, or a request to speak with one of the design partners.\"\n    },\n    {\n      \"proposition\": \"Larkspur Ventures is exploring whether to invest in Nimbus Labs and the design partner network is one of several signals they are evaluating.\",\n      \"needs\": \"A follow-up conversation that moves toward a pitch meeting, term sheet discussion, or a clear pass.\"\n    },\n    {\n      \"proposition\": \"Larkspur Ventures found the design partner information interesting but not a fit for their current focus, and the conversation will go dormant.\",\n      \"needs\": \"No reply for over two weeks, or a polite decline email.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Larkspur Ventures' investment thesis and stage focus? Are they a seed-stage investor, and do they typically invest in AI tools for founders?\",\n      \"relevance\": \"This would clarify whether Larkspur is a realistic investor for Nimbus Labs or whether this is exploratory interest that is unlikely to convert.\"\n    },\n    {\n      \"question\": \"Did Ira Bose's Monday meeting (the week of 2026-03-10) actually happen, and if so, what was the outcome?\",\n      \"relevance\": \"This would explain the silence: if the meeting happened and Larkspur decided to pass, the conversation may be over; if it did not happen or was postponed, the silence is just delay.\"\n    },\n    {\n      \"question\": \"Is Larkspur Ventures a known firm in Arjun's network, or did they come through an introduction or cold outreach?\",\n      \"relevance\": \"If they came through a connector, there may be a relationship to leverage; if cold, the interest is less predictable.\"\n    },\n    {\n      \"question\": \"How many other VCs is Arjun in active conversation with at this stage, and what is the conversion rate so far?\",\n      \"relevance\": \"This would help judge whether Larkspur is a priority or one of many exploratory conversations, and whether the time spent waiting is well-allocated.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A VC has shown exploratory interest in Nimbus Labs' design partner network, asked a qualifying question, received a detailed answer, and said they would take it to an internal meeting. Arjun has offered to join. The conversation is now waiting for Larkspur to move, and the silence so far is within the normal range for this correspondent.\",\n    \"rivals\": [\n      \"Larkspur Ventures is conducting serious diligence and will come back with a substantive follow-up or a meeting request.\",\n      \"Larkspur Ventures found the information interesting but not a fit, and the conversation will go dormant without a clear signal.\",\n      \"Larkspur Ventures is a tire-kicker exploring the space, and this conversation was never likely to convert to investment.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Larkspur Ventures is a VC firm asking about design partners as a signal of traction, and the conversation is exploratory in nature. This is a seed-stage investor conversation, not a partner, program, or other category.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"evt_#4\",\n      \"brief:cbl_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"For an exploratory investor conversation at seed stage: initial interest, a qualifying question, a response with traction signals, and a decision to move forward or pass. The brief names no playbook for this work, so expectations come from the file's own history and the founder's goals.\",\n    \"actual\": \"Larkspur asked about design partners, Arjun provided a detailed answer with a timeline for growth, Ira said she would take it to an internal meeting, Arjun offered to join, and the conversation has been quiet for over a day. No promise of a next step was made, and no timeline was given.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Larkspur comes back in one to two weeks with either a follow-up question, a meeting request, or a polite pass. The conversation either advances or ends without Arjun's further input. If it ends, the opportunity is lost; if it advances, Arjun will have had time to prepare.\",\n    \"act\": \"Arjun sends a follow-up message to Ira, either asking how the Monday meeting went or offering additional information. This risks appearing pushy and may cool interest, but it keeps the conversation warm and signals urgency.\",\n    \"best\": \"Ira comes back with a request to meet with Arjun and one or more of the design partners, or with a request for a pitch meeting. This signals serious interest and moves the conversation toward a potential investment.\",\n    \"worst\": \"Larkspur goes silent for over two weeks and never replies, or sends a polite pass email. The opportunity is lost, and Arjun has no clear reason why.\",\n    \"signals_to_watch\": [\n      \"A reply from Ira within one to two weeks\",\n      \"A request to speak with one of the design partners\",\n      \"A request for a pitch meeting or a call with the Larkspur team\",\n      \"A polite pass email\",\n      \"Continued silence beyond two weeks\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Larkspur Ventures is one of several investors Arjun is pursuing; a pass from them does not block the seed round.\",\n      \"The conversation is exploratory and has not yet reached a stage where a wrong move would be costly.\",\n      \"Arjun has already made a strong move by offering to join a meeting; further action is optional and can be reversed.\",\n      \"The file shows no blocking dependency or high risk; the reasoning units assessed this as low urgency.\",\n      \"If Arjun follows up too soon and cools interest, he can still reach out again later or through a connector.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for Larkspur to reply, and do not follow up unless over two weeks have passed without a response\",\n    \"for_whom\": \"Larkspur Ventures\",\n    \"by_when\": \"2026-03-25\",\n    \"rests_on\": [\n      \"fact:3\",\n      \"fact:4\",\n      \"fact:5\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:4\",\n      \"pattern:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If you choose to act now, send a brief message to Ira asking how the Monday meeting went and whether she would like to schedule a call. Keep it short and friendly, and do not oversell. This risks appearing pushy but may accelerate the conversation if Larkspur is genuinely interested.\",\n  \"wait_or_stop\": \"Wait until 2026-03-25 (two weeks from the last message). If no reply by then, send a single follow-up message. If no reply within one week of the follow-up, mark the file as dormant and move on to other investors. Do not follow up more than once.\",\n  \"done_when\": \"Done when Larkspur either requests a meeting, asks for more information, or sends a clear pass. If they go silent for over three weeks, consider the conversation closed unless they reach out again.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

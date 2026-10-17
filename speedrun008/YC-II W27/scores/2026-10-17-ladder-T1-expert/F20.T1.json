@@ -1,0 +1,460 @@
+{
+ "5e0be2f36e6f531abd3ab4b73bc0451b2ef2b319ba3685fb28911c0c1f8dae3b": {
+  "framed": true,
+  "input_tokens": 14640,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2972,
+  "parsed": {
+   "alternative": "Attend the meetup on 27 September without checking the status first. Use the time to meet the TechBridge team, learn their priorities, and ask about the application status in person. This is reversible and may yield useful information, but it costs time that could be spent on higher-priority work.",
+   "appraisal": {
+    "reasons": [
+     "The mail is an invitation, not a decision or a deadline.",
+     "The founder can attend or not attend without affecting the application's outcome.",
+     "The application's status is unknown; the meetup is a side channel, not the decision path.",
+     "The founder is in active fundraising and hiring; time is scarce, and the meetup is optional.",
+     "If the application has been declined, attending is a courtesy but not a priority. If it is under review, attending may help but is not required. If it has been accepted, attending is a celebration but not urgent."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "The application's status is known and recorded on the file. The founder has decided whether to attend the meetup and has acted on that decision. If the application is still under review, the file is waiting for the programme's decision date. If the application has been decided, the file is closed with the outcome.",
+   "draft": "Hi Sameer, Thanks for the invite to the founders meetup on 27 Sep. Before I confirm, could you let me know the status of our TechBridge application? That will help me plan. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The file does not name a stage. The mail is an event invitation, not a status update. No decision has been reported. The application's status is unknown.",
+    "expected": "The playbook for programme applications names stages: applied, under_review, interview, decision, onboarding, in_programme, declined. At the applied stage, the programme's window is open and the application is waiting for it to close. The playbook advises checking the receipt and waiting for the programme's published deadline to pass. At the under_review stage, the programme is reading and the applicant should wait for the programme's published decision date. Quiet before that date is not a no.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Sameer Rana from TechBridge Foundation wrote to invite the founder to a TechBridge founders meetup on 27 September.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "TechBridge founders meetup, 27 Sep Hello Arjun, Sharing our accelerator's newsletter and an invite to the TechBridge founders meetup on 27 Sep. Do drop in if you are around. Sameer Rana TechBridge Foundation"
+    },
+    {
+     "claim": "The file records this as a programme application to TechBridge Foundation, with the company having applied.",
+     "evidence": [
+      "brief:cbl_#16",
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in the mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days since the mail arrived on 2026-09-13 06:00 UTC.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency and low risk.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's stage is not named in the dossier.",
+     "evidence": [
+      "expected_vs_actual"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook for programme applications has not yet been reviewed.",
+     "evidence": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A programme has sent a routine event invitation to an applicant. The application's status is unknown. The founder must decide whether to attend.",
+    "rivals": [
+     "An early signal of interest from the programme, disguised as a casual invitation.",
+     "A courtesy to a rejected applicant, offering a chance to meet the team and learn feedback.",
+     "A standard outreach to all applicants in the cohort, with no signal about the application itself."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The programme's own published decision date or a status check on the portal, if one exists.",
+     "proposition": "TechBridge's application is still under review and the meetup is a routine outreach to all applicants."
+    },
+    {
+     "needs": "A direct check with TechBridge or a review of the programme's portal for the application status.",
+     "proposition": "TechBridge's application has been declined and the meetup is a courtesy to rejected applicants."
+    },
+    {
+     "needs": "Confirmation from Sameer Rana or another TechBridge contact that attendance would influence the application review.",
+     "proposition": "The meetup is an early signal of interest and a chance to meet decision-makers before a formal decision."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "none:promises"
+     ],
+     "claim": "The mail is an invitation to an event, not a decision or a request for action on the application itself."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The next move is the founder's: to decide whether to attend the meetup on 27 September."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "none:promises"
+     ],
+     "claim": "The application's status remains unknown; the mail does not report progress on it."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-20",
+    "for_whom": "yourself, to decide whether to attend the meetup",
+    "guided_by": [
+     "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+     "pb:founder_office.pb.program_applications.read_the_decision_mail",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:3",
+     "inference:3",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "Check TechBridge Foundation's application portal or write to Sameer Rana to ask the current status of the application.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A programme's event invitation is a courtesy to its applicant pool and a chance to meet the team, but it does not replace the programme's own decision calendar.",
+     "kind": "practice",
+     "why": "Programmes run on their published timelines; an event is a side channel, not the decision path."
+    },
+    {
+     "claim": "Attending a programme's event can be valuable for relationship-building and learning the team's priorities, but only if the founder has bandwidth and the event is on the way.",
+     "kind": "base_rate",
+     "why": "The founder is in active fundraising and hiring; time spent on low-signal activities is time not spent on the critical path."
+    },
+    {
+     "claim": "A founder who attends every event from every programme they have applied to will spend all their time in meetings and none on the company.",
+     "kind": "counter_pattern",
+     "why": "Selectivity is necessary; the decision to attend should rest on whether it advances a specific goal."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A programme's newsletter and event invitation do not signal a decision on an application; they are outreach to its applicant pool.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.programs_and_applications.program_applications"
+     ],
+     "claim": "An invitation to a founders meetup is a low-signal touch; attendance is optional and does not advance the application.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#16",
+     "file:kind",
+     "file:role"
+    ],
+    "kind": "program",
+    "why": "The dossier names this as a programme application; the mail is from the programme's team; the work is to track the application through its decision process."
+   },
+   "scenarios": {
+    "act": "The founder checks TechBridge's portal or writes to Sameer Rana to ask the application's status. If the status is under review, the founder decides whether to attend the meetup based on the programme's decision date and the founder's bandwidth. If the status is decided, the founder acts on the decision.",
+    "best": "The founder checks the status, learns the application is under review, and attends the meetup. The meetup is a chance to meet the decision-makers and learn what they are looking for. The founder's presence and questions signal genuine interest. The application is accepted.",
+    "do_nothing": "The founder does not attend the meetup. The application continues on the programme's own calendar. If the programme is still reviewing, the silence continues until its decision date. If the programme has already decided, the founder learns the outcome only when the programme writes, or when the founder checks the portal or asks directly.",
+    "signals_to_watch": [
+     "A mail from TechBridge reporting the application's status \u2014 under review, accepted, or declined.",
+     "A portal update showing the application's status, if TechBridge publishes one.",
+     "The date of the meetup (27 September) passing without a decision mail \u2014 a signal that the programme is still reviewing or has decided to decline."
+    ],
+    "worst": "The founder attends the meetup without knowing the application has been declined. The founder learns the rejection in person, or learns it later and realizes the time was wasted. Or the founder does not attend and misses a chance to meet the decision-makers before a positive decision."
+   },
+   "unknowns": [
+    {
+     "question": "What is the current status of the application to TechBridge Foundation?",
+     "relevance": "The decision to attend the meetup depends on whether the application is still under review, has been declined, or has been accepted. A declined application may not warrant the founder's time; an accepted one would be a celebration, not a pitch."
+    },
+    {
+     "question": "Does TechBridge publish a decision date or a portal where applicants can check status?",
+     "relevance": "The playbook advises reading the programme's own record first; without it, the silence cannot be interpreted."
+    },
+    {
+     "question": "Is the meetup a routine event for all applicants, or a selective invitation to shortlisted companies?",
+     "relevance": "A selective invitation would signal progress; a routine one would not."
+    }
+   ],
+   "wait_or_stop": "Wait until the status is known. If the application is under review, wait for the programme's published decision date before deciding to attend. If the application has been decided, close the file with the outcome. Do not wait past the meetup date (27 September) without acting; after that date, the decision to attend is moot."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Sameer Rana from TechBridge Foundation wrote to invite the founder to a TechBridge founders meetup on 27 September.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"TechBridge founders meetup, 27 Sep Hello Arjun, Sharing our accelerator's newsletter and an invite to the TechBridge founders meetup on 27 Sep. Do drop in if you are around. Sameer Rana TechBridge Foundation\"\n    },\n    {\n      \"claim\": \"The file records this as a programme application to TechBridge Foundation, with the company having applied.\",\n      \"evidence\": [\n        \"brief:cbl_#16\",\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in the mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days since the mail arrived on 2026-09-13 06:00 UTC.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency and low risk.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's stage is not named in the dossier.\",\n      \"evidence\": [\n        \"expected_vs_actual\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook for programme applications has not yet been reviewed.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The mail is an invitation to an event, not a decision or a request for action on the application itself.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is the founder's: to decide whether to attend the meetup on 27 September.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The application's status remains unknown; the mail does not report progress on it.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"none:promises\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme's newsletter and event invitation do not signal a decision on an application; they are outreach to its applicant pool.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An invitation to a founders meetup is a low-signal touch; attendance is optional and does not advance the application.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.programs_and_applications.program_applications\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A programme's event invitation is a courtesy to its applicant pool and a chance to meet the team, but it does not replace the programme's own decision calendar.\",\n      \"why\": \"Programmes run on their published timelines; an event is a side channel, not the decision path.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Attending a programme's event can be valuable for relationship-building and learning the team's priorities, but only if the founder has bandwidth and the event is on the way.\",\n      \"why\": \"The founder is in active fundraising and hiring; time spent on low-signal activities is time not spent on the critical path.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who attends every event from every programme they have applied to will spend all their time in meetings and none on the company.\",\n      \"why\": \"Selectivity is necessary; the decision to attend should rest on whether it advances a specific goal.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"TechBridge's application is still under review and the meetup is a routine outreach to all applicants.\",\n      \"needs\": \"The programme's own published decision date or a status check on the portal, if one exists.\"\n    },\n    {\n      \"proposition\": \"TechBridge's application has been declined and the meetup is a courtesy to rejected applicants.\",\n      \"needs\": \"A direct check with TechBridge or a review of the programme's portal for the application status.\"\n    },\n    {\n      \"proposition\": \"The meetup is an early signal of interest and a chance to meet decision-makers before a formal decision.\",\n      \"needs\": \"Confirmation from Sameer Rana or another TechBridge contact that attendance would influence the application review.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the current status of the application to TechBridge Foundation?\",\n      \"relevance\": \"The decision to attend the meetup depends on whether the application is still under review, has been declined, or has been accepted. A declined application may not warrant the founder's time; an accepted one would be a celebration, not a pitch.\"\n    },\n    {\n      \"question\": \"Does TechBridge publish a decision date or a portal where applicants can check status?\",\n      \"relevance\": \"The playbook advises reading the programme's own record first; without it, the silence cannot be interpreted.\"\n    },\n    {\n      \"question\": \"Is the meetup a routine event for all applicants, or a selective invitation to shortlisted companies?\",\n      \"relevance\": \"A selective invitation would signal progress; a routine one would not.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A programme has sent a routine event invitation to an applicant. The application's status is unknown. The founder must decide whether to attend.\",\n    \"rivals\": [\n      \"An early signal of interest from the programme, disguised as a casual invitation.\",\n      \"A courtesy to a rejected applicant, offering a chance to meet the team and learn feedback.\",\n      \"A standard outreach to all applicants in the cohort, with no signal about the application itself.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The dossier names this as a programme application; the mail is from the programme's team; the work is to track the application through its decision process.\",\n    \"evidence\": [\n      \"brief:cbl_#16\",\n      \"file:kind\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The playbook for programme applications names stages: applied, under_review, interview, decision, onboarding, in_programme, declined. At the applied stage, the programme's window is open and the application is waiting for it to close. The playbook advises checking the receipt and waiting for the programme's published deadline to pass. At the under_review stage, the programme is reading and the applicant should wait for the programme's published decision date. Quiet before that date is not a no.\",\n    \"actual\": \"The file does not name a stage. The mail is an event invitation, not a status update. No decision has been reported. The application's status is unknown.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not attend the meetup. The application continues on the programme's own calendar. If the programme is still reviewing, the silence continues until its decision date. If the programme has already decided, the founder learns the outcome only when the programme writes, or when the founder checks the portal or asks directly.\",\n    \"act\": \"The founder checks TechBridge's portal or writes to Sameer Rana to ask the application's status. If the status is under review, the founder decides whether to attend the meetup based on the programme's decision date and the founder's bandwidth. If the status is decided, the founder acts on the decision.\",\n    \"best\": \"The founder checks the status, learns the application is under review, and attends the meetup. The meetup is a chance to meet the decision-makers and learn what they are looking for. The founder's presence and questions signal genuine interest. The application is accepted.\",\n    \"worst\": \"The founder attends the meetup without knowing the application has been declined. The founder learns the rejection in person, or learns it later and realizes the time was wasted. Or the founder does not attend and misses a chance to meet the decision-makers before a positive decision.\",\n    \"signals_to_watch\": [\n      \"A mail from TechBridge reporting the application's status \u2014 under review, accepted, or declined.\",\n      \"A portal update showing the application's status, if TechBridge publishes one.\",\n      \"The date of the meetup (27 September) passing without a decision mail \u2014 a signal that the programme is still reviewing or has decided to decline.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The mail is an invitation, not a decision or a deadline.\",\n      \"The founder can attend or not attend without affecting the application's outcome.\",\n      \"The application's status is unknown; the meetup is a side channel, not the decision path.\",\n      \"The founder is in active fundraising and hiring; time is scarce, and the meetup is optional.\",\n      \"If the application has been declined, attending is a courtesy but not a priority. If it is under review, attending may help but is not required. If it has been accepted, attending is a celebration but not urgent.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Check TechBridge Foundation's application portal or write to Sameer Rana to ask the current status of the application.\",\n    \"for_whom\": \"yourself, to decide whether to attend the meetup\",\n    \"by_when\": \"2026-09-20\",\n    \"rests_on\": [\n      \"fact:3\",\n      \"inference:3\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.program_applications.the_portal_is_the_record\",\n      \"pb:founder_office.pb.program_applications.read_the_decision_mail\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Attend the meetup on 27 September without checking the status first. Use the time to meet the TechBridge team, learn their priorities, and ask about the application status in person. This is reversible and may yield useful information, but it costs time that could be spent on higher-priority work.\",\n  \"wait_or_stop\": \"Wait until the status is known. If the application is under review, wait for the programme's published decision date before deciding to attend. If the application has been decided, close the file with the outcome. Do not wait past the meetup date (27 September) without acting; after that date, the decision to attend is moot.\",\n  \"done_when\": \"The application's status is known and recorded on the file. The founder has decided whether to attend the meetup and has acted on that decision. If the application is still under review, the file is waiting for the programme's decision date. If the application has been decided, the file is closed with the outcome.\",\n  \"draft\": \"Hi Sameer, Thanks for the invite to the founders meetup on 27 Sep. Before I confirm, could you let me know the status of our TechBridge application? That will help me plan. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "f82a1d57bcfb446c7db65beb6e48e88cdb042340dbec9488f6596c7a1db05323": {
+  "framed": true,
+  "input_tokens": 14461,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3511,
+  "parsed": {
+   "alternative": "Attend the meetup on 27 September without verifying the receipt or timeline first. This is lower-cost if the founder has time and interest in meeting TechBridge's team and other founders, but does not address the unknowns about the application status.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because TechBridge is one of six programmes Nimbus Labs has applied to, and one of five investors in the seed wave; a rejection or acceptance here affects the overall fundraising and programme strategy, but is not the only path.",
+     "The urgency is low because the invitation is optional, the meetup is 14 days away, and the application decision is on the programme's calendar, not the founder's.",
+     "The move is reversible: attending or not attending the meetup does not commit the founder to anything, and does not change the application's status.",
+     "The file is low-risk because the programme has not asked for anything, and the quiet is expected during the 'applied' stage."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The application receipt is confirmed, TechBridge's decision timeline is known, and the founder has decided whether to attend the meetup based on the value of the event and the founder's calendar, not on the application status.",
+   "draft": "Hi Sameer, Thanks for the invite to the founders meetup on 27 Sep \u2014 we'd like to attend if we can make it work. Before then, could you confirm we received your application and share the timeline for decisions? We want to make sure we're tracking the right dates. Thanks, Arjun",
+   "expected_vs_actual": {
+    "actual": "TechBridge sent a founders meetup invitation on 2026-09-13, 0.5 days after the first touch. No application receipt confirmation is recorded. No decision signal has arrived. The file shows no prior communication history.",
+    "expected": "The application is in the window between submission and the programme's decision deadline. The programme may send newsletters, event invitations, or eligibility checks during this time. The playbook expects quiet during this stage, with no decision signal until the programme's published deadline passes or the programme shows the application is being read.",
+    "stage": "applied"
+   },
+   "facts": [
+    {
+     "claim": "TechBridge Foundation sent an invitation to a founders meetup on 27 September, with no explicit ask or promise beyond attendance.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "TechBridge founders meetup, 27 Sep Hello Arjun, Sharing our accelerator's newsletter and an invite to the TechBridge founders meetup on 27 Sep. Do drop in if you are around. Sameer Rana TechBridge Foundation"
+    },
+    {
+     "claim": "The file is categorized as a program application, and TechBridge Foundation is on the watchlist.",
+     "evidence": [
+      "file:kind",
+      "brief:cbl_#34"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Nimbus Labs applied to TechBridge Foundation as part of its accelerator and incubator program strategy.",
+     "evidence": [
+      "brief:cbl_#16"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No prior communication history exists between the founder and TechBridge; this is the first touch on 2026-09-13 at 06:00 UTC.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "num:usual_gap",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days since the invitation arrived.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply metrics exist for this counterparty; this is the first exchange.",
+     "evidence": [
+      "num:their_reply_time:sameer@techbridge.test",
+      "num:your_reply_time:sameer@techbridge.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units assessed this file as low risk, with low urgency and high engagement.",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.risk"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A programme sends a soft engagement signal during the application review window. The application remains in the 'applied' stage, waiting for the programme's decision. The invitation is optional and does not change the file's status or urgency.",
+    "rivals": [
+     "The invitation is a positive signal that the application is being considered seriously, and attendance is a move that could influence the decision.",
+     "The invitation is a standard courtesy to all applicants, with no signal value; it should be ignored unless the founder has time and interest.",
+     "The invitation is a test of the founder's engagement and commitment; non-attendance could be read as lack of interest."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from TechBridge's website, prior applicants, or a second invitation to another founder from Nimbus Labs.",
+     "proposition": "TechBridge invites all applicants to its founders meetup as a standard practice."
+    },
+    {
+     "needs": "Observation of whether other applicants receive the same invitation, or a pattern of meetup attendees being accepted.",
+     "proposition": "TechBridge invites only applicants it is seriously considering to its founders meetup."
+    },
+    {
+     "needs": "TechBridge's published application deadline and decision timeline; confirmation that the application was received.",
+     "proposition": "The application is still in the 'applied' stage, with no decision window closed yet."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "This is not an application decision or status update; it is a soft engagement signal from the programme."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.programs_and_applications.program_applications#q"
+     ],
+     "claim": "The invitation to attend a founders meetup suggests TechBridge is aware of the application and is creating a touchpoint, but carries no information about the application's status."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "fact:1"
+     ],
+     "claim": "The move is ours: the invitation is optional ('if you are around'), and attendance is a choice, not a requirement."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "This mail does not close the application file or move it to a new stage; the application remains in the 'applied' stage, waiting for the programme's decision window to close."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-15",
+    "for_whom": "yourself and TechBridge",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+     "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:3",
+     "fact:4",
+     "inference:4",
+     "unknown:2",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "Verify the application receipt and TechBridge's decision timeline before deciding whether to attend the meetup.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A founder meetup invitation from a programme during the application window is a courtesy and a networking opportunity, not a signal of acceptance or rejection.",
+     "kind": "practice",
+     "why": "Programmes maintain relationships with all applicants during review; attendance builds familiarity but does not influence the decision process, which runs on its own calendar."
+    },
+    {
+     "claim": "Attending a programme's event during the application window is low-cost and can be valuable for learning the programme's priorities and meeting other founders, but should not be treated as a required move.",
+     "kind": "base_rate",
+     "why": "The founder's time is scarce; the decision to attend should rest on whether the learning or network value justifies the time, not on whether it might influence the application."
+    },
+    {
+     "claim": "A programme that invites an applicant to an event during review may be signalling interest, but this is not reliable; some programmes invite all applicants, and some invite only those they are considering.",
+     "kind": "counter_pattern",
+     "why": "Without knowing TechBridge's practice, the invitation cannot be read as a positive signal; it is a neutral engagement touch."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+      "pb:founder_office.programs_and_applications.program_applications#f2"
+     ],
+     "claim": "Programmes often send newsletters and event invitations to applicants during the application review window, without signalling a decision.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.programs_and_applications.program_applications#q"
+     ],
+     "claim": "A founders meetup is a low-signal engagement; attendance may help build relationship but does not predict application outcome.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "Programmes that read applications as a batch answer on their own published calendar, not on the applicant's engagement level.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#16"
+    ],
+    "kind": "program",
+    "why": "The file is correctly categorized as a program application. TechBridge Foundation is an accelerator, and the work is to track the application through its decision process."
+   },
+   "scenarios": {
+    "act": "The founder attends the meetup on 27 September, meets TechBridge's team and other founders, and learns about the programme's priorities and timeline. This builds relationship and may provide clarity on the application status, but does not change the decision process. The founder also verifies the application receipt and the decision deadline.",
+    "best": "The founder attends the meetup, learns that the application is on track, meets the decision-maker, and receives clarity on the timeline. The application is accepted, and the founder moves to the 'interview' or 'onboarding' stage. The meetup attendance is a low-cost way to build relationship and gather information.",
+    "do_nothing": "The file remains in 'applied' stage. The founder does not attend the meetup. The application waits for TechBridge's decision on its own calendar. If the programme's decision deadline has not been published, the file will remain quiet until it is, or until the programme's published decision date passes. The risk is that the application window closes without the founder knowing the deadline, or that a decision arrives and is missed.",
+    "signals_to_watch": [
+     "Receipt confirmation from TechBridge for the application.",
+     "TechBridge's published application deadline and decision timeline.",
+     "Any communication from TechBridge about the application status or next steps.",
+     "Whether other applicants receive the same meetup invitation.",
+     "The founder's experience at the meetup: whether the team discusses the application, asks questions, or provides feedback."
+    ],
+    "worst": "The founder attends the meetup and learns that the application has been rejected or is not being considered. Or the founder does not attend, and the application is rejected without the founder having had a chance to meet the team or learn the reason. Or the founder attends but the meetup provides no useful information, and the application remains in limbo."
+   },
+   "unknowns": [
+    {
+     "question": "What is TechBridge Foundation's published application deadline and decision timeline?",
+     "relevance": "The playbook's 'applied' stage typically lasts 14 days, but the programme's own deadline is the only fixed point; without it, the file's stage and urgency cannot be judged."
+    },
+    {
+     "question": "Did Nimbus Labs receive a confirmation of application receipt from TechBridge?",
+     "relevance": "The playbook warns that without a receipt confirmation, the application may not have been submitted; this is the first fact to verify."
+    },
+    {
+     "question": "Does TechBridge invite all applicants to its founders meetup, or only a subset?",
+     "relevance": "This determines whether the invitation carries any signal about the application's status or likelihood of acceptance."
+    },
+    {
+     "question": "What is the founder's current calendar and priorities for the week of 27 September?",
+     "relevance": "The decision to attend should rest on the founder's time and the value of the event, not on the application; this is a choice, not an obligation."
+    }
+   ],
+   "wait_or_stop": "Wait until TechBridge's published decision deadline passes before closing the file. If the deadline is not published, wait 90 days from the application date (the playbook's prior for programme applications) before treating the file as dormant. Stop if the programme rejects the application or if the founder decides not to re-apply."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"TechBridge Foundation sent an invitation to a founders meetup on 27 September, with no explicit ask or promise beyond attendance.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"TechBridge founders meetup, 27 Sep Hello Arjun, Sharing our accelerator's newsletter and an invite to the TechBridge founders meetup on 27 Sep. Do drop in if you are around. Sameer Rana TechBridge Foundation\"\n    },\n    {\n      \"claim\": \"The file is categorized as a program application, and TechBridge Foundation is on the watchlist.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"brief:cbl_#34\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Nimbus Labs applied to TechBridge Foundation as part of its accelerator and incubator program strategy.\",\n      \"evidence\": [\n        \"brief:cbl_#16\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No prior communication history exists between the founder and TechBridge; this is the first touch on 2026-09-13 at 06:00 UTC.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"num:usual_gap\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days since the invitation arrived.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply metrics exist for this counterparty; this is the first exchange.\",\n      \"evidence\": [\n        \"num:their_reply_time:sameer@techbridge.test\",\n        \"num:your_reply_time:sameer@techbridge.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units assessed this file as low risk, with low urgency and high engagement.\",\n      \"evidence\": [\n        \"ru:core.temporal\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is not an application decision or status update; it is a soft engagement signal from the programme.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"claim\": \"The invitation to attend a founders meetup suggests TechBridge is aware of the application and is creating a touchpoint, but carries no information about the application's status.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.programs_and_applications.program_applications#q\"\n      ]\n    },\n    {\n      \"claim\": \"The move is ours: the invitation is optional ('if you are around'), and attendance is a choice, not a requirement.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"This mail does not close the application file or move it to a new stage; the application remains in the 'applied' stage, waiting for the programme's decision window to close.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Programmes often send newsletters and event invitations to applicants during the application review window, without signalling a decision.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n        \"pb:founder_office.programs_and_applications.program_applications#f2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A founders meetup is a low-signal engagement; attendance may help build relationship but does not predict application outcome.\",\n      \"based_on\": [\n        \"pb:founder_office.programs_and_applications.program_applications#q\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Programmes that read applications as a batch answer on their own published calendar, not on the applicant's engagement level.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A founder meetup invitation from a programme during the application window is a courtesy and a networking opportunity, not a signal of acceptance or rejection.\",\n      \"why\": \"Programmes maintain relationships with all applicants during review; attendance builds familiarity but does not influence the decision process, which runs on its own calendar.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Attending a programme's event during the application window is low-cost and can be valuable for learning the programme's priorities and meeting other founders, but should not be treated as a required move.\",\n      \"why\": \"The founder's time is scarce; the decision to attend should rest on whether the learning or network value justifies the time, not on whether it might influence the application.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A programme that invites an applicant to an event during review may be signalling interest, but this is not reliable; some programmes invite all applicants, and some invite only those they are considering.\",\n      \"why\": \"Without knowing TechBridge's practice, the invitation cannot be read as a positive signal; it is a neutral engagement touch.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"TechBridge invites all applicants to its founders meetup as a standard practice.\",\n      \"needs\": \"Confirmation from TechBridge's website, prior applicants, or a second invitation to another founder from Nimbus Labs.\"\n    },\n    {\n      \"proposition\": \"TechBridge invites only applicants it is seriously considering to its founders meetup.\",\n      \"needs\": \"Observation of whether other applicants receive the same invitation, or a pattern of meetup attendees being accepted.\"\n    },\n    {\n      \"proposition\": \"The application is still in the 'applied' stage, with no decision window closed yet.\",\n      \"needs\": \"TechBridge's published application deadline and decision timeline; confirmation that the application was received.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is TechBridge Foundation's published application deadline and decision timeline?\",\n      \"relevance\": \"The playbook's 'applied' stage typically lasts 14 days, but the programme's own deadline is the only fixed point; without it, the file's stage and urgency cannot be judged.\"\n    },\n    {\n      \"question\": \"Did Nimbus Labs receive a confirmation of application receipt from TechBridge?\",\n      \"relevance\": \"The playbook warns that without a receipt confirmation, the application may not have been submitted; this is the first fact to verify.\"\n    },\n    {\n      \"question\": \"Does TechBridge invite all applicants to its founders meetup, or only a subset?\",\n      \"relevance\": \"This determines whether the invitation carries any signal about the application's status or likelihood of acceptance.\"\n    },\n    {\n      \"question\": \"What is the founder's current calendar and priorities for the week of 27 September?\",\n      \"relevance\": \"The decision to attend should rest on the founder's time and the value of the event, not on the application; this is a choice, not an obligation.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A programme sends a soft engagement signal during the application review window. The application remains in the 'applied' stage, waiting for the programme's decision. The invitation is optional and does not change the file's status or urgency.\",\n    \"rivals\": [\n      \"The invitation is a positive signal that the application is being considered seriously, and attendance is a move that could influence the decision.\",\n      \"The invitation is a standard courtesy to all applicants, with no signal value; it should be ignored unless the founder has time and interest.\",\n      \"The invitation is a test of the founder's engagement and commitment; non-attendance could be read as lack of interest.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is correctly categorized as a program application. TechBridge Foundation is an accelerator, and the work is to track the application through its decision process.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#16\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"applied\",\n    \"expected\": \"The application is in the window between submission and the programme's decision deadline. The programme may send newsletters, event invitations, or eligibility checks during this time. The playbook expects quiet during this stage, with no decision signal until the programme's published deadline passes or the programme shows the application is being read.\",\n    \"actual\": \"TechBridge sent a founders meetup invitation on 2026-09-13, 0.5 days after the first touch. No application receipt confirmation is recorded. No decision signal has arrived. The file shows no prior communication history.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains in 'applied' stage. The founder does not attend the meetup. The application waits for TechBridge's decision on its own calendar. If the programme's decision deadline has not been published, the file will remain quiet until it is, or until the programme's published decision date passes. The risk is that the application window closes without the founder knowing the deadline, or that a decision arrives and is missed.\",\n    \"act\": \"The founder attends the meetup on 27 September, meets TechBridge's team and other founders, and learns about the programme's priorities and timeline. This builds relationship and may provide clarity on the application status, but does not change the decision process. The founder also verifies the application receipt and the decision deadline.\",\n    \"best\": \"The founder attends the meetup, learns that the application is on track, meets the decision-maker, and receives clarity on the timeline. The application is accepted, and the founder moves to the 'interview' or 'onboarding' stage. The meetup attendance is a low-cost way to build relationship and gather information.\",\n    \"worst\": \"The founder attends the meetup and learns that the application has been rejected or is not being considered. Or the founder does not attend, and the application is rejected without the founder having had a chance to meet the team or learn the reason. Or the founder attends but the meetup provides no useful information, and the application remains in limbo.\",\n    \"signals_to_watch\": [\n      \"Receipt confirmation from TechBridge for the application.\",\n      \"TechBridge's published application deadline and decision timeline.\",\n      \"Any communication from TechBridge about the application status or next steps.\",\n      \"Whether other applicants receive the same meetup invitation.\",\n      \"The founder's experience at the meetup: whether the team discusses the application, asks questions, or provides feedback.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because TechBridge is one of six programmes Nimbus Labs has applied to, and one of five investors in the seed wave; a rejection or acceptance here affects the overall fundraising and programme strategy, but is not the only path.\",\n      \"The urgency is low because the invitation is optional, the meetup is 14 days away, and the application decision is on the programme's calendar, not the founder's.\",\n      \"The move is reversible: attending or not attending the meetup does not commit the founder to anything, and does not change the application's status.\",\n      \"The file is low-risk because the programme has not asked for anything, and the quiet is expected during the 'applied' stage.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Verify the application receipt and TechBridge's decision timeline before deciding whether to attend the meetup.\",\n    \"for_whom\": \"yourself and TechBridge\",\n    \"by_when\": \"2026-09-15\",\n    \"rests_on\": [\n      \"fact:3\",\n      \"fact:4\",\n      \"inference:4\",\n      \"unknown:2\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\",\n      \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Attend the meetup on 27 September without verifying the receipt or timeline first. This is lower-cost if the founder has time and interest in meeting TechBridge's team and other founders, but does not address the unknowns about the application status.\",\n  \"wait_or_stop\": \"Wait until TechBridge's published decision deadline passes before closing the file. If the deadline is not published, wait 90 days from the application date (the playbook's prior for programme applications) before treating the file as dormant. Stop if the programme rejects the application or if the founder decides not to re-apply.\",\n  \"done_when\": \"The application receipt is confirmed, TechBridge's decision timeline is known, and the founder has decided whether to attend the meetup based on the value of the event and the founder's calendar, not on the application status.\",\n  \"draft\": \"Hi Sameer, Thanks for the invite to the founders meetup on 27 Sep \u2014 we'd like to attend if we can make it work. Before then, could you confirm we received your application and share the timeline for decisions? We want to make sure we're tracking the right dates. Thanks, Arjun\"\n}",
+  "site": "expert"
+ }
+}

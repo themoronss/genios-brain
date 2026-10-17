@@ -1,0 +1,1217 @@
+{
+ "37cacbe259a8081003141b8054a2e99f4364b740c6dc5ac9badccecc9d6171e9": {
+  "framed": true,
+  "input_tokens": 7730,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3830,
+  "parsed": {
+   "alternative": "Wait three more business days for Memloop to follow up on their own. If they do not, send the sheet with a note asking whether they still need it. This approach tests whether Memloop is actively pursuing the partnership, but it risks appearing unresponsive if they are waiting for you.",
+   "appraisal": {
+    "reasons": [
+     "Memloop is one of four design partners in active talks, so the stakes are not as high as a lead investor or a critical hire, but design partners can be valuable for product validation and market reach.",
+     "The open ask has been unresolved for nine days, and the pricing call has now occurred, so the urgency is moderate: you should act within the next few days to clarify the situation.",
+     "Sending the API pricing sheet is reversible: if Memloop does not respond, you can follow up or move on. A wrong move here does not lock you into a bad outcome.",
+     "The relationship is exploratory, so a missed deliverable is less damaging than it would be in a vendor or investor context, but it still reflects on your professionalism and follow-through."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The API pricing sheet has been sent to Aman Verma, and the open ask is marked as resolved. Done is confirmed when Memloop responds to the sheet or when you have followed up once and received no response, at which point the relationship status is clear.",
+   "draft": "Hi Aman, I wanted to follow up on the pricing call we had yesterday. I realized I didn't get the API pricing sheet to you before the call as you'd asked \u2014 my apologies for that. I'm attaching it now in case it's still useful as you think through the partnership. Let me know if you have any questions or if there's anything else you need from us. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The document was requested but not sent before the meeting. Both calls occurred as scheduled. No follow-up has occurred from either side in the past day.",
+    "expected": "In an exploratory partner conversation, both parties typically exchange information, discuss fit, and agree on next steps. A request for a specific document before a meeting signals that the document is important to the conversation.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Memloop initiated contact on 2026-09-27 proposing two calls on 2026-10-05 and requesting an API pricing sheet before the second call.",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": "Two calls on 5 Oct: product at 11 am and pricing at 4 pm IST. Could you share your API pricing sheet before the second one?"
+    },
+    {
+     "claim": "Both calls with Memloop occurred on 2026-10-05 as scheduled: a product call at 05:30 UTC and a pricing call at 10:30 UTC.",
+     "evidence": [
+      "evt_#2",
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows an open ask from Memloop waiting on your response since 2026-09-27, with no record of the API pricing sheet being sent.",
+     "evidence": [
+      "loop:loop_#1",
+      "evt_#3"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is classified as partner work in the admin and sales domains, with Memloop listed as a design partner in the company brief.",
+     "evidence": [
+      "file:kind",
+      "file:domains",
+      "brief:cbl_#26"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this kind of work, and no promises were extracted from Memloop's mail.",
+     "evidence": [
+      "none:playbook",
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.06 days since the last meeting, within the normal gaps observed in this relationship.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in your court: Memloop asked for the API pricing sheet before the pricing call, and the calls have now occurred.",
+     "evidence": [
+      "file:whose_move",
+      "evt_#3"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner has requested a specific document before a meeting, the meeting has occurred without the document, and the partner has not followed up. The next move is to clarify whether the document is still needed and to send it if it is.",
+    "rivals": [
+     "A vendor evaluation where the API pricing sheet is a critical input to a purchase decision, and silence from Memloop means they are waiting for you to send it.",
+     "An exploratory conversation where the pricing call satisfied Memloop's core questions and the API pricing sheet is no longer relevant.",
+     "A relationship that has stalled because you missed a commitment, and Memloop is now deprioritizing you."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A message from Memloop asking for it, or a follow-up from you that prompts a response clarifying whether they still need it.",
+     "proposition": "Memloop still needs the API pricing sheet to make a decision about partnership."
+    },
+    {
+     "needs": "A message from Memloop indicating they are moving forward, or silence for another week without a follow-up from them.",
+     "proposition": "The pricing call resolved Memloop's questions and the API pricing sheet is no longer needed."
+    },
+    {
+     "needs": "A message from Memloop after you send it, or no response after you send it, which would indicate they were not waiting for it.",
+     "proposition": "Memloop is waiting for you to send the sheet as a gesture of good faith, even though they did not chase for it."
+    },
+    {
+     "needs": "Clarity on Memloop's timeline and decision process, which could come from a direct question or from observing whether they engage further.",
+     "proposition": "The relationship is exploratory and Memloop is evaluating multiple options; the API pricing sheet is one input among many."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:3",
+      "evt_#1"
+     ],
+     "claim": "The API pricing sheet was likely not sent before the pricing call on 2026-10-05, since the open ask remains unresolved and no record of sending it appears in the file."
+    },
+    {
+     "based_on": [
+      "inference:1",
+      "evt_#1"
+     ],
+     "claim": "The pricing call proceeded without the requested document, which may have limited its effectiveness or left Memloop's question unanswered."
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "evt_#1"
+     ],
+     "claim": "Memloop has not followed up since the calls, suggesting either they are satisfied with what was discussed, they are processing internally, or they are waiting for you to send the promised document."
+    },
+    {
+     "based_on": [
+      "fact:7",
+      "inference:1"
+     ],
+     "claim": "The next move is yours: either to send the API pricing sheet now, to clarify what was discussed in the pricing call, or to confirm whether Memloop still needs the document."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-07",
+    "for_whom": "Aman Verma at Memloop",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "own:1",
+     "own:4"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "inference:1",
+     "inference:4"
+    ],
+    "to": "aman@memloop.test",
+    "what": "send the API pricing sheet to Memloop with a brief note acknowledging the request and the pricing call",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A request made before a meeting and not fulfilled by the meeting time should be addressed within one business day after the meeting, either by sending it or by explaining why it is not available.",
+     "kind": "practice",
+     "why": "Silence after a missed commitment creates ambiguity about whether the other party still needs it, whether you forgot, or whether you are deprioritizing them. A single message clarifies intent and preserves the relationship."
+    },
+    {
+     "claim": "When a partner does not chase after a missed deliverable, it often means they have moved on, found an alternative, or decided the information was not critical to their decision.",
+     "kind": "counter_pattern",
+     "why": "A partner who truly needed the document would follow up within days. Silence suggests the meeting satisfied their core question or they are no longer actively evaluating."
+    },
+    {
+     "claim": "Design partner relationships are often exploratory and do not follow the same commitment-tracking discipline as vendor or investor relationships.",
+     "kind": "practice",
+     "why": "Partners are typically evaluating fit and capability, not executing a contract. A missed document is less likely to be a blocker than it would be in a sales or compliance context."
+    },
+    {
+     "claim": "When both parties have met and the conversation has occurred, the absence of follow-up from the other side within a week usually means the next move is theirs, not yours.",
+     "kind": "base_rate",
+     "why": "If they needed something from you, they would ask. If they are thinking it over, they will come back. Chasing too early reads as pressure and damages the exploratory dynamic."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:1",
+      "inference:1"
+     ],
+     "claim": "A written request for a specific deliverable before a meeting, when the meeting occurs without the deliverable, leaves the ask open and the relationship in an ambiguous state.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "inference:3"
+     ],
+     "claim": "Memloop has not chased for the API pricing sheet after the pricing call, which is atypical for a vendor or partner who needed it to make a decision.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "brief:cbl_#26",
+      "file:domains"
+     ],
+     "claim": "Design partner conversations often proceed without all requested materials if the relationship is exploratory rather than transactional.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#26",
+     "file:kind",
+     "file:domains"
+    ],
+    "kind": "partner",
+    "why": "The brief lists Memloop as a design partner in active talks, and the file is classified as partner work. The conversation is exploratory and focused on fit and capability, not on a transactional vendor relationship or a compliance requirement."
+   },
+   "scenarios": {
+    "act": "You send the API pricing sheet to Memloop with a brief note acknowledging the request and the pricing call. This closes the open ask, demonstrates follow-through, and gives Memloop the information they asked for. If they do not respond, you will know they are not actively pursuing the partnership.",
+    "best": "You send the sheet, Memloop responds within days with interest in moving forward, and the partnership conversation accelerates. The missed deliverable is forgotten because you recovered it quickly.",
+    "do_nothing": "Memloop remains in an ambiguous state: they may be waiting for the API pricing sheet, they may have moved on, or they may be processing internally. If they needed the sheet and you do not send it, the relationship cools. If they did not need it, nothing changes. The open ask remains unresolved and the file stays in limbo.",
+    "signals_to_watch": [
+     "Whether Memloop responds to the API pricing sheet within three business days.",
+     "Whether Memloop asks for additional information or clarification after receiving the sheet.",
+     "Whether Memloop proposes a next step or timeline for the partnership.",
+     "Whether Memloop goes silent for more than a week, which would suggest they have moved on."
+    ],
+    "worst": "You send the sheet and Memloop does not respond, indicating they have deprioritized you or decided to pursue other options. Alternatively, you do nothing and Memloop interprets the silence as disinterest or incompetence, and the relationship dies quietly."
+   },
+   "unknowns": [
+    {
+     "question": "What was discussed in the pricing call on 2026-10-05, and did it address the questions the API pricing sheet would have answered?",
+     "relevance": "If the call covered pricing in detail, the sheet may be redundant. If the call was exploratory, the sheet may still be needed. Without knowing what was said, it is unclear whether sending it now is necessary or whether it would be seen as a follow-up to a conversation that already happened."
+    },
+    {
+     "question": "Does Memloop have a decision timeline, and is the API pricing sheet a blocker to their next step?",
+     "relevance": "If they are deciding this week, the sheet is urgent. If they are in a longer evaluation cycle, it is less so. This would change whether to send it immediately or wait for them to ask again."
+    },
+    {
+     "question": "What is the nature of the partnership Memloop is exploring with you \u2014 is it a reseller, integration, co-marketing, or something else?",
+     "relevance": "The type of partnership determines whether API pricing is central to the decision or peripheral. A reseller needs it; a co-marketing partner may not."
+    },
+    {
+     "question": "Has Memloop engaged with other design partners in your brief, and if so, how far along are those conversations?",
+     "relevance": "If Memloop is one of several partners you are pursuing, the urgency of this particular relationship depends on the status of the others. If this is the most advanced, it deserves more attention."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-10-10 for a response from Memloop after you send the sheet. If they do not respond by then, follow up once with a brief message asking whether they are still interested in exploring the partnership. If there is no response by 2026-10-17, close the file as dormant and revisit only if Memloop reaches out again."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Memloop initiated contact on 2026-09-27 proposing two calls on 2026-10-05 and requesting an API pricing sheet before the second call.\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": \"Two calls on 5 Oct: product at 11 am and pricing at 4 pm IST. Could you share your API pricing sheet before the second one?\"\n    },\n    {\n      \"claim\": \"Both calls with Memloop occurred on 2026-10-05 as scheduled: a product call at 05:30 UTC and a pricing call at 10:30 UTC.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows an open ask from Memloop waiting on your response since 2026-09-27, with no record of the API pricing sheet being sent.\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"evt_#3\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is classified as partner work in the admin and sales domains, with Memloop listed as a design partner in the company brief.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:domains\",\n        \"brief:cbl_#26\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this kind of work, and no promises were extracted from Memloop's mail.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.06 days since the last meeting, within the normal gaps observed in this relationship.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in your court: Memloop asked for the API pricing sheet before the pricing call, and the calls have now occurred.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"evt_#3\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The API pricing sheet was likely not sent before the pricing call on 2026-10-05, since the open ask remains unresolved and no record of sending it appears in the file.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The pricing call proceeded without the requested document, which may have limited its effectiveness or left Memloop's question unanswered.\",\n      \"based_on\": [\n        \"inference:1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"Memloop has not followed up since the calls, suggesting either they are satisfied with what was discussed, they are processing internally, or they are waiting for you to send the promised document.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is yours: either to send the API pricing sheet now, to clarify what was discussed in the pricing call, or to confirm whether Memloop still needs the document.\",\n      \"based_on\": [\n        \"fact:7\",\n        \"inference:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A written request for a specific deliverable before a meeting, when the meeting occurs without the deliverable, leaves the ask open and the relationship in an ambiguous state.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Memloop has not chased for the API pricing sheet after the pricing call, which is atypical for a vendor or partner who needed it to make a decision.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"inference:3\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partner conversations often proceed without all requested materials if the relationship is exploratory rather than transactional.\",\n      \"based_on\": [\n        \"brief:cbl_#26\",\n        \"file:domains\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A request made before a meeting and not fulfilled by the meeting time should be addressed within one business day after the meeting, either by sending it or by explaining why it is not available.\",\n      \"why\": \"Silence after a missed commitment creates ambiguity about whether the other party still needs it, whether you forgot, or whether you are deprioritizing them. A single message clarifies intent and preserves the relationship.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"When a partner does not chase after a missed deliverable, it often means they have moved on, found an alternative, or decided the information was not critical to their decision.\",\n      \"why\": \"A partner who truly needed the document would follow up within days. Silence suggests the meeting satisfied their core question or they are no longer actively evaluating.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Design partner relationships are often exploratory and do not follow the same commitment-tracking discipline as vendor or investor relationships.\",\n      \"why\": \"Partners are typically evaluating fit and capability, not executing a contract. A missed document is less likely to be a blocker than it would be in a sales or compliance context.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When both parties have met and the conversation has occurred, the absence of follow-up from the other side within a week usually means the next move is theirs, not yours.\",\n      \"why\": \"If they needed something from you, they would ask. If they are thinking it over, they will come back. Chasing too early reads as pressure and damages the exploratory dynamic.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Memloop still needs the API pricing sheet to make a decision about partnership.\",\n      \"needs\": \"A message from Memloop asking for it, or a follow-up from you that prompts a response clarifying whether they still need it.\"\n    },\n    {\n      \"proposition\": \"The pricing call resolved Memloop's questions and the API pricing sheet is no longer needed.\",\n      \"needs\": \"A message from Memloop indicating they are moving forward, or silence for another week without a follow-up from them.\"\n    },\n    {\n      \"proposition\": \"Memloop is waiting for you to send the sheet as a gesture of good faith, even though they did not chase for it.\",\n      \"needs\": \"A message from Memloop after you send it, or no response after you send it, which would indicate they were not waiting for it.\"\n    },\n    {\n      \"proposition\": \"The relationship is exploratory and Memloop is evaluating multiple options; the API pricing sheet is one input among many.\",\n      \"needs\": \"Clarity on Memloop's timeline and decision process, which could come from a direct question or from observing whether they engage further.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What was discussed in the pricing call on 2026-10-05, and did it address the questions the API pricing sheet would have answered?\",\n      \"relevance\": \"If the call covered pricing in detail, the sheet may be redundant. If the call was exploratory, the sheet may still be needed. Without knowing what was said, it is unclear whether sending it now is necessary or whether it would be seen as a follow-up to a conversation that already happened.\"\n    },\n    {\n      \"question\": \"Does Memloop have a decision timeline, and is the API pricing sheet a blocker to their next step?\",\n      \"relevance\": \"If they are deciding this week, the sheet is urgent. If they are in a longer evaluation cycle, it is less so. This would change whether to send it immediately or wait for them to ask again.\"\n    },\n    {\n      \"question\": \"What is the nature of the partnership Memloop is exploring with you \u2014 is it a reseller, integration, co-marketing, or something else?\",\n      \"relevance\": \"The type of partnership determines whether API pricing is central to the decision or peripheral. A reseller needs it; a co-marketing partner may not.\"\n    },\n    {\n      \"question\": \"Has Memloop engaged with other design partners in your brief, and if so, how far along are those conversations?\",\n      \"relevance\": \"If Memloop is one of several partners you are pursuing, the urgency of this particular relationship depends on the status of the others. If this is the most advanced, it deserves more attention.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner has requested a specific document before a meeting, the meeting has occurred without the document, and the partner has not followed up. The next move is to clarify whether the document is still needed and to send it if it is.\",\n    \"rivals\": [\n      \"A vendor evaluation where the API pricing sheet is a critical input to a purchase decision, and silence from Memloop means they are waiting for you to send it.\",\n      \"An exploratory conversation where the pricing call satisfied Memloop's core questions and the API pricing sheet is no longer relevant.\",\n      \"A relationship that has stalled because you missed a commitment, and Memloop is now deprioritizing you.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The brief lists Memloop as a design partner in active talks, and the file is classified as partner work. The conversation is exploratory and focused on fit and capability, not on a transactional vendor relationship or a compliance requirement.\",\n    \"evidence\": [\n      \"brief:cbl_#26\",\n      \"file:kind\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"In an exploratory partner conversation, both parties typically exchange information, discuss fit, and agree on next steps. A request for a specific document before a meeting signals that the document is important to the conversation.\",\n    \"actual\": \"The document was requested but not sent before the meeting. Both calls occurred as scheduled. No follow-up has occurred from either side in the past day.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Memloop remains in an ambiguous state: they may be waiting for the API pricing sheet, they may have moved on, or they may be processing internally. If they needed the sheet and you do not send it, the relationship cools. If they did not need it, nothing changes. The open ask remains unresolved and the file stays in limbo.\",\n    \"act\": \"You send the API pricing sheet to Memloop with a brief note acknowledging the request and the pricing call. This closes the open ask, demonstrates follow-through, and gives Memloop the information they asked for. If they do not respond, you will know they are not actively pursuing the partnership.\",\n    \"best\": \"You send the sheet, Memloop responds within days with interest in moving forward, and the partnership conversation accelerates. The missed deliverable is forgotten because you recovered it quickly.\",\n    \"worst\": \"You send the sheet and Memloop does not respond, indicating they have deprioritized you or decided to pursue other options. Alternatively, you do nothing and Memloop interprets the silence as disinterest or incompetence, and the relationship dies quietly.\",\n    \"signals_to_watch\": [\n      \"Whether Memloop responds to the API pricing sheet within three business days.\",\n      \"Whether Memloop asks for additional information or clarification after receiving the sheet.\",\n      \"Whether Memloop proposes a next step or timeline for the partnership.\",\n      \"Whether Memloop goes silent for more than a week, which would suggest they have moved on.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Memloop is one of four design partners in active talks, so the stakes are not as high as a lead investor or a critical hire, but design partners can be valuable for product validation and market reach.\",\n      \"The open ask has been unresolved for nine days, and the pricing call has now occurred, so the urgency is moderate: you should act within the next few days to clarify the situation.\",\n      \"Sending the API pricing sheet is reversible: if Memloop does not respond, you can follow up or move on. A wrong move here does not lock you into a bad outcome.\",\n      \"The relationship is exploratory, so a missed deliverable is less damaging than it would be in a vendor or investor context, but it still reflects on your professionalism and follow-through.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the API pricing sheet to Memloop with a brief note acknowledging the request and the pricing call\",\n    \"for_whom\": \"Aman Verma at Memloop\",\n    \"by_when\": \"2026-10-07\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"own:1\",\n      \"own:4\"\n    ],\n    \"to\": \"aman@memloop.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"Wait three more business days for Memloop to follow up on their own. If they do not, send the sheet with a note asking whether they still need it. This approach tests whether Memloop is actively pursuing the partnership, but it risks appearing unresponsive if they are waiting for you.\",\n    \"wait_or_stop\": \"Wait until 2026-10-10 for a response from Memloop after you send the sheet. If they do not respond by then, follow up once with a brief message asking whether they are still interested in exploring the partnership. If there is no response by 2026-10-17, close the file as dormant and revisit only if Memloop reaches out again.\",\n    \"done_when\": \"The API pricing sheet has been sent to Aman Verma, and the open ask is marked as resolved. Done is confirmed when Memloop responds to the sheet or when you have followed up once and received no response, at which point the relationship status is clear.\",\n    \"draft\": \"Hi Aman, I wanted to follow up on the pricing call we had yesterday. I realized I didn't get the API pricing sheet to you before the call as you'd asked \u2014 my apologies for that. I'm attaching it now in case it's still useful as you think through the partnership. Let me know if you have any questions or if there's anything else you need from us. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "5466edf8c58f0cc34a4003ca86c2bf08e3d3855c7fee6d14989254dcaca3e14a": {
+  "framed": true,
+  "input_tokens": 7798,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3108,
+  "parsed": {
+   "alternative": "If the pricing sheet does not exist, call Aman Verma directly to explain the delay and propose a new date for the pricing call, before sending a written message. This preserves the relationship and gives you a chance to understand Memloop's flexibility.",
+   "appraisal": {
+    "reasons": [
+     "The meetings are scheduled for tomorrow; the window to act is hours, not days.",
+     "A broken commitment on a document request before a meeting damages the relationship and is costly to repair.",
+     "Memloop is listed as a design partner prospect in the brief, and design partners are a stated goal.",
+     "Silence on a specific ask is read as a choice, not an accident, and reverses the momentum of the conversation."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The API pricing sheet has been sent to Aman Verma before the first meeting on 5 Oct, or the pricing call has been rescheduled with Aman's agreement and a new date set.",
+   "draft": "Hi Aman, I'm sending over the API pricing sheet ahead of tomorrow's call at 4 pm IST. Looking forward to discussing it with you. \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "A document was requested seven days ago. No response has been sent. Two meetings are booked for tomorrow. The ball is in our court.",
+    "expected": "No playbook exists for this kind of work. From the brief, the goal is to 'Land design partners'. The expected behavior is to move the conversation forward and demonstrate responsiveness.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Aman Verma at Memloop asked for the API pricing sheet before a second call scheduled for 4 pm IST on 5 Oct.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you share your API pricing sheet before the second one?"
+    },
+    {
+     "claim": "Two meetings were booked: one at 05:30 UTC and one at 10:30 UTC on 2026-10-05, titled 'Memloop x Nimbus - product' and 'Memloop x Nimbus - pricing'.",
+     "evidence": [
+      "evt_#2",
+      "evt_#3"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 7.17 days since the last touch on 2026-09-27 08:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was extracted from Memloop's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we hold an open ask to provide the API pricing sheet.",
+     "evidence": [
+      "loop:loop_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was surfaced to 'send the API pricing sheet to Aman Verma' and was created by rule.",
+     "evidence": [
+      "card:card_#1",
+      "review:ffp-a80a927b2638beb4de16dc0a"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is listed as 'partner' with no playbook written for it.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The account_admin situation is active and the next booking is 0.9 days ahead.",
+     "evidence": [
+      "sit:sit_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner has asked for a document before a meeting scheduled in less than one day. We hold the ball and are overdue. The move is to discharge the commitment or renegotiate before the call.",
+    "rivals": [
+     "This is a low-priority exploratory conversation and the document request is optional; we can address it in the call itself.",
+     "Memloop is testing our responsiveness and the document is a signal of how seriously we take the partnership."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder or the team that the document is prepared.",
+     "proposition": "The API pricing sheet exists and is ready to send."
+    },
+    {
+     "needs": "A statement from the founder that the document is not ready, and if so, whether the meeting should be rescheduled or the ask renegotiated.",
+     "proposition": "The pricing sheet does not exist or is not finalized."
+    },
+    {
+     "needs": "Context on Memloop's fit with Nimbus Labs' product and whether this partnership would materially advance the company's goals.",
+     "proposition": "Memloop is a serious design partner prospect and these meetings are high-value."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The API pricing sheet is a deliverable we committed to provide before the 4 pm IST call on 5 Oct, which is the second meeting at 10:30 UTC."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3",
+      "fact:2"
+     ],
+     "claim": "We are now overdue on this deliverable: the file has been quiet 7.17 days since the ask, and the meetings are imminent."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball"
+     ],
+     "claim": "The rule admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball applies: we must not send a reminder or chase, but must discharge the commitment or renegotiate its date."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:5"
+     ],
+     "claim": "The next move is ours and must happen before the meetings on 5 Oct."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-04",
+    "for_whom": "Aman Verma at Memloop",
+    "guided_by": [
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:5",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "aman@memloop.test",
+    "what": "send the API pricing sheet to Aman Verma, or if it does not exist, message Aman to reschedule the pricing call and explain the delay",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A document requested before a meeting should be sent at least one day before the meeting, not on the day of.",
+     "kind": "practice",
+     "why": "The counterparty needs time to review it and prepare their side of the conversation; sending it the morning of the call signals you did not plan ahead."
+    },
+    {
+     "claim": "When you hold the ball and a deadline is approaching, the cost of sending the document early is zero; the cost of sending it late is the relationship.",
+     "kind": "base_rate",
+     "why": "Early delivery is never wrong; late delivery is always noticed."
+    },
+    {
+     "claim": "Silence on a document request is often read as a signal that you are not serious about the partnership, even when the silence is accidental.",
+     "kind": "counter_pattern",
+     "why": "A counterparty waiting for a document interprets delay as a choice, not a mistake."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1"
+     ],
+     "claim": "When a counterparty asks for a document before a meeting, silence from us reads as either incompetence or disregard, and damages the relationship.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A request for a document sent seven days before a meeting and not answered by the meeting date is treated as a broken commitment, not a delay.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "A document request that arrives with a specific meeting date attached is not a standing request; it is a time-bound deliverable.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#26",
+     "file:kind"
+    ],
+    "kind": "partner",
+    "why": "The dossier lists Memloop under 'Partner \u00b7 Memloop \u2014 design partner talks' and the file's kind is already set to 'partner'. The work is to establish a design partnership, not to raise capital, hire, or comply."
+   },
+   "scenarios": {
+    "act": "The API pricing sheet is sent to Aman Verma before the first meeting on 5 Oct. Memloop sees responsiveness and preparation. The pricing call proceeds with context. The partnership advances or is clearly closed.",
+    "best": "The pricing sheet is sent today or tomorrow morning. Memloop reviews it before the call. The pricing conversation is substantive. The partnership moves to the next stage or a clear decision is made.",
+    "do_nothing": "The meetings proceed without the pricing sheet. Memloop interprets the silence as disinterest or disorganization. The partnership conversation stalls or ends. The card remains open and the file goes dormant.",
+    "signals_to_watch": [
+     "Whether the API pricing sheet is ready to send.",
+     "Memloop's response to the document when it arrives.",
+     "Whether the meetings proceed as scheduled or are rescheduled.",
+     "The tone and substance of Memloop's follow-up after the calls."
+    ],
+    "worst": "The pricing sheet does not exist or cannot be prepared in time. The founder must cancel or reschedule the pricing call. Memloop loses confidence in the partnership. The relationship is damaged."
+   },
+   "unknowns": [
+    {
+     "question": "Does the API pricing sheet exist and is it ready to send?",
+     "relevance": "If it exists, the move is to send it immediately. If it does not, the move is to renegotiate the meeting date or the ask before the call."
+    },
+    {
+     "question": "What is the strategic importance of Memloop as a design partner?",
+     "relevance": "If Memloop is a high-priority partner, the urgency of this move is high. If it is exploratory, the move can be more measured."
+    },
+    {
+     "question": "Has the founder or team prepared any response to the pricing request, or is this the first time it is being surfaced?",
+     "relevance": "If work has already begun, the move is to finish and send. If not, the move may be to renegotiate the timeline."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The meetings are tomorrow. Stop if the founder confirms the pricing sheet does not exist and cannot be prepared; in that case, renegotiate the meeting date immediately. Do not send a reminder or chase; send the document or a renegotiation."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Aman Verma at Memloop asked for the API pricing sheet before a second call scheduled for 4 pm IST on 5 Oct.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you share your API pricing sheet before the second one?\"\n    },\n    {\n      \"claim\": \"Two meetings were booked: one at 05:30 UTC and one at 10:30 UTC on 2026-10-05, titled 'Memloop x Nimbus - product' and 'Memloop x Nimbus - pricing'.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"evt_#3\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 7.17 days since the last touch on 2026-09-27 08:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was extracted from Memloop's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we hold an open ask to provide the API pricing sheet.\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was surfaced to 'send the API pricing sheet to Aman Verma' and was created by rule.\",\n      \"evidence\": [\n        \"card:card_#1\",\n        \"review:ffp-a80a927b2638beb4de16dc0a\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is listed as 'partner' with no playbook written for it.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The account_admin situation is active and the next booking is 0.9 days ahead.\",\n      \"evidence\": [\n        \"sit:sit_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The API pricing sheet is a deliverable we committed to provide before the 4 pm IST call on 5 Oct, which is the second meeting at 10:30 UTC.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"We are now overdue on this deliverable: the file has been quiet 7.17 days since the ask, and the meetings are imminent.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:3\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The rule admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball applies: we must not send a reminder or chase, but must discharge the commitment or renegotiate its date.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours and must happen before the meetings on 5 Oct.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:5\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a counterparty asks for a document before a meeting, silence from us reads as either incompetence or disregard, and damages the relationship.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A request for a document sent seven days before a meeting and not answered by the meeting date is treated as a broken commitment, not a delay.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A document request that arrives with a specific meeting date attached is not a standing request; it is a time-bound deliverable.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A document requested before a meeting should be sent at least one day before the meeting, not on the day of.\",\n      \"why\": \"The counterparty needs time to review it and prepare their side of the conversation; sending it the morning of the call signals you did not plan ahead.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When you hold the ball and a deadline is approaching, the cost of sending the document early is zero; the cost of sending it late is the relationship.\",\n      \"why\": \"Early delivery is never wrong; late delivery is always noticed.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence on a document request is often read as a signal that you are not serious about the partnership, even when the silence is accidental.\",\n      \"why\": \"A counterparty waiting for a document interprets delay as a choice, not a mistake.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The API pricing sheet exists and is ready to send.\",\n      \"needs\": \"Confirmation from the founder or the team that the document is prepared.\"\n    },\n    {\n      \"proposition\": \"The pricing sheet does not exist or is not finalized.\",\n      \"needs\": \"A statement from the founder that the document is not ready, and if so, whether the meeting should be rescheduled or the ask renegotiated.\"\n    },\n    {\n      \"proposition\": \"Memloop is a serious design partner prospect and these meetings are high-value.\",\n      \"needs\": \"Context on Memloop's fit with Nimbus Labs' product and whether this partnership would materially advance the company's goals.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the API pricing sheet exist and is it ready to send?\",\n      \"relevance\": \"If it exists, the move is to send it immediately. If it does not, the move is to renegotiate the meeting date or the ask before the call.\"\n    },\n    {\n      \"question\": \"What is the strategic importance of Memloop as a design partner?\",\n      \"relevance\": \"If Memloop is a high-priority partner, the urgency of this move is high. If it is exploratory, the move can be more measured.\"\n    },\n    {\n      \"question\": \"Has the founder or team prepared any response to the pricing request, or is this the first time it is being surfaced?\",\n      \"relevance\": \"If work has already begun, the move is to finish and send. If not, the move may be to renegotiate the timeline.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner has asked for a document before a meeting scheduled in less than one day. We hold the ball and are overdue. The move is to discharge the commitment or renegotiate before the call.\",\n    \"rivals\": [\n      \"This is a low-priority exploratory conversation and the document request is optional; we can address it in the call itself.\",\n      \"Memloop is testing our responsiveness and the document is a signal of how seriously we take the partnership.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The dossier lists Memloop under 'Partner \u00b7 Memloop \u2014 design partner talks' and the file's kind is already set to 'partner'. The work is to establish a design partnership, not to raise capital, hire, or comply.\",\n    \"evidence\": [\n      \"brief:cbl_#26\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook exists for this kind of work. From the brief, the goal is to 'Land design partners'. The expected behavior is to move the conversation forward and demonstrate responsiveness.\",\n    \"actual\": \"A document was requested seven days ago. No response has been sent. Two meetings are booked for tomorrow. The ball is in our court.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The meetings proceed without the pricing sheet. Memloop interprets the silence as disinterest or disorganization. The partnership conversation stalls or ends. The card remains open and the file goes dormant.\",\n    \"act\": \"The API pricing sheet is sent to Aman Verma before the first meeting on 5 Oct. Memloop sees responsiveness and preparation. The pricing call proceeds with context. The partnership advances or is clearly closed.\",\n    \"best\": \"The pricing sheet is sent today or tomorrow morning. Memloop reviews it before the call. The pricing conversation is substantive. The partnership moves to the next stage or a clear decision is made.\",\n    \"worst\": \"The pricing sheet does not exist or cannot be prepared in time. The founder must cancel or reschedule the pricing call. Memloop loses confidence in the partnership. The relationship is damaged.\",\n    \"signals_to_watch\": [\n      \"Whether the API pricing sheet is ready to send.\",\n      \"Memloop's response to the document when it arrives.\",\n      \"Whether the meetings proceed as scheduled or are rescheduled.\",\n      \"The tone and substance of Memloop's follow-up after the calls.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The meetings are scheduled for tomorrow; the window to act is hours, not days.\",\n      \"A broken commitment on a document request before a meeting damages the relationship and is costly to repair.\",\n      \"Memloop is listed as a design partner prospect in the brief, and design partners are a stated goal.\",\n      \"Silence on a specific ask is read as a choice, not an accident, and reverses the momentum of the conversation.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the API pricing sheet to Aman Verma, or if it does not exist, message Aman to reschedule the pricing call and explain the delay\",\n    \"for_whom\": \"Aman Verma at Memloop\",\n    \"by_when\": \"2026-10-04\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:5\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"aman@memloop.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the pricing sheet does not exist, call Aman Verma directly to explain the delay and propose a new date for the pricing call, before sending a written message. This preserves the relationship and gives you a chance to understand Memloop's flexibility.\",\n  \"wait_or_stop\": \"Do not wait. The meetings are tomorrow. Stop if the founder confirms the pricing sheet does not exist and cannot be prepared; in that case, renegotiate the meeting date immediately. Do not send a reminder or chase; send the document or a renegotiation.\",\n  \"done_when\": \"The API pricing sheet has been sent to Aman Verma before the first meeting on 5 Oct, or the pricing call has been rescheduled with Aman's agreement and a new date set.\",\n  \"draft\": \"Hi Aman, I'm sending over the API pricing sheet ahead of tomorrow's call at 4 pm IST. Looking forward to discussing it with you. \u2014 Arjun\"\n}",
+  "site": "expert"
+ },
+ "75bbd2c8a065a2a794a4e8b97db9bc46b5f3320fa0b4a4b52e6e6f1a5ca185fb": {
+  "framed": true,
+  "input_tokens": 7549,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3452,
+  "parsed": {
+   "alternative": "If the pricing sheet does not exist or is not ready, send a message to Aman today acknowledging his request, explaining the delay, and proposing a revised timeline (e.g., sending it by end of day or discussing pricing in the call itself). This converts a missed commitment into a managed one.",
+   "appraisal": {
+    "reasons": [
+     "The brief lists design partners as a goal, and Memloop is one of four in active talks; losing one reduces optionality",
+     "The call is less than a day away, and the sheet was requested before it; sending it now is the last chance to signal competence",
+     "If we do not send the sheet and the call is cancelled or deprioritized, recovering the relationship requires a renegotiation and an apology, both of which are costly",
+     "The file shows this is the first time we have engaged with Memloop; a misstep now sets the tone for the entire relationship"
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The sheet is sent to Aman by end of day 2026-10-04. Aman receives it and does not follow up with questions or concerns before the call. The product call happens on time on 2026-10-05 05:30 UTC. The pricing call happens on time on 2026-10-05 10:30 UTC, and Aman references the sheet or asks clarifying questions about it.",
+   "draft": "Hi Aman, attached is our API pricing sheet for the call tomorrow. Happy to walk through it in detail at 4 pm IST. Looking forward to the product discussion at 11 am as well. \u2014",
+   "expected_vs_actual": {
+    "actual": "We have booked the calls but have not yet sent the pricing sheet that was requested. We are now 7.17 days into silence, and the call is 0.9 days away. A card was surfaced to send the sheet, but it has not been acted on.",
+    "expected": "Without a playbook, the expectation comes from the brief: design partners are in talks, and the goal is to land them. The expected move is to respond to their requests promptly and prepare for the calls.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Aman Verma at Memloop requested the API pricing sheet before a pricing call scheduled for 2026-10-05 10:30 UTC",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you share your API pricing sheet before the second one?"
+    },
+    {
+     "claim": "Two meetings were booked with Memloop for 2026-10-05: a product call at 05:30 UTC and a pricing call at 10:30 UTC",
+     "evidence": [
+      "evt_#2",
+      "evt_#3"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 7.17 days since the last touch on 2026-09-27 08:00 UTC",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was surfaced to send the API pricing sheet to Aman Verma",
+     "evidence": [
+      "card:card_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is classified as partner work in the admin and sales domains",
+     "evidence": [
+      "file:kind",
+      "file:domains"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this kind of work",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we hold an open ask to provide the pricing sheet",
+     "evidence": [
+      "loop:loop_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner is testing whether Nimbus is worth their time by asking for a document before a call; we are now overdue on delivering it, and the call is less than a day away. The move is to send the sheet today and signal that we take their time seriously.",
+    "rivals": [
+     "This is a vendor evaluation, not a partnership exploration, and the pricing sheet is a qualification filter; if we do not have a compelling answer, sending it now may disqualify us before the call.",
+     "Memloop has deprioritized the conversation and the call may not happen; sending the sheet now may be wasted effort, and we should confirm the call is still on before we send anything.",
+     "The pricing sheet is a negotiation document, not a qualification filter, and sending it before the call gives away our position; we should wait and discuss pricing in the call itself."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation that the document is complete and accurate; if not, the move changes to renegotiating the call date",
+     "proposition": "The pricing sheet exists and is ready to send"
+    },
+    {
+     "needs": "Clarity on whether Memloop is exploring a partnership or evaluating Nimbus as a vendor; this changes the framing of the pricing conversation",
+     "proposition": "Memloop is a genuine design partner prospect, not a vendor evaluation"
+    },
+    {
+     "needs": "Confirmation of what Aman expects to learn from each call; if the calls are independent, the pricing sheet may not be as critical as it appears",
+     "proposition": "The two calls are sequential steps in a structured evaluation, not exploratory chats"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The request for the pricing sheet is a commitment we made by accepting the meeting structure Aman proposed"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3"
+     ],
+     "claim": "We are now overdue on delivering the pricing sheet, as the pricing call is 0.9 days away"
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "inference:2"
+     ],
+     "claim": "The card that was surfaced represents a move we should have already made"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "cap:admin.heu.commitment_tracking.forgotten_beats_broken_for_damage"
+     ],
+     "claim": "Sending the pricing sheet now, before the call, is the only move that discharges our obligation without renegotiating"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-04",
+    "for_whom": "Aman Verma at Memloop",
+    "guided_by": [
+     "cap:admin.heu.commitment_tracking.forgotten_beats_broken_for_damage",
+     "own:1",
+     "own:4"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "inference:4"
+    ],
+    "to": "aman@memloop.test",
+    "what": "send the API pricing sheet to Aman Verma",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A document request before a call should be treated as a hard dependency, not a courtesy ask",
+     "kind": "practice",
+     "why": "The counterparty is structuring their time around having the information; absence signals either disorganization or disinterest, both of which damage the relationship before the call begins"
+    },
+    {
+     "claim": "When a founder is in active accelerator programs and raising, design partner conversations are often exploratory tests of product-market fit and pricing model, not commitments",
+     "kind": "base_rate",
+     "why": "Partners at this stage are evaluating whether to invest time or resources; the pricing sheet is their first filter"
+    },
+    {
+     "claim": "Silence on a document request in the days before a call is not administrative delay; it is often a signal that the call itself is at risk",
+     "kind": "counter_pattern",
+     "why": "A partner who does not receive what they asked for often cancels or deprioritizes, and they do so without saying so until the call time"
+    },
+    {
+     "claim": "The move to send the pricing sheet should be made today, not on the morning of the call",
+     "kind": "practice",
+     "why": "Sending it now gives Aman time to review before the call, signals respect for his time, and prevents a last-minute scramble that reads as disorganization"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "When a counterparty requests a document before a scheduled call, they are signaling that the document is material to the call's outcome",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "A request for a document paired with a specific deadline (the call time) is not a soft ask; it is a condition for the meeting's value",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "brief:cbl_#6",
+      "file:kind"
+     ],
+     "claim": "Design partner conversations that begin with a product call followed by pricing discussion are exploratory partnerships, not vendor relationships",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#26"
+    ],
+    "kind": "partner",
+    "why": "The file is classified as partner work, and the brief lists Memloop under design partner talks. The conversation structure (product call, then pricing call) is consistent with exploratory partnership evaluation, not vendor procurement."
+   },
+   "scenarios": {
+    "act": "We send the pricing sheet today. Aman receives it before the call, reviews it, and comes to the call prepared. The product call at 05:30 UTC establishes fit; the pricing call at 10:30 UTC is a substantive negotiation. The partnership moves forward.",
+    "best": "We send the sheet today. Aman reviews it, finds it compelling, and comes to the pricing call with a concrete proposal. The two calls result in a design partnership agreement or a clear next step. Memloop becomes a reference customer or a strategic partner.",
+    "do_nothing": "The pricing call happens on 2026-10-05 10:30 UTC without the sheet. Aman either asks for it on the call (signaling we failed to deliver on a simple ask) or does not mention it (signaling he has deprioritized the conversation). Either way, the partnership is at risk. If Aman cancels the call because he did not receive the sheet, the relationship is damaged and recovery is costly.",
+    "signals_to_watch": [
+     "Whether Aman confirms the call is still on after we send the sheet",
+     "Whether Aman sends a follow-up question about the pricing sheet before the call",
+     "Whether Aman attends the product call on time",
+     "Whether Aman asks for clarification on pricing during the call or comes with a proposal",
+     "Whether Aman suggests a next step after the pricing call or goes quiet"
+    ],
+    "worst": "We send the sheet today, but it is incomplete, inaccurate, or misaligned with Memloop's model. Aman reviews it before the call and cancels or deprioritizes. Or we do not send it, Aman notices the absence, and he cancels the call. The partnership dies before it starts."
+   },
+   "unknowns": [
+    {
+     "question": "Does the API pricing sheet exist and is it ready to send?",
+     "relevance": "If it does not exist, the move is not to send it but to renegotiate the call date before Aman discovers we do not have it"
+    },
+    {
+     "question": "What is Memloop's stage of evaluation: are they exploring a partnership or testing us as a vendor?",
+     "relevance": "This changes whether the pricing sheet is a negotiation document or a qualification filter; it affects the tone and content of what we send"
+    },
+    {
+     "question": "Has Aman followed up on the pricing sheet request, or has he gone quiet?",
+     "relevance": "If he has followed up, we are now visibly late; if he has gone quiet, he may have deprioritized the call or is waiting to see if we deliver without being chased"
+    },
+    {
+     "question": "What is the relationship history between Nimbus and Memloop before this file?",
+     "relevance": "If this is a warm introduction from a connector, the stakes are higher; if it is a cold outreach, the stakes are lower"
+    }
+   ],
+   "wait_or_stop": "Do not wait. The call is 0.9 days away, and the sheet was requested before it. Waiting until the morning of the call or during the call itself signals disorganization. Stop if Aman cancels the call or explicitly deprioritizes the conversation; in that case, follow up once to confirm and then close the file until he re-engages."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Aman Verma at Memloop requested the API pricing sheet before a pricing call scheduled for 2026-10-05 10:30 UTC\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you share your API pricing sheet before the second one?\"\n    },\n    {\n      \"claim\": \"Two meetings were booked with Memloop for 2026-10-05: a product call at 05:30 UTC and a pricing call at 10:30 UTC\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"evt_#3\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 7.17 days since the last touch on 2026-09-27 08:00 UTC\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was surfaced to send the API pricing sheet to Aman Verma\",\n      \"evidence\": [\n        \"card:card_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is classified as partner work in the admin and sales domains\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:domains\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this kind of work\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we hold an open ask to provide the pricing sheet\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The request for the pricing sheet is a commitment we made by accepting the meeting structure Aman proposed\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"We are now overdue on delivering the pricing sheet, as the pricing call is 0.9 days away\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The card that was surfaced represents a move we should have already made\",\n      \"based_on\": [\n        \"fact:4\",\n        \"inference:2\"\n      ]\n    },\n    {\n      \"claim\": \"Sending the pricing sheet now, before the call, is the only move that discharges our obligation without renegotiating\",\n      \"based_on\": [\n        \"fact:1\",\n        \"cap:admin.heu.commitment_tracking.forgotten_beats_broken_for_damage\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a counterparty requests a document before a scheduled call, they are signaling that the document is material to the call's outcome\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A request for a document paired with a specific deadline (the call time) is not a soft ask; it is a condition for the meeting's value\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partner conversations that begin with a product call followed by pricing discussion are exploratory partnerships, not vendor relationships\",\n      \"based_on\": [\n        \"brief:cbl_#6\",\n        \"file:kind\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A document request before a call should be treated as a hard dependency, not a courtesy ask\",\n      \"why\": \"The counterparty is structuring their time around having the information; absence signals either disorganization or disinterest, both of which damage the relationship before the call begins\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a founder is in active accelerator programs and raising, design partner conversations are often exploratory tests of product-market fit and pricing model, not commitments\",\n      \"why\": \"Partners at this stage are evaluating whether to invest time or resources; the pricing sheet is their first filter\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence on a document request in the days before a call is not administrative delay; it is often a signal that the call itself is at risk\",\n      \"why\": \"A partner who does not receive what they asked for often cancels or deprioritizes, and they do so without saying so until the call time\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The move to send the pricing sheet should be made today, not on the morning of the call\",\n      \"why\": \"Sending it now gives Aman time to review before the call, signals respect for his time, and prevents a last-minute scramble that reads as disorganization\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The pricing sheet exists and is ready to send\",\n      \"needs\": \"Confirmation that the document is complete and accurate; if not, the move changes to renegotiating the call date\"\n    },\n    {\n      \"proposition\": \"Memloop is a genuine design partner prospect, not a vendor evaluation\",\n      \"needs\": \"Clarity on whether Memloop is exploring a partnership or evaluating Nimbus as a vendor; this changes the framing of the pricing conversation\"\n    },\n    {\n      \"proposition\": \"The two calls are sequential steps in a structured evaluation, not exploratory chats\",\n      \"needs\": \"Confirmation of what Aman expects to learn from each call; if the calls are independent, the pricing sheet may not be as critical as it appears\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the API pricing sheet exist and is it ready to send?\",\n      \"relevance\": \"If it does not exist, the move is not to send it but to renegotiate the call date before Aman discovers we do not have it\"\n    },\n    {\n      \"question\": \"What is Memloop's stage of evaluation: are they exploring a partnership or testing us as a vendor?\",\n      \"relevance\": \"This changes whether the pricing sheet is a negotiation document or a qualification filter; it affects the tone and content of what we send\"\n    },\n    {\n      \"question\": \"Has Aman followed up on the pricing sheet request, or has he gone quiet?\",\n      \"relevance\": \"If he has followed up, we are now visibly late; if he has gone quiet, he may have deprioritized the call or is waiting to see if we deliver without being chased\"\n    },\n    {\n      \"question\": \"What is the relationship history between Nimbus and Memloop before this file?\",\n      \"relevance\": \"If this is a warm introduction from a connector, the stakes are higher; if it is a cold outreach, the stakes are lower\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner is testing whether Nimbus is worth their time by asking for a document before a call; we are now overdue on delivering it, and the call is less than a day away. The move is to send the sheet today and signal that we take their time seriously.\",\n    \"rivals\": [\n      \"This is a vendor evaluation, not a partnership exploration, and the pricing sheet is a qualification filter; if we do not have a compelling answer, sending it now may disqualify us before the call.\",\n      \"Memloop has deprioritized the conversation and the call may not happen; sending the sheet now may be wasted effort, and we should confirm the call is still on before we send anything.\",\n      \"The pricing sheet is a negotiation document, not a qualification filter, and sending it before the call gives away our position; we should wait and discuss pricing in the call itself.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The file is classified as partner work, and the brief lists Memloop under design partner talks. The conversation structure (product call, then pricing call) is consistent with exploratory partnership evaluation, not vendor procurement.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#26\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief: design partners are in talks, and the goal is to land them. The expected move is to respond to their requests promptly and prepare for the calls.\",\n    \"actual\": \"We have booked the calls but have not yet sent the pricing sheet that was requested. We are now 7.17 days into silence, and the call is 0.9 days away. A card was surfaced to send the sheet, but it has not been acted on.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The pricing call happens on 2026-10-05 10:30 UTC without the sheet. Aman either asks for it on the call (signaling we failed to deliver on a simple ask) or does not mention it (signaling he has deprioritized the conversation). Either way, the partnership is at risk. If Aman cancels the call because he did not receive the sheet, the relationship is damaged and recovery is costly.\",\n    \"act\": \"We send the pricing sheet today. Aman receives it before the call, reviews it, and comes to the call prepared. The product call at 05:30 UTC establishes fit; the pricing call at 10:30 UTC is a substantive negotiation. The partnership moves forward.\",\n    \"best\": \"We send the sheet today. Aman reviews it, finds it compelling, and comes to the pricing call with a concrete proposal. The two calls result in a design partnership agreement or a clear next step. Memloop becomes a reference customer or a strategic partner.\",\n    \"worst\": \"We send the sheet today, but it is incomplete, inaccurate, or misaligned with Memloop's model. Aman reviews it before the call and cancels or deprioritizes. Or we do not send it, Aman notices the absence, and he cancels the call. The partnership dies before it starts.\",\n    \"signals_to_watch\": [\n      \"Whether Aman confirms the call is still on after we send the sheet\",\n      \"Whether Aman sends a follow-up question about the pricing sheet before the call\",\n      \"Whether Aman attends the product call on time\",\n      \"Whether Aman asks for clarification on pricing during the call or comes with a proposal\",\n      \"Whether Aman suggests a next step after the pricing call or goes quiet\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The brief lists design partners as a goal, and Memloop is one of four in active talks; losing one reduces optionality\",\n      \"The call is less than a day away, and the sheet was requested before it; sending it now is the last chance to signal competence\",\n      \"If we do not send the sheet and the call is cancelled or deprioritized, recovering the relationship requires a renegotiation and an apology, both of which are costly\",\n      \"The file shows this is the first time we have engaged with Memloop; a misstep now sets the tone for the entire relationship\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the API pricing sheet to Aman Verma\",\n    \"for_whom\": \"Aman Verma at Memloop\",\n    \"by_when\": \"2026-10-04\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.heu.commitment_tracking.forgotten_beats_broken_for_damage\",\n      \"own:1\",\n      \"own:4\"\n    ],\n    \"to\": \"aman@memloop.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the pricing sheet does not exist or is not ready, send a message to Aman today acknowledging his request, explaining the delay, and proposing a revised timeline (e.g., sending it by end of day or discussing pricing in the call itself). This converts a missed commitment into a managed one.\",\n  \"wait_or_stop\": \"Do not wait. The call is 0.9 days away, and the sheet was requested before it. Waiting until the morning of the call or during the call itself signals disorganization. Stop if Aman cancels the call or explicitly deprioritizes the conversation; in that case, follow up once to confirm and then close the file until he re-engages.\",\n  \"done_when\": \"The sheet is sent to Aman by end of day 2026-10-04. Aman receives it and does not follow up with questions or concerns before the call. The product call happens on time on 2026-10-05 05:30 UTC. The pricing call happens on time on 2026-10-05 10:30 UTC, and Aman references the sheet or asks clarifying questions about it.\",\n  \"draft\": \"Hi Aman, attached is our API pricing sheet for the call tomorrow. Happy to walk through it in detail at 4 pm IST. Looking forward to the product discussion at 11 am as well. \u2014\"\n}",
+  "site": "expert"
+ },
+ "96b780279eaeb8bbed5ca9db18306696bd172222ffebae845a4dcb2006090d5a": {
+  "framed": true,
+  "input_tokens": 7432,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3585,
+  "parsed": {
+   "alternative": "If the API pricing sheet does not exist or is not ready, send a message to Aman Verma today confirming both meeting times, explaining that the sheet is being finalized, and committing to send it by a specific date before the calls. This keeps the partnership alive while buying time to prepare the sheet.",
+   "appraisal": {
+    "reasons": [
+     "The brief names design partners as a goal, and this is an active prospect who has initiated contact.",
+     "The request for a deliverable paired with booked calls is a signal of serious interest, and a delayed response will damage the relationship.",
+     "The calls are booked for 5 October, which is 8 days away; the sheet must be sent before then, and the sooner the better.",
+     "A design partnership could accelerate product development and customer acquisition, which are critical for a seed-stage AI company.",
+     "A failure to respond to a simple request will signal disorganization and may end the partnership before it begins.",
+     "The delay is already 0.42 days, and every day of silence increases the risk that Memloop will deprioritize the engagement or move on to other partners."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The sheet has been sent to Aman Verma, Memloop has confirmed attendance at both calls, and you have prepared talking points for both the product and pricing discussions.",
+   "draft": "Hi Aman, Thanks for proposing the calls on 5 Oct. I've confirmed both on my calendar \u2014 product at 11 am and pricing at 4 pm IST. I'm attaching our API pricing sheet for you to review before the second call. Looking forward to exploring how we can work together. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "No response has been sent to the request for the API pricing sheet. The meetings are booked on the calendar, but no confirmation has been sent to Memloop, and no indication has been given of whether the sheet will be ready before the calls.",
+    "expected": "Without a playbook, the expectation comes from the brief and the file's own history. The brief names design partners as a goal, and the file shows a partner who has initiated contact and proposed a structured engagement. The expectation is that you would respond to a request for a deliverable within one business day, confirm the meeting times, and prepare for both calls.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Memloop's founder Aman Verma proposed two calls on 5 October: product at 11 am and pricing at 4 pm IST, and asked for the API pricing sheet before the second call.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Two calls on 5 Oct: product at 11 am and pricing at 4 pm IST. Could you share your API pricing sheet before the second one?"
+    },
+    {
+     "claim": "Two meetings have been booked on the calendar for 5 October 2026: one at 05:30 UTC labeled 'Memloop x Nimbus - product' and one at 10:30 UTC labeled 'Memloop x Nimbus - pricing'.",
+     "evidence": [
+      "evt_#2",
+      "evt_#3"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows Memloop as a design partner in talks, with no prior relationship history measured.",
+     "evidence": [
+      "file:kind",
+      "file:role",
+      "num:their_reply_time:aman@memloop.test",
+      "num:your_reply_time:aman@memloop.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in your court: Memloop has made a request for the API pricing sheet and proposed meeting times, and no response has been sent.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days since first touch on 27 September 2026 at 08:00 UTC.",
+     "evidence": [
+      "num:days_quiet",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this kind of work.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner has requested a specific deliverable and booked two calls; the deliverable is overdue relative to the call dates, and you have not yet responded to confirm or to explain any delay.",
+    "rivals": [
+     "A design partner is testing your responsiveness and execution; the request is a filter, and silence is a signal.",
+     "An exploratory conversation that is lower priority than fundraising, and the calls may be deferred or cancelled without damage.",
+     "A request that was received but not routed to the right person, and the delay is organizational rather than intentional."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from you or your team that the sheet is available and in final form.",
+     "proposition": "The API pricing sheet exists and is ready to send."
+    },
+    {
+     "needs": "Clarification of who owns the pricing sheet and whether it is ready, or what is blocking it.",
+     "proposition": "The pricing sheet does not yet exist or requires input from the founding AI engineer or another team member."
+    },
+    {
+     "needs": "Confirmation that both calls are on the calendar and that you plan to attend both.",
+     "proposition": "Memloop is a serious design partner prospect and the meetings are firm."
+    },
+    {
+     "needs": "A decision on whether to treat this as a live opportunity or to defer it until after the seed round closes.",
+     "proposition": "The design partner engagement is exploratory and low priority relative to fundraising."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "loop:loop_#1"
+     ],
+     "claim": "The request for the API pricing sheet is an open ask that requires a deliverable before the second meeting on 5 October."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The meetings are booked but contingent on receiving the pricing sheet, making the sheet the blocking deliverable."
+    },
+    {
+     "based_on": [
+      "sit:sit_#1",
+      "fact:3"
+     ],
+     "claim": "This is a live account administration situation with a near-term deadline, not yet a relationship with measured history."
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3",
+      "fact:1"
+     ],
+     "claim": "The file's silence is not disinterest but a normal wait for a response to a request; the counterparty has done their part by proposing times and asking for the sheet."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-28",
+    "for_whom": "Aman Verma at Memloop",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:4",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "aman@memloop.test",
+    "what": "send the API pricing sheet to Aman Verma, confirm both meeting times, and express enthusiasm for the partnership",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A request for a document paired with booked meetings should be answered within one business day, not left to the day before the call.",
+     "kind": "practice",
+     "why": "Delay signals that the request was not prioritized, and arriving the day before the call reads as reactive rather than collaborative."
+    },
+    {
+     "claim": "Design partners who ask for pricing sheets are usually evaluating whether to deepen the relationship; the sheet is a gate, not a courtesy.",
+     "kind": "base_rate",
+     "why": "The request is a filter: if you cannot produce it on time, the partner learns something about your execution."
+    },
+    {
+     "claim": "A response to a request for a deliverable should confirm receipt of the request, state when the deliverable will arrive, and ask any clarifying questions about what is needed.",
+     "kind": "practice",
+     "why": "Silence leaves the counterparty uncertain whether the request was understood, whether it is feasible, or whether it is being taken seriously."
+    },
+    {
+     "claim": "A pricing sheet request from a potential design partner may signal they are also talking to competitors; speed of response is a tiebreaker.",
+     "kind": "counter_pattern",
+     "why": "Design partners often run parallel conversations; the partner who responds fastest and most completely often wins the engagement."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A counterparty who proposes specific meeting times and asks for a deliverable before those times expects confirmation and the deliverable within days, not weeks.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "Design partner conversations that begin with a request for specific materials and booked calls are usually serious; silence on the request signals either disorganization or deprioritization.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "own:3"
+     ],
+     "claim": "A request for a pricing sheet before a pricing call is not a blocker; it is a signal that the counterparty wants to come prepared and is testing whether you can deliver on time.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#26"
+    ],
+    "kind": "partner",
+    "why": "The dossier names Memloop as a design partner in talks, and the file's kind is partner. The request for a pricing sheet and the booked calls are consistent with a partner evaluation, not a vendor relationship or a compliance matter."
+   },
+   "scenarios": {
+    "act": "You send the API pricing sheet to Aman Verma today or tomorrow, confirm the meeting times, and prepare for both calls. Memloop receives the sheet with time to review it before the calls, and the calls proceed as planned. The partnership has a chance to deepen.",
+    "best": "You send the sheet within one business day with a note confirming both calls and expressing enthusiasm for the partnership. Memloop reviews the sheet, comes to both calls prepared, and the calls result in a design partnership agreement or a clear next step. The speed of response signals that you are organized and serious.",
+    "do_nothing": "The file remains quiet until 5 October. On 5 October, Memloop may or may not attend the calls. If they attend and you do not have the pricing sheet, the calls will be awkward and the partnership will be damaged. If they do not attend, the partnership is likely over. If they attend and you have the sheet, the calls proceed as planned, but the delay in responding will have signaled disorganization.",
+    "signals_to_watch": [
+     "Whether Memloop confirms attendance at the calls after you send the sheet.",
+     "Whether Memloop asks follow-up questions about the pricing sheet, which would signal engagement.",
+     "Whether Memloop proposes a next step after the calls, which would signal interest in deepening the partnership.",
+     "Whether Memloop goes quiet after the calls, which would signal that the partnership is not a priority for them."
+    ],
+    "worst": "You do not send the sheet before 5 October, or you send it the day before the calls. Memloop attends the calls unprepared or cancels them. The partnership stalls or ends. The delay signals disorganization and deprioritization, and Memloop moves on to other partners."
+   },
+   "unknowns": [
+    {
+     "question": "Does the API pricing sheet exist in a form ready to send?",
+     "relevance": "If it does not exist, the next move is to clarify what is needed and when it can be ready, not to send it. If it does exist, the move is to send it immediately."
+    },
+    {
+     "question": "What is Memloop's business model and how does a design partnership with them fit into your product roadmap?",
+     "relevance": "If Memloop is a strategic fit, the pricing sheet and calls are high priority. If the fit is unclear, the calls may be exploratory and lower priority than fundraising."
+    },
+    {
+     "question": "Are the booked times firm, or are they tentative pending your confirmation?",
+     "relevance": "If they are tentative, you need to confirm attendance. If they are firm, you need to prepare for both calls and deliver the sheet."
+    },
+    {
+     "question": "What is the relationship between the product call and the pricing call? Is pricing contingent on product fit?",
+     "relevance": "If pricing is contingent on product fit, the sheet may need to include tiered options or conditional pricing. If it is independent, a standard sheet will suffice."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The calls are 8 days away, and the sheet must be sent before then. If the sheet is not ready, send a message today confirming the calls and committing to a delivery date. Stop if Memloop cancels the calls or goes quiet for more than a week after you send the sheet."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Memloop's founder Aman Verma proposed two calls on 5 October: product at 11 am and pricing at 4 pm IST, and asked for the API pricing sheet before the second call.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Two calls on 5 Oct: product at 11 am and pricing at 4 pm IST. Could you share your API pricing sheet before the second one?\"\n    },\n    {\n      \"claim\": \"Two meetings have been booked on the calendar for 5 October 2026: one at 05:30 UTC labeled 'Memloop x Nimbus - product' and one at 10:30 UTC labeled 'Memloop x Nimbus - pricing'.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"evt_#3\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows Memloop as a design partner in talks, with no prior relationship history measured.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\",\n        \"num:their_reply_time:aman@memloop.test\",\n        \"num:your_reply_time:aman@memloop.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in your court: Memloop has made a request for the API pricing sheet and proposed meeting times, and no response has been sent.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days since first touch on 27 September 2026 at 08:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this kind of work.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The request for the API pricing sheet is an open ask that requires a deliverable before the second meeting on 5 October.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"loop:loop_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The meetings are booked but contingent on receiving the pricing sheet, making the sheet the blocking deliverable.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live account administration situation with a near-term deadline, not yet a relationship with measured history.\",\n      \"based_on\": [\n        \"sit:sit_#1\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The file's silence is not disinterest but a normal wait for a response to a request; the counterparty has done their part by proposing times and asking for the sheet.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\",\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A counterparty who proposes specific meeting times and asks for a deliverable before those times expects confirmation and the deliverable within days, not weeks.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partner conversations that begin with a request for specific materials and booked calls are usually serious; silence on the request signals either disorganization or deprioritization.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A request for a pricing sheet before a pricing call is not a blocker; it is a signal that the counterparty wants to come prepared and is testing whether you can deliver on time.\",\n      \"based_on\": [\n        \"own:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A request for a document paired with booked meetings should be answered within one business day, not left to the day before the call.\",\n      \"why\": \"Delay signals that the request was not prioritized, and arriving the day before the call reads as reactive rather than collaborative.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partners who ask for pricing sheets are usually evaluating whether to deepen the relationship; the sheet is a gate, not a courtesy.\",\n      \"why\": \"The request is a filter: if you cannot produce it on time, the partner learns something about your execution.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A response to a request for a deliverable should confirm receipt of the request, state when the deliverable will arrive, and ask any clarifying questions about what is needed.\",\n      \"why\": \"Silence leaves the counterparty uncertain whether the request was understood, whether it is feasible, or whether it is being taken seriously.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A pricing sheet request from a potential design partner may signal they are also talking to competitors; speed of response is a tiebreaker.\",\n      \"why\": \"Design partners often run parallel conversations; the partner who responds fastest and most completely often wins the engagement.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The API pricing sheet exists and is ready to send.\",\n      \"needs\": \"Confirmation from you or your team that the sheet is available and in final form.\"\n    },\n    {\n      \"proposition\": \"The pricing sheet does not yet exist or requires input from the founding AI engineer or another team member.\",\n      \"needs\": \"Clarification of who owns the pricing sheet and whether it is ready, or what is blocking it.\"\n    },\n    {\n      \"proposition\": \"Memloop is a serious design partner prospect and the meetings are firm.\",\n      \"needs\": \"Confirmation that both calls are on the calendar and that you plan to attend both.\"\n    },\n    {\n      \"proposition\": \"The design partner engagement is exploratory and low priority relative to fundraising.\",\n      \"needs\": \"A decision on whether to treat this as a live opportunity or to defer it until after the seed round closes.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the API pricing sheet exist in a form ready to send?\",\n      \"relevance\": \"If it does not exist, the next move is to clarify what is needed and when it can be ready, not to send it. If it does exist, the move is to send it immediately.\"\n    },\n    {\n      \"question\": \"What is Memloop's business model and how does a design partnership with them fit into your product roadmap?\",\n      \"relevance\": \"If Memloop is a strategic fit, the pricing sheet and calls are high priority. If the fit is unclear, the calls may be exploratory and lower priority than fundraising.\"\n    },\n    {\n      \"question\": \"Are the booked times firm, or are they tentative pending your confirmation?\",\n      \"relevance\": \"If they are tentative, you need to confirm attendance. If they are firm, you need to prepare for both calls and deliver the sheet.\"\n    },\n    {\n      \"question\": \"What is the relationship between the product call and the pricing call? Is pricing contingent on product fit?\",\n      \"relevance\": \"If pricing is contingent on product fit, the sheet may need to include tiered options or conditional pricing. If it is independent, a standard sheet will suffice.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner has requested a specific deliverable and booked two calls; the deliverable is overdue relative to the call dates, and you have not yet responded to confirm or to explain any delay.\",\n    \"rivals\": [\n      \"A design partner is testing your responsiveness and execution; the request is a filter, and silence is a signal.\",\n      \"An exploratory conversation that is lower priority than fundraising, and the calls may be deferred or cancelled without damage.\",\n      \"A request that was received but not routed to the right person, and the delay is organizational rather than intentional.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The dossier names Memloop as a design partner in talks, and the file's kind is partner. The request for a pricing sheet and the booked calls are consistent with a partner evaluation, not a vendor relationship or a compliance matter.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#26\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief and the file's own history. The brief names design partners as a goal, and the file shows a partner who has initiated contact and proposed a structured engagement. The expectation is that you would respond to a request for a deliverable within one business day, confirm the meeting times, and prepare for both calls.\",\n    \"actual\": \"No response has been sent to the request for the API pricing sheet. The meetings are booked on the calendar, but no confirmation has been sent to Memloop, and no indication has been given of whether the sheet will be ready before the calls.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet until 5 October. On 5 October, Memloop may or may not attend the calls. If they attend and you do not have the pricing sheet, the calls will be awkward and the partnership will be damaged. If they do not attend, the partnership is likely over. If they attend and you have the sheet, the calls proceed as planned, but the delay in responding will have signaled disorganization.\",\n    \"act\": \"You send the API pricing sheet to Aman Verma today or tomorrow, confirm the meeting times, and prepare for both calls. Memloop receives the sheet with time to review it before the calls, and the calls proceed as planned. The partnership has a chance to deepen.\",\n    \"best\": \"You send the sheet within one business day with a note confirming both calls and expressing enthusiasm for the partnership. Memloop reviews the sheet, comes to both calls prepared, and the calls result in a design partnership agreement or a clear next step. The speed of response signals that you are organized and serious.\",\n    \"worst\": \"You do not send the sheet before 5 October, or you send it the day before the calls. Memloop attends the calls unprepared or cancels them. The partnership stalls or ends. The delay signals disorganization and deprioritization, and Memloop moves on to other partners.\",\n    \"signals_to_watch\": [\n      \"Whether Memloop confirms attendance at the calls after you send the sheet.\",\n      \"Whether Memloop asks follow-up questions about the pricing sheet, which would signal engagement.\",\n      \"Whether Memloop proposes a next step after the calls, which would signal interest in deepening the partnership.\",\n      \"Whether Memloop goes quiet after the calls, which would signal that the partnership is not a priority for them.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The brief names design partners as a goal, and this is an active prospect who has initiated contact.\",\n      \"The request for a deliverable paired with booked calls is a signal of serious interest, and a delayed response will damage the relationship.\",\n      \"The calls are booked for 5 October, which is 8 days away; the sheet must be sent before then, and the sooner the better.\",\n      \"A design partnership could accelerate product development and customer acquisition, which are critical for a seed-stage AI company.\",\n      \"A failure to respond to a simple request will signal disorganization and may end the partnership before it begins.\",\n      \"The delay is already 0.42 days, and every day of silence increases the risk that Memloop will deprioritize the engagement or move on to other partners.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the API pricing sheet to Aman Verma, confirm both meeting times, and express enthusiasm for the partnership\",\n    \"for_whom\": \"Aman Verma at Memloop\",\n    \"by_when\": \"2026-09-28\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"aman@memloop.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the API pricing sheet does not exist or is not ready, send a message to Aman Verma today confirming both meeting times, explaining that the sheet is being finalized, and committing to send it by a specific date before the calls. This keeps the partnership alive while buying time to prepare the sheet.\",\n  \"wait_or_stop\": \"Do not wait. The calls are 8 days away, and the sheet must be sent before then. If the sheet is not ready, send a message today confirming the calls and committing to a delivery date. Stop if Memloop cancels the calls or goes quiet for more than a week after you send the sheet.\",\n  \"done_when\": \"The sheet has been sent to Aman Verma, Memloop has confirmed attendance at both calls, and you have prepared talking points for both the product and pricing discussions.\",\n  \"draft\": \"Hi Aman, Thanks for proposing the calls on 5 Oct. I've confirmed both on my calendar \u2014 product at 11 am and pricing at 4 pm IST. I'm attaching our API pricing sheet for you to review before the second call. Looking forward to exploring how we can work together. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "b662c0d10a262547315c782199dbf5b681e12eeb2ef5976a5b53ce9129d243ea": {
+  "framed": true,
+  "input_tokens": 7877,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3107,
+  "parsed": {
+   "alternative": "Send a message to Aman Verma asking what the next step is and whether the pricing sheet is still needed, rather than assuming it is and sending it unsolicited. This clarifies the ask before acting.",
+   "appraisal": {
+    "reasons": [
+     "The file is one of four design partner conversations in motion; losing this one is not critical, but it is one of the founder's stated goals.",
+     "The open ask has been unresolved for over a week, and the meetings have passed. The window to act is still open but narrowing.",
+     "A wrong move\u2014chasing Memloop for a response while we hold the ball, or sending the sheet without context\u2014could damage the relationship, but the damage is recoverable with a follow-up message."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The API pricing sheet is sent to Aman Verma, or a message is sent clarifying what we owe and confirming the next step. Memloop replies within a few days, or the conversation moves to a new phase (proposal, follow-up meeting, or explicit pause).",
+   "draft": "Hi Aman, Following up on our calls on the 5th\u2014I wanted to make sure you have the API pricing sheet. Attached. Let me know if you have questions or if there's anything else you need from us as you evaluate. Looking forward to the next step. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "Two meetings occurred on 2026-10-05. An open ask remains unresolved since 2026-09-27. No follow-up communication from either side is recorded after the meetings.",
+    "expected": "Without a playbook, the expectation comes from the brief: design partner talks are in early exploration. The file shows two meetings scheduled and a document requested, which is normal for this stage.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Memloop initiated contact on 2026-09-27 proposing two calls on 2026-10-05, and asked for an API pricing sheet before the second call.",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": "Two calls on 5 Oct: product at 11 am and pricing at 4 pm IST. Could you share your API pricing sheet before the second one?"
+    },
+    {
+     "claim": "Two meetings with Aman Verma from Memloop occurred on 2026-10-05: one on product and one on pricing.",
+     "evidence": [
+      "evt_#2",
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "An open ask exists from Memloop, waiting on our response, open since 2026-09-27.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows the ball is in our court: we hold an open ask.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this kind of work.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.06 days as of the dossier date.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises were extracted from Memloop's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The relationship status is unmeasured in the file.",
+     "evidence": [
+      "ru:core.relationship"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A design partner conversation in early exploration, where we asked for a meeting and they asked for a document before the pricing discussion. The meetings happened; the document's status is unclear. The next move is to clarify what we owe and deliver or renegotiate.",
+    "rivals": [
+     "A sales opportunity where Memloop is evaluating us as a vendor and the pricing sheet is a critical gate to moving forward.",
+     "A stalled conversation where the meetings revealed misalignment and the open ask is now dormant, waiting for one side to re-engage."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder or from Memloop's reply whether the sheet was sent and when.",
+     "proposition": "The API pricing sheet was delivered during or after the 2026-10-05 calls, and the open ask reflects a system lag rather than a missed commitment."
+    },
+    {
+     "needs": "A message from Memloop indicating whether they expect the sheet, or silence that extends beyond the normal gap.",
+     "proposition": "The pricing sheet was not delivered, and Memloop proceeded with the calls anyway, treating it as optional."
+    },
+    {
+     "needs": "Clarification from the founder on what the open ask actually represents.",
+     "proposition": "The open ask is a placeholder for a different commitment\u2014not the pricing sheet itself, but a follow-up action from the calls."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The API pricing sheet was the deliverable we committed to provide before the 4 pm pricing call on 2026-10-05."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:1"
+     ],
+     "claim": "The two meetings on 2026-10-05 have already occurred, meaning the pricing call happened after the requested deadline for the sheet."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "inference:2"
+     ],
+     "claim": "We did not send the API pricing sheet before the pricing call, since the open ask remains unresolved."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "inference:3"
+     ],
+     "claim": "The next move is ours: we must either deliver what was asked for, explain why we could not, or clarify what the actual commitment was."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-07",
+    "for_whom": "Aman Verma at Memloop",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "inference:3"
+    ],
+    "to": "aman@memloop.test",
+    "what": "Send the API pricing sheet to Aman Verma with a brief note, or send a message to Aman Verma clarifying what the open ask is and confirming what we committed to deliver.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A request for a document before a meeting should be treated as a commitment, not a preference, and delivered or renegotiated before the meeting date.",
+     "kind": "practice",
+     "why": "Delivering on time preserves credibility; missing it without explanation damages the relationship and signals poor execution."
+    },
+    {
+     "claim": "Silence after a meeting often means the counterparty is evaluating what was discussed, not that they have lost interest.",
+     "kind": "counter_pattern",
+     "why": "Administrative silence is process, not sentiment; escalating on quietness alone converts a normal wait into a relationship event."
+    },
+    {
+     "claim": "When you hold an open ask and the deadline has passed, the move is to close the ask\u2014either by delivering, by renegotiating, or by stating the blocker\u2014never by chasing the other party.",
+     "kind": "practice",
+     "why": "A chase while the ball is in your court reads as either incompetence or pressure and damages the relationship."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "When a counterparty asks for a document before a meeting and the meeting occurs, the document's absence signals either disorganization or deprioritization.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "A counterparty who schedules two calls and specifies a document request may proceed with the calls regardless, treating the document as optional context rather than a blocker.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "file:domains"
+     ],
+     "claim": "Design partner conversations often move forward through multiple meetings before all materials are exchanged, especially in early-stage exploration.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#26",
+     "file:kind"
+    ],
+    "kind": "partner",
+    "why": "The brief lists Memloop under design partner talks, and the file's kind is marked as partner. The conversation spans product and pricing, consistent with early-stage partnership exploration."
+   },
+   "scenarios": {
+    "act": "Send the pricing sheet now with a brief note, or send a message clarifying what the open ask is and what we owe. This closes the gap and signals execution.",
+    "best": "The pricing sheet is sent today. Memloop replies within a few days with feedback or next steps. The conversation moves to a concrete proposal or partnership agreement.",
+    "do_nothing": "The file remains quiet. If Memloop is waiting on the pricing sheet, their silence may reflect disappointment or a shift to other priorities. If they are evaluating internally, the silence is normal. After one to two weeks, the conversation risks becoming dormant.",
+    "signals_to_watch": [
+     "A reply from Memloop within three days of any outbound message from us.",
+     "A request from Memloop for a follow-up meeting or a proposal.",
+     "Silence from Memloop beyond one week, which would suggest the conversation has cooled.",
+     "A message from the founder clarifying what the open ask actually is."
+    ],
+    "worst": "The pricing sheet is sent, but Memloop does not reply. The conversation stalls. Or, we discover we never committed to sending the sheet, and the open ask is a system error, wasting time on a false obligation."
+   },
+   "unknowns": [
+    {
+     "question": "Was the API pricing sheet actually sent to Aman Verma, and if so, when?",
+     "relevance": "This determines whether we missed a commitment or whether the system record is incomplete. If sent, the ask should be closed. If not sent, we must act now."
+    },
+    {
+     "question": "What was discussed in the two meetings on 2026-10-05, and what did Memloop say about next steps?",
+     "relevance": "The meetings may have generated new asks or changed the priority of the pricing sheet. Without this, we cannot judge whether the open ask is still live or has been superseded."
+    },
+    {
+     "question": "What is the actual open ask\u2014is it the pricing sheet, or something else?",
+     "relevance": "The dossier marks an open ask but does not name it. Without knowing what we promised, we cannot close it or act on it."
+    },
+    {
+     "question": "Is Memloop a design partner candidate or a potential customer or integration partner?",
+     "relevance": "The brief lists Memloop under design partner talks, but the file's domains are admin and sales. The nature of the relationship shapes what the pricing sheet means and how urgent it is."
+    }
+   ],
+   "wait_or_stop": "Wait if the founder confirms that the pricing sheet was already sent. Stop if the founder clarifies that the open ask is something other than the pricing sheet and has already been resolved. Otherwise, act by 2026-10-07."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Memloop initiated contact on 2026-09-27 proposing two calls on 2026-10-05, and asked for an API pricing sheet before the second call.\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": \"Two calls on 5 Oct: product at 11 am and pricing at 4 pm IST. Could you share your API pricing sheet before the second one?\"\n    },\n    {\n      \"claim\": \"Two meetings with Aman Verma from Memloop occurred on 2026-10-05: one on product and one on pricing.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"An open ask exists from Memloop, waiting on our response, open since 2026-09-27.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows the ball is in our court: we hold an open ask.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this kind of work.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.06 days as of the dossier date.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises were extracted from Memloop's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The relationship status is unmeasured in the file.\",\n      \"evidence\": [\n        \"ru:core.relationship\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The API pricing sheet was the deliverable we committed to provide before the 4 pm pricing call on 2026-10-05.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The two meetings on 2026-10-05 have already occurred, meaning the pricing call happened after the requested deadline for the sheet.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"We did not send the API pricing sheet before the pricing call, since the open ask remains unresolved.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"inference:2\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: we must either deliver what was asked for, explain why we could not, or clarify what the actual commitment was.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"inference:3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a counterparty asks for a document before a meeting and the meeting occurs, the document's absence signals either disorganization or deprioritization.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who schedules two calls and specifies a document request may proceed with the calls regardless, treating the document as optional context rather than a blocker.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Design partner conversations often move forward through multiple meetings before all materials are exchanged, especially in early-stage exploration.\",\n      \"based_on\": [\n        \"file:domains\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A request for a document before a meeting should be treated as a commitment, not a preference, and delivered or renegotiated before the meeting date.\",\n      \"why\": \"Delivering on time preserves credibility; missing it without explanation damages the relationship and signals poor execution.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence after a meeting often means the counterparty is evaluating what was discussed, not that they have lost interest.\",\n      \"why\": \"Administrative silence is process, not sentiment; escalating on quietness alone converts a normal wait into a relationship event.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When you hold an open ask and the deadline has passed, the move is to close the ask\u2014either by delivering, by renegotiating, or by stating the blocker\u2014never by chasing the other party.\",\n      \"why\": \"A chase while the ball is in your court reads as either incompetence or pressure and damages the relationship.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The API pricing sheet was delivered during or after the 2026-10-05 calls, and the open ask reflects a system lag rather than a missed commitment.\",\n      \"needs\": \"Confirmation from the founder or from Memloop's reply whether the sheet was sent and when.\"\n    },\n    {\n      \"proposition\": \"The pricing sheet was not delivered, and Memloop proceeded with the calls anyway, treating it as optional.\",\n      \"needs\": \"A message from Memloop indicating whether they expect the sheet, or silence that extends beyond the normal gap.\"\n    },\n    {\n      \"proposition\": \"The open ask is a placeholder for a different commitment\u2014not the pricing sheet itself, but a follow-up action from the calls.\",\n      \"needs\": \"Clarification from the founder on what the open ask actually represents.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Was the API pricing sheet actually sent to Aman Verma, and if so, when?\",\n      \"relevance\": \"This determines whether we missed a commitment or whether the system record is incomplete. If sent, the ask should be closed. If not sent, we must act now.\"\n    },\n    {\n      \"question\": \"What was discussed in the two meetings on 2026-10-05, and what did Memloop say about next steps?\",\n      \"relevance\": \"The meetings may have generated new asks or changed the priority of the pricing sheet. Without this, we cannot judge whether the open ask is still live or has been superseded.\"\n    },\n    {\n      \"question\": \"What is the actual open ask\u2014is it the pricing sheet, or something else?\",\n      \"relevance\": \"The dossier marks an open ask but does not name it. Without knowing what we promised, we cannot close it or act on it.\"\n    },\n    {\n      \"question\": \"Is Memloop a design partner candidate or a potential customer or integration partner?\",\n      \"relevance\": \"The brief lists Memloop under design partner talks, but the file's domains are admin and sales. The nature of the relationship shapes what the pricing sheet means and how urgent it is.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A design partner conversation in early exploration, where we asked for a meeting and they asked for a document before the pricing discussion. The meetings happened; the document's status is unclear. The next move is to clarify what we owe and deliver or renegotiate.\",\n    \"rivals\": [\n      \"A sales opportunity where Memloop is evaluating us as a vendor and the pricing sheet is a critical gate to moving forward.\",\n      \"A stalled conversation where the meetings revealed misalignment and the open ask is now dormant, waiting for one side to re-engage.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The brief lists Memloop under design partner talks, and the file's kind is marked as partner. The conversation spans product and pricing, consistent with early-stage partnership exploration.\",\n    \"evidence\": [\n      \"brief:cbl_#26\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief: design partner talks are in early exploration. The file shows two meetings scheduled and a document requested, which is normal for this stage.\",\n    \"actual\": \"Two meetings occurred on 2026-10-05. An open ask remains unresolved since 2026-09-27. No follow-up communication from either side is recorded after the meetings.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. If Memloop is waiting on the pricing sheet, their silence may reflect disappointment or a shift to other priorities. If they are evaluating internally, the silence is normal. After one to two weeks, the conversation risks becoming dormant.\",\n    \"act\": \"Send the pricing sheet now with a brief note, or send a message clarifying what the open ask is and what we owe. This closes the gap and signals execution.\",\n    \"best\": \"The pricing sheet is sent today. Memloop replies within a few days with feedback or next steps. The conversation moves to a concrete proposal or partnership agreement.\",\n    \"worst\": \"The pricing sheet is sent, but Memloop does not reply. The conversation stalls. Or, we discover we never committed to sending the sheet, and the open ask is a system error, wasting time on a false obligation.\",\n    \"signals_to_watch\": [\n      \"A reply from Memloop within three days of any outbound message from us.\",\n      \"A request from Memloop for a follow-up meeting or a proposal.\",\n      \"Silence from Memloop beyond one week, which would suggest the conversation has cooled.\",\n      \"A message from the founder clarifying what the open ask actually is.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is one of four design partner conversations in motion; losing this one is not critical, but it is one of the founder's stated goals.\",\n      \"The open ask has been unresolved for over a week, and the meetings have passed. The window to act is still open but narrowing.\",\n      \"A wrong move\u2014chasing Memloop for a response while we hold the ball, or sending the sheet without context\u2014could damage the relationship, but the damage is recoverable with a follow-up message.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send the API pricing sheet to Aman Verma with a brief note, or send a message to Aman Verma clarifying what the open ask is and confirming what we committed to deliver.\",\n    \"for_whom\": \"Aman Verma at Memloop\",\n    \"by_when\": \"2026-10-07\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:3\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"own:3\"\n    ],\n    \"to\": \"aman@memloop.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"Send a message to Aman Verma asking what the next step is and whether the pricing sheet is still needed, rather than assuming it is and sending it unsolicited. This clarifies the ask before acting.\",\n  \"wait_or_stop\": \"Wait if the founder confirms that the pricing sheet was already sent. Stop if the founder clarifies that the open ask is something other than the pricing sheet and has already been resolved. Otherwise, act by 2026-10-07.\",\n  \"done_when\": \"The API pricing sheet is sent to Aman Verma, or a message is sent clarifying what we owe and confirming the next step. Memloop replies within a few days, or the conversation moves to a new phase (proposal, follow-up meeting, or explicit pause).\",\n  \"draft\": \"Hi Aman, Following up on our calls on the 5th\u2014I wanted to make sure you have the API pricing sheet. Attached. Let me know if you have questions or if there's anything else you need from us as you evaluate. Looking forward to the next step. Best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

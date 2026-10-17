@@ -1,0 +1,1254 @@
+{
+ "7bbe979d2bf9eda530b66492605775bffd7b17b2cdd197e6ac088807ad83285b": {
+  "framed": true,
+  "input_tokens": 7113,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3178,
+  "parsed": {
+   "alternative": "If you are uncertain about Rahul's fit or Kestrel Capital's current investment stage, send a brief message to Introly asking for context on Rahul's recent investments and current focus before reaching out directly. This adds one day but reduces the risk of a misaligned pitch.",
+   "appraisal": {
+    "reasons": [
+     "Kestrel Capital is one of five seed-stage investors you have written to; a missed opportunity here does not block your fundraising, but it does reduce your pipeline.",
+     "The introduction is warm and aligned, which raises the probability of a positive outcome if you act quickly.",
+     "A delayed follow-up does not burn the relationship, but it does reduce the likelihood of engagement.",
+     "The cost of a follow-up message is minimal; the cost of inaction is a lost lead."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "A meeting is scheduled with Rahul Menon, or Rahul has explicitly declined and you have moved on to the next investor.",
+   "draft": "Hi Rahul, thanks to Introly for the intro. We're building Nimbus Labs\u2014an AI chief of staff for founders\u2014and we're raising a seed round. Your focus on early-stage AI infrastructure is exactly where we're headed. Would you have time for a brief call next week to explore a fit? Happy to work around your schedule. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The introduction was received on 2026-09-03 at 08:15 UTC; as of 2026-09-03 18:00 UTC (9.75 hours later), no follow-up message has been sent from you to Rahul Menon.",
+    "expected": "After a warm introduction, the founder is expected to reach out within one to three days with a substantive message that articulates the fit and proposes a meeting.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure.",
+     "evidence": [
+      "evt_#1",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure. Rahul, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I think you two should talk."
+    },
+    {
+     "claim": "The introduction arrived on 2026-09-03 at 08:15 UTC and has not been followed by any reply from Kestrel Capital.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was made in the introduction mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no playbook because the brief names no kind of work for it.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in your court: the introduction ended with 'I'll let you take it from here,' and no response has been sent.",
+     "evidence": [
+      "file:whose_move",
+      "evt_#1"
+     ],
+     "quote": "I'll let you take it from here."
+    },
+    {
+     "claim": "Kestrel Capital's investment focus\u2014early-stage AI infrastructure\u2014aligns with Nimbus Labs' product and stage.",
+     "evidence": [
+      "brief:company",
+      "evt_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction to a potentially aligned investor that has not yet been activated by you; the next move is yours to convert the introduction into a conversation.",
+    "rivals": [
+     "A passive lead that may not warrant immediate action if your pipeline of more advanced investor conversations is full.",
+     "A test of Introly's connector quality; if Rahul does not reply to your follow-up, the introduction may have been misaligned."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A follow-up message from you in the next two days would test this; if he replies within a day, interest is high.",
+     "proposition": "Rahul Menon is actively interested in meeting but has not yet replied because the introduction is still in his queue."
+    },
+    {
+     "needs": "A brief check of Kestrel Capital's recent investments or a direct question about their current stage focus would settle this.",
+     "proposition": "Rahul Menon's investment focus has shifted or Kestrel Capital is not actively deploying capital right now."
+    },
+    {
+     "needs": "Verification that rahul@kestrelcap.test is the correct contact and that the introduction was delivered.",
+     "proposition": "The introduction was sent to the wrong person or email address at Kestrel Capital."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "file:introduced_by",
+      "evt_#1"
+     ],
+     "claim": "This is a warm introduction from a connector, not a cold outreach, which raises the baseline probability of engagement."
+    },
+    {
+     "based_on": [
+      "brief:cbl_#2",
+      "evt_#1"
+     ],
+     "claim": "The introduction is a potential investor lead aligned with your seed-stage fundraising goal, but it has not yet become a live conversation."
+    },
+    {
+     "based_on": [
+      "none:promises",
+      "evt_#1"
+     ],
+     "claim": "No commitment or timeline was established in the introduction; Introly's role was to make the introduction and step back."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-04",
+    "for_whom": "Rahul Menon at Kestrel Capital",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "own:3",
+     "cap:admin.executive_support.commitment_tracking#f3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:5",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "rahul@kestrelcap.test",
+    "what": "Send a brief, substantive message to Rahul Menon that references the Introly introduction, articulates why Nimbus Labs is a fit for Kestrel Capital's thesis, and proposes a call.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A warm introduction to an investor requires the founder to move first with a substantive message\u2014not a thank-you, but a reason to talk.",
+     "kind": "practice",
+     "why": "The connector has done the work of alignment; the founder must now demonstrate that the fit is real by articulating what they are building and why it matters to this investor's thesis."
+    },
+    {
+     "claim": "Investor introductions that go unacknowledged for more than a week often cool; the window to convert a warm intro into a meeting is typically three to five days.",
+     "kind": "base_rate",
+     "why": "Investors receive many introductions and move on to the next opportunity if the founder does not signal engagement quickly."
+    },
+    {
+     "claim": "The first message to an introduced investor should be brief, specific to their thesis, and include a clear ask\u2014usually a meeting or a call.",
+     "kind": "practice",
+     "why": "A vague or generic follow-up wastes the connector's credibility and the investor's time."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Warm introductions from connectors typically require a follow-up from the founder within one to three days to maintain momentum.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "When a connector says 'I'll let you take it from here,' the expectation is that the founder will reach out to the introduced party, not wait for them to initiate.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence after an introduction does not indicate disinterest; it is often administrative process or the recipient's queue.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "brief:cbl_#2"
+    ],
+    "kind": "investor",
+    "why": "Kestrel Capital is a venture fund, Rahul Menon is a partner who invests in early-stage AI infrastructure, and your goal is to raise a seed round. This is a potential investor lead, not an intro for partnership or hiring."
+   },
+   "scenarios": {
+    "act": "You send a brief, substantive message to Rahul Menon within the next 24 hours, referencing the introduction and proposing a call. If Rahul is interested, you secure a meeting within a week. If he is not, you learn quickly and can move on to other investors.",
+    "best": "Rahul replies within two days expressing interest, you meet within a week, and Kestrel Capital becomes an active investor conversation in your seed round.",
+    "do_nothing": "The introduction cools over the next week. Rahul Menon may assume you are not interested or are too busy to follow up. By day seven, the warm introduction has become a cold lead, and re-engaging requires more effort and explanation.",
+    "signals_to_watch": [
+     "Rahul's reply time to your first message (within 24 hours is strong; within a week is normal; no reply after a week is a signal to stop).",
+     "The tone and specificity of Rahul's reply (enthusiasm for your product, questions about your round, or a meeting proposal are positive; generic interest or a request for more information is neutral).",
+     "Whether Rahul asks for a deck, references, or a call (a direct ask for a meeting is the strongest signal)."
+    ],
+    "worst": "Rahul does not reply to your follow-up, indicating either misalignment or that Kestrel Capital is not actively investing. You have wasted time waiting and must now rebuild credibility or move on."
+   },
+   "unknowns": [
+    {
+     "question": "Has Rahul Menon received the introduction, and if so, has he read it?",
+     "relevance": "If the introduction was not delivered or read, waiting for a reply is pointless; you should resend or reach out directly."
+    },
+    {
+     "question": "Is Kestrel Capital currently in a fundraising mode, and is Rahul Menon the right person to approach for a seed round?",
+     "relevance": "If Kestrel Capital is not actively investing or Rahul is not the decision-maker, your follow-up should be tailored or redirected."
+    },
+    {
+     "question": "What is Introly's track record with this investor, and has Introly made other successful introductions to Kestrel Capital?",
+     "relevance": "If Introly has a strong relationship with Kestrel Capital, the introduction carries more weight and a reply is more likely; if not, you may need to establish your own credibility."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-10 (seven days from the introduction) for a reply from Rahul. If no reply has arrived by then, send one follow-up message. If still no reply by 2026-09-17, close this file and move on to other investors in your pipeline."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure. Rahul, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I think you two should talk.\"\n    },\n    {\n      \"claim\": \"The introduction arrived on 2026-09-03 at 08:15 UTC and has not been followed by any reply from Kestrel Capital.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was made in the introduction mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no playbook because the brief names no kind of work for it.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in your court: the introduction ended with 'I'll let you take it from here,' and no response has been sent.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"evt_#1\"\n      ],\n      \"quote\": \"I'll let you take it from here.\"\n    },\n    {\n      \"claim\": \"Kestrel Capital's investment focus\u2014early-stage AI infrastructure\u2014aligns with Nimbus Labs' product and stage.\",\n      \"evidence\": [\n        \"brief:company\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a warm introduction from a connector, not a cold outreach, which raises the baseline probability of engagement.\",\n      \"based_on\": [\n        \"file:introduced_by\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The introduction is a potential investor lead aligned with your seed-stage fundraising goal, but it has not yet become a live conversation.\",\n      \"based_on\": [\n        \"brief:cbl_#2\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"No commitment or timeline was established in the introduction; Introly's role was to make the introduction and step back.\",\n      \"based_on\": [\n        \"none:promises\",\n        \"evt_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Warm introductions from connectors typically require a follow-up from the founder within one to three days to maintain momentum.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a connector says 'I'll let you take it from here,' the expectation is that the founder will reach out to the introduced party, not wait for them to initiate.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence after an introduction does not indicate disinterest; it is often administrative process or the recipient's queue.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A warm introduction to an investor requires the founder to move first with a substantive message\u2014not a thank-you, but a reason to talk.\",\n      \"why\": \"The connector has done the work of alignment; the founder must now demonstrate that the fit is real by articulating what they are building and why it matters to this investor's thesis.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investor introductions that go unacknowledged for more than a week often cool; the window to convert a warm intro into a meeting is typically three to five days.\",\n      \"why\": \"Investors receive many introductions and move on to the next opportunity if the founder does not signal engagement quickly.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The first message to an introduced investor should be brief, specific to their thesis, and include a clear ask\u2014usually a meeting or a call.\",\n      \"why\": \"A vague or generic follow-up wastes the connector's credibility and the investor's time.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Rahul Menon is actively interested in meeting but has not yet replied because the introduction is still in his queue.\",\n      \"needs\": \"A follow-up message from you in the next two days would test this; if he replies within a day, interest is high.\"\n    },\n    {\n      \"proposition\": \"Rahul Menon's investment focus has shifted or Kestrel Capital is not actively deploying capital right now.\",\n      \"needs\": \"A brief check of Kestrel Capital's recent investments or a direct question about their current stage focus would settle this.\"\n    },\n    {\n      \"proposition\": \"The introduction was sent to the wrong person or email address at Kestrel Capital.\",\n      \"needs\": \"Verification that rahul@kestrelcap.test is the correct contact and that the introduction was delivered.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has Rahul Menon received the introduction, and if so, has he read it?\",\n      \"relevance\": \"If the introduction was not delivered or read, waiting for a reply is pointless; you should resend or reach out directly.\"\n    },\n    {\n      \"question\": \"Is Kestrel Capital currently in a fundraising mode, and is Rahul Menon the right person to approach for a seed round?\",\n      \"relevance\": \"If Kestrel Capital is not actively investing or Rahul is not the decision-maker, your follow-up should be tailored or redirected.\"\n    },\n    {\n      \"question\": \"What is Introly's track record with this investor, and has Introly made other successful introductions to Kestrel Capital?\",\n      \"relevance\": \"If Introly has a strong relationship with Kestrel Capital, the introduction carries more weight and a reply is more likely; if not, you may need to establish your own credibility.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction to a potentially aligned investor that has not yet been activated by you; the next move is yours to convert the introduction into a conversation.\",\n    \"rivals\": [\n      \"A passive lead that may not warrant immediate action if your pipeline of more advanced investor conversations is full.\",\n      \"A test of Introly's connector quality; if Rahul does not reply to your follow-up, the introduction may have been misaligned.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Kestrel Capital is a venture fund, Rahul Menon is a partner who invests in early-stage AI infrastructure, and your goal is to raise a seed round. This is a potential investor lead, not an intro for partnership or hiring.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"brief:cbl_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"After a warm introduction, the founder is expected to reach out within one to three days with a substantive message that articulates the fit and proposes a meeting.\",\n    \"actual\": \"The introduction was received on 2026-09-03 at 08:15 UTC; as of 2026-09-03 18:00 UTC (9.75 hours later), no follow-up message has been sent from you to Rahul Menon.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The introduction cools over the next week. Rahul Menon may assume you are not interested or are too busy to follow up. By day seven, the warm introduction has become a cold lead, and re-engaging requires more effort and explanation.\",\n    \"act\": \"You send a brief, substantive message to Rahul Menon within the next 24 hours, referencing the introduction and proposing a call. If Rahul is interested, you secure a meeting within a week. If he is not, you learn quickly and can move on to other investors.\",\n    \"best\": \"Rahul replies within two days expressing interest, you meet within a week, and Kestrel Capital becomes an active investor conversation in your seed round.\",\n    \"worst\": \"Rahul does not reply to your follow-up, indicating either misalignment or that Kestrel Capital is not actively investing. You have wasted time waiting and must now rebuild credibility or move on.\",\n    \"signals_to_watch\": [\n      \"Rahul's reply time to your first message (within 24 hours is strong; within a week is normal; no reply after a week is a signal to stop).\",\n      \"The tone and specificity of Rahul's reply (enthusiasm for your product, questions about your round, or a meeting proposal are positive; generic interest or a request for more information is neutral).\",\n      \"Whether Rahul asks for a deck, references, or a call (a direct ask for a meeting is the strongest signal).\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Kestrel Capital is one of five seed-stage investors you have written to; a missed opportunity here does not block your fundraising, but it does reduce your pipeline.\",\n      \"The introduction is warm and aligned, which raises the probability of a positive outcome if you act quickly.\",\n      \"A delayed follow-up does not burn the relationship, but it does reduce the likelihood of engagement.\",\n      \"The cost of a follow-up message is minimal; the cost of inaction is a lost lead.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send a brief, substantive message to Rahul Menon that references the Introly introduction, articulates why Nimbus Labs is a fit for Kestrel Capital's thesis, and proposes a call.\",\n    \"for_whom\": \"Rahul Menon at Kestrel Capital\",\n    \"by_when\": \"2026-09-04\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:5\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"own:3\",\n      \"cap:admin.executive_support.commitment_tracking#f3\"\n    ],\n    \"to\": \"rahul@kestrelcap.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If you are uncertain about Rahul's fit or Kestrel Capital's current investment stage, send a brief message to Introly asking for context on Rahul's recent investments and current focus before reaching out directly. This adds one day but reduces the risk of a misaligned pitch.\",\n  \"wait_or_stop\": \"Wait until 2026-09-10 (seven days from the introduction) for a reply from Rahul. If no reply has arrived by then, send one follow-up message. If still no reply by 2026-09-17, close this file and move on to other investors in your pipeline.\",\n  \"done_when\": \"A meeting is scheduled with Rahul Menon, or Rahul has explicitly declined and you have moved on to the next investor.\",\n  \"draft\": \"Hi Rahul, thanks to Introly for the intro. We're building Nimbus Labs\u2014an AI chief of staff for founders\u2014and we're raising a seed round. Your focus on early-stage AI infrastructure is exactly where we're headed. Would you have time for a brief call next week to explore a fit? Happy to work around your schedule. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "9c45fc6c9f046c3a145addd202ffa207c22f975a22359b3045d8a11dd1804ffd": {
+  "framed": true,
+  "input_tokens": 7522,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3963,
+  "parsed": {
+   "alternative": "If you are uncertain whether Kestrel is a fit or what to say, send a brief note to Introly asking for context on Rahul's current focus and what he is looking for; then reply to Rahul within 24 hours of getting that context. This buys you time to prepare a better reply without letting the intro go cold.",
+   "appraisal": {
+    "reasons": [
+     "This is an investor intro, and you are raising seed; a warm intro is a valuable asset, and losing it is costly.",
+     "The window for a warm reply is closing; Introly's reminder signals that the counterparty's interest is flagging.",
+     "A non-response or a late response will damage your reputation with both Rahul and Introly; Introly is a connector, and word travels.",
+     "The reasoning units found urgency low, but that is a prior about the work, not a fact about this file; the facts show a closing window.",
+     "A wrong move here\u2014either no move or a weak move\u2014will not destroy the relationship, but it will make it harder to recover later."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Rahul has received your reply and has either responded or scheduled a call. The intro is warm, and you have a next step with Kestrel Capital.",
+   "draft": "Hi Rahul,\n\nThanks for the intro\u2014I appreciate Introly connecting us. I've been heads-down on the product, but I wanted to reach out properly.\n\nWe're building an AI chief of staff for founders, and from what I know of Kestrel's focus on early-stage AI infrastructure, I think there's a real fit. We're raising seed now, and I'd love to talk through what we're building and what you're looking for.\n\nWould you have time for a call next week?\n\nBest,\nArjun",
+   "expected_vs_actual": {
+    "actual": "Four days have passed since the introduction; you have not written to Rahul; Introly has sent two follow-ups, the second of which signals that the window is closing.",
+    "expected": "The brief names no kind of work for this file, so there is no playbook stage. From the file's own history and the brief's goals, an investor intro should move to a first call or a substantive exchange within two to three days of the introduction.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to Rahul Menon at Kestrel Capital on 2026-09-03, describing him as a partner who invests in early-stage AI infrastructure.",
+     "evidence": [
+      "evt_#3",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure. Rahul, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I think you two should talk."
+    },
+    {
+     "claim": "Introly sent a follow-up check on 2026-09-04 stating Rahul is keen to hear about Nimbus Labs.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Just checking you saw my introduction to Rahul at Kestrel Capital. He is keen to hear about Nimbus Labs."
+    },
+    {
+     "claim": "Introly sent a reminder on 2026-09-07 stating Rahul is still waiting and that introductions work best when answered within two days.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Rahul is still waiting A reminder that Rahul at Kestrel Capital is waiting to hear from you. Introductions work best when answered within two days."
+    },
+    {
+     "claim": "You have not written to Rahul or Kestrel Capital since the introduction.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days as of the dossier date, within the median gap of 2 days between prior touches.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in Introly's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found engagement healthy, urgency low, and risk low.",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.risk"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was surfaced on or before 2026-09-04 advising you to send a substantive message to Rahul Menon.",
+     "evidence": [
+      "card:card_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time this file has been reviewed in the account_admin situation.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@admin",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An investor introduction that is now past the window for a warm reply; the counterparty is waiting, and the connector is signaling that the opportunity is cooling.",
+    "rivals": [
+     "A routine connector touch that is still within normal engagement windows and does not require immediate action.",
+     "A test of your responsiveness and organizational discipline by the connector and the investor."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A note in your calendar or a message to yourself explaining the delay.",
+     "proposition": "You saw the introduction and decided to wait for a better moment to reply."
+    },
+    {
+     "needs": "A check of your inbox and your mail sync logs.",
+     "proposition": "You did not see the introduction or the follow-ups."
+    },
+    {
+     "needs": "A conversation with you about what you want to say and what you need to know about Kestrel before you write.",
+     "proposition": "You are uncertain what to say to Rahul and have been waiting for clarity on your pitch or your round."
+    },
+    {
+     "needs": "A decision to close this file or to send a brief, honest note to Rahul and Introly.",
+     "proposition": "Rahul is not actually a fit for your round, and you are deprioritizing this intro."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "fact:4"
+     ],
+     "claim": "The ball is in your court: Rahul has been waiting for you to respond to the introduction for four days."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "evt_#1"
+     ],
+     "claim": "Introly's reminder on day 4 signals that the introduction window is closing; the stated norm is two days, and you are now past that."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "brief:cbl_#7",
+      "brief:cbl_#8"
+     ],
+     "claim": "This is an investor intro, not a generic connector touch: Rahul invests in early-stage AI infrastructure, and you are raising seed and building AI infrastructure."
+    },
+    {
+     "based_on": [
+      "card:card_#1",
+      "evt_#2"
+     ],
+     "claim": "The card surfaced before the second Introly reminder, meaning the system flagged this as actionable before Introly escalated."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-08",
+    "for_whom": "Rahul Menon at Kestrel Capital",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "fact:4",
+     "inference:1",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "rahul@kestrelcap.test",
+    "what": "send a substantive reply to Rahul Menon, referencing something specific about Kestrel's thesis or the fit, and propose a call",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An introduction from a connector who says the counterparty is keen requires a substantive reply within 48 hours, not a courtesy acknowledgment.",
+     "kind": "practice",
+     "why": "A delayed reply reads as disinterest to the counterparty and wastes the connector's credibility; the connector's follow-up is a signal that the counterparty is watching the clock."
+    },
+    {
+     "claim": "Investor intros that go unanswered past the two-day window are rarely recovered; the investor moves to the next founder.",
+     "kind": "base_rate",
+     "why": "Investors see non-response as a signal of either disorganization or lack of interest, and they have many other founders to talk to."
+    },
+    {
+     "claim": "A substantive reply to an investor intro should reference something specific about their thesis or the fit, not a generic pitch.",
+     "kind": "practice",
+     "why": "It shows you listened to the introduction and did basic homework; it also gives the investor a reason to take the next call."
+    },
+    {
+     "claim": "Chasing a counterparty who is waiting on you damages the relationship more than silence does.",
+     "kind": "counter_pattern",
+     "why": "It reads as either incompetence or pressure; the rule is to discharge the obligation, renegotiate the date, or state the blocker\u2014never to ask them for movement while the ball is in your court."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "evt_#3",
+      "evt_#2",
+      "evt_#1"
+     ],
+     "claim": "Introductions from connectors decay rapidly if not answered; the connector's follow-ups signal the counterparty's interest is flagging.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "evt_#1"
+     ],
+     "claim": "A connector's statement that introductions work best when answered within two days is a soft deadline, not a courtesy.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "ru:core.temporal",
+      "ru:core.risk"
+     ],
+     "claim": "The reasoning units found urgency low and risk low, suggesting this is not a crisis; the file is still within normal engagement windows.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#3",
+     "brief:cbl_#7"
+    ],
+    "kind": "investor",
+    "why": "Rahul Menon is described as a partner at Kestrel Capital who invests in early-stage AI infrastructure; you are raising seed and building AI infrastructure; this is an investor intro, not a generic connector touch or a partnership exploration."
+   },
+   "scenarios": {
+    "act": "You send a substantive reply to Rahul today, referencing something specific about Kestrel's thesis or the fit, and propose a call. Rahul responds, and you have a conversation. The intro is warm, and you have a new investor conversation in your pipeline.",
+    "best": "Rahul is actively looking for founders in your space, your reply resonates, and you move to a call within a week. The conversation leads to a term sheet or a serious investment conversation.",
+    "do_nothing": "Rahul will assume you are not interested or are disorganized. Introly will note the non-response and be less likely to introduce you to other investors. The intro will go cold, and if you reach out later, it will read as a second choice. The opportunity is lost.",
+    "signals_to_watch": [
+     "Rahul's reply time to your message\u2014if he replies within 24 hours, he is still engaged; if he takes more than a week, he has deprioritized.",
+     "The tone of his reply\u2014if he asks specific questions about your product or round, he is interested; if he is generic, he is being polite.",
+     "Whether he proposes a call or asks for more information\u2014a call proposal is a strong signal; a request for a deck or a document is a softer signal."
+    ],
+    "worst": "You reply, but Rahul has already moved on to other founders. Your reply is polite but does not lead to a call. The intro is technically answered but does not generate momentum."
+   },
+   "unknowns": [
+    {
+     "question": "Did you see the introduction and the follow-ups?",
+     "relevance": "If you did not see them, the next move is to confirm your mail is syncing and to reply immediately. If you did, the delay itself is the problem."
+    },
+    {
+     "question": "Is Kestrel Capital a fit for your round, and do you want to pursue this conversation?",
+     "relevance": "If yes, you must reply now. If no, you should close this file and send a brief note to Rahul and Introly rather than let it go cold."
+    },
+    {
+     "question": "What is your current pitch to investors, and what do you want to say about Nimbus Labs to Rahul?",
+     "relevance": "A substantive reply requires you to know what you are asking for and what you want Rahul to know; if you are still working that out, the reply will be weak."
+    },
+    {
+     "question": "Has Rahul replied to Introly's intro, or is Introly's statement that he is keen based on a prior conversation?",
+     "relevance": "If Rahul has already replied to Introly, the urgency is higher. If Introly is inferring interest, there is more room to move."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The two-day window has passed, and every day of silence makes the reply harder. If you decide Kestrel is not a fit, send a brief, honest note to Rahul and Introly today rather than let it go cold. If you are still deciding, make that decision by end of day 2026-09-08 and reply by end of day 2026-09-09."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to Rahul Menon at Kestrel Capital on 2026-09-03, describing him as a partner who invests in early-stage AI infrastructure.\",\n      \"evidence\": [\n        \"evt_#3\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure. Rahul, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I think you two should talk.\"\n    },\n    {\n      \"claim\": \"Introly sent a follow-up check on 2026-09-04 stating Rahul is keen to hear about Nimbus Labs.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Just checking you saw my introduction to Rahul at Kestrel Capital. He is keen to hear about Nimbus Labs.\"\n    },\n    {\n      \"claim\": \"Introly sent a reminder on 2026-09-07 stating Rahul is still waiting and that introductions work best when answered within two days.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Rahul is still waiting A reminder that Rahul at Kestrel Capital is waiting to hear from you. Introductions work best when answered within two days.\"\n    },\n    {\n      \"claim\": \"You have not written to Rahul or Kestrel Capital since the introduction.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days as of the dossier date, within the median gap of 2 days between prior touches.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in Introly's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found engagement healthy, urgency low, and risk low.\",\n      \"evidence\": [\n        \"ru:core.temporal\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was surfaced on or before 2026-09-04 advising you to send a substantive message to Rahul Menon.\",\n      \"evidence\": [\n        \"card:card_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time this file has been reviewed in the account_admin situation.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@admin\",\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in your court: Rahul has been waiting for you to respond to the introduction for four days.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"Introly's reminder on day 4 signals that the introduction window is closing; the stated norm is two days, and you are now past that.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"This is an investor intro, not a generic connector touch: Rahul invests in early-stage AI infrastructure, and you are raising seed and building AI infrastructure.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\"\n      ]\n    },\n    {\n      \"claim\": \"The card surfaced before the second Introly reminder, meaning the system flagged this as actionable before Introly escalated.\",\n      \"based_on\": [\n        \"card:card_#1\",\n        \"evt_#2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Introductions from connectors decay rapidly if not answered; the connector's follow-ups signal the counterparty's interest is flagging.\",\n      \"based_on\": [\n        \"evt_#3\",\n        \"evt_#2\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A connector's statement that introductions work best when answered within two days is a soft deadline, not a courtesy.\",\n      \"based_on\": [\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"The reasoning units found urgency low and risk low, suggesting this is not a crisis; the file is still within normal engagement windows.\",\n      \"based_on\": [\n        \"ru:core.temporal\",\n        \"ru:core.risk\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction from a connector who says the counterparty is keen requires a substantive reply within 48 hours, not a courtesy acknowledgment.\",\n      \"why\": \"A delayed reply reads as disinterest to the counterparty and wastes the connector's credibility; the connector's follow-up is a signal that the counterparty is watching the clock.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investor intros that go unanswered past the two-day window are rarely recovered; the investor moves to the next founder.\",\n      \"why\": \"Investors see non-response as a signal of either disorganization or lack of interest, and they have many other founders to talk to.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A substantive reply to an investor intro should reference something specific about their thesis or the fit, not a generic pitch.\",\n      \"why\": \"It shows you listened to the introduction and did basic homework; it also gives the investor a reason to take the next call.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing a counterparty who is waiting on you damages the relationship more than silence does.\",\n      \"why\": \"It reads as either incompetence or pressure; the rule is to discharge the obligation, renegotiate the date, or state the blocker\u2014never to ask them for movement while the ball is in your court.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"You saw the introduction and decided to wait for a better moment to reply.\",\n      \"needs\": \"A note in your calendar or a message to yourself explaining the delay.\"\n    },\n    {\n      \"proposition\": \"You did not see the introduction or the follow-ups.\",\n      \"needs\": \"A check of your inbox and your mail sync logs.\"\n    },\n    {\n      \"proposition\": \"You are uncertain what to say to Rahul and have been waiting for clarity on your pitch or your round.\",\n      \"needs\": \"A conversation with you about what you want to say and what you need to know about Kestrel before you write.\"\n    },\n    {\n      \"proposition\": \"Rahul is not actually a fit for your round, and you are deprioritizing this intro.\",\n      \"needs\": \"A decision to close this file or to send a brief, honest note to Rahul and Introly.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Did you see the introduction and the follow-ups?\",\n      \"relevance\": \"If you did not see them, the next move is to confirm your mail is syncing and to reply immediately. If you did, the delay itself is the problem.\"\n    },\n    {\n      \"question\": \"Is Kestrel Capital a fit for your round, and do you want to pursue this conversation?\",\n      \"relevance\": \"If yes, you must reply now. If no, you should close this file and send a brief note to Rahul and Introly rather than let it go cold.\"\n    },\n    {\n      \"question\": \"What is your current pitch to investors, and what do you want to say about Nimbus Labs to Rahul?\",\n      \"relevance\": \"A substantive reply requires you to know what you are asking for and what you want Rahul to know; if you are still working that out, the reply will be weak.\"\n    },\n    {\n      \"question\": \"Has Rahul replied to Introly's intro, or is Introly's statement that he is keen based on a prior conversation?\",\n      \"relevance\": \"If Rahul has already replied to Introly, the urgency is higher. If Introly is inferring interest, there is more room to move.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An investor introduction that is now past the window for a warm reply; the counterparty is waiting, and the connector is signaling that the opportunity is cooling.\",\n    \"rivals\": [\n      \"A routine connector touch that is still within normal engagement windows and does not require immediate action.\",\n      \"A test of your responsiveness and organizational discipline by the connector and the investor.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Rahul Menon is described as a partner at Kestrel Capital who invests in early-stage AI infrastructure; you are raising seed and building AI infrastructure; this is an investor intro, not a generic connector touch or a partnership exploration.\",\n    \"evidence\": [\n      \"evt_#3\",\n      \"brief:cbl_#7\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no kind of work for this file, so there is no playbook stage. From the file's own history and the brief's goals, an investor intro should move to a first call or a substantive exchange within two to three days of the introduction.\",\n    \"actual\": \"Four days have passed since the introduction; you have not written to Rahul; Introly has sent two follow-ups, the second of which signals that the window is closing.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Rahul will assume you are not interested or are disorganized. Introly will note the non-response and be less likely to introduce you to other investors. The intro will go cold, and if you reach out later, it will read as a second choice. The opportunity is lost.\",\n    \"act\": \"You send a substantive reply to Rahul today, referencing something specific about Kestrel's thesis or the fit, and propose a call. Rahul responds, and you have a conversation. The intro is warm, and you have a new investor conversation in your pipeline.\",\n    \"best\": \"Rahul is actively looking for founders in your space, your reply resonates, and you move to a call within a week. The conversation leads to a term sheet or a serious investment conversation.\",\n    \"worst\": \"You reply, but Rahul has already moved on to other founders. Your reply is polite but does not lead to a call. The intro is technically answered but does not generate momentum.\",\n    \"signals_to_watch\": [\n      \"Rahul's reply time to your message\u2014if he replies within 24 hours, he is still engaged; if he takes more than a week, he has deprioritized.\",\n      \"The tone of his reply\u2014if he asks specific questions about your product or round, he is interested; if he is generic, he is being polite.\",\n      \"Whether he proposes a call or asks for more information\u2014a call proposal is a strong signal; a request for a deck or a document is a softer signal.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"This is an investor intro, and you are raising seed; a warm intro is a valuable asset, and losing it is costly.\",\n      \"The window for a warm reply is closing; Introly's reminder signals that the counterparty's interest is flagging.\",\n      \"A non-response or a late response will damage your reputation with both Rahul and Introly; Introly is a connector, and word travels.\",\n      \"The reasoning units found urgency low, but that is a prior about the work, not a fact about this file; the facts show a closing window.\",\n      \"A wrong move here\u2014either no move or a weak move\u2014will not destroy the relationship, but it will make it harder to recover later.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a substantive reply to Rahul Menon, referencing something specific about Kestrel's thesis or the fit, and propose a call\",\n    \"for_whom\": \"Rahul Menon at Kestrel Capital\",\n    \"by_when\": \"2026-09-08\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"rahul@kestrelcap.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If you are uncertain whether Kestrel is a fit or what to say, send a brief note to Introly asking for context on Rahul's current focus and what he is looking for; then reply to Rahul within 24 hours of getting that context. This buys you time to prepare a better reply without letting the intro go cold.\",\n  \"wait_or_stop\": \"Do not wait. The two-day window has passed, and every day of silence makes the reply harder. If you decide Kestrel is not a fit, send a brief, honest note to Rahul and Introly today rather than let it go cold. If you are still deciding, make that decision by end of day 2026-09-08 and reply by end of day 2026-09-09.\",\n  \"done_when\": \"Rahul has received your reply and has either responded or scheduled a call. The intro is warm, and you have a next step with Kestrel Capital.\",\n  \"draft\": \"Hi Rahul,\\n\\nThanks for the intro\u2014I appreciate Introly connecting us. I've been heads-down on the product, but I wanted to reach out properly.\\n\\nWe're building an AI chief of staff for founders, and from what I know of Kestrel's focus on early-stage AI infrastructure, I think there's a real fit. We're raising seed now, and I'd love to talk through what we're building and what you're looking for.\\n\\nWould you have time for a call next week?\\n\\nBest,\\nArjun\"\n}",
+  "site": "expert"
+ },
+ "a26eda02e6c2e584c7f47da08bf76795ea1a9f22d9859782e3844cfd887ec79b": {
+  "framed": true,
+  "input_tokens": 7330,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4097,
+  "parsed": {
+   "alternative": "If you are not ready to engage Kestrel Capital now due to bandwidth or other priorities, send a brief message to Rahul acknowledging the introduction and proposing a call for a specific date within the next 7 days, rather than leaving the introduction unanswered. This preserves the warm relationship and signals professionalism.",
+   "appraisal": {
+    "reasons": [
+     "Kestrel Capital invests in early-stage AI infrastructure, which aligns with your product and stage; a warm introduction from a trusted connector is a high-value opportunity.",
+     "You are actively raising a seed round, and this is one of several investors in flight; losing this prospect is not fatal, but it is a missed opportunity.",
+     "A delayed reply to a warm intro signals poor execution or low interest, which damages your credibility with the connector and the investor; recovering from this requires extra effort and may not be possible.",
+     "The window for a strong first impression is narrow; the longer you wait, the harder it is to recover the momentum."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Rahul has replied to your message, or you have scheduled a call with him within the next 7 days. If neither happens within 7 days, the introduction has cooled and you should move on.",
+   "draft": "Hi Rahul, thanks for the intro through Introly. I'm building Nimbus Labs\u2014an AI chief of staff for founders\u2014and I'd love to tell you more about what we're doing and hear how it might fit with Kestrel's thesis. Are you free for a call this week or early next? Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The card remains unexecuted as of 2026-09-04 08:00 UTC, more than 24 hours after the introduction. No message has been sent to Rahul Menon. Introly sent a follow-up check to you, not to Rahul, confirming that Rahul is keen but you have not yet replied.",
+    "expected": "The brief does not name a kind of work for this file, so no playbook stage applies. However, the file's own history shows a card was queued to send a substantive message to Rahul Menon on 2026-09-03, which suggests the expected next move is to send that message within 24 hours of the introduction.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, on 2026-09-03 at 08:15 UTC.",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure. Rahul, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I think you two should talk."
+    },
+    {
+     "claim": "Introly sent a follow-up message on 2026-09-04 at 08:00 UTC asking whether you saw the introduction and noting that Rahul is keen to hear about Nimbus Labs.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Did you see my intro to Rahul? Just checking you saw my introduction to Rahul at Kestrel Capital. He is keen to hear about Nimbus Labs."
+    },
+    {
+     "claim": "No reply from Rahul Menon has been recorded in the file.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days, within the normal gap of 0.99 days that closed before.",
+     "evidence": [
+      "num:usual_gap",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief does not name a kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was queued on 2026-09-03 to send a brief, substantive message to Rahul Menon.",
+     "evidence": [
+      "card:card_#1",
+      "review:ffp-76a3f89b73722794c39c1db5"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Kestrel Capital invests in early-stage AI infrastructure, which aligns with Nimbus Labs' product and stage.",
+     "evidence": [
+      "evt_#2",
+      "brief:company"
+     ],
+     "quote": "a partner at Kestrel Capital who invests in early-stage AI infrastructure"
+    },
+    {
+     "claim": "You are raising a seed round and have written to five other seed-stage investors but have not yet engaged Kestrel Capital in your seed wave.",
+     "evidence": [
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9",
+      "brief:cbl_#10",
+      "brief:cbl_#11",
+      "brief:cbl_#12"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm investor introduction from a trusted connector, signalled as interested, awaiting your first substantive reply. The ball is in your court, and the window for a strong first impression is closing.",
+    "rivals": [
+     "A connector's courtesy check to confirm you received the introduction, with no urgency implied and no expectation of immediate action.",
+     "A test of your responsiveness and professionalism by the connector, who is evaluating whether you are worth introducing to other investors.",
+     "A low-priority introduction that can be addressed after other seed-stage conversations are further along."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from Rahul that either confirms continued interest or indicates he is no longer available; or silence beyond 7 days after your message.",
+     "proposition": "Rahul Menon has already moved on to other deals because you have not replied within 24 hours."
+    },
+    {
+     "needs": "A reply from Rahul within 24 hours of your message, or a meeting scheduled within 7 days.",
+     "proposition": "Rahul is waiting for you to make the first move and will reply promptly when you do."
+    },
+    {
+     "needs": "Confirmation of whether the card was reviewed and why it was not sent, or whether it remains in the queue.",
+     "proposition": "The queued card was created by the system but was never reviewed or sent because it was not prioritized."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "The ball is in your court: Introly has made the introduction, Rahul has signalled interest through Introly, and you have not yet replied."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "file:introduced_by"
+     ],
+     "claim": "Introly's follow-up on 2026-09-04 was a courtesy check to you, not a chase of Rahul, because Introly is a connector managing the introduction on your behalf."
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "review:ffp-76a3f89b73722794c39c1db5"
+     ],
+     "claim": "The queued card to send a substantive message to Rahul was created by the system on 2026-09-03 and remains unexecuted."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:7",
+      "brief:cbl_#2"
+     ],
+     "claim": "This is a live investor introduction that fits your seed-stage fundraising goal and has been signalled as warm by the connector."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-04",
+    "for_whom": "Rahul Menon at Kestrel Capital",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "own:3",
+     "cap:admin.executive_support.commitment_tracking#f1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "rahul@kestrelcap.test",
+    "what": "send a substantive, brief message to Rahul Menon introducing yourself, acknowledging the introduction, and proposing a call to discuss Nimbus Labs and Kestrel Capital's investment thesis",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A warm introduction from a trusted connector to an investor whose thesis matches your product is a high-value moment; the first reply sets the tone for the relationship.",
+     "kind": "practice",
+     "why": "Investors evaluate founders partly on responsiveness and professionalism; a prompt, substantive reply to a warm intro signals that you move fast and respect their time."
+    },
+    {
+     "claim": "Most founders reply to warm investor intros within 24 hours; those who wait more than 48 hours often lose the investor's active attention.",
+     "kind": "base_rate",
+     "why": "Investors see many deals; a delayed reply reads as either low interest or poor execution, either of which weakens the pitch."
+    },
+    {
+     "claim": "The first message to an investor after a warm intro should be brief, specific to their thesis, and propose a concrete next step\u2014usually a call.",
+     "kind": "practice",
+     "why": "A substantive but concise reply respects the investor's time, shows you have done your homework, and moves the conversation forward without friction."
+    },
+    {
+     "claim": "A queued card that sits unexecuted is not a commitment; it is a reminder that the move has not been made.",
+     "kind": "counter_pattern",
+     "why": "The card's existence does not discharge the obligation; only the message sent does."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "When a connector signals that an investor is keen to hear about the company, a reply within one business day preserves momentum and signals seriousness.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "own:1"
+     ],
+     "claim": "A queued card to send a substantive message that remains unexecuted after one day risks the warm introduction cooling.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Introly's follow-up check on 2026-09-04 does not indicate urgency or pressure; it is a normal connector practice to confirm receipt of an introduction.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#2",
+     "brief:cbl_#2",
+     "brief:cbl_#7"
+    ],
+    "kind": "investor",
+    "why": "Kestrel Capital is a seed-stage investor introduced by a connector, Rahul Menon invests in early-stage AI infrastructure which matches Nimbus Labs' product, and you are actively raising a seed round. This is a fundraising opportunity, not an administrative task."
+   },
+   "scenarios": {
+    "act": "You send a substantive, brief message to Rahul within 24 hours, proposing a call. Rahul replies within 24-48 hours and you schedule a meeting within the week. The conversation moves forward, and Kestrel Capital enters your seed round pipeline as an active prospect.",
+    "best": "Rahul replies to your message within 24 hours with enthusiasm and proposes a call for the following day. You have a strong first conversation, and Kestrel Capital becomes a lead investor in your seed round, or at least a committed participant.",
+    "do_nothing": "Rahul's interest cools over the next few days. By 2026-09-07, he has likely moved on to other opportunities or deprioritized Nimbus Labs. When you eventually reply, his response is slower and less engaged, or he does not reply at all. The warm introduction is wasted, and you lose a potential seed investor whose thesis aligns with your product.",
+    "signals_to_watch": [
+     "Rahul's reply time to your message: within 24 hours is strong, 24-48 hours is normal, beyond 48 hours suggests cooling interest.",
+     "The tone of Rahul's reply: enthusiasm and a specific meeting proposal indicate genuine interest; a polite but vague response suggests lower priority.",
+     "Whether Rahul asks follow-up questions about Nimbus Labs or your fundraising: questions indicate engagement; no questions suggest he is still evaluating.",
+     "The speed at which you can schedule a call: within 7 days is normal; beyond 10 days suggests Rahul is not prioritizing the conversation."
+    ],
+    "worst": "You do not reply for several more days. When you do, Rahul does not respond, or responds with a polite decline. The warm introduction is lost, and you have to re-approach Kestrel Capital through a different channel, if at all, which is much harder."
+   },
+   "unknowns": [
+    {
+     "question": "Has Rahul Menon already replied to the introduction, and if so, what did he say?",
+     "relevance": "If he has replied, the next move changes from initiating contact to responding to his message. If he has not, the urgency of your reply increases."
+    },
+    {
+     "question": "What is Kestrel Capital's typical check size and stage focus, and how does it compare to your seed round target?",
+     "relevance": "This would determine whether Kestrel is a priority investor for your seed round or a secondary prospect, which affects the timing and tone of your reply."
+    },
+    {
+     "question": "Why was the queued card not sent on 2026-09-03 or 2026-09-04?",
+     "relevance": "Understanding the reason\u2014whether it was deprioritized, forgotten, or awaiting review\u2014would clarify whether this is a process gap or a deliberate hold."
+    },
+    {
+     "question": "What is your current bandwidth for investor conversations, and how many other warm intros are in flight?",
+     "relevance": "If you are already in active conversations with other investors, the timing of this reply may need to be sequenced; if not, this should be a priority."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The introduction is warm and time-sensitive. Send the message today. If Rahul does not reply within 48 hours, do not chase; wait until 2026-09-06 and then send a brief follow-up only if you have new information to share (e.g., a recent milestone or press mention). If Rahul does not reply within 7 days of your first message, deprioritize Kestrel Capital and move on to other investors, but do not close the door; leave it open for a re-approach later."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure, on 2026-09-03 at 08:15 UTC.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure. Rahul, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I think you two should talk.\"\n    },\n    {\n      \"claim\": \"Introly sent a follow-up message on 2026-09-04 at 08:00 UTC asking whether you saw the introduction and noting that Rahul is keen to hear about Nimbus Labs.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Did you see my intro to Rahul? Just checking you saw my introduction to Rahul at Kestrel Capital. He is keen to hear about Nimbus Labs.\"\n    },\n    {\n      \"claim\": \"No reply from Rahul Menon has been recorded in the file.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days, within the normal gap of 0.99 days that closed before.\",\n      \"evidence\": [\n        \"num:usual_gap\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief does not name a kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was queued on 2026-09-03 to send a brief, substantive message to Rahul Menon.\",\n      \"evidence\": [\n        \"card:card_#1\",\n        \"review:ffp-76a3f89b73722794c39c1db5\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Kestrel Capital invests in early-stage AI infrastructure, which aligns with Nimbus Labs' product and stage.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"brief:company\"\n      ],\n      \"quote\": \"a partner at Kestrel Capital who invests in early-stage AI infrastructure\"\n    },\n    {\n      \"claim\": \"You are raising a seed round and have written to five other seed-stage investors but have not yet engaged Kestrel Capital in your seed wave.\",\n      \"evidence\": [\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\",\n        \"brief:cbl_#10\",\n        \"brief:cbl_#11\",\n        \"brief:cbl_#12\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in your court: Introly has made the introduction, Rahul has signalled interest through Introly, and you have not yet replied.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"Introly's follow-up on 2026-09-04 was a courtesy check to you, not a chase of Rahul, because Introly is a connector managing the introduction on your behalf.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:introduced_by\"\n      ]\n    },\n    {\n      \"claim\": \"The queued card to send a substantive message to Rahul was created by the system on 2026-09-03 and remains unexecuted.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"review:ffp-76a3f89b73722794c39c1db5\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live investor introduction that fits your seed-stage fundraising goal and has been signalled as warm by the connector.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:7\",\n        \"brief:cbl_#2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a connector signals that an investor is keen to hear about the company, a reply within one business day preserves momentum and signals seriousness.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A queued card to send a substantive message that remains unexecuted after one day risks the warm introduction cooling.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Introly's follow-up check on 2026-09-04 does not indicate urgency or pressure; it is a normal connector practice to confirm receipt of an introduction.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A warm introduction from a trusted connector to an investor whose thesis matches your product is a high-value moment; the first reply sets the tone for the relationship.\",\n      \"why\": \"Investors evaluate founders partly on responsiveness and professionalism; a prompt, substantive reply to a warm intro signals that you move fast and respect their time.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most founders reply to warm investor intros within 24 hours; those who wait more than 48 hours often lose the investor's active attention.\",\n      \"why\": \"Investors see many deals; a delayed reply reads as either low interest or poor execution, either of which weakens the pitch.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The first message to an investor after a warm intro should be brief, specific to their thesis, and propose a concrete next step\u2014usually a call.\",\n      \"why\": \"A substantive but concise reply respects the investor's time, shows you have done your homework, and moves the conversation forward without friction.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A queued card that sits unexecuted is not a commitment; it is a reminder that the move has not been made.\",\n      \"why\": \"The card's existence does not discharge the obligation; only the message sent does.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Rahul Menon has already moved on to other deals because you have not replied within 24 hours.\",\n      \"needs\": \"A reply from Rahul that either confirms continued interest or indicates he is no longer available; or silence beyond 7 days after your message.\"\n    },\n    {\n      \"proposition\": \"Rahul is waiting for you to make the first move and will reply promptly when you do.\",\n      \"needs\": \"A reply from Rahul within 24 hours of your message, or a meeting scheduled within 7 days.\"\n    },\n    {\n      \"proposition\": \"The queued card was created by the system but was never reviewed or sent because it was not prioritized.\",\n      \"needs\": \"Confirmation of whether the card was reviewed and why it was not sent, or whether it remains in the queue.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has Rahul Menon already replied to the introduction, and if so, what did he say?\",\n      \"relevance\": \"If he has replied, the next move changes from initiating contact to responding to his message. If he has not, the urgency of your reply increases.\"\n    },\n    {\n      \"question\": \"What is Kestrel Capital's typical check size and stage focus, and how does it compare to your seed round target?\",\n      \"relevance\": \"This would determine whether Kestrel is a priority investor for your seed round or a secondary prospect, which affects the timing and tone of your reply.\"\n    },\n    {\n      \"question\": \"Why was the queued card not sent on 2026-09-03 or 2026-09-04?\",\n      \"relevance\": \"Understanding the reason\u2014whether it was deprioritized, forgotten, or awaiting review\u2014would clarify whether this is a process gap or a deliberate hold.\"\n    },\n    {\n      \"question\": \"What is your current bandwidth for investor conversations, and how many other warm intros are in flight?\",\n      \"relevance\": \"If you are already in active conversations with other investors, the timing of this reply may need to be sequenced; if not, this should be a priority.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm investor introduction from a trusted connector, signalled as interested, awaiting your first substantive reply. The ball is in your court, and the window for a strong first impression is closing.\",\n    \"rivals\": [\n      \"A connector's courtesy check to confirm you received the introduction, with no urgency implied and no expectation of immediate action.\",\n      \"A test of your responsiveness and professionalism by the connector, who is evaluating whether you are worth introducing to other investors.\",\n      \"A low-priority introduction that can be addressed after other seed-stage conversations are further along.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Kestrel Capital is a seed-stage investor introduced by a connector, Rahul Menon invests in early-stage AI infrastructure which matches Nimbus Labs' product, and you are actively raising a seed round. This is a fundraising opportunity, not an administrative task.\",\n    \"evidence\": [\n      \"evt_#2\",\n      \"brief:cbl_#2\",\n      \"brief:cbl_#7\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief does not name a kind of work for this file, so no playbook stage applies. However, the file's own history shows a card was queued to send a substantive message to Rahul Menon on 2026-09-03, which suggests the expected next move is to send that message within 24 hours of the introduction.\",\n    \"actual\": \"The card remains unexecuted as of 2026-09-04 08:00 UTC, more than 24 hours after the introduction. No message has been sent to Rahul Menon. Introly sent a follow-up check to you, not to Rahul, confirming that Rahul is keen but you have not yet replied.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Rahul's interest cools over the next few days. By 2026-09-07, he has likely moved on to other opportunities or deprioritized Nimbus Labs. When you eventually reply, his response is slower and less engaged, or he does not reply at all. The warm introduction is wasted, and you lose a potential seed investor whose thesis aligns with your product.\",\n    \"act\": \"You send a substantive, brief message to Rahul within 24 hours, proposing a call. Rahul replies within 24-48 hours and you schedule a meeting within the week. The conversation moves forward, and Kestrel Capital enters your seed round pipeline as an active prospect.\",\n    \"best\": \"Rahul replies to your message within 24 hours with enthusiasm and proposes a call for the following day. You have a strong first conversation, and Kestrel Capital becomes a lead investor in your seed round, or at least a committed participant.\",\n    \"worst\": \"You do not reply for several more days. When you do, Rahul does not respond, or responds with a polite decline. The warm introduction is lost, and you have to re-approach Kestrel Capital through a different channel, if at all, which is much harder.\",\n    \"signals_to_watch\": [\n      \"Rahul's reply time to your message: within 24 hours is strong, 24-48 hours is normal, beyond 48 hours suggests cooling interest.\",\n      \"The tone of Rahul's reply: enthusiasm and a specific meeting proposal indicate genuine interest; a polite but vague response suggests lower priority.\",\n      \"Whether Rahul asks follow-up questions about Nimbus Labs or your fundraising: questions indicate engagement; no questions suggest he is still evaluating.\",\n      \"The speed at which you can schedule a call: within 7 days is normal; beyond 10 days suggests Rahul is not prioritizing the conversation.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Kestrel Capital invests in early-stage AI infrastructure, which aligns with your product and stage; a warm introduction from a trusted connector is a high-value opportunity.\",\n      \"You are actively raising a seed round, and this is one of several investors in flight; losing this prospect is not fatal, but it is a missed opportunity.\",\n      \"A delayed reply to a warm intro signals poor execution or low interest, which damages your credibility with the connector and the investor; recovering from this requires extra effort and may not be possible.\",\n      \"The window for a strong first impression is narrow; the longer you wait, the harder it is to recover the momentum.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a substantive, brief message to Rahul Menon introducing yourself, acknowledging the introduction, and proposing a call to discuss Nimbus Labs and Kestrel Capital's investment thesis\",\n    \"for_whom\": \"Rahul Menon at Kestrel Capital\",\n    \"by_when\": \"2026-09-04\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"own:3\",\n      \"cap:admin.executive_support.commitment_tracking#f1\"\n    ],\n    \"to\": \"rahul@kestrelcap.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If you are not ready to engage Kestrel Capital now due to bandwidth or other priorities, send a brief message to Rahul acknowledging the introduction and proposing a call for a specific date within the next 7 days, rather than leaving the introduction unanswered. This preserves the warm relationship and signals professionalism.\",\n  \"wait_or_stop\": \"Do not wait. The introduction is warm and time-sensitive. Send the message today. If Rahul does not reply within 48 hours, do not chase; wait until 2026-09-06 and then send a brief follow-up only if you have new information to share (e.g., a recent milestone or press mention). If Rahul does not reply within 7 days of your first message, deprioritize Kestrel Capital and move on to other investors, but do not close the door; leave it open for a re-approach later.\",\n  \"done_when\": \"Rahul has replied to your message, or you have scheduled a call with him within the next 7 days. If neither happens within 7 days, the introduction has cooled and you should move on.\",\n  \"draft\": \"Hi Rahul, thanks for the intro through Introly. I'm building Nimbus Labs\u2014an AI chief of staff for founders\u2014and I'd love to tell you more about what we're doing and hear how it might fit with Kestrel's thesis. Are you free for a call this week or early next? Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "d6c360c4b3628a8083c6ee7ea7560320934f15edbfaf226c0a28ec8bd1a3de7e": {
+  "framed": true,
+  "input_tokens": 7515,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3235,
+  "parsed": {
+   "alternative": "If you are not ready to engage with investors at this moment, send a brief message to Rahul through Introly acknowledging the introduction and proposing a call in one week, with a clear reason for the delay. This keeps the door open and signals professionalism.",
+   "appraisal": {
+    "reasons": [
+     "This is a warm introduction to an investor whose thesis matches your company; it is one of the highest-quality leads in your fundraising pipeline.",
+     "The investor has already signalled interest through the connector; the only friction is your response.",
+     "Delay in responding to a warm introduction signals low priority or disorganization to the investor.",
+     "The brief shows you are actively raising a seed round; this is a direct path to that goal.",
+     "A wrong move here is reversible: a delayed response can be recovered with a substantive message, but momentum will be lost."
+    ],
+    "reversibility": "reversible",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "You have sent a substantive message to Rahul Menon that acknowledges the introduction, confirms your interest, and proposes a specific next step (a call, a meeting, or a request for more information). Rahul has received it and either responded or the message is in his inbox.",
+   "draft": "Hi Rahul, thanks for the intro through Introly. I'm excited to connect\u2014Kestrel's focus on early-stage AI infrastructure is exactly where we're building. Nimbus Labs is an AI chief of staff for founders, and we're raising our seed round now. Would you have time for a call next week to discuss? I can work around your schedule. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The introduction was made on 2026-09-03 at 08:15 UTC; the connector followed up on 2026-09-04 at 08:00 UTC checking whether you saw it; you have not yet responded.",
+    "expected": "After a warm introduction with signalled investor interest, the founder should respond within one to two days with a substantive message that acknowledges the introduction, confirms interest, and proposes a next step.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to a partner at Kestrel Capital on 2026-09-03 at 08:15 UTC",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure. Rahul, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I think you two should talk."
+    },
+    {
+     "claim": "Introly sent a follow-up message on 2026-09-04 at 08:00 UTC checking whether you saw the introduction",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Did you see my intro to Rahul? Just checking you saw my introduction to Rahul at Kestrel Capital. He is keen to hear about Nimbus Labs."
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days, within the normal gap of 0.99 days between touches",
+     "evidence": [
+      "num:usual_gap",
+      "num:longest_gap",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time has been measured from Rahul Menon or to him",
+     "evidence": [
+      "num:their_reply_time:rahul@kestrelcap.test",
+      "num:your_reply_time:rahul@kestrelcap.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "You have not yet written in this file",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was queued on 2026-09-03 to send a brief, substantive message to Rahul Menon",
+     "evidence": [
+      "card:card_#1",
+      "review:ffp-76a3f89b73722794c39c1db5"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Kestrel Capital invests in early-stage AI infrastructure, matching your company's domain",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "a partner at Kestrel Capital who invests in early-stage AI infrastructure"
+    }
+   ],
+   "frames": {
+    "primary": "A warm investor introduction from a connector, with the investor signalling interest, waiting for you to respond and activate the relationship.",
+    "rivals": [
+     "A connector's administrative check-in to confirm delivery of an introduction, with no signal yet of investor interest beyond the connector's own assessment.",
+     "An introduction that has been made but not yet seen by the investor, with Introly checking whether you received it on your end."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A response from you that he replies to, or a meeting request he accepts",
+     "proposition": "Rahul Menon is actively interested in Nimbus Labs and is waiting for you to initiate a conversation"
+    },
+    {
+     "needs": "Confirmation of whether the card was executed or remains pending",
+     "proposition": "The queued card to send a message to Rahul was created but not yet sent"
+    },
+    {
+     "needs": "Research into Kestrel Capital's recent investments, fund size, and stage focus",
+     "proposition": "Kestrel Capital's investment thesis and ticket size align with your seed round needs"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:5"
+     ],
+     "claim": "The ball is in your court: Introly has made the introduction and Rahul has signalled interest, but you have not yet responded"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "evt_#2"
+     ],
+     "claim": "Introly's follow-up is a connector's check-in, not a demand; it signals that Rahul is waiting for your move"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:5",
+      "file:role"
+     ],
+     "claim": "This is a live investor introduction that has not yet been activated by you"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-05",
+    "for_whom": "Rahul Menon at Kestrel Capital",
+    "guided_by": [
+     "own:1",
+     "own:3",
+     "sig:admin.sit.live_account_admin"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:5",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "rahul@kestrelcap.test",
+    "what": "send a substantive message to Rahul Menon acknowledging the introduction, confirming your interest in Kestrel Capital, and proposing a specific next step",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A warm introduction from a connector who has already signalled the investor's interest is one of the highest-quality leads in fundraising; it should be treated as urgent",
+     "kind": "practice",
+     "why": "The connector has already done the work of alignment; the investor has already expressed interest; the only remaining friction is your response"
+    },
+    {
+     "claim": "Investors in AI infrastructure at seed stage typically move quickly; a delayed response to a warm introduction can signal to them that you are not actively fundraising",
+     "kind": "base_rate",
+     "why": "Responsiveness is a signal of founder quality and urgency in early-stage investing"
+    },
+    {
+     "claim": "A substantive first message to an investor after a warm introduction should acknowledge the introduction, confirm your interest, and propose a specific next step",
+     "kind": "practice",
+     "why": "This converts the introduction into a relationship and moves the conversation from the connector's domain into direct dialogue"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "evt_#1",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A connector's follow-up after an introduction signals that the introduced party is waiting and the connector is checking whether the introduction took",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence from the founder after an introduction is not disinterest; it is often a sign that the founder has not yet seen the introduction or has not prioritized it",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "Investor introductions from connectors typically expect a response within one to two days to maintain momentum",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#2",
+     "brief:cbl_#7",
+     "brief:cbl_#8"
+    ],
+    "kind": "investor",
+    "why": "Kestrel Capital is a venture capital firm; Rahul Menon is a partner who invests in early-stage AI infrastructure; the introduction is explicitly framed as a potential investor conversation for your seed round."
+   },
+   "scenarios": {
+    "act": "You send a substantive message to Rahul acknowledging the introduction, confirming your interest in Kestrel Capital, and proposing a call or meeting. Rahul responds and you move into investor conversations.",
+    "best": "Rahul is actively looking for AI infrastructure investments at seed stage, your timing aligns with his fund's deployment cycle, and a conversation leads to a term sheet or serious interest.",
+    "do_nothing": "Introly's follow-up will age; Rahul will interpret silence as disinterest or low priority; the warm introduction will cool; the opportunity to engage a well-matched investor will be lost or significantly delayed.",
+    "signals_to_watch": [
+     "Rahul's response time to your message",
+     "Whether he proposes a call or asks for more information",
+     "The tone and specificity of his questions about your product and business model",
+     "Whether he introduces you to other partners at Kestrel Capital or asks for references"
+    ],
+    "worst": "Rahul is not actively investing at seed stage, or Kestrel Capital's thesis does not align with your product; the conversation stalls or ends without interest."
+   },
+   "unknowns": [
+    {
+     "question": "Has the queued card to send a message to Rahul Menon been executed, or does it remain pending?",
+     "relevance": "If the card was executed, you have already moved; if it remains pending, it is the next action. This determines whether the file is stalled or in motion."
+    },
+    {
+     "question": "What is Kestrel Capital's typical check size, fund stage focus, and investment timeline?",
+     "relevance": "This determines whether Rahul is a fit for your seed round and how to position the conversation."
+    },
+    {
+     "question": "Has Rahul Menon received the introduction, or is Introly's follow-up checking whether the introduction was delivered?",
+     "relevance": "If Rahul has not yet seen the introduction, your response should acknowledge Introly's message; if he has, your response should go directly to him."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The connector's follow-up indicates that Rahul is waiting for your move. Waiting beyond one more day risks the introduction cooling. Stop if Rahul does not respond to your message within three days; at that point, you can follow up once or move on."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to a partner at Kestrel Capital on 2026-09-03 at 08:15 UTC\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure. Rahul, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I think you two should talk.\"\n    },\n    {\n      \"claim\": \"Introly sent a follow-up message on 2026-09-04 at 08:00 UTC checking whether you saw the introduction\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Did you see my intro to Rahul? Just checking you saw my introduction to Rahul at Kestrel Capital. He is keen to hear about Nimbus Labs.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days, within the normal gap of 0.99 days between touches\",\n      \"evidence\": [\n        \"num:usual_gap\",\n        \"num:longest_gap\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time has been measured from Rahul Menon or to him\",\n      \"evidence\": [\n        \"num:their_reply_time:rahul@kestrelcap.test\",\n        \"num:your_reply_time:rahul@kestrelcap.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"You have not yet written in this file\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was queued on 2026-09-03 to send a brief, substantive message to Rahul Menon\",\n      \"evidence\": [\n        \"card:card_#1\",\n        \"review:ffp-76a3f89b73722794c39c1db5\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Kestrel Capital invests in early-stage AI infrastructure, matching your company's domain\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"a partner at Kestrel Capital who invests in early-stage AI infrastructure\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in your court: Introly has made the introduction and Rahul has signalled interest, but you have not yet responded\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:5\"\n      ]\n    },\n    {\n      \"claim\": \"Introly's follow-up is a connector's check-in, not a demand; it signals that Rahul is waiting for your move\",\n      \"based_on\": [\n        \"fact:2\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live investor introduction that has not yet been activated by you\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:5\",\n        \"file:role\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A connector's follow-up after an introduction signals that the introduced party is waiting and the connector is checking whether the introduction took\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence from the founder after an introduction is not disinterest; it is often a sign that the founder has not yet seen the introduction or has not prioritized it\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investor introductions from connectors typically expect a response within one to two days to maintain momentum\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A warm introduction from a connector who has already signalled the investor's interest is one of the highest-quality leads in fundraising; it should be treated as urgent\",\n      \"why\": \"The connector has already done the work of alignment; the investor has already expressed interest; the only remaining friction is your response\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investors in AI infrastructure at seed stage typically move quickly; a delayed response to a warm introduction can signal to them that you are not actively fundraising\",\n      \"why\": \"Responsiveness is a signal of founder quality and urgency in early-stage investing\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A substantive first message to an investor after a warm introduction should acknowledge the introduction, confirm your interest, and propose a specific next step\",\n      \"why\": \"This converts the introduction into a relationship and moves the conversation from the connector's domain into direct dialogue\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Rahul Menon is actively interested in Nimbus Labs and is waiting for you to initiate a conversation\",\n      \"needs\": \"A response from you that he replies to, or a meeting request he accepts\"\n    },\n    {\n      \"proposition\": \"The queued card to send a message to Rahul was created but not yet sent\",\n      \"needs\": \"Confirmation of whether the card was executed or remains pending\"\n    },\n    {\n      \"proposition\": \"Kestrel Capital's investment thesis and ticket size align with your seed round needs\",\n      \"needs\": \"Research into Kestrel Capital's recent investments, fund size, and stage focus\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the queued card to send a message to Rahul Menon been executed, or does it remain pending?\",\n      \"relevance\": \"If the card was executed, you have already moved; if it remains pending, it is the next action. This determines whether the file is stalled or in motion.\"\n    },\n    {\n      \"question\": \"What is Kestrel Capital's typical check size, fund stage focus, and investment timeline?\",\n      \"relevance\": \"This determines whether Rahul is a fit for your seed round and how to position the conversation.\"\n    },\n    {\n      \"question\": \"Has Rahul Menon received the introduction, or is Introly's follow-up checking whether the introduction was delivered?\",\n      \"relevance\": \"If Rahul has not yet seen the introduction, your response should acknowledge Introly's message; if he has, your response should go directly to him.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm investor introduction from a connector, with the investor signalling interest, waiting for you to respond and activate the relationship.\",\n    \"rivals\": [\n      \"A connector's administrative check-in to confirm delivery of an introduction, with no signal yet of investor interest beyond the connector's own assessment.\",\n      \"An introduction that has been made but not yet seen by the investor, with Introly checking whether you received it on your end.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Kestrel Capital is a venture capital firm; Rahul Menon is a partner who invests in early-stage AI infrastructure; the introduction is explicitly framed as a potential investor conversation for your seed round.\",\n    \"evidence\": [\n      \"evt_#2\",\n      \"brief:cbl_#7\",\n      \"brief:cbl_#8\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"After a warm introduction with signalled investor interest, the founder should respond within one to two days with a substantive message that acknowledges the introduction, confirms interest, and proposes a next step.\",\n    \"actual\": \"The introduction was made on 2026-09-03 at 08:15 UTC; the connector followed up on 2026-09-04 at 08:00 UTC checking whether you saw it; you have not yet responded.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Introly's follow-up will age; Rahul will interpret silence as disinterest or low priority; the warm introduction will cool; the opportunity to engage a well-matched investor will be lost or significantly delayed.\",\n    \"act\": \"You send a substantive message to Rahul acknowledging the introduction, confirming your interest in Kestrel Capital, and proposing a call or meeting. Rahul responds and you move into investor conversations.\",\n    \"best\": \"Rahul is actively looking for AI infrastructure investments at seed stage, your timing aligns with his fund's deployment cycle, and a conversation leads to a term sheet or serious interest.\",\n    \"worst\": \"Rahul is not actively investing at seed stage, or Kestrel Capital's thesis does not align with your product; the conversation stalls or ends without interest.\",\n    \"signals_to_watch\": [\n      \"Rahul's response time to your message\",\n      \"Whether he proposes a call or asks for more information\",\n      \"The tone and specificity of his questions about your product and business model\",\n      \"Whether he introduces you to other partners at Kestrel Capital or asks for references\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is a warm introduction to an investor whose thesis matches your company; it is one of the highest-quality leads in your fundraising pipeline.\",\n      \"The investor has already signalled interest through the connector; the only friction is your response.\",\n      \"Delay in responding to a warm introduction signals low priority or disorganization to the investor.\",\n      \"The brief shows you are actively raising a seed round; this is a direct path to that goal.\",\n      \"A wrong move here is reversible: a delayed response can be recovered with a substantive message, but momentum will be lost.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a substantive message to Rahul Menon acknowledging the introduction, confirming your interest in Kestrel Capital, and proposing a specific next step\",\n    \"for_whom\": \"Rahul Menon at Kestrel Capital\",\n    \"by_when\": \"2026-09-05\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:5\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:3\",\n      \"sig:admin.sit.live_account_admin\"\n    ],\n    \"to\": \"rahul@kestrelcap.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If you are not ready to engage with investors at this moment, send a brief message to Rahul through Introly acknowledging the introduction and proposing a call in one week, with a clear reason for the delay. This keeps the door open and signals professionalism.\",\n  \"wait_or_stop\": \"Do not wait. The connector's follow-up indicates that Rahul is waiting for your move. Waiting beyond one more day risks the introduction cooling. Stop if Rahul does not respond to your message within three days; at that point, you can follow up once or move on.\",\n  \"done_when\": \"You have sent a substantive message to Rahul Menon that acknowledges the introduction, confirms your interest, and proposes a specific next step (a call, a meeting, or a request for more information). Rahul has received it and either responded or the message is in his inbox.\",\n  \"draft\": \"Hi Rahul, thanks for the intro through Introly. I'm excited to connect\u2014Kestrel's focus on early-stage AI infrastructure is exactly where we're building. Nimbus Labs is an AI chief of staff for founders, and we're raising our seed round now. Would you have time for a call next week to discuss? I can work around your schedule. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "df61d6be95c8fd79016eefc7f2572e308d8b15194ac55f359b2866ce34c378aa": {
+  "framed": true,
+  "input_tokens": 7704,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3574,
+  "parsed": {
+   "alternative": "If the founder is not interested in Kestrel Capital, send a polite message via Introly declining the introduction and thanking them for thinking of Nimbus Labs. This preserves the relationship with the connector and signals respect for their time.",
+   "appraisal": {
+    "reasons": [
+     "The contact is described as keen and waiting, suggesting genuine interest that could lead to a seed round meeting.",
+     "The connector has already sent two reminders, indicating the contact is actively interested and the founder's silence is becoming noticeable.",
+     "A poor response or continued silence will damage the relationship with the connector, making future introductions less likely.",
+     "The founder's goal is to raise the seed round, and this is a live prospect.",
+     "The window for a good-faith reply is closing; after a certain point, a reply will read as an afterthought rather than a genuine interest."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The founder has sent a substantive message to the contact proposing a call, the contact has replied confirming interest, and a meeting is scheduled or a call has taken place.",
+   "draft": "Hi Rahul, thanks for the intro through Introly. I've been building Nimbus Labs to solve a real problem I saw as a founder\u2014the constant context-switching between investor updates, hiring, and a hundred other things that pull you away from the work that matters. I'd love to hear your thoughts on how you think about AI infrastructure for founder tools, and whether this is something you'd want to explore together. Are you free for a call this week? Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "No reply has been sent by the founder. Two reminders have been sent by Introly in four days, indicating the contact is still waiting and the connector is checking in.",
+    "expected": "A substantive first message from the founder to the contact within two days of the introduction, acknowledging the introduction and proposing a call or meeting. The contact is described as keen and waiting, which suggests they are ready to engage.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "An introduction was made on 2026-09-03 by Introly, connecting the founder to a partner at Kestrel Capital who invests in early-stage AI infrastructure.",
+     "evidence": [
+      "evt_#3",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure. Rahul, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I think you two should talk."
+    },
+    {
+     "claim": "A follow-up reminder was sent on 2026-09-04 noting that the person at Kestrel Capital was waiting for a reply.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Just checking you saw my introduction to Rahul at Kestrel Capital. He is keen to hear about Nimbus Labs."
+    },
+    {
+     "claim": "A second reminder was sent on 2026-09-07 stating the person was still waiting.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Rahul is still waiting A reminder that Rahul at Kestrel Capital is waiting to hear from you. Introductions work best when answered within two days."
+    },
+    {
+     "claim": "The file shows the ball is in the founder's court: no reply has been sent to the introduction.",
+     "evidence": [
+      "file:whose_move",
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days, within the median gap of 2 days observed in prior touches.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for it.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is categorized as admin work, introduced by a connector.",
+     "evidence": [
+      "file:domains",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was surfaced advising to send a substantive message to the contact.",
+     "evidence": [
+      "card:card_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A live introduction from a connector to a potential investor who is actively waiting for a substantive reply. The founder has not yet replied, and the connector has sent two reminders in four days. The ball is in the founder's court, and the window for a good-faith reply is closing.",
+    "rivals": [
+     "A routine admin task that can wait until the founder has bandwidth, with no immediate consequence if it slips.",
+     "A signal that the founder is not interested in this investor and should politely decline rather than go silent.",
+     "A test of the founder's responsiveness and respect for connectors' time, with reputational stakes for future introductions."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A direct question to the founder about what is blocking the reply.",
+     "proposition": "The founder has not replied because the timing is wrong or the pitch is not ready."
+    },
+    {
+     "needs": "Confirmation from the founder that a message was sent, or a check of the mail thread.",
+     "proposition": "The founder has replied but the message did not reach the contact or Introly."
+    },
+    {
+     "needs": "Research on Kestrel Capital's investment thesis, check-in with the founder on whether they want to pursue this, and confirmation that the contact's focus aligns with Nimbus Labs.",
+     "proposition": "The contact at Kestrel Capital is a good fit for the seed round and this introduction is a genuine opportunity."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "none:we_wrote"
+     ],
+     "claim": "The founder has not yet replied to the introduction, and Introly has sent two reminders in four days."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "The reminders from Introly are chasing the founder, not the contact, because the ball is in the founder's court."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "The contact at Kestrel Capital is described as keen and waiting, suggesting genuine interest that has not yet been met with a substantive reply."
+    },
+    {
+     "based_on": [
+      "sit:sit_#1",
+      "file:domains"
+     ],
+     "claim": "This is a live account administration situation: an introduction that requires a substantive first response from the founder."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-08",
+    "for_whom": "Rahul Menon at Kestrel Capital",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:3",
+     "own:4",
+     "sig:admin.sit.live_account_admin"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "fact:4",
+     "inference:1",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "rahul@kestrelcap.test",
+    "what": "send a substantive message to the contact at Kestrel Capital, acknowledging the introduction, referencing something specific about their firm or focus, and proposing a call",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An introduction from a connector who explicitly states the other party is keen and waiting should be treated as a soft deadline: the founder's first substantive message is the deliverable, not a follow-up.",
+     "kind": "practice",
+     "why": "Connectors stake their reputation on introductions; a delayed or generic reply signals that the founder does not take the introduction seriously, and the connector will be less likely to make future introductions."
+    },
+    {
+     "claim": "When a connector sends two reminders in four days, it usually means the contact has asked the connector to check in, not that the connector is being overly persistent.",
+     "kind": "base_rate",
+     "why": "Connectors are typically disciplined about follow-up; multiple reminders suggest the contact is actively interested and the founder's silence is becoming noticeable."
+    },
+    {
+     "claim": "A substantive first message to an investor introduction should reference something specific about the investor or their firm, not a generic pitch.",
+     "kind": "practice",
+     "why": "It shows the founder has done homework and respects the investor's time; a generic message wastes the introduction and signals low priority."
+    },
+    {
+     "claim": "Waiting for the perfect moment or the perfect pitch before replying to an introduction often results in the moment passing and the contact losing interest.",
+     "kind": "counter_pattern",
+     "why": "Momentum in introductions decays quickly; a good-enough substantive message sent today is better than a perfect one sent next week."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "evt_#2",
+      "cap:admin.executive_support.commitment_tracking#f1"
+     ],
+     "claim": "Introductions from connectors typically expect a substantive reply within two days to maintain momentum and show respect for the introducer's effort.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1"
+     ],
+     "claim": "Sending a reminder to someone who is waiting on you reads as incompetence or pressure and damages the administrative relationship rather than maintaining it.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "none:playbook",
+      "whatif:3",
+      "whatif:7",
+      "whatif:14"
+     ],
+     "claim": "A file with no playbook and no explicit deadline can drift without clear stopping rules, especially when the work is categorized as admin rather than investor or program.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#3",
+     "brief:cbl_#7",
+     "brief:cbl_#2"
+    ],
+    "kind": "investor",
+    "why": "The introduction is to a partner at Kestrel Capital who invests in early-stage AI infrastructure, and the founder's goal is to raise the seed round. This is a live investor prospect, not a generic admin task."
+   },
+   "scenarios": {
+    "act": "The founder sends a substantive message to the contact today, acknowledging the introduction, referencing something specific about Kestrel Capital or the contact's work, and proposing a call. The contact replies and a meeting is scheduled. The connector is satisfied that the introduction was well-received.",
+    "best": "The contact is a strong fit for the seed round, the meeting leads to a term sheet, and the founder learns to reply to introductions promptly. The connector becomes a trusted source of future introductions.",
+    "do_nothing": "The contact at Kestrel Capital will lose interest as the silence extends beyond the two-day window. Introly may send a third reminder or close the introduction. The founder will have missed a potential investor meeting and damaged the relationship with the connector, making future introductions less likely.",
+    "signals_to_watch": [
+     "Whether the founder replies within one day",
+     "Whether the reply is substantive or generic",
+     "Whether the contact responds and proposes a meeting",
+     "Whether Introly sends a third reminder or closes the introduction"
+    ],
+    "worst": "The founder sends a generic or delayed reply, the contact has already moved on, and the introduction yields nothing. The connector notes the founder's poor responsiveness and stops making introductions."
+   },
+   "unknowns": [
+    {
+     "question": "Has the founder seen the introduction and the reminders, and if so, what is blocking a reply?",
+     "relevance": "If the founder has not seen them, the move is to flag the file. If they have seen them and are blocked, the move is to unblock. If they have seen them and are not interested, the move is to close the file."
+    },
+    {
+     "question": "What is the founder's assessment of Kestrel Capital as a potential investor?",
+     "relevance": "If Kestrel Capital is not a fit, the founder should politely decline via Introly rather than go silent. If it is a fit, the founder should reply substantively."
+    },
+    {
+     "question": "Is the contact at Kestrel Capital a decision-maker or a scout, and what is their typical response time?",
+     "relevance": "This would inform whether the introduction is a priority and how much urgency to apply."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The contact is actively waiting and the connector has already sent two reminders. A reply today or tomorrow is timely; a reply after the weekend will read as delayed. If the founder does not reply by 2026-09-08, flag the file and ask the founder directly what is blocking the reply. If the founder is not interested, close the file after sending a polite decline."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"An introduction was made on 2026-09-03 by Introly, connecting the founder to a partner at Kestrel Capital who invests in early-stage AI infrastructure.\",\n      \"evidence\": [\n        \"evt_#3\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure. Rahul, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I think you two should talk.\"\n    },\n    {\n      \"claim\": \"A follow-up reminder was sent on 2026-09-04 noting that the person at Kestrel Capital was waiting for a reply.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Just checking you saw my introduction to Rahul at Kestrel Capital. He is keen to hear about Nimbus Labs.\"\n    },\n    {\n      \"claim\": \"A second reminder was sent on 2026-09-07 stating the person was still waiting.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Rahul is still waiting A reminder that Rahul at Kestrel Capital is waiting to hear from you. Introductions work best when answered within two days.\"\n    },\n    {\n      \"claim\": \"The file shows the ball is in the founder's court: no reply has been sent to the introduction.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days, within the median gap of 2 days observed in prior touches.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for it.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is categorized as admin work, introduced by a connector.\",\n      \"evidence\": [\n        \"file:domains\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was surfaced advising to send a substantive message to the contact.\",\n      \"evidence\": [\n        \"card:card_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The founder has not yet replied to the introduction, and Introly has sent two reminders in four days.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\",\n        \"none:we_wrote\"\n      ]\n    },\n    {\n      \"claim\": \"The reminders from Introly are chasing the founder, not the contact, because the ball is in the founder's court.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The contact at Kestrel Capital is described as keen and waiting, suggesting genuine interest that has not yet been met with a substantive reply.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live account administration situation: an introduction that requires a substantive first response from the founder.\",\n      \"based_on\": [\n        \"sit:sit_#1\",\n        \"file:domains\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Introductions from connectors typically expect a substantive reply within two days to maintain momentum and show respect for the introducer's effort.\",\n      \"based_on\": [\n        \"evt_#2\",\n        \"cap:admin.executive_support.commitment_tracking#f1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Sending a reminder to someone who is waiting on you reads as incompetence or pressure and damages the administrative relationship rather than maintaining it.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A file with no playbook and no explicit deadline can drift without clear stopping rules, especially when the work is categorized as admin rather than investor or program.\",\n      \"based_on\": [\n        \"none:playbook\",\n        \"whatif:3\",\n        \"whatif:7\",\n        \"whatif:14\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction from a connector who explicitly states the other party is keen and waiting should be treated as a soft deadline: the founder's first substantive message is the deliverable, not a follow-up.\",\n      \"why\": \"Connectors stake their reputation on introductions; a delayed or generic reply signals that the founder does not take the introduction seriously, and the connector will be less likely to make future introductions.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a connector sends two reminders in four days, it usually means the contact has asked the connector to check in, not that the connector is being overly persistent.\",\n      \"why\": \"Connectors are typically disciplined about follow-up; multiple reminders suggest the contact is actively interested and the founder's silence is becoming noticeable.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A substantive first message to an investor introduction should reference something specific about the investor or their firm, not a generic pitch.\",\n      \"why\": \"It shows the founder has done homework and respects the investor's time; a generic message wastes the introduction and signals low priority.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Waiting for the perfect moment or the perfect pitch before replying to an introduction often results in the moment passing and the contact losing interest.\",\n      \"why\": \"Momentum in introductions decays quickly; a good-enough substantive message sent today is better than a perfect one sent next week.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The founder has not replied because the timing is wrong or the pitch is not ready.\",\n      \"needs\": \"A direct question to the founder about what is blocking the reply.\"\n    },\n    {\n      \"proposition\": \"The founder has replied but the message did not reach the contact or Introly.\",\n      \"needs\": \"Confirmation from the founder that a message was sent, or a check of the mail thread.\"\n    },\n    {\n      \"proposition\": \"The contact at Kestrel Capital is a good fit for the seed round and this introduction is a genuine opportunity.\",\n      \"needs\": \"Research on Kestrel Capital's investment thesis, check-in with the founder on whether they want to pursue this, and confirmation that the contact's focus aligns with Nimbus Labs.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the founder seen the introduction and the reminders, and if so, what is blocking a reply?\",\n      \"relevance\": \"If the founder has not seen them, the move is to flag the file. If they have seen them and are blocked, the move is to unblock. If they have seen them and are not interested, the move is to close the file.\"\n    },\n    {\n      \"question\": \"What is the founder's assessment of Kestrel Capital as a potential investor?\",\n      \"relevance\": \"If Kestrel Capital is not a fit, the founder should politely decline via Introly rather than go silent. If it is a fit, the founder should reply substantively.\"\n    },\n    {\n      \"question\": \"Is the contact at Kestrel Capital a decision-maker or a scout, and what is their typical response time?\",\n      \"relevance\": \"This would inform whether the introduction is a priority and how much urgency to apply.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A live introduction from a connector to a potential investor who is actively waiting for a substantive reply. The founder has not yet replied, and the connector has sent two reminders in four days. The ball is in the founder's court, and the window for a good-faith reply is closing.\",\n    \"rivals\": [\n      \"A routine admin task that can wait until the founder has bandwidth, with no immediate consequence if it slips.\",\n      \"A signal that the founder is not interested in this investor and should politely decline rather than go silent.\",\n      \"A test of the founder's responsiveness and respect for connectors' time, with reputational stakes for future introductions.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The introduction is to a partner at Kestrel Capital who invests in early-stage AI infrastructure, and the founder's goal is to raise the seed round. This is a live investor prospect, not a generic admin task.\",\n    \"evidence\": [\n      \"evt_#3\",\n      \"brief:cbl_#7\",\n      \"brief:cbl_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"A substantive first message from the founder to the contact within two days of the introduction, acknowledging the introduction and proposing a call or meeting. The contact is described as keen and waiting, which suggests they are ready to engage.\",\n    \"actual\": \"No reply has been sent by the founder. Two reminders have been sent by Introly in four days, indicating the contact is still waiting and the connector is checking in.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The contact at Kestrel Capital will lose interest as the silence extends beyond the two-day window. Introly may send a third reminder or close the introduction. The founder will have missed a potential investor meeting and damaged the relationship with the connector, making future introductions less likely.\",\n    \"act\": \"The founder sends a substantive message to the contact today, acknowledging the introduction, referencing something specific about Kestrel Capital or the contact's work, and proposing a call. The contact replies and a meeting is scheduled. The connector is satisfied that the introduction was well-received.\",\n    \"best\": \"The contact is a strong fit for the seed round, the meeting leads to a term sheet, and the founder learns to reply to introductions promptly. The connector becomes a trusted source of future introductions.\",\n    \"worst\": \"The founder sends a generic or delayed reply, the contact has already moved on, and the introduction yields nothing. The connector notes the founder's poor responsiveness and stops making introductions.\",\n    \"signals_to_watch\": [\n      \"Whether the founder replies within one day\",\n      \"Whether the reply is substantive or generic\",\n      \"Whether the contact responds and proposes a meeting\",\n      \"Whether Introly sends a third reminder or closes the introduction\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The contact is described as keen and waiting, suggesting genuine interest that could lead to a seed round meeting.\",\n      \"The connector has already sent two reminders, indicating the contact is actively interested and the founder's silence is becoming noticeable.\",\n      \"A poor response or continued silence will damage the relationship with the connector, making future introductions less likely.\",\n      \"The founder's goal is to raise the seed round, and this is a live prospect.\",\n      \"The window for a good-faith reply is closing; after a certain point, a reply will read as an afterthought rather than a genuine interest.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a substantive message to the contact at Kestrel Capital, acknowledging the introduction, referencing something specific about their firm or focus, and proposing a call\",\n    \"for_whom\": \"Rahul Menon at Kestrel Capital\",\n    \"by_when\": \"2026-09-08\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:3\",\n      \"own:4\",\n      \"sig:admin.sit.live_account_admin\"\n    ],\n    \"to\": \"rahul@kestrelcap.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder is not interested in Kestrel Capital, send a polite message via Introly declining the introduction and thanking them for thinking of Nimbus Labs. This preserves the relationship with the connector and signals respect for their time.\",\n  \"wait_or_stop\": \"Do not wait. The contact is actively waiting and the connector has already sent two reminders. A reply today or tomorrow is timely; a reply after the weekend will read as delayed. If the founder does not reply by 2026-09-08, flag the file and ask the founder directly what is blocking the reply. If the founder is not interested, close the file after sending a polite decline.\",\n  \"done_when\": \"The founder has sent a substantive message to the contact proposing a call, the contact has replied confirming interest, and a meeting is scheduled or a call has taken place.\",\n  \"draft\": \"Hi Rahul, thanks for the intro through Introly. I've been building Nimbus Labs to solve a real problem I saw as a founder\u2014the constant context-switching between investor updates, hiring, and a hundred other things that pull you away from the work that matters. I'd love to hear your thoughts on how you think about AI infrastructure for founder tools, and whether this is something you'd want to explore together. Are you free for a call this week? Best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

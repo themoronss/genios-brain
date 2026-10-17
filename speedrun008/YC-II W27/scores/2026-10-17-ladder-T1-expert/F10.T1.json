@@ -1,0 +1,247 @@
+{
+ "16657294f955f92116d02eb604460f4bcadca20f83a92947055dd660b7aed034": {
+  "framed": true,
+  "input_tokens": 11368,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4282,
+  "parsed": {
+   "alternative": "If the founder does not have a data room ready, send a reply today acknowledging the request and committing to send the data room and cap table by a specific date (e.g., tomorrow or the next business day). This keeps the conversation warm and signals that the founder is organized and responsive, even if the material is not ready yet. Follow up with the data room link as soon as it is ready, with a note that you are available for a call to discuss it.",
+   "appraisal": {
+    "reasons": [
+     "Banyan Seed Fund is one of five investors in the seed wave, and a prompt reply to a diligence request is a gate to moving forward with this investor.",
+     "The investor has already met the founder at a demo day and is now requesting material, signaling they are past the first-contact stage and are evaluating seriously.",
+     "A delayed reply to a diligence request is read by investors as lost momentum, the one attribute a raise cannot afford to project.",
+     "The investor sent a term-sheet FAQ and portfolio note, signaling they are preparing to move forward; a slow reply wastes this signal.",
+     "Momentum in a raise comes from one investor moving; if Banyan moves, other investors in the wave will follow. If Banyan passes due to a slow reply, the founder loses not just Banyan but the momentum they would have created.",
+     "A wrong move here\u2014a delayed reply, a disorganized data room, or a reply that raises new questions\u2014is costly to reverse because the investor will have already formed an impression of the founder's operational readiness and speed."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "Done when the founder has sent the data room link and cap table to Kiran Agnihotri, and the investor has acknowledged receipt and scheduled a call or meeting to discuss the material, or asked follow-up questions that indicate continued interest.",
+   "draft": "Hi Kiran,\n\nThanks for the follow-up and for sending the term-sheet FAQ and portfolio note. I'm attaching our data room link and the current cap table. Happy to walk through the material on a call whenever works for you.\n\nLooking forward to it.\n\nArjun",
+   "expected_vs_actual": {
+    "actual": "The investor has written a substantive follow-up email referencing a prior demo day meeting, sent a term-sheet FAQ and portfolio note, and requested specific diligence material (data room link and cap table). This is a signal of active interest that moves the conversation beyond first contact toward a first call or partner meeting. The investor has not yet scheduled a call or meeting, but the request for diligence material suggests they are preparing to do so. The founder has not yet replied.",
+    "expected": "At the first_contact stage, the playbook expects either a first meeting or call to be scheduled, or the investor to decline. The typical duration is 14 days. Silence is the default; after a warm introduction, silence means the investor has not opted in. The stage ends when a first meeting or call takes place, or the investor declines.",
+    "stage": "first_contact"
+   },
+   "facts": [
+    {
+     "claim": "Kiran Agnihotri at Banyan Seed Fund wrote on 2026-09-18 at 07:45 UTC asking for a data room link and current cap table, referencing a prior chat at a demo day.",
+     "evidence": [
+      "evt_#1",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": "Following up on our chat at the demo day. We'd like to understand Nimbus Labs better: could you share your data-room link and the current cap table?"
+    },
+    {
+     "claim": "Banyan Seed Fund sent a term-sheet FAQ and a portfolio note with the request.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "I've attached our term-sheet FAQ and a short portfolio note for context."
+    },
+    {
+     "claim": "The file shows no prior written exchange between the founder and Banyan Seed Fund before this message.",
+     "evidence": [
+      "none:we_wrote",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as 'whose move: ours' with an open ask waiting on the founder since 2026-09-18 07:45 UTC.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.43 days as of the dossier's timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Banyan Seed Fund is listed in the company brief as one of five investors written to in the seed wave.",
+     "evidence": [
+      "brief:cbl_#7"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An investor who met the founder at a demo day is now requesting diligence material, signaling a move from first contact to active evaluation. The founder owes a reply now, and the speed and quality of that reply will determine whether the investor moves to a partner meeting or passes.",
+    "rivals": [
+     "A polite follow-up from an investor who is not yet serious and is testing whether the founder will respond; the data room request is exploratory, not confirmatory.",
+     "A standard diligence request from an investor who is already in a partner meeting or has already decided to move forward, and the data room is a gate to closing rather than a decision point.",
+     "A request from an investor who is comparing Nimbus Labs to other companies in the wave and is using the data room to screen out weak candidates; the founder's reply will determine whether Nimbus stays in the running."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder that the data room exists and is current.",
+     "proposition": "The founder has a data room ready and can send the link and cap table today."
+    },
+    {
+     "needs": "A timeline from the founder on when the data room can be ready, and whether that timeline is acceptable to the investor.",
+     "proposition": "The founder does not yet have a data room prepared and will need to assemble it before replying."
+    },
+    {
+     "needs": "Confirmation of what was discussed at the demo day and whether the investor has already met with other founders from the company.",
+     "proposition": "The 'chat at the demo day' was a brief conversation and this is the first substantive engagement; the investor is testing interest before committing time."
+    },
+    {
+     "needs": "Confirmation from the founder of the investor's position in the round strategy and whether other investors are further along.",
+     "proposition": "Banyan Seed Fund is the lead investor the founder is targeting for this round, and this request is the critical path to closing."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "brief:cbl_#7"
+     ],
+     "claim": "The investor has moved from a cold or warm introduction to an active request for diligence material, signaling genuine interest past the first-contact stage."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:first_touch"
+     ],
+     "claim": "The reference to 'our chat at the demo day' indicates a prior meeting or interaction that is not recorded in this file, suggesting the relationship may have progressed further than the file's first-touch date shows."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The investor's request for a data room and cap table is a standard diligence request that typically follows a positive first call or meeting, placing this conversation at or near the partner_meeting or early diligence stage."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "The founder owes a reply now: the investor wrote last, asked a direct question, and the file marks the move as ours."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-18",
+    "for_whom": "Kiran Agnihotri at Banyan Seed Fund",
+    "guided_by": [
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:4",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": "kiran@banyanseed.test",
+    "what": "Send the data room link and current cap table to Kiran Agnihotri, with a brief note thanking them for the interest and offering to walk through the material on a call.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A data room request is a gate: it separates investors who are serious from those who are polite. Sending it the same day or next morning signals momentum and professionalism; waiting signals either disorganization or lack of interest.",
+     "kind": "practice",
+     "why": "Investors see this as a test of the founder's operational readiness and speed. A slow reply to a diligence request is read as a proxy for how the founder will move through the rest of the process."
+    },
+    {
+     "claim": "When an investor sends a term-sheet FAQ and a portfolio note alongside a diligence request, they are signaling they have already decided to move forward if the diligence is clean; the data room request is not exploratory but confirmatory.",
+     "kind": "base_rate",
+     "why": "The FAQ and portfolio note are not sent to every inquiry; they are sent to investors the firm is preparing to move with. This is a warm signal, not a cold one."
+    },
+    {
+     "claim": "A founder who has multiple investors in a seed wave should not treat each one as equally urgent; the one who asks for a data room first is the one most likely to move fastest and should be prioritized.",
+     "kind": "counter_pattern",
+     "why": "Momentum in a raise comes from one investor moving; others follow. The first to ask for diligence is the first to close, and closing one investor often triggers others to decide."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "An investor who asks for a data room and cap table after a demo day meeting is typically in the partner_meeting or early diligence stage and expects a response within days, not weeks.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "A founder who does not reply to a diligence request within a few days risks the investor interpreting silence as lost momentum, the one attribute a raise cannot afford to project.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "pb:founder_office.pb.investor_relations.before_an_investor_call"
+     ],
+     "claim": "Investors in a seed wave typically expect a response to a direct ask within one to three business days; silence past that window begins to read as a soft no.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#7",
+     "file:kind",
+     "file:domains"
+    ],
+    "kind": "investor",
+    "why": "The file is correctly marked as investor work. Banyan Seed Fund is a venture capital firm, the request is for diligence material as part of a seed round evaluation, and the playbook for investor relations applies."
+   },
+   "scenarios": {
+    "act": "If the founder replies today or tomorrow with the data room link and cap table, the investor will move to the next stage: scheduling a call or meeting to discuss the diligence material, or moving directly to a partner meeting if the material is clean. A prompt reply signals momentum and operational readiness. The investor will likely ask follow-up questions or request references or customer calls within a few days. The conversation will move toward a decision within the playbook's typical timeline for diligence (21 days).",
+    "best": "The founder sends the data room link and cap table today, with a brief note thanking the investor for the interest and offering to walk through the material on a call. The investor reviews the material over the next few days, finds it clean, and schedules a partner meeting or a call with a decision-maker. The conversation moves to diligence or a term sheet within two weeks. Banyan becomes the lead investor or a co-investor in the round, and other investors in the wave see the momentum and move faster.",
+    "do_nothing": "If the founder does not reply, the investor will interpret silence as lost momentum or lack of interest. After three to five business days of no reply, the investor will likely move on to other companies in the wave. The conversation will decay into a soft no that is never explicitly stated. The founder will learn of the pass only when the round has moved on without Banyan's participation. The investor will not follow up a second time after a diligence request goes unanswered.",
+    "signals_to_watch": [
+     "Whether the founder has a data room ready and can send it today or tomorrow.",
+     "The investor's response time after receiving the data room: a quick follow-up question or meeting request signals continued interest; silence past three business days signals a soft no.",
+     "Whether the investor asks for references or customer calls, which would indicate a move into diligence.",
+     "Whether other investors in the wave ask for a data room after Banyan does, which would signal momentum.",
+     "Whether the investor mentions other investors or signals exclusivity, which would indicate they are moving toward a term sheet."
+    ],
+    "worst": "The founder does not have a data room ready and delays the reply by a week or more. The investor interprets the delay as a sign that the company is disorganized or not serious about fundraising. The investor moves on to other companies. The founder eventually sends the data room, but the investor has already decided to pass. The conversation ends without a clear reason, and the founder loses a warm lead. Other investors in the wave see the delay and assume the company is not moving fast, which slows the entire round."
+   },
+   "unknowns": [
+    {
+     "question": "Does the founder have a data room prepared, and if so, is it current with the latest cap table and financial information?",
+     "relevance": "This determines whether the reply can be sent today or requires preparation time. A delay in sending the data room is read by the investor as hesitation or disorganization."
+    },
+    {
+     "question": "What was discussed in the 'chat at the demo day' and what did the investor understand the company's stage and needs to be?",
+     "relevance": "This determines whether the investor's request is aligned with what the founder pitched and whether the founder should clarify anything in the reply."
+    },
+    {
+     "question": "Is Banyan Seed Fund the lead investor the founder is targeting, or one of several in parallel?",
+     "relevance": "This determines the priority of the reply and whether the founder should signal exclusivity or openness to other investors in the round."
+    },
+    {
+     "question": "What is the current state of the cap table, and are there any recent changes or complications that should be disclosed proactively?",
+     "relevance": "A cap table with surprises or complications can derail diligence; proactive disclosure in the reply can prevent later friction."
+    },
+    {
+     "question": "Has the founder already sent a data room or cap table to other investors in the wave, and if so, what was their response?",
+     "relevance": "This determines whether the founder is in a position to signal momentum to Banyan by mentioning other investors' interest, or whether this is the first serious inquiry."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The investor wrote last, asked a direct question, and the file marks the move as ours. Waiting past today or tomorrow risks the investor interpreting silence as lost momentum. If the founder does not have a data room ready, send a reply today committing to send it by a specific date. Do not stop; this is a live investor conversation that is moving toward a decision."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Kiran Agnihotri at Banyan Seed Fund wrote on 2026-09-18 at 07:45 UTC asking for a data room link and current cap table, referencing a prior chat at a demo day.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"Following up on our chat at the demo day. We'd like to understand Nimbus Labs better: could you share your data-room link and the current cap table?\"\n    },\n    {\n      \"claim\": \"Banyan Seed Fund sent a term-sheet FAQ and a portfolio note with the request.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"I've attached our term-sheet FAQ and a short portfolio note for context.\"\n    },\n    {\n      \"claim\": \"The file shows no prior written exchange between the founder and Banyan Seed Fund before this message.\",\n      \"evidence\": [\n        \"none:we_wrote\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as 'whose move: ours' with an open ask waiting on the founder since 2026-09-18 07:45 UTC.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.43 days as of the dossier's timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Banyan Seed Fund is listed in the company brief as one of five investors written to in the seed wave.\",\n      \"evidence\": [\n        \"brief:cbl_#7\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The investor has moved from a cold or warm introduction to an active request for diligence material, signaling genuine interest past the first-contact stage.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"brief:cbl_#7\"\n      ]\n    },\n    {\n      \"claim\": \"The reference to 'our chat at the demo day' indicates a prior meeting or interaction that is not recorded in this file, suggesting the relationship may have progressed further than the file's first-touch date shows.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:first_touch\"\n      ]\n    },\n    {\n      \"claim\": \"The investor's request for a data room and cap table is a standard diligence request that typically follows a positive first call or meeting, placing this conversation at or near the partner_meeting or early diligence stage.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"The founder owes a reply now: the investor wrote last, asked a direct question, and the file marks the move as ours.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\",\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who asks for a data room and cap table after a demo day meeting is typically in the partner_meeting or early diligence stage and expects a response within days, not weeks.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A founder who does not reply to a diligence request within a few days risks the investor interpreting silence as lost momentum, the one attribute a raise cannot afford to project.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investors in a seed wave typically expect a response to a direct ask within one to three business days; silence past that window begins to read as a soft no.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A data room request is a gate: it separates investors who are serious from those who are polite. Sending it the same day or next morning signals momentum and professionalism; waiting signals either disorganization or lack of interest.\",\n      \"why\": \"Investors see this as a test of the founder's operational readiness and speed. A slow reply to a diligence request is read as a proxy for how the founder will move through the rest of the process.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When an investor sends a term-sheet FAQ and a portfolio note alongside a diligence request, they are signaling they have already decided to move forward if the diligence is clean; the data room request is not exploratory but confirmatory.\",\n      \"why\": \"The FAQ and portfolio note are not sent to every inquiry; they are sent to investors the firm is preparing to move with. This is a warm signal, not a cold one.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who has multiple investors in a seed wave should not treat each one as equally urgent; the one who asks for a data room first is the one most likely to move fastest and should be prioritized.\",\n      \"why\": \"Momentum in a raise comes from one investor moving; others follow. The first to ask for diligence is the first to close, and closing one investor often triggers others to decide.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The founder has a data room ready and can send the link and cap table today.\",\n      \"needs\": \"Confirmation from the founder that the data room exists and is current.\"\n    },\n    {\n      \"proposition\": \"The founder does not yet have a data room prepared and will need to assemble it before replying.\",\n      \"needs\": \"A timeline from the founder on when the data room can be ready, and whether that timeline is acceptable to the investor.\"\n    },\n    {\n      \"proposition\": \"The 'chat at the demo day' was a brief conversation and this is the first substantive engagement; the investor is testing interest before committing time.\",\n      \"needs\": \"Confirmation of what was discussed at the demo day and whether the investor has already met with other founders from the company.\"\n    },\n    {\n      \"proposition\": \"Banyan Seed Fund is the lead investor the founder is targeting for this round, and this request is the critical path to closing.\",\n      \"needs\": \"Confirmation from the founder of the investor's position in the round strategy and whether other investors are further along.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the founder have a data room prepared, and if so, is it current with the latest cap table and financial information?\",\n      \"relevance\": \"This determines whether the reply can be sent today or requires preparation time. A delay in sending the data room is read by the investor as hesitation or disorganization.\"\n    },\n    {\n      \"question\": \"What was discussed in the 'chat at the demo day' and what did the investor understand the company's stage and needs to be?\",\n      \"relevance\": \"This determines whether the investor's request is aligned with what the founder pitched and whether the founder should clarify anything in the reply.\"\n    },\n    {\n      \"question\": \"Is Banyan Seed Fund the lead investor the founder is targeting, or one of several in parallel?\",\n      \"relevance\": \"This determines the priority of the reply and whether the founder should signal exclusivity or openness to other investors in the round.\"\n    },\n    {\n      \"question\": \"What is the current state of the cap table, and are there any recent changes or complications that should be disclosed proactively?\",\n      \"relevance\": \"A cap table with surprises or complications can derail diligence; proactive disclosure in the reply can prevent later friction.\"\n    },\n    {\n      \"question\": \"Has the founder already sent a data room or cap table to other investors in the wave, and if so, what was their response?\",\n      \"relevance\": \"This determines whether the founder is in a position to signal momentum to Banyan by mentioning other investors' interest, or whether this is the first serious inquiry.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An investor who met the founder at a demo day is now requesting diligence material, signaling a move from first contact to active evaluation. The founder owes a reply now, and the speed and quality of that reply will determine whether the investor moves to a partner meeting or passes.\",\n    \"rivals\": [\n      \"A polite follow-up from an investor who is not yet serious and is testing whether the founder will respond; the data room request is exploratory, not confirmatory.\",\n      \"A standard diligence request from an investor who is already in a partner meeting or has already decided to move forward, and the data room is a gate to closing rather than a decision point.\",\n      \"A request from an investor who is comparing Nimbus Labs to other companies in the wave and is using the data room to screen out weak candidates; the founder's reply will determine whether Nimbus stays in the running.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is correctly marked as investor work. Banyan Seed Fund is a venture capital firm, the request is for diligence material as part of a seed round evaluation, and the playbook for investor relations applies.\",\n    \"evidence\": [\n      \"brief:cbl_#7\",\n      \"file:kind\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_contact\",\n    \"expected\": \"At the first_contact stage, the playbook expects either a first meeting or call to be scheduled, or the investor to decline. The typical duration is 14 days. Silence is the default; after a warm introduction, silence means the investor has not opted in. The stage ends when a first meeting or call takes place, or the investor declines.\",\n    \"actual\": \"The investor has written a substantive follow-up email referencing a prior demo day meeting, sent a term-sheet FAQ and portfolio note, and requested specific diligence material (data room link and cap table). This is a signal of active interest that moves the conversation beyond first contact toward a first call or partner meeting. The investor has not yet scheduled a call or meeting, but the request for diligence material suggests they are preparing to do so. The founder has not yet replied.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If the founder does not reply, the investor will interpret silence as lost momentum or lack of interest. After three to five business days of no reply, the investor will likely move on to other companies in the wave. The conversation will decay into a soft no that is never explicitly stated. The founder will learn of the pass only when the round has moved on without Banyan's participation. The investor will not follow up a second time after a diligence request goes unanswered.\",\n    \"act\": \"If the founder replies today or tomorrow with the data room link and cap table, the investor will move to the next stage: scheduling a call or meeting to discuss the diligence material, or moving directly to a partner meeting if the material is clean. A prompt reply signals momentum and operational readiness. The investor will likely ask follow-up questions or request references or customer calls within a few days. The conversation will move toward a decision within the playbook's typical timeline for diligence (21 days).\",\n    \"best\": \"The founder sends the data room link and cap table today, with a brief note thanking the investor for the interest and offering to walk through the material on a call. The investor reviews the material over the next few days, finds it clean, and schedules a partner meeting or a call with a decision-maker. The conversation moves to diligence or a term sheet within two weeks. Banyan becomes the lead investor or a co-investor in the round, and other investors in the wave see the momentum and move faster.\",\n    \"worst\": \"The founder does not have a data room ready and delays the reply by a week or more. The investor interprets the delay as a sign that the company is disorganized or not serious about fundraising. The investor moves on to other companies. The founder eventually sends the data room, but the investor has already decided to pass. The conversation ends without a clear reason, and the founder loses a warm lead. Other investors in the wave see the delay and assume the company is not moving fast, which slows the entire round.\",\n    \"signals_to_watch\": [\n      \"Whether the founder has a data room ready and can send it today or tomorrow.\",\n      \"The investor's response time after receiving the data room: a quick follow-up question or meeting request signals continued interest; silence past three business days signals a soft no.\",\n      \"Whether the investor asks for references or customer calls, which would indicate a move into diligence.\",\n      \"Whether other investors in the wave ask for a data room after Banyan does, which would signal momentum.\",\n      \"Whether the investor mentions other investors or signals exclusivity, which would indicate they are moving toward a term sheet.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Banyan Seed Fund is one of five investors in the seed wave, and a prompt reply to a diligence request is a gate to moving forward with this investor.\",\n      \"The investor has already met the founder at a demo day and is now requesting material, signaling they are past the first-contact stage and are evaluating seriously.\",\n      \"A delayed reply to a diligence request is read by investors as lost momentum, the one attribute a raise cannot afford to project.\",\n      \"The investor sent a term-sheet FAQ and portfolio note, signaling they are preparing to move forward; a slow reply wastes this signal.\",\n      \"Momentum in a raise comes from one investor moving; if Banyan moves, other investors in the wave will follow. If Banyan passes due to a slow reply, the founder loses not just Banyan but the momentum they would have created.\",\n      \"A wrong move here\u2014a delayed reply, a disorganized data room, or a reply that raises new questions\u2014is costly to reverse because the investor will have already formed an impression of the founder's operational readiness and speed.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send the data room link and current cap table to Kiran Agnihotri, with a brief note thanking them for the interest and offering to walk through the material on a call.\",\n    \"for_whom\": \"Kiran Agnihotri at Banyan Seed Fund\",\n    \"by_when\": \"2026-09-18\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:4\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"kiran@banyanseed.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder does not have a data room ready, send a reply today acknowledging the request and committing to send the data room and cap table by a specific date (e.g., tomorrow or the next business day). This keeps the conversation warm and signals that the founder is organized and responsive, even if the material is not ready yet. Follow up with the data room link as soon as it is ready, with a note that you are available for a call to discuss it.\",\n    \"wait_or_stop\": \"Do not wait. The investor wrote last, asked a direct question, and the file marks the move as ours. Waiting past today or tomorrow risks the investor interpreting silence as lost momentum. If the founder does not have a data room ready, send a reply today committing to send it by a specific date. Do not stop; this is a live investor conversation that is moving toward a decision.\",\n    \"done_when\": \"Done when the founder has sent the data room link and cap table to Kiran Agnihotri, and the investor has acknowledged receipt and scheduled a call or meeting to discuss the material, or asked follow-up questions that indicate continued interest.\",\n    \"draft\": \"Hi Kiran,\\n\\nThanks for the follow-up and for sending the term-sheet FAQ and portfolio note. I'm attaching our data room link and the current cap table. Happy to walk through the material on a call whenever works for you.\\n\\nLooking forward to it.\\n\\nArjun\"\n  }\n}",
+  "site": "expert"
+ }
+}

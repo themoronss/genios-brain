@@ -1,0 +1,916 @@
+{
+ "7acfa1704ad62579af247c0b2eba109de61adcd857b687c179d1213512fefa56": {
+  "framed": true,
+  "input_tokens": 14807,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3542,
+  "parsed": {
+   "alternative": "If the scheduling link is broken or unclear, send a brief reply to Amira Saleh asking for clarification or an alternative way to book the slot, and do so the same day. Do not delay; a same-day reply keeps the thread warm and signals seriousness.",
+   "appraisal": {
+    "reasons": [
+     "The deadline to book is 10 Oct, which is nine days away; missing it closes this opportunity for this cohort.",
+     "Gulf Launchpad is on the watchlist and is an active programme the company is pursuing; advancing through interview is a material step toward an offer.",
+     "An interview slot, once lost, cannot be recovered for this cohort; the company would have to re-apply to a future cohort.",
+     "The company is in the middle of a seed raise and multiple programme applications; this interview is one of several paths to capital and validation.",
+     "The playbook notes that an application is lost on a date rather than on merit if the interview slot goes unbooked."
+    ],
+    "reversibility": "irreversible",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The interview slot is booked and confirmed on your calendar with the date, time, and any preparation requirements noted. You have reviewed your application, noted what has changed since submission, and prepared key metrics to discuss. All co-founders who will attend are confirmed and have reviewed the application.",
+   "draft": "Hi Amira, Thanks for the invitation to interview for Gulf Launchpad cohort 9. I've reviewed the scheduling link and will book a slot by end of day tomorrow. Looking forward to the conversation. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The company received the invitation on 2026-10-01 with a booking deadline of 10 Oct. The file shows the move is ours and an open ask exists, but does not confirm whether the slot has been booked. No preparation activity is recorded. The company has been quiet for 0.44 days since the invitation.",
+    "expected": "The playbook expects the founder to book a slot by the programme's deadline, prepare for the interview format, and attend with all co-founders present. The programme typically gives a booking window of days, not weeks. Between booking and the interview, the founder should prepare by reviewing the application, noting what has changed since submission, and preparing key metrics and a demo if relevant.",
+    "stage": "interview"
+   },
+   "facts": [
+    {
+     "claim": "Gulf Launchpad invited the company to interview on 2026-10-01 at 07:30 UTC, asking to book a 30-minute slot by 10 Oct.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Your application has moved to the interview stage. Please book a 30-minute slot using the scheduling link by 10 Oct."
+    },
+    {
+     "claim": "The company applied to Gulf Launchpad cohort 9 and received confirmation on 2026-08-26.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Thanks - we've submitted the application form."
+    },
+    {
+     "claim": "The file shows an open ask: the company must book an interview slot by 10 Oct, and the move is ours.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Gulf Launchpad is on the watchlist and is an active accelerator program the company is pursuing.",
+     "evidence": [
+      "brief:cbl_#31",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The company has been quiet for 0.44 days since the invitation arrived.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units assessed this file as low urgency, low risk, and high engagement with no blocking dependency.",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "The company has been invited to interview by an accelerator programme and must book a slot by a hard deadline (10 Oct) or lose the opportunity. The move is entirely the founder's, and the clock is running.",
+    "rivals": [
+     "The company has already booked the slot and the file is simply not yet updated; the move is complete and the next phase is preparation.",
+     "The company is uncertain about the interview or has lower priority for this programme relative to other fundraising work, and is intentionally delaying.",
+     "The company received the invitation but the scheduling link is broken or unclear, and the founder is blocked from booking."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A check of the company's calendar or a direct question to the founder about whether the slot has been booked.",
+     "proposition": "The company has already booked the interview slot but has not updated the file."
+    },
+    {
+     "needs": "A conversation with the founder about what preparation is needed and what questions remain unanswered.",
+     "proposition": "The company is uncertain about the interview format, what to prepare, or who should attend, and is delaying booking until those questions are answered."
+    },
+    {
+     "needs": "A review of the founder's calendar and current priorities to understand the relative urgency.",
+     "proposition": "The company is prioritizing other work (fundraising, hiring, compliance) and has not yet turned attention to this interview."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "The company is now in the interview stage of Gulf Launchpad's selection process, having passed the application review."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "The deadline to book the interview slot (10 Oct) is a hard date that will not move for this company, and missing it risks losing the slot."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3"
+     ],
+     "claim": "The next move is entirely the company's: to book the slot using the scheduling link provided by Amira Saleh before 10 Oct."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:last_touch"
+     ],
+     "claim": "The company has approximately nine days from the invitation to book the slot, which is sufficient time if action is taken promptly."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-03",
+    "for_whom": "Gulf Launchpad (Amira Saleh)",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Book the interview slot using the scheduling link provided by Amira Saleh, confirm the date and time, and add it to your calendar. Then prepare for the interview by reviewing your application, noting what has changed since submission, and preparing key metrics.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An interview invitation from an accelerator is a gate passed, not a gate won; the interview itself determines whether the company advances.",
+     "kind": "practice",
+     "why": "The programme has moved from screening applications to evaluating founders in conversation, which is a material step forward but not a commitment."
+    },
+    {
+     "claim": "Booking an interview slot the same day the invitation arrives, or within one business day, signals seriousness and keeps the founder's calendar clear of conflicts.",
+     "kind": "practice",
+     "why": "Programmes notice which founders move fast, and a founder who delays booking risks a slot that no longer fits their calendar."
+    },
+    {
+     "claim": "A founder who receives an interview invitation and does not book within three days is often signalling low priority to the programme, even if unintentionally.",
+     "kind": "counter_pattern",
+     "why": "Programmes see many companies; a founder who does not act quickly on an invitation reads as less committed than one who does."
+    },
+    {
+     "claim": "The best founders book interview slots within hours of receiving the invitation, and prepare for the interview within a week.",
+     "kind": "benchmark",
+     "why": "This pace demonstrates commitment, leaves time for preparation, and avoids the risk of slot unavailability."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.prepare_for_the_interview"
+     ],
+     "claim": "Programme invitations to interview typically carry a booking deadline and expect the founder to act within days, not weeks.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "A founder who does not book an interview slot by the programme's deadline loses the slot and may not be re-invited.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "Programmes read applications as a batch and answer on their own published calendar; silence before the programme's date is not a no.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#31",
+     "file:kind"
+    ],
+    "kind": "program",
+    "why": "Gulf Launchpad is an accelerator programme with a published selection process, a cohort model, and a calendar-driven timeline. The file correctly names it as a programme application."
+   },
+   "scenarios": {
+    "act": "If the founder books the interview slot today or tomorrow, the company secures a place in the interview calendar and can prepare for the call. The founder then prepares by reviewing the application, noting progress since submission, preparing key metrics, and rehearsing the introduction. The interview is held at the booked time, and the programme's decision follows within the typical 14-day decision window.",
+    "best": "The founder books the slot within one business day, prepares thoroughly over the next week, attends the interview with all co-founders, answers questions clearly with verified metrics, and receives an invitation to a second round or an offer within two weeks. The company advances in Gulf Launchpad's selection process.",
+    "do_nothing": "If the founder does not book a slot by 10 Oct, the company loses the interview opportunity and is likely out of Gulf Launchpad cohort 9. The programme will not re-invite for this cohort. The company may be able to apply to a future cohort, but this opportunity is lost. The file would close as declined with a re-application date tied to the next cohort opening.",
+    "signals_to_watch": [
+     "Whether the founder books the slot by 5 Oct (mid-deadline), signalling commitment.",
+     "Whether the founder asks for preparation guidance or clarification about the interview format.",
+     "Whether the founder confirms attendance with all co-founders or signals a conflict.",
+     "The date and time of the booked interview, which will determine the preparation timeline."
+    ],
+    "worst": "The founder delays booking, the preferred slots fill, and the only available slot conflicts with other commitments. The founder either misses the interview or attends unprepared. The programme declines the company or moves it to a waitlist. The company loses this cohort and must re-apply to a future one."
+   },
+   "unknowns": [
+    {
+     "question": "Has the company already booked the interview slot, and if so, when and with whom?",
+     "relevance": "If the slot is booked, the next move shifts from booking to preparation; if not, the urgency is immediate."
+    },
+    {
+     "question": "What is the interview format, and what does Gulf Launchpad expect the founder to prepare?",
+     "relevance": "The preparation required will determine how much time the founder needs between booking and the interview date."
+    },
+    {
+     "question": "Are there any conflicts in the founder's calendar that might constrain which slots are available?",
+     "relevance": "If the founder is traveling or has other commitments, the available slots may be limited, and booking urgency increases."
+    },
+    {
+     "question": "What is Gulf Launchpad's typical interview-to-decision timeline, and how many companies advance from interview to offer?",
+     "relevance": "This would inform how much weight to place on this interview relative to other work in motion."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline is 10 Oct, which is nine days away. Book the slot by 2026-10-03 to leave time for preparation and to avoid last-minute conflicts. If the slot is not booked by 2026-10-05, send a follow-up to Amira Saleh confirming that you intend to attend and asking for the next available slot. If no slot is booked by 2026-10-10, the opportunity is lost and the file closes as declined with a re-application date tied to the next Gulf Launchpad cohort."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Gulf Launchpad invited the company to interview on 2026-10-01 at 07:30 UTC, asking to book a 30-minute slot by 10 Oct.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Your application has moved to the interview stage. Please book a 30-minute slot using the scheduling link by 10 Oct.\"\n    },\n    {\n      \"claim\": \"The company applied to Gulf Launchpad cohort 9 and received confirmation on 2026-08-26.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Thanks - we've submitted the application form.\"\n    },\n    {\n      \"claim\": \"The file shows an open ask: the company must book an interview slot by 10 Oct, and the move is ours.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Gulf Launchpad is on the watchlist and is an active accelerator program the company is pursuing.\",\n      \"evidence\": [\n        \"brief:cbl_#31\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The company has been quiet for 0.44 days since the invitation arrived.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units assessed this file as low urgency, low risk, and high engagement with no blocking dependency.\",\n      \"evidence\": [\n        \"ru:core.temporal\",\n        \"ru:core.dependency\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The company is now in the interview stage of Gulf Launchpad's selection process, having passed the application review.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"claim\": \"The deadline to book the interview slot (10 Oct) is a hard date that will not move for this company, and missing it risks losing the slot.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is entirely the company's: to book the slot using the scheduling link provided by Amira Saleh before 10 Oct.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The company has approximately nine days from the invitation to book the slot, which is sufficient time if action is taken promptly.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:last_touch\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Programme invitations to interview typically carry a booking deadline and expect the founder to act within days, not weeks.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.prepare_for_the_interview\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A founder who does not book an interview slot by the programme's deadline loses the slot and may not be re-invited.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Programmes read applications as a batch and answer on their own published calendar; silence before the programme's date is not a no.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An interview invitation from an accelerator is a gate passed, not a gate won; the interview itself determines whether the company advances.\",\n      \"why\": \"The programme has moved from screening applications to evaluating founders in conversation, which is a material step forward but not a commitment.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Booking an interview slot the same day the invitation arrives, or within one business day, signals seriousness and keeps the founder's calendar clear of conflicts.\",\n      \"why\": \"Programmes notice which founders move fast, and a founder who delays booking risks a slot that no longer fits their calendar.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who receives an interview invitation and does not book within three days is often signalling low priority to the programme, even if unintentionally.\",\n      \"why\": \"Programmes see many companies; a founder who does not act quickly on an invitation reads as less committed than one who does.\"\n    },\n    {\n      \"kind\": \"benchmark\",\n      \"claim\": \"The best founders book interview slots within hours of receiving the invitation, and prepare for the interview within a week.\",\n      \"why\": \"This pace demonstrates commitment, leaves time for preparation, and avoids the risk of slot unavailability.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The company has already booked the interview slot but has not updated the file.\",\n      \"needs\": \"A check of the company's calendar or a direct question to the founder about whether the slot has been booked.\"\n    },\n    {\n      \"proposition\": \"The company is uncertain about the interview format, what to prepare, or who should attend, and is delaying booking until those questions are answered.\",\n      \"needs\": \"A conversation with the founder about what preparation is needed and what questions remain unanswered.\"\n    },\n    {\n      \"proposition\": \"The company is prioritizing other work (fundraising, hiring, compliance) and has not yet turned attention to this interview.\",\n      \"needs\": \"A review of the founder's calendar and current priorities to understand the relative urgency.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the company already booked the interview slot, and if so, when and with whom?\",\n      \"relevance\": \"If the slot is booked, the next move shifts from booking to preparation; if not, the urgency is immediate.\"\n    },\n    {\n      \"question\": \"What is the interview format, and what does Gulf Launchpad expect the founder to prepare?\",\n      \"relevance\": \"The preparation required will determine how much time the founder needs between booking and the interview date.\"\n    },\n    {\n      \"question\": \"Are there any conflicts in the founder's calendar that might constrain which slots are available?\",\n      \"relevance\": \"If the founder is traveling or has other commitments, the available slots may be limited, and booking urgency increases.\"\n    },\n    {\n      \"question\": \"What is Gulf Launchpad's typical interview-to-decision timeline, and how many companies advance from interview to offer?\",\n      \"relevance\": \"This would inform how much weight to place on this interview relative to other work in motion.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"The company has been invited to interview by an accelerator programme and must book a slot by a hard deadline (10 Oct) or lose the opportunity. The move is entirely the founder's, and the clock is running.\",\n    \"rivals\": [\n      \"The company has already booked the slot and the file is simply not yet updated; the move is complete and the next phase is preparation.\",\n      \"The company is uncertain about the interview or has lower priority for this programme relative to other fundraising work, and is intentionally delaying.\",\n      \"The company received the invitation but the scheduling link is broken or unclear, and the founder is blocked from booking.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"Gulf Launchpad is an accelerator programme with a published selection process, a cohort model, and a calendar-driven timeline. The file correctly names it as a programme application.\",\n    \"evidence\": [\n      \"brief:cbl_#31\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"interview\",\n    \"expected\": \"The playbook expects the founder to book a slot by the programme's deadline, prepare for the interview format, and attend with all co-founders present. The programme typically gives a booking window of days, not weeks. Between booking and the interview, the founder should prepare by reviewing the application, noting what has changed since submission, and preparing key metrics and a demo if relevant.\",\n    \"actual\": \"The company received the invitation on 2026-10-01 with a booking deadline of 10 Oct. The file shows the move is ours and an open ask exists, but does not confirm whether the slot has been booked. No preparation activity is recorded. The company has been quiet for 0.44 days since the invitation.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If the founder does not book a slot by 10 Oct, the company loses the interview opportunity and is likely out of Gulf Launchpad cohort 9. The programme will not re-invite for this cohort. The company may be able to apply to a future cohort, but this opportunity is lost. The file would close as declined with a re-application date tied to the next cohort opening.\",\n    \"act\": \"If the founder books the interview slot today or tomorrow, the company secures a place in the interview calendar and can prepare for the call. The founder then prepares by reviewing the application, noting progress since submission, preparing key metrics, and rehearsing the introduction. The interview is held at the booked time, and the programme's decision follows within the typical 14-day decision window.\",\n    \"best\": \"The founder books the slot within one business day, prepares thoroughly over the next week, attends the interview with all co-founders, answers questions clearly with verified metrics, and receives an invitation to a second round or an offer within two weeks. The company advances in Gulf Launchpad's selection process.\",\n    \"worst\": \"The founder delays booking, the preferred slots fill, and the only available slot conflicts with other commitments. The founder either misses the interview or attends unprepared. The programme declines the company or moves it to a waitlist. The company loses this cohort and must re-apply to a future one.\",\n    \"signals_to_watch\": [\n      \"Whether the founder books the slot by 5 Oct (mid-deadline), signalling commitment.\",\n      \"Whether the founder asks for preparation guidance or clarification about the interview format.\",\n      \"Whether the founder confirms attendance with all co-founders or signals a conflict.\",\n      \"The date and time of the booked interview, which will determine the preparation timeline.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"irreversible\",\n    \"reasons\": [\n      \"The deadline to book is 10 Oct, which is nine days away; missing it closes this opportunity for this cohort.\",\n      \"Gulf Launchpad is on the watchlist and is an active programme the company is pursuing; advancing through interview is a material step toward an offer.\",\n      \"An interview slot, once lost, cannot be recovered for this cohort; the company would have to re-apply to a future cohort.\",\n      \"The company is in the middle of a seed raise and multiple programme applications; this interview is one of several paths to capital and validation.\",\n      \"The playbook notes that an application is lost on a date rather than on merit if the interview slot goes unbooked.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Book the interview slot using the scheduling link provided by Amira Saleh, confirm the date and time, and add it to your calendar. Then prepare for the interview by reviewing your application, noting what has changed since submission, and preparing key metrics.\",\n    \"for_whom\": \"Gulf Launchpad (Amira Saleh)\",\n    \"by_when\": \"2026-10-03\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:3\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.prepare_for_the_interview\",\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the scheduling link is broken or unclear, send a brief reply to Amira Saleh asking for clarification or an alternative way to book the slot, and do so the same day. Do not delay; a same-day reply keeps the thread warm and signals seriousness.\",\n  \"wait_or_stop\": \"Do not wait. The deadline is 10 Oct, which is nine days away. Book the slot by 2026-10-03 to leave time for preparation and to avoid last-minute conflicts. If the slot is not booked by 2026-10-05, send a follow-up to Amira Saleh confirming that you intend to attend and asking for the next available slot. If no slot is booked by 2026-10-10, the opportunity is lost and the file closes as declined with a re-application date tied to the next Gulf Launchpad cohort.\",\n  \"done_when\": \"The interview slot is booked and confirmed on your calendar with the date, time, and any preparation requirements noted. You have reviewed your application, noted what has changed since submission, and prepared key metrics to discuss. All co-founders who will attend are confirmed and have reviewed the application.\",\n  \"draft\": \"Hi Amira, Thanks for the invitation to interview for Gulf Launchpad cohort 9. I've reviewed the scheduling link and will book a slot by end of day tomorrow. Looking forward to the conversation. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "830acd2b5d25509f8b4cd6e03a757d4e6ded85f6ad795a20e42c2c3ddf6acbd7": {
+  "framed": true,
+  "input_tokens": 14656,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2906,
+  "parsed": {
+   "alternative": "Wait for the programme's published decision date without verifying the receipt, on the assumption that a confirmation mail will arrive or the application is in the system. This is lower-cost but higher-risk if the application did not submit.",
+   "appraisal": {
+    "reasons": [
+     "The application is one of several programmes the founder is pursuing; a miss here does not end the fundraising round",
+     "If the application did not submit, resubmission is possible before the deadline, but only if the deadline has not yet passed",
+     "A wrong move now \u2014 chasing the programme before its decision date \u2014 is reversible but costs the relationship and gains no information",
+     "The programme's own calendar is the only reliable guide; without it, the file cannot be scheduled correctly"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "A confirmation mail from Gulf Launchpad is on the file with a receipt and a copy of the application, or the programme's portal shows the application was received; the programme's published deadline and decision date are on the file; the file is scheduled to the programme's calendar, not the founder's clock.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The application was submitted on 2026-08-26 at 08:00 UTC; no confirmation mail has been received as of 2026-08-26 18:00 UTC; the programme has not replied; the file is quiet for 0.42 days",
+    "expected": "The application window is open or has just closed; the programme is gathering applications and has not yet begun review; the next event is the programme's published deadline passing and review beginning; the founder should have received a confirmation mail with a copy of the application and a receipt",
+    "stage": "applied"
+   },
+   "facts": [
+    {
+     "claim": "Arjun submitted an application to Gulf Launchpad on 2026-08-26 at 08:00 UTC",
+     "evidence": [
+      "evt_#1",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": "we've submitted the application form"
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days since submission",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Gulf Launchpad is on the watchlist as an accelerator the founder is tracking",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#31"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise or deadline was found in Gulf Launchpad's mail",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The mailbox has been read through 2026-08-26 18:00 UTC with no reply since the submission",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is program, and Gulf Launchpad is an accelerator",
+     "evidence": [
+      "file:kind",
+      "brief:cbl_#31"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An application submitted to an accelerator programme, now in the applied stage, waiting for the programme's window to close and review to begin on its own published calendar",
+    "rivals": [
+     "A stalled investor conversation that needs follow-up to stay warm",
+     "A compliance task that requires immediate action to meet a deadline"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The programme's own website or the confirmation mail to Arjun should carry the deadline date and the expected decision date",
+     "proposition": "Gulf Launchpad has published a deadline and review timeline for cohort 9"
+    },
+    {
+     "needs": "A search of the mailbox for a mail from gulflaunchpad.test with subject line containing 'confirm' or 'receipt' or 'application' sent after 2026-08-26 08:00 UTC",
+     "proposition": "The confirmation mail from Gulf Launchpad arrived and is in the mailbox"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "The application is in the applied stage, waiting for the programme's window to close and review to begin"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "The programme's silence at this point carries no information about the application's merit or status"
+    },
+    {
+     "based_on": [
+      "inference:1",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "The next move is the programme's: to close its application window and begin review on its own published calendar"
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-27",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.follow_an_application",
+     "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:4",
+     "fact:5",
+     "inference:1",
+     "unknown:2",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "Verify that the application was received by Gulf Launchpad and identify the programme's published deadline and decision date",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "The receipt of an application is the only thing to verify at this stage; without a confirmation, the application may not have submitted",
+     "kind": "practice",
+     "why": "A programme's own confirmation mail or portal status is the proof that the application entered the system; without it, resubmission is necessary"
+    },
+    {
+     "claim": "Most accelerators in India and the Gulf publish their application deadlines and review timelines; the programme's own published dates are the only reliable guide",
+     "kind": "base_rate",
+     "why": "Programmes operate on fixed cohort calendars and do not respond to individual applicants' urgency; their published dates are binding"
+    },
+    {
+     "claim": "A founder who chases an application before the programme's published decision date typically damages the relationship without gaining information",
+     "kind": "counter_pattern",
+     "why": "The programme has committed to a calendar and will answer on it; a chase reads as pressure on a process that treats all applicants equally"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A programme that reads applications as a batch answers on its own published calendar, not on the applicant's clock",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "An application in the applied stage typically waits for the programme's deadline to pass before review begins, typically around 14 days",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+      "cap:founder_office.programs_and_applications.program_applications#f2"
+     ],
+     "claim": "A programme's silence before its published decision date is not a no and does not warrant follow-up",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#31"
+    ],
+    "kind": "program",
+    "why": "The file is explicitly named as a programme application in the brief, and Gulf Launchpad is an accelerator with a published cohort model"
+   },
+   "scenarios": {
+    "act": "Verify that a confirmation mail was received from Gulf Launchpad; if not, check the programme's portal or website to confirm the application was received; if the application did not submit, resubmit before the deadline. Identify the programme's published deadline and decision date and add them to the file.",
+    "best": "A confirmation mail arrives from Gulf Launchpad with a copy of the application and a receipt; the programme's deadline and decision date are clear; the application is in the system and will be reviewed on schedule; the founder waits for the programme's decision date without further action.",
+    "do_nothing": "The file remains in applied stage. If Gulf Launchpad's deadline has not yet passed, the application waits for the window to close and review to begin on the programme's calendar. If the deadline has passed, the application enters under_review and the founder waits for the programme's published decision date. If no confirmation mail was received, the application may not have submitted, and the deadline may pass without the application being in the system.",
+    "signals_to_watch": [
+     "A confirmation mail from Gulf Launchpad arrives with a receipt and a copy of the application",
+     "The programme's published deadline passes and the application moves to under_review",
+     "The programme's published decision date arrives and a decision mail is received",
+     "The programme sends an eligibility check or a request for a missing document, signaling that review has begun"
+    ],
+    "worst": "No confirmation mail arrives; the application did not submit; the deadline passes without the application being in the system; the founder misses the cohort and must wait for the next intake."
+   },
+   "unknowns": [
+    {
+     "question": "What is Gulf Launchpad's published deadline for cohort 9 applications, and when does the programme say it will begin review?",
+     "relevance": "The programme's own calendar is the only reliable guide to when the next move is due; without it, the file cannot be scheduled correctly"
+    },
+    {
+     "question": "Did Gulf Launchpad send a confirmation mail with a copy of the application and a receipt?",
+     "relevance": "Without a confirmation, the application may not have submitted; a re-submission may be necessary before the deadline"
+    },
+    {
+     "question": "What is the typical cohort size and selection process for Gulf Launchpad, and does it write only to applicants it wants to interview?",
+     "relevance": "If the programme writes only to selected applicants, silence after the decision date is the answer; if it writes to all, silence is not yet an answer"
+    }
+   ],
+   "wait_or_stop": "Wait until the programme's published deadline has passed and review has begun (under_review stage). Stop if the deadline has passed and no confirmation mail has arrived; resubmit immediately if the deadline is still open. Do not chase the programme before its published decision date."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Arjun submitted an application to Gulf Launchpad on 2026-08-26 at 08:00 UTC\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"we've submitted the application form\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days since submission\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Gulf Launchpad is on the watchlist as an accelerator the founder is tracking\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#31\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise or deadline was found in Gulf Launchpad's mail\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The mailbox has been read through 2026-08-26 18:00 UTC with no reply since the submission\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is program, and Gulf Launchpad is an accelerator\",\n      \"evidence\": [\n        \"file:kind\",\n        \"brief:cbl_#31\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The application is in the applied stage, waiting for the programme's window to close and review to begin\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"claim\": \"The programme's silence at this point carries no information about the application's merit or status\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is the programme's: to close its application window and begin review on its own published calendar\",\n      \"based_on\": [\n        \"inference:1\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme that reads applications as a batch answers on its own published calendar, not on the applicant's clock\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An application in the applied stage typically waits for the programme's deadline to pass before review begins, typically around 14 days\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme's silence before its published decision date is not a no and does not warrant follow-up\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n        \"cap:founder_office.programs_and_applications.program_applications#f2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The receipt of an application is the only thing to verify at this stage; without a confirmation, the application may not have submitted\",\n      \"why\": \"A programme's own confirmation mail or portal status is the proof that the application entered the system; without it, resubmission is necessary\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most accelerators in India and the Gulf publish their application deadlines and review timelines; the programme's own published dates are the only reliable guide\",\n      \"why\": \"Programmes operate on fixed cohort calendars and do not respond to individual applicants' urgency; their published dates are binding\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who chases an application before the programme's published decision date typically damages the relationship without gaining information\",\n      \"why\": \"The programme has committed to a calendar and will answer on it; a chase reads as pressure on a process that treats all applicants equally\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Gulf Launchpad has published a deadline and review timeline for cohort 9\",\n      \"needs\": \"The programme's own website or the confirmation mail to Arjun should carry the deadline date and the expected decision date\"\n    },\n    {\n      \"proposition\": \"The confirmation mail from Gulf Launchpad arrived and is in the mailbox\",\n      \"needs\": \"A search of the mailbox for a mail from gulflaunchpad.test with subject line containing 'confirm' or 'receipt' or 'application' sent after 2026-08-26 08:00 UTC\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Gulf Launchpad's published deadline for cohort 9 applications, and when does the programme say it will begin review?\",\n      \"relevance\": \"The programme's own calendar is the only reliable guide to when the next move is due; without it, the file cannot be scheduled correctly\"\n    },\n    {\n      \"question\": \"Did Gulf Launchpad send a confirmation mail with a copy of the application and a receipt?\",\n      \"relevance\": \"Without a confirmation, the application may not have submitted; a re-submission may be necessary before the deadline\"\n    },\n    {\n      \"question\": \"What is the typical cohort size and selection process for Gulf Launchpad, and does it write only to applicants it wants to interview?\",\n      \"relevance\": \"If the programme writes only to selected applicants, silence after the decision date is the answer; if it writes to all, silence is not yet an answer\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An application submitted to an accelerator programme, now in the applied stage, waiting for the programme's window to close and review to begin on its own published calendar\",\n    \"rivals\": [\n      \"A stalled investor conversation that needs follow-up to stay warm\",\n      \"A compliance task that requires immediate action to meet a deadline\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is explicitly named as a programme application in the brief, and Gulf Launchpad is an accelerator with a published cohort model\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#31\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"applied\",\n    \"expected\": \"The application window is open or has just closed; the programme is gathering applications and has not yet begun review; the next event is the programme's published deadline passing and review beginning; the founder should have received a confirmation mail with a copy of the application and a receipt\",\n    \"actual\": \"The application was submitted on 2026-08-26 at 08:00 UTC; no confirmation mail has been received as of 2026-08-26 18:00 UTC; the programme has not replied; the file is quiet for 0.42 days\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains in applied stage. If Gulf Launchpad's deadline has not yet passed, the application waits for the window to close and review to begin on the programme's calendar. If the deadline has passed, the application enters under_review and the founder waits for the programme's published decision date. If no confirmation mail was received, the application may not have submitted, and the deadline may pass without the application being in the system.\",\n    \"act\": \"Verify that a confirmation mail was received from Gulf Launchpad; if not, check the programme's portal or website to confirm the application was received; if the application did not submit, resubmit before the deadline. Identify the programme's published deadline and decision date and add them to the file.\",\n    \"best\": \"A confirmation mail arrives from Gulf Launchpad with a copy of the application and a receipt; the programme's deadline and decision date are clear; the application is in the system and will be reviewed on schedule; the founder waits for the programme's decision date without further action.\",\n    \"worst\": \"No confirmation mail arrives; the application did not submit; the deadline passes without the application being in the system; the founder misses the cohort and must wait for the next intake.\",\n    \"signals_to_watch\": [\n      \"A confirmation mail from Gulf Launchpad arrives with a receipt and a copy of the application\",\n      \"The programme's published deadline passes and the application moves to under_review\",\n      \"The programme's published decision date arrives and a decision mail is received\",\n      \"The programme sends an eligibility check or a request for a missing document, signaling that review has begun\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The application is one of several programmes the founder is pursuing; a miss here does not end the fundraising round\",\n      \"If the application did not submit, resubmission is possible before the deadline, but only if the deadline has not yet passed\",\n      \"A wrong move now \u2014 chasing the programme before its decision date \u2014 is reversible but costs the relationship and gains no information\",\n      \"The programme's own calendar is the only reliable guide; without it, the file cannot be scheduled correctly\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Verify that the application was received by Gulf Launchpad and identify the programme's published deadline and decision date\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-08-27\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:4\",\n      \"fact:5\",\n      \"inference:1\",\n      \"unknown:2\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.follow_an_application\",\n      \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Wait for the programme's published decision date without verifying the receipt, on the assumption that a confirmation mail will arrive or the application is in the system. This is lower-cost but higher-risk if the application did not submit.\",\n  \"wait_or_stop\": \"Wait until the programme's published deadline has passed and review has begun (under_review stage). Stop if the deadline has passed and no confirmation mail has arrived; resubmit immediately if the deadline is still open. Do not chase the programme before its published decision date.\",\n  \"done_when\": \"A confirmation mail from Gulf Launchpad is on the file with a receipt and a copy of the application, or the programme's portal shows the application was received; the programme's published deadline and decision date are on the file; the file is scheduled to the programme's calendar, not the founder's clock.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "e3df5ffa1d1ca5f150692208f75a57d3aca408dcb727f7e93529bd14ef8adb31": {
+  "framed": true,
+  "input_tokens": 14924,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3236,
+  "parsed": {
+   "alternative": "If the scheduling link is broken or inaccessible, reply to Amira Saleh at amira@gulflaunchpad.test immediately, stating that the link is not working and asking for an alternative way to book the slot or for a direct calendar link.",
+   "appraisal": {
+    "reasons": [
+     "The company is raising the seed round, and Gulf Launchpad is an active programme in the brief's goals.",
+     "The interview is the company's opportunity to advance in the selection process; missing the deadline loses the interview and the cohort.",
+     "The deadline is fixed and will not move for this company; once it passes, the opportunity is gone until the next intake.",
+     "The company has approximately nine days to act, which is a narrow window.",
+     "An interview slot, once lost, cannot be recovered in this cohort."
+    ],
+    "reversibility": "irreversible",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "The interview slot is booked and confirmed by Gulf Launchpad. A calendar entry shows the date and time of the interview. The founder has reviewed the application, noted what has changed since submission, and prepared a two-sentence answer to 'What is your company working on?'",
+   "draft": "Hi Amira, Thanks for the invitation to interview for Gulf Launchpad cohort 9. I've booked a 30-minute slot using the scheduling link. Looking forward to the conversation. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "Gulf Launchpad sent an invitation to interview on 2026-10-01 07:30 UTC, asking the company to book a slot by 10 Oct using a scheduling link. No confirmation has been received that the slot has been booked. The company has not yet replied to the invitation.",
+    "expected": "The company should book a 30-minute interview slot by the programme's deadline. The playbook expects the company to book by the date given, prepare by reviewing the application and noting changes since submission, and attend with all founders present. The interview typically lasts 20 to 30 minutes, and the programme may ask about the company's progress since applying.",
+    "stage": "interview"
+   },
+   "facts": [
+    {
+     "claim": "Gulf Launchpad invited the company to interview on 2026-10-01 07:30 UTC, asking to book a 30-minute slot by a deadline.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Your application has moved to the interview stage. Please book a 30-minute slot using the scheduling link by 10 Oct."
+    },
+    {
+     "claim": "The company submitted its application to Gulf Launchpad on 2026-08-26 08:00 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "we've submitted the application form"
+    },
+    {
+     "claim": "The file has been quiet for 0.44 days since the last mail from Gulf Launchpad.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Gulf Launchpad's previous reply took 35.98 days from the company's submission.",
+     "evidence": [
+      "num:their_reply_time:amira@gulflaunchpad.test",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as a program application, and Gulf Launchpad is on the watchlist.",
+     "evidence": [
+      "file:kind",
+      "file:role",
+      "brief:cbl_#14"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The open ask is that the company must book an interview slot by 10 Oct 2026.",
+     "evidence": [
+      "loop:loop_#1",
+      "evt_#1"
+     ],
+     "quote": "Please book a 30-minute slot using the scheduling link by 10 Oct"
+    }
+   ],
+   "frames": {
+    "primary": "The company has advanced from application to interview in Gulf Launchpad's cohort 9 selection process. The next move is the company's: to book the interview slot by the deadline of 10 Oct 2026. This is a time-bound, binary action that cannot be recovered if missed.",
+    "rivals": [
+     "The company has already booked the slot and is now in preparation mode, waiting for the interview date.",
+     "The company is in a holding pattern, waiting for Gulf Launchpad to provide additional information or confirm the booking.",
+     "The invitation is a soft signal and the company has discretion over whether and when to book."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A confirmation from the founder or a calendar entry showing the slot booked.",
+     "proposition": "The company has already booked the interview slot and the file is simply waiting for the interview date."
+    },
+    {
+     "needs": "Confirmation from the founder of the current status of the booking.",
+     "proposition": "The company has not yet booked the slot and is at risk of missing the deadline."
+    },
+    {
+     "needs": "The founder attempting to use the link and reporting whether it works.",
+     "proposition": "The scheduling link in the invitation is broken or inaccessible, preventing the company from booking."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:6"
+     ],
+     "claim": "The company is now in the interview stage of Gulf Launchpad's selection process, and the next move is the company's: to book the interview slot before the deadline."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "The deadline of 10 Oct 2026 is a fixed point that will not move for this application, and missing it would mean losing the interview opportunity in this cohort."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:6"
+     ],
+     "claim": "The company has approximately nine days from the mail date (2026-10-01) to book the slot, which is within the typical interview stage window."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-02",
+    "for_whom": "Gulf Launchpad, for the interview in cohort 9",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:6",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "Book the interview slot using the scheduling link in Gulf Launchpad's mail, confirm the booking, and prepare for the interview by reviewing the application and noting what has changed since 2026-08-26.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An interview invitation with a booking deadline requires immediate action; the slot should be booked within one business day of receiving the invitation to secure the preferred time.",
+     "kind": "practice",
+     "why": "Interview slots fill quickly, and booking early signals seriousness to the programme. A delay risks losing the preferred time or, worse, missing the deadline entirely."
+    },
+    {
+     "claim": "Founders often delay booking interview slots because the invitation feels like a soft commitment rather than a hard deadline, and this delay costs the slot or the interview itself.",
+     "kind": "base_rate",
+     "why": "The programme has moved the company forward; the company's move is now binary and time-bound. Treating it as optional or deferrable is the most common way to lose an interview that was already won."
+    },
+    {
+     "claim": "Before the interview, the founder should prepare by reviewing what was written in the application, noting what has changed since submission, and preparing a two-sentence answer to 'What is your company working on?'",
+     "kind": "practice",
+     "why": "The programme has read the application and will ask about it. The founder's edge is showing progress since the application went in, and that requires knowing what was claimed and what is now true."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.prepare_for_the_interview"
+     ],
+     "claim": "A programme's invitation to interview carries a date to book by, and that date is a deadline, not a suggestion.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "An interview slot left unbooked by the programme's date is lost on a date rather than on merit.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A programme that reads applications as a batch answers on its own published calendar; its quiet before the published decision date is not a no.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#14",
+     "evt_#1"
+    ],
+    "kind": "program",
+    "why": "The file is explicitly marked as a program application in the brief, Gulf Launchpad is listed as an accelerator the company applied to, and the mail is from a programme manager inviting the company to interview as part of a cohort selection process."
+   },
+   "scenarios": {
+    "act": "The company books the interview slot immediately, prepares by reviewing the application and noting progress since 2026-08-26, and attends the interview with all founders present. Gulf Launchpad conducts the interview and makes a decision within its published timeline.",
+    "best": "The company books the slot within one business day, prepares thoroughly, attends the interview with strong progress to report, and receives an invitation to the next round or an offer.",
+    "do_nothing": "The company misses the 10 Oct deadline to book the slot. Gulf Launchpad moves the company to the next cohort or declines the application. The interview opportunity is lost, and the company must re-apply at the next intake.",
+    "signals_to_watch": [
+     "Confirmation that the interview slot has been booked (calendar entry, confirmation email from Gulf Launchpad).",
+     "The date and time of the booked interview.",
+     "Any follow-up mail from Gulf Launchpad asking for additional information or documents before the interview.",
+     "Any change to the deadline or the scheduling link."
+    ],
+    "worst": "The company delays booking, misses the deadline, and loses the interview. Gulf Launchpad declines the application or moves it to the next cohort without an interview."
+   },
+   "unknowns": [
+    {
+     "question": "Has the company already booked the interview slot, or is it still open?",
+     "relevance": "If booked, the file moves to preparation; if not, the company is at immediate risk of missing the deadline and losing the interview."
+    },
+    {
+     "question": "What is the exact time zone of the 10 Oct deadline, and what time on 10 Oct does it close?",
+     "relevance": "The deadline's precision determines how much time remains and whether the company is already past it or still has hours to act."
+    },
+    {
+     "question": "What has changed in the company's product, traction, or team since the application was submitted on 2026-08-26?",
+     "relevance": "The interview will ask about progress since the application. Knowing what to highlight is the founder's preparation."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline of 10 Oct 2026 is fixed and will not move. Book the slot by 2026-10-02 to secure the preferred time and signal seriousness to the programme. If the slot cannot be booked by 2026-10-03, contact Gulf Launchpad to confirm the deadline and ask for an alternative booking method. If the deadline passes without a booked slot, the interview is lost for this cohort."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Gulf Launchpad invited the company to interview on 2026-10-01 07:30 UTC, asking to book a 30-minute slot by a deadline.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Your application has moved to the interview stage. Please book a 30-minute slot using the scheduling link by 10 Oct.\"\n    },\n    {\n      \"claim\": \"The company submitted its application to Gulf Launchpad on 2026-08-26 08:00 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"we've submitted the application form\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.44 days since the last mail from Gulf Launchpad.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Gulf Launchpad's previous reply took 35.98 days from the company's submission.\",\n      \"evidence\": [\n        \"num:their_reply_time:amira@gulflaunchpad.test\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as a program application, and Gulf Launchpad is on the watchlist.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\",\n        \"brief:cbl_#14\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The open ask is that the company must book an interview slot by 10 Oct 2026.\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"evt_#1\"\n      ],\n      \"quote\": \"Please book a 30-minute slot using the scheduling link by 10 Oct\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The company is now in the interview stage of Gulf Launchpad's selection process, and the next move is the company's: to book the interview slot before the deadline.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"claim\": \"The deadline of 10 Oct 2026 is a fixed point that will not move for this application, and missing it would mean losing the interview opportunity in this cohort.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"claim\": \"The company has approximately nine days from the mail date (2026-10-01) to book the slot, which is within the typical interview stage window.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:6\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme's invitation to interview carries a date to book by, and that date is a deadline, not a suggestion.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.prepare_for_the_interview\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An interview slot left unbooked by the programme's date is lost on a date rather than on merit.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A programme that reads applications as a batch answers on its own published calendar; its quiet before the published decision date is not a no.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An interview invitation with a booking deadline requires immediate action; the slot should be booked within one business day of receiving the invitation to secure the preferred time.\",\n      \"why\": \"Interview slots fill quickly, and booking early signals seriousness to the programme. A delay risks losing the preferred time or, worse, missing the deadline entirely.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founders often delay booking interview slots because the invitation feels like a soft commitment rather than a hard deadline, and this delay costs the slot or the interview itself.\",\n      \"why\": \"The programme has moved the company forward; the company's move is now binary and time-bound. Treating it as optional or deferrable is the most common way to lose an interview that was already won.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Before the interview, the founder should prepare by reviewing what was written in the application, noting what has changed since submission, and preparing a two-sentence answer to 'What is your company working on?'\",\n      \"why\": \"The programme has read the application and will ask about it. The founder's edge is showing progress since the application went in, and that requires knowing what was claimed and what is now true.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The company has already booked the interview slot and the file is simply waiting for the interview date.\",\n      \"needs\": \"A confirmation from the founder or a calendar entry showing the slot booked.\"\n    },\n    {\n      \"proposition\": \"The company has not yet booked the slot and is at risk of missing the deadline.\",\n      \"needs\": \"Confirmation from the founder of the current status of the booking.\"\n    },\n    {\n      \"proposition\": \"The scheduling link in the invitation is broken or inaccessible, preventing the company from booking.\",\n      \"needs\": \"The founder attempting to use the link and reporting whether it works.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the company already booked the interview slot, or is it still open?\",\n      \"relevance\": \"If booked, the file moves to preparation; if not, the company is at immediate risk of missing the deadline and losing the interview.\"\n    },\n    {\n      \"question\": \"What is the exact time zone of the 10 Oct deadline, and what time on 10 Oct does it close?\",\n      \"relevance\": \"The deadline's precision determines how much time remains and whether the company is already past it or still has hours to act.\"\n    },\n    {\n      \"question\": \"What has changed in the company's product, traction, or team since the application was submitted on 2026-08-26?\",\n      \"relevance\": \"The interview will ask about progress since the application. Knowing what to highlight is the founder's preparation.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"The company has advanced from application to interview in Gulf Launchpad's cohort 9 selection process. The next move is the company's: to book the interview slot by the deadline of 10 Oct 2026. This is a time-bound, binary action that cannot be recovered if missed.\",\n    \"rivals\": [\n      \"The company has already booked the slot and is now in preparation mode, waiting for the interview date.\",\n      \"The company is in a holding pattern, waiting for Gulf Launchpad to provide additional information or confirm the booking.\",\n      \"The invitation is a soft signal and the company has discretion over whether and when to book.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is explicitly marked as a program application in the brief, Gulf Launchpad is listed as an accelerator the company applied to, and the mail is from a programme manager inviting the company to interview as part of a cohort selection process.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#14\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"interview\",\n    \"expected\": \"The company should book a 30-minute interview slot by the programme's deadline. The playbook expects the company to book by the date given, prepare by reviewing the application and noting changes since submission, and attend with all founders present. The interview typically lasts 20 to 30 minutes, and the programme may ask about the company's progress since applying.\",\n    \"actual\": \"Gulf Launchpad sent an invitation to interview on 2026-10-01 07:30 UTC, asking the company to book a slot by 10 Oct using a scheduling link. No confirmation has been received that the slot has been booked. The company has not yet replied to the invitation.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The company misses the 10 Oct deadline to book the slot. Gulf Launchpad moves the company to the next cohort or declines the application. The interview opportunity is lost, and the company must re-apply at the next intake.\",\n    \"act\": \"The company books the interview slot immediately, prepares by reviewing the application and noting progress since 2026-08-26, and attends the interview with all founders present. Gulf Launchpad conducts the interview and makes a decision within its published timeline.\",\n    \"best\": \"The company books the slot within one business day, prepares thoroughly, attends the interview with strong progress to report, and receives an invitation to the next round or an offer.\",\n    \"worst\": \"The company delays booking, misses the deadline, and loses the interview. Gulf Launchpad declines the application or moves it to the next cohort without an interview.\",\n    \"signals_to_watch\": [\n      \"Confirmation that the interview slot has been booked (calendar entry, confirmation email from Gulf Launchpad).\",\n      \"The date and time of the booked interview.\",\n      \"Any follow-up mail from Gulf Launchpad asking for additional information or documents before the interview.\",\n      \"Any change to the deadline or the scheduling link.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"irreversible\",\n    \"reasons\": [\n      \"The company is raising the seed round, and Gulf Launchpad is an active programme in the brief's goals.\",\n      \"The interview is the company's opportunity to advance in the selection process; missing the deadline loses the interview and the cohort.\",\n      \"The deadline is fixed and will not move for this company; once it passes, the opportunity is gone until the next intake.\",\n      \"The company has approximately nine days to act, which is a narrow window.\",\n      \"An interview slot, once lost, cannot be recovered in this cohort.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Book the interview slot using the scheduling link in Gulf Launchpad's mail, confirm the booking, and prepare for the interview by reviewing the application and noting what has changed since 2026-08-26.\",\n    \"for_whom\": \"Gulf Launchpad, for the interview in cohort 9\",\n    \"by_when\": \"2026-10-02\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:6\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.prepare_for_the_interview\",\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the scheduling link is broken or inaccessible, reply to Amira Saleh at amira@gulflaunchpad.test immediately, stating that the link is not working and asking for an alternative way to book the slot or for a direct calendar link.\",\n  \"wait_or_stop\": \"Do not wait. The deadline of 10 Oct 2026 is fixed and will not move. Book the slot by 2026-10-02 to secure the preferred time and signal seriousness to the programme. If the slot cannot be booked by 2026-10-03, contact Gulf Launchpad to confirm the deadline and ask for an alternative booking method. If the deadline passes without a booked slot, the interview is lost for this cohort.\",\n  \"done_when\": \"The interview slot is booked and confirmed by Gulf Launchpad. A calendar entry shows the date and time of the interview. The founder has reviewed the application, noted what has changed since submission, and prepared a two-sentence answer to 'What is your company working on?'\",\n  \"draft\": \"Hi Amira, Thanks for the invitation to interview for Gulf Launchpad cohort 9. I've booked a 30-minute slot using the scheduling link. Looking forward to the conversation. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "e7dbed7ae40ce5d7fb063bd6fe26390aaeb2605bbd61e2a69c5b0e2e9565fc18": {
+  "framed": true,
+  "input_tokens": 14524,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3679,
+  "parsed": {
+   "alternative": "If the application's receipt is confirmed and Gulf Launchpad's decision date is known to be still ahead, wait for that date and do nothing until it arrives. If the decision date has passed, query the programme once through its published channel (typically a contact form or a support email) and close the file as lapsed if no reply comes within two weeks.",
+   "appraisal": {
+    "reasons": [
+     "The application is one of several programmes in motion; Gulf Launchpad is watched but not the only path to the founder's goals.",
+     "The file is in the 'applied' stage, where the programme's calendar is the only clock; there is no deadline on the founder's side until the programme's decision date arrives.",
+     "If the decision date has not yet arrived, nothing is at risk; if it has passed, the file can be closed and re-applied to the next cohort without losing the company's position.",
+     "The silence is expected at this stage and carries no information about the application's merit; a wrong move now \u2014 chasing the programme or treating the silence as a no \u2014 would damage the relationship and waste time."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The application's receipt is verified (a confirmation mail or portal status), and Gulf Launchpad's published decision date for cohort 9 is on the file. The file is then set to wait for that date, with a signal to watch for any mail from the programme or a status change on the portal.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The application was submitted on 2026-08-26 at 08:00 UTC. No reply has been received. The file has been quiet for 0.42 days. No confirmation mail or portal status is recorded in the file. No published decision date for cohort 9 is recorded in the file.",
+    "expected": "The application is submitted and the programme reads it as part of a cohort against its own published calendar. The programme's silence before its decision date is the default. The file waits for the programme's published decision date, typically fourteen days to twelve weeks after the application deadline, depending on the programme's own rule. The one thing to check at this stage is the receipt: a confirmation mail or the portal's submitted status. The stage ends when the programme's published deadline passes, or the programme shows the application is being read \u2014 a status change, an eligibility check, or a request for a missing document.",
+    "stage": "applied"
+   },
+   "facts": [
+    {
+     "claim": "You submitted an application to Gulf Launchpad on 2026-08-26 at 08:00 UTC.",
+     "evidence": [
+      "evt_#1",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": "Re: Gulf Launchpad cohort 9 Hi Amira, Thanks - we've submitted the application form. Arjun"
+    },
+    {
+     "claim": "No reply has been received from Gulf Launchpad since the submission.",
+     "evidence": [
+      "file:last_touch",
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days as of the last mailbox read at 2026-08-26 18:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Gulf Launchpad is listed as a watched accelerator in the company brief.",
+     "evidence": [
+      "brief:cbl_#31",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises or next steps were stated in the submission mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's stage is named 'applied' \u2014 in, and waiting for the window to close.",
+     "evidence": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An application to a cohort accelerator in the 'applied' stage, waiting for the programme's published decision date. The silence is expected and carries no information about the application's merit until the programme's calendar reaches its decision point.",
+    "rivals": [
+     "A stalled investor conversation where the programme has gone quiet and the founder should chase or re-engage.",
+     "A failed application where the silence is the answer and the founder should move on.",
+     "A successful submission that is now in active review, and the founder should prepare for an interview or decision."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The programme's own published timeline for cohort 9 \u2014 the application deadline, the decision date, and any intermediate milestones.",
+     "proposition": "Gulf Launchpad has a published decision date for cohort 9 that has not yet arrived."
+    },
+    {
+     "needs": "A confirmation mail from Gulf Launchpad or a status check on the programme's portal showing the application as received.",
+     "proposition": "The application was successfully submitted and is now in the programme's review queue."
+    },
+    {
+     "needs": "The programme's own published rule about how it communicates with applicants \u2014 whether it notifies all applicants or only those it wants to advance.",
+     "proposition": "Gulf Launchpad writes only to applicants it wants to advance, and silence after its response window is the answer."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "The application is in the 'applied' stage, where the programme reads applications as a batch against its own published calendar, not the applicant's."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "inference:1",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "The silence since submission is expected and carries no information about the application's merit or status until the programme's published decision date."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "inference:1"
+     ],
+     "claim": "The next move is the programme's: to read the application and communicate its decision on its own calendar."
+    },
+    {
+     "based_on": [
+      "num:days_quiet",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "The file is not dormant; it is waiting within the normal window for a cohort programme's response."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-27",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.follow_an_application",
+     "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "unknown:2",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "Verify the application's receipt and find Gulf Launchpad's published decision date for cohort 9.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "The receipt of an application \u2014 a confirmation mail or the portal's submitted status \u2014 is the only thing to verify at this stage; without it, the application may not have gone in.",
+     "kind": "practice",
+     "why": "Programmes like YC explicitly warn that without a confirmation 'you likely did not submit the application', and this is the one fact that changes the entire file."
+    },
+    {
+     "claim": "Most accelerators and incubators read applications in cohorts and answer on a published calendar that typically runs from the deadline to a decision date of four to twelve weeks later.",
+     "kind": "base_rate",
+     "why": "The programmes' own published timelines show this pattern consistently, and it is the only reliable clock for an application in the 'applied' stage."
+    },
+    {
+     "claim": "The programme's own published deadline and decision date are the only dates that matter; every other date in the plan is set backwards from the deadline, on the programme's clock.",
+     "kind": "practice",
+     "why": "The deadline is published once for every applicant and kept; everything on the company's side can move, but the deadline cannot."
+    },
+    {
+     "claim": "Chasing a programme before its published decision date, or treating its silence as a soft no, is a common error that wastes time and damages the relationship.",
+     "kind": "counter_pattern",
+     "why": "Programmes have published their calendar and committed to answering everyone; a chase before that date reads the programme as an investor, which it is not."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A cohort programme's silence before its published decision date is the default state and does not indicate rejection or lack of interest.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "Programmes that read applications as a batch publish a decision date and commit to answering all applicants by it.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "Some programmes write only to applicants they want to advance; in those cases, silence after the programme's own response window has closed is the answer.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "An application is typically lost on a date rather than on merit when the interview slot goes unbooked, a clarification goes unanswered past the programme's date, or an offer lapses before its agreement is signed.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#31",
+     "file:kind"
+    ],
+    "kind": "program",
+    "why": "The file is explicitly named as a programme application in the brief, and the playbook for programme applications governs the work. The file's kind is correct."
+   },
+   "scenarios": {
+    "act": "If you verify the application's receipt and Gulf Launchpad's published decision date, you can set a reliable clock for the file and know when to expect a decision or when to act. If the decision date has passed, you can query the programme once through its published channel and close the file as lapsed if no reply comes within two weeks. If the application was not successfully submitted, you can resubmit it before the next deadline.",
+    "best": "Gulf Launchpad's decision date has not yet arrived, the application is in active review, and a decision \u2014 an offer or an interview invitation \u2014 arrives on the programme's published date. You accept the offer in writing before its reply-by date, or prepare for the interview and attend it on the programme's scheduled date.",
+    "do_nothing": "The file remains in the 'applied' stage, waiting for Gulf Launchpad's published decision date. If the decision date has not yet arrived, the silence continues as expected. If the decision date has passed and no decision has been received, the file becomes dormant after ninety days of quiet, and the application is lost on a date rather than on merit. If the programme writes only to applicants it wants to advance, the silence after its response window is the answer, and the file should be closed as declined.",
+    "signals_to_watch": [
+     "A confirmation mail from Gulf Launchpad or a status update on the programme's portal showing the application as received.",
+     "Gulf Launchpad's published decision date for cohort 9 \u2014 when it is, and whether it has passed.",
+     "Any mail from Gulf Launchpad \u2014 an eligibility check, a request for a missing document, an interview invitation, or a decision.",
+     "The programme's published rule for communicating with applicants \u2014 whether it notifies all applicants or only those it wants to advance."
+    ],
+    "worst": "The application was not successfully submitted, and the file is premature. Or the decision date has passed, the programme writes only to applicants it wants to advance, and the silence is the answer. Or the application is lost in the programme's queue, and the file becomes dormant after ninety days of quiet without a decision."
+   },
+   "unknowns": [
+    {
+     "question": "What is Gulf Launchpad's published decision date for cohort 9?",
+     "relevance": "This date is the only reliable clock for the file; without it, the judgment of whether to act now or wait is unfounded."
+    },
+    {
+     "question": "Did the application successfully submit, and is there a confirmation mail or portal status to verify it?",
+     "relevance": "Without confirmation, the application may not have gone in at all, and the entire file is premature."
+    },
+    {
+     "question": "What is Gulf Launchpad's published rule for communicating with applicants \u2014 does it notify all applicants or only those it wants to advance?",
+     "relevance": "This determines whether silence is the default or the answer, and changes the entire frame of the file."
+    },
+    {
+     "question": "Has the application window for cohort 9 closed, or is it still open?",
+     "relevance": "If the window is still open, the file is in the 'applied' stage; if it has closed, the file may have moved to 'under_review' without the file being updated."
+    }
+   ],
+   "wait_or_stop": "Wait until Gulf Launchpad's published decision date arrives. If the decision date has passed and no decision has been received, query the programme once and wait two weeks for a reply. If no reply comes, close the file as lapsed. Do not chase the programme before its published decision date, and do not treat the silence as a no until the programme's own response window has closed."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You submitted an application to Gulf Launchpad on 2026-08-26 at 08:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"Re: Gulf Launchpad cohort 9 Hi Amira, Thanks - we've submitted the application form. Arjun\"\n    },\n    {\n      \"claim\": \"No reply has been received from Gulf Launchpad since the submission.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days as of the last mailbox read at 2026-08-26 18:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Gulf Launchpad is listed as a watched accelerator in the company brief.\",\n      \"evidence\": [\n        \"brief:cbl_#31\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises or next steps were stated in the submission mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's stage is named 'applied' \u2014 in, and waiting for the window to close.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The application is in the 'applied' stage, where the programme reads applications as a batch against its own published calendar, not the applicant's.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"claim\": \"The silence since submission is expected and carries no information about the application's merit or status until the programme's published decision date.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"inference:1\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is the programme's: to read the application and communicate its decision on its own calendar.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"The file is not dormant; it is waiting within the normal window for a cohort programme's response.\",\n      \"based_on\": [\n        \"num:days_quiet\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A cohort programme's silence before its published decision date is the default state and does not indicate rejection or lack of interest.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Programmes that read applications as a batch publish a decision date and commit to answering all applicants by it.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Some programmes write only to applicants they want to advance; in those cases, silence after the programme's own response window has closed is the answer.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An application is typically lost on a date rather than on merit when the interview slot goes unbooked, a clarification goes unanswered past the programme's date, or an offer lapses before its agreement is signed.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The receipt of an application \u2014 a confirmation mail or the portal's submitted status \u2014 is the only thing to verify at this stage; without it, the application may not have gone in.\",\n      \"why\": \"Programmes like YC explicitly warn that without a confirmation 'you likely did not submit the application', and this is the one fact that changes the entire file.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most accelerators and incubators read applications in cohorts and answer on a published calendar that typically runs from the deadline to a decision date of four to twelve weeks later.\",\n      \"why\": \"The programmes' own published timelines show this pattern consistently, and it is the only reliable clock for an application in the 'applied' stage.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The programme's own published deadline and decision date are the only dates that matter; every other date in the plan is set backwards from the deadline, on the programme's clock.\",\n      \"why\": \"The deadline is published once for every applicant and kept; everything on the company's side can move, but the deadline cannot.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing a programme before its published decision date, or treating its silence as a soft no, is a common error that wastes time and damages the relationship.\",\n      \"why\": \"Programmes have published their calendar and committed to answering everyone; a chase before that date reads the programme as an investor, which it is not.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Gulf Launchpad has a published decision date for cohort 9 that has not yet arrived.\",\n      \"needs\": \"The programme's own published timeline for cohort 9 \u2014 the application deadline, the decision date, and any intermediate milestones.\"\n    },\n    {\n      \"proposition\": \"The application was successfully submitted and is now in the programme's review queue.\",\n      \"needs\": \"A confirmation mail from Gulf Launchpad or a status check on the programme's portal showing the application as received.\"\n    },\n    {\n      \"proposition\": \"Gulf Launchpad writes only to applicants it wants to advance, and silence after its response window is the answer.\",\n      \"needs\": \"The programme's own published rule about how it communicates with applicants \u2014 whether it notifies all applicants or only those it wants to advance.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Gulf Launchpad's published decision date for cohort 9?\",\n      \"relevance\": \"This date is the only reliable clock for the file; without it, the judgment of whether to act now or wait is unfounded.\"\n    },\n    {\n      \"question\": \"Did the application successfully submit, and is there a confirmation mail or portal status to verify it?\",\n      \"relevance\": \"Without confirmation, the application may not have gone in at all, and the entire file is premature.\"\n    },\n    {\n      \"question\": \"What is Gulf Launchpad's published rule for communicating with applicants \u2014 does it notify all applicants or only those it wants to advance?\",\n      \"relevance\": \"This determines whether silence is the default or the answer, and changes the entire frame of the file.\"\n    },\n    {\n      \"question\": \"Has the application window for cohort 9 closed, or is it still open?\",\n      \"relevance\": \"If the window is still open, the file is in the 'applied' stage; if it has closed, the file may have moved to 'under_review' without the file being updated.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An application to a cohort accelerator in the 'applied' stage, waiting for the programme's published decision date. The silence is expected and carries no information about the application's merit until the programme's calendar reaches its decision point.\",\n    \"rivals\": [\n      \"A stalled investor conversation where the programme has gone quiet and the founder should chase or re-engage.\",\n      \"A failed application where the silence is the answer and the founder should move on.\",\n      \"A successful submission that is now in active review, and the founder should prepare for an interview or decision.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is explicitly named as a programme application in the brief, and the playbook for programme applications governs the work. The file's kind is correct.\",\n    \"evidence\": [\n      \"brief:cbl_#31\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"applied\",\n    \"expected\": \"The application is submitted and the programme reads it as part of a cohort against its own published calendar. The programme's silence before its decision date is the default. The file waits for the programme's published decision date, typically fourteen days to twelve weeks after the application deadline, depending on the programme's own rule. The one thing to check at this stage is the receipt: a confirmation mail or the portal's submitted status. The stage ends when the programme's published deadline passes, or the programme shows the application is being read \u2014 a status change, an eligibility check, or a request for a missing document.\",\n    \"actual\": \"The application was submitted on 2026-08-26 at 08:00 UTC. No reply has been received. The file has been quiet for 0.42 days. No confirmation mail or portal status is recorded in the file. No published decision date for cohort 9 is recorded in the file.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains in the 'applied' stage, waiting for Gulf Launchpad's published decision date. If the decision date has not yet arrived, the silence continues as expected. If the decision date has passed and no decision has been received, the file becomes dormant after ninety days of quiet, and the application is lost on a date rather than on merit. If the programme writes only to applicants it wants to advance, the silence after its response window is the answer, and the file should be closed as declined.\",\n    \"act\": \"If you verify the application's receipt and Gulf Launchpad's published decision date, you can set a reliable clock for the file and know when to expect a decision or when to act. If the decision date has passed, you can query the programme once through its published channel and close the file as lapsed if no reply comes within two weeks. If the application was not successfully submitted, you can resubmit it before the next deadline.\",\n    \"best\": \"Gulf Launchpad's decision date has not yet arrived, the application is in active review, and a decision \u2014 an offer or an interview invitation \u2014 arrives on the programme's published date. You accept the offer in writing before its reply-by date, or prepare for the interview and attend it on the programme's scheduled date.\",\n    \"worst\": \"The application was not successfully submitted, and the file is premature. Or the decision date has passed, the programme writes only to applicants it wants to advance, and the silence is the answer. Or the application is lost in the programme's queue, and the file becomes dormant after ninety days of quiet without a decision.\",\n    \"signals_to_watch\": [\n      \"A confirmation mail from Gulf Launchpad or a status update on the programme's portal showing the application as received.\",\n      \"Gulf Launchpad's published decision date for cohort 9 \u2014 when it is, and whether it has passed.\",\n      \"Any mail from Gulf Launchpad \u2014 an eligibility check, a request for a missing document, an interview invitation, or a decision.\",\n      \"The programme's published rule for communicating with applicants \u2014 whether it notifies all applicants or only those it wants to advance.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The application is one of several programmes in motion; Gulf Launchpad is watched but not the only path to the founder's goals.\",\n      \"The file is in the 'applied' stage, where the programme's calendar is the only clock; there is no deadline on the founder's side until the programme's decision date arrives.\",\n      \"If the decision date has not yet arrived, nothing is at risk; if it has passed, the file can be closed and re-applied to the next cohort without losing the company's position.\",\n      \"The silence is expected at this stage and carries no information about the application's merit; a wrong move now \u2014 chasing the programme or treating the silence as a no \u2014 would damage the relationship and waste time.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Verify the application's receipt and find Gulf Launchpad's published decision date for cohort 9.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-08-27\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"unknown:2\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.follow_an_application\",\n      \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the application's receipt is confirmed and Gulf Launchpad's decision date is known to be still ahead, wait for that date and do nothing until it arrives. If the decision date has passed, query the programme once through its published channel (typically a contact form or a support email) and close the file as lapsed if no reply comes within two weeks.\",\n  \"wait_or_stop\": \"Wait until Gulf Launchpad's published decision date arrives. If the decision date has passed and no decision has been received, query the programme once and wait two weeks for a reply. If no reply comes, close the file as lapsed. Do not chase the programme before its published decision date, and do not treat the silence as a no until the programme's own response window has closed.\",\n  \"done_when\": \"The application's receipt is verified (a confirmation mail or portal status), and Gulf Launchpad's published decision date for cohort 9 is on the file. The file is then set to wait for that date, with a signal to watch for any mail from the programme or a status change on the portal.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

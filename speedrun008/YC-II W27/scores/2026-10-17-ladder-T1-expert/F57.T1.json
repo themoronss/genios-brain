@@ -1,0 +1,944 @@
+{
+ "647cd03cee3bc0eee13be1d7f71882e38f9c0e7ff6f5c15185e988ebce289a7f": {
+  "framed": true,
+  "input_tokens": 7183,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3347,
+  "parsed": {
+   "alternative": "If the founder confirms that the NDA is ready and the deadline has not passed, send the signed NDA to Zoya today with a brief note. If the deadline has passed, send the NDA with an explanation and propose a new date for the pilot data share.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because the file is unclassified and Pinecrest's role in the company's goals is not yet known. If Pinecrest is a design partner or customer validation, the stakes are higher. If it is a low-priority exploration, they are lower.",
+     "The urgency is medium because Zoya named a deadline (Thursday), and the file is now 1.29 days old. If Thursday has not passed, the urgency is to send the NDA before then. If it has passed, the urgency is to renegotiate or explain.",
+     "A wrong move is reversible: if you send the NDA late, you can explain the delay. If you do not send it, you can still send it later. The relationship is new, so there is no prior trust to damage beyond the first impression."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The NDA is signed and sent to Zoya, and Zoya confirms receipt or sends a signed copy back. The pilot data share proceeds, or Pinecrest confirms the next step.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The file is now 1.29 days old, and no reply has been sent. The deadline (Thursday) is not dated in the dossier, so it is not known whether it has passed. The ball remains in our court.",
+    "expected": "Without a playbook, the expectation comes from the brief and the file's own history. The brief names no role for Pinecrest. The file's first touch is a request for a signed NDA by Thursday. The expected next move is to sign and send the NDA before the deadline, or to renegotiate the deadline if it cannot be met.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Zoya Hameed at Pinecrest asked for a signed mutual NDA to be sent by Thursday so they can share pilot data.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you send the signed mutual NDA by Thursday so we can share the pilot data?"
+    },
+    {
+     "claim": "The file records two open asks: a question and a request for information, both waiting on us since 2026-09-01 05:00 UTC.",
+     "evidence": [
+      "loop:loop_#1",
+      "loop:loop_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.29 days as of 2026-09-02 12:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first and only touch in the file; no prior history with Pinecrest is recorded.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for Pinecrest; the file is unclassified.",
+     "evidence": [
+      "file:kind",
+      "file:role",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we hold the open asks and have not yet replied.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A first-touch vendor or partner relationship in which the counterparty has asked for a specific deliverable by a named deadline, and the ball is in our court. The file is unclassified and has no playbook, so the founder has not yet decided what this relationship is for.",
+    "rivals": [
+     "A test of responsiveness from a potential investor or program partner, disguised as a pilot data request.",
+     "A low-priority exploration that the founder has not yet triaged, and the deadline has already passed.",
+     "A design partner or customer validation opportunity that is material to the company's goals but has not been connected to them in the brief."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder of who Pinecrest is, how they were introduced, and what the pilot is for.",
+     "proposition": "Pinecrest is a potential design partner or pilot customer, and the NDA is the gate to a pilot engagement."
+    },
+    {
+     "needs": "The actual date of Zoya's message and the calendar date of the Thursday she named.",
+     "proposition": "The Thursday deadline has already passed, and the file is now overdue."
+    },
+    {
+     "needs": "Confirmation that the NDA has been drafted, reviewed, and signed.",
+     "proposition": "The NDA is already signed and ready to send, and the delay is only in the founder's inbox."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#1"
+     ],
+     "claim": "Zoya's message names a deadline \u2014 Thursday \u2014 but the dossier does not record which Thursday or whether it has passed."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The open asks in the file are the NDA signature and the pilot data share, both contingent on our delivery of the signed NDA."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "brief:company"
+     ],
+     "claim": "No playbook exists for this work because the brief does not name Pinecrest's role in any of the founder's stated goals: raising, programs, compliance, hiring, or design partners."
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "sit:sit_#1"
+     ],
+     "claim": "The file's domain is admin, and the situation is account_admin, suggesting this is a vendor or partner relationship in its early stage, not yet classified by the founder."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-02",
+    "for_whom": "the founder",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#q",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "unknown:3",
+     "unknown:4"
+    ],
+    "to": null,
+    "what": "confirm with the founder whether the NDA is ready to sign, who Pinecrest is, what the pilot is for, and whether the Thursday deadline has passed or is still open",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A request for a signed document with a named deadline should be answered within one business day, or the deadline should be renegotiated before it passes.",
+     "kind": "practice",
+     "why": "Silence on a time-bound ask signals either that the deadline was missed or that the ask was not understood as binding. Either reading damages trust."
+    },
+    {
+     "claim": "Pilot data shares are usually contingent on legal alignment; an NDA is the gate, not the goal.",
+     "kind": "base_rate",
+     "why": "The counterparty is not asking for the NDA for its own sake; they are asking for it so they can move to the next step. Holding the NDA holds the entire thread."
+    },
+    {
+     "claim": "A first message from an unknown counterparty that names a specific deliverable and a deadline is often a test of responsiveness, not a casual request.",
+     "kind": "counter_pattern",
+     "why": "Early-stage relationships are judged on speed and clarity. A slow or unclear reply to a first ask sets the tone for the entire relationship."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#q"
+     ],
+     "claim": "A written ask with a named deadline usually expects a reply before that deadline passes.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1",
+      "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball"
+     ],
+     "claim": "Chasing a counterparty for movement while the ball is in our court damages the relationship and reads as either incompetence or pressure.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "fact:5"
+     ],
+     "claim": "A first touch from an unclassified counterparty with a specific deliverable ask is usually a vendor, partner, or pilot opportunity.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "file:domains",
+     "sit:sit_#1"
+    ],
+    "kind": "partner",
+    "why": "Pinecrest is asking to share pilot data, which suggests a design partner or pilot customer relationship. The NDA is the gate to that engagement. The file's domain is admin, and the situation is account_admin, consistent with a live vendor or partner relationship."
+   },
+   "scenarios": {
+    "act": "If you act now, you will send the signed NDA to Zoya before Thursday (if Thursday has not passed) or with an explanation and a new date (if it has). This will unblock the pilot data share and signal responsiveness to Pinecrest.",
+    "best": "The NDA is ready to sign, you sign and send it today, Pinecrest receives it before Thursday, and the pilot data share proceeds on schedule. The relationship is established as responsive and professional.",
+    "do_nothing": "If nothing is done, the file will grow quiet. After 3 days, it will have been quiet 4.3 days. After 7 days, 8.3 days. After 14 days, 15.3 days. The playbook names no stop rule, so it is not known whether the work will go dormant or whether Pinecrest will follow up. If the Thursday deadline has passed, silence signals that the NDA was not signed, and Pinecrest may assume the founder is not interested in the pilot.",
+    "signals_to_watch": [
+     "Whether Zoya replies to the NDA with a signed copy or with a follow-up question.",
+     "Whether Zoya sends a follow-up message asking about the NDA before you send it.",
+     "Whether the pilot data share proceeds on schedule after the NDA is signed.",
+     "Whether Pinecrest is named in the brief as a design partner or pilot customer after this exchange."
+    ],
+    "worst": "The Thursday deadline has passed, you send the NDA late with no explanation, Pinecrest interprets the delay as disinterest or incompetence, and the pilot is cancelled or deprioritized. The relationship is damaged before it begins."
+   },
+   "unknowns": [
+    {
+     "question": "Who is Pinecrest, and how were they introduced to the founder?",
+     "relevance": "The brief does not name Pinecrest as a design partner, vendor, or program. If they are a new opportunity, the founder may not have prioritized them. If they are a known contact, the delay may signal a different problem."
+    },
+    {
+     "question": "What is the pilot, and what does it mean for the company's goals?",
+     "relevance": "If the pilot is a design partner engagement or a customer validation, it could be material to raising or product-market fit. If it is a low-priority exploration, the urgency changes."
+    },
+    {
+     "question": "Has the Thursday deadline passed?",
+     "relevance": "If the deadline has passed, the file is overdue and requires a renegotiation or an explanation, not a silent send. If it has not passed, the move is to send the NDA before Thursday."
+    },
+    {
+     "question": "Is the NDA ready to sign, or does it require legal review or negotiation?",
+     "relevance": "If the NDA is ready, the move is to sign and send it today. If it requires review, the move is to find out what is blocking it and renegotiate the deadline."
+    }
+   ],
+   "wait_or_stop": "Wait for the founder's confirmation on the NDA status and the deadline. Do not send the NDA without confirmation, and do not chase Pinecrest for a follow-up. If the founder does not respond by end of day 2026-09-02, send the NDA if it is ready, or send Zoya a note explaining the delay and proposing a new date."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Zoya Hameed at Pinecrest asked for a signed mutual NDA to be sent by Thursday so they can share pilot data.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you send the signed mutual NDA by Thursday so we can share the pilot data?\"\n    },\n    {\n      \"claim\": \"The file records two open asks: a question and a request for information, both waiting on us since 2026-09-01 05:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"loop:loop_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.29 days as of 2026-09-02 12:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first and only touch in the file; no prior history with Pinecrest is recorded.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for Pinecrest; the file is unclassified.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we hold the open asks and have not yet replied.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Zoya's message names a deadline \u2014 Thursday \u2014 but the dossier does not record which Thursday or whether it has passed.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The open asks in the file are the NDA signature and the pilot data share, both contingent on our delivery of the signed NDA.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"No playbook exists for this work because the brief does not name Pinecrest's role in any of the founder's stated goals: raising, programs, compliance, hiring, or design partners.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"brief:company\"\n      ]\n    },\n    {\n      \"claim\": \"The file's domain is admin, and the situation is account_admin, suggesting this is a vendor or partner relationship in its early stage, not yet classified by the founder.\",\n      \"based_on\": [\n        \"file:domains\",\n        \"sit:sit_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A written ask with a named deadline usually expects a reply before that deadline passes.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#q\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing a counterparty for movement while the ball is in our court damages the relationship and reads as either incompetence or pressure.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\",\n        \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A first touch from an unclassified counterparty with a specific deliverable ask is usually a vendor, partner, or pilot opportunity.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"fact:5\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A request for a signed document with a named deadline should be answered within one business day, or the deadline should be renegotiated before it passes.\",\n      \"why\": \"Silence on a time-bound ask signals either that the deadline was missed or that the ask was not understood as binding. Either reading damages trust.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Pilot data shares are usually contingent on legal alignment; an NDA is the gate, not the goal.\",\n      \"why\": \"The counterparty is not asking for the NDA for its own sake; they are asking for it so they can move to the next step. Holding the NDA holds the entire thread.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A first message from an unknown counterparty that names a specific deliverable and a deadline is often a test of responsiveness, not a casual request.\",\n      \"why\": \"Early-stage relationships are judged on speed and clarity. A slow or unclear reply to a first ask sets the tone for the entire relationship.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Pinecrest is a potential design partner or pilot customer, and the NDA is the gate to a pilot engagement.\",\n      \"needs\": \"Confirmation from the founder of who Pinecrest is, how they were introduced, and what the pilot is for.\"\n    },\n    {\n      \"proposition\": \"The Thursday deadline has already passed, and the file is now overdue.\",\n      \"needs\": \"The actual date of Zoya's message and the calendar date of the Thursday she named.\"\n    },\n    {\n      \"proposition\": \"The NDA is already signed and ready to send, and the delay is only in the founder's inbox.\",\n      \"needs\": \"Confirmation that the NDA has been drafted, reviewed, and signed.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Who is Pinecrest, and how were they introduced to the founder?\",\n      \"relevance\": \"The brief does not name Pinecrest as a design partner, vendor, or program. If they are a new opportunity, the founder may not have prioritized them. If they are a known contact, the delay may signal a different problem.\"\n    },\n    {\n      \"question\": \"What is the pilot, and what does it mean for the company's goals?\",\n      \"relevance\": \"If the pilot is a design partner engagement or a customer validation, it could be material to raising or product-market fit. If it is a low-priority exploration, the urgency changes.\"\n    },\n    {\n      \"question\": \"Has the Thursday deadline passed?\",\n      \"relevance\": \"If the deadline has passed, the file is overdue and requires a renegotiation or an explanation, not a silent send. If it has not passed, the move is to send the NDA before Thursday.\"\n    },\n    {\n      \"question\": \"Is the NDA ready to sign, or does it require legal review or negotiation?\",\n      \"relevance\": \"If the NDA is ready, the move is to sign and send it today. If it requires review, the move is to find out what is blocking it and renegotiate the deadline.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A first-touch vendor or partner relationship in which the counterparty has asked for a specific deliverable by a named deadline, and the ball is in our court. The file is unclassified and has no playbook, so the founder has not yet decided what this relationship is for.\",\n    \"rivals\": [\n      \"A test of responsiveness from a potential investor or program partner, disguised as a pilot data request.\",\n      \"A low-priority exploration that the founder has not yet triaged, and the deadline has already passed.\",\n      \"A design partner or customer validation opportunity that is material to the company's goals but has not been connected to them in the brief.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"Pinecrest is asking to share pilot data, which suggests a design partner or pilot customer relationship. The NDA is the gate to that engagement. The file's domain is admin, and the situation is account_admin, consistent with a live vendor or partner relationship.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"file:domains\",\n      \"sit:sit_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief and the file's own history. The brief names no role for Pinecrest. The file's first touch is a request for a signed NDA by Thursday. The expected next move is to sign and send the NDA before the deadline, or to renegotiate the deadline if it cannot be met.\",\n    \"actual\": \"The file is now 1.29 days old, and no reply has been sent. The deadline (Thursday) is not dated in the dossier, so it is not known whether it has passed. The ball remains in our court.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If nothing is done, the file will grow quiet. After 3 days, it will have been quiet 4.3 days. After 7 days, 8.3 days. After 14 days, 15.3 days. The playbook names no stop rule, so it is not known whether the work will go dormant or whether Pinecrest will follow up. If the Thursday deadline has passed, silence signals that the NDA was not signed, and Pinecrest may assume the founder is not interested in the pilot.\",\n    \"act\": \"If you act now, you will send the signed NDA to Zoya before Thursday (if Thursday has not passed) or with an explanation and a new date (if it has). This will unblock the pilot data share and signal responsiveness to Pinecrest.\",\n    \"best\": \"The NDA is ready to sign, you sign and send it today, Pinecrest receives it before Thursday, and the pilot data share proceeds on schedule. The relationship is established as responsive and professional.\",\n    \"worst\": \"The Thursday deadline has passed, you send the NDA late with no explanation, Pinecrest interprets the delay as disinterest or incompetence, and the pilot is cancelled or deprioritized. The relationship is damaged before it begins.\",\n    \"signals_to_watch\": [\n      \"Whether Zoya replies to the NDA with a signed copy or with a follow-up question.\",\n      \"Whether Zoya sends a follow-up message asking about the NDA before you send it.\",\n      \"Whether the pilot data share proceeds on schedule after the NDA is signed.\",\n      \"Whether Pinecrest is named in the brief as a design partner or pilot customer after this exchange.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because the file is unclassified and Pinecrest's role in the company's goals is not yet known. If Pinecrest is a design partner or customer validation, the stakes are higher. If it is a low-priority exploration, they are lower.\",\n      \"The urgency is medium because Zoya named a deadline (Thursday), and the file is now 1.29 days old. If Thursday has not passed, the urgency is to send the NDA before then. If it has passed, the urgency is to renegotiate or explain.\",\n      \"A wrong move is reversible: if you send the NDA late, you can explain the delay. If you do not send it, you can still send it later. The relationship is new, so there is no prior trust to damage beyond the first impression.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"confirm with the founder whether the NDA is ready to sign, who Pinecrest is, what the pilot is for, and whether the Thursday deadline has passed or is still open\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-02\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"unknown:3\",\n      \"unknown:4\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#q\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder confirms that the NDA is ready and the deadline has not passed, send the signed NDA to Zoya today with a brief note. If the deadline has passed, send the NDA with an explanation and propose a new date for the pilot data share.\",\n  \"wait_or_stop\": \"Wait for the founder's confirmation on the NDA status and the deadline. Do not send the NDA without confirmation, and do not chase Pinecrest for a follow-up. If the founder does not respond by end of day 2026-09-02, send the NDA if it is ready, or send Zoya a note explaining the delay and proposing a new date.\",\n  \"done_when\": \"The NDA is signed and sent to Zoya, and Zoya confirms receipt or sends a signed copy back. The pilot data share proceeds, or Pinecrest confirms the next step.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "d0bff9511ea0fb58c901a9e49f6f745b687bdb6699d34a7db327ae1fa02e0e7e": {
+  "framed": true,
+  "input_tokens": 7420,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3036,
+  "parsed": {
+   "alternative": "If you need to know Pinecrest's status for planning purposes, send a brief, low-pressure message asking for a timeline on the pilot data, framed as a request for clarity, not a chase. Example: 'Hi Zoya, thanks for the NDA. When do you expect to have the pilot data ready to share? Just want to make sure I have the timeline right. Arjun.' This is a find_out move, not an act move, and should be sent only if the timeline matters to your other work.",
+   "appraisal": {
+    "reasons": [
+     "The file is not named in the brief as a goal or a priority.",
+     "The engagement is early-stage, with no commitment or investment yet.",
+     "The silence is within the normal range of administrative process, not a crisis.",
+     "A wrong move\u2014chasing too early\u2014is reversible but costly to the relationship.",
+     "The file's role in the brief is none, suggesting it is exploratory, not critical."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Pinecrest shares the pilot data, or confirms a timeline for sharing it, or explicitly declines to proceed. Any of these outcomes closes the wait and moves the file to the next stage.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The NDA has been signed and sent. No pilot data has been shared yet. No follow-up communication has been received.",
+    "expected": "Without a playbook, the brief does not name this work. If it is a design partner engagement, the expected stage would be 'pilot setup' or 'data sharing', with the NDA signed and pilot data to follow. If it is a vendor evaluation, the expected stage would be 'evaluation', with data sharing as the next step.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Pinecrest requested a signed mutual NDA by Thursday to share pilot data.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Could you send the signed mutual NDA by Thursday so we can share the pilot data?"
+    },
+    {
+     "claim": "You sent the signed NDA to Pinecrest on 2026-09-03.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Signed NDA attached."
+    },
+    {
+     "claim": "No reply has been received from Pinecrest since the NDA was sent.",
+     "evidence": [
+      "cov:last_mail",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.25 days, within the pattern of prior gaps.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is not named in the brief.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Pinecrest's role in the brief is none.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in Pinecrest's court; they hold the next move.",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "You have delivered a requested NDA on time. Pinecrest is now processing it internally before sharing pilot data. The silence is normal administrative process, not a signal of disinterest. The next move is theirs.",
+    "rivals": [
+     "Pinecrest has lost interest or encountered an internal blocker and is not communicating it.",
+     "The NDA was not received or was rejected, and Pinecrest is preparing a response.",
+     "Pinecrest is a low-priority lead for them, and the pilot data will be shared when their schedule permits, which may be weeks away."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation of Pinecrest's business model, their relationship to your product, and whether this pilot is part of a larger evaluation or a standalone engagement.",
+     "proposition": "Pinecrest is a potential investor, partner, or customer evaluating a pilot with you."
+    },
+    {
+     "needs": "Clarity on what the pilot data will show and whether Pinecrest is the subject of the pilot or a party to it.",
+     "proposition": "Pinecrest is a vendor or service provider you are evaluating."
+    },
+    {
+     "needs": "A date from Pinecrest, or a pattern of similar engagements in your own history, to calibrate the wait.",
+     "proposition": "The pilot data will be shared within a week or two, and silence is normal process."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The NDA was delivered on time or near the requested deadline, fulfilling your commitment."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Pinecrest's silence is consistent with administrative process, not disinterest or rejection."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "file:whose_move"
+     ],
+     "claim": "The next substantive move\u2014sharing pilot data\u2014depends on Pinecrest's internal process, not on your action."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-18",
+    "for_whom": "Pinecrest",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:3",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "wait for Pinecrest to share the pilot data or to communicate a timeline",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When you have delivered what was asked, the next move belongs to the other party until they signal otherwise or a deadline passes.",
+     "kind": "practice",
+     "why": "Tracking their silence as your problem converts a normal wait into a relationship event and teaches them that your commitments are negotiable."
+    },
+    {
+     "claim": "Pilot data sharing typically requires internal review, legal clearance, or data preparation on the counterparty's side, which takes days to weeks.",
+     "kind": "base_rate",
+     "why": "The request to share data is not the same as the ability to share it; the gap between the two is where most delays live."
+    },
+    {
+     "claim": "A counterparty who asks for an NDA and then goes quiet is usually processing it, not losing interest.",
+     "kind": "counter_pattern",
+     "why": "The NDA is a gate; silence after you pass it is the normal state of the gate closing behind you, not a signal of rejection."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative counterparties go quiet after receiving a deliverable while they process it internally.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1",
+      "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball"
+     ],
+     "claim": "Chasing a counterparty while you hold the ball damages the relationship and reads as pressure or incompetence.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "num:usual_gap",
+      "num:longest_gap"
+     ],
+     "claim": "A single exchange with a new counterparty over two days is too short to infer momentum or stall.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#2",
+     "file:domains"
+    ],
+    "kind": "partner",
+    "why": "The language of 'pilot data' and the request for an NDA suggest a collaborative evaluation or proof-of-concept, not a vendor transaction, investment, or hiring decision. The file's domain is admin, and the work is relationship-building around a shared project."
+   },
+   "scenarios": {
+    "act": "You send a follow-up message asking for a timeline on the pilot data. This risks reading as pressure and may accelerate their internal process or may trigger a defensive response. It also signals that you are tracking them, which may or may not be welcome.",
+    "best": "Pinecrest shares the pilot data within a few days, the pilot runs successfully, and it leads to a partnership, investment, or customer relationship that advances one of your stated goals.",
+    "do_nothing": "Pinecrest shares the pilot data within a week or two, and the engagement proceeds. You learn what you need to learn from the pilot. If they do not share it, the engagement stalls silently, and you do not know whether to follow up or move on.",
+    "signals_to_watch": [
+     "A message from Pinecrest with the pilot data or a timeline for sharing it.",
+     "A message from Pinecrest asking for clarification on the NDA or the pilot.",
+     "Silence beyond two weeks, which would suggest the engagement is stalled.",
+     "A message from the connector or referrer who introduced Pinecrest, if any, asking for an update."
+    ],
+    "worst": "Pinecrest never shares the pilot data, does not respond to follow-ups, and the engagement dies silently. You have spent time on a lead that went nowhere and learned nothing about why."
+   },
+   "unknowns": [
+    {
+     "question": "Who is Pinecrest, and how were they introduced to you?",
+     "relevance": "The source and context of the introduction would clarify whether this is a warm lead, a cold outreach, or a referral, and would inform how much urgency to assign to their silence."
+    },
+    {
+     "question": "What is the pilot, and what does Pinecrest stand to gain or learn from it?",
+     "relevance": "The nature of the pilot would clarify whether Pinecrest is evaluating you, you are evaluating them, or you are collaborating on a shared problem. This changes the power dynamic and the expected timeline."
+    },
+    {
+     "question": "Is there a deadline for the pilot data to be shared, or a deadline for a decision based on it?",
+     "relevance": "An implicit deadline would change the urgency of the wait and would tell you when to escalate if silence continues."
+    },
+    {
+     "question": "Does this engagement fit into one of your stated goals in the brief?",
+     "relevance": "If Pinecrest is a design partner, investor, or program, it would change the priority and the mode of engagement. If it is none of these, it may be a distraction."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-18 (two weeks from the NDA send). If no message has been received by then, send a brief, low-pressure check-in. If no response follows within a week, close the file as dormant and revisit only if Pinecrest reaches out. Do not escalate or chase; the engagement is not critical to your stated goals."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Pinecrest requested a signed mutual NDA by Thursday to share pilot data.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Could you send the signed mutual NDA by Thursday so we can share the pilot data?\"\n    },\n    {\n      \"claim\": \"You sent the signed NDA to Pinecrest on 2026-09-03.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Signed NDA attached.\"\n    },\n    {\n      \"claim\": \"No reply has been received from Pinecrest since the NDA was sent.\",\n      \"evidence\": [\n        \"cov:last_mail\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.25 days, within the pattern of prior gaps.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is not named in the brief.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Pinecrest's role in the brief is none.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in Pinecrest's court; they hold the next move.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The NDA was delivered on time or near the requested deadline, fulfilling your commitment.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"Pinecrest's silence is consistent with administrative process, not disinterest or rejection.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"claim\": \"The next substantive move\u2014sharing pilot data\u2014depends on Pinecrest's internal process, not on your action.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"file:whose_move\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Administrative counterparties go quiet after receiving a deliverable while they process it internally.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing a counterparty while you hold the ball damages the relationship and reads as pressure or incompetence.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\",\n        \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A single exchange with a new counterparty over two days is too short to infer momentum or stall.\",\n      \"based_on\": [\n        \"num:usual_gap\",\n        \"num:longest_gap\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When you have delivered what was asked, the next move belongs to the other party until they signal otherwise or a deadline passes.\",\n      \"why\": \"Tracking their silence as your problem converts a normal wait into a relationship event and teaches them that your commitments are negotiable.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Pilot data sharing typically requires internal review, legal clearance, or data preparation on the counterparty's side, which takes days to weeks.\",\n      \"why\": \"The request to share data is not the same as the ability to share it; the gap between the two is where most delays live.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who asks for an NDA and then goes quiet is usually processing it, not losing interest.\",\n      \"why\": \"The NDA is a gate; silence after you pass it is the normal state of the gate closing behind you, not a signal of rejection.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Pinecrest is a potential investor, partner, or customer evaluating a pilot with you.\",\n      \"needs\": \"Confirmation of Pinecrest's business model, their relationship to your product, and whether this pilot is part of a larger evaluation or a standalone engagement.\"\n    },\n    {\n      \"proposition\": \"Pinecrest is a vendor or service provider you are evaluating.\",\n      \"needs\": \"Clarity on what the pilot data will show and whether Pinecrest is the subject of the pilot or a party to it.\"\n    },\n    {\n      \"proposition\": \"The pilot data will be shared within a week or two, and silence is normal process.\",\n      \"needs\": \"A date from Pinecrest, or a pattern of similar engagements in your own history, to calibrate the wait.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Who is Pinecrest, and how were they introduced to you?\",\n      \"relevance\": \"The source and context of the introduction would clarify whether this is a warm lead, a cold outreach, or a referral, and would inform how much urgency to assign to their silence.\"\n    },\n    {\n      \"question\": \"What is the pilot, and what does Pinecrest stand to gain or learn from it?\",\n      \"relevance\": \"The nature of the pilot would clarify whether Pinecrest is evaluating you, you are evaluating them, or you are collaborating on a shared problem. This changes the power dynamic and the expected timeline.\"\n    },\n    {\n      \"question\": \"Is there a deadline for the pilot data to be shared, or a deadline for a decision based on it?\",\n      \"relevance\": \"An implicit deadline would change the urgency of the wait and would tell you when to escalate if silence continues.\"\n    },\n    {\n      \"question\": \"Does this engagement fit into one of your stated goals in the brief?\",\n      \"relevance\": \"If Pinecrest is a design partner, investor, or program, it would change the priority and the mode of engagement. If it is none of these, it may be a distraction.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"You have delivered a requested NDA on time. Pinecrest is now processing it internally before sharing pilot data. The silence is normal administrative process, not a signal of disinterest. The next move is theirs.\",\n    \"rivals\": [\n      \"Pinecrest has lost interest or encountered an internal blocker and is not communicating it.\",\n      \"The NDA was not received or was rejected, and Pinecrest is preparing a response.\",\n      \"Pinecrest is a low-priority lead for them, and the pilot data will be shared when their schedule permits, which may be weeks away.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The language of 'pilot data' and the request for an NDA suggest a collaborative evaluation or proof-of-concept, not a vendor transaction, investment, or hiring decision. The file's domain is admin, and the work is relationship-building around a shared project.\",\n    \"evidence\": [\n      \"evt_#2\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the brief does not name this work. If it is a design partner engagement, the expected stage would be 'pilot setup' or 'data sharing', with the NDA signed and pilot data to follow. If it is a vendor evaluation, the expected stage would be 'evaluation', with data sharing as the next step.\",\n    \"actual\": \"The NDA has been signed and sent. No pilot data has been shared yet. No follow-up communication has been received.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Pinecrest shares the pilot data within a week or two, and the engagement proceeds. You learn what you need to learn from the pilot. If they do not share it, the engagement stalls silently, and you do not know whether to follow up or move on.\",\n    \"act\": \"You send a follow-up message asking for a timeline on the pilot data. This risks reading as pressure and may accelerate their internal process or may trigger a defensive response. It also signals that you are tracking them, which may or may not be welcome.\",\n    \"best\": \"Pinecrest shares the pilot data within a few days, the pilot runs successfully, and it leads to a partnership, investment, or customer relationship that advances one of your stated goals.\",\n    \"worst\": \"Pinecrest never shares the pilot data, does not respond to follow-ups, and the engagement dies silently. You have spent time on a lead that went nowhere and learned nothing about why.\",\n    \"signals_to_watch\": [\n      \"A message from Pinecrest with the pilot data or a timeline for sharing it.\",\n      \"A message from Pinecrest asking for clarification on the NDA or the pilot.\",\n      \"Silence beyond two weeks, which would suggest the engagement is stalled.\",\n      \"A message from the connector or referrer who introduced Pinecrest, if any, asking for an update.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is not named in the brief as a goal or a priority.\",\n      \"The engagement is early-stage, with no commitment or investment yet.\",\n      \"The silence is within the normal range of administrative process, not a crisis.\",\n      \"A wrong move\u2014chasing too early\u2014is reversible but costly to the relationship.\",\n      \"The file's role in the brief is none, suggesting it is exploratory, not critical.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for Pinecrest to share the pilot data or to communicate a timeline\",\n    \"for_whom\": \"Pinecrest\",\n    \"by_when\": \"2026-09-18\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If you need to know Pinecrest's status for planning purposes, send a brief, low-pressure message asking for a timeline on the pilot data, framed as a request for clarity, not a chase. Example: 'Hi Zoya, thanks for the NDA. When do you expect to have the pilot data ready to share? Just want to make sure I have the timeline right. Arjun.' This is a find_out move, not an act move, and should be sent only if the timeline matters to your other work.\",\n  \"wait_or_stop\": \"Wait until 2026-09-18 (two weeks from the NDA send). If no message has been received by then, send a brief, low-pressure check-in. If no response follows within a week, close the file as dormant and revisit only if Pinecrest reaches out. Do not escalate or chase; the engagement is not critical to your stated goals.\",\n  \"done_when\": \"Pinecrest shares the pilot data, or confirms a timeline for sharing it, or explicitly declines to proceed. Any of these outcomes closes the wait and moves the file to the next stage.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "e9da517b0448eb2289deb52e9622c642c2b342a9246c071f711d6f4355dfb8b9": {
+  "framed": true,
+  "input_tokens": 7110,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3343,
+  "parsed": {
+   "alternative": "If the NDA is not ready and will not be ready for several more days, send a brief message to Zoya Hameed today acknowledging the deadline, apologizing for the delay, and proposing a specific new date. This converts a broken promise into a managed one and keeps the relationship warm.",
+   "appraisal": {
+    "reasons": [
+     "The deadline has passed and silence now reads as a broken commitment; a late response will require an apology and may damage trust.",
+     "Pilot data sharing is a gating condition for the partnership; missing this deadline delays the entire engagement.",
+     "The counterparty is waiting on us and has not followed up yet; a prompt response now can reset the relationship, but a delayed response will be harder to recover from.",
+     "The file shows no prior relationship history with Pinecrest, suggesting this is a new opportunity; a misstep now could lose it entirely."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The NDA is sent to Pinecrest, or a message is sent to Zoya Hameed with a new date and an apology. Pinecrest responds with confirmation or a new timeline.",
+   "draft": "Hi Zoya, I apologize for the delay on the NDA. I'm getting it signed today and will send it to you by end of day. Thanks for your patience. \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "The NDA has not been sent, the deadline has passed, and we have not communicated the delay or renegotiated the date.",
+    "expected": "If this is a partner relationship, the expected stage would be 'legal gate' or 'NDA execution', where the counterparty has requested a signed NDA and we are expected to review, sign, and return it within the stated deadline.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Zoya Hameed at Pinecrest requested a signed mutual NDA by Thursday to share pilot data.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you send the signed mutual NDA by Thursday so we can share the pilot data?"
+    },
+    {
+     "claim": "The file shows two open asks: a question and information requested, both waiting on us since 2026-09-01 05:00 UTC.",
+     "evidence": [
+      "loop:loop_#1",
+      "loop:loop_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.29 days as of 2026-09-02 12:00 UTC, with no outbound move from us recorded.",
+     "evidence": [
+      "num:days_quiet",
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Pinecrest is not listed in the company brief as a counterparty in any active work stream.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we hold the open asks and have not yet replied.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A new counterparty (Pinecrest) has requested a signed NDA by a specific deadline to share pilot data; the deadline has likely passed, we have not sent the NDA, and we have not communicated the delay. The ball is in our court and the silence risks damaging the relationship.",
+    "rivals": [
+     "Pinecrest is a vendor or service provider, not a design partner, and the NDA is a standard gate; the delay is routine and the relationship is not at risk.",
+     "The NDA has been signed and sent, but the file is not updated; the work is actually complete and the file is stale.",
+     "Pinecrest is a low-priority opportunity and the founder has deprioritized it; the silence is intentional and the file should be closed."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A check of the founder's inbox, legal folder, or document management system to see if the NDA is signed and ready.",
+     "proposition": "The NDA has been signed and is ready to send, but has not been sent due to oversight or a process delay."
+    },
+    {
+     "needs": "A status check with the founder or legal counsel on the NDA review timeline.",
+     "proposition": "The NDA is still in legal review and will not be ready by the deadline, and the founder has not yet communicated this to Pinecrest."
+    },
+    {
+     "needs": "Confirmation from the founder of Pinecrest's role and whether this is a new relationship or an existing one that was not documented.",
+     "proposition": "Pinecrest is a design partner or early customer that the founder has been in talks with but has not yet added to the brief."
+    },
+    {
+     "needs": "A check of the calendar to confirm the deadline date and whether it has passed.",
+     "proposition": "The Thursday deadline has passed and Pinecrest is now waiting to see if we will follow up or if the deal is off."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "num:days_quiet"
+     ],
+     "claim": "The request for a signed NDA by Thursday implies a specific deadline that has likely passed, since the mail arrived 2026-09-01 05:00 UTC and today is 2026-09-02 12:00 UTC."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:1"
+     ],
+     "claim": "The two open asks correspond to the NDA request and the pilot data sharing: one is the question of whether we will sign, the other is the information (the signed NDA itself) they are waiting for."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "fact:5"
+     ],
+     "claim": "This is a vendor or partner relationship in early stages, not yet named in the brief, suggesting either a new opportunity or an undocumented engagement."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The silence for over a day while holding the ball violates the rule against chasing while we hold it, but also risks converting a normal wait into a relationship event if we do not move soon."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#2",
+    "by_when": "2026-09-02",
+    "for_whom": "Zoya Hameed at Pinecrest",
+    "guided_by": [
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "pb:admin.heu.commitment_tracking.forgotten_beats_broken_for_damage",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:4"
+    ],
+    "to": "zoya@pinecrest.test",
+    "what": "Send the signed NDA to Pinecrest, or if it is not yet signed, send a message to Zoya Hameed explaining the delay and proposing a new date.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A signed NDA is a document that requires legal review or founder sign-off; it is not a message to draft but a process to execute, and the delay is usually in the review, not the sending.",
+     "kind": "practice",
+     "why": "NDAs are gating documents; the counterparty is waiting on a process step, not a decision, and the silence from us signals the process has stalled."
+    },
+    {
+     "claim": "When a counterparty names a specific day and we miss it without renegotiating, the next message from them is often a follow-up asking for status, not a continuation of the conversation.",
+     "kind": "base_rate",
+     "why": "A missed deadline without communication reads as either a broken commitment or a signal that we are not ready; the counterparty will test whether we are still engaged."
+    },
+    {
+     "claim": "A new counterparty offering pilot data is often a design partner or early customer, not a vendor; the relationship is exploratory and the NDA is a gate to sharing their work, not ours.",
+     "kind": "counter_pattern",
+     "why": "The direction of the data flow (they will share it) suggests they are the party with IP to protect, which is typical of partners or customers, not vendors."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "A request for a signed document with a specific deadline (by Thursday) signals urgency and a gating condition for the counterparty's next move.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A counterparty who goes quiet after stating a deadline is often waiting to see if we will meet it, not disinterested.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "Pilot data sharing is typically gated by legal review and NDA execution; missing the deadline risks delaying the pilot and signaling low priority.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "file:domains"
+    ],
+    "kind": "partner",
+    "why": "Pinecrest is offering to share pilot data, which suggests a design partner or early customer relationship, not a vendor or investor. The NDA is a gate to their sharing their work with us, not ours with them."
+   },
+   "scenarios": {
+    "act": "We send the signed NDA immediately (if it is ready) or communicate the delay and a new date (if it is not). The relationship is reset and the pilot can proceed.",
+    "best": "The NDA is signed and ready; we send it today with a brief apology for the delay. Pinecrest shares the pilot data and the partnership moves forward.",
+    "do_nothing": "Pinecrest will follow up in a few days asking for status. If we do not respond, they will assume we are not interested and will move on to another partner. The pilot opportunity will be lost.",
+    "signals_to_watch": [
+     "A follow-up message from Pinecrest asking for status or expressing concern.",
+     "A message from the founder or legal counsel confirming the NDA is signed and ready.",
+     "A message from the founder deprioritizing or closing the Pinecrest relationship."
+    ],
+    "worst": "The NDA is still in legal review and will not be ready for over a week. We do not communicate this to Pinecrest. They follow up, we apologize, and they lose confidence in our ability to execute. The pilot is delayed or cancelled."
+   },
+   "unknowns": [
+    {
+     "question": "Has the NDA been signed, and if so, is it ready to send?",
+     "relevance": "If it is signed and ready, the move is to send it immediately; if it is not signed, the move is to communicate the delay and renegotiate the deadline."
+    },
+    {
+     "question": "What is Pinecrest's role in the company's strategy, and is this a design partner, early customer, or vendor relationship?",
+     "relevance": "The kind of relationship determines the priority and the tone of the next message; a design partner is higher priority than a vendor."
+    },
+    {
+     "question": "What is the status of the legal review of the NDA, and when will it be ready?",
+     "relevance": "If the review is complete, the move is to send; if it is not, the move is to communicate the delay and set a new date."
+    },
+    {
+     "question": "Has the Thursday deadline passed, and if so, has Pinecrest followed up?",
+     "relevance": "If the deadline has passed and they have not followed up, they may be waiting to see if we will reach out; if they have followed up, the relationship may be at risk."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline has passed and silence now costs more than a message. If the NDA is not ready, send the message today. If it is ready, send it today. Stop waiting for the legal review to complete; if it is not complete, communicate that to Pinecrest now."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Zoya Hameed at Pinecrest requested a signed mutual NDA by Thursday to share pilot data.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you send the signed mutual NDA by Thursday so we can share the pilot data?\"\n    },\n    {\n      \"claim\": \"The file shows two open asks: a question and information requested, both waiting on us since 2026-09-01 05:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"loop:loop_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.29 days as of 2026-09-02 12:00 UTC, with no outbound move from us recorded.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Pinecrest is not listed in the company brief as a counterparty in any active work stream.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we hold the open asks and have not yet replied.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The request for a signed NDA by Thursday implies a specific deadline that has likely passed, since the mail arrived 2026-09-01 05:00 UTC and today is 2026-09-02 12:00 UTC.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"num:days_quiet\"\n      ]\n    },\n    {\n      \"claim\": \"The two open asks correspond to the NDA request and the pilot data sharing: one is the question of whether we will sign, the other is the information (the signed NDA itself) they are waiting for.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"This is a vendor or partner relationship in early stages, not yet named in the brief, suggesting either a new opportunity or an undocumented engagement.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"fact:5\"\n      ]\n    },\n    {\n      \"claim\": \"The silence for over a day while holding the ball violates the rule against chasing while we hold it, but also risks converting a normal wait into a relationship event if we do not move soon.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A request for a signed document with a specific deadline (by Thursday) signals urgency and a gating condition for the counterparty's next move.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who goes quiet after stating a deadline is often waiting to see if we will meet it, not disinterested.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Pilot data sharing is typically gated by legal review and NDA execution; missing the deadline risks delaying the pilot and signaling low priority.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A signed NDA is a document that requires legal review or founder sign-off; it is not a message to draft but a process to execute, and the delay is usually in the review, not the sending.\",\n      \"why\": \"NDAs are gating documents; the counterparty is waiting on a process step, not a decision, and the silence from us signals the process has stalled.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a counterparty names a specific day and we miss it without renegotiating, the next message from them is often a follow-up asking for status, not a continuation of the conversation.\",\n      \"why\": \"A missed deadline without communication reads as either a broken commitment or a signal that we are not ready; the counterparty will test whether we are still engaged.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A new counterparty offering pilot data is often a design partner or early customer, not a vendor; the relationship is exploratory and the NDA is a gate to sharing their work, not ours.\",\n      \"why\": \"The direction of the data flow (they will share it) suggests they are the party with IP to protect, which is typical of partners or customers, not vendors.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The NDA has been signed and is ready to send, but has not been sent due to oversight or a process delay.\",\n      \"needs\": \"A check of the founder's inbox, legal folder, or document management system to see if the NDA is signed and ready.\"\n    },\n    {\n      \"proposition\": \"The NDA is still in legal review and will not be ready by the deadline, and the founder has not yet communicated this to Pinecrest.\",\n      \"needs\": \"A status check with the founder or legal counsel on the NDA review timeline.\"\n    },\n    {\n      \"proposition\": \"Pinecrest is a design partner or early customer that the founder has been in talks with but has not yet added to the brief.\",\n      \"needs\": \"Confirmation from the founder of Pinecrest's role and whether this is a new relationship or an existing one that was not documented.\"\n    },\n    {\n      \"proposition\": \"The Thursday deadline has passed and Pinecrest is now waiting to see if we will follow up or if the deal is off.\",\n      \"needs\": \"A check of the calendar to confirm the deadline date and whether it has passed.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the NDA been signed, and if so, is it ready to send?\",\n      \"relevance\": \"If it is signed and ready, the move is to send it immediately; if it is not signed, the move is to communicate the delay and renegotiate the deadline.\"\n    },\n    {\n      \"question\": \"What is Pinecrest's role in the company's strategy, and is this a design partner, early customer, or vendor relationship?\",\n      \"relevance\": \"The kind of relationship determines the priority and the tone of the next message; a design partner is higher priority than a vendor.\"\n    },\n    {\n      \"question\": \"What is the status of the legal review of the NDA, and when will it be ready?\",\n      \"relevance\": \"If the review is complete, the move is to send; if it is not, the move is to communicate the delay and set a new date.\"\n    },\n    {\n      \"question\": \"Has the Thursday deadline passed, and if so, has Pinecrest followed up?\",\n      \"relevance\": \"If the deadline has passed and they have not followed up, they may be waiting to see if we will reach out; if they have followed up, the relationship may be at risk.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A new counterparty (Pinecrest) has requested a signed NDA by a specific deadline to share pilot data; the deadline has likely passed, we have not sent the NDA, and we have not communicated the delay. The ball is in our court and the silence risks damaging the relationship.\",\n    \"rivals\": [\n      \"Pinecrest is a vendor or service provider, not a design partner, and the NDA is a standard gate; the delay is routine and the relationship is not at risk.\",\n      \"The NDA has been signed and sent, but the file is not updated; the work is actually complete and the file is stale.\",\n      \"Pinecrest is a low-priority opportunity and the founder has deprioritized it; the silence is intentional and the file should be closed.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"Pinecrest is offering to share pilot data, which suggests a design partner or early customer relationship, not a vendor or investor. The NDA is a gate to their sharing their work with us, not ours with them.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"If this is a partner relationship, the expected stage would be 'legal gate' or 'NDA execution', where the counterparty has requested a signed NDA and we are expected to review, sign, and return it within the stated deadline.\",\n    \"actual\": \"The NDA has not been sent, the deadline has passed, and we have not communicated the delay or renegotiated the date.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Pinecrest will follow up in a few days asking for status. If we do not respond, they will assume we are not interested and will move on to another partner. The pilot opportunity will be lost.\",\n    \"act\": \"We send the signed NDA immediately (if it is ready) or communicate the delay and a new date (if it is not). The relationship is reset and the pilot can proceed.\",\n    \"best\": \"The NDA is signed and ready; we send it today with a brief apology for the delay. Pinecrest shares the pilot data and the partnership moves forward.\",\n    \"worst\": \"The NDA is still in legal review and will not be ready for over a week. We do not communicate this to Pinecrest. They follow up, we apologize, and they lose confidence in our ability to execute. The pilot is delayed or cancelled.\",\n    \"signals_to_watch\": [\n      \"A follow-up message from Pinecrest asking for status or expressing concern.\",\n      \"A message from the founder or legal counsel confirming the NDA is signed and ready.\",\n      \"A message from the founder deprioritizing or closing the Pinecrest relationship.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The deadline has passed and silence now reads as a broken commitment; a late response will require an apology and may damage trust.\",\n      \"Pilot data sharing is a gating condition for the partnership; missing this deadline delays the entire engagement.\",\n      \"The counterparty is waiting on us and has not followed up yet; a prompt response now can reset the relationship, but a delayed response will be harder to recover from.\",\n      \"The file shows no prior relationship history with Pinecrest, suggesting this is a new opportunity; a misstep now could lose it entirely.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send the signed NDA to Pinecrest, or if it is not yet signed, send a message to Zoya Hameed explaining the delay and proposing a new date.\",\n    \"for_whom\": \"Zoya Hameed at Pinecrest\",\n    \"by_when\": \"2026-09-02\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"pb:admin.heu.commitment_tracking.forgotten_beats_broken_for_damage\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"zoya@pinecrest.test\",\n    \"answers\": \"loop:loop_#2\"\n  },\n  \"alternative\": \"If the NDA is not ready and will not be ready for several more days, send a brief message to Zoya Hameed today acknowledging the deadline, apologizing for the delay, and proposing a specific new date. This converts a broken promise into a managed one and keeps the relationship warm.\",\n  \"wait_or_stop\": \"Do not wait. The deadline has passed and silence now costs more than a message. If the NDA is not ready, send the message today. If it is ready, send it today. Stop waiting for the legal review to complete; if it is not complete, communicate that to Pinecrest now.\",\n  \"done_when\": \"The NDA is sent to Pinecrest, or a message is sent to Zoya Hameed with a new date and an apology. Pinecrest responds with confirmation or a new timeline.\",\n  \"draft\": \"Hi Zoya, I apologize for the delay on the NDA. I'm getting it signed today and will send it to you by end of day. Thanks for your patience. \u2014 Arjun\"\n}",
+  "site": "expert"
+ },
+ "f039b0f036388f99e751e8d3d3f363a83a5d5f0c7847d85bf4fcffcfa996b561": {
+  "framed": true,
+  "input_tokens": 7347,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3141,
+  "parsed": {
+   "alternative": "Send a brief check-in to Pinecrest now, asking whether they received the NDA and when they expect to share the pilot data. This surfaces whether the work is still active and gives them a gentle prompt if they have deprioritized it. The risk is that you read as impatient or that you interrupt their internal process.",
+   "appraisal": {
+    "reasons": [
+     "The file is not named in the brief as a priority, so the stakes are not high.",
+     "The counterparty has named a next step and gone silent, which is a signal that requires attention but not immediate action.",
+     "A wrong move \u2014 such as a premature or aggressive check-in \u2014 could damage the relationship, but the damage is recoverable.",
+     "The file has been quiet for over a week, which is longer than any prior gap, suggesting a change in momentum."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Pinecrest sends the pilot data or a clear timeline for sharing it, or Pinecrest replies that they have decided not to move forward. In either case, the file is categorized in the brief and either moved to the next phase or closed.",
+   "expected_vs_actual": {
+    "actual": "The counterparty has been silent for over a week after receiving the NDA, with no reply or next step.",
+    "expected": "Without a named kind of work or playbook, the expectation comes from the file's own history: after you send a deliverable, the counterparty moves to the next step within one to two weeks.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Pinecrest asked for a signed mutual NDA by Thursday to share pilot data.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Could you send the signed mutual NDA by Thursday so we can share the pilot data?"
+    },
+    {
+     "claim": "You sent the signed NDA on 2026-09-03, two days after the request.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Signed NDA attached."
+    },
+    {
+     "claim": "No reply has been received from Pinecrest since the NDA was sent.",
+     "evidence": [
+      "cov:last_mail",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 7.25 days, longer than any prior gap it closed.",
+     "evidence": [
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Pinecrest is not named in the company brief as a counterparty to any work in motion.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is not named by the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file was first touched on 2026-09-01 and last touched on 2026-09-03.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A counterparty has received a deliverable you sent and is processing it internally before moving to the next step. The silence is administrative process, not disinterest. The file is in early-stage relationship building with a clear next step promised but not yet delivered.",
+    "rivals": [
+     "Pinecrest has deprioritized the work or encountered an internal blocker and will not move forward without a prompt from you.",
+     "Pinecrest is waiting for you to take the next step, and the NDA was not the final gate.",
+     "The relationship has stalled, and Pinecrest is no longer interested in the pilot."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from Pinecrest with the pilot data or a request for clarification on the NDA.",
+     "proposition": "Pinecrest is processing the NDA internally and will send pilot data within the next week."
+    },
+    {
+     "needs": "A check-in from you that surfaces whether the work is still active on their side.",
+     "proposition": "Pinecrest has deprioritized the pilot or encountered an internal blocker and will not move forward without a prompt."
+    },
+    {
+     "needs": "Clarification from you on what Pinecrest is and why they are sharing pilot data.",
+     "proposition": "Pinecrest is a design partner or potential customer, and this file should be categorized as 'partner' in the brief."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "The ball is in Pinecrest's court: they asked for the NDA, you sent it, and they have not yet replied."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The silence may be administrative process rather than disinterest, as Pinecrest said they would share pilot data once the NDA was signed."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "fact:1"
+     ],
+     "claim": "This file represents a potential partnership or pilot engagement, not yet categorized in the brief."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3",
+      "sit:sit_#1"
+     ],
+     "claim": "The file is in early-stage relationship building, with a clear next step promised by the counterparty but not yet delivered."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-17",
+    "for_whom": "Pinecrest",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "Wait for a reply from Pinecrest. If no reply arrives by 2026-09-17, send a brief check-in asking whether they received the NDA and when they expect to share the pilot data.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A counterparty who commits to a next step after receiving a deliverable should be given at least one full business cycle before any outbound check-in.",
+     "kind": "practice",
+     "why": "Premature follow-up reads as pressure and damages the relationship; administrative processes require time to route internally."
+    },
+    {
+     "claim": "When a counterparty names a specific day and then goes silent past it, the silence often signals a change in priority or an internal blocker that they have not yet communicated.",
+     "kind": "counter_pattern",
+     "why": "Named deadlines are commitments; silence past them is a signal, not noise."
+    },
+    {
+     "claim": "A file with no named kind of work and no role in the brief should be categorized before any next move is made.",
+     "kind": "practice",
+     "why": "Without a category, the file cannot be tracked against the founder's goals or prioritized against other work."
+    },
+    {
+     "claim": "Pilot data sharing typically requires legal review and data governance approval on the counterparty's side, which can take two to three weeks.",
+     "kind": "benchmark",
+     "why": "The NDA is the first gate; the data sharing agreement is the second, and it is slower."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative counterparties often go quiet after receiving a deliverable while they process it internally, especially when they have named a next step.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3",
+      "num:days_quiet"
+     ],
+     "claim": "A counterparty who names a specific deadline and then goes silent past it may have deprioritized the work or encountered an internal blocker.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Pilot data sharing agreements typically move to the next phase within one to two weeks of NDA signature.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#2",
+     "file:kind",
+     "file:role"
+    ],
+    "kind": "partner",
+    "why": "Pinecrest is offering to share pilot data, which suggests a design partner or customer pilot engagement. The file is not named in the brief, but the nature of the work \u2014 sharing data under NDA \u2014 fits the pattern of partner or customer evaluation."
+   },
+   "scenarios": {
+    "act": "You send a brief check-in to Pinecrest asking whether they received the NDA and when they expect to share the pilot data. This surfaces whether the work is still active and gives them a gentle prompt if they have deprioritized it. The risk is that you read as impatient or that you interrupt their internal process.",
+    "best": "Pinecrest replies within two days with the pilot data or a timeline for sharing it. The pilot is valuable and leads to a design partnership or customer engagement.",
+    "do_nothing": "The file remains quiet. If Pinecrest is processing the NDA internally, they will send pilot data within the next week or two. If they have deprioritized the work, the silence will extend, and the file will eventually go dormant. The risk is that you miss a window to re-engage if the work is still active on their side.",
+    "signals_to_watch": [
+     "A reply from Pinecrest with pilot data or a timeline for sharing it.",
+     "A reply from Pinecrest asking for clarification on the NDA or requesting changes.",
+     "Continued silence past two weeks from the NDA signature.",
+     "A reply from Pinecrest saying they have decided not to move forward."
+    ],
+    "worst": "Pinecrest does not reply to a check-in, or replies that they have decided not to move forward. The pilot is lost, and the relationship ends."
+   },
+   "unknowns": [
+    {
+     "question": "What is Pinecrest, and what is the nature of the pilot data they are offering to share?",
+     "relevance": "This determines whether the file is a partner engagement, a customer pilot, a vendor evaluation, or something else \u2014 and thus how to prioritize it against your other work."
+    },
+    {
+     "question": "How was Pinecrest introduced to you, and who is Zoya Hameed?",
+     "relevance": "This determines whether there is a connector who can provide context or follow up, and whether the relationship has a warm introduction or is cold."
+    },
+    {
+     "question": "What is the business case for this pilot, and how does it fit into your product roadmap or customer acquisition strategy?",
+     "relevance": "This determines whether the pilot is strategic or exploratory, and thus how much time and attention it deserves."
+    },
+    {
+     "question": "Did Pinecrest actually commit to sending pilot data by a specific date, or was 'Thursday' a soft target?",
+     "relevance": "This determines whether the silence is a missed commitment or a normal administrative delay."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-17 (two weeks from the NDA signature) before sending a check-in. If Pinecrest replies with pilot data or a timeline before then, close the file and move to the next phase. If no reply arrives by 2026-09-17, send a check-in. If no reply arrives by 2026-09-24 (three weeks from the NDA signature), consider the file dormant and close it unless there is a strategic reason to keep it open."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Pinecrest asked for a signed mutual NDA by Thursday to share pilot data.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Could you send the signed mutual NDA by Thursday so we can share the pilot data?\"\n    },\n    {\n      \"claim\": \"You sent the signed NDA on 2026-09-03, two days after the request.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Signed NDA attached.\"\n    },\n    {\n      \"claim\": \"No reply has been received from Pinecrest since the NDA was sent.\",\n      \"evidence\": [\n        \"cov:last_mail\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 7.25 days, longer than any prior gap it closed.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Pinecrest is not named in the company brief as a counterparty to any work in motion.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is not named by the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file was first touched on 2026-09-01 and last touched on 2026-09-03.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in Pinecrest's court: they asked for the NDA, you sent it, and they have not yet replied.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The silence may be administrative process rather than disinterest, as Pinecrest said they would share pilot data once the NDA was signed.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"claim\": \"This file represents a potential partnership or pilot engagement, not yet categorized in the brief.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The file is in early-stage relationship building, with a clear next step promised by the counterparty but not yet delivered.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:3\",\n        \"sit:sit_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Administrative counterparties often go quiet after receiving a deliverable while they process it internally, especially when they have named a next step.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who names a specific deadline and then goes silent past it may have deprioritized the work or encountered an internal blocker.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:3\",\n        \"num:days_quiet\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Pilot data sharing agreements typically move to the next phase within one to two weeks of NDA signature.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A counterparty who commits to a next step after receiving a deliverable should be given at least one full business cycle before any outbound check-in.\",\n      \"why\": \"Premature follow-up reads as pressure and damages the relationship; administrative processes require time to route internally.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"When a counterparty names a specific day and then goes silent past it, the silence often signals a change in priority or an internal blocker that they have not yet communicated.\",\n      \"why\": \"Named deadlines are commitments; silence past them is a signal, not noise.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A file with no named kind of work and no role in the brief should be categorized before any next move is made.\",\n      \"why\": \"Without a category, the file cannot be tracked against the founder's goals or prioritized against other work.\"\n    },\n    {\n      \"kind\": \"benchmark\",\n      \"claim\": \"Pilot data sharing typically requires legal review and data governance approval on the counterparty's side, which can take two to three weeks.\",\n      \"why\": \"The NDA is the first gate; the data sharing agreement is the second, and it is slower.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Pinecrest is processing the NDA internally and will send pilot data within the next week.\",\n      \"needs\": \"A reply from Pinecrest with the pilot data or a request for clarification on the NDA.\"\n    },\n    {\n      \"proposition\": \"Pinecrest has deprioritized the pilot or encountered an internal blocker and will not move forward without a prompt.\",\n      \"needs\": \"A check-in from you that surfaces whether the work is still active on their side.\"\n    },\n    {\n      \"proposition\": \"Pinecrest is a design partner or potential customer, and this file should be categorized as 'partner' in the brief.\",\n      \"needs\": \"Clarification from you on what Pinecrest is and why they are sharing pilot data.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Pinecrest, and what is the nature of the pilot data they are offering to share?\",\n      \"relevance\": \"This determines whether the file is a partner engagement, a customer pilot, a vendor evaluation, or something else \u2014 and thus how to prioritize it against your other work.\"\n    },\n    {\n      \"question\": \"How was Pinecrest introduced to you, and who is Zoya Hameed?\",\n      \"relevance\": \"This determines whether there is a connector who can provide context or follow up, and whether the relationship has a warm introduction or is cold.\"\n    },\n    {\n      \"question\": \"What is the business case for this pilot, and how does it fit into your product roadmap or customer acquisition strategy?\",\n      \"relevance\": \"This determines whether the pilot is strategic or exploratory, and thus how much time and attention it deserves.\"\n    },\n    {\n      \"question\": \"Did Pinecrest actually commit to sending pilot data by a specific date, or was 'Thursday' a soft target?\",\n      \"relevance\": \"This determines whether the silence is a missed commitment or a normal administrative delay.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A counterparty has received a deliverable you sent and is processing it internally before moving to the next step. The silence is administrative process, not disinterest. The file is in early-stage relationship building with a clear next step promised but not yet delivered.\",\n    \"rivals\": [\n      \"Pinecrest has deprioritized the work or encountered an internal blocker and will not move forward without a prompt from you.\",\n      \"Pinecrest is waiting for you to take the next step, and the NDA was not the final gate.\",\n      \"The relationship has stalled, and Pinecrest is no longer interested in the pilot.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"Pinecrest is offering to share pilot data, which suggests a design partner or customer pilot engagement. The file is not named in the brief, but the nature of the work \u2014 sharing data under NDA \u2014 fits the pattern of partner or customer evaluation.\",\n    \"evidence\": [\n      \"evt_#2\",\n      \"file:kind\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a named kind of work or playbook, the expectation comes from the file's own history: after you send a deliverable, the counterparty moves to the next step within one to two weeks.\",\n    \"actual\": \"The counterparty has been silent for over a week after receiving the NDA, with no reply or next step.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. If Pinecrest is processing the NDA internally, they will send pilot data within the next week or two. If they have deprioritized the work, the silence will extend, and the file will eventually go dormant. The risk is that you miss a window to re-engage if the work is still active on their side.\",\n    \"act\": \"You send a brief check-in to Pinecrest asking whether they received the NDA and when they expect to share the pilot data. This surfaces whether the work is still active and gives them a gentle prompt if they have deprioritized it. The risk is that you read as impatient or that you interrupt their internal process.\",\n    \"best\": \"Pinecrest replies within two days with the pilot data or a timeline for sharing it. The pilot is valuable and leads to a design partnership or customer engagement.\",\n    \"worst\": \"Pinecrest does not reply to a check-in, or replies that they have decided not to move forward. The pilot is lost, and the relationship ends.\",\n    \"signals_to_watch\": [\n      \"A reply from Pinecrest with pilot data or a timeline for sharing it.\",\n      \"A reply from Pinecrest asking for clarification on the NDA or requesting changes.\",\n      \"Continued silence past two weeks from the NDA signature.\",\n      \"A reply from Pinecrest saying they have decided not to move forward.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is not named in the brief as a priority, so the stakes are not high.\",\n      \"The counterparty has named a next step and gone silent, which is a signal that requires attention but not immediate action.\",\n      \"A wrong move \u2014 such as a premature or aggressive check-in \u2014 could damage the relationship, but the damage is recoverable.\",\n      \"The file has been quiet for over a week, which is longer than any prior gap, suggesting a change in momentum.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Wait for a reply from Pinecrest. If no reply arrives by 2026-09-17, send a brief check-in asking whether they received the NDA and when they expect to share the pilot data.\",\n    \"for_whom\": \"Pinecrest\",\n    \"by_when\": \"2026-09-17\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Send a brief check-in to Pinecrest now, asking whether they received the NDA and when they expect to share the pilot data. This surfaces whether the work is still active and gives them a gentle prompt if they have deprioritized it. The risk is that you read as impatient or that you interrupt their internal process.\",\n  \"wait_or_stop\": \"Wait until 2026-09-17 (two weeks from the NDA signature) before sending a check-in. If Pinecrest replies with pilot data or a timeline before then, close the file and move to the next phase. If no reply arrives by 2026-09-17, send a check-in. If no reply arrives by 2026-09-24 (three weeks from the NDA signature), consider the file dormant and close it unless there is a strategic reason to keep it open.\",\n  \"done_when\": \"Pinecrest sends the pilot data or a clear timeline for sharing it, or Pinecrest replies that they have decided not to move forward. In either case, the file is categorized in the brief and either moved to the next phase or closed.\"\n}",
+  "site": "expert"
+ }
+}

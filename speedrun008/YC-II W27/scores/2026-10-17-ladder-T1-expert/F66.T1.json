@@ -1,0 +1,739 @@
+{
+ "6d88902c2b9479b806ad124470d3a8b04e7be3b14c8aad98adaa31437bc80893": {
+  "framed": true,
+  "input_tokens": 12412,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3340,
+  "parsed": {
+   "alternative": "Do nothing until the first paid pilot is delivered, then write to Ines Duarte about it. This is simpler but risks misalignment on what the milestone is and when it should be delivered.",
+   "appraisal": {
+    "reasons": [
+     "Northfield Ventures is one of five investors in the seed wave; the founder is also engaged with Lumen Ventures and has applied to multiple accelerators, so this one investor is not a blocker.",
+     "The conversation is conditional on the founder's execution, not on the investor's decision; the founder controls the next move.",
+     "A conditional deferral can be reopened if the condition is met; it is not a terminal pass.",
+     "The file has been quiet for less than a day; there is no urgency to move now."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The milestone is confirmed in writing, Ines Duarte is on the update list, and the founder has a plan to deliver the first paid pilot and report back to her.",
+   "draft": "Hi Ines, Thanks for the call on Tuesday. Just to confirm: you'd like to see how the first paid pilot goes, and we'll keep you posted on that milestone. We're working on it now and expect to have results by [DATE]. I'll write to you then with an update. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "Ines Duarte named a milestone \u2014 the first paid pilot \u2014 and asked to be kept posted. No meeting was booked, no diligence was requested, and no pass was given. The founder has not yet confirmed the milestone in writing or named a date to report back.",
+    "expected": "After a first call, the investor is deciding whether to spend more time. The playbook expects either a partners' meeting to be booked, diligence material to be requested, the investor to pass, or silence \u2014 which usually means a soft no. A named next step without a date is a conditional deferral.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Ines Duarte at Northfield Ventures held a call with the founder on Tuesday and wrote to him the same day.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Good to meet on Tuesday."
+    },
+    {
+     "claim": "Ines Duarte named a milestone for the investor to reconsider: the first paid pilot.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Keep me posted on how the first paid pilot goes \u2014 that is the milestone we would look at."
+    },
+    {
+     "claim": "No explicit promise or commitment was made in Ines Duarte's message.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.33 days since the last touch on 2026-09-21 04:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The founder owes a move: the file's whose_move field reads 'ours'.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No open asks are recorded on this file.",
+     "evidence": [
+      "file:open_asks"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is investor, and its role in the brief is none \u2014 it was not listed among the company's active investor conversations.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A first call with a conditional deferral: the investor has named a milestone and asked to be kept posted, but has not committed to a meeting or a timeline. The founder must execute the milestone and then report back; silence until then is the default.",
+    "rivals": [
+     "A soft pass: the investor is deferring and will not reconsider, and the milestone is a polite way to end the conversation.",
+     "A file that should not be on the active list: Northfield Ventures may not be a target investor, or Ines Duarte may be a sourcer rather than a decision-maker, and the conversation may not warrant ongoing tracking."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The founder delivers the pilot and writes to Ines Duarte about it; Ines Duarte replies with a meeting request or a question within two weeks.",
+     "proposition": "Ines Duarte is genuinely interested and will reconsider if the first paid pilot is delivered."
+    },
+    {
+     "needs": "The founder delivers the pilot and writes to Ines Duarte; Ines Duarte does not reply, or replies with a new condition.",
+     "proposition": "Ines Duarte is deferring and will not reconsider regardless of the milestone."
+    },
+    {
+     "needs": "The founder confirms whether Northfield Ventures is a target investor for this round and whether Ines Duarte is the decision-maker or a sourcer.",
+     "proposition": "This file should be tracked as an active investor conversation, not as a one-off outreach."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "none:promises",
+      "pb:founder_office.heu.investor_relations.only_an_offer_counts"
+     ],
+     "claim": "Ines Duarte did not make an offer or a commitment; she named a condition for future consideration."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:1"
+     ],
+     "claim": "The conversation has moved from first contact to first call held, and the next step is conditional on the founder's execution, not on the investor's decision."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The founder must now execute the first paid pilot and then report back; silence from the investor until that milestone is met is the default, not a signal."
+    },
+    {
+     "based_on": [
+      "fact:7",
+      "brief:cbl_#8"
+     ],
+     "claim": "This file should be on the watchlist as an active investor conversation, not filed as 'role: none'."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-28",
+    "for_whom": "Ines Duarte",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+     "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:2",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "ines@northfieldvc.test",
+    "what": "Confirm the milestone in writing with Ines Duarte, and add her to the update list with a watch on the first paid pilot. When the pilot is delivered, write to her about it and ask for a meeting.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A first call that ends with a named milestone but no date and no next meeting is a soft conditional: the investor has not said no, but has handed the ball back to the founder and will not move again until the condition is met.",
+     "kind": "practice",
+     "why": "The investor has named what would bring them back into the conversation, but has not committed to reviewing it or to a timeline; the founder's execution is now the only clock."
+    },
+    {
+     "claim": "Investors who name a milestone without a follow-up date or a meeting to discuss it rarely follow up on their own; the founder must deliver the milestone and then write to them about it.",
+     "kind": "base_rate",
+     "why": "A fund sees far more companies than it can fund and loses nothing by dropping one; the founder must create the reason for the investor to re-engage."
+    },
+    {
+     "claim": "A file that records 'whose_move: ours' but has no open asks and no named next step is usually a file waiting on the founder's execution, not on the founder's outbound move.",
+     "kind": "practice",
+     "why": "The file's whose_move field should reflect whose turn it is in the conversation, not whose turn it is to write; here the investor has written last and named a condition, so the founder's move is to execute, not to reply."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "After a first call that names a next step without a date, the investor is deciding whether to spend more time, and most do not; silence is the default until the founder delivers the named milestone.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "One in three companies whose management a venture firm meets is reviewed at a partners' meeting; the other two receive no further engagement.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "A conditional deferral \u2014 'keep me posted on X' \u2014 is not a pass and not a commitment; it is a door left open that requires the founder to deliver the condition before the investor will reconsider.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "evt_#1"
+    ],
+    "kind": "investor",
+    "why": "The file is a conversation with a venture investor about a seed round; Ines Duarte is a Principal at Northfield Ventures, a venture firm."
+   },
+   "scenarios": {
+    "act": "The founder executes the first paid pilot and writes to Ines Duarte when it is done, naming the milestone and asking for a meeting to discuss the results. Ines Duarte either replies with a meeting time or a question, or does not reply.",
+    "best": "The founder delivers the pilot and writes to Ines Duarte; Ines Duarte replies within a week with a meeting request or a question, and the conversation moves to a partners' meeting or diligence.",
+    "do_nothing": "The founder does not execute the pilot or does not report back when it is done. Ines Duarte does not follow up; the conversation decays into a no that nobody sends. The founder learns of it only when the round has moved on without Northfield Ventures.",
+    "signals_to_watch": [
+     "The founder delivers the first paid pilot and has a customer or revenue to report.",
+     "Ines Duarte replies to the founder's update within two weeks with a meeting request or a question.",
+     "Ines Duarte does not reply to the founder's update, or replies with a new condition or a pass.",
+     "The founder learns that Northfield Ventures has invested in a competitor or a similar company."
+    ],
+    "worst": "The founder delivers the pilot and writes to Ines Duarte; Ines Duarte does not reply, or replies with a new condition. The conversation stalls and the founder learns months later that Northfield Ventures passed."
+   },
+   "unknowns": [
+    {
+     "question": "Is Northfield Ventures a target investor for this round, and is Ines Duarte the partner or an associate?",
+     "relevance": "If Ines Duarte is an associate, the conversation may not reach a partner meeting even if the pilot is delivered; if Northfield is not a target, the file may not warrant ongoing tracking."
+    },
+    {
+     "question": "What is the timeline for the first paid pilot, and when should the founder expect to have it?",
+     "relevance": "The founder's next move depends on when the milestone can be delivered; if it is months away, the file should be moved to a watch list rather than tracked as active."
+    },
+    {
+     "question": "Did the founder confirm the milestone in writing after the call, or is Ines Duarte's message the only record?",
+     "relevance": "If the founder did not confirm, there is a risk of misalignment on what the milestone is; a written confirmation is the asset."
+    }
+   ],
+   "wait_or_stop": "Wait until the first paid pilot is delivered. Do not send a check-in or a reminder before then; silence is the default. If the pilot is not delivered within a reasonable time (unknown from the dossier), revisit the file and decide whether to close it or move it to a watch list. If Ines Duarte replies to the confirmation with a pass or a new condition, record it and act accordingly."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Ines Duarte at Northfield Ventures held a call with the founder on Tuesday and wrote to him the same day.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Good to meet on Tuesday.\"\n    },\n    {\n      \"claim\": \"Ines Duarte named a milestone for the investor to reconsider: the first paid pilot.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Keep me posted on how the first paid pilot goes \u2014 that is the milestone we would look at.\"\n    },\n    {\n      \"claim\": \"No explicit promise or commitment was made in Ines Duarte's message.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.33 days since the last touch on 2026-09-21 04:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The founder owes a move: the file's whose_move field reads 'ours'.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No open asks are recorded on this file.\",\n      \"evidence\": [\n        \"file:open_asks\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is investor, and its role in the brief is none \u2014 it was not listed among the company's active investor conversations.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Ines Duarte did not make an offer or a commitment; she named a condition for future consideration.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"none:promises\",\n        \"pb:founder_office.heu.investor_relations.only_an_offer_counts\"\n      ]\n    },\n    {\n      \"claim\": \"The conversation has moved from first contact to first call held, and the next step is conditional on the founder's execution, not on the investor's decision.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The founder must now execute the first paid pilot and then report back; silence from the investor until that milestone is met is the default, not a signal.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"This file should be on the watchlist as an active investor conversation, not filed as 'role: none'.\",\n      \"based_on\": [\n        \"fact:7\",\n        \"brief:cbl_#8\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"After a first call that names a next step without a date, the investor is deciding whether to spend more time, and most do not; silence is the default until the founder delivers the named milestone.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"One in three companies whose management a venture firm meets is reviewed at a partners' meeting; the other two receive no further engagement.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A conditional deferral \u2014 'keep me posted on X' \u2014 is not a pass and not a commitment; it is a door left open that requires the founder to deliver the condition before the investor will reconsider.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A first call that ends with a named milestone but no date and no next meeting is a soft conditional: the investor has not said no, but has handed the ball back to the founder and will not move again until the condition is met.\",\n      \"why\": \"The investor has named what would bring them back into the conversation, but has not committed to reviewing it or to a timeline; the founder's execution is now the only clock.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investors who name a milestone without a follow-up date or a meeting to discuss it rarely follow up on their own; the founder must deliver the milestone and then write to them about it.\",\n      \"why\": \"A fund sees far more companies than it can fund and loses nothing by dropping one; the founder must create the reason for the investor to re-engage.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A file that records 'whose_move: ours' but has no open asks and no named next step is usually a file waiting on the founder's execution, not on the founder's outbound move.\",\n      \"why\": \"The file's whose_move field should reflect whose turn it is in the conversation, not whose turn it is to write; here the investor has written last and named a condition, so the founder's move is to execute, not to reply.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Ines Duarte is genuinely interested and will reconsider if the first paid pilot is delivered.\",\n      \"needs\": \"The founder delivers the pilot and writes to Ines Duarte about it; Ines Duarte replies with a meeting request or a question within two weeks.\"\n    },\n    {\n      \"proposition\": \"Ines Duarte is deferring and will not reconsider regardless of the milestone.\",\n      \"needs\": \"The founder delivers the pilot and writes to Ines Duarte; Ines Duarte does not reply, or replies with a new condition.\"\n    },\n    {\n      \"proposition\": \"This file should be tracked as an active investor conversation, not as a one-off outreach.\",\n      \"needs\": \"The founder confirms whether Northfield Ventures is a target investor for this round and whether Ines Duarte is the decision-maker or a sourcer.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Northfield Ventures a target investor for this round, and is Ines Duarte the partner or an associate?\",\n      \"relevance\": \"If Ines Duarte is an associate, the conversation may not reach a partner meeting even if the pilot is delivered; if Northfield is not a target, the file may not warrant ongoing tracking.\"\n    },\n    {\n      \"question\": \"What is the timeline for the first paid pilot, and when should the founder expect to have it?\",\n      \"relevance\": \"The founder's next move depends on when the milestone can be delivered; if it is months away, the file should be moved to a watch list rather than tracked as active.\"\n    },\n    {\n      \"question\": \"Did the founder confirm the milestone in writing after the call, or is Ines Duarte's message the only record?\",\n      \"relevance\": \"If the founder did not confirm, there is a risk of misalignment on what the milestone is; a written confirmation is the asset.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A first call with a conditional deferral: the investor has named a milestone and asked to be kept posted, but has not committed to a meeting or a timeline. The founder must execute the milestone and then report back; silence until then is the default.\",\n    \"rivals\": [\n      \"A soft pass: the investor is deferring and will not reconsider, and the milestone is a polite way to end the conversation.\",\n      \"A file that should not be on the active list: Northfield Ventures may not be a target investor, or Ines Duarte may be a sourcer rather than a decision-maker, and the conversation may not warrant ongoing tracking.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is a conversation with a venture investor about a seed round; Ines Duarte is a Principal at Northfield Ventures, a venture firm.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"After a first call, the investor is deciding whether to spend more time. The playbook expects either a partners' meeting to be booked, diligence material to be requested, the investor to pass, or silence \u2014 which usually means a soft no. A named next step without a date is a conditional deferral.\",\n    \"actual\": \"Ines Duarte named a milestone \u2014 the first paid pilot \u2014 and asked to be kept posted. No meeting was booked, no diligence was requested, and no pass was given. The founder has not yet confirmed the milestone in writing or named a date to report back.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not execute the pilot or does not report back when it is done. Ines Duarte does not follow up; the conversation decays into a no that nobody sends. The founder learns of it only when the round has moved on without Northfield Ventures.\",\n    \"act\": \"The founder executes the first paid pilot and writes to Ines Duarte when it is done, naming the milestone and asking for a meeting to discuss the results. Ines Duarte either replies with a meeting time or a question, or does not reply.\",\n    \"best\": \"The founder delivers the pilot and writes to Ines Duarte; Ines Duarte replies within a week with a meeting request or a question, and the conversation moves to a partners' meeting or diligence.\",\n    \"worst\": \"The founder delivers the pilot and writes to Ines Duarte; Ines Duarte does not reply, or replies with a new condition. The conversation stalls and the founder learns months later that Northfield Ventures passed.\",\n    \"signals_to_watch\": [\n      \"The founder delivers the first paid pilot and has a customer or revenue to report.\",\n      \"Ines Duarte replies to the founder's update within two weeks with a meeting request or a question.\",\n      \"Ines Duarte does not reply to the founder's update, or replies with a new condition or a pass.\",\n      \"The founder learns that Northfield Ventures has invested in a competitor or a similar company.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Northfield Ventures is one of five investors in the seed wave; the founder is also engaged with Lumen Ventures and has applied to multiple accelerators, so this one investor is not a blocker.\",\n      \"The conversation is conditional on the founder's execution, not on the investor's decision; the founder controls the next move.\",\n      \"A conditional deferral can be reopened if the condition is met; it is not a terminal pass.\",\n      \"The file has been quiet for less than a day; there is no urgency to move now.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Confirm the milestone in writing with Ines Duarte, and add her to the update list with a watch on the first paid pilot. When the pilot is delivered, write to her about it and ask for a meeting.\",\n    \"for_whom\": \"Ines Duarte\",\n    \"by_when\": \"2026-09-28\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n      \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n      \"own:2\"\n    ],\n    \"to\": \"ines@northfieldvc.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Do nothing until the first paid pilot is delivered, then write to Ines Duarte about it. This is simpler but risks misalignment on what the milestone is and when it should be delivered.\",\n  \"wait_or_stop\": \"Wait until the first paid pilot is delivered. Do not send a check-in or a reminder before then; silence is the default. If the pilot is not delivered within a reasonable time (unknown from the dossier), revisit the file and decide whether to close it or move it to a watch list. If Ines Duarte replies to the confirmation with a pass or a new condition, record it and act accordingly.\",\n  \"done_when\": \"The milestone is confirmed in writing, Ines Duarte is on the update list, and the founder has a plan to deliver the first paid pilot and report back to her.\",\n  \"draft\": \"Hi Ines, Thanks for the call on Tuesday. Just to confirm: you'd like to see how the first paid pilot goes, and we'll keep you posted on that milestone. We're working on it now and expect to have results by [DATE]. I'll write to you then with an update. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "a4366f587d03fa91c4f467a05720c3912ae7254a12f7722d963d0cdc994261bd": {
+  "framed": true,
+  "input_tokens": 12257,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3877,
+  "parsed": {
+   "alternative": "Wait for the first paid pilot to be ready, then send an update to Ines with the news and ask for a meeting. This is slower and risks the investor forgetting the condition, but it avoids a message that might seem premature.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because Northfield is one of five investors in the seed wave, and the round depends on multiple investors moving in parallel, not on any single one.",
+     "The urgency is medium because the investor has named a condition that is likely weeks or months away, so there is time to act, but the window after the call is closing and a same-day confirmation is much more likely to land than a delayed one.",
+     "The move is reversible because a confirmation note that locks in the condition does not commit the founder to anything; it only clarifies what both parties agreed to. If the investor does not re-engage, the founder can move on.",
+     "The reasoning units found low urgency and low risk, which is correct for the file as it stands, but the playbook's guidance on conditional deferrals suggests that a same-day confirmation is a best practice that increases the probability of re-engagement."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The confirmation note is sent the same day, and the investor is added to the monthly update list. When the first paid pilot is ready, an update is sent to the investor, and a meeting is booked or a reply is received that re-engages the conversation.",
+   "draft": "Hi Ines, Thanks for the call on Tuesday. I wanted to confirm what we discussed: you'd like to see how the first paid pilot goes, and that's the milestone you'd look at before we talk next. I'll send you a monthly update on how we're tracking toward that, and we'll connect once it's live. Looking forward to showing you the traction. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The investor named a condition \u2014 a first paid pilot \u2014 but did not name a next step or a date. No partners' meeting was booked, no diligence was requested, and no pass was given. The founder has not yet confirmed the condition in writing or established a cadence for updates.",
+    "expected": "The playbook expects that after a first call, one of three things happens: a partners' meeting or second meeting with a decision-maker is booked, diligence material is requested, or the investor passes. The typical duration is 14 days. Silence after a first call that named no next step is usually a soft no; silence after a first call that named a step and a date is the firm's process until that date passes.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Ines Duarte at Northfield Ventures wrote on 2026-09-21 04:00 UTC proposing a first call and naming a milestone for future engagement.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Good to meet on Tuesday. Keep me posted on how the first paid pilot goes \u2014 that is the milestone we would look at."
+    },
+    {
+     "claim": "The file shows a first call has taken place \u2014 Ines references 'Tuesday' as past and speaks of a milestone to watch.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Good to meet on Tuesday"
+    },
+    {
+     "claim": "No next step was named in writing after the call, and no date was confirmed for follow-up.",
+     "evidence": [
+      "file:whose_move",
+      "file:open_asks"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.33 days since the last touch on 2026-09-21 04:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was extracted from the mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is investor, and Northfield Ventures is listed in the brief as one of five investors written to in the seed wave.",
+     "evidence": [
+      "file:kind",
+      "brief:cbl_#8"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found low risk, high engagement, and low urgency, with no blocking dependency observed.",
+     "evidence": [
+      "ru:core.risk",
+      "ru:core.temporal",
+      "ru:core.dependency"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The playbook for investor conversations names five stages: first_contact, first_call, partner_meeting, diligence, term_sheet, closed, and passed.",
+     "evidence": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A first call with a conditional deferral: the investor has left the door open but named a metric \u2014 a first paid pilot \u2014 that must be met before they will re-engage. The ball is in the founder's court to confirm the condition in writing and add the investor to a monthly update list.",
+    "rivals": [
+     "A soft no disguised as a condition: the investor is using the 'first paid pilot' as a polite way to defer without committing, and is unlikely to re-engage even if the condition is met.",
+     "A genuine gate with high probability of re-engagement: the investor is tracking the metric and will move quickly once it is met, because they have already decided the company is worth funding if the traction appears."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A record of how the call went, what was discussed, and whether the investor asked questions or showed engagement.",
+     "proposition": "The first call was a warm introduction or a strong meeting, and the investor is genuinely interested but needs to see traction before committing."
+    },
+    {
+     "needs": "A record of the investor's tone, questions asked, and whether they asked for any materials or references.",
+     "proposition": "The first call was lukewarm, and the investor is using the 'first paid pilot' condition as a polite way to defer without saying no."
+    },
+    {
+     "needs": "A record of whether the investor has asked to be kept posted, or whether this is an inferred condition.",
+     "proposition": "The investor is genuinely tracking the milestone and will re-engage when it is met."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "evt_#1"
+     ],
+     "claim": "The conversation has moved from first_contact to first_call, as evidenced by the reference to a meeting that has occurred."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3"
+     ],
+     "claim": "The investor has named a condition for re-engagement \u2014 a first paid pilot \u2014 but has not committed to a next step or a date."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "file:whose_move"
+     ],
+     "claim": "The ball is in our court: we owe a follow-up that confirms the milestone, thanks the investor, and establishes when we will update them."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "This is a conditional deferral \u2014 the investor has left the door open but named a condition, not a commitment."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Silence now is not a signal; the investor has named a condition and is waiting to hear from us when it is met."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-21",
+    "for_whom": "Ines Duarte at Northfield Ventures",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+     "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "ines@northfieldvc.test",
+    "what": "Send a same-day note to Ines Duarte confirming the condition in her own words, thanking her for the call, and naming when you will send the next update.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "After a first call, the founder should send a same-day note confirming the condition in the investor's own words, thanking them, and naming when they will hear next.",
+     "kind": "practice",
+     "why": "A written confirmation of the condition locks it in and prevents misunderstanding; it also signals momentum and professionalism. The investor will not re-read the call notes; the founder's summary is the record."
+    },
+    {
+     "claim": "Most founders wait too long to confirm a condition after a call, and by the time they do, the investor has moved on to other companies.",
+     "kind": "base_rate",
+     "why": "The window after a call is when the investor's attention is highest. A delay of more than a day reads as lack of momentum."
+    },
+    {
+     "claim": "A conditional deferral should be added to a monthly update list, with the metric or milestone tracked and reported each month until the condition is met.",
+     "kind": "practice",
+     "why": "Without a cadence, the investor forgets the condition and the founder forgets to track it. A monthly update keeps both parties aligned and the door warm."
+    },
+    {
+     "claim": "Do not send a check-in to an investor on a conditional deferral; send only updates that track progress against the named condition.",
+     "kind": "counter_pattern",
+     "why": "A check-in is the conversation they already deferred. An update that shows progress against their condition is a reason to re-engage."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "After a first call that names a condition but no next step, the investor is in a holding pattern and expects to hear from the founder when the condition is met.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "A first call that ends without a named next step and date is usually a soft no, unless a condition was named.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "About one company in three whose management a venture firm meets is reviewed at a partners' meeting.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+     ],
+     "claim": "A conditional deferral with a named metric is not a pass; it is a door left open with a threshold.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#8"
+    ],
+    "kind": "investor",
+    "why": "The file is about a venture capital firm in the seed round, and the work is to move the conversation toward a commitment or a clear pass."
+   },
+   "scenarios": {
+    "act": "The founder sends a same-day note confirming the condition in the investor's own words, thanking them, and naming when they will hear next. The investor is added to a monthly update list, and the founder tracks the metric and reports progress each month. When the condition is met, the founder writes to the investor about that and nothing else, and a meeting is booked.",
+    "best": "The investor is genuinely interested and tracking the metric. When the pilot is ready, the founder's update triggers a quick re-engagement, and the investor moves to a partners' meeting or diligence. The condition was a real gate, not a deferral.",
+    "do_nothing": "The investor remains on the file as a live conversation, but without a written confirmation of the condition or a cadence for updates. Over time, the investor forgets the condition, the founder forgets to track it, and the conversation decays into a no that nobody sends. By the time the pilot is ready, the investor has moved on.",
+    "signals_to_watch": [
+     "Whether the investor replies to the confirmation note with a question or a request to meet \u2014 a sign of genuine interest.",
+     "Whether the investor replies to the first monthly update \u2014 a sign that they are tracking the condition.",
+     "Whether other investors in the wave move faster \u2014 a sign that Northfield is a secondary option and the founder should focus on the leaders.",
+     "Whether the first paid pilot is achieved on the timeline the founder expects \u2014 a sign that the condition will be met and the investor can be re-engaged."
+    ],
+    "worst": "The investor was using the condition as a polite deferral. Even if the pilot is ready, the investor does not re-engage, because they have moved on or the company no longer fits their thesis. The founder has wasted time tracking a condition that was never a real gate."
+   },
+   "unknowns": [
+    {
+     "question": "What was discussed on the call, and what was the investor's tone and level of engagement?",
+     "relevance": "This would determine whether the condition is a genuine gate or a polite deferral, and whether a follow-up is likely to re-engage the investor."
+    },
+    {
+     "question": "Was the call a warm introduction, or a cold outreach that led to a meeting?",
+     "relevance": "A warm introduction carries higher probability of re-engagement; a cold outreach that led to a meeting is less likely to convert without momentum elsewhere."
+    },
+    {
+     "question": "What is the timeline for the first paid pilot, and is it realistic?",
+     "relevance": "If the pilot is months away, the investor may have moved on by the time it is ready. If it is weeks away, the condition is a real gate."
+    },
+    {
+     "question": "Are there other investors in the wave who have moved further, or is Northfield ahead of the pack?",
+     "relevance": "If Northfield is ahead, the condition is a real gate and worth tracking. If others are further along, Northfield may be a secondary option."
+    }
+   ],
+   "wait_or_stop": "Wait until the first paid pilot is ready, then send an update. Stop if the investor does not reply to the confirmation note within a week, or if other investors in the wave move significantly faster and the founder's attention is needed elsewhere. Do not send a check-in; send only updates that track progress against the named condition."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Ines Duarte at Northfield Ventures wrote on 2026-09-21 04:00 UTC proposing a first call and naming a milestone for future engagement.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Good to meet on Tuesday. Keep me posted on how the first paid pilot goes \u2014 that is the milestone we would look at.\"\n    },\n    {\n      \"claim\": \"The file shows a first call has taken place \u2014 Ines references 'Tuesday' as past and speaks of a milestone to watch.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Good to meet on Tuesday\"\n    },\n    {\n      \"claim\": \"No next step was named in writing after the call, and no date was confirmed for follow-up.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"file:open_asks\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.33 days since the last touch on 2026-09-21 04:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was extracted from the mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is investor, and Northfield Ventures is listed in the brief as one of five investors written to in the seed wave.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"brief:cbl_#8\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found low risk, high engagement, and low urgency, with no blocking dependency observed.\",\n      \"evidence\": [\n        \"ru:core.risk\",\n        \"ru:core.temporal\",\n        \"ru:core.dependency\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The playbook for investor conversations names five stages: first_contact, first_call, partner_meeting, diligence, term_sheet, closed, and passed.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The conversation has moved from first_contact to first_call, as evidenced by the reference to a meeting that has occurred.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The investor has named a condition for re-engagement \u2014 a first paid pilot \u2014 but has not committed to a next step or a date.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in our court: we owe a follow-up that confirms the milestone, thanks the investor, and establishes when we will update them.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"This is a conditional deferral \u2014 the investor has left the door open but named a condition, not a commitment.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"claim\": \"Silence now is not a signal; the investor has named a condition and is waiting to hear from us when it is met.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"After a first call that names a condition but no next step, the investor is in a holding pattern and expects to hear from the founder when the condition is met.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A first call that ends without a named next step and date is usually a soft no, unless a condition was named.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"About one company in three whose management a venture firm meets is reviewed at a partners' meeting.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A conditional deferral with a named metric is not a pass; it is a door left open with a threshold.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"After a first call, the founder should send a same-day note confirming the condition in the investor's own words, thanking them, and naming when they will hear next.\",\n      \"why\": \"A written confirmation of the condition locks it in and prevents misunderstanding; it also signals momentum and professionalism. The investor will not re-read the call notes; the founder's summary is the record.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most founders wait too long to confirm a condition after a call, and by the time they do, the investor has moved on to other companies.\",\n      \"why\": \"The window after a call is when the investor's attention is highest. A delay of more than a day reads as lack of momentum.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A conditional deferral should be added to a monthly update list, with the metric or milestone tracked and reported each month until the condition is met.\",\n      \"why\": \"Without a cadence, the investor forgets the condition and the founder forgets to track it. A monthly update keeps both parties aligned and the door warm.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Do not send a check-in to an investor on a conditional deferral; send only updates that track progress against the named condition.\",\n      \"why\": \"A check-in is the conversation they already deferred. An update that shows progress against their condition is a reason to re-engage.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The first call was a warm introduction or a strong meeting, and the investor is genuinely interested but needs to see traction before committing.\",\n      \"needs\": \"A record of how the call went, what was discussed, and whether the investor asked questions or showed engagement.\"\n    },\n    {\n      \"proposition\": \"The first call was lukewarm, and the investor is using the 'first paid pilot' condition as a polite way to defer without saying no.\",\n      \"needs\": \"A record of the investor's tone, questions asked, and whether they asked for any materials or references.\"\n    },\n    {\n      \"proposition\": \"The investor is genuinely tracking the milestone and will re-engage when it is met.\",\n      \"needs\": \"A record of whether the investor has asked to be kept posted, or whether this is an inferred condition.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What was discussed on the call, and what was the investor's tone and level of engagement?\",\n      \"relevance\": \"This would determine whether the condition is a genuine gate or a polite deferral, and whether a follow-up is likely to re-engage the investor.\"\n    },\n    {\n      \"question\": \"Was the call a warm introduction, or a cold outreach that led to a meeting?\",\n      \"relevance\": \"A warm introduction carries higher probability of re-engagement; a cold outreach that led to a meeting is less likely to convert without momentum elsewhere.\"\n    },\n    {\n      \"question\": \"What is the timeline for the first paid pilot, and is it realistic?\",\n      \"relevance\": \"If the pilot is months away, the investor may have moved on by the time it is ready. If it is weeks away, the condition is a real gate.\"\n    },\n    {\n      \"question\": \"Are there other investors in the wave who have moved further, or is Northfield ahead of the pack?\",\n      \"relevance\": \"If Northfield is ahead, the condition is a real gate and worth tracking. If others are further along, Northfield may be a secondary option.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A first call with a conditional deferral: the investor has left the door open but named a metric \u2014 a first paid pilot \u2014 that must be met before they will re-engage. The ball is in the founder's court to confirm the condition in writing and add the investor to a monthly update list.\",\n    \"rivals\": [\n      \"A soft no disguised as a condition: the investor is using the 'first paid pilot' as a polite way to defer without committing, and is unlikely to re-engage even if the condition is met.\",\n      \"A genuine gate with high probability of re-engagement: the investor is tracking the metric and will move quickly once it is met, because they have already decided the company is worth funding if the traction appears.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is about a venture capital firm in the seed round, and the work is to move the conversation toward a commitment or a clear pass.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#8\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"The playbook expects that after a first call, one of three things happens: a partners' meeting or second meeting with a decision-maker is booked, diligence material is requested, or the investor passes. The typical duration is 14 days. Silence after a first call that named no next step is usually a soft no; silence after a first call that named a step and a date is the firm's process until that date passes.\",\n    \"actual\": \"The investor named a condition \u2014 a first paid pilot \u2014 but did not name a next step or a date. No partners' meeting was booked, no diligence was requested, and no pass was given. The founder has not yet confirmed the condition in writing or established a cadence for updates.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The investor remains on the file as a live conversation, but without a written confirmation of the condition or a cadence for updates. Over time, the investor forgets the condition, the founder forgets to track it, and the conversation decays into a no that nobody sends. By the time the pilot is ready, the investor has moved on.\",\n    \"act\": \"The founder sends a same-day note confirming the condition in the investor's own words, thanking them, and naming when they will hear next. The investor is added to a monthly update list, and the founder tracks the metric and reports progress each month. When the condition is met, the founder writes to the investor about that and nothing else, and a meeting is booked.\",\n    \"best\": \"The investor is genuinely interested and tracking the metric. When the pilot is ready, the founder's update triggers a quick re-engagement, and the investor moves to a partners' meeting or diligence. The condition was a real gate, not a deferral.\",\n    \"worst\": \"The investor was using the condition as a polite deferral. Even if the pilot is ready, the investor does not re-engage, because they have moved on or the company no longer fits their thesis. The founder has wasted time tracking a condition that was never a real gate.\",\n    \"signals_to_watch\": [\n      \"Whether the investor replies to the confirmation note with a question or a request to meet \u2014 a sign of genuine interest.\",\n      \"Whether the investor replies to the first monthly update \u2014 a sign that they are tracking the condition.\",\n      \"Whether other investors in the wave move faster \u2014 a sign that Northfield is a secondary option and the founder should focus on the leaders.\",\n      \"Whether the first paid pilot is achieved on the timeline the founder expects \u2014 a sign that the condition will be met and the investor can be re-engaged.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because Northfield is one of five investors in the seed wave, and the round depends on multiple investors moving in parallel, not on any single one.\",\n      \"The urgency is medium because the investor has named a condition that is likely weeks or months away, so there is time to act, but the window after the call is closing and a same-day confirmation is much more likely to land than a delayed one.\",\n      \"The move is reversible because a confirmation note that locks in the condition does not commit the founder to anything; it only clarifies what both parties agreed to. If the investor does not re-engage, the founder can move on.\",\n      \"The reasoning units found low urgency and low risk, which is correct for the file as it stands, but the playbook's guidance on conditional deferrals suggests that a same-day confirmation is a best practice that increases the probability of re-engagement.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send a same-day note to Ines Duarte confirming the condition in her own words, thanking her for the call, and naming when you will send the next update.\",\n    \"for_whom\": \"Ines Duarte at Northfield Ventures\",\n    \"by_when\": \"2026-09-21\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:3\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n      \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n      \"own:1\"\n    ],\n    \"to\": \"ines@northfieldvc.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Wait for the first paid pilot to be ready, then send an update to Ines with the news and ask for a meeting. This is slower and risks the investor forgetting the condition, but it avoids a message that might seem premature.\",\n  \"wait_or_stop\": \"Wait until the first paid pilot is ready, then send an update. Stop if the investor does not reply to the confirmation note within a week, or if other investors in the wave move significantly faster and the founder's attention is needed elsewhere. Do not send a check-in; send only updates that track progress against the named condition.\",\n  \"done_when\": \"The confirmation note is sent the same day, and the investor is added to the monthly update list. When the first paid pilot is ready, an update is sent to the investor, and a meeting is booked or a reply is received that re-engages the conversation.\",\n  \"draft\": \"Hi Ines, Thanks for the call on Tuesday. I wanted to confirm what we discussed: you'd like to see how the first paid pilot goes, and that's the milestone you'd look at before we talk next. I'll send you a monthly update on how we're tracking toward that, and we'll connect once it's live. Looking forward to showing you the traction. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "b1f228f266d73dcaff1867c60402d3d237afce2b23295559cef6ab77b4dd88d7": {
+  "framed": true,
+  "input_tokens": 12241,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4057,
+  "parsed": {
+   "alternative": "Ask the connector who introduced Arjun to Marcus to clarify what Marcus means by 'a lead' and whether Marcus has check-writing authority. Then send the confirmation. This costs one extra day but reduces the risk of misunderstanding the condition.",
+   "appraisal": {
+    "reasons": [
+     "Harbor Point Partners is one of five investors written to in the seed wave; losing this investor is not fatal, but keeping the door open is valuable.",
+     "The company has not yet landed a lead investor or a customer, so the condition is not yet met; there is no time pressure to act now.",
+     "A written confirmation of the condition costs one email and takes one business day; if the company does not send it, the file decays into a no that nobody sends, and the founder learns of it only when the round has moved on.",
+     "A confirmation sent now is reversible: if the company later decides Harbor Point is not a fit, it can stop updating Marcus; if the company lands a lead and Marcus does not reply, the company can move on."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The confirmation is sent to Marcus the same day or the next business day, and Marcus is added to the monthly update list. When the company lands a lead investor or a customer, the re-approach is sent with a note that cites the condition in Marcus's own words.",
+   "draft": "Hi Marcus, Thanks for the call on Wednesday and for your note. I understood you to say: when the round opens with a lead, send you a note and you'll take a proper look. I'll do that. In the meantime, I'll send you a monthly update on how we're progressing \u2014 growth, cash, burn, and what we need. Looking forward to reconnecting when we have a lead. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "Marcus wrote back the same day with a conditional deferral: 'When the round opens with a lead, send me a note and we will take a proper look.' He has not named a next step or a date, but he has named a condition. The company has not yet replied.",
+    "expected": "After a first call, the investor is deciding whether to spend more time. Most do not. If they do, they will either name a next step and a date, or they will go quiet. Silence usually means a soft no. A written message that names a condition is a deferral, not a no.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Marcus Bell of Harbor Point Partners wrote to Arjun on 2026-09-21 06:00 UTC after a Wednesday call, asking to be contacted when the round opens with a lead.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Thanks for the call Hi Arjun, Thanks for walking me through Nimbus Labs on Wednesday. When the round opens with a lead, send me a note and we will take a proper look. Marcus Bell Partner, Harbor Point Partners"
+    },
+    {
+     "claim": "This is the only message in the file; it arrived 0.25 days ago.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file records no promise extracted from the mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Harbor Point Partners was written to in the seed wave, and the file's role in the brief is none.",
+     "evidence": [
+      "brief:cbl_#9",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's whose_move is ours.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time has been measured for Marcus Bell or for replies sent to him.",
+     "evidence": [
+      "num:their_reply_time:marcus@harborpoint.test",
+      "num:your_reply_time:marcus@harborpoint.test"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A conditional deferral from an interested investor after a first call: Marcus Bell has taken the call, written back the same day, and named a condition on which he will take a proper look. The company owes a written confirmation of the condition and should add him to the update list, re-approaching only when the condition is met.",
+    "rivals": [
+     "A soft no disguised as a deferral: Marcus is not interested and is using the condition as a polite way to end the conversation. The company should treat it as a pass and move on.",
+     "A test of the company's momentum: Marcus is watching to see whether the company can land a lead investor or a customer; if it can, he will invest; if it cannot, he will not. The company should focus on landing the lead and then re-approach.",
+     "A scheduling conflict: Marcus is interested but Harbor Point's process does not allow him to move forward until the company has a lead investor or a customer, at which point the company becomes a hotter deal and Harbor Point will prioritize it."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A clarifying question sent to Marcus asking what would count as a lead in his eyes, or a re-read of Harbor Point's thesis and portfolio to infer their stage and what they look for.",
+     "proposition": "Marcus Bell's 'lead' means a customer or a paying user, not a partnership or a press mention."
+    },
+    {
+     "needs": "A check of Harbor Point's website or a question to the connector who introduced Arjun to Marcus, asking whether Marcus has check-writing authority and whether Harbor Point leads rounds.",
+     "proposition": "Harbor Point Partners is a lead investor in the seed round and Marcus is the partner who will make the decision, not an associate who will pass it up."
+    },
+    {
+     "needs": "A review of the company's fundraising timeline and the status of other investors in the wave to see whether a lead is likely to commit in the near term.",
+     "proposition": "The 'round opening with a lead' is a near-term event \u2014 within weeks \u2014 and Marcus expects to hear from Arjun soon."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "Marcus Bell's message is a conditional deferral, not a pass and not a commitment: he names a condition \u2014 'when the round opens with a lead' \u2014 on which he will take a proper look."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:1",
+      "cap:admin.executive_support.commitment_tracking#f6"
+     ],
+     "claim": "The message does not extract as a promise because it is not a unilateral commitment by the company; it is a statement of what Marcus will do if a condition is met."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral"
+     ],
+     "claim": "The next move is ours: we owe a response that confirms the condition in Marcus's own words and says he will hear when it changes."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The file is in first_contact stage: a first call has taken place, but no next step has been named and no diligence has opened."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Marcus's message signals that he is interested enough to have taken the call and to have written back, but is not yet ready to commit time to diligence; he is deferring until a lead is in place."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-22",
+    "for_whom": "Marcus Bell",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:5",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "marcus@harborpoint.test",
+    "what": "Send Marcus Bell a written confirmation of his condition in his own words, thank him for the call and the message, and say he will hear when the condition is met. Add him to the monthly update list.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A conditional deferral requires a written confirmation of the condition in the investor's own words, sent the same day or within one business day, to lock in the threshold and prevent later misremembering.",
+     "kind": "practice",
+     "why": "The condition is the only asset the company holds; restating it in writing creates a shared record and makes the re-approach unambiguous when the condition is met."
+    },
+    {
+     "claim": "When an investor names a condition like 'a lead', the founder should ask what counts as a lead in their eyes \u2014 a customer, a partnership, a revenue figure \u2014 before the round moves on.",
+     "kind": "base_rate",
+     "why": "Vagueness on the condition means the founder may meet it and the investor may not agree; clarity costs one question now and saves a wasted re-approach later."
+    },
+    {
+     "claim": "A conditional deferral should move the investor to an update list, not to a pass list; the founder sends monthly updates on growth, cash, burn and what the company needs, and re-approaches only when the condition is met.",
+     "kind": "practice",
+     "why": "The investor has left a door open and is signaling interest in the company's progress; monthly updates keep the relationship warm and give the investor a reason to reply if the condition is met sooner than expected."
+    },
+    {
+     "claim": "A founder who treats a conditional deferral as a soft no and stops communicating loses the investor; one who treats it as a standing invitation and sends updates without a condition being met teaches the investor to ignore the updates.",
+     "kind": "counter_pattern",
+     "why": "The balance is to confirm the condition, add the investor to the update list, and re-approach only when the condition changes \u2014 not to check in or to ask for a meeting before that."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "After a first call with an investor, silence usually means the investor is deciding whether to spend more time, and most do not; at a venture firm about one company in three whose management the firm meets is reviewed at a partners' meeting.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+      "pb:founder_office.heu.investor_relations.only_an_offer_counts"
+     ],
+     "claim": "A conditional deferral \u2014 'send me updates', 'come back when you have a lead' \u2014 commits nobody and translates to 'No, except yes if you turn out to be a hot deal'; the condition is the asset, and the exact words are what must be captured.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict"
+     ],
+     "claim": "Most passes are decisions about timing, stage or a metric, and each carries an implicit date on which it stops being true; only thesis and team passes are verdicts.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "Investors who reject a company are some of the warmest leads for future fundraising, especially those who spent significant time deciding.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#9",
+     "file:kind"
+    ],
+    "kind": "investor",
+    "why": "The file is about an investor conversation in the seed round; Marcus Bell is a partner at Harbor Point Partners, a venture firm; the company is raising and has written to Harbor Point in the seed wave."
+   },
+   "scenarios": {
+    "act": "The company sends a written confirmation of the condition in Marcus's own words, thanks him, and says he will hear when it changes. The company adds Marcus to the update list and sends monthly updates. When the company lands a lead investor or a customer, it re-approaches Marcus with a note saying 'You said come back when we have a lead; we have one.' Marcus replies or agrees to a meeting.",
+    "best": "Marcus replies to the confirmation with a question or a request to meet, signaling that he is more interested than the deferral suggested. Or the company lands a lead investor quickly, re-approaches Marcus, and he agrees to a meeting or commits to the round.",
+    "do_nothing": "The file stays open and quiet. Marcus does not hear from the company. The company lands a lead investor or a customer and does not re-approach Marcus because the file was never confirmed. Marcus assumes the company did not land a lead and does not follow up. The company loses a warm investor.",
+    "signals_to_watch": [
+     "Marcus replies to the confirmation with a question or a request to meet",
+     "Marcus replies to a monthly update with a question or a request for more information",
+     "The company lands a lead investor or a customer and re-approaches Marcus; he replies or agrees to a meeting",
+     "The company lands a lead investor or a customer and re-approaches Marcus; he does not reply",
+     "More than ninety days pass with no reply from Marcus and no condition met; the file becomes dormant"
+    ],
+    "worst": "The company confirms the condition and adds Marcus to the update list, but Marcus never replies to the updates and never re-engages. The company lands a lead investor and re-approaches Marcus, but he does not reply. The company loses the investor."
+   },
+   "unknowns": [
+    {
+     "question": "What does Marcus Bell mean by 'a lead' \u2014 a customer, a revenue figure, a partnership, a press mention, or a lead investor?",
+     "relevance": "The re-approach will be wrong if the company meets one definition and Marcus has another in mind; clarity now prevents a wasted re-approach later."
+    },
+    {
+     "question": "Does Marcus have check-writing authority at Harbor Point, or will he pass the company to a partner?",
+     "relevance": "If Marcus is an associate, the company may need to reach a partner to move forward; if he is a partner, he is the decision-maker."
+    },
+    {
+     "question": "Is Harbor Point a lead investor or a follow-on investor in seed rounds?",
+     "relevance": "If Harbor Point only follows, Marcus's condition may be that another investor commits first; if Harbor Point leads, Marcus may be the first commitment."
+    },
+    {
+     "question": "When does the company expect to have a lead investor or a customer?",
+     "relevance": "If the timeline is months away, the company should add Marcus to the update list and not expect to re-approach soon; if it is weeks, the re-approach should be prepared now."
+    }
+   ],
+   "wait_or_stop": "Wait until the company lands a lead investor or a customer, then re-approach Marcus with a note saying 'You said come back when we have a lead; we have one.' Do not send a check-in or a monthly update without a condition being met; that teaches Marcus to ignore the updates. If more than ninety days pass with no reply from Marcus and no condition met, treat the file as dormant and stop counting it."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Marcus Bell of Harbor Point Partners wrote to Arjun on 2026-09-21 06:00 UTC after a Wednesday call, asking to be contacted when the round opens with a lead.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Thanks for the call Hi Arjun, Thanks for walking me through Nimbus Labs on Wednesday. When the round opens with a lead, send me a note and we will take a proper look. Marcus Bell Partner, Harbor Point Partners\"\n    },\n    {\n      \"claim\": \"This is the only message in the file; it arrived 0.25 days ago.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file records no promise extracted from the mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Harbor Point Partners was written to in the seed wave, and the file's role in the brief is none.\",\n      \"evidence\": [\n        \"brief:cbl_#9\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's whose_move is ours.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time has been measured for Marcus Bell or for replies sent to him.\",\n      \"evidence\": [\n        \"num:their_reply_time:marcus@harborpoint.test\",\n        \"num:your_reply_time:marcus@harborpoint.test\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Marcus Bell's message is a conditional deferral, not a pass and not a commitment: he names a condition \u2014 'when the round opens with a lead' \u2014 on which he will take a proper look.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"claim\": \"The message does not extract as a promise because it is not a unilateral commitment by the company; it is a statement of what Marcus will do if a condition is met.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:1\",\n        \"cap:admin.executive_support.commitment_tracking#f6\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: we owe a response that confirms the condition in Marcus's own words and says he will hear when it changes.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\"\n      ]\n    },\n    {\n      \"claim\": \"The file is in first_contact stage: a first call has taken place, but no next step has been named and no diligence has opened.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"Marcus's message signals that he is interested enough to have taken the call and to have written back, but is not yet ready to commit time to diligence; he is deferring until a lead is in place.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"After a first call with an investor, silence usually means the investor is deciding whether to spend more time, and most do not; at a venture firm about one company in three whose management the firm meets is reviewed at a partners' meeting.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A conditional deferral \u2014 'send me updates', 'come back when you have a lead' \u2014 commits nobody and translates to 'No, except yes if you turn out to be a hot deal'; the condition is the asset, and the exact words are what must be captured.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n        \"pb:founder_office.heu.investor_relations.only_an_offer_counts\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Most passes are decisions about timing, stage or a metric, and each carries an implicit date on which it stops being true; only thesis and team passes are verdicts.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investors who reject a company are some of the warmest leads for future fundraising, especially those who spent significant time deciding.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A conditional deferral requires a written confirmation of the condition in the investor's own words, sent the same day or within one business day, to lock in the threshold and prevent later misremembering.\",\n      \"why\": \"The condition is the only asset the company holds; restating it in writing creates a shared record and makes the re-approach unambiguous when the condition is met.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When an investor names a condition like 'a lead', the founder should ask what counts as a lead in their eyes \u2014 a customer, a partnership, a revenue figure \u2014 before the round moves on.\",\n      \"why\": \"Vagueness on the condition means the founder may meet it and the investor may not agree; clarity costs one question now and saves a wasted re-approach later.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A conditional deferral should move the investor to an update list, not to a pass list; the founder sends monthly updates on growth, cash, burn and what the company needs, and re-approaches only when the condition is met.\",\n      \"why\": \"The investor has left a door open and is signaling interest in the company's progress; monthly updates keep the relationship warm and give the investor a reason to reply if the condition is met sooner than expected.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who treats a conditional deferral as a soft no and stops communicating loses the investor; one who treats it as a standing invitation and sends updates without a condition being met teaches the investor to ignore the updates.\",\n      \"why\": \"The balance is to confirm the condition, add the investor to the update list, and re-approach only when the condition changes \u2014 not to check in or to ask for a meeting before that.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Marcus Bell's 'lead' means a customer or a paying user, not a partnership or a press mention.\",\n      \"needs\": \"A clarifying question sent to Marcus asking what would count as a lead in his eyes, or a re-read of Harbor Point's thesis and portfolio to infer their stage and what they look for.\"\n    },\n    {\n      \"proposition\": \"Harbor Point Partners is a lead investor in the seed round and Marcus is the partner who will make the decision, not an associate who will pass it up.\",\n      \"needs\": \"A check of Harbor Point's website or a question to the connector who introduced Arjun to Marcus, asking whether Marcus has check-writing authority and whether Harbor Point leads rounds.\"\n    },\n    {\n      \"proposition\": \"The 'round opening with a lead' is a near-term event \u2014 within weeks \u2014 and Marcus expects to hear from Arjun soon.\",\n      \"needs\": \"A review of the company's fundraising timeline and the status of other investors in the wave to see whether a lead is likely to commit in the near term.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Marcus Bell mean by 'a lead' \u2014 a customer, a revenue figure, a partnership, a press mention, or a lead investor?\",\n      \"relevance\": \"The re-approach will be wrong if the company meets one definition and Marcus has another in mind; clarity now prevents a wasted re-approach later.\"\n    },\n    {\n      \"question\": \"Does Marcus have check-writing authority at Harbor Point, or will he pass the company to a partner?\",\n      \"relevance\": \"If Marcus is an associate, the company may need to reach a partner to move forward; if he is a partner, he is the decision-maker.\"\n    },\n    {\n      \"question\": \"Is Harbor Point a lead investor or a follow-on investor in seed rounds?\",\n      \"relevance\": \"If Harbor Point only follows, Marcus's condition may be that another investor commits first; if Harbor Point leads, Marcus may be the first commitment.\"\n    },\n    {\n      \"question\": \"When does the company expect to have a lead investor or a customer?\",\n      \"relevance\": \"If the timeline is months away, the company should add Marcus to the update list and not expect to re-approach soon; if it is weeks, the re-approach should be prepared now.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A conditional deferral from an interested investor after a first call: Marcus Bell has taken the call, written back the same day, and named a condition on which he will take a proper look. The company owes a written confirmation of the condition and should add him to the update list, re-approaching only when the condition is met.\",\n    \"rivals\": [\n      \"A soft no disguised as a deferral: Marcus is not interested and is using the condition as a polite way to end the conversation. The company should treat it as a pass and move on.\",\n      \"A test of the company's momentum: Marcus is watching to see whether the company can land a lead investor or a customer; if it can, he will invest; if it cannot, he will not. The company should focus on landing the lead and then re-approach.\",\n      \"A scheduling conflict: Marcus is interested but Harbor Point's process does not allow him to move forward until the company has a lead investor or a customer, at which point the company becomes a hotter deal and Harbor Point will prioritize it.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is about an investor conversation in the seed round; Marcus Bell is a partner at Harbor Point Partners, a venture firm; the company is raising and has written to Harbor Point in the seed wave.\",\n    \"evidence\": [\n      \"brief:cbl_#9\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"After a first call, the investor is deciding whether to spend more time. Most do not. If they do, they will either name a next step and a date, or they will go quiet. Silence usually means a soft no. A written message that names a condition is a deferral, not a no.\",\n    \"actual\": \"Marcus wrote back the same day with a conditional deferral: 'When the round opens with a lead, send me a note and we will take a proper look.' He has not named a next step or a date, but he has named a condition. The company has not yet replied.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file stays open and quiet. Marcus does not hear from the company. The company lands a lead investor or a customer and does not re-approach Marcus because the file was never confirmed. Marcus assumes the company did not land a lead and does not follow up. The company loses a warm investor.\",\n    \"act\": \"The company sends a written confirmation of the condition in Marcus's own words, thanks him, and says he will hear when it changes. The company adds Marcus to the update list and sends monthly updates. When the company lands a lead investor or a customer, it re-approaches Marcus with a note saying 'You said come back when we have a lead; we have one.' Marcus replies or agrees to a meeting.\",\n    \"best\": \"Marcus replies to the confirmation with a question or a request to meet, signaling that he is more interested than the deferral suggested. Or the company lands a lead investor quickly, re-approaches Marcus, and he agrees to a meeting or commits to the round.\",\n    \"worst\": \"The company confirms the condition and adds Marcus to the update list, but Marcus never replies to the updates and never re-engages. The company lands a lead investor and re-approaches Marcus, but he does not reply. The company loses the investor.\",\n    \"signals_to_watch\": [\n      \"Marcus replies to the confirmation with a question or a request to meet\",\n      \"Marcus replies to a monthly update with a question or a request for more information\",\n      \"The company lands a lead investor or a customer and re-approaches Marcus; he replies or agrees to a meeting\",\n      \"The company lands a lead investor or a customer and re-approaches Marcus; he does not reply\",\n      \"More than ninety days pass with no reply from Marcus and no condition met; the file becomes dormant\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Harbor Point Partners is one of five investors written to in the seed wave; losing this investor is not fatal, but keeping the door open is valuable.\",\n      \"The company has not yet landed a lead investor or a customer, so the condition is not yet met; there is no time pressure to act now.\",\n      \"A written confirmation of the condition costs one email and takes one business day; if the company does not send it, the file decays into a no that nobody sends, and the founder learns of it only when the round has moved on.\",\n      \"A confirmation sent now is reversible: if the company later decides Harbor Point is not a fit, it can stop updating Marcus; if the company lands a lead and Marcus does not reply, the company can move on.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send Marcus Bell a written confirmation of his condition in his own words, thank him for the call and the message, and say he will hear when the condition is met. Add him to the monthly update list.\",\n    \"for_whom\": \"Marcus Bell\",\n    \"by_when\": \"2026-09-22\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:5\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.the_conditional_deferral\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"marcus@harborpoint.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Ask the connector who introduced Arjun to Marcus to clarify what Marcus means by 'a lead' and whether Marcus has check-writing authority. Then send the confirmation. This costs one extra day but reduces the risk of misunderstanding the condition.\",\n    \"wait_or_stop\": \"Wait until the company lands a lead investor or a customer, then re-approach Marcus with a note saying 'You said come back when we have a lead; we have one.' Do not send a check-in or a monthly update without a condition being met; that teaches Marcus to ignore the updates. If more than ninety days pass with no reply from Marcus and no condition met, treat the file as dormant and stop counting it.\",\n  \"done_when\": \"The confirmation is sent to Marcus the same day or the next business day, and Marcus is added to the monthly update list. When the company lands a lead investor or a customer, the re-approach is sent with a note that cites the condition in Marcus's own words.\",\n  \"draft\": \"Hi Marcus, Thanks for the call on Wednesday and for your note. I understood you to say: when the round opens with a lead, send you a note and you'll take a proper look. I'll do that. In the meantime, I'll send you a monthly update on how we're progressing \u2014 growth, cash, burn, and what we need. Looking forward to reconnecting when we have a lead. Best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

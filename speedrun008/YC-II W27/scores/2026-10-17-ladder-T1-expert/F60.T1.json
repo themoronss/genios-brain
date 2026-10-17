@@ -1,0 +1,1221 @@
+{
+ "0db0bb43449230ca4ab1e5425ad55740f0ca3ab1999083414bc795366600d8f1": {
+  "framed": true,
+  "input_tokens": 8156,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3926,
+  "parsed": {
+   "alternative": "Respond to the connector, Introly, with a single message thanking them for the introductions and confirming that you will follow up with each person directly. This keeps the connector in the loop and preserves the relationship for future introductions.",
+   "appraisal": {
+    "reasons": [
+     "The demo request from Rhea Kapur's team of eight signals a concrete evaluation opportunity, which is higher stakes than a single investor deck request.",
+     "The file is quiet for only 0.44 days, so there is still time to respond without losing momentum.",
+     "A late response can be recovered with a good explanation and a strong follow-up, so the move is reversible.",
+     "The brief lists design partners as a goal, and Saltmarsh may be one, which raises the stakes.",
+     "The brief lists Lakshya Accelerator as an active program, and the Lakefront founder evening may be a Lakshya event, which suggests the introductions are high-quality."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "All three people have confirmed their next steps: Kiran Bhat has received the deck and confirmed a meeting or a timeline for review, Rhea Kapur has confirmed a demo time, and Vikram Nair has confirmed a call time.",
+   "draft": "To Kiran Bhat: \"Hi Kiran, thanks for the intro from Introly. I'm attaching our deck. We're building an AI chief of staff for founders, and we're raising our seed round now. I'd love to get your thoughts. Are you free for a call next week?\" To Rhea Kapur: \"Hi Rhea, thanks for the intro from Introly. I'd love to show you and your team what we're building. Would Tuesday, Wednesday, or Thursday next week work for a 30-minute demo?\" To Vikram Nair: \"Hi Vikram, thanks for the intro from Introly. I'm interested in learning more about the referral partnership you mentioned. Are you free for a call next week?\"",
+   "expected_vs_actual": {
+    "actual": "The founder has not responded to any of the three introductions. The file has been quiet for 0.44 days since the introduction was made.",
+    "expected": "The brief names no playbook for this file. If it were an investor conversation, the expected stage would be introduction_made, and the expected next move would be to respond to the deck request within one business day. If it were a customer or partner conversation, the expected stage would be demo_requested, and the expected next move would be to schedule the demo.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly, an introduction agent, forwarded three introductions from a Lakefront founder evening on 2026-08-08 at 07:30 UTC.",
+     "evidence": [
+      "evt_#1",
+      "brief:cbl_#27"
+     ],
+     "quote": "three people from Thursday's Lakefront founder evening asked me to connect you, and I've copied them here so you can take it from here with each of them"
+    },
+    {
+     "claim": "Rhea Kapur, who runs operations at Saltmarsh, requested a demo for her team of eight.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Rhea Kapur, who runs operations at Saltmarsh, would like a demo for her team of eight"
+    },
+    {
+     "claim": "The file has been quiet for 0.44 days since the introduction was made.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time data exists for Rhea Kapur or for any response sent to her.",
+     "evidence": [
+      "num:their_reply_time:rhea@saltmarsh.test",
+      "num:your_reply_time:rhea@saltmarsh.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The move is ours: no open asks are recorded, and the introduction was made to the founder.",
+     "evidence": [
+      "file:whose_move",
+      "file:open_asks"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "Three warm introductions from a founder event, each with a specific ask: an investor principal requesting a deck, an operations lead requesting a demo, and a partnership lead requesting a call. The founder has not yet responded to any of them.",
+    "rivals": [
+     "A single batch introduction that should be treated as one work item, with the founder responding to the connector once to address all three.",
+     "Three separate investor conversations, all of equal priority and urgency.",
+     "A customer or partner evaluation disguised as an investor introduction, where the demo request is the real opportunity."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder or from Rhea Kapur's email that Saltmarsh is a design partner, customer, or investor.",
+     "proposition": "Saltmarsh is a potential design partner, as listed in the brief's design partner talks."
+    },
+    {
+     "needs": "A decision from the founder on whether to split this file or keep it as a batch of introductions from one event.",
+     "proposition": "The three introductions should be filed as three separate work items, not one."
+    },
+    {
+     "needs": "Confirmation of the demo's timing and whether it is scheduled or pending the founder's response.",
+     "proposition": "Rhea Kapur's demo request is the most time-sensitive of the three asks."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "evt_#1",
+      "file:domains"
+     ],
+     "claim": "This file represents three separate investor or partnership conversations, not one: Kiran Bhat at Pinewood Capital (investor), Rhea Kapur at Saltmarsh (operations lead requesting a demo), and Vikram Nair at Brightwell (partnership lead)."
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "brief:cbl_#24"
+     ],
+     "claim": "Saltmarsh is not an investor but a potential design partner or customer, based on Rhea Kapur's role as operations lead and her request for a demo rather than a deck."
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "evt_#1"
+     ],
+     "claim": "The file's domain is fundraising, but it contains three distinct work streams that should be separated: investor relations (Kiran Bhat), partnership or customer development (Rhea Kapur), and business development (Vikram Nair)."
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "sig:founder_office.sit.live_investor_relationship"
+     ],
+     "claim": "The stage of engagement is introduction_made, the earliest stage in an investor relationship, with no meeting scheduled or next step confirmed."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-09",
+    "for_whom": "Kiran Bhat, Rhea Kapur, and Vikram Nair",
+    "guided_by": [
+     "cap:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+     "cap:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Respond to each of the three introductions with a specific next step: send Kiran Bhat the deck with a note, propose three times for Rhea Kapur's demo, and propose a call with Vikram Nair. Treat each as a separate conversation.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Separate introductions by their work type immediately: investor conversations, customer or partner conversations, and business development conversations each need different playbooks and timelines.",
+     "kind": "practice",
+     "why": "Mixing them in one file creates confusion about urgency, stage, and the right next move. An investor deck is not a customer demo, and a partnership call is neither."
+    },
+    {
+     "claim": "A demo request from a team of eight signals serious evaluation and should be treated as higher urgency than a deck request to a single principal.",
+     "kind": "base_rate",
+     "why": "A team demo requires coordination, preparation, and implies the company has passed an initial filter. It is a more advanced stage of engagement."
+    },
+    {
+     "claim": "When a connector makes three introductions at once, respond to each within one business day, addressing the specific ask each person named.",
+     "kind": "practice",
+     "why": "The connector has done the work; the founder's job is to move fast and keep the connector's credibility intact. Delay signals disinterest."
+    },
+    {
+     "claim": "An operations lead asking for a demo is often more likely to convert to a real outcome than an investor principal asking for a deck, because the ask is more concrete and the team is already engaged.",
+     "kind": "counter_pattern",
+     "why": "Investors see many decks and make few decisions. Operations teams that ask for demos are usually past the initial filter and evaluating fit."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "evt_#1",
+      "cap:founder_office.fundraising.investor_relations#f6"
+     ],
+     "claim": "A warm introduction from a connector that names three people and three asks creates three separate work items, each with its own timeline and stage.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "own:1"
+     ],
+     "claim": "When an introduction names a specific ask\u2014a deck, a demo, a call\u2014the founder's move is to respond within one business day to keep momentum.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+      "own:2"
+     ],
+     "claim": "Introductions that name a specific next step convert at higher rates than those that do not, because the ask is already clear.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "brief:cbl_#24"
+     ],
+     "claim": "A demo request from an operations lead, not a founder or investor, often signals a customer or partner evaluation rather than fundraising.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:introduced_by",
+     "brief:cbl_#27",
+     "evt_#1"
+    ],
+    "kind": "intro",
+    "why": "The file is a batch of introductions from a connector, not a direct investor conversation, customer conversation, or partnership. The brief names Introly as a connector whose mail is an introduction, not a stranger. The file should be classified as an intro, with three separate work items to be created from it."
+   },
+   "scenarios": {
+    "act": "The founder responds to each introduction within one business day. For Kiran Bhat, the founder sends the deck with a note. For Rhea Kapur, the founder proposes three times for the demo and asks what would be most convenient. For Vikram Nair, the founder proposes a call and asks what the referral partnership is about. All three conversations move forward in parallel.",
+    "best": "Rhea Kapur's demo converts to a design partnership or customer contract. Kiran Bhat's deck leads to a partner meeting at Pinewood Capital. Vikram Nair's partnership call leads to a referral agreement that brings new customers or investors. The founder's responsiveness to the connector's introductions leads to more high-quality introductions in the future.",
+    "do_nothing": "The three introductions go unanswered. Rhea Kapur's demo request is not addressed, and the team of eight loses interest. Kiran Bhat does not receive the deck and moves on to other companies. Vikram Nair's partnership call is not scheduled. The connector's credibility is damaged, and future introductions from Introly are less likely to be taken seriously. The founder misses three potential opportunities.",
+    "signals_to_watch": [
+     "Whether Rhea Kapur responds to the founder's demo proposal and confirms a time.",
+     "Whether Kiran Bhat requests a meeting after receiving the deck.",
+     "Whether Vikram Nair confirms the partnership call and describes the referral opportunity.",
+     "How quickly each person responds to the founder's outreach.",
+     "Whether the connector, Introly, sends follow-up introductions in the future."
+    ],
+    "worst": "The founder responds late or not at all. Rhea Kapur's team loses interest and does not schedule the demo. Kiran Bhat passes on the company without a meeting. Vikram Nair's partnership call is never scheduled. The connector's credibility is damaged, and the founder's reputation for responsiveness suffers."
+   },
+   "unknowns": [
+    {
+     "question": "Is Saltmarsh a design partner, a customer, an investor, or something else?",
+     "relevance": "This determines whether the file should be filed under partner, investor, or customer development, and what the right next move is."
+    },
+    {
+     "question": "What is the timeline for Rhea Kapur's demo request\u2014is it urgent, or is it a standing offer?",
+     "relevance": "This determines the urgency of the response and whether the founder should prioritize it over other work."
+    },
+    {
+     "question": "Has the founder already responded to any of the three introductions?",
+     "relevance": "The dossier shows no outbound mail from the founder, but the file's last touch is the same as its first touch, which may mean the dossier's sync is incomplete."
+    },
+    {
+     "question": "What is Kiran Bhat's fund's stage, cheque size, and thesis?",
+     "relevance": "This determines whether Pinewood Capital is a fit for the round and whether the founder should prioritize the deck request."
+    },
+    {
+     "question": "What is Vikram Nair's referral partnership about, and is it related to fundraising or business development?",
+     "relevance": "This determines whether the partnership call is urgent or can be deferred."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The file is only 0.44 days old, and the asks are specific and time-sensitive. Respond within one business day. Stop if all three people confirm their next steps or pass."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly, an introduction agent, forwarded three introductions from a Lakefront founder evening on 2026-08-08 at 07:30 UTC.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"brief:cbl_#27\"\n      ],\n      \"quote\": \"three people from Thursday's Lakefront founder evening asked me to connect you, and I've copied them here so you can take it from here with each of them\"\n    },\n    {\n      \"claim\": \"Rhea Kapur, who runs operations at Saltmarsh, requested a demo for her team of eight.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Rhea Kapur, who runs operations at Saltmarsh, would like a demo for her team of eight\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.44 days since the introduction was made.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time data exists for Rhea Kapur or for any response sent to her.\",\n      \"evidence\": [\n        \"num:their_reply_time:rhea@saltmarsh.test\",\n        \"num:your_reply_time:rhea@saltmarsh.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The move is ours: no open asks are recorded, and the introduction was made to the founder.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"file:open_asks\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This file represents three separate investor or partnership conversations, not one: Kiran Bhat at Pinewood Capital (investor), Rhea Kapur at Saltmarsh (operations lead requesting a demo), and Vikram Nair at Brightwell (partnership lead).\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"file:domains\"\n      ]\n    },\n    {\n      \"claim\": \"Saltmarsh is not an investor but a potential design partner or customer, based on Rhea Kapur's role as operations lead and her request for a demo rather than a deck.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"brief:cbl_#24\"\n      ]\n    },\n    {\n      \"claim\": \"The file's domain is fundraising, but it contains three distinct work streams that should be separated: investor relations (Kiran Bhat), partnership or customer development (Rhea Kapur), and business development (Vikram Nair).\",\n      \"based_on\": [\n        \"file:domains\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The stage of engagement is introduction_made, the earliest stage in an investor relationship, with no meeting scheduled or next step confirmed.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"sig:founder_office.sit.live_investor_relationship\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A warm introduction from a connector that names three people and three asks creates three separate work items, each with its own timeline and stage.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"cap:founder_office.fundraising.investor_relations#f6\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an introduction names a specific ask\u2014a deck, a demo, a call\u2014the founder's move is to respond within one business day to keep momentum.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions that name a specific next step convert at higher rates than those that do not, because the ask is already clear.\",\n      \"based_on\": [\n        \"cap:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\",\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A demo request from an operations lead, not a founder or investor, often signals a customer or partner evaluation rather than fundraising.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"brief:cbl_#24\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Separate introductions by their work type immediately: investor conversations, customer or partner conversations, and business development conversations each need different playbooks and timelines.\",\n      \"why\": \"Mixing them in one file creates confusion about urgency, stage, and the right next move. An investor deck is not a customer demo, and a partnership call is neither.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A demo request from a team of eight signals serious evaluation and should be treated as higher urgency than a deck request to a single principal.\",\n      \"why\": \"A team demo requires coordination, preparation, and implies the company has passed an initial filter. It is a more advanced stage of engagement.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a connector makes three introductions at once, respond to each within one business day, addressing the specific ask each person named.\",\n      \"why\": \"The connector has done the work; the founder's job is to move fast and keep the connector's credibility intact. Delay signals disinterest.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An operations lead asking for a demo is often more likely to convert to a real outcome than an investor principal asking for a deck, because the ask is more concrete and the team is already engaged.\",\n      \"why\": \"Investors see many decks and make few decisions. Operations teams that ask for demos are usually past the initial filter and evaluating fit.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Saltmarsh is a potential design partner, as listed in the brief's design partner talks.\",\n      \"needs\": \"Confirmation from the founder or from Rhea Kapur's email that Saltmarsh is a design partner, customer, or investor.\"\n    },\n    {\n      \"proposition\": \"The three introductions should be filed as three separate work items, not one.\",\n      \"needs\": \"A decision from the founder on whether to split this file or keep it as a batch of introductions from one event.\"\n    },\n    {\n      \"proposition\": \"Rhea Kapur's demo request is the most time-sensitive of the three asks.\",\n      \"needs\": \"Confirmation of the demo's timing and whether it is scheduled or pending the founder's response.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Saltmarsh a design partner, a customer, an investor, or something else?\",\n      \"relevance\": \"This determines whether the file should be filed under partner, investor, or customer development, and what the right next move is.\"\n    },\n    {\n      \"question\": \"What is the timeline for Rhea Kapur's demo request\u2014is it urgent, or is it a standing offer?\",\n      \"relevance\": \"This determines the urgency of the response and whether the founder should prioritize it over other work.\"\n    },\n    {\n      \"question\": \"Has the founder already responded to any of the three introductions?\",\n      \"relevance\": \"The dossier shows no outbound mail from the founder, but the file's last touch is the same as its first touch, which may mean the dossier's sync is incomplete.\"\n    },\n    {\n      \"question\": \"What is Kiran Bhat's fund's stage, cheque size, and thesis?\",\n      \"relevance\": \"This determines whether Pinewood Capital is a fit for the round and whether the founder should prioritize the deck request.\"\n    },\n    {\n      \"question\": \"What is Vikram Nair's referral partnership about, and is it related to fundraising or business development?\",\n      \"relevance\": \"This determines whether the partnership call is urgent or can be deferred.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"Three warm introductions from a founder event, each with a specific ask: an investor principal requesting a deck, an operations lead requesting a demo, and a partnership lead requesting a call. The founder has not yet responded to any of them.\",\n    \"rivals\": [\n      \"A single batch introduction that should be treated as one work item, with the founder responding to the connector once to address all three.\",\n      \"Three separate investor conversations, all of equal priority and urgency.\",\n      \"A customer or partner evaluation disguised as an investor introduction, where the demo request is the real opportunity.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is a batch of introductions from a connector, not a direct investor conversation, customer conversation, or partnership. The brief names Introly as a connector whose mail is an introduction, not a stranger. The file should be classified as an intro, with three separate work items to be created from it.\",\n    \"evidence\": [\n      \"file:introduced_by\",\n      \"brief:cbl_#27\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this file. If it were an investor conversation, the expected stage would be introduction_made, and the expected next move would be to respond to the deck request within one business day. If it were a customer or partner conversation, the expected stage would be demo_requested, and the expected next move would be to schedule the demo.\",\n    \"actual\": \"The founder has not responded to any of the three introductions. The file has been quiet for 0.44 days since the introduction was made.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The three introductions go unanswered. Rhea Kapur's demo request is not addressed, and the team of eight loses interest. Kiran Bhat does not receive the deck and moves on to other companies. Vikram Nair's partnership call is not scheduled. The connector's credibility is damaged, and future introductions from Introly are less likely to be taken seriously. The founder misses three potential opportunities.\",\n    \"act\": \"The founder responds to each introduction within one business day. For Kiran Bhat, the founder sends the deck with a note. For Rhea Kapur, the founder proposes three times for the demo and asks what would be most convenient. For Vikram Nair, the founder proposes a call and asks what the referral partnership is about. All three conversations move forward in parallel.\",\n    \"best\": \"Rhea Kapur's demo converts to a design partnership or customer contract. Kiran Bhat's deck leads to a partner meeting at Pinewood Capital. Vikram Nair's partnership call leads to a referral agreement that brings new customers or investors. The founder's responsiveness to the connector's introductions leads to more high-quality introductions in the future.\",\n    \"worst\": \"The founder responds late or not at all. Rhea Kapur's team loses interest and does not schedule the demo. Kiran Bhat passes on the company without a meeting. Vikram Nair's partnership call is never scheduled. The connector's credibility is damaged, and the founder's reputation for responsiveness suffers.\",\n    \"signals_to_watch\": [\n      \"Whether Rhea Kapur responds to the founder's demo proposal and confirms a time.\",\n      \"Whether Kiran Bhat requests a meeting after receiving the deck.\",\n      \"Whether Vikram Nair confirms the partnership call and describes the referral opportunity.\",\n      \"How quickly each person responds to the founder's outreach.\",\n      \"Whether the connector, Introly, sends follow-up introductions in the future.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The demo request from Rhea Kapur's team of eight signals a concrete evaluation opportunity, which is higher stakes than a single investor deck request.\",\n      \"The file is quiet for only 0.44 days, so there is still time to respond without losing momentum.\",\n      \"A late response can be recovered with a good explanation and a strong follow-up, so the move is reversible.\",\n      \"The brief lists design partners as a goal, and Saltmarsh may be one, which raises the stakes.\",\n      \"The brief lists Lakshya Accelerator as an active program, and the Lakefront founder evening may be a Lakshya event, which suggests the introductions are high-quality.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Respond to each of the three introductions with a specific next step: send Kiran Bhat the deck with a note, propose three times for Rhea Kapur's demo, and propose a call with Vikram Nair. Treat each as a separate conversation.\",\n    \"for_whom\": \"Kiran Bhat, Rhea Kapur, and Vikram Nair\",\n    \"by_when\": \"2026-08-09\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\",\n      \"cap:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Respond to the connector, Introly, with a single message thanking them for the introductions and confirming that you will follow up with each person directly. This keeps the connector in the loop and preserves the relationship for future introductions.\",\n  \"wait_or_stop\": \"Do not wait. The file is only 0.44 days old, and the asks are specific and time-sensitive. Respond within one business day. Stop if all three people confirm their next steps or pass.\",\n  \"done_when\": \"All three people have confirmed their next steps: Kiran Bhat has received the deck and confirmed a meeting or a timeline for review, Rhea Kapur has confirmed a demo time, and Vikram Nair has confirmed a call time.\",\n  \"draft\": \"To Kiran Bhat: \\\"Hi Kiran, thanks for the intro from Introly. I'm attaching our deck. We're building an AI chief of staff for founders, and we're raising our seed round now. I'd love to get your thoughts. Are you free for a call next week?\\\" To Rhea Kapur: \\\"Hi Rhea, thanks for the intro from Introly. I'd love to show you and your team what we're building. Would Tuesday, Wednesday, or Thursday next week work for a 30-minute demo?\\\" To Vikram Nair: \\\"Hi Vikram, thanks for the intro from Introly. I'm interested in learning more about the referral partnership you mentioned. Are you free for a call next week?\\\"\"\n}",
+  "site": "expert"
+ },
+ "8e2fc24502282d16cdcfcfeb11e84ad7b3e24f419aacd7e2c49533ed2700e66b": {
+  "framed": true,
+  "input_tokens": 8259,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2811,
+  "parsed": {
+   "alternative": "Wait one more day for Vikram to reach out first, then follow up if no response. This is weaker because it cedes the initiative and risks the warm context decaying.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are low because a referral partnership is not capital and does not block other work; it is an upside opportunity.",
+     "Urgency is medium because the warm context is fresh and will decay if the founder does not respond within one to two days; delay is costly but not irreversible.",
+     "A wrong move\u2014reaching out too aggressively or committing to something that does not fit\u2014is reversible; the founder can always decline or pivot the conversation."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "medium"
+   },
+   "done_when": "A call is scheduled with Vikram Nair within the next week, or Vikram has declined and the founder has recorded the reason.",
+   "draft": "Hi Vikram, thanks for the intro through Introly. I'd like to learn more about the referral partnership you mentioned\u2014would you have time for a quick call this week? I'm curious how Brightwell's model works and whether there's a fit with what we're building. Let me know what works for you.",
+   "expected_vs_actual": {
+    "actual": "The introduction was sent; no outreach from the founder has been recorded. The file is less than a day old and has not yet moved.",
+    "expected": "The brief names no playbook for this kind of work. From the brief's goals, a partner conversation should move from introduction to a call to a pilot or agreement. At this stage, the expected move is for the founder to reach out and schedule a call.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced three people from a founder event, one of whom is Vikram Nair at Brightwell who wants a call about a referral partnership.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Vikram Nair, who leads partnerships at Brightwell, would like a call about a referral partnership"
+    },
+    {
+     "claim": "The file was created by an introduction from Introly, a connector listed in the brief.",
+     "evidence": [
+      "file:introduced_by",
+      "brief:cbl_#27"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply has been received from Brightwell since the introduction on 2026-08-08 07:30 UTC.",
+     "evidence": [
+      "file:last_touch",
+      "cov:conn_golden_gmail",
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.44 days as of the dossier timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The next move is ours, as no open asks are recorded.",
+     "evidence": [
+      "file:whose_move",
+      "file:open_asks"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction to a potential partner who has expressed interest in exploring a referral partnership; the founder has not yet responded, and the warm context is still fresh.",
+    "rivals": [
+     "A low-priority introduction that can wait until after fundraising closes, since it is not capital.",
+     "A test of the founder's responsiveness and organizational discipline, where delay signals disinterest to the connector and the person introduced."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A response to an outreach message within two business days, or acceptance of a calendar invite.",
+     "proposition": "Vikram Nair is genuinely interested in exploring a referral partnership and will respond positively to a call request."
+    },
+    {
+     "needs": "A conversation with Vikram that clarifies what Brightwell's referral model is and whether it fits your customer acquisition strategy.",
+     "proposition": "The referral partnership is a real opportunity that could generate customer introductions or co-marketing."
+    },
+    {
+     "needs": "Clarity on whether the other two introductions (Kiran Bhat at Pinewood Capital and Rhea Kapur at Saltmarsh) have been actioned, and how they rank against this one.",
+     "proposition": "This introduction is one of three from the same event and should be prioritized equally with the other two."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#1"
+     ],
+     "claim": "This is a warm introduction to a potential partner, not an investor, because Vikram Nair leads partnerships and the ask is about a referral partnership, not capital."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The introduction came through a connector who batched three introductions from a single event, which is a pattern of warm intros that require immediate follow-up to preserve momentum."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4"
+     ],
+     "claim": "No response yet does not signal disinterest at this stage; the introduction was sent the same day and less than a day has passed."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-09",
+    "for_whom": "Vikram Nair",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "inference:2"
+    ],
+    "to": "vikram@brightwell.test",
+    "what": "reach out to Vikram Nair and propose a call to explore the referral partnership",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A partnership conversation initiated by someone who leads partnerships at a company is usually exploratory and moves faster than investor conversations; the ask is clear and the person has authority to explore it.",
+     "kind": "practice",
+     "why": "Partnership leads are often empowered to scope conversations without committee approval, and the ask\u2014a referral partnership\u2014is concrete enough to move to a call without diligence."
+    },
+    {
+     "claim": "When a connector sends a batched introduction and names what each person wants, the founder should reach out to each within the same day to show responsiveness and keep the warm context alive.",
+     "kind": "base_rate",
+     "why": "The connector has already done the work of introduction; delay signals either disinterest or disorganization, and the warm context decays quickly once the event ends."
+    },
+    {
+     "claim": "Waiting for a response to a batched introduction is a mistake; the founder is expected to initiate the call, not wait to be called.",
+     "kind": "counter_pattern",
+     "why": "The introduction names what each person wants and gives the founder the opening; silence from the founder reads as lack of interest, not as politeness."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+      "own:1"
+     ],
+     "claim": "A warm introduction from a connector at a founder event typically expects a response within one to two days to preserve the warm context.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "evt_#1"
+     ],
+     "claim": "When a connector batches multiple introductions, each person in the batch expects the founder to reach out directly, not wait for the connector to manage the thread.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "brief:cbl_#6"
+    ],
+    "kind": "partner",
+    "why": "Vikram Nair leads partnerships at Brightwell and the ask is about a referral partnership, not investment or program participation. The brief lists design partners as a goal, and a referral partnership is a business partnership."
+   },
+   "scenarios": {
+    "act": "The founder reaches out to Vikram Nair, proposes a call, and learns what Brightwell's referral partnership looks like. If it fits, a pilot or agreement can be scoped. If it does not, the founder has preserved the relationship and the connector's trust.",
+    "best": "Vikram Nair responds within one business day, the call happens within a week, and a referral partnership is scoped that generates customer introductions or co-marketing opportunities without requiring capital or significant founder time.",
+    "do_nothing": "The warm context decays. Vikram Nair does not hear from the founder and assumes disinterest. The connector's credibility is slightly damaged. The opportunity to explore a referral partnership is lost or significantly delayed.",
+    "signals_to_watch": [
+     "Response time to the founder's outreach message.",
+     "Clarity and specificity of Vikram's description of what Brightwell's referral partnership entails.",
+     "Whether Vikram proposes a call or asks for more information first.",
+     "Whether the partnership would require exclusivity or compete with other partnerships the founder is exploring."
+    ],
+    "worst": "Vikram Nair does not respond, or responds to say the partnership is not a fit. The founder has spent minimal time and the relationship remains warm for future exploration."
+   },
+   "unknowns": [
+    {
+     "question": "Has the founder already reached out to Vikram Nair or the other two people from the Lakefront founder evening, or is this the first time the file is being reviewed?",
+     "relevance": "If outreach has already happened, the file's stage and next move change; if not, the move is urgent and time-sensitive."
+    },
+    {
+     "question": "What does Brightwell do, and what is the nature of their referral partnership model?",
+     "relevance": "Understanding Brightwell's business and what they mean by referral partnership would clarify whether this is a strategic fit and how to frame the call."
+    },
+    {
+     "question": "How does a referral partnership with Brightwell rank against the founder's current priorities\u2014fundraising, accelerator applications, hiring, and design partners?",
+     "relevance": "The founder's bandwidth and strategic priorities determine whether this call should happen immediately or be deferred."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The introduction is fresh and the ask is clear. Stop if Vikram declines or does not respond after two follow-ups over a week."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced three people from a founder event, one of whom is Vikram Nair at Brightwell who wants a call about a referral partnership.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Vikram Nair, who leads partnerships at Brightwell, would like a call about a referral partnership\"\n    },\n    {\n      \"claim\": \"The file was created by an introduction from Introly, a connector listed in the brief.\",\n      \"evidence\": [\n        \"file:introduced_by\",\n        \"brief:cbl_#27\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply has been received from Brightwell since the introduction on 2026-08-08 07:30 UTC.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"cov:conn_golden_gmail\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.44 days as of the dossier timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The next move is ours, as no open asks are recorded.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"file:open_asks\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a warm introduction to a potential partner, not an investor, because Vikram Nair leads partnerships and the ask is about a referral partnership, not capital.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The introduction came through a connector who batched three introductions from a single event, which is a pattern of warm intros that require immediate follow-up to preserve momentum.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"No response yet does not signal disinterest at this stage; the introduction was sent the same day and less than a day has passed.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A warm introduction from a connector at a founder event typically expects a response within one to two days to preserve the warm context.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a connector batches multiple introductions, each person in the batch expects the founder to reach out directly, not wait for the connector to manage the thread.\",\n      \"based_on\": [\n        \"evt_#1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A partnership conversation initiated by someone who leads partnerships at a company is usually exploratory and moves faster than investor conversations; the ask is clear and the person has authority to explore it.\",\n      \"why\": \"Partnership leads are often empowered to scope conversations without committee approval, and the ask\u2014a referral partnership\u2014is concrete enough to move to a call without diligence.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a connector sends a batched introduction and names what each person wants, the founder should reach out to each within the same day to show responsiveness and keep the warm context alive.\",\n      \"why\": \"The connector has already done the work of introduction; delay signals either disinterest or disorganization, and the warm context decays quickly once the event ends.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Waiting for a response to a batched introduction is a mistake; the founder is expected to initiate the call, not wait to be called.\",\n      \"why\": \"The introduction names what each person wants and gives the founder the opening; silence from the founder reads as lack of interest, not as politeness.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Vikram Nair is genuinely interested in exploring a referral partnership and will respond positively to a call request.\",\n      \"needs\": \"A response to an outreach message within two business days, or acceptance of a calendar invite.\"\n    },\n    {\n      \"proposition\": \"The referral partnership is a real opportunity that could generate customer introductions or co-marketing.\",\n      \"needs\": \"A conversation with Vikram that clarifies what Brightwell's referral model is and whether it fits your customer acquisition strategy.\"\n    },\n    {\n      \"proposition\": \"This introduction is one of three from the same event and should be prioritized equally with the other two.\",\n      \"needs\": \"Clarity on whether the other two introductions (Kiran Bhat at Pinewood Capital and Rhea Kapur at Saltmarsh) have been actioned, and how they rank against this one.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the founder already reached out to Vikram Nair or the other two people from the Lakefront founder evening, or is this the first time the file is being reviewed?\",\n      \"relevance\": \"If outreach has already happened, the file's stage and next move change; if not, the move is urgent and time-sensitive.\"\n    },\n    {\n      \"question\": \"What does Brightwell do, and what is the nature of their referral partnership model?\",\n      \"relevance\": \"Understanding Brightwell's business and what they mean by referral partnership would clarify whether this is a strategic fit and how to frame the call.\"\n    },\n    {\n      \"question\": \"How does a referral partnership with Brightwell rank against the founder's current priorities\u2014fundraising, accelerator applications, hiring, and design partners?\",\n      \"relevance\": \"The founder's bandwidth and strategic priorities determine whether this call should happen immediately or be deferred.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction to a potential partner who has expressed interest in exploring a referral partnership; the founder has not yet responded, and the warm context is still fresh.\",\n    \"rivals\": [\n      \"A low-priority introduction that can wait until after fundraising closes, since it is not capital.\",\n      \"A test of the founder's responsiveness and organizational discipline, where delay signals disinterest to the connector and the person introduced.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"Vikram Nair leads partnerships at Brightwell and the ask is about a referral partnership, not investment or program participation. The brief lists design partners as a goal, and a referral partnership is a business partnership.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"brief:cbl_#6\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this kind of work. From the brief's goals, a partner conversation should move from introduction to a call to a pilot or agreement. At this stage, the expected move is for the founder to reach out and schedule a call.\",\n    \"actual\": \"The introduction was sent; no outreach from the founder has been recorded. The file is less than a day old and has not yet moved.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The warm context decays. Vikram Nair does not hear from the founder and assumes disinterest. The connector's credibility is slightly damaged. The opportunity to explore a referral partnership is lost or significantly delayed.\",\n    \"act\": \"The founder reaches out to Vikram Nair, proposes a call, and learns what Brightwell's referral partnership looks like. If it fits, a pilot or agreement can be scoped. If it does not, the founder has preserved the relationship and the connector's trust.\",\n    \"best\": \"Vikram Nair responds within one business day, the call happens within a week, and a referral partnership is scoped that generates customer introductions or co-marketing opportunities without requiring capital or significant founder time.\",\n    \"worst\": \"Vikram Nair does not respond, or responds to say the partnership is not a fit. The founder has spent minimal time and the relationship remains warm for future exploration.\",\n    \"signals_to_watch\": [\n      \"Response time to the founder's outreach message.\",\n      \"Clarity and specificity of Vikram's description of what Brightwell's referral partnership entails.\",\n      \"Whether Vikram proposes a call or asks for more information first.\",\n      \"Whether the partnership would require exclusivity or compete with other partnerships the founder is exploring.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are low because a referral partnership is not capital and does not block other work; it is an upside opportunity.\",\n      \"Urgency is medium because the warm context is fresh and will decay if the founder does not respond within one to two days; delay is costly but not irreversible.\",\n      \"A wrong move\u2014reaching out too aggressively or committing to something that does not fit\u2014is reversible; the founder can always decline or pivot the conversation.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"reach out to Vikram Nair and propose a call to explore the referral partnership\",\n    \"for_whom\": \"Vikram Nair\",\n    \"by_when\": \"2026-08-09\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:3\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\",\n      \"own:2\"\n    ],\n    \"to\": \"vikram@brightwell.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Wait one more day for Vikram to reach out first, then follow up if no response. This is weaker because it cedes the initiative and risks the warm context decaying.\",\n  \"wait_or_stop\": \"Do not wait. The introduction is fresh and the ask is clear. Stop if Vikram declines or does not respond after two follow-ups over a week.\",\n  \"done_when\": \"A call is scheduled with Vikram Nair within the next week, or Vikram has declined and the founder has recorded the reason.\",\n  \"draft\": \"Hi Vikram, thanks for the intro through Introly. I'd like to learn more about the referral partnership you mentioned\u2014would you have time for a quick call this week? I'm curious how Brightwell's model works and whether there's a fit with what we're building. Let me know what works for you.\"\n}",
+  "site": "expert"
+ },
+ "ba96ab166399dee88ca6b81a6ade596e4e75985edd71bd99e0400e84d50a80ce": {
+  "framed": true,
+  "input_tokens": 8138,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4330,
+  "parsed": {
+   "alternative": "If you cannot send all three replies today, prioritize Kiran Bhat at Pinewood Capital, because his partner meeting may be soon and the deck request is time-sensitive. Reply to Vikram Nair and Rhea Kapur tomorrow. However, a same-day reply to all three is better and keeps all three threads warm.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because a referral partnership could bring customers or partners, which would help the company, but it is not capital and does not directly move the seed round. However, Kiran Bhat at Pinewood Capital is a live investor conversation, which is high-stakes.",
+     "The urgency is medium because Kiran Bhat's partner meeting may be soon, which makes the deck request time-sensitive. Vikram Nair's call request has no stated deadline, so it is less urgent. A same-day reply keeps the thread warm and signals respect for the connector.",
+     "A wrong move is reversible because a poor reply can be followed up with a better one, and a missed call can be rescheduled. However, a delayed reply or no reply will age the thread and make it harder to recover."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Done when you have sent three separate replies (one to each person), each tailored to their ask and proposing a next step (call time, deck receipt, demo time). Done when Vikram Nair has confirmed a call time, Kiran Bhat has confirmed receipt of the deck and a timeline for the partner meeting, and Rhea Kapur has confirmed a demo time.",
+   "expected_vs_actual": {
+    "actual": "An introduction has been made by Introly, copying three parties with three different asks. No reply has been sent yet. The file is 0.44 days old and has not aged.",
+    "expected": "No playbook is named for this file. If it were an investor conversation, the playbook would expect an introduction_made stage, with the next move being to reply and propose a meeting. If it were a partnership conversation, the playbook would expect a similar stage, with the next move being to reply and propose a call. The brief names no kind of work for this file, so no playbook applies.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly, an introduction agent, forwarded three introductions from a Lakefront founder evening on 2026-08-08 at 07:30 UTC.",
+     "evidence": [
+      "evt_#1",
+      "brief:cbl_#27"
+     ],
+     "quote": "three people from Thursday's Lakefront founder evening asked me to connect you, and I've copied them here so you can take it from here with each of them"
+    },
+    {
+     "claim": "One of the three introductions is Vikram Nair at Brightwell, who wants a call about a referral partnership.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Vikram Nair, who leads partnerships at Brightwell, would like a call about a referral partnership"
+    },
+    {
+     "claim": "The other two introductions are Kiran Bhat at Pinewood Capital (requesting a deck) and Rhea Kapur at Saltmarsh (requesting a demo).",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Kiran Bhat, a principal at Pinewood Capital, would like your deck before the fund's partner meeting. Rhea Kapur, who runs operations at Saltmarsh, would like a demo for her team of eight"
+    },
+    {
+     "claim": "This file has been quiet for 0.44 days since first touch on 2026-08-08 at 07:30 UTC, with no reply from Brightwell yet.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is not named by the brief, though its role is identified as an intro.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The next move is ours, as the file shows whose_move is ours and there are no open asks recorded.",
+     "evidence": [
+      "file:whose_move",
+      "file:open_asks"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time has been measured for Vikram Nair or for any reply you have sent to Brightwell.",
+     "evidence": [
+      "num:their_reply_time:vikram@brightwell.test",
+      "num:your_reply_time:vikram@brightwell.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found low blocker severity, low risk, and low urgency, with high confidence in the context.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.priority",
+      "ru:core.confidence"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction to a partnership lead at Brightwell, who wants a call about a referral partnership. This is the first touch, and the next move is to reply and propose a call time. However, the file conflates three separate introductions (investor, customer/partner, partnership) into one record, which obscures what each party wants and what you owe them.",
+    "rivals": [
+     "A warm introduction to a potential customer or design partner at Brightwell, who wants to explore a partnership. The investor and customer asks are separate and should be tracked separately.",
+     "A batch of three introductions from a connector, each requiring a different reply and playbook. The file should be split into three separate files, one for each counterparty.",
+     "A low-priority partnership inquiry that can wait until the fundraising round is further along. Vikram Nair's ask is not capital and does not move the needle on the seed round."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation of what Brightwell does and what Vikram Nair's referral partnership ask means \u2014 does he want to refer customers to you, or refer you to customers, or something else?",
+     "proposition": "Brightwell is a potential design partner or customer, not an investor."
+    },
+    {
+     "needs": "A decision to split the file or to confirm that Brightwell is the only counterparty and the other two are separate work.",
+     "proposition": "The three introductions should be tracked as three separate files, not one."
+    },
+    {
+     "needs": "A reply from Vikram Nair after you send a message proposing a call time.",
+     "proposition": "Vikram Nair will reply to a call request within one business day."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "file:domains"
+     ],
+     "claim": "This is a warm introduction to a potential partner, not an investor, because Vikram Nair leads partnerships at Brightwell and the ask is about a referral partnership, not capital."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "cap:founder_office.fundraising.investor_relations#f6"
+     ],
+     "claim": "The file conflates three separate introductions into one counterparty record, when each should be tracked separately: Kiran Bhat (investor), Rhea Kapur (design partner or customer), and Vikram Nair (partnership)."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:6"
+     ],
+     "claim": "The move is ours because Introly has made the introductions and copied all three parties, leaving it to you to take each conversation forward."
+    },
+    {
+     "based_on": [
+      "hist:derived.history.prior_card_verdict@fundraising",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "claim": "This is the first touch on this file, so there is no prior relationship history, reply pattern, or stage to read from."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-08",
+    "for_whom": "Vikram Nair at Brightwell, Kiran Bhat at Pinewood Capital, and Rhea Kapur at Saltmarsh",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "fact:6",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "vikram@brightwell.test, kiran@pinewood.test, rhea@saltmarsh.test",
+    "what": "Reply to Vikram Nair with a proposed call time, and separately reply to Kiran Bhat with the deck and to Rhea Kapur with a demo offer. Send three separate messages, one to each person, tailored to their ask.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A warm introduction that arrives on a Thursday evening and sits until Friday morning has not yet aged; reply within the same business day to keep the thread warm and signal respect for the connector's effort.",
+     "kind": "practice",
+     "why": "The connector has spent social capital to make the introduction, and a same-day reply honors that and keeps the person's attention before their inbox fills."
+    },
+    {
+     "claim": "When three introductions arrive in one message, the founder should reply to each within one business day, but with three separate messages \u2014 one to each person \u2014 not one reply to all.",
+     "kind": "base_rate",
+     "why": "A reply to all dilutes the personal attention each person expects, and a single message to three different asks (deck, demo, call) reads as a template, not a response."
+    },
+    {
+     "claim": "A partnership ask should be routed to the person who owns partnerships or business development, not handled as a fundraising conversation.",
+     "kind": "practice",
+     "why": "A referral partnership is a business development move, not capital, and conflating it with investor relations creates confusion about what the company is asking for and what Brightwell can offer."
+    },
+    {
+     "claim": "An introduction to a principal at a fund who asks for a deck before a partner meeting is a live investor conversation; an introduction to operations at a company asking for a demo is a customer or design partner conversation; an introduction to a partnerships lead asking for a call is a business development conversation. Filing all three as investor_relationship is a category error.",
+     "kind": "counter_pattern",
+     "why": "Each has a different playbook, timeline, and success metric, and treating them as one situation obscures what each party actually wants and what you owe them."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+      "own:1"
+     ],
+     "claim": "A warm introduction from a connector that names three separate asks (deck, demo, call) requires three separate replies, each tailored to the ask and the person.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+      "own:2"
+     ],
+     "claim": "Silence after a warm introduction in the first day is the default and carries no signal; the clock starts after a reply is sent and a next step is named.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "sit:sit_#1",
+      "cap:founder_office.fundraising.investor_relations#f6"
+     ],
+     "claim": "A partnership ask (referral partnership) is not a fundraising ask and should not be filed in the investor_relationship situation; it belongs in a partner or vendor situation.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "file:domains",
+     "file:role"
+    ],
+    "kind": "partner",
+    "why": "Vikram Nair leads partnerships at Brightwell and asks for a call about a referral partnership. This is a business development conversation, not an investor conversation. The file's role is intro, but its domain is fundraising, which is a mismatch. The counterparty is a partnership lead, not an investor, and the ask is about partnership, not capital."
+   },
+   "scenarios": {
+    "act": "If you reply to Vikram Nair today with a proposed call time, he is likely to confirm or suggest an alternative time. A call will happen within one to three business days. In the call, you will learn what Brightwell does and what a referral partnership would mean. You will also reply to Kiran Bhat with a deck and to Rhea Kapur with a demo offer, each within one business day.",
+    "best": "Vikram Nair replies within one business day and confirms a call time. In the call, he describes a referral partnership that brings customers or partners to you, or refers you to customers or partners. The partnership is valuable and moves forward. Kiran Bhat receives the deck, presents it to Pinewood's partners, and schedules a meeting. Rhea Kapur receives the demo offer and schedules a demo for her team.",
+    "do_nothing": "If you do not reply to Vikram Nair, the introduction will age and the thread will go cold. Introly will not follow up, and Vikram Nair will assume you are not interested. The referral partnership opportunity will be lost. The other two introductions (Kiran Bhat and Rhea Kapur) will also age and go cold.",
+    "signals_to_watch": [
+     "Vikram Nair replies within one business day with a proposed call time or a question about the partnership.",
+     "Kiran Bhat replies to confirm receipt of the deck and a timeline for the partner meeting.",
+     "Rhea Kapur replies to confirm a demo time and the size of her team.",
+     "Vikram Nair's call happens and he describes a specific referral partnership opportunity.",
+     "Kiran Bhat's partner meeting happens and Pinewood schedules a follow-up meeting.",
+     "Rhea Kapur's demo happens and she expresses interest in a design partnership."
+    ],
+    "worst": "Vikram Nair does not reply, or replies to say Brightwell is not interested. Kiran Bhat's partner meeting happens without the deck, or the deck does not move the needle. Rhea Kapur's team does not show up for the demo, or the demo does not convert to a design partnership."
+   },
+   "unknowns": [
+    {
+     "question": "What does Brightwell do, and what does Vikram Nair mean by a referral partnership?",
+     "relevance": "This determines whether Brightwell is a partner, a customer, a vendor, or something else, and what the next move should be. A referral partnership could mean many things \u2014 referring customers to you, referring you to customers, co-marketing, or something else \u2014 and the reply should address the specific ask."
+    },
+    {
+     "question": "Are the three introductions (Kiran Bhat, Rhea Kapur, Vikram Nair) meant to be tracked as one file or three?",
+     "relevance": "If they are three separate conversations, the file should be split, and each should have its own playbook and timeline. If Brightwell is the only counterparty, the file should be renamed and the other two should be separate work."
+    },
+    {
+     "question": "What is the timeline for Kiran Bhat's partner meeting at Pinewood Capital?",
+     "relevance": "If the partner meeting is soon, the deck request is urgent and should be answered first. If it is weeks away, it can wait."
+    },
+    {
+     "question": "Has Introly made these introductions before, and what is the typical reply rate and conversion rate?",
+     "relevance": "This would tell you whether Introly introductions are warm or cold, and what to expect from Vikram Nair's reply."
+    }
+   ],
+   "wait_or_stop": "Do not wait. Reply today. If Vikram Nair does not reply within three business days, send a follow-up message proposing a specific call time. If he does not reply within one week, the thread has gone cold and you can deprioritize it. If Kiran Bhat's partner meeting is within one week, prioritize the deck and follow up with him to confirm he received it and when the meeting is. If Rhea Kapur does not reply within three business days, follow up with a specific demo time."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly, an introduction agent, forwarded three introductions from a Lakefront founder evening on 2026-08-08 at 07:30 UTC.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"brief:cbl_#27\"\n      ],\n      \"quote\": \"three people from Thursday's Lakefront founder evening asked me to connect you, and I've copied them here so you can take it from here with each of them\"\n    },\n    {\n      \"claim\": \"One of the three introductions is Vikram Nair at Brightwell, who wants a call about a referral partnership.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Vikram Nair, who leads partnerships at Brightwell, would like a call about a referral partnership\"\n    },\n    {\n      \"claim\": \"The other two introductions are Kiran Bhat at Pinewood Capital (requesting a deck) and Rhea Kapur at Saltmarsh (requesting a demo).\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Kiran Bhat, a principal at Pinewood Capital, would like your deck before the fund's partner meeting. Rhea Kapur, who runs operations at Saltmarsh, would like a demo for her team of eight\"\n    },\n    {\n      \"claim\": \"This file has been quiet for 0.44 days since first touch on 2026-08-08 at 07:30 UTC, with no reply from Brightwell yet.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is not named by the brief, though its role is identified as an intro.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The next move is ours, as the file shows whose_move is ours and there are no open asks recorded.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"file:open_asks\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time has been measured for Vikram Nair or for any reply you have sent to Brightwell.\",\n      \"evidence\": [\n        \"num:their_reply_time:vikram@brightwell.test\",\n        \"num:your_reply_time:vikram@brightwell.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found low blocker severity, low risk, and low urgency, with high confidence in the context.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.priority\",\n        \"ru:core.confidence\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a warm introduction to a potential partner, not an investor, because Vikram Nair leads partnerships at Brightwell and the ask is about a referral partnership, not capital.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:domains\"\n      ]\n    },\n    {\n      \"claim\": \"The file conflates three separate introductions into one counterparty record, when each should be tracked separately: Kiran Bhat (investor), Rhea Kapur (design partner or customer), and Vikram Nair (partnership).\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\",\n        \"cap:founder_office.fundraising.investor_relations#f6\"\n      ]\n    },\n    {\n      \"claim\": \"The move is ours because Introly has made the introductions and copied all three parties, leaving it to you to take each conversation forward.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"claim\": \"This is the first touch on this file, so there is no prior relationship history, reply pattern, or stage to read from.\",\n      \"based_on\": [\n        \"hist:derived.history.prior_card_verdict@fundraising\",\n        \"hist:derived.history.times_seen@fundraising\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A warm introduction from a connector that names three separate asks (deck, demo, call) requires three separate replies, each tailored to the ask and the person.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Silence after a warm introduction in the first day is the default and carries no signal; the clock starts after a reply is sent and a next step is named.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A partnership ask (referral partnership) is not a fundraising ask and should not be filed in the investor_relationship situation; it belongs in a partner or vendor situation.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"sit:sit_#1\",\n        \"cap:founder_office.fundraising.investor_relations#f6\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A warm introduction that arrives on a Thursday evening and sits until Friday morning has not yet aged; reply within the same business day to keep the thread warm and signal respect for the connector's effort.\",\n      \"why\": \"The connector has spent social capital to make the introduction, and a same-day reply honors that and keeps the person's attention before their inbox fills.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When three introductions arrive in one message, the founder should reply to each within one business day, but with three separate messages \u2014 one to each person \u2014 not one reply to all.\",\n      \"why\": \"A reply to all dilutes the personal attention each person expects, and a single message to three different asks (deck, demo, call) reads as a template, not a response.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A partnership ask should be routed to the person who owns partnerships or business development, not handled as a fundraising conversation.\",\n      \"why\": \"A referral partnership is a business development move, not capital, and conflating it with investor relations creates confusion about what the company is asking for and what Brightwell can offer.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An introduction to a principal at a fund who asks for a deck before a partner meeting is a live investor conversation; an introduction to operations at a company asking for a demo is a customer or design partner conversation; an introduction to a partnerships lead asking for a call is a business development conversation. Filing all three as investor_relationship is a category error.\",\n      \"why\": \"Each has a different playbook, timeline, and success metric, and treating them as one situation obscures what each party actually wants and what you owe them.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Brightwell is a potential design partner or customer, not an investor.\",\n      \"needs\": \"Confirmation of what Brightwell does and what Vikram Nair's referral partnership ask means \u2014 does he want to refer customers to you, or refer you to customers, or something else?\"\n    },\n    {\n      \"proposition\": \"The three introductions should be tracked as three separate files, not one.\",\n      \"needs\": \"A decision to split the file or to confirm that Brightwell is the only counterparty and the other two are separate work.\"\n    },\n    {\n      \"proposition\": \"Vikram Nair will reply to a call request within one business day.\",\n      \"needs\": \"A reply from Vikram Nair after you send a message proposing a call time.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Brightwell do, and what does Vikram Nair mean by a referral partnership?\",\n      \"relevance\": \"This determines whether Brightwell is a partner, a customer, a vendor, or something else, and what the next move should be. A referral partnership could mean many things \u2014 referring customers to you, referring you to customers, co-marketing, or something else \u2014 and the reply should address the specific ask.\"\n    },\n    {\n      \"question\": \"Are the three introductions (Kiran Bhat, Rhea Kapur, Vikram Nair) meant to be tracked as one file or three?\",\n      \"relevance\": \"If they are three separate conversations, the file should be split, and each should have its own playbook and timeline. If Brightwell is the only counterparty, the file should be renamed and the other two should be separate work.\"\n    },\n    {\n      \"question\": \"What is the timeline for Kiran Bhat's partner meeting at Pinewood Capital?\",\n      \"relevance\": \"If the partner meeting is soon, the deck request is urgent and should be answered first. If it is weeks away, it can wait.\"\n    },\n    {\n      \"question\": \"Has Introly made these introductions before, and what is the typical reply rate and conversion rate?\",\n      \"relevance\": \"This would tell you whether Introly introductions are warm or cold, and what to expect from Vikram Nair's reply.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction to a partnership lead at Brightwell, who wants a call about a referral partnership. This is the first touch, and the next move is to reply and propose a call time. However, the file conflates three separate introductions (investor, customer/partner, partnership) into one record, which obscures what each party wants and what you owe them.\",\n    \"rivals\": [\n      \"A warm introduction to a potential customer or design partner at Brightwell, who wants to explore a partnership. The investor and customer asks are separate and should be tracked separately.\",\n      \"A batch of three introductions from a connector, each requiring a different reply and playbook. The file should be split into three separate files, one for each counterparty.\",\n      \"A low-priority partnership inquiry that can wait until the fundraising round is further along. Vikram Nair's ask is not capital and does not move the needle on the seed round.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"Vikram Nair leads partnerships at Brightwell and asks for a call about a referral partnership. This is a business development conversation, not an investor conversation. The file's role is intro, but its domain is fundraising, which is a mismatch. The counterparty is a partnership lead, not an investor, and the ask is about partnership, not capital.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"file:domains\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook is named for this file. If it were an investor conversation, the playbook would expect an introduction_made stage, with the next move being to reply and propose a meeting. If it were a partnership conversation, the playbook would expect a similar stage, with the next move being to reply and propose a call. The brief names no kind of work for this file, so no playbook applies.\",\n    \"actual\": \"An introduction has been made by Introly, copying three parties with three different asks. No reply has been sent yet. The file is 0.44 days old and has not aged.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If you do not reply to Vikram Nair, the introduction will age and the thread will go cold. Introly will not follow up, and Vikram Nair will assume you are not interested. The referral partnership opportunity will be lost. The other two introductions (Kiran Bhat and Rhea Kapur) will also age and go cold.\",\n    \"act\": \"If you reply to Vikram Nair today with a proposed call time, he is likely to confirm or suggest an alternative time. A call will happen within one to three business days. In the call, you will learn what Brightwell does and what a referral partnership would mean. You will also reply to Kiran Bhat with a deck and to Rhea Kapur with a demo offer, each within one business day.\",\n    \"best\": \"Vikram Nair replies within one business day and confirms a call time. In the call, he describes a referral partnership that brings customers or partners to you, or refers you to customers or partners. The partnership is valuable and moves forward. Kiran Bhat receives the deck, presents it to Pinewood's partners, and schedules a meeting. Rhea Kapur receives the demo offer and schedules a demo for her team.\",\n    \"worst\": \"Vikram Nair does not reply, or replies to say Brightwell is not interested. Kiran Bhat's partner meeting happens without the deck, or the deck does not move the needle. Rhea Kapur's team does not show up for the demo, or the demo does not convert to a design partnership.\",\n    \"signals_to_watch\": [\n      \"Vikram Nair replies within one business day with a proposed call time or a question about the partnership.\",\n      \"Kiran Bhat replies to confirm receipt of the deck and a timeline for the partner meeting.\",\n      \"Rhea Kapur replies to confirm a demo time and the size of her team.\",\n      \"Vikram Nair's call happens and he describes a specific referral partnership opportunity.\",\n      \"Kiran Bhat's partner meeting happens and Pinewood schedules a follow-up meeting.\",\n      \"Rhea Kapur's demo happens and she expresses interest in a design partnership.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because a referral partnership could bring customers or partners, which would help the company, but it is not capital and does not directly move the seed round. However, Kiran Bhat at Pinewood Capital is a live investor conversation, which is high-stakes.\",\n      \"The urgency is medium because Kiran Bhat's partner meeting may be soon, which makes the deck request time-sensitive. Vikram Nair's call request has no stated deadline, so it is less urgent. A same-day reply keeps the thread warm and signals respect for the connector.\",\n      \"A wrong move is reversible because a poor reply can be followed up with a better one, and a missed call can be rescheduled. However, a delayed reply or no reply will age the thread and make it harder to recover.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Reply to Vikram Nair with a proposed call time, and separately reply to Kiran Bhat with the deck and to Rhea Kapur with a demo offer. Send three separate messages, one to each person, tailored to their ask.\",\n    \"for_whom\": \"Vikram Nair at Brightwell, Kiran Bhat at Pinewood Capital, and Rhea Kapur at Saltmarsh\",\n    \"by_when\": \"2026-08-08\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"fact:6\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"vikram@brightwell.test, kiran@pinewood.test, rhea@saltmarsh.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If you cannot send all three replies today, prioritize Kiran Bhat at Pinewood Capital, because his partner meeting may be soon and the deck request is time-sensitive. Reply to Vikram Nair and Rhea Kapur tomorrow. However, a same-day reply to all three is better and keeps all three threads warm.\",\n  \"wait_or_stop\": \"Do not wait. Reply today. If Vikram Nair does not reply within three business days, send a follow-up message proposing a specific call time. If he does not reply within one week, the thread has gone cold and you can deprioritize it. If Kiran Bhat's partner meeting is within one week, prioritize the deck and follow up with him to confirm he received it and when the meeting is. If Rhea Kapur does not reply within three business days, follow up with a specific demo time.\",\n  \"done_when\": \"Done when you have sent three separate replies (one to each person), each tailored to their ask and proposing a next step (call time, deck receipt, demo time). Done when Vikram Nair has confirmed a call time, Kiran Bhat has confirmed receipt of the deck and a timeline for the partner meeting, and Rhea Kapur has confirmed a demo time.\"\n}",
+  "site": "expert"
+ },
+ "dd84560a1bb4d3b6cfe46c7076be79ce95e2e543f2de240100fb5da3fc7270a4": {
+  "framed": true,
+  "input_tokens": 8372,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3264,
+  "parsed": {
+   "alternative": "If you cannot schedule a demo within the next week, send a brief reply to Rhea Kapur acknowledging her request, confirming that you will send demo times by a specific date, and asking one clarifying question about her team's objectives to show engagement and buy time.",
+   "appraisal": {
+    "reasons": [
+     "A design partner relationship could generate feedback and a case study, which supports fundraising and product development, but is not a capital commitment.",
+     "The request is concrete and warm, but no timeline has been stated, so urgency is moderate rather than high.",
+     "A delayed response can be recovered by following up within a few days; the relationship is not lost if the first reply is slow, but momentum is reduced."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "A demo is scheduled with Rhea Kapur and her team, with a confirmed date and attendee list. After the demo, done is a follow-up conversation about next steps (pilot, design partnership, or close).",
+   "draft": "Hi Rhea, thanks for the introduction from Introly. I'd love to show your team how Nimbus Labs works. A demo typically takes thirty minutes and covers how we help founders manage their day-to-day. Would next Tuesday or Wednesday work for you and your team of eight? I can do 10am or 2pm UTC either day. Let me know what works best and if there's anything specific you'd like to see. \u2014Arjun",
+   "expected_vs_actual": {
+    "actual": "An introduction has been made with a specific demo request, but no response has been sent and no stage has been established.",
+    "expected": "The brief lists design partner talks in motion with Orbitly, Cleanwave, Novacore, and Memloop. A new design partner prospect should follow the pattern of those conversations: initial contact, discovery call, demo or pilot proposal, and terms discussion.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced three people from a Lakefront founder evening on 2026-08-08 at 07:30 UTC.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "three people from Thursday's Lakefront founder evening asked me to connect you"
+    },
+    {
+     "claim": "Rhea Kapur, who runs operations at Saltmarsh, asked for a demo for her team of eight.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Rhea Kapur, who runs operations at Saltmarsh, would like a demo for her team of eight"
+    },
+    {
+     "claim": "The file is categorized as an intro by Introly, a connector.",
+     "evidence": [
+      "file:introduced_by",
+      "file:role",
+      "brief:cbl_#27"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply has been sent to this introduction.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.44 days since first touch.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file names no open asks.",
+     "evidence": [
+      "file:open_asks"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for it.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Saltmarsh is the company whose operations manager made the request.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction from a connector to an operational stakeholder at a potential design partner, with a concrete request for a demo to a named team size, requiring a prompt response to preserve momentum.",
+    "rivals": [
+     "A bundled introduction to three separate parties (investor, operations, partnership) that requires triage and separate response paths.",
+     "An exploratory outreach from Saltmarsh to understand Nimbus Labs' product, with no commitment implied and low conversion probability unless the demo is exceptional."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from Rhea Kapur about the purpose of the demo and what success looks like for her team.",
+     "proposition": "Saltmarsh is evaluating Nimbus Labs as a potential design partner or pilot customer."
+    },
+    {
+     "needs": "A follow-up from Rhea Kapur or Introly indicating a deadline or decision timeline.",
+     "proposition": "The demo request is urgent and time-sensitive."
+    },
+    {
+     "needs": "Clarification during the demo conversation about her role in decision-making and who else needs to be involved.",
+     "proposition": "Rhea Kapur has authority to commit to a partnership or pilot."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "file:whose_move"
+     ],
+     "claim": "The move is ours: Rhea Kapur has asked for a demo and named a specific audience size, which is a concrete request that requires a response."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:3",
+      "brief:cbl_#27"
+     ],
+     "claim": "This is a warm introduction from a connector, not a cold outreach, which raises the probability of conversion if answered promptly."
+    },
+    {
+     "based_on": [
+      "evt_#1"
+     ],
+     "claim": "The introduction bundles three separate requests (deck review, demo, partnership call) from three different parties, each requiring a different response path."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "brief:cbl_#24",
+      "brief:cbl_#23"
+     ],
+     "claim": "Saltmarsh is a design partner prospect, not an investor, based on the context that Rhea Kapur runs operations and requested a demo for her team rather than investment terms."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-09",
+    "for_whom": "Rhea Kapur at Saltmarsh",
+    "guided_by": [
+     "own:1",
+     "cap:founder_office.heu.investor_relations.investors_do_not_chase",
+     "cap:founder_office.fundraising.investor_relations#f3"
+    ],
+    "rests_on": [
+     "fact:2",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "rhea@saltmarsh.test",
+    "what": "respond to Rhea Kapur with a demo proposal, confirming her team size and objectives, and propose two or three specific times in the next week",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A demo request with a named team size and no timeline stated should be answered within one business day to preserve momentum and signal seriousness.",
+     "kind": "practice",
+     "why": "Connectors introduce multiple parties; the first to respond clearly wins the founder's attention, and delay signals lower priority to the prospect."
+    },
+    {
+     "claim": "Warm introductions to operational stakeholders (not investors or partners) who request demos often lead to design partnerships or pilot agreements rather than capital.",
+     "kind": "base_rate",
+     "why": "Operations leaders evaluate tools for team use; their requests are about fit and capability, not valuation or terms."
+    },
+    {
+     "claim": "When a connector introduces three parties in one message, the founder should separate them into three distinct threads to avoid cross-contamination and to track each relationship independently.",
+     "kind": "practice",
+     "why": "Each party has different needs and timelines; bundling them creates confusion about who is waiting for what."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "Introductions from connectors that name a specific next step (demo, call, deck review) convert at higher rates than those that do not.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "cap:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "A request for a demo with a named audience size signals readiness to move forward and should be treated as higher priority than a general introduction.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "inference:3"
+     ],
+     "claim": "An introduction that bundles multiple requests without clear ownership or sequencing often results in confusion about which party owns the next move.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "brief:cbl_#24",
+     "brief:cbl_#23"
+    ],
+    "kind": "partner",
+    "why": "Rhea Kapur runs operations and requested a demo for her team, not investment terms or a partnership agreement. This signals evaluation for potential design partnership or pilot use, not investor relations or vendor sales."
+   },
+   "scenarios": {
+    "act": "You respond to Rhea Kapur within one business day, propose a demo time, and confirm the team size and objectives. A demo is scheduled. Saltmarsh evaluates Nimbus Labs against alternatives. If the demo is strong, a pilot or design partnership conversation begins.",
+    "best": "Rhea Kapur's team finds Nimbus Labs valuable, proposes a pilot with Saltmarsh, and becomes a design partner. The pilot generates feedback and a case study. Saltmarsh refers Nimbus Labs to other companies in its network.",
+    "do_nothing": "Rhea Kapur's request goes unanswered. Introly may follow up once; if no response comes, Saltmarsh moves to another vendor or tool. The introduction cools within a week. The opportunity is lost.",
+    "signals_to_watch": [
+     "Whether Rhea Kapur responds to your demo proposal within two business days.",
+     "Whether she confirms the team size and demo objectives or asks clarifying questions.",
+     "Whether the demo is attended by decision-makers or only exploratory participants.",
+     "Whether Saltmarsh proposes a pilot or next step after the demo, or goes silent."
+    ],
+    "worst": "The demo is scheduled but Rhea Kapur's team finds the product does not fit their workflow. No pilot is proposed. Saltmarsh does not refer. The relationship ends."
+   },
+   "unknowns": [
+    {
+     "question": "What is Saltmarsh's business, and how does it relate to Nimbus Labs' product or market?",
+     "relevance": "Understanding the fit determines whether this is a genuine design partner opportunity or a misaligned introduction."
+    },
+    {
+     "question": "Does Rhea Kapur have a specific timeline or deadline for the demo?",
+     "relevance": "A deadline changes the urgency and sequencing of the response."
+    },
+    {
+     "question": "What does Rhea Kapur mean by 'demo for her team of eight'\u2014is she evaluating for adoption, or is this exploratory?",
+     "relevance": "The depth of preparation required for the demo depends on whether this is a serious evaluation or an exploratory conversation."
+    },
+    {
+     "question": "Are the other two introductions (Kiran Bhat at Pinewood Capital and Vikram Nair at Brightwell) tracked in separate files, or are they bundled here?",
+     "relevance": "If bundled, the file's kind of work is ambiguous and the response strategy must account for three different counterparties and domains."
+    }
+   ],
+   "wait_or_stop": "Wait only if Saltmarsh's business or Rhea Kapur's role is unknown and you need to research before responding. Do not wait for the other two introductions (Kiran Bhat and Vikram Nair) to be handled first; respond to each in parallel. Stop if Rhea Kapur does not respond to your demo proposal within five business days; follow up once, and if still no response, move the file to dormant."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced three people from a Lakefront founder evening on 2026-08-08 at 07:30 UTC.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"three people from Thursday's Lakefront founder evening asked me to connect you\"\n    },\n    {\n      \"claim\": \"Rhea Kapur, who runs operations at Saltmarsh, asked for a demo for her team of eight.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Rhea Kapur, who runs operations at Saltmarsh, would like a demo for her team of eight\"\n    },\n    {\n      \"claim\": \"The file is categorized as an intro by Introly, a connector.\",\n      \"evidence\": [\n        \"file:introduced_by\",\n        \"file:role\",\n        \"brief:cbl_#27\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply has been sent to this introduction.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.44 days since first touch.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file names no open asks.\",\n      \"evidence\": [\n        \"file:open_asks\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for it.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Saltmarsh is the company whose operations manager made the request.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The move is ours: Rhea Kapur has asked for a demo and named a specific audience size, which is a concrete request that requires a response.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"This is a warm introduction from a connector, not a cold outreach, which raises the probability of conversion if answered promptly.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:3\",\n        \"brief:cbl_#27\"\n      ]\n    },\n    {\n      \"claim\": \"The introduction bundles three separate requests (deck review, demo, partnership call) from three different parties, each requiring a different response path.\",\n      \"based_on\": [\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"Saltmarsh is a design partner prospect, not an investor, based on the context that Rhea Kapur runs operations and requested a demo for her team rather than investment terms.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"brief:cbl_#24\",\n        \"brief:cbl_#23\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Introductions from connectors that name a specific next step (demo, call, deck review) convert at higher rates than those that do not.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A request for a demo with a named audience size signals readiness to move forward and should be treated as higher priority than a general introduction.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"cap:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An introduction that bundles multiple requests without clear ownership or sequencing often results in confusion about which party owns the next move.\",\n      \"based_on\": [\n        \"inference:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A demo request with a named team size and no timeline stated should be answered within one business day to preserve momentum and signal seriousness.\",\n      \"why\": \"Connectors introduce multiple parties; the first to respond clearly wins the founder's attention, and delay signals lower priority to the prospect.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Warm introductions to operational stakeholders (not investors or partners) who request demos often lead to design partnerships or pilot agreements rather than capital.\",\n      \"why\": \"Operations leaders evaluate tools for team use; their requests are about fit and capability, not valuation or terms.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a connector introduces three parties in one message, the founder should separate them into three distinct threads to avoid cross-contamination and to track each relationship independently.\",\n      \"why\": \"Each party has different needs and timelines; bundling them creates confusion about who is waiting for what.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Saltmarsh is evaluating Nimbus Labs as a potential design partner or pilot customer.\",\n      \"needs\": \"Confirmation from Rhea Kapur about the purpose of the demo and what success looks like for her team.\"\n    },\n    {\n      \"proposition\": \"The demo request is urgent and time-sensitive.\",\n      \"needs\": \"A follow-up from Rhea Kapur or Introly indicating a deadline or decision timeline.\"\n    },\n    {\n      \"proposition\": \"Rhea Kapur has authority to commit to a partnership or pilot.\",\n      \"needs\": \"Clarification during the demo conversation about her role in decision-making and who else needs to be involved.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Saltmarsh's business, and how does it relate to Nimbus Labs' product or market?\",\n      \"relevance\": \"Understanding the fit determines whether this is a genuine design partner opportunity or a misaligned introduction.\"\n    },\n    {\n      \"question\": \"Does Rhea Kapur have a specific timeline or deadline for the demo?\",\n      \"relevance\": \"A deadline changes the urgency and sequencing of the response.\"\n    },\n    {\n      \"question\": \"What does Rhea Kapur mean by 'demo for her team of eight'\u2014is she evaluating for adoption, or is this exploratory?\",\n      \"relevance\": \"The depth of preparation required for the demo depends on whether this is a serious evaluation or an exploratory conversation.\"\n    },\n    {\n      \"question\": \"Are the other two introductions (Kiran Bhat at Pinewood Capital and Vikram Nair at Brightwell) tracked in separate files, or are they bundled here?\",\n      \"relevance\": \"If bundled, the file's kind of work is ambiguous and the response strategy must account for three different counterparties and domains.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction from a connector to an operational stakeholder at a potential design partner, with a concrete request for a demo to a named team size, requiring a prompt response to preserve momentum.\",\n    \"rivals\": [\n      \"A bundled introduction to three separate parties (investor, operations, partnership) that requires triage and separate response paths.\",\n      \"An exploratory outreach from Saltmarsh to understand Nimbus Labs' product, with no commitment implied and low conversion probability unless the demo is exceptional.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"Rhea Kapur runs operations and requested a demo for her team, not investment terms or a partnership agreement. This signals evaluation for potential design partnership or pilot use, not investor relations or vendor sales.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"brief:cbl_#24\",\n      \"brief:cbl_#23\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief lists design partner talks in motion with Orbitly, Cleanwave, Novacore, and Memloop. A new design partner prospect should follow the pattern of those conversations: initial contact, discovery call, demo or pilot proposal, and terms discussion.\",\n    \"actual\": \"An introduction has been made with a specific demo request, but no response has been sent and no stage has been established.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Rhea Kapur's request goes unanswered. Introly may follow up once; if no response comes, Saltmarsh moves to another vendor or tool. The introduction cools within a week. The opportunity is lost.\",\n    \"act\": \"You respond to Rhea Kapur within one business day, propose a demo time, and confirm the team size and objectives. A demo is scheduled. Saltmarsh evaluates Nimbus Labs against alternatives. If the demo is strong, a pilot or design partnership conversation begins.\",\n    \"best\": \"Rhea Kapur's team finds Nimbus Labs valuable, proposes a pilot with Saltmarsh, and becomes a design partner. The pilot generates feedback and a case study. Saltmarsh refers Nimbus Labs to other companies in its network.\",\n    \"worst\": \"The demo is scheduled but Rhea Kapur's team finds the product does not fit their workflow. No pilot is proposed. Saltmarsh does not refer. The relationship ends.\",\n    \"signals_to_watch\": [\n      \"Whether Rhea Kapur responds to your demo proposal within two business days.\",\n      \"Whether she confirms the team size and demo objectives or asks clarifying questions.\",\n      \"Whether the demo is attended by decision-makers or only exploratory participants.\",\n      \"Whether Saltmarsh proposes a pilot or next step after the demo, or goes silent.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"A design partner relationship could generate feedback and a case study, which supports fundraising and product development, but is not a capital commitment.\",\n      \"The request is concrete and warm, but no timeline has been stated, so urgency is moderate rather than high.\",\n      \"A delayed response can be recovered by following up within a few days; the relationship is not lost if the first reply is slow, but momentum is reduced.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"respond to Rhea Kapur with a demo proposal, confirming her team size and objectives, and propose two or three specific times in the next week\",\n    \"for_whom\": \"Rhea Kapur at Saltmarsh\",\n    \"by_when\": \"2026-08-09\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"cap:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"cap:founder_office.fundraising.investor_relations#f3\"\n    ],\n    \"to\": \"rhea@saltmarsh.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If you cannot schedule a demo within the next week, send a brief reply to Rhea Kapur acknowledging her request, confirming that you will send demo times by a specific date, and asking one clarifying question about her team's objectives to show engagement and buy time.\",\n  \"wait_or_stop\": \"Wait only if Saltmarsh's business or Rhea Kapur's role is unknown and you need to research before responding. Do not wait for the other two introductions (Kiran Bhat and Vikram Nair) to be handled first; respond to each in parallel. Stop if Rhea Kapur does not respond to your demo proposal within five business days; follow up once, and if still no response, move the file to dormant.\",\n  \"done_when\": \"A demo is scheduled with Rhea Kapur and her team, with a confirmed date and attendee list. After the demo, done is a follow-up conversation about next steps (pilot, design partnership, or close).\",\n  \"draft\": \"Hi Rhea, thanks for the introduction from Introly. I'd love to show your team how Nimbus Labs works. A demo typically takes thirty minutes and covers how we help founders manage their day-to-day. Would next Tuesday or Wednesday work for you and your team of eight? I can do 10am or 2pm UTC either day. Let me know what works best and if there's anything specific you'd like to see. \u2014Arjun\"\n}",
+  "site": "expert"
+ },
+ "edc9273d4c184dfd0cae6d90813b832f277f05f8d9d01e159b071131d49fc603": {
+  "framed": true,
+  "input_tokens": 8147,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4357,
+  "parsed": {
+   "alternative": "Research Pinewood Capital's stage, cheque size, thesis, and recent portfolio before sending the deck, so you can tailor the deck and prepare for a partner meeting. This takes more time but increases the quality of the reply and the founder's readiness. If the partner meeting is more than a week away, this is the better move; if it is within two days, send the deck today and research the fund in parallel.",
+   "appraisal": {
+    "reasons": [
+     "The founder is raising a seed round and has named five investors in a wave; a new investor is an opportunity, but not a blocker if the founder closes with one of the named investors.",
+     "The ask has a deadline tied to a partner meeting, which is a fixed event; missing the deadline costs this opportunity, but the founder can reopen the relationship later if the company gains traction.",
+     "The introduction came through a connector bot, not a warm referral, which is a weaker signal than the founder's existing wave; the founder should treat this as a real opportunity but not assume the fund is moving fast.",
+     "The founder has not yet replied, and the clock is running; the move is ours, and the founder's speed and quality of reply will determine whether this becomes a real conversation."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Kiran Bhat receives the deck in time for the partner meeting, and either schedules a meeting with the founder or passes with a clear reason. The founder learns whether Pinewood Capital is a fit and whether the fund is moving fast.",
+   "draft": "Kiran, thanks for the introduction. I'm attaching our deck for the partner meeting. A few quick questions: when is the meeting, and what will you be highlighting about Nimbus Labs? And when might I hear back from the partners? Happy to jump on a call if that's helpful. \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "The founder has received a concrete ask from a principal at a new fund: send a deck before a partner meeting. The founder has not yet replied. This is the first touch in this relationship, and the move is ours.",
+    "expected": "The brief names no playbook for this file, so there is no stage or expected behavior from a playbook. From the brief's goals, the founder is raising a seed round and has written to five named investors in a wave. A new investor introduction should be evaluated against the founder's existing wave: is this fund a better fit than the named investors, and should it be prioritized?",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly, an AI connector, introduced three people from a founder event on 2026-08-08 at 07:30 UTC, one of whom is Kiran Bhat, a principal at Pinewood Capital.",
+     "evidence": [
+      "evt_#1",
+      "brief:cbl_#27"
+     ],
+     "quote": "three people from Thursday's Lakefront founder evening asked me to connect you, and I've copied them here so you can take it from here with each of them. Kiran Bhat, a principal at Pinewood Capital, would like your deck before the fund's partner meeting."
+    },
+    {
+     "claim": "Kiran Bhat has made a specific ask: the founder's deck before Pinewood Capital's partner meeting.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Kiran Bhat, a principal at Pinewood Capital, would like your deck before the fund's partner meeting."
+    },
+    {
+     "claim": "The file has been quiet for 0.44 days since the introduction was made.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time data exists for Kiran Bhat or the founder's prior replies to him.",
+     "evidence": [
+      "num:their_reply_time:kiran@pinewood.test",
+      "num:your_reply_time:kiran@pinewood.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief lists Pinewood Capital nowhere among named investors, programs, or partners.",
+     "evidence": [
+      "brief:company"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is not named by the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The move is ours: the founder has been asked to send a deck and has not yet done so.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A principal at a new fund has asked for the founder's deck before a partner meeting, signaling that the company has passed a first filter and the principal is preparing to pitch it internally. The founder has not yet replied, and the clock is running because the partner meeting is a fixed event. This is a concrete next step in a new investor relationship, not a soft signal.",
+    "rivals": [
+     "This is a volume introduction from a connector bot, and Kiran Bhat may not have high conviction; the founder should treat it as a real opportunity but not assume the fund is moving fast.",
+     "This is a test of the founder's responsiveness and organization; the principal is checking whether the founder can execute before the fund commits time to a meeting.",
+     "This is a low-priority introduction compared to the founder's existing wave of named investors, and the founder should not let it distract from closing momentum elsewhere."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from Kiran Bhat after the founder sends the deck, or a follow-up from the founder asking what the partners will discuss.",
+     "proposition": "Kiran Bhat has already discussed Nimbus Labs with other partners at Pinewood Capital, and the deck request is a gate to moving forward."
+    },
+    {
+     "needs": "The founder asking Kiran Bhat when the meeting is, or the founder inferring from the urgency of the ask.",
+     "proposition": "Pinewood Capital's partner meeting is within the next week, and the deadline is tight."
+    },
+    {
+     "needs": "The founder researching Pinewood Capital's recent investments and stage focus before sending the deck.",
+     "proposition": "Pinewood Capital is a fit for Nimbus Labs' stage and cheque size, and the fund's thesis aligns with the company's product."
+    },
+    {
+     "needs": "The founder asking Kiran Bhat who else at the fund should see the deck, or the founder researching the fund's partners.",
+     "proposition": "The introduction through Introly is a one-time introduction, and Kiran Bhat is the only point of contact at the fund."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "Kiran Bhat's ask carries a deadline: the deck must arrive before Pinewood Capital's partner meeting, which is a gate to the fund's decision-making process."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "brief:cbl_#27"
+     ],
+     "claim": "The introduction came through a connector, not a warm referral from someone Pinewood Capital knows well, which is a weaker path than a founder the fund has backed or someone who knows the partner closely."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "brief:company"
+     ],
+     "claim": "Pinewood Capital is a new investor relationship, not part of the founder's existing wave or named investor set, and the fund's stage, cheque size, thesis, and portfolio are unknown."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "fact:2"
+     ],
+     "claim": "The founder has not yet replied to Kiran Bhat's ask, and the clock is running against the founder because the partner meeting is a fixed event."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-09",
+    "for_whom": "Kiran Bhat at Pinewood Capital",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:4",
+     "inference:1",
+     "inference:4"
+    ],
+    "to": "kiran@pinewood.test",
+    "what": "send your deck to Kiran Bhat, and ask when the partner meeting is, what the partners will discuss, and when you might hear back",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A deck request with a named deadline should be answered within one business day, before the founder's other work, because the fund's calendar is fixed and the founder's is not.",
+     "kind": "practice",
+     "why": "The fund will not wait, and a missed deadline signals either disorganization or lack of interest; the founder's reply speed here sets the tone for the relationship."
+    },
+    {
+     "claim": "When a principal asks for a deck before a partner meeting, the founder should also ask in the same reply what the principal will say about the company, what questions the partners will ask, and when the founder might hear back.",
+     "kind": "base_rate",
+     "why": "This move converts a one-way ask into a two-way conversation, signals that the founder understands the fund's process, and gives the founder a chance to shape the narrative before the partners see it."
+    },
+    {
+     "claim": "A principal who introduces a company via a connector bot, rather than directly, may be testing the founder's responsiveness or may have limited conviction; the founder should treat this as a real opportunity but not assume the fund is moving fast.",
+     "kind": "counter_pattern",
+     "why": "Connector bots are often used for volume sourcing, and the principal may be one of many people the bot introduced that day; the founder's speed and quality of reply will determine whether this becomes a real conversation."
+    },
+    {
+     "claim": "Before sending a deck to a new fund, the founder should know the fund's stage, cheque size, thesis, recent investments, and the principal's background, so the deck can be tailored and the founder can prepare for the partner meeting.",
+     "kind": "practice",
+     "why": "A generic deck sent to a new fund wastes the opportunity; a tailored deck and a prepared founder convert at a much higher rate."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#q",
+      "pb:founder_office.pb.investor_relations.before_an_investor_call"
+     ],
+     "claim": "A principal at a fund who asks for a deck before a partner meeting is signaling that the company has passed a first filter and the principal is preparing to pitch it internally.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "A deck request with a deadline is a concrete next step, not a soft signal; missing the deadline costs the relationship and the round.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+      "cap:founder_office.fundraising.investor_relations#f6"
+     ],
+     "claim": "An introduction through an AI connector bot, rather than a founder or portfolio company, is a weaker signal than a warm intro from someone the fund knows well, and the fund may be running a broad sourcing process rather than a targeted one.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f4"
+     ],
+     "claim": "A principal who asks for a deck before a partner meeting has usually already discussed the company with at least one other partner, or is testing whether the company is worth the conversation.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "file:role",
+     "file:domains"
+    ],
+    "kind": "investor",
+    "why": "Kiran Bhat is a principal at Pinewood Capital, a fund, and has asked for a deck before a partner meeting. This is an investor relationship, not an intro, program, compliance, hiring, partner, or vendor engagement. The brief names no kind of work for this file, but the file's content and the ask make the kind clear."
+   },
+   "scenarios": {
+    "act": "The founder sends the deck to Kiran Bhat within one business day, and asks when the partner meeting is, what the partners will discuss, and when the founder might hear back. Kiran Bhat receives the deck in time for the partner meeting, pitches the company to the partners, and either schedules a meeting with the founder or passes. The founder learns whether Pinewood Capital is a fit and whether the fund is moving fast.",
+    "best": "The founder sends a tailored deck and a thoughtful reply to Kiran Bhat. The principal pitches the company to the partners, who are impressed. Kiran Bhat schedules a meeting with the founder within a week, and the fund moves into diligence. The founder learns that Pinewood Capital is a strong fit and a real opportunity in the seed round.",
+    "do_nothing": "The founder does not send the deck, and Kiran Bhat does not follow up. The opportunity is lost, and the fund moves on to the next company. The founder's responsiveness is signaled as low, and the relationship ends. If the fund was a good fit, this is a missed opportunity in the seed round.",
+    "signals_to_watch": [
+     "Kiran Bhat's reply time after the founder sends the deck: a reply within one business day signals that the principal is moving fast; a reply after more than a week signals that the fund is not prioritizing the company.",
+     "Whether Kiran Bhat asks for a meeting or more information: a request for a meeting signals that the partners are interested; a request for more information signals that the fund is still evaluating.",
+     "Whether the founder hears from other partners at Pinewood Capital: if the founder hears from multiple partners, the fund is moving the company through its process; if the founder only hears from Kiran Bhat, the principal may not have pitched the company to the partners.",
+     "Whether the founder's existing wave of named investors moves faster or slower than Pinewood Capital: if the named investors move faster, the founder should prioritize them; if Pinewood Capital moves faster, the founder should prioritize this fund."
+    ],
+    "worst": "The founder sends a generic deck late, or does not send it at all. Kiran Bhat does not pitch the company to the partners, or pitches it poorly because the deck was late or weak. The fund passes, and the relationship ends. The founder's responsiveness is signaled as low, and the opportunity is lost."
+   },
+   "unknowns": [
+    {
+     "question": "When is Pinewood Capital's partner meeting?",
+     "relevance": "The deadline for the deck is tied to this date; if it is within two days, the founder must send the deck today; if it is more than a week away, the founder has time to research the fund and tailor the deck."
+    },
+    {
+     "question": "What is Pinewood Capital's stage, cheque size, thesis, and recent portfolio?",
+     "relevance": "The founder needs this information to decide whether to prioritize this fund, to tailor the deck, and to prepare for a partner meeting if it happens."
+    },
+    {
+     "question": "Has Kiran Bhat already discussed Nimbus Labs with other partners, or is this a cold introduction?",
+     "relevance": "If the principal has already pitched the company, the deck is a gate to a real conversation; if this is a cold introduction, the deck is a test of the founder's responsiveness and the company's fit."
+    },
+    {
+     "question": "What is Kiran Bhat's role and track record at Pinewood Capital?",
+     "relevance": "A principal who has backed successful companies carries more weight in partner meetings; a junior associate's pitch may not move the fund."
+    },
+    {
+     "question": "Are there other investors in the founder's wave who are further along, and should the founder prioritize them over this new introduction?",
+     "relevance": "The founder is running a seed round and should run investors in parallel; if Lumen Ventures or another named investor is closer to a term sheet, the founder should not let this new opportunity distract from closing momentum elsewhere."
+    }
+   ],
+   "wait_or_stop": "Wait if the founder learns that Pinewood Capital's partner meeting is more than two weeks away, or if the founder's existing wave of named investors is moving faster and closer to a term sheet. Stop if Kiran Bhat does not reply within one week after the founder sends the deck, or if the fund passes and gives a reason that is not about timing or traction."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly, an AI connector, introduced three people from a founder event on 2026-08-08 at 07:30 UTC, one of whom is Kiran Bhat, a principal at Pinewood Capital.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"brief:cbl_#27\"\n      ],\n      \"quote\": \"three people from Thursday's Lakefront founder evening asked me to connect you, and I've copied them here so you can take it from here with each of them. Kiran Bhat, a principal at Pinewood Capital, would like your deck before the fund's partner meeting.\"\n    },\n    {\n      \"claim\": \"Kiran Bhat has made a specific ask: the founder's deck before Pinewood Capital's partner meeting.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Kiran Bhat, a principal at Pinewood Capital, would like your deck before the fund's partner meeting.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.44 days since the introduction was made.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time data exists for Kiran Bhat or the founder's prior replies to him.\",\n      \"evidence\": [\n        \"num:their_reply_time:kiran@pinewood.test\",\n        \"num:your_reply_time:kiran@pinewood.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief lists Pinewood Capital nowhere among named investors, programs, or partners.\",\n      \"evidence\": [\n        \"brief:company\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is not named by the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The move is ours: the founder has been asked to send a deck and has not yet done so.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Kiran Bhat's ask carries a deadline: the deck must arrive before Pinewood Capital's partner meeting, which is a gate to the fund's decision-making process.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The introduction came through a connector, not a warm referral from someone Pinewood Capital knows well, which is a weaker path than a founder the fund has backed or someone who knows the partner closely.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"brief:cbl_#27\"\n      ]\n    },\n    {\n      \"claim\": \"Pinewood Capital is a new investor relationship, not part of the founder's existing wave or named investor set, and the fund's stage, cheque size, thesis, and portfolio are unknown.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"brief:company\"\n      ]\n    },\n    {\n      \"claim\": \"The founder has not yet replied to Kiran Bhat's ask, and the clock is running against the founder because the partner meeting is a fixed event.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A principal at a fund who asks for a deck before a partner meeting is signaling that the company has passed a first filter and the principal is preparing to pitch it internally.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#q\",\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A deck request with a deadline is a concrete next step, not a soft signal; missing the deadline costs the relationship and the round.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An introduction through an AI connector bot, rather than a founder or portfolio company, is a weaker signal than a warm intro from someone the fund knows well, and the fund may be running a broad sourcing process rather than a targeted one.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor\",\n        \"cap:founder_office.fundraising.investor_relations#f6\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A principal who asks for a deck before a partner meeting has usually already discussed the company with at least one other partner, or is testing whether the company is worth the conversation.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f4\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A deck request with a named deadline should be answered within one business day, before the founder's other work, because the fund's calendar is fixed and the founder's is not.\",\n      \"why\": \"The fund will not wait, and a missed deadline signals either disorganization or lack of interest; the founder's reply speed here sets the tone for the relationship.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a principal asks for a deck before a partner meeting, the founder should also ask in the same reply what the principal will say about the company, what questions the partners will ask, and when the founder might hear back.\",\n      \"why\": \"This move converts a one-way ask into a two-way conversation, signals that the founder understands the fund's process, and gives the founder a chance to shape the narrative before the partners see it.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A principal who introduces a company via a connector bot, rather than directly, may be testing the founder's responsiveness or may have limited conviction; the founder should treat this as a real opportunity but not assume the fund is moving fast.\",\n      \"why\": \"Connector bots are often used for volume sourcing, and the principal may be one of many people the bot introduced that day; the founder's speed and quality of reply will determine whether this becomes a real conversation.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Before sending a deck to a new fund, the founder should know the fund's stage, cheque size, thesis, recent investments, and the principal's background, so the deck can be tailored and the founder can prepare for the partner meeting.\",\n      \"why\": \"A generic deck sent to a new fund wastes the opportunity; a tailored deck and a prepared founder convert at a much higher rate.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Kiran Bhat has already discussed Nimbus Labs with other partners at Pinewood Capital, and the deck request is a gate to moving forward.\",\n      \"needs\": \"A reply from Kiran Bhat after the founder sends the deck, or a follow-up from the founder asking what the partners will discuss.\"\n    },\n    {\n      \"proposition\": \"Pinewood Capital's partner meeting is within the next week, and the deadline is tight.\",\n      \"needs\": \"The founder asking Kiran Bhat when the meeting is, or the founder inferring from the urgency of the ask.\"\n    },\n    {\n      \"proposition\": \"Pinewood Capital is a fit for Nimbus Labs' stage and cheque size, and the fund's thesis aligns with the company's product.\",\n      \"needs\": \"The founder researching Pinewood Capital's recent investments and stage focus before sending the deck.\"\n    },\n    {\n      \"proposition\": \"The introduction through Introly is a one-time introduction, and Kiran Bhat is the only point of contact at the fund.\",\n      \"needs\": \"The founder asking Kiran Bhat who else at the fund should see the deck, or the founder researching the fund's partners.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"When is Pinewood Capital's partner meeting?\",\n      \"relevance\": \"The deadline for the deck is tied to this date; if it is within two days, the founder must send the deck today; if it is more than a week away, the founder has time to research the fund and tailor the deck.\"\n    },\n    {\n      \"question\": \"What is Pinewood Capital's stage, cheque size, thesis, and recent portfolio?\",\n      \"relevance\": \"The founder needs this information to decide whether to prioritize this fund, to tailor the deck, and to prepare for a partner meeting if it happens.\"\n    },\n    {\n      \"question\": \"Has Kiran Bhat already discussed Nimbus Labs with other partners, or is this a cold introduction?\",\n      \"relevance\": \"If the principal has already pitched the company, the deck is a gate to a real conversation; if this is a cold introduction, the deck is a test of the founder's responsiveness and the company's fit.\"\n    },\n    {\n      \"question\": \"What is Kiran Bhat's role and track record at Pinewood Capital?\",\n      \"relevance\": \"A principal who has backed successful companies carries more weight in partner meetings; a junior associate's pitch may not move the fund.\"\n    },\n    {\n      \"question\": \"Are there other investors in the founder's wave who are further along, and should the founder prioritize them over this new introduction?\",\n      \"relevance\": \"The founder is running a seed round and should run investors in parallel; if Lumen Ventures or another named investor is closer to a term sheet, the founder should not let this new opportunity distract from closing momentum elsewhere.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A principal at a new fund has asked for the founder's deck before a partner meeting, signaling that the company has passed a first filter and the principal is preparing to pitch it internally. The founder has not yet replied, and the clock is running because the partner meeting is a fixed event. This is a concrete next step in a new investor relationship, not a soft signal.\",\n    \"rivals\": [\n      \"This is a volume introduction from a connector bot, and Kiran Bhat may not have high conviction; the founder should treat it as a real opportunity but not assume the fund is moving fast.\",\n      \"This is a test of the founder's responsiveness and organization; the principal is checking whether the founder can execute before the fund commits time to a meeting.\",\n      \"This is a low-priority introduction compared to the founder's existing wave of named investors, and the founder should not let it distract from closing momentum elsewhere.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Kiran Bhat is a principal at Pinewood Capital, a fund, and has asked for a deck before a partner meeting. This is an investor relationship, not an intro, program, compliance, hiring, partner, or vendor engagement. The brief names no kind of work for this file, but the file's content and the ask make the kind clear.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"file:role\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this file, so there is no stage or expected behavior from a playbook. From the brief's goals, the founder is raising a seed round and has written to five named investors in a wave. A new investor introduction should be evaluated against the founder's existing wave: is this fund a better fit than the named investors, and should it be prioritized?\",\n    \"actual\": \"The founder has received a concrete ask from a principal at a new fund: send a deck before a partner meeting. The founder has not yet replied. This is the first touch in this relationship, and the move is ours.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not send the deck, and Kiran Bhat does not follow up. The opportunity is lost, and the fund moves on to the next company. The founder's responsiveness is signaled as low, and the relationship ends. If the fund was a good fit, this is a missed opportunity in the seed round.\",\n    \"act\": \"The founder sends the deck to Kiran Bhat within one business day, and asks when the partner meeting is, what the partners will discuss, and when the founder might hear back. Kiran Bhat receives the deck in time for the partner meeting, pitches the company to the partners, and either schedules a meeting with the founder or passes. The founder learns whether Pinewood Capital is a fit and whether the fund is moving fast.\",\n    \"best\": \"The founder sends a tailored deck and a thoughtful reply to Kiran Bhat. The principal pitches the company to the partners, who are impressed. Kiran Bhat schedules a meeting with the founder within a week, and the fund moves into diligence. The founder learns that Pinewood Capital is a strong fit and a real opportunity in the seed round.\",\n    \"worst\": \"The founder sends a generic deck late, or does not send it at all. Kiran Bhat does not pitch the company to the partners, or pitches it poorly because the deck was late or weak. The fund passes, and the relationship ends. The founder's responsiveness is signaled as low, and the opportunity is lost.\",\n    \"signals_to_watch\": [\n      \"Kiran Bhat's reply time after the founder sends the deck: a reply within one business day signals that the principal is moving fast; a reply after more than a week signals that the fund is not prioritizing the company.\",\n      \"Whether Kiran Bhat asks for a meeting or more information: a request for a meeting signals that the partners are interested; a request for more information signals that the fund is still evaluating.\",\n      \"Whether the founder hears from other partners at Pinewood Capital: if the founder hears from multiple partners, the fund is moving the company through its process; if the founder only hears from Kiran Bhat, the principal may not have pitched the company to the partners.\",\n      \"Whether the founder's existing wave of named investors moves faster or slower than Pinewood Capital: if the named investors move faster, the founder should prioritize them; if Pinewood Capital moves faster, the founder should prioritize this fund.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The founder is raising a seed round and has named five investors in a wave; a new investor is an opportunity, but not a blocker if the founder closes with one of the named investors.\",\n      \"The ask has a deadline tied to a partner meeting, which is a fixed event; missing the deadline costs this opportunity, but the founder can reopen the relationship later if the company gains traction.\",\n      \"The introduction came through a connector bot, not a warm referral, which is a weaker signal than the founder's existing wave; the founder should treat this as a real opportunity but not assume the fund is moving fast.\",\n      \"The founder has not yet replied, and the clock is running; the move is ours, and the founder's speed and quality of reply will determine whether this becomes a real conversation.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send your deck to Kiran Bhat, and ask when the partner meeting is, what the partners will discuss, and when you might hear back\",\n    \"for_whom\": \"Kiran Bhat at Pinewood Capital\",\n    \"by_when\": \"2026-08-09\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"kiran@pinewood.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Research Pinewood Capital's stage, cheque size, thesis, and recent portfolio before sending the deck, so you can tailor the deck and prepare for a partner meeting. This takes more time but increases the quality of the reply and the founder's readiness. If the partner meeting is more than a week away, this is the better move; if it is within two days, send the deck today and research the fund in parallel.\",\n  \"wait_or_stop\": \"Wait if the founder learns that Pinewood Capital's partner meeting is more than two weeks away, or if the founder's existing wave of named investors is moving faster and closer to a term sheet. Stop if Kiran Bhat does not reply within one week after the founder sends the deck, or if the fund passes and gives a reason that is not about timing or traction.\",\n  \"done_when\": \"Kiran Bhat receives the deck in time for the partner meeting, and either schedules a meeting with the founder or passes with a clear reason. The founder learns whether Pinewood Capital is a fit and whether the fund is moving fast.\",\n  \"draft\": \"Kiran, thanks for the introduction. I'm attaching our deck for the partner meeting. A few quick questions: when is the meeting, and what will you be highlighting about Nimbus Labs? And when might I hear back from the partners? Happy to jump on a call if that's helpful. \u2014 Arjun\"\n}",
+  "site": "expert"
+ }
+}

@@ -1,0 +1,236 @@
+{
+ "899c7551e0b7dde531f33a532e1065cc4ab93b376e6f14d69cc975de7eaf4764": {
+  "framed": true,
+  "input_tokens": 8070,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2831,
+  "parsed": {
+   "alternative": "If the founder believes the recognition is critical to the fundraising round, send a brief, professional inquiry to StartupSetu now (within one week) to confirm the examination timeline and ask when a decision is expected. This trades a small risk of signaling uncertainty for clarity on the timeline.",
+   "appraisal": {
+    "reasons": [
+     "The recognition is a credential that supports fundraising but is not a blocker; the round can proceed without it.",
+     "The file is in a government process with no immediate action required from the founder.",
+     "If the examination is delayed, the founder can continue fundraising and pursue recognition in parallel.",
+     "The process is controlled by StartupSetu, not by the founder; the founder's actions have limited impact on the timeline."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "StartupSetu communicates a decision (approval or request for additional information), or the founder confirms that the recognition is not material to the fundraising round and deprioritizes the file.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "StartupSetu has confirmed the application is under examination and will notify the founder when complete. No additional information has been requested, and no timeline has been provided.",
+    "expected": "The brief lists StartupSetu recognition as a goal; the expected path is application submission, examination, and approval. The file shows the application has been submitted and is now in examination, which is the expected next stage.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "StartupSetu sent a status update on the recognition application, moving it to 'Under Examination' stage.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Your application SSR-2026-48213 for recognition under the StartupSetu programme has moved to the stage: Under Examination."
+    },
+    {
+     "claim": "The file has been quiet for 0.28 days since the last touch on 2026-09-24 05:20 UTC.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file; its capability is not yet authored.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is categorized as compliance work in the brief, with fundraising as its domain.",
+     "evidence": [
+      "file:kind",
+      "file:domains",
+      "brief:cbl_#20"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "StartupSetu recognition is listed as a goal in the company brief.",
+     "evidence": [
+      "brief:cbl_#3"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows no open asks and no recorded whose_move.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found low risk, high engagement, and no blocking dependency.",
+     "evidence": [
+      "ru:core.risk",
+      "ru:core.temporal",
+      "ru:core.dependency"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A government recognition application is in normal progress through its examination stage; no action is required from the founder until StartupSetu requests information or communicates a decision.",
+    "rivals": [
+     "The application is stalled and requires proactive follow-up to move forward.",
+     "The examination stage is a formality and the outcome is already determined; the founder should prepare to use the credential in fundraising conversations.",
+     "The recognition is critical to the fundraising round and delays in the process pose a risk to the timeline."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A follow-up communication from StartupSetu indicating approval or requesting additional information.",
+     "proposition": "The examination will complete within a standard timeframe (four to eight weeks) and result in recognition."
+    },
+    {
+     "needs": "A request from StartupSetu for clarification or additional materials, or silence beyond the typical examination window.",
+     "proposition": "The examination may stall or require additional documentation."
+    },
+    {
+     "needs": "Feedback from investors on whether the credential influenced their decision or perception.",
+     "proposition": "The recognition, once granted, will materially improve the founder's position in fundraising conversations."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "own:1"
+     ],
+     "claim": "The application is progressing through the official process; 'Under Examination' is a normal intermediate stage, not a signal of trouble."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:6"
+     ],
+     "claim": "No action is required from the founder at this moment; the next move belongs to StartupSetu."
+    },
+    {
+     "based_on": [
+      "file:kind",
+      "file:domains",
+      "brief:cbl_#3"
+     ],
+     "claim": "The file's categorization as 'compliance' is correct; it is a regulatory recognition process, not a fundraising conversation, though it supports fundraising goals."
+    },
+    {
+     "based_on": [
+      "none:playbook",
+      "fact:4"
+     ],
+     "claim": "The absence of a playbook means the file's progress and next steps must be judged from first principles and the brief's own goals, not from a standard pattern."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-11-19",
+    "for_whom": "the founder",
+    "guided_by": [
+     "own:2",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "own:1"
+    ],
+    "to": null,
+    "what": "Monitor for the next communication from StartupSetu. If no communication arrives within eight weeks of the status update (by approximately 2026-11-19), send a brief inquiry to confirm the examination status. In the meantime, continue fundraising without waiting for the recognition.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Government recognition programs in India typically take weeks to months to complete examination; a single status update does not indicate urgency or imminent decision.",
+     "kind": "base_rate",
+     "why": "These processes involve multiple stakeholders and compliance checks; the timeline is set by the agency, not by the applicant's needs."
+    },
+    {
+     "claim": "When a government body moves an application to 'Under Examination,' the applicant should wait for the next communication unless the agency explicitly requests additional documents or information.",
+     "kind": "practice",
+     "why": "Proactive follow-up before a decision is made typically delays the process and signals uncertainty about the application's strength."
+    },
+    {
+     "claim": "Recognition from StartupSetu is a credential that supports fundraising but is not a blocker to raising; many successful seed rounds close without it.",
+     "kind": "benchmark",
+     "why": "Investors value traction and team more than government recognition; the credential is a plus, not a requirement."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "Government recognition processes move in stages and communicate status updates; 'Under Examination' typically means the application has passed initial screening and is in substantive review.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "own:2"
+     ],
+     "claim": "A status update from a government body with no request for additional information signals the process is on track.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "own:2"
+     ],
+     "claim": "Silence from a government body after an application is submitted is common and does not indicate rejection; a status update is a positive signal.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#3"
+    ],
+    "kind": "compliance",
+    "why": "The file is a government recognition application, not a fundraising conversation or investor relationship. It is categorized correctly in the brief as compliance work, though it supports fundraising goals."
+   },
+   "scenarios": {
+    "act": "The founder proactively contacts StartupSetu to inquire about the examination timeline or to confirm that all required documents are on file. This may accelerate the process or provide clarity on next steps, but it may also signal uncertainty and could delay the decision.",
+    "best": "StartupSetu approves the application within four to six weeks. The founder receives the recognition credential and can reference it in investor conversations. The credential strengthens the founder's position without requiring additional effort.",
+    "do_nothing": "The examination proceeds on StartupSetu's timeline. The founder receives a decision (approval or request for information) within the agency's standard window. If approved, the credential becomes available for use in fundraising. If additional information is requested, the founder must respond to keep the process moving.",
+    "signals_to_watch": [
+     "A communication from StartupSetu requesting additional documents or information.",
+     "Silence from StartupSetu beyond eight weeks from the status update.",
+     "An approval notification from StartupSetu.",
+     "Investor feedback on whether recognition influences their decision."
+    ],
+    "worst": "StartupSetu requests additional documentation that the founder does not have readily available, or the examination extends beyond the fundraising timeline. The founder must choose between delaying the round to pursue recognition or proceeding without it."
+   },
+   "unknowns": [
+    {
+     "question": "What is the typical examination duration for StartupSetu applications, and when should the founder expect a decision?",
+     "relevance": "This determines whether the file should be monitored passively or whether a follow-up is needed if silence extends beyond the normal window."
+    },
+    {
+     "question": "Are there any documents or information that StartupSetu may request during examination, and is the founder prepared to provide them quickly?",
+     "relevance": "A delayed response to a document request could extend the timeline; knowing the likely asks in advance allows preparation."
+    },
+    {
+     "question": "How much weight do the investors in the current fundraising wave place on StartupSetu recognition?",
+     "relevance": "If recognition is immaterial to the round's outcome, the file can be monitored passively; if it is material, the founder may need to accelerate or flag it in conversations."
+    }
+   ],
+   "wait_or_stop": "Wait for the next communication from StartupSetu. Stop waiting and send an inquiry if silence extends beyond eight weeks from the status update. Stop monitoring this file if the founder decides to proceed with fundraising regardless of the recognition outcome."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"StartupSetu sent a status update on the recognition application, moving it to 'Under Examination' stage.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Your application SSR-2026-48213 for recognition under the StartupSetu programme has moved to the stage: Under Examination.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.28 days since the last touch on 2026-09-24 05:20 UTC.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file; its capability is not yet authored.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is categorized as compliance work in the brief, with fundraising as its domain.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:domains\",\n        \"brief:cbl_#20\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"StartupSetu recognition is listed as a goal in the company brief.\",\n      \"evidence\": [\n        \"brief:cbl_#3\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows no open asks and no recorded whose_move.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found low risk, high engagement, and no blocking dependency.\",\n      \"evidence\": [\n        \"ru:core.risk\",\n        \"ru:core.temporal\",\n        \"ru:core.dependency\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The application is progressing through the official process; 'Under Examination' is a normal intermediate stage, not a signal of trouble.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"claim\": \"No action is required from the founder at this moment; the next move belongs to StartupSetu.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"claim\": \"The file's categorization as 'compliance' is correct; it is a regulatory recognition process, not a fundraising conversation, though it supports fundraising goals.\",\n      \"based_on\": [\n        \"file:kind\",\n        \"file:domains\",\n        \"brief:cbl_#3\"\n      ]\n    },\n    {\n      \"claim\": \"The absence of a playbook means the file's progress and next steps must be judged from first principles and the brief's own goals, not from a standard pattern.\",\n      \"based_on\": [\n        \"none:playbook\",\n        \"fact:4\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Government recognition processes move in stages and communicate status updates; 'Under Examination' typically means the application has passed initial screening and is in substantive review.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A status update from a government body with no request for additional information signals the process is on track.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence from a government body after an application is submitted is common and does not indicate rejection; a status update is a positive signal.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"own:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Government recognition programs in India typically take weeks to months to complete examination; a single status update does not indicate urgency or imminent decision.\",\n      \"why\": \"These processes involve multiple stakeholders and compliance checks; the timeline is set by the agency, not by the applicant's needs.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a government body moves an application to 'Under Examination,' the applicant should wait for the next communication unless the agency explicitly requests additional documents or information.\",\n      \"why\": \"Proactive follow-up before a decision is made typically delays the process and signals uncertainty about the application's strength.\"\n    },\n    {\n      \"kind\": \"benchmark\",\n      \"claim\": \"Recognition from StartupSetu is a credential that supports fundraising but is not a blocker to raising; many successful seed rounds close without it.\",\n      \"why\": \"Investors value traction and team more than government recognition; the credential is a plus, not a requirement.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The examination will complete within a standard timeframe (four to eight weeks) and result in recognition.\",\n      \"needs\": \"A follow-up communication from StartupSetu indicating approval or requesting additional information.\"\n    },\n    {\n      \"proposition\": \"The examination may stall or require additional documentation.\",\n      \"needs\": \"A request from StartupSetu for clarification or additional materials, or silence beyond the typical examination window.\"\n    },\n    {\n      \"proposition\": \"The recognition, once granted, will materially improve the founder's position in fundraising conversations.\",\n      \"needs\": \"Feedback from investors on whether the credential influenced their decision or perception.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the typical examination duration for StartupSetu applications, and when should the founder expect a decision?\",\n      \"relevance\": \"This determines whether the file should be monitored passively or whether a follow-up is needed if silence extends beyond the normal window.\"\n    },\n    {\n      \"question\": \"Are there any documents or information that StartupSetu may request during examination, and is the founder prepared to provide them quickly?\",\n      \"relevance\": \"A delayed response to a document request could extend the timeline; knowing the likely asks in advance allows preparation.\"\n    },\n    {\n      \"question\": \"How much weight do the investors in the current fundraising wave place on StartupSetu recognition?\",\n      \"relevance\": \"If recognition is immaterial to the round's outcome, the file can be monitored passively; if it is material, the founder may need to accelerate or flag it in conversations.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A government recognition application is in normal progress through its examination stage; no action is required from the founder until StartupSetu requests information or communicates a decision.\",\n    \"rivals\": [\n      \"The application is stalled and requires proactive follow-up to move forward.\",\n      \"The examination stage is a formality and the outcome is already determined; the founder should prepare to use the credential in fundraising conversations.\",\n      \"The recognition is critical to the fundraising round and delays in the process pose a risk to the timeline.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"compliance\",\n    \"why\": \"The file is a government recognition application, not a fundraising conversation or investor relationship. It is categorized correctly in the brief as compliance work, though it supports fundraising goals.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#3\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief lists StartupSetu recognition as a goal; the expected path is application submission, examination, and approval. The file shows the application has been submitted and is now in examination, which is the expected next stage.\",\n    \"actual\": \"StartupSetu has confirmed the application is under examination and will notify the founder when complete. No additional information has been requested, and no timeline has been provided.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The examination proceeds on StartupSetu's timeline. The founder receives a decision (approval or request for information) within the agency's standard window. If approved, the credential becomes available for use in fundraising. If additional information is requested, the founder must respond to keep the process moving.\",\n    \"act\": \"The founder proactively contacts StartupSetu to inquire about the examination timeline or to confirm that all required documents are on file. This may accelerate the process or provide clarity on next steps, but it may also signal uncertainty and could delay the decision.\",\n    \"best\": \"StartupSetu approves the application within four to six weeks. The founder receives the recognition credential and can reference it in investor conversations. The credential strengthens the founder's position without requiring additional effort.\",\n    \"worst\": \"StartupSetu requests additional documentation that the founder does not have readily available, or the examination extends beyond the fundraising timeline. The founder must choose between delaying the round to pursue recognition or proceeding without it.\",\n    \"signals_to_watch\": [\n      \"A communication from StartupSetu requesting additional documents or information.\",\n      \"Silence from StartupSetu beyond eight weeks from the status update.\",\n      \"An approval notification from StartupSetu.\",\n      \"Investor feedback on whether recognition influences their decision.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The recognition is a credential that supports fundraising but is not a blocker; the round can proceed without it.\",\n      \"The file is in a government process with no immediate action required from the founder.\",\n      \"If the examination is delayed, the founder can continue fundraising and pursue recognition in parallel.\",\n      \"The process is controlled by StartupSetu, not by the founder; the founder's actions have limited impact on the timeline.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Monitor for the next communication from StartupSetu. If no communication arrives within eight weeks of the status update (by approximately 2026-11-19), send a brief inquiry to confirm the examination status. In the meantime, continue fundraising without waiting for the recognition.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-11-19\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"own:1\"\n    ],\n    \"guided_by\": [\n      \"own:2\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder believes the recognition is critical to the fundraising round, send a brief, professional inquiry to StartupSetu now (within one week) to confirm the examination timeline and ask when a decision is expected. This trades a small risk of signaling uncertainty for clarity on the timeline.\",\n  \"wait_or_stop\": \"Wait for the next communication from StartupSetu. Stop waiting and send an inquiry if silence extends beyond eight weeks from the status update. Stop monitoring this file if the founder decides to proceed with fundraising regardless of the recognition outcome.\",\n  \"done_when\": \"StartupSetu communicates a decision (approval or request for additional information), or the founder confirms that the recognition is not material to the fundraising round and deprioritizes the file.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

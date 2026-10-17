@@ -1,0 +1,1547 @@
+{
+ "11c214b4b32ec926e8af645a85f21db9ba939dbebf67641f8163aa1c1e163bf6": {
+  "framed": true,
+  "input_tokens": 8219,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3459,
+  "parsed": {
+   "alternative": "If you choose to act now, send a follow-up after three days of silence (by 2026-08-14) with a new fact \u2014 a metric, a commitment, or a reason to meet now \u2014 to show persistence and give the investor a reason to reconsider. This is earlier than the base rate and should be used only if the investor is a top priority or if a new fact has emerged that changes the pitch.",
+   "appraisal": {
+    "reasons": [
+     "The file is one of five investors in a wave and one of many in the round; losing this one investor does not end the round.",
+     "Silence at this stage is the default and does not yet signal a pass; the file is in the normal flow of investor relations.",
+     "A wrong move \u2014 a premature follow-up, or a close too early \u2014 can be reversed by a later follow-up or a re-approach.",
+     "The file has no blocking dependency and no deadline; the round is in motion elsewhere."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "A reply is received and a next step is agreed (a meeting scheduled, a data-room request, a term sheet, or a conditional deferral with a reopening date). Or the file is closed after fourteen days of silence and no follow-up reply.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The pitch was sent 0.67 days ago. No reply has been received. The file is waiting for their move.",
+    "expected": "The brief does not name a playbook for this file, so no stage is established. If the file is classified as investor work, the expected stage is introduction_made: the pitch has been sent, and the next step is a reply or a follow-up after silence.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Arjun Rao wrote to Juniper Ridge on 2026-08-11 at 02:00 UTC with a seed round pitch and deck attachment, asking for a twenty-minute meeting in the next two weeks.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?"
+    },
+    {
+     "claim": "Juniper Ridge has not replied as of 2026-08-11 18:00 UTC, when the mailbox read completed.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.67 days since the outbound pitch.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Juniper Ridge is not named in the brief as an investor target, program, or connector.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is not named by the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time the file has been seen; it has no prior verdict or outcome recorded.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@fundraising",
+      "hist:derived.history.prior_outcome@fundraising",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The wave containing this pitch was sent to five recipients; none have replied and none have bounced.",
+     "evidence": [
+      "wave:wave_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was made in Juniper Ridge's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An early-stage investor pitch sent to a potential seed investor with no prior relationship. The investor has not yet replied, which is the default at this stage and does not yet signal a pass. The next move is theirs, and the file should wait for a reply or a follow-up trigger.",
+    "rivals": [
+     "A stalled deal: the investor has silently passed and the file should be closed.",
+     "A generic address or bot: the pitch was not routed to a decision-maker and should be re-sent or re-routed.",
+     "A warm introduction that was not warm enough: the connector did not carry enough weight or the pitch did not land, and the file should be re-approached with a different angle or connector."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from them, or a lack of reply after seven days of silence.",
+     "proposition": "Juniper Ridge is actively reviewing seed rounds and will reply within the next week."
+    },
+    {
+     "needs": "No reply after seven to ten days, or a pass when they do reply.",
+     "proposition": "Juniper Ridge is not actively reviewing or does not fit the thesis, and will not reply."
+    },
+    {
+     "needs": "A reply from a generic address, or a lack of reply after ten days, or a check of Juniper Ridge's team and process.",
+     "proposition": "The pitch was sent to a generic address or a connector bot, not to a partner or associate who can move it forward."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The next move is theirs: they have received an ask and have not yet answered."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "sig:founder_office.sit.live_investor_relationship"
+     ],
+     "claim": "The file is in the earliest stage of an investor relationship \u2014 an introduction has been made, but no meeting has been requested or scheduled by them, and no next step has been agreed."
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+      "inference:2"
+     ],
+     "claim": "Silence at this stage \u2014 before a first meeting is scheduled \u2014 is the default and does not yet signal a soft no."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:domains"
+     ],
+     "claim": "The file should be classified as investor work, not as an unnamed kind, because the pitch is a seed round raise and Juniper Ridge is a potential capital source."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-18",
+    "for_whom": "Juniper Ridge",
+    "guided_by": [
+     "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+     "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "wait for a reply from Juniper Ridge, or for seven days of silence to trigger a follow-up decision",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A pitch sent to an investor with no prior relationship should be followed up once, after seven to ten days of silence, with a single short note that carries a fact the first email did not \u2014 a new commitment, a metric, a launch, or a reason to meet now rather than later.",
+     "kind": "practice",
+     "why": "A second touch after silence shows persistence without pressure, and gives the investor a reason to reconsider if they set the first email aside. A third touch or more is usually wasted."
+    },
+    {
+     "claim": "Investors see far more companies than they can fund \u2014 one partner described five hundred to eight hundred plans a year for one or two deals done \u2014 and lose nothing by dropping one. The founder loses time by waiting.",
+     "kind": "base_rate",
+     "why": "This asymmetry means the founder must run every conversation in parallel and let each investor hear real progress elsewhere. A conversation run on its own has no clock."
+    },
+    {
+     "claim": "A file on an investor should be classified by the kind of work it is \u2014 investor, not unnamed \u2014 so that the playbook's stages and patterns apply and the file can be reviewed against the right expectations.",
+     "kind": "practice",
+     "why": "Without a kind, the file has no playbook, no stages, and no way to know what done looks like or when to stop waiting."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "A cold or warm pitch to an investor with no prior relationship typically receives a reply within three to five business days if the investor is actively reviewing, or no reply at all if they are not.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+      "wave:wave_#1"
+     ],
+     "claim": "A wave sent to five investors with no replies after half a day is too early to interpret as a signal; the pattern emerges only after a week of silence across the wave.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "Mistaking a lack of reply in the first hours or days for a soft no is a common error; investors do not chase, and silence before a meeting is requested is not a signal.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "file:domains"
+    ],
+    "kind": "investor",
+    "why": "The file is a seed round pitch to a potential capital source, and the brief names investor work as a domain. The file should be classified as investor work so that the playbook's stages and patterns apply."
+   },
+   "scenarios": {
+    "act": "A follow-up is sent after seven days of silence, carrying a new fact \u2014 a metric, a commitment, a launch, or a reason to meet now. This gives the investor a reason to reconsider and shows persistence without pressure.",
+    "best": "Juniper Ridge replies within three to five days with interest and proposes a meeting. The file moves to meeting_scheduled and the next step is clear.",
+    "do_nothing": "The file remains quiet. After seven days, silence will begin to read as a soft no, and the file will need a follow-up or a close. After fourteen days, the file will be dormant and should be closed or deprioritized unless a new fact emerges.",
+    "signals_to_watch": [
+     "A reply from Juniper Ridge within three to five days",
+     "No reply after seven days, triggering a follow-up decision",
+     "A meeting scheduled or a next step agreed",
+     "A pass with a reason (stage, timing, traction, thesis, team) or no reason",
+     "A reply from a generic address or a junior associate, signaling a need to re-route"
+    ],
+    "worst": "Juniper Ridge does not reply after fourteen days, or replies with a pass. The file is closed or moved to a conditional deferral if the pass carries a reopening condition."
+   },
+   "unknowns": [
+    {
+     "question": "Is Juniper Ridge an active seed investor, and does their thesis fit Nimbus Labs?",
+     "relevance": "If they are not active or do not fit, the file should be closed or deprioritized. If they are active and fit, a follow-up after seven days is warranted."
+    },
+    {
+     "question": "Who at Juniper Ridge received the pitch, and what is their role in the investment process?",
+     "relevance": "If the pitch went to a generic address or a junior associate with no decision-making power, the file may need to be re-routed to a partner. If it went to a partner, silence is more likely to be a soft no."
+    },
+    {
+     "question": "What is the stage and traction of Nimbus Labs at this moment \u2014 how much revenue, how many users, how much runway?",
+     "relevance": "If the company is very early, Juniper Ridge may be waiting to see more traction before engaging. If the company is further along, silence may be a pass."
+    },
+    {
+     "question": "Is this pitch part of a parallel wave to multiple investors, or is Juniper Ridge being pursued in sequence?",
+     "relevance": "If in sequence, the file should be deprioritized in favor of parallel conversations. If in parallel, the file is in the right place."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-18 (seven days of silence). If no reply by then, send a follow-up with a new fact. If no reply after the follow-up by 2026-08-25, close the file or move it to a conditional deferral if a reopening condition emerges. Stop if a pass is received with no reopening condition, or if the round closes without this investor."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Arjun Rao wrote to Juniper Ridge on 2026-08-11 at 02:00 UTC with a seed round pitch and deck attachment, asking for a twenty-minute meeting in the next two weeks.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?\"\n    },\n    {\n      \"claim\": \"Juniper Ridge has not replied as of 2026-08-11 18:00 UTC, when the mailbox read completed.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.67 days since the outbound pitch.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Juniper Ridge is not named in the brief as an investor target, program, or connector.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is not named by the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time the file has been seen; it has no prior verdict or outcome recorded.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@fundraising\",\n        \"hist:derived.history.prior_outcome@fundraising\",\n        \"hist:derived.history.times_seen@fundraising\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The wave containing this pitch was sent to five recipients; none have replied and none have bounced.\",\n      \"evidence\": [\n        \"wave:wave_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was made in Juniper Ridge's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The next move is theirs: they have received an ask and have not yet answered.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The file is in the earliest stage of an investor relationship \u2014 an introduction has been made, but no meeting has been requested or scheduled by them, and no next step has been agreed.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"sig:founder_office.sit.live_investor_relationship\"\n      ]\n    },\n    {\n      \"claim\": \"Silence at this stage \u2014 before a first meeting is scheduled \u2014 is the default and does not yet signal a soft no.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n        \"inference:2\"\n      ]\n    },\n    {\n      \"claim\": \"The file should be classified as investor work, not as an unnamed kind, because the pitch is a seed round raise and Juniper Ridge is a potential capital source.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:domains\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A cold or warm pitch to an investor with no prior relationship typically receives a reply within three to five business days if the investor is actively reviewing, or no reply at all if they are not.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A wave sent to five investors with no replies after half a day is too early to interpret as a signal; the pattern emerges only after a week of silence across the wave.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_wave_gone_silent\",\n        \"wave:wave_#1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Mistaking a lack of reply in the first hours or days for a soft no is a common error; investors do not chase, and silence before a meeting is requested is not a signal.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A pitch sent to an investor with no prior relationship should be followed up once, after seven to ten days of silence, with a single short note that carries a fact the first email did not \u2014 a new commitment, a metric, a launch, or a reason to meet now rather than later.\",\n      \"why\": \"A second touch after silence shows persistence without pressure, and gives the investor a reason to reconsider if they set the first email aside. A third touch or more is usually wasted.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investors see far more companies than they can fund \u2014 one partner described five hundred to eight hundred plans a year for one or two deals done \u2014 and lose nothing by dropping one. The founder loses time by waiting.\",\n      \"why\": \"This asymmetry means the founder must run every conversation in parallel and let each investor hear real progress elsewhere. A conversation run on its own has no clock.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A file on an investor should be classified by the kind of work it is \u2014 investor, not unnamed \u2014 so that the playbook's stages and patterns apply and the file can be reviewed against the right expectations.\",\n      \"why\": \"Without a kind, the file has no playbook, no stages, and no way to know what done looks like or when to stop waiting.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Juniper Ridge is actively reviewing seed rounds and will reply within the next week.\",\n      \"needs\": \"A reply from them, or a lack of reply after seven days of silence.\"\n    },\n    {\n      \"proposition\": \"Juniper Ridge is not actively reviewing or does not fit the thesis, and will not reply.\",\n      \"needs\": \"No reply after seven to ten days, or a pass when they do reply.\"\n    },\n    {\n      \"proposition\": \"The pitch was sent to a generic address or a connector bot, not to a partner or associate who can move it forward.\",\n      \"needs\": \"A reply from a generic address, or a lack of reply after ten days, or a check of Juniper Ridge's team and process.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Juniper Ridge an active seed investor, and does their thesis fit Nimbus Labs?\",\n      \"relevance\": \"If they are not active or do not fit, the file should be closed or deprioritized. If they are active and fit, a follow-up after seven days is warranted.\"\n    },\n    {\n      \"question\": \"Who at Juniper Ridge received the pitch, and what is their role in the investment process?\",\n      \"relevance\": \"If the pitch went to a generic address or a junior associate with no decision-making power, the file may need to be re-routed to a partner. If it went to a partner, silence is more likely to be a soft no.\"\n    },\n    {\n      \"question\": \"What is the stage and traction of Nimbus Labs at this moment \u2014 how much revenue, how many users, how much runway?\",\n      \"relevance\": \"If the company is very early, Juniper Ridge may be waiting to see more traction before engaging. If the company is further along, silence may be a pass.\"\n    },\n    {\n      \"question\": \"Is this pitch part of a parallel wave to multiple investors, or is Juniper Ridge being pursued in sequence?\",\n      \"relevance\": \"If in sequence, the file should be deprioritized in favor of parallel conversations. If in parallel, the file is in the right place.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An early-stage investor pitch sent to a potential seed investor with no prior relationship. The investor has not yet replied, which is the default at this stage and does not yet signal a pass. The next move is theirs, and the file should wait for a reply or a follow-up trigger.\",\n    \"rivals\": [\n      \"A stalled deal: the investor has silently passed and the file should be closed.\",\n      \"A generic address or bot: the pitch was not routed to a decision-maker and should be re-sent or re-routed.\",\n      \"A warm introduction that was not warm enough: the connector did not carry enough weight or the pitch did not land, and the file should be re-approached with a different angle or connector.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is a seed round pitch to a potential capital source, and the brief names investor work as a domain. The file should be classified as investor work so that the playbook's stages and patterns apply.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief does not name a playbook for this file, so no stage is established. If the file is classified as investor work, the expected stage is introduction_made: the pitch has been sent, and the next step is a reply or a follow-up after silence.\",\n    \"actual\": \"The pitch was sent 0.67 days ago. No reply has been received. The file is waiting for their move.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. After seven days, silence will begin to read as a soft no, and the file will need a follow-up or a close. After fourteen days, the file will be dormant and should be closed or deprioritized unless a new fact emerges.\",\n    \"act\": \"A follow-up is sent after seven days of silence, carrying a new fact \u2014 a metric, a commitment, a launch, or a reason to meet now. This gives the investor a reason to reconsider and shows persistence without pressure.\",\n    \"best\": \"Juniper Ridge replies within three to five days with interest and proposes a meeting. The file moves to meeting_scheduled and the next step is clear.\",\n    \"worst\": \"Juniper Ridge does not reply after fourteen days, or replies with a pass. The file is closed or moved to a conditional deferral if the pass carries a reopening condition.\",\n    \"signals_to_watch\": [\n      \"A reply from Juniper Ridge within three to five days\",\n      \"No reply after seven days, triggering a follow-up decision\",\n      \"A meeting scheduled or a next step agreed\",\n      \"A pass with a reason (stage, timing, traction, thesis, team) or no reason\",\n      \"A reply from a generic address or a junior associate, signaling a need to re-route\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is one of five investors in a wave and one of many in the round; losing this one investor does not end the round.\",\n      \"Silence at this stage is the default and does not yet signal a pass; the file is in the normal flow of investor relations.\",\n      \"A wrong move \u2014 a premature follow-up, or a close too early \u2014 can be reversed by a later follow-up or a re-approach.\",\n      \"The file has no blocking dependency and no deadline; the round is in motion elsewhere.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for a reply from Juniper Ridge, or for seven days of silence to trigger a follow-up decision\",\n    \"for_whom\": \"Juniper Ridge\",\n    \"by_when\": \"2026-08-18\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n      \"pb:founder_office.pb.investor_relations.the_wave_gone_silent\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If you choose to act now, send a follow-up after three days of silence (by 2026-08-14) with a new fact \u2014 a metric, a commitment, or a reason to meet now \u2014 to show persistence and give the investor a reason to reconsider. This is earlier than the base rate and should be used only if the investor is a top priority or if a new fact has emerged that changes the pitch.\",\n  \"wait_or_stop\": \"Wait until 2026-08-18 (seven days of silence). If no reply by then, send a follow-up with a new fact. If no reply after the follow-up by 2026-08-25, close the file or move it to a conditional deferral if a reopening condition emerges. Stop if a pass is received with no reopening condition, or if the round closes without this investor.\",\n  \"done_when\": \"A reply is received and a next step is agreed (a meeting scheduled, a data-room request, a term sheet, or a conditional deferral with a reopening date). Or the file is closed after fourteen days of silence and no follow-up reply.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "1bc4f701c5846de58ba7ba0e13fba6cd6028c9c4c01a6e66cf41e15f0b895621": {
+  "framed": true,
+  "input_tokens": 8207,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4349,
+  "parsed": {
+   "alternative": "If the founder believes Meridian Seed is a strong fit and wants to accelerate the conversation, send a follow-up after three business days (2026-08-14) with a new fact\u2014a portfolio company introduction, a metric, or a commitment\u2014rather than a repeat of the ask. This is reversible and may trigger a reply, but it risks appearing desperate if the investor is simply slow.",
+   "appraisal": {
+    "reasons": [
+     "Meridian Seed is one of many investors in the round; losing this conversation does not end the round, but it is one of several parallel threads that together create momentum.",
+     "Silence at 0.58 days is within the normal window; no urgency is warranted until a week has passed.",
+     "A follow-up or a revised wave can be sent at any time; the decision to act or wait is reversible.",
+     "The file has no blocking dependency; the round can proceed without Meridian Seed's reply.",
+     "The risk is low if the round is being run in parallel with other investors; the risk is high if Meridian Seed is the only active thread."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "Done when Meridian Seed replies with interest or a pass, or when seven business days have passed and the wave-wide reply rate is known. If the wave is working (at least one reply from the five), Meridian Seed's silence is filed as a data point and the round proceeds. If the wave is silent, it is paused and revised.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The founder sent the pitch on 2026-08-11 at 04:00 UTC. As of 2026-08-11 18:00 UTC, no reply has been received. The file has been quiet for 0.58 days. The entire wave of five recipients has gone silent.",
+    "expected": "At the introduction stage, the founder has sent a pitch with a deck and a meeting request. The investor either replies with interest, declines, or remains silent. Silence before three business days is the default; a reply within five business days is typical for an active investor.",
+    "stage": "introduction"
+   },
+   "facts": [
+    {
+     "claim": "Arjun Rao wrote to Meridian Seed on 2026-08-11 at 04:00 UTC with a seed round pitch and deck attachment, asking for a twenty-minute meeting in the next two weeks.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?"
+    },
+    {
+     "claim": "Meridian Seed has not replied as of 2026-08-11 18:00 UTC, when the mailbox read completed.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.58 days since the outbound message.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Meridian Seed is not named in the brief as a target investor, and this file has no kind of work assigned to it.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first touch with Meridian Seed, and the file has been open since 2026-08-11 04:00 UTC with no prior history.",
+     "evidence": [
+      "file:first_touch",
+      "hist:derived.history.prior_card_verdict@fundraising",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The wave containing this outbound message was sent to five recipients, with zero replies and zero bounces as of the last measurement.",
+     "evidence": [
+      "wave:wave_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Nimbus Labs is actively raising a seed round and has written to five named seed funds in the same wave, plus engaged Lumen Ventures separately.",
+     "evidence": [
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9",
+      "brief:cbl_#10",
+      "brief:cbl_#11",
+      "brief:cbl_#12"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A first outbound to a potential seed investor who has not yet replied, within the normal window for silence before a first meeting is scheduled or a pass is received.",
+    "rivals": [
+     "A cold outbound to an investor not on the brief's target list, which may indicate a lack of targeting discipline and a lower probability of conversion.",
+     "A wave-wide silence that suggests an issue with the ask, the list, or the deck, rather than with individual investors.",
+     "An early-stage investor relationship that is proceeding normally and requires no action until a reply is received or a week has passed."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from Meridian Seed, or a lack of reply after seven business days, which would shift the interpretation to a soft no.",
+     "proposition": "Meridian Seed is actively reviewing the deck and will respond within the next three to five business days."
+    },
+    {
+     "needs": "Knowledge of whether Meridian Seed was introduced by a connector or added cold; if cold, a check of their typical response rate to unsolicited pitches.",
+     "proposition": "Meridian Seed was added to the wave without a warm introduction or prior relationship, and the cold outbound will not convert."
+    },
+    {
+     "needs": "A reply rate check on the other four investors in the wave; if all five remain silent after seven days, the wave should be paused and the ask revised.",
+     "proposition": "The wave itself has an issue\u2014the ask, the timing, the list, or the deck\u2014that is causing silence across all five recipients."
+    },
+    {
+     "needs": "Confirmation that the other four named seed funds and Lumen Ventures are being actively pursued in parallel; if not, the round is being run in sequence, which is a mistake.",
+     "proposition": "Meridian Seed is a fit for the round and will eventually respond, but the founder should not wait for them alone; other investors in the parallel set should be moved forward."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The next move is Meridian Seed's: they received an ask for a meeting and have not yet responded."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "num:days_quiet",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Meridian Seed's silence at 0.58 days is within the normal window for a first outbound to an investor; no signal of disinterest or pass has been received."
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "fact:1",
+      "fact:7"
+     ],
+     "claim": "This file should be classified as investor work, not as an unnamed kind, because it is a seed-stage fundraising outbound to a potential investor with an explicit meeting request."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9",
+      "brief:cbl_#10",
+      "brief:cbl_#11"
+     ],
+     "claim": "Meridian Seed was not part of the brief's named target list, suggesting it may have been added to the wave opportunistically or through a connector not recorded in the brief."
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "pb:founder_office.pb.investor_relations.the_wave_gone_silent"
+     ],
+     "claim": "The entire wave of five recipients has gone silent, which suggests the issue may be with the ask or the list, not with individual investors."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-18",
+    "for_whom": "Meridian Seed",
+    "guided_by": [
+     "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+     "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "inference:5"
+    ],
+    "to": null,
+    "what": "Wait for a reply from Meridian Seed until 2026-08-18 (seven business days from the outbound). If no reply is received by then, check the reply rate on the other four named seed funds in the wave. If all five remain silent, pause the wave and revise the ask or the list. If any of the four have replied, treat Meridian Seed's silence as a data point on that investor and move forward with the others.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "In a seed round, founders typically run investors in parallel, not in sequence, to create momentum and prevent any single investor from holding an indefinite option.",
+     "kind": "practice",
+     "why": "A single conversation run alone has no clock, and investors see far more companies than they can fund; silence on one thread is the default until a meeting is scheduled or a decision is made."
+    },
+    {
+     "claim": "A wave sent to five investors with no prior relationship and no connector introduction typically sees a reply rate of ten to twenty percent within a week.",
+     "kind": "base_rate",
+     "why": "Cold outbounds to seed funds are high-volume; warm introductions and existing relationships drive response rates above fifty percent."
+    },
+    {
+     "claim": "The first follow-up to a silent wave should come after five to seven business days, not before, and should carry a new fact\u2014a commitment, a launch, a metric\u2014not a repeat of the ask.",
+     "kind": "practice",
+     "why": "A repeat ask signals desperation and wastes the relationship; a new fact gives the investor a reason to reconsider and keeps the thread warm."
+    },
+    {
+     "claim": "A founder who has written to five named seed funds plus engaged a sixth separately is running the round in parallel correctly, but adding a sixth unnamed investor to the wave without a clear reason dilutes focus and may indicate a lack of targeting discipline.",
+     "kind": "counter_pattern",
+     "why": "Each investor in the set should fit the company's stage, sector, and cheque size; a wave that includes mismatched investors reduces the overall reply rate and wastes follow-up effort."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "A first outbound to an investor typically receives a reply within three to five business days if the investor is actively reviewing, or silence if they are not.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+      "num:days_quiet"
+     ],
+     "claim": "A wave sent to five recipients with zero replies after less than one day is too early to interpret as a signal; the pattern emerges only after a week.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "A meeting request with a specific timeframe ('next two weeks') and a deck attached is more likely to receive a response than a generic inquiry, but silence before three days does not indicate a pass.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "evt_#1",
+     "brief:cbl_#2"
+    ],
+    "kind": "investor",
+    "why": "The file is a seed-stage fundraising outbound to a potential investor with an explicit meeting request and a deck attachment. It belongs in the investor relations playbook, not as an unnamed kind."
+   },
+   "scenarios": {
+    "act": "The founder follows up with Meridian Seed after five to seven business days with a new fact\u2014a commitment, a launch, a metric, or a portfolio company introduction\u2014rather than a repeat of the ask. Alternatively, the founder pauses the wave and revises the ask or the list if all five recipients remain silent after seven days.",
+    "best": "Meridian Seed replies within three to five business days with interest in a meeting. The founder schedules a call, prepares thoroughly, and moves the conversation to a partners' meeting or a diligence request. The round gains momentum as other investors see progress.",
+    "do_nothing": "Meridian Seed remains in the file as an open ask. If silence continues past seven business days, the file will be marked as a soft no or a deferral, depending on any signals received. The founder continues to pursue the other four named seed funds and Lumen Ventures. The round proceeds in parallel, and Meridian Seed is revisited only if the round stalls or if a new fact emerges.",
+    "signals_to_watch": [
+     "A reply from Meridian Seed within five business days, indicating active interest.",
+     "A reply rate check on the other four named seed funds; if any reply, the wave is working.",
+     "Silence from all five recipients after seven business days, indicating a wave-wide problem.",
+     "Forward movement from Lumen Ventures, indicating the round has at least one active investor.",
+     "A new fact from the founder\u2014a commitment, a launch, a metric\u2014that could trigger a follow-up."
+    ],
+    "worst": "Meridian Seed never replies, and the entire wave of five recipients goes silent. The founder realizes the wave has a problem\u2014the ask, the list, or the deck\u2014and must revise before sending a follow-up or a new wave. The round stalls, and momentum is lost."
+   },
+   "unknowns": [
+    {
+     "question": "Was Meridian Seed introduced by a connector, or was this a cold outbound?",
+     "relevance": "A warm introduction carries a much higher reply rate and changes the interpretation of silence; a cold outbound to an unnamed investor suggests the wave may lack targeting discipline."
+    },
+    {
+     "question": "What is Meridian Seed's typical response time and reply rate to unsolicited seed-stage pitches?",
+     "relevance": "If Meridian Seed is known to be slow or to have a low reply rate, silence at 0.58 days is not a signal; if they are known to be fast, silence may indicate a pass."
+    },
+    {
+     "question": "What is the reply rate on the other four named seed funds in the wave?",
+     "relevance": "If the other four have replied or are actively engaged, Meridian Seed's silence is a data point on that investor; if all five are silent, the wave has a problem."
+    },
+    {
+     "question": "Is Lumen Ventures, which is marked as 'engaged,' actively moving forward, or is that engagement stalled?",
+     "relevance": "If Lumen Ventures is the only investor with forward momentum, the round is at risk of being single-threaded; if multiple investors are moving in parallel, the round has momentum."
+    },
+    {
+     "question": "What is the founder's target cheque size and valuation for this seed round?",
+     "relevance": "If Meridian Seed's typical cheque size or stage focus does not match, they may not be a fit, and silence may be a soft no rather than a delay."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-18 (seven business days). If no reply is received by then and the other four named seed funds in the wave are also silent, stop waiting on this wave and revise the ask or the list. If any of the four have replied, continue to pursue them in parallel and revisit Meridian Seed only if a new fact emerges or if the round stalls."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Arjun Rao wrote to Meridian Seed on 2026-08-11 at 04:00 UTC with a seed round pitch and deck attachment, asking for a twenty-minute meeting in the next two weeks.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?\"\n    },\n    {\n      \"claim\": \"Meridian Seed has not replied as of 2026-08-11 18:00 UTC, when the mailbox read completed.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.58 days since the outbound message.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Meridian Seed is not named in the brief as a target investor, and this file has no kind of work assigned to it.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first touch with Meridian Seed, and the file has been open since 2026-08-11 04:00 UTC with no prior history.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"hist:derived.history.prior_card_verdict@fundraising\",\n        \"hist:derived.history.times_seen@fundraising\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The wave containing this outbound message was sent to five recipients, with zero replies and zero bounces as of the last measurement.\",\n      \"evidence\": [\n        \"wave:wave_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Nimbus Labs is actively raising a seed round and has written to five named seed funds in the same wave, plus engaged Lumen Ventures separately.\",\n      \"evidence\": [\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\",\n        \"brief:cbl_#10\",\n        \"brief:cbl_#11\",\n        \"brief:cbl_#12\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The next move is Meridian Seed's: they received an ask for a meeting and have not yet responded.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"Meridian Seed's silence at 0.58 days is within the normal window for a first outbound to an investor; no signal of disinterest or pass has been received.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"num:days_quiet\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"claim\": \"This file should be classified as investor work, not as an unnamed kind, because it is a seed-stage fundraising outbound to a potential investor with an explicit meeting request.\",\n      \"based_on\": [\n        \"file:domains\",\n        \"fact:1\",\n        \"fact:7\"\n      ]\n    },\n    {\n      \"claim\": \"Meridian Seed was not part of the brief's named target list, suggesting it may have been added to the wave opportunistically or through a connector not recorded in the brief.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\",\n        \"brief:cbl_#10\",\n        \"brief:cbl_#11\"\n      ]\n    },\n    {\n      \"claim\": \"The entire wave of five recipients has gone silent, which suggests the issue may be with the ask or the list, not with individual investors.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"pb:founder_office.pb.investor_relations.the_wave_gone_silent\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A first outbound to an investor typically receives a reply within three to five business days if the investor is actively reviewing, or silence if they are not.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A wave sent to five recipients with zero replies after less than one day is too early to interpret as a signal; the pattern emerges only after a week.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_wave_gone_silent\",\n        \"num:days_quiet\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A meeting request with a specific timeframe ('next two weeks') and a deck attached is more likely to receive a response than a generic inquiry, but silence before three days does not indicate a pass.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"In a seed round, founders typically run investors in parallel, not in sequence, to create momentum and prevent any single investor from holding an indefinite option.\",\n      \"why\": \"A single conversation run alone has no clock, and investors see far more companies than they can fund; silence on one thread is the default until a meeting is scheduled or a decision is made.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A wave sent to five investors with no prior relationship and no connector introduction typically sees a reply rate of ten to twenty percent within a week.\",\n      \"why\": \"Cold outbounds to seed funds are high-volume; warm introductions and existing relationships drive response rates above fifty percent.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The first follow-up to a silent wave should come after five to seven business days, not before, and should carry a new fact\u2014a commitment, a launch, a metric\u2014not a repeat of the ask.\",\n      \"why\": \"A repeat ask signals desperation and wastes the relationship; a new fact gives the investor a reason to reconsider and keeps the thread warm.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who has written to five named seed funds plus engaged a sixth separately is running the round in parallel correctly, but adding a sixth unnamed investor to the wave without a clear reason dilutes focus and may indicate a lack of targeting discipline.\",\n      \"why\": \"Each investor in the set should fit the company's stage, sector, and cheque size; a wave that includes mismatched investors reduces the overall reply rate and wastes follow-up effort.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Meridian Seed is actively reviewing the deck and will respond within the next three to five business days.\",\n      \"needs\": \"A reply from Meridian Seed, or a lack of reply after seven business days, which would shift the interpretation to a soft no.\"\n    },\n    {\n      \"proposition\": \"Meridian Seed was added to the wave without a warm introduction or prior relationship, and the cold outbound will not convert.\",\n      \"needs\": \"Knowledge of whether Meridian Seed was introduced by a connector or added cold; if cold, a check of their typical response rate to unsolicited pitches.\"\n    },\n    {\n      \"proposition\": \"The wave itself has an issue\u2014the ask, the timing, the list, or the deck\u2014that is causing silence across all five recipients.\",\n      \"needs\": \"A reply rate check on the other four investors in the wave; if all five remain silent after seven days, the wave should be paused and the ask revised.\"\n    },\n    {\n      \"proposition\": \"Meridian Seed is a fit for the round and will eventually respond, but the founder should not wait for them alone; other investors in the parallel set should be moved forward.\",\n      \"needs\": \"Confirmation that the other four named seed funds and Lumen Ventures are being actively pursued in parallel; if not, the round is being run in sequence, which is a mistake.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Was Meridian Seed introduced by a connector, or was this a cold outbound?\",\n      \"relevance\": \"A warm introduction carries a much higher reply rate and changes the interpretation of silence; a cold outbound to an unnamed investor suggests the wave may lack targeting discipline.\"\n    },\n    {\n      \"question\": \"What is Meridian Seed's typical response time and reply rate to unsolicited seed-stage pitches?\",\n      \"relevance\": \"If Meridian Seed is known to be slow or to have a low reply rate, silence at 0.58 days is not a signal; if they are known to be fast, silence may indicate a pass.\"\n    },\n    {\n      \"question\": \"What is the reply rate on the other four named seed funds in the wave?\",\n      \"relevance\": \"If the other four have replied or are actively engaged, Meridian Seed's silence is a data point on that investor; if all five are silent, the wave has a problem.\"\n    },\n    {\n      \"question\": \"Is Lumen Ventures, which is marked as 'engaged,' actively moving forward, or is that engagement stalled?\",\n      \"relevance\": \"If Lumen Ventures is the only investor with forward momentum, the round is at risk of being single-threaded; if multiple investors are moving in parallel, the round has momentum.\"\n    },\n    {\n      \"question\": \"What is the founder's target cheque size and valuation for this seed round?\",\n      \"relevance\": \"If Meridian Seed's typical cheque size or stage focus does not match, they may not be a fit, and silence may be a soft no rather than a delay.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A first outbound to a potential seed investor who has not yet replied, within the normal window for silence before a first meeting is scheduled or a pass is received.\",\n    \"rivals\": [\n      \"A cold outbound to an investor not on the brief's target list, which may indicate a lack of targeting discipline and a lower probability of conversion.\",\n      \"A wave-wide silence that suggests an issue with the ask, the list, or the deck, rather than with individual investors.\",\n      \"An early-stage investor relationship that is proceeding normally and requires no action until a reply is received or a week has passed.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is a seed-stage fundraising outbound to a potential investor with an explicit meeting request and a deck attachment. It belongs in the investor relations playbook, not as an unnamed kind.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"evt_#1\",\n      \"brief:cbl_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"introduction\",\n    \"expected\": \"At the introduction stage, the founder has sent a pitch with a deck and a meeting request. The investor either replies with interest, declines, or remains silent. Silence before three business days is the default; a reply within five business days is typical for an active investor.\",\n    \"actual\": \"The founder sent the pitch on 2026-08-11 at 04:00 UTC. As of 2026-08-11 18:00 UTC, no reply has been received. The file has been quiet for 0.58 days. The entire wave of five recipients has gone silent.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Meridian Seed remains in the file as an open ask. If silence continues past seven business days, the file will be marked as a soft no or a deferral, depending on any signals received. The founder continues to pursue the other four named seed funds and Lumen Ventures. The round proceeds in parallel, and Meridian Seed is revisited only if the round stalls or if a new fact emerges.\",\n    \"act\": \"The founder follows up with Meridian Seed after five to seven business days with a new fact\u2014a commitment, a launch, a metric, or a portfolio company introduction\u2014rather than a repeat of the ask. Alternatively, the founder pauses the wave and revises the ask or the list if all five recipients remain silent after seven days.\",\n    \"best\": \"Meridian Seed replies within three to five business days with interest in a meeting. The founder schedules a call, prepares thoroughly, and moves the conversation to a partners' meeting or a diligence request. The round gains momentum as other investors see progress.\",\n    \"worst\": \"Meridian Seed never replies, and the entire wave of five recipients goes silent. The founder realizes the wave has a problem\u2014the ask, the list, or the deck\u2014and must revise before sending a follow-up or a new wave. The round stalls, and momentum is lost.\",\n    \"signals_to_watch\": [\n      \"A reply from Meridian Seed within five business days, indicating active interest.\",\n      \"A reply rate check on the other four named seed funds; if any reply, the wave is working.\",\n      \"Silence from all five recipients after seven business days, indicating a wave-wide problem.\",\n      \"Forward movement from Lumen Ventures, indicating the round has at least one active investor.\",\n      \"A new fact from the founder\u2014a commitment, a launch, a metric\u2014that could trigger a follow-up.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Meridian Seed is one of many investors in the round; losing this conversation does not end the round, but it is one of several parallel threads that together create momentum.\",\n      \"Silence at 0.58 days is within the normal window; no urgency is warranted until a week has passed.\",\n      \"A follow-up or a revised wave can be sent at any time; the decision to act or wait is reversible.\",\n      \"The file has no blocking dependency; the round can proceed without Meridian Seed's reply.\",\n      \"The risk is low if the round is being run in parallel with other investors; the risk is high if Meridian Seed is the only active thread.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Wait for a reply from Meridian Seed until 2026-08-18 (seven business days from the outbound). If no reply is received by then, check the reply rate on the other four named seed funds in the wave. If all five remain silent, pause the wave and revise the ask or the list. If any of the four have replied, treat Meridian Seed's silence as a data point on that investor and move forward with the others.\",\n    \"for_whom\": \"Meridian Seed\",\n    \"by_when\": \"2026-08-18\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:5\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n      \"pb:founder_office.pb.investor_relations.the_wave_gone_silent\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder believes Meridian Seed is a strong fit and wants to accelerate the conversation, send a follow-up after three business days (2026-08-14) with a new fact\u2014a portfolio company introduction, a metric, or a commitment\u2014rather than a repeat of the ask. This is reversible and may trigger a reply, but it risks appearing desperate if the investor is simply slow.\",\n  \"wait_or_stop\": \"Wait until 2026-08-18 (seven business days). If no reply is received by then and the other four named seed funds in the wave are also silent, stop waiting on this wave and revise the ask or the list. If any of the four have replied, continue to pursue them in parallel and revisit Meridian Seed only if a new fact emerges or if the round stalls.\",\n  \"done_when\": \"Done when Meridian Seed replies with interest or a pass, or when seven business days have passed and the wave-wide reply rate is known. If the wave is working (at least one reply from the five), Meridian Seed's silence is filed as a data point and the round proceeds. If the wave is silent, it is paused and revised.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "8f15fbece22336a711f54457ae894b0c3a0f5428ae22d899b010da1b7b78a3a1": {
+  "framed": true,
+  "input_tokens": 8211,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4103,
+  "parsed": {
+   "alternative": "Wait until day seven of silence to follow up, and use the wait time to clarify the investor's qualification and follow-up plan. This defers the decision but risks losing momentum if the investor is qualified and responsive.",
+   "appraisal": {
+    "reasons": [
+     "The file is an outbound prospecting touch to a single investor, not a warm introduction or a qualified conversation in motion; losing this conversation does not materially harm the round if other qualified investors are moving.",
+     "At 0.54 days of silence, the file is still within the normal window for a first response and does not yet require action.",
+     "A follow-up or a decision to deprioritize this investor can be made at any time without cost, as the conversation has not yet moved to diligence or a term sheet.",
+     "The stakes are medium because the round's success depends on a portfolio of qualified investors, and each conversation that does not move forward consumes attention that could be spent on warmer leads."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The founder has clarified whether Northstar Angels is a qualified target investor, a follow-up plan is established (or the file is deprioritized), and the next action is scheduled with a clear date and owner.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "An outbound pitch sent 0.54 days ago with no reply yet; the file is still within the normal window for a first response and does not yet show disengagement.",
+    "expected": "Without a playbook for this file, the expectation comes from the brief's goal to raise a seed round and the standard timeline for outbound investor prospecting: a first response within seven to ten business days, or silence beyond that window signaling a soft no or a pass.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Nimbus Labs sent an outbound pitch to Northstar Angels on 2026-08-11 at 05:00 UTC requesting a twenty-minute meeting within two weeks.",
+     "evidence": [
+      "evt_#1",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": "Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?"
+    },
+    {
+     "claim": "No reply has been received from Northstar Angels since the pitch was sent.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file records an open ask: a question to which we are waiting on their reply, open since 2026-08-11 05:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Northstar Angels is not named in the brief as a target investor; this is an outbound cold or warm introduction not documented in the company's stated work in motion.",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9",
+      "brief:cbl_#10",
+      "brief:cbl_#11",
+      "brief:cbl_#12"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.54 days since the pitch was sent.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and high engagement based on the healthy temporal pattern.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.temporal"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for Northstar Angels.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An outbound prospecting pitch to a potential seed-stage investor, sent without documented warm introduction or prior qualification, now awaiting first response at 0.54 days of silence \u2014 within the normal window for a first response but requiring clarification on whether this investor is a qualified target or an exploratory prospect.",
+    "rivals": [
+     "A warm introduction to a qualified investor that was sent as a follow-up to a connector's introduction, and is now in the normal review window before a reply.",
+     "A prospecting touch to an investor outside the round's qualified target list, sent as part of exploratory outbound prospecting, which may not warrant follow-up if other qualified conversations are moving faster.",
+     "A test of a new outbound pitch or target list, with no expectation of immediate reply and no planned follow-up sequence."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A record in the file or the brief showing the source of the introduction, or a note from the founder confirming the introduction path.",
+     "proposition": "Northstar Angels was introduced to the founder by a connector or warm source, and the pitch was sent as a follow-up to that introduction."
+    },
+    {
+     "needs": "A record in the brief or a note from the founder confirming Northstar Angels' investment thesis, typical cheque size, and portfolio companies in the AI or founder-tools space.",
+     "proposition": "Northstar Angels is a qualified target investor for Nimbus Labs' seed round, with stage, sector, and cheque size fit."
+    },
+    {
+     "needs": "A record in the brief or a note from the founder showing the outbound target list, the follow-up plan, and the rationale for including Northstar Angels.",
+     "proposition": "The pitch was sent as part of a deliberate outbound prospecting strategy, with a planned follow-up sequence and a target list of similar investors."
+    },
+    {
+     "needs": "A reply from Northstar Angels, or a signal such as a meeting request or a pass, to confirm or refute this hypothesis.",
+     "proposition": "Northstar Angels has received the pitch and is reviewing it internally, and silence at this stage is normal."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The next move is theirs: they must decide whether to grant the meeting request or decline."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:4"
+     ],
+     "claim": "This is an outbound prospecting touch, not a warm introduction or a response to inbound interest, and therefore carries lower expected reply rates and longer expected response times than warm introductions."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:5",
+      "ru:core.temporal"
+     ],
+     "claim": "At 0.54 days of silence, the file is still within the normal window for a first response to a cold outbound pitch and does not yet signal disengagement."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:domains",
+      "brief:cbl_#2"
+     ],
+     "claim": "The file's kind of work is investor relations, specifically an outbound prospecting pitch to a potential seed-stage investor, even though the brief does not name Northstar Angels as a target."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-12",
+    "for_whom": "the founder",
+    "guided_by": [
+     "cap:founder_office.fundraising.investor_relations#f4",
+     "cap:founder_office.pb.investor_relations.run_an_investor_conversation",
+     "own:3",
+     "own:4"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:4",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "clarify with the founder whether Northstar Angels is a qualified target investor for the seed round, how the investor was sourced, and whether there is a planned follow-up sequence; then establish a follow-up plan if the investor is qualified, or deprioritize the file if exploratory.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Outbound investor prospecting requires a list of targets qualified by stage, sector, cheque size, and thesis fit before the pitch is sent; sending to investors not on the brief's stated target list risks wasting follow-up effort on misaligned parties.",
+     "kind": "practice",
+     "why": "An investor who does not fit the company's stage or thesis will pass regardless of traction, and a pass on thesis is not reopenable; effort spent on such investors is effort not spent on warm introductions or qualified targets."
+    },
+    {
+     "claim": "The first response window for an outbound investor pitch is typically seven to ten business days; a follow-up before that window closes is premature and reads as pressure.",
+     "kind": "base_rate",
+     "why": "Investors batch their email review and partner meetings; a pitch that arrives on a Monday may not reach a partner's desk until the following week's meeting."
+    },
+    {
+     "claim": "A single outbound pitch to an investor not on the brief's target list, with no follow-up plan and no context on why this investor was chosen, often signals prospecting drift rather than a deliberate strategy.",
+     "kind": "counter_pattern",
+     "why": "Founders under pressure to raise often expand their target list beyond qualified investors, which dilutes the round's momentum and consumes follow-up cycles on low-probability conversations."
+    },
+    {
+     "claim": "Outbound pitches should be tracked separately from warm introductions and should not be counted in the round's active investor set until a meeting is scheduled or a partner meeting is booked.",
+     "kind": "practice",
+     "why": "Counting outbound prospects as active investors inflates the pipeline and obscures the actual number of qualified conversations in motion."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Outbound pitches to investors who have not been pre-qualified or introduced by a connector typically see reply rates between ten and thirty percent, with median response times of three to seven days for those who reply.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "wave:wave_#1",
+      "cap:founder_office.pb.investor_relations.the_wave_gone_silent"
+     ],
+     "claim": "A wave of five outbound pitches sent at the same time with no replies after half a day is within the normal distribution and does not yet signal a problem with the ask or the list.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "cap:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Silence after a first outbound pitch does not mean the investor is uninterested; it means the email has not yet reached the decision-maker or has not yet been prioritized.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "A follow-up to an outbound pitch is typically sent after five to seven business days of silence, not before.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "evt_#1",
+     "brief:cbl_#2"
+    ],
+    "kind": "investor",
+    "why": "The file documents an outbound pitch to a potential seed-stage investor for fundraising, which is investor relations work, even though the brief does not name Northstar Angels as a target."
+   },
+   "scenarios": {
+    "act": "The founder clarifies whether Northstar Angels is a qualified target investor and establishes a follow-up plan. If qualified, the file is tracked as an active investor conversation with a follow-up scheduled for day seven if no reply is received. If exploratory, the file is tracked separately and may be deprioritized if other qualified conversations are moving faster. A follow-up note is drafted and scheduled for delivery at the appropriate time.",
+    "best": "Northstar Angels replies within three business days with interest in a meeting, the founder schedules a call within the next week, and the conversation moves to the next stage of diligence. The file becomes an active investor relationship with clear next steps and a decision timeline.",
+    "do_nothing": "The file remains open with no follow-up plan. If Northstar Angels does not reply within seven to ten business days, the file drifts into dormancy and the conversation is lost. If they do reply, the founder must respond quickly to maintain momentum. Without a planned follow-up sequence, the file consumes attention on each review cycle without clear next steps.",
+    "signals_to_watch": [
+     "A reply from Northstar Angels within seven business days, indicating engagement.",
+     "A meeting request or a pass, indicating a decision.",
+     "Silence beyond ten business days, indicating a soft no or deprioritization.",
+     "A reply from other investors in the wave, indicating whether the ask or the list is the problem.",
+     "Founder's clarification on whether Northstar Angels is a qualified target or an exploratory prospect."
+    ],
+    "worst": "Northstar Angels does not reply, and the founder spends follow-up cycles on an unqualified or unresponsive investor while other qualified conversations stall. The file consumes attention without moving the round forward, and the founder's time is wasted on low-probability prospects."
+   },
+   "unknowns": [
+    {
+     "question": "Is Northstar Angels a qualified target investor for Nimbus Labs' seed round, or an exploratory outbound prospect?",
+     "relevance": "If qualified, the file should be tracked as an active investor conversation and followed up on a standard timeline; if exploratory, it should be tracked separately and may not warrant follow-up if other qualified conversations are moving faster."
+    },
+    {
+     "question": "Was the pitch sent as a result of a warm introduction, or as a cold outbound prospecting touch?",
+     "relevance": "Warm introductions carry higher reply rates and faster response times; cold outbound touches require longer wait times before follow-up and should not be counted in the round's active set."
+    },
+    {
+     "question": "What is Northstar Angels' typical response time to inbound pitches, and what is their investment stage and cheque size?",
+     "relevance": "Response time and investment criteria would inform whether silence at 0.54 days is normal or a signal of disengagement, and whether a follow-up is warranted."
+    },
+    {
+     "question": "Is there a planned follow-up sequence for this pitch, and if so, what is the timeline?",
+     "relevance": "Without a planned follow-up, the file may drift into dormancy; with a plan, the next move is clear and the file can be scheduled for review at the appropriate time."
+    },
+    {
+     "question": "Are there other investors in the wave who have replied, or is the entire wave silent?",
+     "relevance": "If other investors in the wave have replied, the silence from Northstar Angels may be normal variation; if the entire wave is silent, the ask or the list may need revision."
+    }
+   ],
+   "wait_or_stop": "Wait until day seven of silence before sending a follow-up note. Stop tracking this file as an active investor conversation if the founder confirms it is exploratory prospecting and other qualified investors are moving faster. Resume tracking if a reply is received or if the founder confirms the investor is qualified and warrants follow-up."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Nimbus Labs sent an outbound pitch to Northstar Angels on 2026-08-11 at 05:00 UTC requesting a twenty-minute meeting within two weeks.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?\"\n    },\n    {\n      \"claim\": \"No reply has been received from Northstar Angels since the pitch was sent.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file records an open ask: a question to which we are waiting on their reply, open since 2026-08-11 05:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Northstar Angels is not named in the brief as a target investor; this is an outbound cold or warm introduction not documented in the company's stated work in motion.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\",\n        \"brief:cbl_#10\",\n        \"brief:cbl_#11\",\n        \"brief:cbl_#12\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.54 days since the pitch was sent.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and high engagement based on the healthy temporal pattern.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.temporal\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for Northstar Angels.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The next move is theirs: they must decide whether to grant the meeting request or decline.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"This is an outbound prospecting touch, not a warm introduction or a response to inbound interest, and therefore carries lower expected reply rates and longer expected response times than warm introductions.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"At 0.54 days of silence, the file is still within the normal window for a first response to a cold outbound pitch and does not yet signal disengagement.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:5\",\n        \"ru:core.temporal\"\n      ]\n    },\n    {\n      \"claim\": \"The file's kind of work is investor relations, specifically an outbound prospecting pitch to a potential seed-stage investor, even though the brief does not name Northstar Angels as a target.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:domains\",\n        \"brief:cbl_#2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Outbound pitches to investors who have not been pre-qualified or introduced by a connector typically see reply rates between ten and thirty percent, with median response times of three to seven days for those who reply.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A wave of five outbound pitches sent at the same time with no replies after half a day is within the normal distribution and does not yet signal a problem with the ask or the list.\",\n      \"based_on\": [\n        \"wave:wave_#1\",\n        \"cap:founder_office.pb.investor_relations.the_wave_gone_silent\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence after a first outbound pitch does not mean the investor is uninterested; it means the email has not yet reached the decision-maker or has not yet been prioritized.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"cap:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A follow-up to an outbound pitch is typically sent after five to seven business days of silence, not before.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Outbound investor prospecting requires a list of targets qualified by stage, sector, cheque size, and thesis fit before the pitch is sent; sending to investors not on the brief's stated target list risks wasting follow-up effort on misaligned parties.\",\n      \"why\": \"An investor who does not fit the company's stage or thesis will pass regardless of traction, and a pass on thesis is not reopenable; effort spent on such investors is effort not spent on warm introductions or qualified targets.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"The first response window for an outbound investor pitch is typically seven to ten business days; a follow-up before that window closes is premature and reads as pressure.\",\n      \"why\": \"Investors batch their email review and partner meetings; a pitch that arrives on a Monday may not reach a partner's desk until the following week's meeting.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A single outbound pitch to an investor not on the brief's target list, with no follow-up plan and no context on why this investor was chosen, often signals prospecting drift rather than a deliberate strategy.\",\n      \"why\": \"Founders under pressure to raise often expand their target list beyond qualified investors, which dilutes the round's momentum and consumes follow-up cycles on low-probability conversations.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Outbound pitches should be tracked separately from warm introductions and should not be counted in the round's active investor set until a meeting is scheduled or a partner meeting is booked.\",\n      \"why\": \"Counting outbound prospects as active investors inflates the pipeline and obscures the actual number of qualified conversations in motion.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Northstar Angels was introduced to the founder by a connector or warm source, and the pitch was sent as a follow-up to that introduction.\",\n      \"needs\": \"A record in the file or the brief showing the source of the introduction, or a note from the founder confirming the introduction path.\"\n    },\n    {\n      \"proposition\": \"Northstar Angels is a qualified target investor for Nimbus Labs' seed round, with stage, sector, and cheque size fit.\",\n      \"needs\": \"A record in the brief or a note from the founder confirming Northstar Angels' investment thesis, typical cheque size, and portfolio companies in the AI or founder-tools space.\"\n    },\n    {\n      \"proposition\": \"The pitch was sent as part of a deliberate outbound prospecting strategy, with a planned follow-up sequence and a target list of similar investors.\",\n      \"needs\": \"A record in the brief or a note from the founder showing the outbound target list, the follow-up plan, and the rationale for including Northstar Angels.\"\n    },\n    {\n      \"proposition\": \"Northstar Angels has received the pitch and is reviewing it internally, and silence at this stage is normal.\",\n      \"needs\": \"A reply from Northstar Angels, or a signal such as a meeting request or a pass, to confirm or refute this hypothesis.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Northstar Angels a qualified target investor for Nimbus Labs' seed round, or an exploratory outbound prospect?\",\n      \"relevance\": \"If qualified, the file should be tracked as an active investor conversation and followed up on a standard timeline; if exploratory, it should be tracked separately and may not warrant follow-up if other qualified conversations are moving faster.\"\n    },\n    {\n      \"question\": \"Was the pitch sent as a result of a warm introduction, or as a cold outbound prospecting touch?\",\n      \"relevance\": \"Warm introductions carry higher reply rates and faster response times; cold outbound touches require longer wait times before follow-up and should not be counted in the round's active set.\"\n    },\n    {\n      \"question\": \"What is Northstar Angels' typical response time to inbound pitches, and what is their investment stage and cheque size?\",\n      \"relevance\": \"Response time and investment criteria would inform whether silence at 0.54 days is normal or a signal of disengagement, and whether a follow-up is warranted.\"\n    },\n    {\n      \"question\": \"Is there a planned follow-up sequence for this pitch, and if so, what is the timeline?\",\n      \"relevance\": \"Without a planned follow-up, the file may drift into dormancy; with a plan, the next move is clear and the file can be scheduled for review at the appropriate time.\"\n    },\n    {\n      \"question\": \"Are there other investors in the wave who have replied, or is the entire wave silent?\",\n      \"relevance\": \"If other investors in the wave have replied, the silence from Northstar Angels may be normal variation; if the entire wave is silent, the ask or the list may need revision.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An outbound prospecting pitch to a potential seed-stage investor, sent without documented warm introduction or prior qualification, now awaiting first response at 0.54 days of silence \u2014 within the normal window for a first response but requiring clarification on whether this investor is a qualified target or an exploratory prospect.\",\n    \"rivals\": [\n      \"A warm introduction to a qualified investor that was sent as a follow-up to a connector's introduction, and is now in the normal review window before a reply.\",\n      \"A prospecting touch to an investor outside the round's qualified target list, sent as part of exploratory outbound prospecting, which may not warrant follow-up if other qualified conversations are moving faster.\",\n      \"A test of a new outbound pitch or target list, with no expectation of immediate reply and no planned follow-up sequence.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file documents an outbound pitch to a potential seed-stage investor for fundraising, which is investor relations work, even though the brief does not name Northstar Angels as a target.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"evt_#1\",\n      \"brief:cbl_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook for this file, the expectation comes from the brief's goal to raise a seed round and the standard timeline for outbound investor prospecting: a first response within seven to ten business days, or silence beyond that window signaling a soft no or a pass.\",\n    \"actual\": \"An outbound pitch sent 0.54 days ago with no reply yet; the file is still within the normal window for a first response and does not yet show disengagement.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open with no follow-up plan. If Northstar Angels does not reply within seven to ten business days, the file drifts into dormancy and the conversation is lost. If they do reply, the founder must respond quickly to maintain momentum. Without a planned follow-up sequence, the file consumes attention on each review cycle without clear next steps.\",\n    \"act\": \"The founder clarifies whether Northstar Angels is a qualified target investor and establishes a follow-up plan. If qualified, the file is tracked as an active investor conversation with a follow-up scheduled for day seven if no reply is received. If exploratory, the file is tracked separately and may be deprioritized if other qualified conversations are moving faster. A follow-up note is drafted and scheduled for delivery at the appropriate time.\",\n    \"best\": \"Northstar Angels replies within three business days with interest in a meeting, the founder schedules a call within the next week, and the conversation moves to the next stage of diligence. The file becomes an active investor relationship with clear next steps and a decision timeline.\",\n    \"worst\": \"Northstar Angels does not reply, and the founder spends follow-up cycles on an unqualified or unresponsive investor while other qualified conversations stall. The file consumes attention without moving the round forward, and the founder's time is wasted on low-probability prospects.\",\n    \"signals_to_watch\": [\n      \"A reply from Northstar Angels within seven business days, indicating engagement.\",\n      \"A meeting request or a pass, indicating a decision.\",\n      \"Silence beyond ten business days, indicating a soft no or deprioritization.\",\n      \"A reply from other investors in the wave, indicating whether the ask or the list is the problem.\",\n      \"Founder's clarification on whether Northstar Angels is a qualified target or an exploratory prospect.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is an outbound prospecting touch to a single investor, not a warm introduction or a qualified conversation in motion; losing this conversation does not materially harm the round if other qualified investors are moving.\",\n      \"At 0.54 days of silence, the file is still within the normal window for a first response and does not yet require action.\",\n      \"A follow-up or a decision to deprioritize this investor can be made at any time without cost, as the conversation has not yet moved to diligence or a term sheet.\",\n      \"The stakes are medium because the round's success depends on a portfolio of qualified investors, and each conversation that does not move forward consumes attention that could be spent on warmer leads.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"clarify with the founder whether Northstar Angels is a qualified target investor for the seed round, how the investor was sourced, and whether there is a planned follow-up sequence; then establish a follow-up plan if the investor is qualified, or deprioritize the file if exploratory.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-08-12\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:4\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"cap:founder_office.fundraising.investor_relations#f4\",\n      \"cap:founder_office.pb.investor_relations.run_an_investor_conversation\",\n      \"own:3\",\n      \"own:4\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Wait until day seven of silence to follow up, and use the wait time to clarify the investor's qualification and follow-up plan. This defers the decision but risks losing momentum if the investor is qualified and responsive.\",\n  \"wait_or_stop\": \"Wait until day seven of silence before sending a follow-up note. Stop tracking this file as an active investor conversation if the founder confirms it is exploratory prospecting and other qualified investors are moving faster. Resume tracking if a reply is received or if the founder confirms the investor is qualified and warrants follow-up.\",\n  \"done_when\": \"The founder has clarified whether Northstar Angels is a qualified target investor, a follow-up plan is established (or the file is deprioritized), and the next action is scheduled with a clear date and owner.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "c1a4b52ef3ed6f1c4d7a88f9189c560546d43257701db032981f0acd244bc1ad": {
+  "framed": true,
+  "input_tokens": 8218,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3724,
+  "parsed": {
+   "alternative": "If the founder has a connector who knows a named partner at Lattice Capital, ask for a warm introduction now. A warm intro to a named partner is far more likely to convert than a cold pitch to a generic address. This move should be made in parallel with the wait, not instead of it.",
+   "appraisal": {
+    "reasons": [
+     "This is one of five investors in a wave; losing this one does not materially change the round's outcome.",
+     "Silence at this stage is the default; there is no deadline or signal that requires immediate action.",
+     "A follow-up can be sent at any time; a wrong move now (e.g., a second ask without new information) can be reversed by waiting and sending a better follow-up later.",
+     "The file has no named partner, no meeting scheduled, and no relationship history; it is a cold pitch to a generic address, which has low conversion rates."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Done when Lattice Capital replies with interest and a meeting is scheduled, or when Lattice Capital passes and the reason is recorded, or when two weeks have passed with no reply and one follow-up has been sent and also gone unanswered.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "One day after the pitch, no reply has been received from Lattice Capital. The other four investors in the wave have also not replied. No follow-up has been sent.",
+    "expected": "The brief does not name a playbook for this file, and no kind of work is assigned. Without a playbook, there is no expected stage. From the brief's own history: the founder is running a seed round and has written to five investors in a wave. The expected outcome is replies from some, silence from others, and a follow-up with new facts for those who do not reply.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Arjun Rao sent an outbound pitch to Lattice Capital on 2026-08-11 at 03:00 UTC, requesting a twenty-minute meeting within two weeks.",
+     "evidence": [
+      "evt_#1",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": "Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?"
+    },
+    {
+     "claim": "No reply has been received from Lattice Capital as of 2026-08-11 18:00 UTC, when the mailbox was last read.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Lattice Capital is not named in the brief as a target investor, and this file has no kind of work assigned to it.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The pitch was sent to a generic deals address (deals@latticecap.test), not to a named partner.",
+     "evidence": [
+      "num:their_reply_time:deals@latticecap.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first touch with Lattice Capital; no prior relationship history exists.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@fundraising",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The pitch was sent as part of a wave to five investors, of which none have replied and none have bounced.",
+     "evidence": [
+      "wave:wave_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.62 days since the outbound pitch.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A cold outbound pitch to a generic investor address, less than one day old, with no reply yet. Silence at this stage is the default and carries no signal. The file should not be tracked as an active investor relationship until a named partner engages or a meeting is requested.",
+    "rivals": [
+     "A stalled investor conversation that needs a follow-up. This frame is wrong: there is no conversation yet, only an outbound ask.",
+     "A pass or a soft no from Lattice Capital. This frame is wrong: no reply is not a pass; it is the default before a first meeting.",
+     "A signal that the wave is not working and the pitch needs to be revised. This frame is possible but premature: one day of silence from one investor is not enough data; the founder should wait for replies from the other four and for feedback from any who do reply."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A note in the founder's records explaining why Lattice Capital was chosen, or a connector who introduced them.",
+     "proposition": "Lattice Capital is a fit for the round and was added to the wave deliberately."
+    },
+    {
+     "needs": "Feedback from at least one investor on what would move them, or a comparison of reply rates to other waves the founder has sent.",
+     "proposition": "The wave's silence across all five recipients signals a problem with the pitch, the traction, or the stage, not with the investors."
+    },
+    {
+     "needs": "A reply from Lattice Capital, or a known fact about their sourcing process.",
+     "proposition": "Lattice Capital has a process that takes longer than one day to route inbound pitches to a partner."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "file:whose_move",
+      "fact:1"
+     ],
+     "claim": "The move is theirs: Lattice Capital must reply or decline to engage; nothing is owed by the founder until they respond."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:4",
+      "fact:5"
+     ],
+     "claim": "This is a cold outbound pitch to a generic address, not a warm introduction or a conversation already in motion."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:7",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Silence at this stage\u2014less than one day after a cold pitch to a generic address\u2014is the default and carries no signal."
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "pb:founder_office.pb.investor_relations.the_wave_gone_silent"
+     ],
+     "claim": "The wave's silence across all five recipients suggests the ask, timing, or traction in the pitch may not have moved any of them, rather than a failure of any single investor."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-25",
+    "for_whom": "Lattice Capital",
+    "guided_by": [
+     "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+     "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:7",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "Wait for replies from the other four investors in the wave and for feedback from any who do reply. Do not follow up with Lattice Capital until you have a new fact to carry\u2014a commitment, a launch, a revenue milestone, or a named partner meeting booked. If Lattice Capital replies, respond promptly and move to a meeting or a pass. If none of the five reply after two weeks, send one follow-up to each with a new fact; if that also goes unanswered, close the wave.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A cold pitch to a generic address should not be tracked as an active investor relationship until a named partner engages or a meeting is requested.",
+     "kind": "practice",
+     "why": "Generic addresses are often routed by junior staff or filtered by systems; they do not represent a relationship with a decision-maker, and tracking them as live relationships creates false urgency and wastes attention on conversations that will not convert."
+    },
+    {
+     "claim": "Investors do not chase; when the turn is ours, the clock runs against us, and when the turn is theirs, they have no reason to hurry.",
+     "kind": "base_rate",
+     "why": "A fund sees far more companies than it can fund and loses nothing by dropping one. The founder's time is the scarce resource, not the investor's."
+    },
+    {
+     "claim": "A wave should be followed up once, with a fact the first email did not carry\u2014a commitment, a launch, a revenue milestone\u2014not with a repeat of the ask.",
+     "kind": "practice",
+     "why": "A second ask without new information reads as desperation and hardens a soft no into a pass."
+    },
+    {
+     "claim": "Lattice Capital is not in the brief's named set of targets; sending to investors outside the set dilutes focus and creates tracking overhead without a clear reason.",
+     "kind": "counter_pattern",
+     "why": "The brief names five seed funds and one engaged fund; adding others without a connector or a reason to believe they fit the round's thesis spreads effort and attention."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f4",
+      "fact:4"
+     ],
+     "claim": "Cold pitches to generic investor addresses have low reply rates; a generic address is often not read by a decision-maker.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+      "fact:6"
+     ],
+     "claim": "A wave silent everywhere is usually about the ask, not the investors\u2014the traction, the stage, or the framing did not move any of them.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+      "fact:7"
+     ],
+     "claim": "Silence before a first meeting is the default; it is not a soft no, and it is not a signal to follow up immediately.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "file:kind",
+     "evt_#1"
+    ],
+    "kind": "investor",
+    "why": "The file is a cold outbound pitch to a seed-stage investor as part of a fundraising wave. The brief names it as a domain (fundraising) but does not name a kind of work for this file. The kind is investor."
+   },
+   "scenarios": {
+    "act": "The founder sends a follow-up to Lattice Capital with a new fact\u2014a commitment, a launch, a revenue milestone, or a named partner meeting booked. The follow-up is sent to a named partner if one can be found, not to the generic address. Lattice Capital replies or does not. If they reply, a meeting is scheduled or a pass is received. If they do not reply, the file is closed after one follow-up.",
+    "best": "Lattice Capital replies within two days with interest and a meeting request. The founder meets with a partner, pitches the round, and Lattice Capital commits or passes with clear feedback. The founder learns what moved them or what did not, and uses that feedback to improve the pitch for other investors.",
+    "do_nothing": "Lattice Capital remains in the file as an open ask. The founder does not follow up. After two weeks (the window named in the pitch), the file is still quiet. After three weeks, the founder may assume Lattice Capital has passed or is not interested. The file is closed or moved to a watchlist. No relationship is built, and no feedback is received.",
+    "signals_to_watch": [
+     "A reply from Lattice Capital within two weeks, with interest or a pass.",
+     "A reply from any of the other four investors in the wave, with feedback on the pitch or the traction.",
+     "A new fact the founder can add to a follow-up\u2014a commitment, a launch, a revenue milestone, or a named partner meeting booked.",
+     "A path to a named partner at Lattice Capital, found through a connector or the founder's network."
+    ],
+    "worst": "Lattice Capital never replies. The founder sends a follow-up after one week, and it also goes unanswered. The founder wastes attention on a generic address that was never read by a decision-maker. The file is closed after two weeks with no relationship built and no feedback received."
+   },
+   "unknowns": [
+    {
+     "question": "Is Lattice Capital a deliberate target, or was it added to the wave without a clear reason?",
+     "relevance": "If it is not a fit, tracking it wastes attention; if it is, the founder should know why and have a path to a named partner."
+    },
+    {
+     "question": "What is the reply rate on the other four investors in the wave, and have any of them replied?",
+     "relevance": "If all five are silent, the problem is likely the pitch or the traction, not Lattice Capital; if others have replied, Lattice Capital's silence is just the default."
+    },
+    {
+     "question": "Does the founder have a path to a named partner at Lattice Capital, or is the generic address the only entry point?",
+     "relevance": "A generic address is unlikely to convert; a named partner is the only path that matters."
+    },
+    {
+     "question": "What is the founder's follow-up plan for this wave\u2014when will they send a second note, and what new fact will it carry?",
+     "relevance": "A follow-up without new information will harden soft nos; a follow-up with a commitment or a milestone might move them."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-25 (two weeks from the pitch). If Lattice Capital has not replied by then, send one follow-up with a new fact. If that also goes unanswered, close the file. Do not send a second follow-up without new information; it will harden a soft no into a pass and waste the relationship."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Arjun Rao sent an outbound pitch to Lattice Capital on 2026-08-11 at 03:00 UTC, requesting a twenty-minute meeting within two weeks.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?\"\n    },\n    {\n      \"claim\": \"No reply has been received from Lattice Capital as of 2026-08-11 18:00 UTC, when the mailbox was last read.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Lattice Capital is not named in the brief as a target investor, and this file has no kind of work assigned to it.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The pitch was sent to a generic deals address (deals@latticecap.test), not to a named partner.\",\n      \"evidence\": [\n        \"num:their_reply_time:deals@latticecap.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first touch with Lattice Capital; no prior relationship history exists.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@fundraising\",\n        \"hist:derived.history.times_seen@fundraising\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The pitch was sent as part of a wave to five investors, of which none have replied and none have bounced.\",\n      \"evidence\": [\n        \"wave:wave_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.62 days since the outbound pitch.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The move is theirs: Lattice Capital must reply or decline to engage; nothing is owed by the founder until they respond.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"This is a cold outbound pitch to a generic address, not a warm introduction or a conversation already in motion.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:4\",\n        \"fact:5\"\n      ]\n    },\n    {\n      \"claim\": \"Silence at this stage\u2014less than one day after a cold pitch to a generic address\u2014is the default and carries no signal.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:7\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"claim\": \"The wave's silence across all five recipients suggests the ask, timing, or traction in the pitch may not have moved any of them, rather than a failure of any single investor.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"pb:founder_office.pb.investor_relations.the_wave_gone_silent\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Cold pitches to generic investor addresses have low reply rates; a generic address is often not read by a decision-maker.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f4\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A wave silent everywhere is usually about the ask, not the investors\u2014the traction, the stage, or the framing did not move any of them.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.the_wave_gone_silent\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence before a first meeting is the default; it is not a soft no, and it is not a signal to follow up immediately.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n        \"fact:7\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A cold pitch to a generic address should not be tracked as an active investor relationship until a named partner engages or a meeting is requested.\",\n      \"why\": \"Generic addresses are often routed by junior staff or filtered by systems; they do not represent a relationship with a decision-maker, and tracking them as live relationships creates false urgency and wastes attention on conversations that will not convert.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Investors do not chase; when the turn is ours, the clock runs against us, and when the turn is theirs, they have no reason to hurry.\",\n      \"why\": \"A fund sees far more companies than it can fund and loses nothing by dropping one. The founder's time is the scarce resource, not the investor's.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A wave should be followed up once, with a fact the first email did not carry\u2014a commitment, a launch, a revenue milestone\u2014not with a repeat of the ask.\",\n      \"why\": \"A second ask without new information reads as desperation and hardens a soft no into a pass.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Lattice Capital is not in the brief's named set of targets; sending to investors outside the set dilutes focus and creates tracking overhead without a clear reason.\",\n      \"why\": \"The brief names five seed funds and one engaged fund; adding others without a connector or a reason to believe they fit the round's thesis spreads effort and attention.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Lattice Capital is a fit for the round and was added to the wave deliberately.\",\n      \"needs\": \"A note in the founder's records explaining why Lattice Capital was chosen, or a connector who introduced them.\"\n    },\n    {\n      \"proposition\": \"The wave's silence across all five recipients signals a problem with the pitch, the traction, or the stage, not with the investors.\",\n      \"needs\": \"Feedback from at least one investor on what would move them, or a comparison of reply rates to other waves the founder has sent.\"\n    },\n    {\n      \"proposition\": \"Lattice Capital has a process that takes longer than one day to route inbound pitches to a partner.\",\n      \"needs\": \"A reply from Lattice Capital, or a known fact about their sourcing process.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Lattice Capital a deliberate target, or was it added to the wave without a clear reason?\",\n      \"relevance\": \"If it is not a fit, tracking it wastes attention; if it is, the founder should know why and have a path to a named partner.\"\n    },\n    {\n      \"question\": \"What is the reply rate on the other four investors in the wave, and have any of them replied?\",\n      \"relevance\": \"If all five are silent, the problem is likely the pitch or the traction, not Lattice Capital; if others have replied, Lattice Capital's silence is just the default.\"\n    },\n    {\n      \"question\": \"Does the founder have a path to a named partner at Lattice Capital, or is the generic address the only entry point?\",\n      \"relevance\": \"A generic address is unlikely to convert; a named partner is the only path that matters.\"\n    },\n    {\n      \"question\": \"What is the founder's follow-up plan for this wave\u2014when will they send a second note, and what new fact will it carry?\",\n      \"relevance\": \"A follow-up without new information will harden soft nos; a follow-up with a commitment or a milestone might move them.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A cold outbound pitch to a generic investor address, less than one day old, with no reply yet. Silence at this stage is the default and carries no signal. The file should not be tracked as an active investor relationship until a named partner engages or a meeting is requested.\",\n    \"rivals\": [\n      \"A stalled investor conversation that needs a follow-up. This frame is wrong: there is no conversation yet, only an outbound ask.\",\n      \"A pass or a soft no from Lattice Capital. This frame is wrong: no reply is not a pass; it is the default before a first meeting.\",\n      \"A signal that the wave is not working and the pitch needs to be revised. This frame is possible but premature: one day of silence from one investor is not enough data; the founder should wait for replies from the other four and for feedback from any who do reply.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is a cold outbound pitch to a seed-stage investor as part of a fundraising wave. The brief names it as a domain (fundraising) but does not name a kind of work for this file. The kind is investor.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"file:kind\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief does not name a playbook for this file, and no kind of work is assigned. Without a playbook, there is no expected stage. From the brief's own history: the founder is running a seed round and has written to five investors in a wave. The expected outcome is replies from some, silence from others, and a follow-up with new facts for those who do not reply.\",\n    \"actual\": \"One day after the pitch, no reply has been received from Lattice Capital. The other four investors in the wave have also not replied. No follow-up has been sent.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Lattice Capital remains in the file as an open ask. The founder does not follow up. After two weeks (the window named in the pitch), the file is still quiet. After three weeks, the founder may assume Lattice Capital has passed or is not interested. The file is closed or moved to a watchlist. No relationship is built, and no feedback is received.\",\n    \"act\": \"The founder sends a follow-up to Lattice Capital with a new fact\u2014a commitment, a launch, a revenue milestone, or a named partner meeting booked. The follow-up is sent to a named partner if one can be found, not to the generic address. Lattice Capital replies or does not. If they reply, a meeting is scheduled or a pass is received. If they do not reply, the file is closed after one follow-up.\",\n    \"best\": \"Lattice Capital replies within two days with interest and a meeting request. The founder meets with a partner, pitches the round, and Lattice Capital commits or passes with clear feedback. The founder learns what moved them or what did not, and uses that feedback to improve the pitch for other investors.\",\n    \"worst\": \"Lattice Capital never replies. The founder sends a follow-up after one week, and it also goes unanswered. The founder wastes attention on a generic address that was never read by a decision-maker. The file is closed after two weeks with no relationship built and no feedback received.\",\n    \"signals_to_watch\": [\n      \"A reply from Lattice Capital within two weeks, with interest or a pass.\",\n      \"A reply from any of the other four investors in the wave, with feedback on the pitch or the traction.\",\n      \"A new fact the founder can add to a follow-up\u2014a commitment, a launch, a revenue milestone, or a named partner meeting booked.\",\n      \"A path to a named partner at Lattice Capital, found through a connector or the founder's network.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is one of five investors in a wave; losing this one does not materially change the round's outcome.\",\n      \"Silence at this stage is the default; there is no deadline or signal that requires immediate action.\",\n      \"A follow-up can be sent at any time; a wrong move now (e.g., a second ask without new information) can be reversed by waiting and sending a better follow-up later.\",\n      \"The file has no named partner, no meeting scheduled, and no relationship history; it is a cold pitch to a generic address, which has low conversion rates.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Wait for replies from the other four investors in the wave and for feedback from any who do reply. Do not follow up with Lattice Capital until you have a new fact to carry\u2014a commitment, a launch, a revenue milestone, or a named partner meeting booked. If Lattice Capital replies, respond promptly and move to a meeting or a pass. If none of the five reply after two weeks, send one follow-up to each with a new fact; if that also goes unanswered, close the wave.\",\n    \"for_whom\": \"Lattice Capital\",\n    \"by_when\": \"2026-08-25\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:7\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n      \"pb:founder_office.pb.investor_relations.the_wave_gone_silent\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder has a connector who knows a named partner at Lattice Capital, ask for a warm introduction now. A warm intro to a named partner is far more likely to convert than a cold pitch to a generic address. This move should be made in parallel with the wait, not instead of it.\",\n  \"wait_or_stop\": \"Wait until 2026-08-25 (two weeks from the pitch). If Lattice Capital has not replied by then, send one follow-up with a new fact. If that also goes unanswered, close the file. Do not send a second follow-up without new information; it will harden a soft no into a pass and waste the relationship.\",\n  \"done_when\": \"Done when Lattice Capital replies with interest and a meeting is scheduled, or when Lattice Capital passes and the reason is recorded, or when two weeks have passed with no reply and one follow-up has been sent and also gone unanswered.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "cb7b0b84e97f240a0625b04d05b1d18c59ccb521c0d9480d1d45a44da6518b66": {
+  "framed": true,
+  "input_tokens": 8218,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3880,
+  "parsed": {
+   "alternative": "If you believe Cobalt Peak is not a qualified fit or not a priority, close the file now and reallocate attention to the five named investors in the brief (Banyan Seed Fund, Northfield Ventures, Harbor Point Partners, Tusker Capital, Fjord Venture Partners) and the one engaged investor (Lumen Ventures). This is reversible if Cobalt Peak becomes a priority later.",
+   "appraisal": {
+    "reasons": [
+     "Cobalt Peak is one of many investors in your seed wave; a single investor's pass or silence does not determine the round's outcome.",
+     "The file is less than one day old; no decision is needed yet, and no action is required until at least five to seven business days have passed.",
+     "A wrong move now (a premature follow-up, or a decision to close the file) can be reversed by a later follow-up or a warm introduction.",
+     "The brief does not name Cobalt Peak as a priority investor, which lowers the stakes if this file is closed or deprioritized."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "A meeting is scheduled with Cobalt Peak, or the file is closed as a soft no after fourteen days of silence.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "You sent a cold outbound with a meeting request and a deck attachment less than one day ago. Cobalt Peak has not replied. The file is in wait status, with the next move owed by them.",
+    "expected": "The brief names no playbook for this file because Cobalt Peak is not named in the brief's investor set. Without a playbook, the expected behavior is that a cold outbound to an investor receives a reply within three to seven business days, or no reply at all. A meeting request should not be followed up until at least five to seven business days have passed.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You wrote to Cobalt Peak on 2026-08-11 at 01:00 UTC with a seed round pitch and deck attachment.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?"
+    },
+    {
+     "claim": "Cobalt Peak has not replied as of 2026-08-11 18:00 UTC, when the mailbox read completed.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.71 days since the outbound message.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first touch with Cobalt Peak; no prior relationship history exists.",
+     "evidence": [
+      "file:first_touch",
+      "hist:derived.history.prior_card_verdict@fundraising",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Cobalt Peak's role in the brief is not named; the file's kind of work is not named by the brief.",
+     "evidence": [
+      "file:role",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is classified as an investor_relationship in active status with no end recorded.",
+     "evidence": [
+      "sit:sit_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "You have an open ask waiting on Cobalt Peak's move since 2026-08-11 01:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A cold outbound to an investor in a seed wave, sent less than one day ago, awaiting a reply. Silence at this stage is normal and does not signal rejection.",
+    "rivals": [
+     "A test outbound to a secondary or unqualified investor, sent to validate the pitch or to fill out a wave.",
+     "A misclassified file: Cobalt Peak may be a vendor, a partner, or a connector, not an investor.",
+     "A follow-up opportunity: if Cobalt Peak is a known investor who has been contacted before, this may be a re-engagement, not a first touch."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation that Cobalt Peak invests at seed stage, in AI/founder tools, and that the email reached a partner or sourcing lead, not a generic address.",
+     "proposition": "Cobalt Peak is a qualified investor for your stage and thesis, and the outbound was sent to the right person."
+    },
+    {
+     "needs": "Clarification from you on why Cobalt Peak was included in this wave and whether they are a priority.",
+     "proposition": "Cobalt Peak is not a fit, and this outbound was sent to test the pitch or to a secondary target."
+    },
+    {
+     "needs": "Confirmation of the recipient's role and whether a warm introduction or a direct partner email would be more effective.",
+     "proposition": "The email was delivered to a generic address (partners@cobaltpeak.test) and was not routed to a decision-maker."
+    },
+    {
+     "needs": "A follow-up after seven business days to test whether silence is delay or disinterest.",
+     "proposition": "Cobalt Peak is interested but has not yet replied because they are in a partner meeting, on vacation, or triaging a large inbox."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The next move is theirs: they received a meeting request and have not yet replied."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "none:promises"
+     ],
+     "claim": "No promise or commitment was made in their mail because they have not yet replied."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "The silence is still within normal bounds for a cold outbound to an investor: less than one day has passed since send."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "Cobalt Peak's stage in the investor conversation is unknown \u2014 no meeting has been scheduled, no diligence opened, no term sheet discussed."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-18",
+    "for_whom": "Cobalt Peak",
+    "guided_by": [
+     "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "hold the file in wait until 2026-08-18 (seven business days from send). On that date, if Cobalt Peak has not replied, send a single follow-up with a new fact or a gentle reminder. If they reply before then, move the file to the next stage based on their response.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A single cold outbound to an investor should not be judged on its reply within the first week; the file should be held in wait until day seven or ten, when silence becomes meaningful.",
+     "kind": "practice",
+     "why": "Investors receive hundreds of pitches and triage by partner, stage, and thesis fit. A lack of reply in the first day or two reflects their inbox, not their interest. Judgment before day five is premature."
+    },
+    {
+     "claim": "When a wave is sent to multiple investors in parallel, the first replies often come from the weakest fit or the most responsive generalists; the best-fit investors may take longer.",
+     "kind": "base_rate",
+     "why": "Investors who are most selective and most relevant to the company's stage and sector often have deeper diligence processes and slower reply times. Silence from the right investors is not a bad sign early."
+    },
+    {
+     "claim": "A meeting request in the first outbound should not be followed up until at least five to seven business days have passed, and only once.",
+     "kind": "practice",
+     "why": "A second message within a week reads as pressure and damages the relationship. Investors know how to reply if they are interested. A single follow-up after a week is professional; more than that is noise."
+    },
+    {
+     "claim": "Cobalt Peak is not in your named investor set in the brief, and no connector introduced them; this may be a cold outbound to an investor not yet qualified.",
+     "kind": "counter_pattern",
+     "why": "The brief names five investors written to in the seed wave and one engaged (Lumen Ventures). Cobalt Peak appears in the file but not in the brief's investor list. This may be a test outbound, a secondary target, or a mistake in the file's classification."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A cold outbound to an investor typically receives a reply within three to five business days, or no reply at all.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Silence before a first meeting is the default and does not signal rejection.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "wave:wave_#1",
+      "pb:founder_office.pb.investor_relations.the_wave_gone_silent"
+     ],
+     "claim": "A wave sent to five investors with zero replies after half a day is not yet a signal of rejection; the wave's silence is usually about the ask or the investor set, not about the company.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "Investors do not chase; when the turn is ours, the clock runs against us.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "sit:sit_#1",
+     "evt_#1"
+    ],
+    "kind": "investor",
+    "why": "The file is classified as an investor_relationship in the brief's domains (fundraising), and the outbound is a seed round pitch with a meeting request. The dossier names it as investor_relationship in its situations."
+   },
+   "scenarios": {
+    "act": "You send a follow-up message after five to seven business days with a new fact or a gentle reminder. This risks appearing pushy if sent too soon, and risks losing the lead if sent too late. A follow-up is warranted only if Cobalt Peak is a qualified fit and a priority.",
+    "best": "Cobalt Peak replies within three business days with interest and a meeting is scheduled within two weeks. The conversation moves to the next stage (meeting_scheduled) and the file is tracked for progress.",
+    "do_nothing": "The file remains in wait. After seven business days, if Cobalt Peak has not replied, you may send a single follow-up with a new fact (a commitment, a launch, a revenue figure) or close the file. If they reply with a pass, the file is closed or reopened depending on the reason. If they reply with interest, a meeting is scheduled and the file moves to the next stage.",
+    "signals_to_watch": [
+     "A reply from Cobalt Peak within three to five business days signals engagement; no reply by day seven signals disinterest or a generic inbox.",
+     "A reply that names a meeting date signals a qualified lead; a reply that asks for more information signals interest but not urgency.",
+     "A pass with a reason (stage, timing, traction) signals a conditional deferral; a pass with no reason signals a verdict.",
+     "A reply from a partner signals a qualified lead; a reply from an associate or a generic inbox signals a lower priority."
+    ],
+    "worst": "Cobalt Peak does not reply, and the file goes dormant. After two weeks, the file is closed as a soft no. If Cobalt Peak is a qualified fit, this represents a lost opportunity. If Cobalt Peak is not a fit, the file should have been closed earlier."
+   },
+   "unknowns": [
+    {
+     "question": "Is Cobalt Peak a qualified investor for your seed round \u2014 do they invest at your stage, in your sector, and at your likely valuation?",
+     "relevance": "If Cobalt Peak is not a fit, this file should be closed or deprioritized. If they are a fit, the silence is normal and the file should be held in wait. The brief does not name them, which raises doubt."
+    },
+    {
+     "question": "Who at Cobalt Peak received the email \u2014 a partner, an associate, a sourcing lead, or a generic inbox?",
+     "relevance": "If the email went to a generic address, it may have been filtered or forwarded to the wrong person. A direct partner email or a warm introduction would be more effective. If it reached the right person, silence is normal at this stage."
+    },
+    {
+     "question": "How many investors in your seed wave are qualified fits, and how many are secondary targets or tests?",
+     "relevance": "The brief names five investors written to in the seed wave. If Cobalt Peak is a sixth, the wave may be too broad or unfocused. If Cobalt Peak is a replacement for one of the five, the brief may be out of date."
+    },
+    {
+     "question": "What is your follow-up strategy for this wave \u2014 will you follow up once after a week, or will you let silence stand?",
+     "relevance": "A single follow-up after seven business days is standard practice. No follow-up risks losing a warm lead. Multiple follow-ups risk damaging the relationship. The file does not name a follow-up plan."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-18 (seven business days). If Cobalt Peak has not replied by then, send a single follow-up. If they reply with a pass, record the reason and close the file unless the reason is stage, timing, or traction (which carry an implicit date). If they reply with interest, schedule a meeting and move the file to the next stage. If they do not reply to the follow-up, close the file after 2026-08-25 (fourteen days from send)."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You wrote to Cobalt Peak on 2026-08-11 at 01:00 UTC with a seed round pitch and deck attachment.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?\"\n    },\n    {\n      \"claim\": \"Cobalt Peak has not replied as of 2026-08-11 18:00 UTC, when the mailbox read completed.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.71 days since the outbound message.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first touch with Cobalt Peak; no prior relationship history exists.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"hist:derived.history.prior_card_verdict@fundraising\",\n        \"hist:derived.history.times_seen@fundraising\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Cobalt Peak's role in the brief is not named; the file's kind of work is not named by the brief.\",\n      \"evidence\": [\n        \"file:role\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is classified as an investor_relationship in active status with no end recorded.\",\n      \"evidence\": [\n        \"sit:sit_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"You have an open ask waiting on Cobalt Peak's move since 2026-08-11 01:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The next move is theirs: they received a meeting request and have not yet replied.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"No promise or commitment was made in their mail because they have not yet replied.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"The silence is still within normal bounds for a cold outbound to an investor: less than one day has passed since send.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"Cobalt Peak's stage in the investor conversation is unknown \u2014 no meeting has been scheduled, no diligence opened, no term sheet discussed.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A cold outbound to an investor typically receives a reply within three to five business days, or no reply at all.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Silence before a first meeting is the default and does not signal rejection.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A wave sent to five investors with zero replies after half a day is not yet a signal of rejection; the wave's silence is usually about the ask or the investor set, not about the company.\",\n      \"based_on\": [\n        \"wave:wave_#1\",\n        \"pb:founder_office.pb.investor_relations.the_wave_gone_silent\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Investors do not chase; when the turn is ours, the clock runs against us.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A single cold outbound to an investor should not be judged on its reply within the first week; the file should be held in wait until day seven or ten, when silence becomes meaningful.\",\n      \"why\": \"Investors receive hundreds of pitches and triage by partner, stage, and thesis fit. A lack of reply in the first day or two reflects their inbox, not their interest. Judgment before day five is premature.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a wave is sent to multiple investors in parallel, the first replies often come from the weakest fit or the most responsive generalists; the best-fit investors may take longer.\",\n      \"why\": \"Investors who are most selective and most relevant to the company's stage and sector often have deeper diligence processes and slower reply times. Silence from the right investors is not a bad sign early.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting request in the first outbound should not be followed up until at least five to seven business days have passed, and only once.\",\n      \"why\": \"A second message within a week reads as pressure and damages the relationship. Investors know how to reply if they are interested. A single follow-up after a week is professional; more than that is noise.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Cobalt Peak is not in your named investor set in the brief, and no connector introduced them; this may be a cold outbound to an investor not yet qualified.\",\n      \"why\": \"The brief names five investors written to in the seed wave and one engaged (Lumen Ventures). Cobalt Peak appears in the file but not in the brief's investor list. This may be a test outbound, a secondary target, or a mistake in the file's classification.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Cobalt Peak is a qualified investor for your stage and thesis, and the outbound was sent to the right person.\",\n      \"needs\": \"Confirmation that Cobalt Peak invests at seed stage, in AI/founder tools, and that the email reached a partner or sourcing lead, not a generic address.\"\n    },\n    {\n      \"proposition\": \"Cobalt Peak is not a fit, and this outbound was sent to test the pitch or to a secondary target.\",\n      \"needs\": \"Clarification from you on why Cobalt Peak was included in this wave and whether they are a priority.\"\n    },\n    {\n      \"proposition\": \"The email was delivered to a generic address (partners@cobaltpeak.test) and was not routed to a decision-maker.\",\n      \"needs\": \"Confirmation of the recipient's role and whether a warm introduction or a direct partner email would be more effective.\"\n    },\n    {\n      \"proposition\": \"Cobalt Peak is interested but has not yet replied because they are in a partner meeting, on vacation, or triaging a large inbox.\",\n      \"needs\": \"A follow-up after seven business days to test whether silence is delay or disinterest.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Cobalt Peak a qualified investor for your seed round \u2014 do they invest at your stage, in your sector, and at your likely valuation?\",\n      \"relevance\": \"If Cobalt Peak is not a fit, this file should be closed or deprioritized. If they are a fit, the silence is normal and the file should be held in wait. The brief does not name them, which raises doubt.\"\n    },\n    {\n      \"question\": \"Who at Cobalt Peak received the email \u2014 a partner, an associate, a sourcing lead, or a generic inbox?\",\n      \"relevance\": \"If the email went to a generic address, it may have been filtered or forwarded to the wrong person. A direct partner email or a warm introduction would be more effective. If it reached the right person, silence is normal at this stage.\"\n    },\n    {\n      \"question\": \"How many investors in your seed wave are qualified fits, and how many are secondary targets or tests?\",\n      \"relevance\": \"The brief names five investors written to in the seed wave. If Cobalt Peak is a sixth, the wave may be too broad or unfocused. If Cobalt Peak is a replacement for one of the five, the brief may be out of date.\"\n    },\n    {\n      \"question\": \"What is your follow-up strategy for this wave \u2014 will you follow up once after a week, or will you let silence stand?\",\n      \"relevance\": \"A single follow-up after seven business days is standard practice. No follow-up risks losing a warm lead. Multiple follow-ups risk damaging the relationship. The file does not name a follow-up plan.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A cold outbound to an investor in a seed wave, sent less than one day ago, awaiting a reply. Silence at this stage is normal and does not signal rejection.\",\n    \"rivals\": [\n      \"A test outbound to a secondary or unqualified investor, sent to validate the pitch or to fill out a wave.\",\n      \"A misclassified file: Cobalt Peak may be a vendor, a partner, or a connector, not an investor.\",\n      \"A follow-up opportunity: if Cobalt Peak is a known investor who has been contacted before, this may be a re-engagement, not a first touch.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is classified as an investor_relationship in the brief's domains (fundraising), and the outbound is a seed round pitch with a meeting request. The dossier names it as investor_relationship in its situations.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"sit:sit_#1\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this file because Cobalt Peak is not named in the brief's investor set. Without a playbook, the expected behavior is that a cold outbound to an investor receives a reply within three to seven business days, or no reply at all. A meeting request should not be followed up until at least five to seven business days have passed.\",\n    \"actual\": \"You sent a cold outbound with a meeting request and a deck attachment less than one day ago. Cobalt Peak has not replied. The file is in wait status, with the next move owed by them.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains in wait. After seven business days, if Cobalt Peak has not replied, you may send a single follow-up with a new fact (a commitment, a launch, a revenue figure) or close the file. If they reply with a pass, the file is closed or reopened depending on the reason. If they reply with interest, a meeting is scheduled and the file moves to the next stage.\",\n    \"act\": \"You send a follow-up message after five to seven business days with a new fact or a gentle reminder. This risks appearing pushy if sent too soon, and risks losing the lead if sent too late. A follow-up is warranted only if Cobalt Peak is a qualified fit and a priority.\",\n    \"best\": \"Cobalt Peak replies within three business days with interest and a meeting is scheduled within two weeks. The conversation moves to the next stage (meeting_scheduled) and the file is tracked for progress.\",\n    \"worst\": \"Cobalt Peak does not reply, and the file goes dormant. After two weeks, the file is closed as a soft no. If Cobalt Peak is a qualified fit, this represents a lost opportunity. If Cobalt Peak is not a fit, the file should have been closed earlier.\",\n    \"signals_to_watch\": [\n      \"A reply from Cobalt Peak within three to five business days signals engagement; no reply by day seven signals disinterest or a generic inbox.\",\n      \"A reply that names a meeting date signals a qualified lead; a reply that asks for more information signals interest but not urgency.\",\n      \"A pass with a reason (stage, timing, traction) signals a conditional deferral; a pass with no reason signals a verdict.\",\n      \"A reply from a partner signals a qualified lead; a reply from an associate or a generic inbox signals a lower priority.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Cobalt Peak is one of many investors in your seed wave; a single investor's pass or silence does not determine the round's outcome.\",\n      \"The file is less than one day old; no decision is needed yet, and no action is required until at least five to seven business days have passed.\",\n      \"A wrong move now (a premature follow-up, or a decision to close the file) can be reversed by a later follow-up or a warm introduction.\",\n      \"The brief does not name Cobalt Peak as a priority investor, which lowers the stakes if this file is closed or deprioritized.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"hold the file in wait until 2026-08-18 (seven business days from send). On that date, if Cobalt Peak has not replied, send a single follow-up with a new fact or a gentle reminder. If they reply before then, move the file to the next stage based on their response.\",\n    \"for_whom\": \"Cobalt Peak\",\n    \"by_when\": \"2026-08-18\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If you believe Cobalt Peak is not a qualified fit or not a priority, close the file now and reallocate attention to the five named investors in the brief (Banyan Seed Fund, Northfield Ventures, Harbor Point Partners, Tusker Capital, Fjord Venture Partners) and the one engaged investor (Lumen Ventures). This is reversible if Cobalt Peak becomes a priority later.\",\n  \"wait_or_stop\": \"Wait until 2026-08-18 (seven business days). If Cobalt Peak has not replied by then, send a single follow-up. If they reply with a pass, record the reason and close the file unless the reason is stage, timing, or traction (which carry an implicit date). If they reply with interest, schedule a meeting and move the file to the next stage. If they do not reply to the follow-up, close the file after 2026-08-25 (fourteen days from send).\",\n  \"done_when\": \"A meeting is scheduled with Cobalt Peak, or the file is closed as a soft no after fourteen days of silence.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "e4c15a03daf77e2243319dc155f536c0e3278a157c908cbf08e4867bcd0e6ea9": {
+  "framed": true,
+  "input_tokens": 8241,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4062,
+  "parsed": {
+   "alternative": "Close the file now if Meridian Seed is not a fit for the round (stage, cheque size, thesis), or if the investor was added to the wave without a clear reason. This would free attention for investors who are a better fit or who have already replied. The founder should confirm Meridian Seed's fit against the brief before deciding to close.",
+   "appraisal": {
+    "reasons": [
+     "The file is a single cold pitch to an investor not named in the brief, with no prior relationship or warm introduction.",
+     "The silence is less than one day old, which is within the normal window for investor triage.",
+     "The founder has five other investors in the wave and one engaged investor (Lumen Ventures), so this single file is not critical to the round.",
+     "A follow-up or a decision to close the file can be made at any time without cost; the move is reversible.",
+     "The file has no assigned kind of work and no playbook, so the founder should clarify the investor's fit before deciding on follow-up."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Meridian Seed replies with interest in a meeting (move to meeting_request stage), or replies with a clear pass and a reason (record the reason and the date to reopen if applicable), or the founder confirms that Meridian Seed is not a fit and closes the file.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "A cold pitch was sent to Meridian Seed on 2026-08-11 at 04:00 UTC asking for a twenty-minute meeting in the next two weeks. No reply has been received as of 2026-08-11 18:00 UTC, a gap of 0.58 days. The wave containing this pitch was sent to five investors with zero replies and zero bounces.",
+    "expected": "The brief names five investors written to in the seed wave and one investor engaged; Meridian Seed is not named. If this file is part of the seed round fundraising, the expected stage would be introduction or meeting_request. The expected outcome at this stage is either a reply agreeing to a meeting, a reply declining, or silence followed by a follow-up after five business days.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Arjun Rao wrote to Meridian Seed on 2026-08-11 at 04:00 UTC with a seed round pitch and deck attachment, asking for a twenty-minute meeting in the next two weeks.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?"
+    },
+    {
+     "claim": "Meridian Seed has not replied as of 2026-08-11 18:00 UTC, when the mailbox read completed.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.58 days since the outbound pitch.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Meridian Seed is not named in the brief as a target investor, and this file has no kind of work assigned to it.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first touch with Meridian Seed; no prior relationship history exists.",
+     "evidence": [
+      "file:first_touch",
+      "hist:derived.history.prior_card_verdict@fundraising",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The wave containing this pitch was sent to five investors, with zero replies and zero bounces as of the last measurement.",
+     "evidence": [
+      "wave:wave_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows an open ask: a question, waiting on them, open since 2026-08-11 04:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A cold pitch to an investor with no prior relationship, sent as part of a wave to five investors, awaiting a reply after less than one day of silence. The file has no assigned kind of work and no playbook, and the investor is not named in the brief.",
+    "rivals": [
+     "A pitch to an investor who is actively reviewing and will reply within the normal window, with silence being the default before a first meeting.",
+     "A pitch to an investor who is not a fit for this round and will not reply, with silence being a soft no.",
+     "A pitch sent to a generic address that was not routed to a decision-maker and will not receive a reply."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from Meridian Seed, or a pattern of replies from other investors in the wave, would settle this.",
+     "proposition": "Meridian Seed is actively reviewing the pitch and will reply within the next three to five business days."
+    },
+    {
+     "needs": "Confirmation that Meridian Seed's stage, cheque size, or thesis does not match Nimbus Labs' profile would settle this.",
+     "proposition": "Meridian Seed is not a fit for this round and will not reply."
+    },
+    {
+     "needs": "Confirmation of the recipient address and whether it was a partner, associate, or generic inbox would settle this.",
+     "proposition": "The pitch was sent to a generic address and was not routed to a partner; it will not receive a reply."
+    },
+    {
+     "needs": "Feedback from at least one investor in the wave, or a comparison to the founder's prior waves, would settle this.",
+     "proposition": "The wave's zero-reply rate is a signal that the pitch, timing, or investor fit needs revision before further outreach."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "file:whose_move",
+      "fact:1"
+     ],
+     "claim": "The next move is theirs: Meridian Seed must reply to the pitch or decline to engage."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "num:days_quiet"
+     ],
+     "claim": "The silence is still within the normal window for a cold or lightly-introduced investor outreach; no pattern of non-response has formed."
+    },
+    {
+     "based_on": [
+      "wave:wave_#1",
+      "cap:founder_office.pb.investor_relations.the_wave_gone_silent"
+     ],
+     "claim": "The wave's zero-reply rate across five investors suggests either a problem with the ask itself, the timing, the investor fit, or the distribution method \u2014 not yet a signal of individual investor disinterest."
+    },
+    {
+     "based_on": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "claim": "Without a playbook for this file, the stage cannot be named from the brief's investor_relations playbook; the stage is unknown."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-18",
+    "for_whom": "Meridian Seed",
+    "guided_by": [
+     "cap:founder_office.heu.investor_relations.silence_reads_by_stage",
+     "cap:founder_office.pb.investor_relations.the_wave_gone_silent",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "wait for a reply from Meridian Seed, and after five business days of silence, decide whether to follow up, close the file, or wait longer based on the investor's fit and the wave's overall reply rate",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A single outbound pitch to an investor with no prior relationship or warm introduction should not be judged on the first day of silence; the founder should wait at least five business days before deciding whether to follow up or move on.",
+     "kind": "practice",
+     "why": "Investors receive hundreds of pitches and triage them in batches; a single day of silence is not a signal."
+    },
+    {
+     "claim": "A wave of five cold pitches with zero replies after one day is too early to diagnose; the founder should check whether the investors fit the stage and thesis, and whether the pitch was sent to partners or to generic addresses.",
+     "kind": "base_rate",
+     "why": "Generic addresses and poor fit are the most common reasons for silence, not investor disinterest."
+    },
+    {
+     "claim": "When a file has no kind of work assigned and no playbook, the founder should clarify whether this investor is a target for this round, and if so, assign the file a kind and a playbook before deciding on follow-up.",
+     "kind": "practice",
+     "why": "Without a frame, the founder cannot distinguish between a conversation that is on track and one that is stalled."
+    },
+    {
+     "claim": "A founder should not follow up on a cold pitch within the first week unless the investor has a known pattern of fast replies or a deadline has been set.",
+     "kind": "counter_pattern",
+     "why": "Early follow-up on a cold pitch reads as pressure and can damage the relationship before it starts."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "cap:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "A cold pitch to an investor with no prior relationship typically receives a reply within three to five business days if the investor is actively reviewing, or no reply at all if they are not.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "wave:wave_#1",
+      "cap:founder_office.pb.investor_relations.the_wave_gone_silent"
+     ],
+     "claim": "A wave sent to multiple investors with zero replies across all recipients within a day suggests the ask, timing, or investor fit may need review before follow-up.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Silence before a first meeting is the default and does not signal rejection; it is only after a first call with no next step named that silence usually reads as a soft no.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "brief:cbl_#2",
+     "evt_#1"
+    ],
+    "kind": "investor",
+    "why": "The file documents an outbound pitch to a seed-stage investor as part of the founder's seed round fundraising, which is named in the brief as a goal. The counterparty is a fund, the domain is fundraising, and the work is investor outreach."
+   },
+   "scenarios": {
+    "act": "The founder could follow up with Meridian Seed after five business days if there is no reply, or could close the file now if Meridian Seed is not a fit. A follow-up would clarify whether the pitch was received and whether Meridian Seed is interested. Closing the file would free attention for investors who are a better fit or who have already replied.",
+    "best": "Meridian Seed replies within three business days with interest in a meeting, the founder schedules a call, and the conversation moves to the next stage. Alternatively, Meridian Seed replies with a clear pass and a reason (stage, timing, thesis, team), which the founder can use to refine the pitch or to reopen the conversation later if the reason changes.",
+    "do_nothing": "The file remains open with Meridian Seed's move pending. After five business days of silence, the founder will need to decide whether to follow up, close the file, or wait longer. If the founder does not follow up and Meridian Seed does not reply, the file will drift into dormancy without a clear outcome. The founder's attention will be divided between this file and the other investors in the wave, and the lack of a decision will create ambiguity about whether Meridian Seed is still a prospect.",
+    "signals_to_watch": [
+     "A reply from Meridian Seed within three to five business days would signal that the pitch was received and the investor is reviewing.",
+     "A reply from at least one other investor in the wave would signal that the pitch and timing are sound, and Meridian Seed's silence is not a wave-level problem.",
+     "No reply from any investor in the wave after five business days would signal that the pitch, timing, or investor fit needs revision.",
+     "A pattern of replies from investors named in the brief (Banyan Seed, Northfield Ventures, Harbor Point, Tusker Capital, Fjord Venture Partners) would show whether the founder's outreach is working and whether Meridian Seed is an outlier."
+    ],
+    "worst": "Meridian Seed never replies, and the founder wastes attention following up on a cold pitch to an investor who is not a fit or who is not actively reviewing. The founder's time is diverted from investors who have already replied or who are a better fit, and the round's momentum is slowed by conversations that are not moving."
+   },
+   "unknowns": [
+    {
+     "question": "Is Meridian Seed a target investor for this round, and does it fit the stage, cheque size, and thesis?",
+     "relevance": "If Meridian Seed is not a fit, the file should be closed or deprioritized; if it is a fit, the founder should decide whether to follow up or wait."
+    },
+    {
+     "question": "Was the pitch sent to a partner, an associate, or a generic address at Meridian Seed?",
+     "relevance": "A pitch to a generic address is unlikely to reach a decision-maker and should not be followed up; a pitch to a partner or associate should be followed up after five business days if there is no reply."
+    },
+    {
+     "question": "What is the founder's prior experience with Meridian Seed, and has anyone at the company been introduced to them before?",
+     "relevance": "A warm introduction or prior relationship would change the expected timeline and the follow-up strategy."
+    },
+    {
+     "question": "What is the reply rate and timeline for the other four investors in the wave?",
+     "relevance": "If the other investors are also silent, the wave itself may need revision; if some have replied, Meridian Seed's silence is less significant."
+    },
+    {
+     "question": "Does the brief name Meridian Seed as a target, and if not, why was it included in this wave?",
+     "relevance": "If Meridian Seed was added to the wave without a clear reason, the file should be reviewed for fit before any follow-up."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-18 (five business days from the pitch) for a reply from Meridian Seed. If there is no reply by then, check the wave's overall reply rate: if other investors have replied, follow up with Meridian Seed; if the entire wave is silent, revise the pitch or investor fit before following up. Stop waiting if Meridian Seed replies with a clear pass on thesis or team (which do not reopen), or if the founder confirms that Meridian Seed is not a fit for this round."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Arjun Rao wrote to Meridian Seed on 2026-08-11 at 04:00 UTC with a seed round pitch and deck attachment, asking for a twenty-minute meeting in the next two weeks.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Nimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?\"\n    },\n    {\n      \"claim\": \"Meridian Seed has not replied as of 2026-08-11 18:00 UTC, when the mailbox read completed.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.58 days since the outbound pitch.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Meridian Seed is not named in the brief as a target investor, and this file has no kind of work assigned to it.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first touch with Meridian Seed; no prior relationship history exists.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"hist:derived.history.prior_card_verdict@fundraising\",\n        \"hist:derived.history.times_seen@fundraising\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The wave containing this pitch was sent to five investors, with zero replies and zero bounces as of the last measurement.\",\n      \"evidence\": [\n        \"wave:wave_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows an open ask: a question, waiting on them, open since 2026-08-11 04:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The next move is theirs: Meridian Seed must reply to the pitch or decline to engage.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The silence is still within the normal window for a cold or lightly-introduced investor outreach; no pattern of non-response has formed.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"num:days_quiet\"\n      ]\n    },\n    {\n      \"claim\": \"The wave's zero-reply rate across five investors suggests either a problem with the ask itself, the timing, the investor fit, or the distribution method \u2014 not yet a signal of individual investor disinterest.\",\n      \"based_on\": [\n        \"wave:wave_#1\",\n        \"cap:founder_office.pb.investor_relations.the_wave_gone_silent\"\n      ]\n    },\n    {\n      \"claim\": \"Without a playbook for this file, the stage cannot be named from the brief's investor_relations playbook; the stage is unknown.\",\n      \"based_on\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A cold pitch to an investor with no prior relationship typically receives a reply within three to five business days if the investor is actively reviewing, or no reply at all if they are not.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"cap:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A wave sent to multiple investors with zero replies across all recipients within a day suggests the ask, timing, or investor fit may need review before follow-up.\",\n      \"based_on\": [\n        \"wave:wave_#1\",\n        \"cap:founder_office.pb.investor_relations.the_wave_gone_silent\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence before a first meeting is the default and does not signal rejection; it is only after a first call with no next step named that silence usually reads as a soft no.\",\n      \"based_on\": [\n        \"cap:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A single outbound pitch to an investor with no prior relationship or warm introduction should not be judged on the first day of silence; the founder should wait at least five business days before deciding whether to follow up or move on.\",\n      \"why\": \"Investors receive hundreds of pitches and triage them in batches; a single day of silence is not a signal.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A wave of five cold pitches with zero replies after one day is too early to diagnose; the founder should check whether the investors fit the stage and thesis, and whether the pitch was sent to partners or to generic addresses.\",\n      \"why\": \"Generic addresses and poor fit are the most common reasons for silence, not investor disinterest.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a file has no kind of work assigned and no playbook, the founder should clarify whether this investor is a target for this round, and if so, assign the file a kind and a playbook before deciding on follow-up.\",\n      \"why\": \"Without a frame, the founder cannot distinguish between a conversation that is on track and one that is stalled.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder should not follow up on a cold pitch within the first week unless the investor has a known pattern of fast replies or a deadline has been set.\",\n      \"why\": \"Early follow-up on a cold pitch reads as pressure and can damage the relationship before it starts.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Meridian Seed is actively reviewing the pitch and will reply within the next three to five business days.\",\n      \"needs\": \"A reply from Meridian Seed, or a pattern of replies from other investors in the wave, would settle this.\"\n    },\n    {\n      \"proposition\": \"Meridian Seed is not a fit for this round and will not reply.\",\n      \"needs\": \"Confirmation that Meridian Seed's stage, cheque size, or thesis does not match Nimbus Labs' profile would settle this.\"\n    },\n    {\n      \"proposition\": \"The pitch was sent to a generic address and was not routed to a partner; it will not receive a reply.\",\n      \"needs\": \"Confirmation of the recipient address and whether it was a partner, associate, or generic inbox would settle this.\"\n    },\n    {\n      \"proposition\": \"The wave's zero-reply rate is a signal that the pitch, timing, or investor fit needs revision before further outreach.\",\n      \"needs\": \"Feedback from at least one investor in the wave, or a comparison to the founder's prior waves, would settle this.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Meridian Seed a target investor for this round, and does it fit the stage, cheque size, and thesis?\",\n      \"relevance\": \"If Meridian Seed is not a fit, the file should be closed or deprioritized; if it is a fit, the founder should decide whether to follow up or wait.\"\n    },\n    {\n      \"question\": \"Was the pitch sent to a partner, an associate, or a generic address at Meridian Seed?\",\n      \"relevance\": \"A pitch to a generic address is unlikely to reach a decision-maker and should not be followed up; a pitch to a partner or associate should be followed up after five business days if there is no reply.\"\n    },\n    {\n      \"question\": \"What is the founder's prior experience with Meridian Seed, and has anyone at the company been introduced to them before?\",\n      \"relevance\": \"A warm introduction or prior relationship would change the expected timeline and the follow-up strategy.\"\n    },\n    {\n      \"question\": \"What is the reply rate and timeline for the other four investors in the wave?\",\n      \"relevance\": \"If the other investors are also silent, the wave itself may need revision; if some have replied, Meridian Seed's silence is less significant.\"\n    },\n    {\n      \"question\": \"Does the brief name Meridian Seed as a target, and if not, why was it included in this wave?\",\n      \"relevance\": \"If Meridian Seed was added to the wave without a clear reason, the file should be reviewed for fit before any follow-up.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A cold pitch to an investor with no prior relationship, sent as part of a wave to five investors, awaiting a reply after less than one day of silence. The file has no assigned kind of work and no playbook, and the investor is not named in the brief.\",\n    \"rivals\": [\n      \"A pitch to an investor who is actively reviewing and will reply within the normal window, with silence being the default before a first meeting.\",\n      \"A pitch to an investor who is not a fit for this round and will not reply, with silence being a soft no.\",\n      \"A pitch sent to a generic address that was not routed to a decision-maker and will not receive a reply.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file documents an outbound pitch to a seed-stage investor as part of the founder's seed round fundraising, which is named in the brief as a goal. The counterparty is a fund, the domain is fundraising, and the work is investor outreach.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"brief:cbl_#2\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names five investors written to in the seed wave and one investor engaged; Meridian Seed is not named. If this file is part of the seed round fundraising, the expected stage would be introduction or meeting_request. The expected outcome at this stage is either a reply agreeing to a meeting, a reply declining, or silence followed by a follow-up after five business days.\",\n    \"actual\": \"A cold pitch was sent to Meridian Seed on 2026-08-11 at 04:00 UTC asking for a twenty-minute meeting in the next two weeks. No reply has been received as of 2026-08-11 18:00 UTC, a gap of 0.58 days. The wave containing this pitch was sent to five investors with zero replies and zero bounces.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open with Meridian Seed's move pending. After five business days of silence, the founder will need to decide whether to follow up, close the file, or wait longer. If the founder does not follow up and Meridian Seed does not reply, the file will drift into dormancy without a clear outcome. The founder's attention will be divided between this file and the other investors in the wave, and the lack of a decision will create ambiguity about whether Meridian Seed is still a prospect.\",\n    \"act\": \"The founder could follow up with Meridian Seed after five business days if there is no reply, or could close the file now if Meridian Seed is not a fit. A follow-up would clarify whether the pitch was received and whether Meridian Seed is interested. Closing the file would free attention for investors who are a better fit or who have already replied.\",\n    \"best\": \"Meridian Seed replies within three business days with interest in a meeting, the founder schedules a call, and the conversation moves to the next stage. Alternatively, Meridian Seed replies with a clear pass and a reason (stage, timing, thesis, team), which the founder can use to refine the pitch or to reopen the conversation later if the reason changes.\",\n    \"worst\": \"Meridian Seed never replies, and the founder wastes attention following up on a cold pitch to an investor who is not a fit or who is not actively reviewing. The founder's time is diverted from investors who have already replied or who are a better fit, and the round's momentum is slowed by conversations that are not moving.\",\n    \"signals_to_watch\": [\n      \"A reply from Meridian Seed within three to five business days would signal that the pitch was received and the investor is reviewing.\",\n      \"A reply from at least one other investor in the wave would signal that the pitch and timing are sound, and Meridian Seed's silence is not a wave-level problem.\",\n      \"No reply from any investor in the wave after five business days would signal that the pitch, timing, or investor fit needs revision.\",\n      \"A pattern of replies from investors named in the brief (Banyan Seed, Northfield Ventures, Harbor Point, Tusker Capital, Fjord Venture Partners) would show whether the founder's outreach is working and whether Meridian Seed is an outlier.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file is a single cold pitch to an investor not named in the brief, with no prior relationship or warm introduction.\",\n      \"The silence is less than one day old, which is within the normal window for investor triage.\",\n      \"The founder has five other investors in the wave and one engaged investor (Lumen Ventures), so this single file is not critical to the round.\",\n      \"A follow-up or a decision to close the file can be made at any time without cost; the move is reversible.\",\n      \"The file has no assigned kind of work and no playbook, so the founder should clarify the investor's fit before deciding on follow-up.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for a reply from Meridian Seed, and after five business days of silence, decide whether to follow up, close the file, or wait longer based on the investor's fit and the wave's overall reply rate\",\n    \"for_whom\": \"Meridian Seed\",\n    \"by_when\": \"2026-08-18\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:founder_office.heu.investor_relations.silence_reads_by_stage\",\n      \"cap:founder_office.pb.investor_relations.the_wave_gone_silent\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"Close the file now if Meridian Seed is not a fit for the round (stage, cheque size, thesis), or if the investor was added to the wave without a clear reason. This would free attention for investors who are a better fit or who have already replied. The founder should confirm Meridian Seed's fit against the brief before deciding to close.\",\n  \"wait_or_stop\": \"Wait until 2026-08-18 (five business days from the pitch) for a reply from Meridian Seed. If there is no reply by then, check the wave's overall reply rate: if other investors have replied, follow up with Meridian Seed; if the entire wave is silent, revise the pitch or investor fit before following up. Stop waiting if Meridian Seed replies with a clear pass on thesis or team (which do not reopen), or if the founder confirms that Meridian Seed is not a fit for this round.\",\n  \"done_when\": \"Meridian Seed replies with interest in a meeting (move to meeting_request stage), or replies with a clear pass and a reason (record the reason and the date to reopen if applicable), or the founder confirms that Meridian Seed is not a fit and closes the file.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

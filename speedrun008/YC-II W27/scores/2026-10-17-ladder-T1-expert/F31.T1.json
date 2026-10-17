@@ -1,0 +1,664 @@
+{
+ "04f1bd48a798cc05ddfacebccb91281e444499489d1c248c4f99f782808c6a19": {
+  "framed": true,
+  "input_tokens": 14588,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3318,
+  "parsed": {
+   "alternative": "If the founder is at capacity and cannot complete the assignment by 2026-09-17, send a brief note to Divya Raman at Lakshya asking whether a late submission is acceptable or whether the deadline can be extended. This is a lower-confidence move because programmes typically do not extend cohort deadlines, but it clarifies the programme's rule before the deadline passes.",
+   "appraisal": {
+    "reasons": [
+     "The deadline is fixed and will not move; missing it is a compliance failure in an active programme.",
+     "The assignment is one of many in the cohort; missing one does not end the relationship, but it signals disengagement.",
+     "The work is completable in a few hours if the pricing page exists; the barrier is prioritization, not difficulty.",
+     "The founder is managing multiple competing priorities (raising, hiring, compliance); the assignment may be crowded out.",
+     "A missed deadline can be recovered by re-engaging with Lakshya and completing the work late, but it costs credibility."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The assignment is submitted to Lakshya before 2026-09-17 at 11:59 pm IST, and the submission is recorded in the file with a confirmation from Lakshya or a screenshot of the portal showing the submission.",
+   "expected_vs_actual": {
+    "actual": "An assignment was issued on 2026-09-09 with a deadline of 2026-09-17 at 11:59 pm IST. The file shows no record of progress, submission, or completion. The file has been quiet for 0.5 days. No draft, no submission, no confirmation of work in progress is recorded.",
+    "expected": "The programme issues assignments with fixed deadlines. The founder completes and submits each assignment by its deadline. The programme's calendar is the file's calendar. Quiet means nothing about the application, which is settled; what the file holds now is the programme's own deadlines \u2014 assignments, reviews, demo day \u2014 published to the cohort and fixed for all of it.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Lakshya Accelerator sent an assignment due 17 September at 11:59 pm IST, a pricing page teardown.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST."
+    },
+    {
+     "claim": "The file shows Nimbus Labs is in the active cohort at Lakshya Accelerator.",
+     "evidence": [
+      "brief:cbl_#13"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days since the assignment was sent.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in the mail from Lakshya Accelerator.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is listed as 'program' in the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows an open ask: a question they wait on us for, open since 2026-09-09 06:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A programme assignment is due in eight days. The founder is in an active cohort and owes this deliverable to the programme. The file shows no progress on it. The next move is to complete and submit it by the deadline.",
+    "rivals": [
+     "The assignment is a low-priority exercise and can be deferred if more urgent work (fundraising, hiring) demands the founder's time.",
+     "The assignment is blocked by a missing prerequisite (a pricing page) and cannot be completed until that is resolved.",
+     "The open ask loop refers to this assignment, and the loop is actually a question from Lakshya that the founder has not yet answered."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A check of the founder's drafts, email drafts, or the Lakshya portal to see if a submission is in progress.",
+     "proposition": "The pricing page teardown has already been drafted or completed but not yet submitted."
+    },
+    {
+     "needs": "Confirmation from the founder on whether the pricing page is live and what the current pricing model is.",
+     "proposition": "The assignment is blocked because the pricing page does not yet exist or is not finalized."
+    },
+    {
+     "needs": "Clarification of what loop_#1 actually refers to in the programme's communications.",
+     "proposition": "The open ask loop refers to this assignment, and the loop is waiting on the founder to submit it."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.program_applications.in_programme"
+     ],
+     "claim": "The assignment is a deliverable owed to the programme, not a question from them."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "inference:1"
+     ],
+     "claim": "The next move is ours: the assignment must be completed and submitted by the deadline."
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "fact:1"
+     ],
+     "claim": "The file's open ask loop does not match the assignment deadline; the loop may be stale or mislabeled."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-10",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.in_programme",
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Confirm with the founder whether the pricing page exists and is live. If it does, schedule time to complete the teardown and submit it before 2026-09-17 at 11:59 pm IST. If it does not, clarify with Lakshya whether a draft or hypothetical teardown is acceptable, or defer the assignment until the page is ready. Record the submission in the file once it is sent.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An assignment from an accelerator programme is a compliance item, not optional feedback; missing it signals disengagement to the programme.",
+     "kind": "practice",
+     "why": "Programmes use assignments to assess founder commitment and progress; a missed deadline is read as a signal about the founder's seriousness."
+    },
+    {
+     "claim": "Pricing page teardowns are typically completed in a few hours if the pricing page exists and the founder has thought through the logic.",
+     "kind": "base_rate",
+     "why": "The work is analytical, not creative; it requires clarity on the company's own pricing, not external research."
+    },
+    {
+     "claim": "A founder who is raising, hiring, and managing compliance applications simultaneously often deprioritizes programme assignments.",
+     "kind": "counter_pattern",
+     "why": "Investor conversations and hiring moves feel more urgent because they have direct revenue or team impact; programme work feels like overhead."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.in_programme",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "Programmes in the in_programme stage issue assignments with fixed deadlines that do not move.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.in_programme"
+     ],
+     "claim": "A missed assignment deadline in an accelerator cohort can affect standing or graduation eligibility.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "brief:cbl_#2",
+      "brief:cbl_#5"
+     ],
+     "claim": "Founders in active cohorts typically have multiple concurrent assignments and competing priorities.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#13",
+     "pb:founder_office.pb.program_applications.in_programme"
+    ],
+    "kind": "program",
+    "why": "The file is already correctly classified as a programme application. Lakshya Accelerator is an accelerator programme, and the assignment is part of the in_programme stage. The work is to complete and submit a programme deliverable by its deadline."
+   },
+   "scenarios": {
+    "act": "The founder completes the pricing page teardown and submits it before 2026-09-17 at 11:59 pm IST. The assignment is recorded as submitted. The programme receives the work on time. The founder remains in good standing with the cohort. The file records the submission and moves forward with the next assignment or milestone.",
+    "best": "The founder completes the teardown in the next two days, submits it early, and receives positive feedback from Lakshya. The assignment demonstrates thoughtful analysis of the pricing model and signals engagement to the programme. The founder's standing in the cohort is strengthened.",
+    "do_nothing": "The assignment remains unsubmitted. On 2026-09-17 at 11:59 pm IST, the deadline passes. The founder either submits late (if the programme accepts late submissions) or misses it entirely. A missed assignment in an active cohort signals disengagement to the programme and may affect the founder's standing, graduation eligibility, or the programme's perception of the company's seriousness. The file closes with a missed deadline.",
+    "signals_to_watch": [
+     "Whether the founder has a pricing page live or in draft.",
+     "Whether the founder acknowledges the deadline and commits to completing it.",
+     "Whether the assignment is submitted before 2026-09-17 at 11:59 pm IST.",
+     "Whether Lakshya sends a reminder or follow-up before the deadline.",
+     "Whether the founder's other priorities (fundraising, hiring) are consuming all available time."
+    ],
+    "worst": "The founder forgets the deadline or deprioritizes it due to fundraising or hiring work. The assignment is missed. Lakshya notes the miss. The founder's engagement score in the cohort drops. If multiple assignments are missed, the programme may question the founder's commitment or readiness. The relationship with Lakshya is damaged."
+   },
+   "unknowns": [
+    {
+     "question": "Does the pricing page exist and is it live?",
+     "relevance": "If the page does not exist, the assignment cannot be completed as written; the founder would need to clarify with Lakshya whether a draft or a hypothetical teardown is acceptable."
+    },
+    {
+     "question": "What does the open ask loop refer to, and who is waiting on whom?",
+     "relevance": "The loop is marked as 'they wait on us' but the assignment is a deliverable we owe them; clarifying the loop's actual content would confirm whether this is the right move."
+    },
+    {
+     "question": "Has the founder already started or completed the assignment?",
+     "relevance": "If it is already done, the move is to submit it; if not started, the move is to prioritize it against other work."
+    },
+    {
+     "question": "What is the founder's current capacity to complete this by 17 September?",
+     "relevance": "The founder is raising, hiring, and managing multiple programme applications; the assignment may need to be scheduled explicitly or delegated."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-10 to confirm the founder's capacity and the status of the pricing page. If the founder confirms the page exists and commits to completing the work, wait until 2026-09-17 to confirm submission. If the founder indicates the page does not exist or cannot be completed by the deadline, escalate to Lakshya immediately (by 2026-09-11) to clarify expectations. Do not wait past 2026-09-15; if the assignment is not submitted by then, the deadline will pass."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Lakshya Accelerator sent an assignment due 17 September at 11:59 pm IST, a pricing page teardown.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\"\n    },\n    {\n      \"claim\": \"The file shows Nimbus Labs is in the active cohort at Lakshya Accelerator.\",\n      \"evidence\": [\n        \"brief:cbl_#13\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days since the assignment was sent.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in the mail from Lakshya Accelerator.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is listed as 'program' in the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows an open ask: a question they wait on us for, open since 2026-09-09 06:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The assignment is a deliverable owed to the programme, not a question from them.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.program_applications.in_programme\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: the assignment must be completed and submitted by the deadline.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"The file's open ask loop does not match the assignment deadline; the loop may be stale or mislabeled.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Programmes in the in_programme stage issue assignments with fixed deadlines that do not move.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.in_programme\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A missed assignment deadline in an accelerator cohort can affect standing or graduation eligibility.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.in_programme\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founders in active cohorts typically have multiple concurrent assignments and competing priorities.\",\n      \"based_on\": [\n        \"brief:cbl_#2\",\n        \"brief:cbl_#5\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An assignment from an accelerator programme is a compliance item, not optional feedback; missing it signals disengagement to the programme.\",\n      \"why\": \"Programmes use assignments to assess founder commitment and progress; a missed deadline is read as a signal about the founder's seriousness.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Pricing page teardowns are typically completed in a few hours if the pricing page exists and the founder has thought through the logic.\",\n      \"why\": \"The work is analytical, not creative; it requires clarity on the company's own pricing, not external research.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who is raising, hiring, and managing compliance applications simultaneously often deprioritizes programme assignments.\",\n      \"why\": \"Investor conversations and hiring moves feel more urgent because they have direct revenue or team impact; programme work feels like overhead.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The pricing page teardown has already been drafted or completed but not yet submitted.\",\n      \"needs\": \"A check of the founder's drafts, email drafts, or the Lakshya portal to see if a submission is in progress.\"\n    },\n    {\n      \"proposition\": \"The assignment is blocked because the pricing page does not yet exist or is not finalized.\",\n      \"needs\": \"Confirmation from the founder on whether the pricing page is live and what the current pricing model is.\"\n    },\n    {\n      \"proposition\": \"The open ask loop refers to this assignment, and the loop is waiting on the founder to submit it.\",\n      \"needs\": \"Clarification of what loop_#1 actually refers to in the programme's communications.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the pricing page exist and is it live?\",\n      \"relevance\": \"If the page does not exist, the assignment cannot be completed as written; the founder would need to clarify with Lakshya whether a draft or a hypothetical teardown is acceptable.\"\n    },\n    {\n      \"question\": \"What does the open ask loop refer to, and who is waiting on whom?\",\n      \"relevance\": \"The loop is marked as 'they wait on us' but the assignment is a deliverable we owe them; clarifying the loop's actual content would confirm whether this is the right move.\"\n    },\n    {\n      \"question\": \"Has the founder already started or completed the assignment?\",\n      \"relevance\": \"If it is already done, the move is to submit it; if not started, the move is to prioritize it against other work.\"\n    },\n    {\n      \"question\": \"What is the founder's current capacity to complete this by 17 September?\",\n      \"relevance\": \"The founder is raising, hiring, and managing multiple programme applications; the assignment may need to be scheduled explicitly or delegated.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A programme assignment is due in eight days. The founder is in an active cohort and owes this deliverable to the programme. The file shows no progress on it. The next move is to complete and submit it by the deadline.\",\n    \"rivals\": [\n      \"The assignment is a low-priority exercise and can be deferred if more urgent work (fundraising, hiring) demands the founder's time.\",\n      \"The assignment is blocked by a missing prerequisite (a pricing page) and cannot be completed until that is resolved.\",\n      \"The open ask loop refers to this assignment, and the loop is actually a question from Lakshya that the founder has not yet answered.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is already correctly classified as a programme application. Lakshya Accelerator is an accelerator programme, and the assignment is part of the in_programme stage. The work is to complete and submit a programme deliverable by its deadline.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#13\",\n      \"pb:founder_office.pb.program_applications.in_programme\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The programme issues assignments with fixed deadlines. The founder completes and submits each assignment by its deadline. The programme's calendar is the file's calendar. Quiet means nothing about the application, which is settled; what the file holds now is the programme's own deadlines \u2014 assignments, reviews, demo day \u2014 published to the cohort and fixed for all of it.\",\n    \"actual\": \"An assignment was issued on 2026-09-09 with a deadline of 2026-09-17 at 11:59 pm IST. The file shows no record of progress, submission, or completion. The file has been quiet for 0.5 days. No draft, no submission, no confirmation of work in progress is recorded.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The assignment remains unsubmitted. On 2026-09-17 at 11:59 pm IST, the deadline passes. The founder either submits late (if the programme accepts late submissions) or misses it entirely. A missed assignment in an active cohort signals disengagement to the programme and may affect the founder's standing, graduation eligibility, or the programme's perception of the company's seriousness. The file closes with a missed deadline.\",\n    \"act\": \"The founder completes the pricing page teardown and submits it before 2026-09-17 at 11:59 pm IST. The assignment is recorded as submitted. The programme receives the work on time. The founder remains in good standing with the cohort. The file records the submission and moves forward with the next assignment or milestone.\",\n    \"best\": \"The founder completes the teardown in the next two days, submits it early, and receives positive feedback from Lakshya. The assignment demonstrates thoughtful analysis of the pricing model and signals engagement to the programme. The founder's standing in the cohort is strengthened.\",\n    \"worst\": \"The founder forgets the deadline or deprioritizes it due to fundraising or hiring work. The assignment is missed. Lakshya notes the miss. The founder's engagement score in the cohort drops. If multiple assignments are missed, the programme may question the founder's commitment or readiness. The relationship with Lakshya is damaged.\",\n    \"signals_to_watch\": [\n      \"Whether the founder has a pricing page live or in draft.\",\n      \"Whether the founder acknowledges the deadline and commits to completing it.\",\n      \"Whether the assignment is submitted before 2026-09-17 at 11:59 pm IST.\",\n      \"Whether Lakshya sends a reminder or follow-up before the deadline.\",\n      \"Whether the founder's other priorities (fundraising, hiring) are consuming all available time.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The deadline is fixed and will not move; missing it is a compliance failure in an active programme.\",\n      \"The assignment is one of many in the cohort; missing one does not end the relationship, but it signals disengagement.\",\n      \"The work is completable in a few hours if the pricing page exists; the barrier is prioritization, not difficulty.\",\n      \"The founder is managing multiple competing priorities (raising, hiring, compliance); the assignment may be crowded out.\",\n      \"A missed deadline can be recovered by re-engaging with Lakshya and completing the work late, but it costs credibility.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Confirm with the founder whether the pricing page exists and is live. If it does, schedule time to complete the teardown and submit it before 2026-09-17 at 11:59 pm IST. If it does not, clarify with Lakshya whether a draft or hypothetical teardown is acceptable, or defer the assignment until the page is ready. Record the submission in the file once it is sent.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-10\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.in_programme\",\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder is at capacity and cannot complete the assignment by 2026-09-17, send a brief note to Divya Raman at Lakshya asking whether a late submission is acceptable or whether the deadline can be extended. This is a lower-confidence move because programmes typically do not extend cohort deadlines, but it clarifies the programme's rule before the deadline passes.\",\n  \"wait_or_stop\": \"Wait until 2026-09-10 to confirm the founder's capacity and the status of the pricing page. If the founder confirms the page exists and commits to completing the work, wait until 2026-09-17 to confirm submission. If the founder indicates the page does not exist or cannot be completed by the deadline, escalate to Lakshya immediately (by 2026-09-11) to clarify expectations. Do not wait past 2026-09-15; if the assignment is not submitted by then, the deadline will pass.\",\n    \"done_when\": \"The assignment is submitted to Lakshya before 2026-09-17 at 11:59 pm IST, and the submission is recorded in the file with a confirmation from Lakshya or a screenshot of the portal showing the submission.\"\n  },\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "d2fbb0948d14ca7bd8ed73386aa033f74800386fb22e54c63dea7ff6ae646c21": {
+  "framed": true,
+  "input_tokens": 14746,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2768,
+  "parsed": {
+   "alternative": "If the assignment is unclear or the founder needs clarification, send a short question to Divya Raman asking what Lakshya expects in the teardown \u2014 but do this immediately, not after 17 Sep, so there is time to revise before the deadline.",
+   "appraisal": {
+    "reasons": [
+     "The deadline is fixed and published by the programme; it will not move for this founder",
+     "Missing an accelerator assignment can affect the founder's standing in the cohort and eligibility for later benefits",
+     "The assignment is due in 8 days; there is time to complete it, but not much",
+     "The file is in in_programme, where the programme's calendar is the only calendar that matters"
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The assignment is submitted to Lakshya before 17 Sep, 11:59 pm IST, and a submission confirmation is on the file.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "Lakshya sent an assignment due on 17 Sep, 11:59 pm IST. The founder has not yet replied or submitted. The file has been quiet for 0.5 days.",
+    "expected": "The programme publishes assignments and deadlines to the cohort. The founder's move is to complete and submit each assignment by its deadline. The programme's quiet between assignments means nothing \u2014 the calendar is fixed and published.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Lakshya Accelerator sent an assignment due on 17 Sep, 11:59 pm IST",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST"
+    },
+    {
+     "claim": "The file shows the founder is in the active cohort at Lakshya Accelerator",
+     "evidence": [
+      "brief:cbl_#13"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The assignment is from Divya Raman, Programme Lead at Lakshya Accelerator",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Divya Raman Programme Lead, Lakshya Accelerator"
+    },
+    {
+     "claim": "No reply time has been measured for Divya Raman or the founder's replies to her",
+     "evidence": [
+      "num:their_reply_time:divya@lakshya.test",
+      "num:your_reply_time:divya@lakshya.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days since the assignment was sent",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's stage is in_programme, not applied or under_review",
+     "evidence": [
+      "brief:cbl_#13"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "The founder is in an accelerator cohort and has received an assignment due on 17 Sep. The next move is to complete and submit it by the deadline. This is a programme task, not an investor conversation or a compliance requirement.",
+    "rivals": [
+     "The assignment is a signal that Lakshya is evaluating the founder's progress and may be a gate to later benefits like demo day or investor intros; missing it could affect the founder's standing in the programme.",
+     "The assignment is a low-priority task compared to fundraising and hiring, and the founder should defer it if other work is more urgent."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A note from the founder on the file, or a draft of the assignment in the company's work system",
+     "proposition": "The founder has already begun work on the pricing page teardown"
+    },
+    {
+     "needs": "A question from the founder to Divya Raman, or a note that the assignment brief was unclear",
+     "proposition": "The founder is unclear what a pricing page teardown means or what Lakshya expects in the submission"
+    },
+    {
+     "needs": "A note on the file about competing deadlines \u2014 investor meetings, hiring interviews, or other programme assignments",
+     "proposition": "The founder has other work that will conflict with the assignment deadline"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "file:kind"
+     ],
+     "claim": "The assignment is a programme deadline, not an investor ask or a compliance requirement"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "inference:1"
+     ],
+     "claim": "The next move is the founder's: to complete and submit the assignment by the deadline"
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "The file is in the in_programme stage, where the programme's own calendar \u2014 not the application calendar \u2014 governs what happens next"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-17",
+    "for_whom": "Lakshya Accelerator, via Divya Raman",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.follow_an_application",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "Complete the pricing page teardown assignment and submit it to Lakshya by 17 Sep, 11:59 pm IST",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An assignment from a programme lead is a task, not a conversation; it is answered by doing the work and submitting it by the date given, not by replying to the mail",
+     "kind": "practice",
+     "why": "A programme's assignments are part of its curriculum and are tracked by submission, not by correspondence"
+    },
+    {
+     "claim": "Founders in accelerators often carry multiple assignments in parallel with fundraising and hiring; the assignment deadline is a hard constraint on the founder's time",
+     "kind": "base_rate",
+     "why": "Accelerator cohorts run on a published schedule and do not defer assignments for other work"
+    },
+    {
+     "claim": "A founder who misses an accelerator assignment deadline may be asked to catch up or may fall behind the cohort; missing it is not recoverable in the same way a missed investor call is",
+     "kind": "counter_pattern",
+     "why": "Accelerators grade cohort progress and some tie later benefits \u2014 demo day, investor intros, follow-on funding \u2014 to completion of the curriculum"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "A programme in the in_programme stage publishes assignments and deadlines to the cohort, and the founder's move is to meet them on the programme's calendar",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "Assignments in an accelerator cohort are fixed for all founders in the cohort and are not negotiable",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "A programme's quiet during in_programme means nothing about the application \u2014 the programme's own deadlines are the file's calendar",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": null,
+   "scenarios": {
+    "act": "The founder completes the pricing page teardown and submits it to Lakshya by 17 Sep, 11:59 pm IST. The assignment is recorded as complete. The founder stays on track with the cohort calendar.",
+    "best": "The founder completes the assignment early, submits it by 17 Sep, receives feedback from Divya Raman that improves the pricing page, and uses that feedback to refine the company's pricing strategy before the next investor meeting.",
+    "do_nothing": "The assignment deadline passes on 17 Sep at 11:59 pm IST. If the founder has not submitted by then, the assignment is late or missed. Lakshya may mark it as incomplete, which could affect the founder's standing in the cohort or eligibility for later benefits. The file remains in in_programme with a missed deadline recorded.",
+    "signals_to_watch": [
+     "A submission confirmation from Lakshya before 17 Sep, 11:59 pm IST",
+     "Feedback from Divya Raman on the submission",
+     "A note from the founder that the assignment is complete or that there is a blocker",
+     "Silence past 17 Sep, 11:59 pm IST with no submission"
+    ],
+    "worst": "The founder misses the deadline, Lakshya marks the assignment incomplete, the founder falls behind the cohort, and later benefits \u2014 demo day, investor intros, or follow-on funding \u2014 are affected or delayed."
+   },
+   "unknowns": [
+    {
+     "question": "What does Lakshya's assignment submission process look like \u2014 is it a form, an email, a portal upload, or a presentation?",
+     "relevance": "The submission method affects how the founder should prepare and when to finalize the work"
+    },
+    {
+     "question": "Has the founder completed prior assignments in this cohort, and what was the quality of feedback?",
+     "relevance": "Prior feedback would show whether the founder understands Lakshya's standards and whether the assignment is on track"
+    },
+    {
+     "question": "What is the founder's current capacity \u2014 are there investor calls, hiring interviews, or other programme deadlines between now and 17 Sep?",
+     "relevance": "Competing deadlines would affect whether the assignment can be done well or whether it will slip"
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline is 17 Sep, 11:59 pm IST, and it will not move. If the founder has not started, start now. If the founder has questions, ask Divya Raman today, not later. Stop if the founder confirms the assignment is complete and submitted before the deadline."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Lakshya Accelerator sent an assignment due on 17 Sep, 11:59 pm IST\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST\"\n    },\n    {\n      \"claim\": \"The file shows the founder is in the active cohort at Lakshya Accelerator\",\n      \"evidence\": [\n        \"brief:cbl_#13\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The assignment is from Divya Raman, Programme Lead at Lakshya Accelerator\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Divya Raman Programme Lead, Lakshya Accelerator\"\n    },\n    {\n      \"claim\": \"No reply time has been measured for Divya Raman or the founder's replies to her\",\n      \"evidence\": [\n        \"num:their_reply_time:divya@lakshya.test\",\n        \"num:your_reply_time:divya@lakshya.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days since the assignment was sent\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's stage is in_programme, not applied or under_review\",\n      \"evidence\": [\n        \"brief:cbl_#13\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The assignment is a programme deadline, not an investor ask or a compliance requirement\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"file:kind\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is the founder's: to complete and submit the assignment by the deadline\",\n      \"based_on\": [\n        \"fact:1\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"The file is in the in_programme stage, where the programme's own calendar \u2014 not the application calendar \u2014 governs what happens next\",\n      \"based_on\": [\n        \"fact:6\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme in the in_programme stage publishes assignments and deadlines to the cohort, and the founder's move is to meet them on the programme's calendar\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Assignments in an accelerator cohort are fixed for all founders in the cohort and are not negotiable\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme's quiet during in_programme means nothing about the application \u2014 the programme's own deadlines are the file's calendar\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An assignment from a programme lead is a task, not a conversation; it is answered by doing the work and submitting it by the date given, not by replying to the mail\",\n      \"why\": \"A programme's assignments are part of its curriculum and are tracked by submission, not by correspondence\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founders in accelerators often carry multiple assignments in parallel with fundraising and hiring; the assignment deadline is a hard constraint on the founder's time\",\n      \"why\": \"Accelerator cohorts run on a published schedule and do not defer assignments for other work\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who misses an accelerator assignment deadline may be asked to catch up or may fall behind the cohort; missing it is not recoverable in the same way a missed investor call is\",\n      \"why\": \"Accelerators grade cohort progress and some tie later benefits \u2014 demo day, investor intros, follow-on funding \u2014 to completion of the curriculum\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The founder has already begun work on the pricing page teardown\",\n      \"needs\": \"A note from the founder on the file, or a draft of the assignment in the company's work system\"\n    },\n    {\n      \"proposition\": \"The founder is unclear what a pricing page teardown means or what Lakshya expects in the submission\",\n      \"needs\": \"A question from the founder to Divya Raman, or a note that the assignment brief was unclear\"\n    },\n    {\n      \"proposition\": \"The founder has other work that will conflict with the assignment deadline\",\n      \"needs\": \"A note on the file about competing deadlines \u2014 investor meetings, hiring interviews, or other programme assignments\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Lakshya's assignment submission process look like \u2014 is it a form, an email, a portal upload, or a presentation?\",\n      \"relevance\": \"The submission method affects how the founder should prepare and when to finalize the work\"\n    },\n    {\n      \"question\": \"Has the founder completed prior assignments in this cohort, and what was the quality of feedback?\",\n      \"relevance\": \"Prior feedback would show whether the founder understands Lakshya's standards and whether the assignment is on track\"\n    },\n    {\n      \"question\": \"What is the founder's current capacity \u2014 are there investor calls, hiring interviews, or other programme deadlines between now and 17 Sep?\",\n      \"relevance\": \"Competing deadlines would affect whether the assignment can be done well or whether it will slip\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"The founder is in an accelerator cohort and has received an assignment due on 17 Sep. The next move is to complete and submit it by the deadline. This is a programme task, not an investor conversation or a compliance requirement.\",\n    \"rivals\": [\n      \"The assignment is a signal that Lakshya is evaluating the founder's progress and may be a gate to later benefits like demo day or investor intros; missing it could affect the founder's standing in the programme.\",\n      \"The assignment is a low-priority task compared to fundraising and hiring, and the founder should defer it if other work is more urgent.\"\n    ]\n  },\n  \"proposed_kind\": null,\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The programme publishes assignments and deadlines to the cohort. The founder's move is to complete and submit each assignment by its deadline. The programme's quiet between assignments means nothing \u2014 the calendar is fixed and published.\",\n    \"actual\": \"Lakshya sent an assignment due on 17 Sep, 11:59 pm IST. The founder has not yet replied or submitted. The file has been quiet for 0.5 days.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The assignment deadline passes on 17 Sep at 11:59 pm IST. If the founder has not submitted by then, the assignment is late or missed. Lakshya may mark it as incomplete, which could affect the founder's standing in the cohort or eligibility for later benefits. The file remains in in_programme with a missed deadline recorded.\",\n    \"act\": \"The founder completes the pricing page teardown and submits it to Lakshya by 17 Sep, 11:59 pm IST. The assignment is recorded as complete. The founder stays on track with the cohort calendar.\",\n    \"best\": \"The founder completes the assignment early, submits it by 17 Sep, receives feedback from Divya Raman that improves the pricing page, and uses that feedback to refine the company's pricing strategy before the next investor meeting.\",\n    \"worst\": \"The founder misses the deadline, Lakshya marks the assignment incomplete, the founder falls behind the cohort, and later benefits \u2014 demo day, investor intros, or follow-on funding \u2014 are affected or delayed.\",\n    \"signals_to_watch\": [\n      \"A submission confirmation from Lakshya before 17 Sep, 11:59 pm IST\",\n      \"Feedback from Divya Raman on the submission\",\n      \"A note from the founder that the assignment is complete or that there is a blocker\",\n      \"Silence past 17 Sep, 11:59 pm IST with no submission\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The deadline is fixed and published by the programme; it will not move for this founder\",\n      \"Missing an accelerator assignment can affect the founder's standing in the cohort and eligibility for later benefits\",\n      \"The assignment is due in 8 days; there is time to complete it, but not much\",\n      \"The file is in in_programme, where the programme's calendar is the only calendar that matters\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Complete the pricing page teardown assignment and submit it to Lakshya by 17 Sep, 11:59 pm IST\",\n    \"for_whom\": \"Lakshya Accelerator, via Divya Raman\",\n    \"by_when\": \"2026-09-17\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.follow_an_application\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the assignment is unclear or the founder needs clarification, send a short question to Divya Raman asking what Lakshya expects in the teardown \u2014 but do this immediately, not after 17 Sep, so there is time to revise before the deadline.\",\n  \"wait_or_stop\": \"Do not wait. The deadline is 17 Sep, 11:59 pm IST, and it will not move. If the founder has not started, start now. If the founder has questions, ask Divya Raman today, not later. Stop if the founder confirms the assignment is complete and submitted before the deadline.\",\n  \"done_when\": \"The assignment is submitted to Lakshya before 17 Sep, 11:59 pm IST, and a submission confirmation is on the file.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "dfda3095e2c21f4aeb110a2c208c3ca568cad5f7820f0b5af87671b7a998cf69": {
+  "framed": true,
+  "input_tokens": 14519,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3377,
+  "parsed": {
+   "alternative": "If the pricing page does not exist or is not ready, reach out to Divya Raman today to ask for clarification on the assignment \u2014 whether it is a teardown of a competitor's pricing page or your own, and what the rubric is. This buys time to understand the assignment and plan the work, but it does not extend the deadline.",
+   "appraisal": {
+    "reasons": [
+     "The assignment is a fixed deadline on the programme's calendar, and missing it signals execution risk to the programme.",
+     "The founder is in an active cohort, and the programme is evaluating the founder's ability to execute.",
+     "A late or missing submission affects the founder's standing in the cohort and may affect access to resources or mentorship.",
+     "The assignment is due in 8 days, and the founder has not yet submitted it or recorded a draft.",
+     "A weak submission is harder to recover from than a strong one, and the founder cannot resubmit after the deadline."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The pricing page teardown is submitted to Lakshya Accelerator before 17 September 2026 at 11:59 pm IST, and the submission is recorded in the file with the date and time of submission.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The programme sent an assignment due 17 September 2026 at 11:59 pm IST. The founder has not yet submitted it, and the file does not record a completion status or a draft.",
+    "expected": "The programme publishes fixed deadlines to the cohort \u2014 assignments, reviews, demo day \u2014 and the founder executes on the programme's calendar. The file holds the programme's own deadlines and the founder's completion status for each.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Lakshya Accelerator sent an assignment due 17 September 2026 at 11:59 pm IST, a pricing page teardown labeled Assignment 4.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Assignment 4: pricing page teardown Hi Arjun, Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST."
+    },
+    {
+     "claim": "The file is marked as 'in_programme' stage in the brief, with Lakshya Accelerator listed as 'the active cohort'.",
+     "evidence": [
+      "brief:cbl_#13"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days since the assignment was sent on 2026-09-09 06:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in the mail from Lakshya Accelerator.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is listed as 'program' in the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's role is 'watched' \u2014 Lakshya Accelerator is a programme the founder is in.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The open ask is marked as 'they wait on us' since 2026-09-09 06:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "We have not written in this file.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A programme assignment is due in 8 days, and the founder has not yet submitted it. The assignment is a fixed deadline on the programme's calendar, and missing it signals execution risk to the programme. The next move is ours to complete and submit the assignment before the deadline.",
+    "rivals": [
+     "The assignment is optional or low-stakes, and the founder can defer it if other priorities are higher.",
+     "The assignment is a test of the founder's ability to think critically, and a weak submission is worse than no submission.",
+     "The assignment is part of a larger evaluation, and the founder should focus on the assignments that count most toward the final grade."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the programme's syllabus or from Divya Raman about how the assignment is graded and what it counts toward.",
+     "proposition": "The assignment is a graded component of the programme's evaluation, and the grade affects the founder's standing or the company's access to programme resources."
+    },
+    {
+     "needs": "Clarification from the programme about whether the teardown is of a competitor's pricing page or the founder's own, and what the rubric is.",
+     "proposition": "The pricing page teardown is a test of the founder's ability to think critically about a competitor or the founder's own product."
+    },
+    {
+     "needs": "The full syllabus or assignment schedule from Lakshya Accelerator to see the sequence and dependencies.",
+     "proposition": "The assignment is part of a series, and missing or late submissions affect the founder's ability to complete later assignments."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "The assignment is a programme deadline, not a suggestion, and it is fixed on the programme's calendar."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "The file is in the 'in_programme' stage, where the programme's own deadlines \u2014 assignments, reviews, demo day \u2014 are the file's calendar."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:7"
+     ],
+     "claim": "The assignment is due in 8 days from the file's last touch, and the next move is ours to complete and submit it."
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application",
+      "fact:1"
+     ],
+     "claim": "Doing nothing costs the assignment slot \u2014 it will be marked late or missing on the programme's record, affecting the founder's standing in the cohort."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-17",
+    "for_whom": "Lakshya Accelerator, for the programme's evaluation of your company.",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.follow_an_application",
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:7",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "divya@lakshya.test",
+    "what": "Complete the pricing page teardown and submit it to Lakshya Accelerator before 17 September 2026 at 11:59 pm IST.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An assignment from a programme you are in is a commitment to the cohort and to the programme's evaluation of your company \u2014 missing it signals to the programme that you are not serious about the programme or the work.",
+     "kind": "practice",
+     "why": "Programmes use assignments to filter for founders who execute, and a missed deadline is read as a signal of execution risk, not as a scheduling conflict."
+    },
+    {
+     "claim": "Pricing page teardowns are typically used by accelerators to test whether founders understand their own unit economics and can articulate value to customers.",
+     "kind": "base_rate",
+     "why": "The assignment is a proxy for founder clarity on the business model, and a weak teardown signals to the programme that the founder has not thought through pricing."
+    },
+    {
+     "claim": "A programme assignment due in under two weeks should be scheduled into the founder's calendar immediately, with a completion date at least two days before the deadline.",
+     "kind": "practice",
+     "why": "Last-minute submissions often have errors, and a buffer allows for revision and for the programme to see a polished piece of work."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "A programme in the 'in_programme' stage publishes fixed deadlines to the cohort, and every assignment is a test of the founder's ability to execute on the programme's calendar.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "Assignments in accelerators are often graded or reviewed by the programme staff, and missing or late submissions affect the founder's evaluation and standing.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A programme's quiet during the 'in_programme' stage means nothing about the application \u2014 the programme's own deadlines are the only signal that matters.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [],
+    "kind": null,
+    "why": "The file's kind is correctly listed as 'program' in the brief. The assignment is part of the 'in_programme' stage, where the programme's own deadlines are the file's calendar."
+   },
+   "scenarios": {
+    "act": "The founder completes the pricing page teardown and submits it before 17 September 11:59 pm IST. The programme receives a complete submission on time, and the founder's standing in the cohort is maintained. The programme can evaluate the founder's thinking on pricing and provide feedback.",
+    "best": "The founder completes a high-quality teardown that demonstrates clear thinking on pricing strategy and unit economics. The programme provides positive feedback, and the founder's standing in the cohort is strengthened. The teardown becomes a reference for the founder's own pricing strategy.",
+    "do_nothing": "The assignment goes unsubmitted or is submitted late on 17 September. The programme marks it as late or missing on the founder's record. The founder's standing in the cohort is affected, and the programme may view the founder as not serious about the programme or the work. If the assignment is graded, a late or missing submission lowers the founder's score.",
+    "signals_to_watch": [
+     "Whether the founder has a pricing page drafted or in progress.",
+     "Whether the founder completes the teardown and submits it before the deadline.",
+     "Whether the programme provides feedback on the submission, and what the feedback says about the founder's thinking on pricing.",
+     "Whether the founder's standing in the cohort is affected by the submission or lack thereof."
+    ],
+    "worst": "The founder does not complete the assignment or submits a weak teardown that shows unclear thinking on pricing. The programme marks the submission as late or low-quality, and the founder's standing in the cohort is damaged. The programme may view the founder as not serious about the work, affecting access to resources or mentorship."
+   },
+   "unknowns": [
+    {
+     "question": "What is the rubric or grading criteria for the pricing page teardown?",
+     "relevance": "The quality bar for the assignment is unknown, and without it the founder cannot know whether a draft is ready to submit."
+    },
+    {
+     "question": "Is the assignment graded, and does the grade affect the founder's standing in the programme or access to resources?",
+     "relevance": "If the assignment is ungraded or optional, the urgency is lower; if it is graded and counts toward a final evaluation, the urgency is higher."
+    },
+    {
+     "question": "What is the founder's current pricing page, and has it been drafted?",
+     "relevance": "If the pricing page does not exist, the assignment requires building it first; if it exists, the assignment is a teardown and critique of it."
+    },
+    {
+     "question": "Are there other assignments due around the same date, or is this the only one?",
+     "relevance": "If there are multiple assignments due, the founder's capacity to complete this one on time is constrained."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline is fixed and will not move. Stop if the programme confirms that the assignment is optional or ungraded, but assume it is required and graded until you hear otherwise. Complete the teardown by 15 September to allow time for revision and to submit before the deadline."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Lakshya Accelerator sent an assignment due 17 September 2026 at 11:59 pm IST, a pricing page teardown labeled Assignment 4.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Assignment 4: pricing page teardown Hi Arjun, Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\"\n    },\n    {\n      \"claim\": \"The file is marked as 'in_programme' stage in the brief, with Lakshya Accelerator listed as 'the active cohort'.\",\n      \"evidence\": [\n        \"brief:cbl_#13\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days since the assignment was sent on 2026-09-09 06:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in the mail from Lakshya Accelerator.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is listed as 'program' in the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's role is 'watched' \u2014 Lakshya Accelerator is a programme the founder is in.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The open ask is marked as 'they wait on us' since 2026-09-09 06:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"We have not written in this file.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The assignment is a programme deadline, not a suggestion, and it is fixed on the programme's calendar.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"claim\": \"The file is in the 'in_programme' stage, where the programme's own deadlines \u2014 assignments, reviews, demo day \u2014 are the file's calendar.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"claim\": \"The assignment is due in 8 days from the file's last touch, and the next move is ours to complete and submit it.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:7\"\n      ]\n    },\n    {\n      \"claim\": \"Doing nothing costs the assignment slot \u2014 it will be marked late or missing on the programme's record, affecting the founder's standing in the cohort.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\",\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme in the 'in_programme' stage publishes fixed deadlines to the cohort, and every assignment is a test of the founder's ability to execute on the programme's calendar.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Assignments in accelerators are often graded or reviewed by the programme staff, and missing or late submissions affect the founder's evaluation and standing.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A programme's quiet during the 'in_programme' stage means nothing about the application \u2014 the programme's own deadlines are the only signal that matters.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An assignment from a programme you are in is a commitment to the cohort and to the programme's evaluation of your company \u2014 missing it signals to the programme that you are not serious about the programme or the work.\",\n      \"why\": \"Programmes use assignments to filter for founders who execute, and a missed deadline is read as a signal of execution risk, not as a scheduling conflict.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Pricing page teardowns are typically used by accelerators to test whether founders understand their own unit economics and can articulate value to customers.\",\n      \"why\": \"The assignment is a proxy for founder clarity on the business model, and a weak teardown signals to the programme that the founder has not thought through pricing.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A programme assignment due in under two weeks should be scheduled into the founder's calendar immediately, with a completion date at least two days before the deadline.\",\n      \"why\": \"Last-minute submissions often have errors, and a buffer allows for revision and for the programme to see a polished piece of work.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The assignment is a graded component of the programme's evaluation, and the grade affects the founder's standing or the company's access to programme resources.\",\n      \"needs\": \"Confirmation from the programme's syllabus or from Divya Raman about how the assignment is graded and what it counts toward.\"\n    },\n    {\n      \"proposition\": \"The pricing page teardown is a test of the founder's ability to think critically about a competitor or the founder's own product.\",\n      \"needs\": \"Clarification from the programme about whether the teardown is of a competitor's pricing page or the founder's own, and what the rubric is.\"\n    },\n    {\n      \"proposition\": \"The assignment is part of a series, and missing or late submissions affect the founder's ability to complete later assignments.\",\n      \"needs\": \"The full syllabus or assignment schedule from Lakshya Accelerator to see the sequence and dependencies.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the rubric or grading criteria for the pricing page teardown?\",\n      \"relevance\": \"The quality bar for the assignment is unknown, and without it the founder cannot know whether a draft is ready to submit.\"\n    },\n    {\n      \"question\": \"Is the assignment graded, and does the grade affect the founder's standing in the programme or access to resources?\",\n      \"relevance\": \"If the assignment is ungraded or optional, the urgency is lower; if it is graded and counts toward a final evaluation, the urgency is higher.\"\n    },\n    {\n      \"question\": \"What is the founder's current pricing page, and has it been drafted?\",\n      \"relevance\": \"If the pricing page does not exist, the assignment requires building it first; if it exists, the assignment is a teardown and critique of it.\"\n    },\n    {\n      \"question\": \"Are there other assignments due around the same date, or is this the only one?\",\n      \"relevance\": \"If there are multiple assignments due, the founder's capacity to complete this one on time is constrained.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A programme assignment is due in 8 days, and the founder has not yet submitted it. The assignment is a fixed deadline on the programme's calendar, and missing it signals execution risk to the programme. The next move is ours to complete and submit the assignment before the deadline.\",\n    \"rivals\": [\n      \"The assignment is optional or low-stakes, and the founder can defer it if other priorities are higher.\",\n      \"The assignment is a test of the founder's ability to think critically, and a weak submission is worse than no submission.\",\n      \"The assignment is part of a larger evaluation, and the founder should focus on the assignments that count most toward the final grade.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The file's kind is correctly listed as 'program' in the brief. The assignment is part of the 'in_programme' stage, where the programme's own deadlines are the file's calendar.\",\n    \"evidence\": []\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The programme publishes fixed deadlines to the cohort \u2014 assignments, reviews, demo day \u2014 and the founder executes on the programme's calendar. The file holds the programme's own deadlines and the founder's completion status for each.\",\n    \"actual\": \"The programme sent an assignment due 17 September 2026 at 11:59 pm IST. The founder has not yet submitted it, and the file does not record a completion status or a draft.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The assignment goes unsubmitted or is submitted late on 17 September. The programme marks it as late or missing on the founder's record. The founder's standing in the cohort is affected, and the programme may view the founder as not serious about the programme or the work. If the assignment is graded, a late or missing submission lowers the founder's score.\",\n    \"act\": \"The founder completes the pricing page teardown and submits it before 17 September 11:59 pm IST. The programme receives a complete submission on time, and the founder's standing in the cohort is maintained. The programme can evaluate the founder's thinking on pricing and provide feedback.\",\n    \"best\": \"The founder completes a high-quality teardown that demonstrates clear thinking on pricing strategy and unit economics. The programme provides positive feedback, and the founder's standing in the cohort is strengthened. The teardown becomes a reference for the founder's own pricing strategy.\",\n    \"worst\": \"The founder does not complete the assignment or submits a weak teardown that shows unclear thinking on pricing. The programme marks the submission as late or low-quality, and the founder's standing in the cohort is damaged. The programme may view the founder as not serious about the work, affecting access to resources or mentorship.\",\n    \"signals_to_watch\": [\n      \"Whether the founder has a pricing page drafted or in progress.\",\n      \"Whether the founder completes the teardown and submits it before the deadline.\",\n      \"Whether the programme provides feedback on the submission, and what the feedback says about the founder's thinking on pricing.\",\n      \"Whether the founder's standing in the cohort is affected by the submission or lack thereof.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The assignment is a fixed deadline on the programme's calendar, and missing it signals execution risk to the programme.\",\n      \"The founder is in an active cohort, and the programme is evaluating the founder's ability to execute.\",\n      \"A late or missing submission affects the founder's standing in the cohort and may affect access to resources or mentorship.\",\n      \"The assignment is due in 8 days, and the founder has not yet submitted it or recorded a draft.\",\n      \"A weak submission is harder to recover from than a strong one, and the founder cannot resubmit after the deadline.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Complete the pricing page teardown and submit it to Lakshya Accelerator before 17 September 2026 at 11:59 pm IST.\",\n    \"for_whom\": \"Lakshya Accelerator, for the programme's evaluation of your company.\",\n    \"by_when\": \"2026-09-17\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:7\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.follow_an_application\",\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"own:3\"\n    ],\n    \"to\": \"divya@lakshya.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the pricing page does not exist or is not ready, reach out to Divya Raman today to ask for clarification on the assignment \u2014 whether it is a teardown of a competitor's pricing page or your own, and what the rubric is. This buys time to understand the assignment and plan the work, but it does not extend the deadline.\",\n  \"wait_or_stop\": \"Do not wait. The deadline is fixed and will not move. Stop if the programme confirms that the assignment is optional or ungraded, but assume it is required and graded until you hear otherwise. Complete the teardown by 15 September to allow time for revision and to submit before the deadline.\",\n  \"done_when\": \"The pricing page teardown is submitted to Lakshya Accelerator before 17 September 2026 at 11:59 pm IST, and the submission is recorded in the file with the date and time of submission.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

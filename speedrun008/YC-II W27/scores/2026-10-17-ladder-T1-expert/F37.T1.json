@@ -1,0 +1,483 @@
+{
+ "c1b9abd799755194f8377b41b5f8e6b75fa5a599d3040addb76db98aa8ae0411": {
+  "framed": true,
+  "input_tokens": 8274,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3607,
+  "parsed": {
+   "alternative": "If the deck is not ready, send a brief note to Farah by Thursday 11 Sep confirming receipt of her request, explaining any delay, and proposing a call for early the following week. This keeps the conversation warm while buying time to prepare the deck.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because Kitepath is one of many investors in the round, and missing this one does not kill the round, but it is a real opportunity.",
+     "The urgency is high because the deadline is four days away, and a missed deadline signals disorganization to the investor.",
+     "The move is reversible because even if the founder sends the deck late, Farah may still review it and move forward, though with reduced momentum.",
+     "The file is quiet longer than its prior gaps, which suggests the founder has not yet acted on the request.",
+     "The brief misfiled Kitepath as an intro, which may have caused the founder to deprioritize it."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The deck is sent to Farah by Friday 12 Sep, and Farah confirms receipt or schedules a call within a week.",
+   "draft": "Hi Farah, thanks for the intro and for asking to see the deck. I'm attaching it now. I'd love to walk you through it and answer any questions you have. Are you free for a call next week? Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The founder has received a deck request with a deadline (Friday 12 Sep) and has not yet replied. The conversation is 0.38 days quiet, which is longer than the gap between the intro and the deck request (0.17 days).",
+    "expected": "The brief names no playbook for this file, so no stage is defined. However, if this is an investor conversation, the stage should be intro_made or meeting_request, and the next step is to send the deck and confirm a follow-up call.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced the founder to Farah Qureshi at Kitepath on 2026-09-08 05:00 UTC.",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Farah Qureshi, who leads investments at Kitepath. Farah, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "Farah Qureshi asked for the pitch deck by Friday 12 Sep in a message sent 2026-09-08 09:00 UTC.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Can you send your deck by Friday 12 Sep?"
+    },
+    {
+     "claim": "The file has been quiet for 0.38 days since the last message, longer than any prior gap it closed.",
+     "evidence": [
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The next move is ours: the founder owes a reply to Farah's request.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for Kitepath.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Kitepath is filed as an intro, not as an investor, in the brief.",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#27"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A live investor conversation at the deck-request stage, with a real deadline and momentum. The founder owes a move now.",
+    "rivals": [
+     "A courtesy introduction that will not convert, and the deck request is a polite way to end the conversation.",
+     "An early-stage exploratory conversation where Farah is gathering information, not evaluating for a commitment.",
+     "A test of the founder's responsiveness and professionalism, where the deck is secondary to how quickly and professionally it is sent."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation of Kitepath's stage, cheque size, thesis, and whether Farah is a partner or an associate.",
+     "proposition": "Kitepath is a real investor with decision-making authority, not a connector or portfolio company."
+    },
+    {
+     "needs": "A response from Farah after the deck is sent, or a scheduled call.",
+     "proposition": "Farah's deck request is a genuine next step toward a meeting or diligence, not a courtesy ask."
+    },
+    {
+     "needs": "Confirmation that a pitch deck exists and is current.",
+     "proposition": "The founder has a deck ready to send, or can prepare one by Friday 12 Sep."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "evt_#1",
+      "evt_#2"
+     ],
+     "claim": "Farah Qureshi leads investments at Kitepath, which means Kitepath is an investor or investment entity, not a connector or service provider."
+    },
+    {
+     "based_on": [
+      "inference:1",
+      "file:role",
+      "file:domains"
+     ],
+     "claim": "The brief has misfiled Kitepath: it should be categorized as an investor, not as an intro."
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "Farah's request for a deck by a specific date signals a real next step in the investor conversation, not mere pleasantries."
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "sig:founder_office.sit.live_investor_relationship"
+     ],
+     "claim": "The stage of this conversation is meeting_request or intro_made, depending on whether Farah's ask constitutes a first meeting or a pre-meeting step."
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "file:last_touch"
+     ],
+     "claim": "The deadline of Friday 12 Sep is four days away from the last message (2026-09-08 09:00 UTC), which is soon enough to require immediate action."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-11",
+    "for_whom": "Farah Qureshi at Kitepath",
+    "guided_by": [
+     "cap:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:4",
+     "inference:3",
+     "inference:5"
+    ],
+    "to": "farah@kitepath.test",
+    "what": "send the pitch deck to Farah Qureshi with a brief note confirming her request and proposing a call",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A deck request with a deadline is a commitment signal: the investor has moved from introduction to evaluation. Treat it as a live deal, not a courtesy.",
+     "kind": "practice",
+     "why": "Investors do not ask for decks unless they are seriously considering the company. A specific deadline means they have a review cycle or decision point in mind."
+    },
+    {
+     "claim": "Most founders delay sending decks because they want to perfect them or because they are juggling many conversations. This costs momentum more than a slightly rough deck costs credibility.",
+     "kind": "base_rate",
+     "why": "Investors expect iteration; they do not expect perfection at the deck stage. Speed signals confidence and respect for their time."
+    },
+    {
+     "claim": "When a connector introduces two parties and one asks for a deliverable, the connector's job is done. Do not loop them back in unless you need them to vouch for something or to unblock a stall.",
+     "kind": "practice",
+     "why": "Connectors introduce; they do not manage. Pulling them back in every step dilutes their credibility and makes them feel like they own the outcome."
+    },
+    {
+     "claim": "A brief that files an investor under 'intro' instead of 'investor' often means the founder has not yet decided whether to pursue them seriously, or the brief is out of date.",
+     "kind": "counter_pattern",
+     "why": "The brief's categorization shapes how the founder thinks about the work. A misfiled investor gets treated as a courtesy, not a priority."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:founder_office.heu.investor_relations.investors_do_not_chase",
+      "own:1"
+     ],
+     "claim": "When an investor asks for a deck by a specific date, the founder's reply time matters: a same-day or next-day response signals seriousness and keeps momentum.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "sig:founder_office.sit.live_investor_relationship",
+      "evt_#1",
+      "evt_#2"
+     ],
+     "claim": "A warm intro that moves to a deck request within hours is a live investor relationship, not a courtesy exchange.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.heu.investor_relations.silence_reads_by_stage",
+      "num:days_quiet"
+     ],
+     "claim": "Silence after a deck request, even for a few days, can signal a soft no or deprioritization, especially if the founder does not confirm receipt or ask clarifying questions.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "evt_#2",
+     "file:domains"
+    ],
+    "kind": "investor",
+    "why": "Farah Qureshi leads investments at Kitepath and has asked for a pitch deck by a specific date. This is an investor conversation, not an intro. The brief misfiled it."
+   },
+   "scenarios": {
+    "act": "The founder sends the deck by Thursday 11 Sep or Friday 12 Sep morning, with a brief note confirming receipt of Farah's request and proposing a call to discuss. Farah reviews the deck and either schedules a call or asks for more information. The conversation moves forward.",
+    "best": "The founder sends the deck by Thursday, Farah reviews it over the weekend, and she schedules a call for early the following week. The call goes well, and Kitepath expresses serious interest. The founder adds Kitepath to the active investor list and runs them in parallel with other investors.",
+    "do_nothing": "The deadline passes without a response. Farah assumes the founder is not serious or is disorganized. She deprioritizes Kitepath and moves on to other companies. The conversation stalls or dies. The founder loses a potential investor and a warm introduction.",
+    "signals_to_watch": [
+     "Farah's response time after the deck is sent: same day or next day is a strong signal; more than a week is a soft no.",
+     "Whether Farah asks for a call or more information: a call request is a strong signal; silence is a soft no.",
+     "Whether Farah introduces the founder to a partner or keeps the conversation at the associate level: a partner introduction is a strong signal.",
+     "The tone of Farah's follow-up: enthusiasm, specific questions, and a timeline are strong signals; generic praise is a soft no."
+    ],
+    "worst": "The founder sends the deck late or not at all. Farah does not follow up. The conversation dies. Kitepath is later discovered to be a strong fit, but the opportunity is lost because of a missed deadline."
+   },
+   "unknowns": [
+    {
+     "question": "What is Kitepath's stage, cheque size, and investment thesis?",
+     "relevance": "This determines whether Kitepath fits the round and whether Farah's interest is serious or exploratory."
+    },
+    {
+     "question": "Is Farah a partner or an associate at Kitepath, and does she have decision-making authority?",
+     "relevance": "An associate's interest may not convert to a commitment without partner approval, which affects how to prioritize this conversation."
+    },
+    {
+     "question": "Does the founder have a current pitch deck, and is it tailored to Kitepath's thesis?",
+     "relevance": "If the deck does not exist or is stale, the deadline becomes a constraint rather than an opportunity."
+    },
+    {
+     "question": "What is Kitepath's decision timeline after receiving the deck?",
+     "relevance": "This determines whether this is a fast-moving opportunity or a slow-burn conversation."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline is four days away. Send the deck by Thursday 11 Sep at the latest. If Farah does not respond within a week of receiving the deck, send a brief follow-up asking if she has questions or if she would like to schedule a call. If she does not respond within two weeks, deprioritize Kitepath and focus on investors who are moving faster."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced the founder to Farah Qureshi at Kitepath on 2026-09-08 05:00 UTC.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Farah Qureshi, who leads investments at Kitepath. Farah, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"Farah Qureshi asked for the pitch deck by Friday 12 Sep in a message sent 2026-09-08 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Can you send your deck by Friday 12 Sep?\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.38 days since the last message, longer than any prior gap it closed.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The next move is ours: the founder owes a reply to Farah's request.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for Kitepath.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Kitepath is filed as an intro, not as an investor, in the brief.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#27\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Farah Qureshi leads investments at Kitepath, which means Kitepath is an investor or investment entity, not a connector or service provider.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"The brief has misfiled Kitepath: it should be categorized as an investor, not as an intro.\",\n      \"based_on\": [\n        \"inference:1\",\n        \"file:role\",\n        \"file:domains\"\n      ]\n    },\n    {\n      \"claim\": \"Farah's request for a deck by a specific date signals a real next step in the investor conversation, not mere pleasantries.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"claim\": \"The stage of this conversation is meeting_request or intro_made, depending on whether Farah's ask constitutes a first meeting or a pre-meeting step.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"sig:founder_office.sit.live_investor_relationship\"\n      ]\n    },\n    {\n      \"claim\": \"The deadline of Friday 12 Sep is four days away from the last message (2026-09-08 09:00 UTC), which is soon enough to require immediate action.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"file:last_touch\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an investor asks for a deck by a specific date, the founder's reply time matters: a same-day or next-day response signals seriousness and keeps momentum.\",\n      \"based_on\": [\n        \"cap:founder_office.heu.investor_relations.investors_do_not_chase\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A warm intro that moves to a deck request within hours is a live investor relationship, not a courtesy exchange.\",\n      \"based_on\": [\n        \"sig:founder_office.sit.live_investor_relationship\",\n        \"evt_#1\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence after a deck request, even for a few days, can signal a soft no or deprioritization, especially if the founder does not confirm receipt or ask clarifying questions.\",\n      \"based_on\": [\n        \"cap:founder_office.heu.investor_relations.silence_reads_by_stage\",\n        \"num:days_quiet\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A deck request with a deadline is a commitment signal: the investor has moved from introduction to evaluation. Treat it as a live deal, not a courtesy.\",\n      \"why\": \"Investors do not ask for decks unless they are seriously considering the company. A specific deadline means they have a review cycle or decision point in mind.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most founders delay sending decks because they want to perfect them or because they are juggling many conversations. This costs momentum more than a slightly rough deck costs credibility.\",\n      \"why\": \"Investors expect iteration; they do not expect perfection at the deck stage. Speed signals confidence and respect for their time.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a connector introduces two parties and one asks for a deliverable, the connector's job is done. Do not loop them back in unless you need them to vouch for something or to unblock a stall.\",\n      \"why\": \"Connectors introduce; they do not manage. Pulling them back in every step dilutes their credibility and makes them feel like they own the outcome.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A brief that files an investor under 'intro' instead of 'investor' often means the founder has not yet decided whether to pursue them seriously, or the brief is out of date.\",\n      \"why\": \"The brief's categorization shapes how the founder thinks about the work. A misfiled investor gets treated as a courtesy, not a priority.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Kitepath is a real investor with decision-making authority, not a connector or portfolio company.\",\n      \"needs\": \"Confirmation of Kitepath's stage, cheque size, thesis, and whether Farah is a partner or an associate.\"\n    },\n    {\n      \"proposition\": \"Farah's deck request is a genuine next step toward a meeting or diligence, not a courtesy ask.\",\n      \"needs\": \"A response from Farah after the deck is sent, or a scheduled call.\"\n    },\n    {\n      \"proposition\": \"The founder has a deck ready to send, or can prepare one by Friday 12 Sep.\",\n      \"needs\": \"Confirmation that a pitch deck exists and is current.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Kitepath's stage, cheque size, and investment thesis?\",\n      \"relevance\": \"This determines whether Kitepath fits the round and whether Farah's interest is serious or exploratory.\"\n    },\n    {\n      \"question\": \"Is Farah a partner or an associate at Kitepath, and does she have decision-making authority?\",\n      \"relevance\": \"An associate's interest may not convert to a commitment without partner approval, which affects how to prioritize this conversation.\"\n    },\n    {\n      \"question\": \"Does the founder have a current pitch deck, and is it tailored to Kitepath's thesis?\",\n      \"relevance\": \"If the deck does not exist or is stale, the deadline becomes a constraint rather than an opportunity.\"\n    },\n    {\n      \"question\": \"What is Kitepath's decision timeline after receiving the deck?\",\n      \"relevance\": \"This determines whether this is a fast-moving opportunity or a slow-burn conversation.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A live investor conversation at the deck-request stage, with a real deadline and momentum. The founder owes a move now.\",\n    \"rivals\": [\n      \"A courtesy introduction that will not convert, and the deck request is a polite way to end the conversation.\",\n      \"An early-stage exploratory conversation where Farah is gathering information, not evaluating for a commitment.\",\n      \"A test of the founder's responsiveness and professionalism, where the deck is secondary to how quickly and professionally it is sent.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Farah Qureshi leads investments at Kitepath and has asked for a pitch deck by a specific date. This is an investor conversation, not an intro. The brief misfiled it.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"evt_#2\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this file, so no stage is defined. However, if this is an investor conversation, the stage should be intro_made or meeting_request, and the next step is to send the deck and confirm a follow-up call.\",\n    \"actual\": \"The founder has received a deck request with a deadline (Friday 12 Sep) and has not yet replied. The conversation is 0.38 days quiet, which is longer than the gap between the intro and the deck request (0.17 days).\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The deadline passes without a response. Farah assumes the founder is not serious or is disorganized. She deprioritizes Kitepath and moves on to other companies. The conversation stalls or dies. The founder loses a potential investor and a warm introduction.\",\n    \"act\": \"The founder sends the deck by Thursday 11 Sep or Friday 12 Sep morning, with a brief note confirming receipt of Farah's request and proposing a call to discuss. Farah reviews the deck and either schedules a call or asks for more information. The conversation moves forward.\",\n    \"best\": \"The founder sends the deck by Thursday, Farah reviews it over the weekend, and she schedules a call for early the following week. The call goes well, and Kitepath expresses serious interest. The founder adds Kitepath to the active investor list and runs them in parallel with other investors.\",\n    \"worst\": \"The founder sends the deck late or not at all. Farah does not follow up. The conversation dies. Kitepath is later discovered to be a strong fit, but the opportunity is lost because of a missed deadline.\",\n    \"signals_to_watch\": [\n      \"Farah's response time after the deck is sent: same day or next day is a strong signal; more than a week is a soft no.\",\n      \"Whether Farah asks for a call or more information: a call request is a strong signal; silence is a soft no.\",\n      \"Whether Farah introduces the founder to a partner or keeps the conversation at the associate level: a partner introduction is a strong signal.\",\n      \"The tone of Farah's follow-up: enthusiasm, specific questions, and a timeline are strong signals; generic praise is a soft no.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because Kitepath is one of many investors in the round, and missing this one does not kill the round, but it is a real opportunity.\",\n      \"The urgency is high because the deadline is four days away, and a missed deadline signals disorganization to the investor.\",\n      \"The move is reversible because even if the founder sends the deck late, Farah may still review it and move forward, though with reduced momentum.\",\n      \"The file is quiet longer than its prior gaps, which suggests the founder has not yet acted on the request.\",\n      \"The brief misfiled Kitepath as an intro, which may have caused the founder to deprioritize it.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the pitch deck to Farah Qureshi with a brief note confirming her request and proposing a call\",\n    \"for_whom\": \"Farah Qureshi at Kitepath\",\n    \"by_when\": \"2026-09-11\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:3\",\n      \"inference:5\"\n    ],\n    \"guided_by\": [\n      \"cap:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"farah@kitepath.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the deck is not ready, send a brief note to Farah by Thursday 11 Sep confirming receipt of her request, explaining any delay, and proposing a call for early the following week. This keeps the conversation warm while buying time to prepare the deck.\",\n  \"wait_or_stop\": \"Do not wait. The deadline is four days away. Send the deck by Thursday 11 Sep at the latest. If Farah does not respond within a week of receiving the deck, send a brief follow-up asking if she has questions or if she would like to schedule a call. If she does not respond within two weeks, deprioritize Kitepath and focus on investors who are moving faster.\",\n  \"done_when\": \"The deck is sent to Farah by Friday 12 Sep, and Farah confirms receipt or schedules a call within a week.\",\n  \"draft\": \"Hi Farah, thanks for the intro and for asking to see the deck. I'm attaching it now. I'd love to walk you through it and answer any questions you have. Are you free for a call next week? Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "cf6caa158c6b55b9b0961b2e57ce8008d6f0393e9c538ad23701a3834c530944": {
+  "framed": true,
+  "input_tokens": 8438,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3352,
+  "parsed": {
+   "alternative": "If the deck is not ready or needs tailoring to Kitepath, send a brief note to Farah today saying the deck is coming by Wednesday, with a one-line reason (e.g., 'tailoring it to your stage'). This keeps the deadline in play and signals seriousness.",
+   "appraisal": {
+    "reasons": [
+     "A new investor conversation is one of many in the round, so missing this one does not end the raise, but it costs a live lead.",
+     "The deadline is four days away, making this time-sensitive but not immediate.",
+     "If the deck is sent late, the relationship can be repaired with a good follow-up, but momentum is lost.",
+     "Kitepath is not yet in the brief's investor list, so its stage and fit are unknown; it may or may not be a material lead."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The deck is sent to Farah by Wednesday 10 Sep, and she confirms receipt or replies with a next step (call, more information, or a pass).",
+   "draft": "Hi Farah, thanks for the intro from Introly. I'm attaching our deck \u2014 it covers what we're building, the problem we're solving, and where we are now. Happy to walk through it on a call if that's helpful. Let me know what questions come up. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "A warm introduction was made on 2026-09-08 05:00 UTC. The investor asked for a deck by Friday 12 Sep on 2026-09-08 09:00 UTC. The founder has not yet replied, and the file has been quiet for 0.38 days.",
+    "expected": "After a warm introduction, the investor may ask for a deck, a call, or more information. If they ask for a deck, the founder sends it and waits for a reply. The investor then either schedules a call, passes, or asks for more information.",
+    "stage": "introduction_made"
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced the founder to Farah Qureshi at Kitepath on 2026-09-08 05:00 UTC.",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Farah Qureshi, who leads investments at Kitepath. Farah, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "Farah Qureshi asked for the pitch deck by Friday 12 Sep in a message sent 2026-09-08 09:00 UTC.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Can you send your deck by Friday 12 Sep?"
+    },
+    {
+     "claim": "The file has been quiet for 0.38 days since the last message, longer than any prior gap it closed.",
+     "evidence": [
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The next move is ours: the founder owes a reply to Farah's request.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for Kitepath.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found low risk and low urgency in this file.",
+     "evidence": [
+      "ru:core.risk",
+      "ru:core.priority"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction to a new investor who has asked for a pitch deck by a named deadline, with the next move ours and the deadline four days away.",
+    "rivals": [
+     "A connector-sourced lead that may not convert because Kitepath is not a fit for the round.",
+     "A stale file where the deck was already sent and the conversation has moved on or stalled.",
+     "An introduction that is still in the getting-to-know-you phase and the deck request is exploratory, not a serious signal."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder whether Kitepath was a known target or a new lead from Introly.",
+     "proposition": "Kitepath is a new investor not yet in the brief's investor list."
+    },
+    {
+     "needs": "A check of the founder's sent mail or a direct ask whether the deck was sent.",
+     "proposition": "The founder has already sent the deck and the file is stale."
+    },
+    {
+     "needs": "Research on Kitepath's structure and Farah's role to know whether this conversation can lead to a term sheet or needs escalation.",
+     "proposition": "Farah Qureshi is a partner or decision-maker at Kitepath, not an associate."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "evt_#1",
+      "evt_#2"
+     ],
+     "claim": "Kitepath is an investor or investment entity, not a connector or program, because Farah Qureshi leads investments there and asked for a pitch deck."
+    },
+    {
+     "based_on": [
+      "evt_#2",
+      "evt_#1",
+      "sig:founder_office.sit.live_investor_relationship"
+     ],
+     "claim": "The stage is introduction_made: a warm introduction has occurred, and the investor has named a next step (send deck by Friday)."
+    },
+    {
+     "based_on": [
+      "evt_#1"
+     ],
+     "claim": "The deadline Friday 12 Sep is four days away from the last message on 2026-09-08 09:00 UTC, making this time-sensitive."
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "file:domains"
+     ],
+     "claim": "Kitepath should be added to the brief's investor list and tracked as an active investor conversation, not left as an intro-only file."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-10",
+    "for_whom": "Farah Qureshi at Kitepath",
+    "guided_by": [
+     "cap:founder_office.fundraising.investor_relations#f3",
+     "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:4",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "farah@kitepath.test",
+    "what": "send the pitch deck to Farah Qureshi",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A deck sent the same day or next day to a warm investor who named a deadline keeps momentum and signals seriousness; delay beyond that costs the relationship's warmth.",
+     "kind": "practice",
+     "why": "Investors see many companies and move on quickly; a founder who moves fast on their ask proves they execute."
+    },
+    {
+     "claim": "Most investor conversations that stall after a warm intro and a named ask do so because the founder missed the deadline or sent it late.",
+     "kind": "base_rate",
+     "why": "The investor has signaled interest and named a clear next step; failure to deliver on time reads as low priority or disorganization."
+    },
+    {
+     "claim": "A pitch deck sent to an investor should be tailored to what you know of their stage, thesis, and portfolio, not a generic deck.",
+     "kind": "practice",
+     "why": "An investor who leads investments at a firm has a thesis; a deck that speaks to it converts better than one that does not."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "cap:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "When an investor names a specific deadline for a deliverable, missing it signals low priority to them and weakens the relationship.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "sig:founder_office.sit.live_investor_relationship",
+      "evt_#1"
+     ],
+     "claim": "A warm introduction followed by a concrete ask (deck by date) is a positive signal and moves the conversation from introduction to meeting_request stage.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "ru:core.priority",
+      "evt_#1"
+     ],
+     "claim": "The reasoning units marked urgency as low despite a four-day deadline, suggesting the system may underweight time-bound investor asks.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "file:domains",
+     "evt_#2"
+    ],
+    "kind": "investor",
+    "why": "Farah Qureshi leads investments at Kitepath and asked for a pitch deck, which is the standard first step in an investor conversation. The brief names Kitepath in no role, but the file's domain is fundraising and the mail shows an investor ask."
+   },
+   "scenarios": {
+    "act": "The founder sends the pitch deck to Farah today or tomorrow. Farah reviews it and either schedules a call, asks for more information, or passes. The conversation moves to the next stage.",
+    "best": "The founder sends the deck by Wednesday 10 Sep. Farah reviews it before Friday and schedules a call for the following week. The conversation moves to meeting_scheduled and the founder has a live investor meeting.",
+    "do_nothing": "The deadline passes on Friday 12 Sep. The founder does not send the deck. Farah does not follow up, and the conversation dies. Kitepath is lost as a lead.",
+    "signals_to_watch": [
+     "Whether the founder sends the deck before Friday 12 Sep.",
+     "Farah's reply time after receiving the deck.",
+     "Whether Farah asks for a call or more information, or passes.",
+     "Whether Farah's reply mentions a timeline or next step."
+    ],
+    "worst": "The founder sends the deck late or not at all. Farah interprets this as low priority and does not follow up. The lead is lost, and Kitepath is marked as a pass."
+   },
+   "unknowns": [
+    {
+     "question": "Does the founder have a pitch deck ready to send, and is it tailored to Kitepath's stage and thesis?",
+     "relevance": "If the deck does not exist or is generic, the move is to prepare it first; if it exists and is ready, the move is to send it today."
+    },
+    {
+     "question": "What is Kitepath's stage, cheque size, and portfolio, and does it fit the round the founder is raising?",
+     "relevance": "If Kitepath is too early or too late stage, or invests in a different sector, the conversation may not convert; if it fits, this is a live lead."
+    },
+    {
+     "question": "Is Farah Qureshi a partner or an associate, and does she have check-writing authority?",
+     "relevance": "If she is an associate, the conversation may stall at her level; if she is a partner, this is a direct path to a decision."
+    },
+    {
+     "question": "Has the founder sent the deck already, and if so, what was Farah's reply?",
+     "relevance": "If the deck was sent and Farah has not replied, the file is stale and needs a follow-up; if it was not sent, the deadline is at risk."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline is Friday 12 Sep, four days away. Send the deck by Wednesday 10 Sep to give Farah time to review before the deadline. If the deck is not sent by Thursday 11 Sep, the deadline is at risk and the relationship is weakened. Stop if Farah passes or does not reply within a week after receiving the deck; at that point, move her to a conditional deferral and focus on other investors."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced the founder to Farah Qureshi at Kitepath on 2026-09-08 05:00 UTC.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Farah Qureshi, who leads investments at Kitepath. Farah, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"Farah Qureshi asked for the pitch deck by Friday 12 Sep in a message sent 2026-09-08 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Can you send your deck by Friday 12 Sep?\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.38 days since the last message, longer than any prior gap it closed.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The next move is ours: the founder owes a reply to Farah's request.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for Kitepath.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found low risk and low urgency in this file.\",\n      \"evidence\": [\n        \"ru:core.risk\",\n        \"ru:core.priority\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Kitepath is an investor or investment entity, not a connector or program, because Farah Qureshi leads investments there and asked for a pitch deck.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"The stage is introduction_made: a warm introduction has occurred, and the investor has named a next step (send deck by Friday).\",\n      \"based_on\": [\n        \"evt_#2\",\n        \"evt_#1\",\n        \"sig:founder_office.sit.live_investor_relationship\"\n      ]\n    },\n    {\n      \"claim\": \"The deadline Friday 12 Sep is four days away from the last message on 2026-09-08 09:00 UTC, making this time-sensitive.\",\n      \"based_on\": [\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"Kitepath should be added to the brief's investor list and tracked as an active investor conversation, not left as an intro-only file.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"file:domains\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an investor names a specific deadline for a deliverable, missing it signals low priority to them and weakens the relationship.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"cap:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A warm introduction followed by a concrete ask (deck by date) is a positive signal and moves the conversation from introduction to meeting_request stage.\",\n      \"based_on\": [\n        \"sig:founder_office.sit.live_investor_relationship\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"The reasoning units marked urgency as low despite a four-day deadline, suggesting the system may underweight time-bound investor asks.\",\n      \"based_on\": [\n        \"ru:core.priority\",\n        \"evt_#1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A deck sent the same day or next day to a warm investor who named a deadline keeps momentum and signals seriousness; delay beyond that costs the relationship's warmth.\",\n      \"why\": \"Investors see many companies and move on quickly; a founder who moves fast on their ask proves they execute.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most investor conversations that stall after a warm intro and a named ask do so because the founder missed the deadline or sent it late.\",\n      \"why\": \"The investor has signaled interest and named a clear next step; failure to deliver on time reads as low priority or disorganization.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A pitch deck sent to an investor should be tailored to what you know of their stage, thesis, and portfolio, not a generic deck.\",\n      \"why\": \"An investor who leads investments at a firm has a thesis; a deck that speaks to it converts better than one that does not.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Kitepath is a new investor not yet in the brief's investor list.\",\n      \"needs\": \"Confirmation from the founder whether Kitepath was a known target or a new lead from Introly.\"\n    },\n    {\n      \"proposition\": \"The founder has already sent the deck and the file is stale.\",\n      \"needs\": \"A check of the founder's sent mail or a direct ask whether the deck was sent.\"\n    },\n    {\n      \"proposition\": \"Farah Qureshi is a partner or decision-maker at Kitepath, not an associate.\",\n      \"needs\": \"Research on Kitepath's structure and Farah's role to know whether this conversation can lead to a term sheet or needs escalation.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the founder have a pitch deck ready to send, and is it tailored to Kitepath's stage and thesis?\",\n      \"relevance\": \"If the deck does not exist or is generic, the move is to prepare it first; if it exists and is ready, the move is to send it today.\"\n    },\n    {\n      \"question\": \"What is Kitepath's stage, cheque size, and portfolio, and does it fit the round the founder is raising?\",\n      \"relevance\": \"If Kitepath is too early or too late stage, or invests in a different sector, the conversation may not convert; if it fits, this is a live lead.\"\n    },\n    {\n      \"question\": \"Is Farah Qureshi a partner or an associate, and does she have check-writing authority?\",\n      \"relevance\": \"If she is an associate, the conversation may stall at her level; if she is a partner, this is a direct path to a decision.\"\n    },\n    {\n      \"question\": \"Has the founder sent the deck already, and if so, what was Farah's reply?\",\n      \"relevance\": \"If the deck was sent and Farah has not replied, the file is stale and needs a follow-up; if it was not sent, the deadline is at risk.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction to a new investor who has asked for a pitch deck by a named deadline, with the next move ours and the deadline four days away.\",\n    \"rivals\": [\n      \"A connector-sourced lead that may not convert because Kitepath is not a fit for the round.\",\n      \"A stale file where the deck was already sent and the conversation has moved on or stalled.\",\n      \"An introduction that is still in the getting-to-know-you phase and the deck request is exploratory, not a serious signal.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Farah Qureshi leads investments at Kitepath and asked for a pitch deck, which is the standard first step in an investor conversation. The brief names Kitepath in no role, but the file's domain is fundraising and the mail shows an investor ask.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"file:domains\",\n      \"evt_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"introduction_made\",\n    \"expected\": \"After a warm introduction, the investor may ask for a deck, a call, or more information. If they ask for a deck, the founder sends it and waits for a reply. The investor then either schedules a call, passes, or asks for more information.\",\n    \"actual\": \"A warm introduction was made on 2026-09-08 05:00 UTC. The investor asked for a deck by Friday 12 Sep on 2026-09-08 09:00 UTC. The founder has not yet replied, and the file has been quiet for 0.38 days.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The deadline passes on Friday 12 Sep. The founder does not send the deck. Farah does not follow up, and the conversation dies. Kitepath is lost as a lead.\",\n    \"act\": \"The founder sends the pitch deck to Farah today or tomorrow. Farah reviews it and either schedules a call, asks for more information, or passes. The conversation moves to the next stage.\",\n    \"best\": \"The founder sends the deck by Wednesday 10 Sep. Farah reviews it before Friday and schedules a call for the following week. The conversation moves to meeting_scheduled and the founder has a live investor meeting.\",\n    \"worst\": \"The founder sends the deck late or not at all. Farah interprets this as low priority and does not follow up. The lead is lost, and Kitepath is marked as a pass.\",\n    \"signals_to_watch\": [\n      \"Whether the founder sends the deck before Friday 12 Sep.\",\n      \"Farah's reply time after receiving the deck.\",\n      \"Whether Farah asks for a call or more information, or passes.\",\n      \"Whether Farah's reply mentions a timeline or next step.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"A new investor conversation is one of many in the round, so missing this one does not end the raise, but it costs a live lead.\",\n      \"The deadline is four days away, making this time-sensitive but not immediate.\",\n      \"If the deck is sent late, the relationship can be repaired with a good follow-up, but momentum is lost.\",\n      \"Kitepath is not yet in the brief's investor list, so its stage and fit are unknown; it may or may not be a material lead.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the pitch deck to Farah Qureshi\",\n    \"for_whom\": \"Farah Qureshi at Kitepath\",\n    \"by_when\": \"2026-09-10\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:founder_office.fundraising.investor_relations#f3\",\n      \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n      \"own:1\"\n    ],\n    \"to\": \"farah@kitepath.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the deck is not ready or needs tailoring to Kitepath, send a brief note to Farah today saying the deck is coming by Wednesday, with a one-line reason (e.g., 'tailoring it to your stage'). This keeps the deadline in play and signals seriousness.\",\n  \"wait_or_stop\": \"Do not wait. The deadline is Friday 12 Sep, four days away. Send the deck by Wednesday 10 Sep to give Farah time to review before the deadline. If the deck is not sent by Thursday 11 Sep, the deadline is at risk and the relationship is weakened. Stop if Farah passes or does not reply within a week after receiving the deck; at that point, move her to a conditional deferral and focus on other investors.\",\n  \"done_when\": \"The deck is sent to Farah by Wednesday 10 Sep, and she confirms receipt or replies with a next step (call, more information, or a pass).\",\n  \"draft\": \"Hi Farah, thanks for the intro from Introly. I'm attaching our deck \u2014 it covers what we're building, the problem we're solving, and where we are now. Happy to walk through it on a call if that's helpful. Let me know what questions come up. Best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

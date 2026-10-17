@@ -1,0 +1,716 @@
+{
+ "2f5951db5a98be56079fa90f73577637398504abcc6986c8b3e8c15c46a09d00": {
+  "framed": true,
+  "input_tokens": 7324,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3316,
+  "parsed": {
+   "alternative": "If you have decided not to pursue this meeting, send Kunal a brief message thanking him for his time and letting him know you will not be able to meet. This closes the loop and preserves the relationship.",
+   "appraisal": {
+    "reasons": [
+     "The file has been quiet for over two weeks, longer than any gap it closed before (num:longest_gap)",
+     "Arjun initiated the request and then failed to follow through, which damages trust with the counterparty (cap:admin.executive_support.commitment_tracking#f1)",
+     "The purpose of the meeting is unknown, so the stakes cannot be fully assessed, but the silence itself is a relationship risk (ru:core.risk)",
+     "If Sparkreach is a vendor, partner, or investor, the delay may have closed a window or signaled deprioritization (own:2)"
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The meeting is booked and confirmed, or Kunal has received a message from you explaining the situation and closing the conversation.",
+   "draft": "Hi Kunal, apologies for the delay in getting back to you. I'd like to book a time to connect. I'm available [pick a specific time from his calendar]. Does that work for you? Thanks, Arjun",
+   "expected_vs_actual": {
+    "actual": "Arjun did not book a meeting. The file has been quiet for over two weeks since Kunal provided the calendar link.",
+    "expected": "The brief does not name a kind of work for this file, so no playbook applies. From the file's own history: after Arjun asked for the calendar link to be resent, the expected next step was for Arjun to book a meeting within days.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Arjun missed a meeting slot with Kunal Mehta on 2026-07-08 morning and asked for the calendar link to be resent.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Sorry I missed our slot this morning. Please resend the calendar link - I will book it again."
+    },
+    {
+     "claim": "Kunal Mehta replied the same day with his calendar link and invited Arjun to book any time that works.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "here is my calendar: cal.sparkreach.test/kunal. Block any time that works for you."
+    },
+    {
+     "claim": "The file has been quiet for 14.06 days since the last touch on 2026-07-08 10:30 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Kunal Mehta replied within 0.06 days of Arjun's message.",
+     "evidence": [
+      "num:their_reply_time:kunal@sparkreach.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief does not name any kind of work for this file.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Sparkreach has no named role in the brief.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in the mail between Arjun and Kunal.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in Arjun's court: Kunal provided the calendar link and is waiting for Arjun to book a time.",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": "Block any time that works for you."
+    }
+   ],
+   "frames": {
+    "primary": "A meeting request that Arjun initiated, then failed to follow through on after the counterparty provided what was asked. The ball is in Arjun's court and has been for over two weeks. This is an administrative task that has stalled, not a relationship problem with the counterparty.",
+    "rivals": [
+     "A deprioritized lead that Arjun has decided not to pursue but has not communicated that decision to Kunal.",
+     "A meeting that was time-sensitive and the window has closed, making the calendar link obsolete.",
+     "An exploratory conversation that was never meant to result in a scheduled meeting, and the silence is normal.",
+     "A blocker unknown to the file that is preventing Arjun from booking the meeting."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The brief or a prior message would name Sparkreach's role or the context of the meeting.",
+     "proposition": "Sparkreach is a potential investor, partner, or vendor that Arjun is evaluating or has deprioritized."
+    },
+    {
+     "needs": "A message from Arjun explaining the delay, or a calendar entry showing the meeting was booked and then cancelled.",
+     "proposition": "Arjun intended to book the meeting but forgot or was blocked by a competing priority."
+    },
+    {
+     "needs": "Context about what the meeting was for and whether it is still relevant.",
+     "proposition": "The meeting was time-sensitive and the window has now closed."
+    },
+    {
+     "needs": "The brief or a prior message would identify Kunal's role or the source of the introduction.",
+     "proposition": "Kunal Mehta is a connector or introducer, and the meeting was exploratory with no clear outcome expected."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "Arjun has not booked a meeting with Kunal despite receiving the calendar link over two weeks ago."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:4"
+     ],
+     "claim": "The silence is not due to Kunal's unresponsiveness; he replied promptly and provided what was asked."
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "file:role"
+     ],
+     "claim": "The purpose of the meeting with Kunal Mehta is unknown from the file."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "file:domains"
+     ],
+     "claim": "This file represents an administrative task that has stalled after Arjun's request was fulfilled."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-07-25",
+    "for_whom": "Kunal Mehta",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1"
+    ],
+    "to": "kunal@sparkreach.test",
+    "what": "Either book the meeting with Kunal Mehta using the calendar link he provided, or send him a message explaining the delay and proposing a new time. Do not leave the calendar link unused for another week.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When you ask someone to resend something and they do so promptly, the next move must happen within days, not weeks, or the counterparty will assume the request was not genuine.",
+     "kind": "practice",
+     "why": "A delayed response after a direct request reads as either a change of mind or administrative failure, both of which damage trust in a new relationship."
+    },
+    {
+     "claim": "An unscheduled meeting slot with an unknown counterparty, left open for over two weeks, will eventually be filled by someone else or abandoned by the counterparty.",
+     "kind": "base_rate",
+     "why": "Calendar slots are finite; a person who offers their time and receives no booking will move on to other priorities."
+    },
+    {
+     "claim": "A founder who misses a meeting and asks for a reschedule, then does not reschedule, is often blocked by something not stated in the mail\u2014a competing priority, uncertainty about the meeting's value, or a change in circumstances.",
+     "kind": "counter_pattern",
+     "why": "The stated reason (missing the slot) does not explain the subsequent inaction; the real reason lies elsewhere."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "When a counterparty provides what was asked for and receives no follow-up within days, they interpret silence as deprioritization or changed intent.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence from a counterparty is often process, not disinterest; but silence from the founder after receiving what they asked for signals a different problem.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "A calendar link provided with an open invitation to book any time is a soft commitment; the founder's failure to act on it within two weeks suggests either deprioritization or a blocker not visible in the file.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "file:role"
+    ],
+    "kind": "vendor",
+    "why": "Sparkreach is in the admin domain and the interaction is transactional (calendar coordination). Without a named role in the brief, it is most likely a vendor, service provider, or administrative contact. It could also be an intro or partner, but the file gives no evidence of either."
+   },
+   "scenarios": {
+    "act": "Arjun either books the meeting immediately, or sends a message to Kunal explaining the delay and rescheduling. If Arjun has decided not to pursue the meeting, he should communicate that to Kunal rather than leaving him waiting.",
+    "best": "Arjun books the meeting within days and it proceeds. The relationship with Kunal is maintained. If Sparkreach is a vendor or partner, the engagement moves forward.",
+    "do_nothing": "The file remains quiet. Kunal will eventually assume Arjun is not interested and will not follow up. The meeting will not happen. If Sparkreach is a vendor or partner, the relationship will cool. If it is a time-sensitive opportunity, it will be lost.",
+    "signals_to_watch": [
+     "Whether Arjun books the meeting within the next few days.",
+     "Whether Kunal sends a follow-up message or closes the conversation.",
+     "Whether the meeting is completed and what outcome it produces."
+    ],
+    "worst": "Arjun does not act, and Kunal interprets the silence as disinterest or poor follow-through. Kunal does not respond to future outreach. If Sparkreach is a key vendor or partner, the relationship is damaged or lost."
+   },
+   "unknowns": [
+    {
+     "question": "What is the purpose of the meeting with Kunal Mehta?",
+     "relevance": "The purpose determines whether the silence is a problem, a missed opportunity, or a deprioritized lead. Without it, the urgency and stakes cannot be judged."
+    },
+    {
+     "question": "Who introduced Arjun to Kunal Mehta, or how did this conversation start?",
+     "relevance": "If Kunal is a connector or referral, the relationship carries different weight than if he is a cold outreach. The brief does not name Sparkreach or Kunal."
+    },
+    {
+     "question": "Is there a deadline or time-sensitivity to this meeting?",
+     "relevance": "If the meeting was time-bound, the two-week silence may have closed the window. If it was open-ended, the delay is less critical but still signals deprioritization."
+    },
+    {
+     "question": "Has Arjun booked the meeting since 2026-07-08, or is the calendar link still unused?",
+     "relevance": "The file's last sync was 2026-07-22, but screen activity is not part of the timeline. If the meeting was booked, this file is stale and needs no action. If not, the silence is active."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The file has been quiet for over two weeks. If you do not act by 2026-07-25, send Kunal a message to close the loop. If the meeting is not relevant to your current priorities, say so rather than leaving him waiting."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Arjun missed a meeting slot with Kunal Mehta on 2026-07-08 morning and asked for the calendar link to be resent.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Sorry I missed our slot this morning. Please resend the calendar link - I will book it again.\"\n    },\n    {\n      \"claim\": \"Kunal Mehta replied the same day with his calendar link and invited Arjun to book any time that works.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"here is my calendar: cal.sparkreach.test/kunal. Block any time that works for you.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 14.06 days since the last touch on 2026-07-08 10:30 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Kunal Mehta replied within 0.06 days of Arjun's message.\",\n      \"evidence\": [\n        \"num:their_reply_time:kunal@sparkreach.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief does not name any kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Sparkreach has no named role in the brief.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in the mail between Arjun and Kunal.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in Arjun's court: Kunal provided the calendar link and is waiting for Arjun to book a time.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": \"Block any time that works for you.\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Arjun has not booked a meeting with Kunal despite receiving the calendar link over two weeks ago.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The silence is not due to Kunal's unresponsiveness; he replied promptly and provided what was asked.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"The purpose of the meeting with Kunal Mehta is unknown from the file.\",\n      \"based_on\": [\n        \"file:domains\",\n        \"file:role\"\n      ]\n    },\n    {\n      \"claim\": \"This file represents an administrative task that has stalled after Arjun's request was fulfilled.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"file:domains\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a counterparty provides what was asked for and receives no follow-up within days, they interpret silence as deprioritization or changed intent.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Administrative silence from a counterparty is often process, not disinterest; but silence from the founder after receiving what they asked for signals a different problem.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A calendar link provided with an open invitation to book any time is a soft commitment; the founder's failure to act on it within two weeks suggests either deprioritization or a blocker not visible in the file.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When you ask someone to resend something and they do so promptly, the next move must happen within days, not weeks, or the counterparty will assume the request was not genuine.\",\n      \"why\": \"A delayed response after a direct request reads as either a change of mind or administrative failure, both of which damage trust in a new relationship.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"An unscheduled meeting slot with an unknown counterparty, left open for over two weeks, will eventually be filled by someone else or abandoned by the counterparty.\",\n      \"why\": \"Calendar slots are finite; a person who offers their time and receives no booking will move on to other priorities.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who misses a meeting and asks for a reschedule, then does not reschedule, is often blocked by something not stated in the mail\u2014a competing priority, uncertainty about the meeting's value, or a change in circumstances.\",\n      \"why\": \"The stated reason (missing the slot) does not explain the subsequent inaction; the real reason lies elsewhere.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Sparkreach is a potential investor, partner, or vendor that Arjun is evaluating or has deprioritized.\",\n      \"needs\": \"The brief or a prior message would name Sparkreach's role or the context of the meeting.\"\n    },\n    {\n      \"proposition\": \"Arjun intended to book the meeting but forgot or was blocked by a competing priority.\",\n      \"needs\": \"A message from Arjun explaining the delay, or a calendar entry showing the meeting was booked and then cancelled.\"\n    },\n    {\n      \"proposition\": \"The meeting was time-sensitive and the window has now closed.\",\n      \"needs\": \"Context about what the meeting was for and whether it is still relevant.\"\n    },\n    {\n      \"proposition\": \"Kunal Mehta is a connector or introducer, and the meeting was exploratory with no clear outcome expected.\",\n      \"needs\": \"The brief or a prior message would identify Kunal's role or the source of the introduction.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the purpose of the meeting with Kunal Mehta?\",\n      \"relevance\": \"The purpose determines whether the silence is a problem, a missed opportunity, or a deprioritized lead. Without it, the urgency and stakes cannot be judged.\"\n    },\n    {\n      \"question\": \"Who introduced Arjun to Kunal Mehta, or how did this conversation start?\",\n      \"relevance\": \"If Kunal is a connector or referral, the relationship carries different weight than if he is a cold outreach. The brief does not name Sparkreach or Kunal.\"\n    },\n    {\n      \"question\": \"Is there a deadline or time-sensitivity to this meeting?\",\n      \"relevance\": \"If the meeting was time-bound, the two-week silence may have closed the window. If it was open-ended, the delay is less critical but still signals deprioritization.\"\n    },\n    {\n      \"question\": \"Has Arjun booked the meeting since 2026-07-08, or is the calendar link still unused?\",\n      \"relevance\": \"The file's last sync was 2026-07-22, but screen activity is not part of the timeline. If the meeting was booked, this file is stale and needs no action. If not, the silence is active.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A meeting request that Arjun initiated, then failed to follow through on after the counterparty provided what was asked. The ball is in Arjun's court and has been for over two weeks. This is an administrative task that has stalled, not a relationship problem with the counterparty.\",\n    \"rivals\": [\n      \"A deprioritized lead that Arjun has decided not to pursue but has not communicated that decision to Kunal.\",\n      \"A meeting that was time-sensitive and the window has closed, making the calendar link obsolete.\",\n      \"An exploratory conversation that was never meant to result in a scheduled meeting, and the silence is normal.\",\n      \"A blocker unknown to the file that is preventing Arjun from booking the meeting.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"vendor\",\n    \"why\": \"Sparkreach is in the admin domain and the interaction is transactional (calendar coordination). Without a named role in the brief, it is most likely a vendor, service provider, or administrative contact. It could also be an intro or partner, but the file gives no evidence of either.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief does not name a kind of work for this file, so no playbook applies. From the file's own history: after Arjun asked for the calendar link to be resent, the expected next step was for Arjun to book a meeting within days.\",\n    \"actual\": \"Arjun did not book a meeting. The file has been quiet for over two weeks since Kunal provided the calendar link.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. Kunal will eventually assume Arjun is not interested and will not follow up. The meeting will not happen. If Sparkreach is a vendor or partner, the relationship will cool. If it is a time-sensitive opportunity, it will be lost.\",\n    \"act\": \"Arjun either books the meeting immediately, or sends a message to Kunal explaining the delay and rescheduling. If Arjun has decided not to pursue the meeting, he should communicate that to Kunal rather than leaving him waiting.\",\n    \"best\": \"Arjun books the meeting within days and it proceeds. The relationship with Kunal is maintained. If Sparkreach is a vendor or partner, the engagement moves forward.\",\n    \"worst\": \"Arjun does not act, and Kunal interprets the silence as disinterest or poor follow-through. Kunal does not respond to future outreach. If Sparkreach is a key vendor or partner, the relationship is damaged or lost.\",\n    \"signals_to_watch\": [\n      \"Whether Arjun books the meeting within the next few days.\",\n      \"Whether Kunal sends a follow-up message or closes the conversation.\",\n      \"Whether the meeting is completed and what outcome it produces.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The file has been quiet for over two weeks, longer than any gap it closed before (num:longest_gap)\",\n      \"Arjun initiated the request and then failed to follow through, which damages trust with the counterparty (cap:admin.executive_support.commitment_tracking#f1)\",\n      \"The purpose of the meeting is unknown, so the stakes cannot be fully assessed, but the silence itself is a relationship risk (ru:core.risk)\",\n      \"If Sparkreach is a vendor, partner, or investor, the delay may have closed a window or signaled deprioritization (own:2)\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Either book the meeting with Kunal Mehta using the calendar link he provided, or send him a message explaining the delay and proposing a new time. Do not leave the calendar link unused for another week.\",\n    \"for_whom\": \"Kunal Mehta\",\n    \"by_when\": \"2026-07-25\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"own:1\"\n    ],\n    \"to\": \"kunal@sparkreach.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If you have decided not to pursue this meeting, send Kunal a brief message thanking him for his time and letting him know you will not be able to meet. This closes the loop and preserves the relationship.\",\n  \"wait_or_stop\": \"Do not wait. The file has been quiet for over two weeks. If you do not act by 2026-07-25, send Kunal a message to close the loop. If the meeting is not relevant to your current priorities, say so rather than leaving him waiting.\",\n  \"done_when\": \"The meeting is booked and confirmed, or Kunal has received a message from you explaining the situation and closing the conversation.\",\n  \"draft\": \"Hi Kunal, apologies for the delay in getting back to you. I'd like to book a time to connect. I'm available [pick a specific time from his calendar]. Does that work for you? Thanks, Arjun\"\n}",
+  "site": "expert"
+ },
+ "8edec1d411f3de14917c976f8df1ae320fa205dc84f8c37071721d560e7e2c69": {
+  "framed": true,
+  "input_tokens": 7274,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3325,
+  "parsed": {
+   "alternative": "If you cannot decide whether to meet Kunal, send him a note saying you are in the middle of a fundraise and would like to reschedule for early August, with a specific date. This buys time and keeps the relationship warm without committing to a meeting you may not have time for. But this is a delay, not a resolution; it should be followed by a booking or a close within two weeks.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because Sparkreach's value is unknown; if it is a design partner or vendor you need, the cost of losing the relationship is real but not existential.",
+     "The urgency is high because the silence has already lasted over two weeks, and another week will make it impossible to recover the relationship without an apology.",
+     "The reversibility is costly because a founder who misses a meeting and then goes silent is read as unreliable; recovering from that requires either a meeting that goes very well or an explicit apology and rescheduling, both of which cost credibility.",
+     "The rule against chasing while the ball is in your court applies here: you cannot ask Kunal to follow up; you must either book or close.",
+     "The silence is now a relationship event, not a scheduling issue."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "Done when either: (1) you have booked a meeting with Kunal and sent him a confirmation, or (2) you have sent him a note thanking him for his time and closing the loop. The file should not remain open after 2026-07-24.",
+   "draft": "Hi Kunal, I apologize for the delay in getting back to you. I'd like to book a time to talk. How does [specific day and time from his calendar] work for you? Looking forward to it. Arjun",
+   "expected_vs_actual": {
+    "actual": "You requested a reschedule, received a calendar link, and have not booked a meeting in over two weeks.",
+    "expected": "The brief names no playbook for this work. If this is a vendor or partner evaluation, the expected stage would be 'intro' or 'evaluation', and the expected move would be to meet, assess fit, and decide. If this is a design partner, the expected move would be to book the meeting and begin the conversation.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You missed a meeting slot with Kunal Mehta on 2026-07-08 morning.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Sorry I missed our slot this morning"
+    },
+    {
+     "claim": "You asked Kunal to resend a calendar link so you could rebook.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Please resend the calendar link - I will book it again"
+    },
+    {
+     "claim": "Kunal replied the same day with his calendar link.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "here is my calendar: cal.sparkreach.test/kunal. Block any time that works for you"
+    },
+    {
+     "claim": "The file has been quiet for 14 days since Kunal's last message on 2026-07-08.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for Sparkreach.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Sparkreach has no stated role in the brief's goals or work in motion.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was extracted from the mail with Kunal.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in your court: you asked for the calendar link and said you would book it.",
+     "evidence": [
+      "evt_#2",
+      "file:whose_move"
+     ],
+     "quote": "I will book it again"
+    }
+   ],
+   "frames": {
+    "primary": "A counterparty has sent a calendar link in response to your request to reschedule a missed meeting. You have not booked a slot in over two weeks. The ball is in your court, and the silence is now a relationship event.",
+    "rivals": [
+     "This is an exploratory intro you have not yet decided to pursue, and the silence is a soft no.",
+     "This is a vendor or partner evaluation that has been deprioritized by other work, and the file should be closed rather than carried.",
+     "This is a meeting you intend to take but have simply not yet scheduled, and a reminder to yourself is all that is needed."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The brief would name it in the Partner or vendor section, or you would have written to them as part of a named goal.",
+     "proposition": "Sparkreach is a design partner or vendor you are evaluating."
+    },
+    {
+     "needs": "A note in the file saying Introly sent this, or a mail from Introly naming Sparkreach.",
+     "proposition": "Sparkreach is an intro from Introly that you have not yet categorized."
+    },
+    {
+     "needs": "A note closing the file, or a mail saying so to Kunal.",
+     "proposition": "You have decided Sparkreach is not a priority and have moved on."
+    },
+    {
+     "needs": "A booking in your calendar, or a mail to Kunal with a time.",
+     "proposition": "You intend to book the meeting but have not yet done so."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4"
+     ],
+     "claim": "You have not booked the meeting after receiving Kunal's calendar link."
+    },
+    {
+     "based_on": [
+      "fact:8",
+      "inference:1"
+     ],
+     "claim": "The silence is yours to break, not Kunal's to end."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "num:their_reply_time:kunal@sparkreach.test"
+     ],
+     "claim": "Kunal's quick reply and open calendar suggest he is interested and waiting."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "fact:6"
+     ],
+     "claim": "The work's purpose and value remain unmeasured because the brief does not name what Sparkreach is for."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-07-24",
+    "for_whom": "Kunal Mehta at Sparkreach",
+    "guided_by": [
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "fact:4",
+     "fact:8",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "kunal@sparkreach.test",
+    "what": "Either book a meeting with Kunal within the next two days, or send him a note closing the loop and thanking him for his time. Do not leave the file open without one of these moves.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A missed meeting followed by a request for a reschedule, followed by silence, damages trust faster than a direct cancellation would.",
+     "kind": "practice",
+     "why": "The counterparty has now invested twice: once in the original slot, once in sending the calendar. A third investment (waiting) without a booking reads as disrespect."
+    },
+    {
+     "claim": "When a founder cannot name what a counterparty is for, the work is either exploratory or it is not work at all.",
+     "kind": "base_rate",
+     "why": "A file with no stated purpose in the brief is a file that has not been thought through. It will not survive a founder's next priority shift."
+    },
+    {
+     "claim": "A counterparty who replies fast and sends a calendar link is not the problem; a founder who does not book is.",
+     "kind": "counter_pattern",
+     "why": "The counterparty has done their part. The silence is not theirs."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "When a counterparty sends a calendar link in response to a request, they expect a booking within days, not weeks.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "inference:1"
+     ],
+     "claim": "A founder who has missed one meeting slot and then does not book the rescheduled one signals either low priority or a blocker the founder has not named.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "Silence after a calendar is sent, when the sender said they would book, is read by the recipient as either a lost email or a change of mind.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "brief:cbl_#6",
+     "brief:cbl_#23"
+    ],
+    "kind": "vendor",
+    "why": "Sparkreach is named as a company, not a person; the mail is administrative (calendar coordination); and the brief does not name it. The most likely frame is that this is a vendor or service provider you are evaluating. If it is a design partner, it should be named in the Partner section of the brief. If it is an investor or program, it would be named there. The absence suggests either a vendor relationship or an intro not yet categorized."
+   },
+   "scenarios": {
+    "act": "You book a meeting with Kunal within the next two days, or you send him a note saying you have decided not to pursue this now and thank him for his time. Either move closes the loop and restores the relationship.",
+    "best": "You book a meeting, meet Kunal, and discover Sparkreach is a valuable partner or vendor. You move forward with a clear next step. The relationship is warm and the work is named.",
+    "do_nothing": "After another week, Kunal will assume you are not interested. He will not follow up a second time. The relationship will cool. If Sparkreach is valuable, you will have lost the opportunity. If it is not, the file will remain open and unresolved, a cost centre carrying a debt you do not owe.",
+    "signals_to_watch": [
+     "Whether you have a calendar entry with Kunal in the next week",
+     "Whether Kunal sends a follow-up message (he is unlikely to)",
+     "Whether the brief is updated to name Sparkreach's role",
+     "Whether you close the file with a note saying why"
+    ],
+    "worst": "You book a meeting, meet Kunal, and discover Sparkreach is not a fit. You have wasted both your time and his. Alternatively, you do nothing, Kunal assumes you are not serious, and the opportunity is lost without a conversation."
+   },
+   "unknowns": [
+    {
+     "question": "What is Sparkreach, and what is the meeting for?",
+     "relevance": "Without knowing the purpose, it is impossible to judge whether the silence is a mistake or a correct deprioritization. If Sparkreach is a design partner or investor, the silence is costly. If it is a cold intro you have not warmed to, the silence may be right."
+    },
+    {
+     "question": "Did you intend to book the meeting and forget, or did you decide not to?",
+     "relevance": "If you forgot, the move is to book now and apologize for the delay. If you decided not to, the move is to tell Kunal so, not to leave him waiting."
+    },
+    {
+     "question": "Is there a blocker preventing you from meeting Kunal?",
+     "relevance": "If there is a blocker, it should be named to Kunal now, not left as silence. If there is not, the blocker is only that you have not prioritized it."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The silence has already lasted over two weeks. Waiting another week will make the relationship unrecoverable. Stop if you decide Sparkreach is not a priority; close the file with a note to Kunal. Do not carry an open file with no stated purpose and no move."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You missed a meeting slot with Kunal Mehta on 2026-07-08 morning.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Sorry I missed our slot this morning\"\n    },\n    {\n      \"claim\": \"You asked Kunal to resend a calendar link so you could rebook.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Please resend the calendar link - I will book it again\"\n    },\n    {\n      \"claim\": \"Kunal replied the same day with his calendar link.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"here is my calendar: cal.sparkreach.test/kunal. Block any time that works for you\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 14 days since Kunal's last message on 2026-07-08.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for Sparkreach.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Sparkreach has no stated role in the brief's goals or work in motion.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was extracted from the mail with Kunal.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in your court: you asked for the calendar link and said you would book it.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:whose_move\"\n      ],\n      \"quote\": \"I will book it again\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"You have not booked the meeting after receiving Kunal's calendar link.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"The silence is yours to break, not Kunal's to end.\",\n      \"based_on\": [\n        \"fact:8\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"Kunal's quick reply and open calendar suggest he is interested and waiting.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"num:their_reply_time:kunal@sparkreach.test\"\n      ]\n    },\n    {\n      \"claim\": \"The work's purpose and value remain unmeasured because the brief does not name what Sparkreach is for.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"fact:6\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a counterparty sends a calendar link in response to a request, they expect a booking within days, not weeks.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who has missed one meeting slot and then does not book the rescheduled one signals either low priority or a blocker the founder has not named.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Silence after a calendar is sent, when the sender said they would book, is read by the recipient as either a lost email or a change of mind.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A missed meeting followed by a request for a reschedule, followed by silence, damages trust faster than a direct cancellation would.\",\n      \"why\": \"The counterparty has now invested twice: once in the original slot, once in sending the calendar. A third investment (waiting) without a booking reads as disrespect.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a founder cannot name what a counterparty is for, the work is either exploratory or it is not work at all.\",\n      \"why\": \"A file with no stated purpose in the brief is a file that has not been thought through. It will not survive a founder's next priority shift.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who replies fast and sends a calendar link is not the problem; a founder who does not book is.\",\n      \"why\": \"The counterparty has done their part. The silence is not theirs.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Sparkreach is a design partner or vendor you are evaluating.\",\n      \"needs\": \"The brief would name it in the Partner or vendor section, or you would have written to them as part of a named goal.\"\n    },\n    {\n      \"proposition\": \"Sparkreach is an intro from Introly that you have not yet categorized.\",\n      \"needs\": \"A note in the file saying Introly sent this, or a mail from Introly naming Sparkreach.\"\n    },\n    {\n      \"proposition\": \"You have decided Sparkreach is not a priority and have moved on.\",\n      \"needs\": \"A note closing the file, or a mail saying so to Kunal.\"\n    },\n    {\n      \"proposition\": \"You intend to book the meeting but have not yet done so.\",\n      \"needs\": \"A booking in your calendar, or a mail to Kunal with a time.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Sparkreach, and what is the meeting for?\",\n      \"relevance\": \"Without knowing the purpose, it is impossible to judge whether the silence is a mistake or a correct deprioritization. If Sparkreach is a design partner or investor, the silence is costly. If it is a cold intro you have not warmed to, the silence may be right.\"\n    },\n    {\n      \"question\": \"Did you intend to book the meeting and forget, or did you decide not to?\",\n      \"relevance\": \"If you forgot, the move is to book now and apologize for the delay. If you decided not to, the move is to tell Kunal so, not to leave him waiting.\"\n    },\n    {\n      \"question\": \"Is there a blocker preventing you from meeting Kunal?\",\n      \"relevance\": \"If there is a blocker, it should be named to Kunal now, not left as silence. If there is not, the blocker is only that you have not prioritized it.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A counterparty has sent a calendar link in response to your request to reschedule a missed meeting. You have not booked a slot in over two weeks. The ball is in your court, and the silence is now a relationship event.\",\n    \"rivals\": [\n      \"This is an exploratory intro you have not yet decided to pursue, and the silence is a soft no.\",\n      \"This is a vendor or partner evaluation that has been deprioritized by other work, and the file should be closed rather than carried.\",\n      \"This is a meeting you intend to take but have simply not yet scheduled, and a reminder to yourself is all that is needed.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"vendor\",\n    \"why\": \"Sparkreach is named as a company, not a person; the mail is administrative (calendar coordination); and the brief does not name it. The most likely frame is that this is a vendor or service provider you are evaluating. If it is a design partner, it should be named in the Partner section of the brief. If it is an investor or program, it would be named there. The absence suggests either a vendor relationship or an intro not yet categorized.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"brief:cbl_#6\",\n      \"brief:cbl_#23\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this work. If this is a vendor or partner evaluation, the expected stage would be 'intro' or 'evaluation', and the expected move would be to meet, assess fit, and decide. If this is a design partner, the expected move would be to book the meeting and begin the conversation.\",\n    \"actual\": \"You requested a reschedule, received a calendar link, and have not booked a meeting in over two weeks.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"After another week, Kunal will assume you are not interested. He will not follow up a second time. The relationship will cool. If Sparkreach is valuable, you will have lost the opportunity. If it is not, the file will remain open and unresolved, a cost centre carrying a debt you do not owe.\",\n    \"act\": \"You book a meeting with Kunal within the next two days, or you send him a note saying you have decided not to pursue this now and thank him for his time. Either move closes the loop and restores the relationship.\",\n    \"best\": \"You book a meeting, meet Kunal, and discover Sparkreach is a valuable partner or vendor. You move forward with a clear next step. The relationship is warm and the work is named.\",\n    \"worst\": \"You book a meeting, meet Kunal, and discover Sparkreach is not a fit. You have wasted both your time and his. Alternatively, you do nothing, Kunal assumes you are not serious, and the opportunity is lost without a conversation.\",\n    \"signals_to_watch\": [\n      \"Whether you have a calendar entry with Kunal in the next week\",\n      \"Whether Kunal sends a follow-up message (he is unlikely to)\",\n      \"Whether the brief is updated to name Sparkreach's role\",\n      \"Whether you close the file with a note saying why\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The stakes are medium because Sparkreach's value is unknown; if it is a design partner or vendor you need, the cost of losing the relationship is real but not existential.\",\n      \"The urgency is high because the silence has already lasted over two weeks, and another week will make it impossible to recover the relationship without an apology.\",\n      \"The reversibility is costly because a founder who misses a meeting and then goes silent is read as unreliable; recovering from that requires either a meeting that goes very well or an explicit apology and rescheduling, both of which cost credibility.\",\n      \"The rule against chasing while the ball is in your court applies here: you cannot ask Kunal to follow up; you must either book or close.\",\n      \"The silence is now a relationship event, not a scheduling issue.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Either book a meeting with Kunal within the next two days, or send him a note closing the loop and thanking him for his time. Do not leave the file open without one of these moves.\",\n    \"for_whom\": \"Kunal Mehta at Sparkreach\",\n    \"by_when\": \"2026-07-24\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"fact:4\",\n      \"fact:8\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"kunal@sparkreach.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If you cannot decide whether to meet Kunal, send him a note saying you are in the middle of a fundraise and would like to reschedule for early August, with a specific date. This buys time and keeps the relationship warm without committing to a meeting you may not have time for. But this is a delay, not a resolution; it should be followed by a booking or a close within two weeks.\",\n  \"wait_or_stop\": \"Do not wait. The silence has already lasted over two weeks. Waiting another week will make the relationship unrecoverable. Stop if you decide Sparkreach is not a priority; close the file with a note to Kunal. Do not carry an open file with no stated purpose and no move.\",\n  \"done_when\": \"Done when either: (1) you have booked a meeting with Kunal and sent him a confirmation, or (2) you have sent him a note thanking him for his time and closing the loop. The file should not remain open after 2026-07-24.\",\n  \"draft\": \"Hi Kunal, I apologize for the delay in getting back to you. I'd like to book a time to talk. How does [specific day and time from his calendar] work for you? Looking forward to it. Arjun\"\n}",
+  "site": "expert"
+ },
+ "94404e4b7d1fb424f7e3a47a0fefa2eb32eb679b300c5573b724199c2c0db31f": {
+  "framed": true,
+  "input_tokens": 7205,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3008,
+  "parsed": {
+   "alternative": "If you decide the meeting is no longer needed, send a brief note to Kunal thanking him for the calendar and letting him know you will not be able to meet at this time. This clears the file and preserves the relationship.",
+   "appraisal": {
+    "reasons": [
+     "Sparkreach has no stated role in the brief and no clear connection to your stated goals, so the stakes are low.",
+     "The file has been quiet for over two weeks, and Kunal is waiting for your move, so urgency is medium: a decision is needed soon to avoid further drift.",
+     "A wrong move here \u2014 booking a meeting you do not need or sending a confusing message \u2014 is reversible: you can cancel or clarify later."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "medium"
+   },
+   "done_when": "Either a meeting is booked with Kunal and a calendar invite is sent, or a note is sent to Kunal closing the file with thanks. The file is then resolved and no longer quiet.",
+   "draft": "Hi Kunal, I apologise for the delay in getting back to you. I want to make sure we use your time well \u2014 could you remind me what Sparkreach does and what you had in mind for a conversation? Once I have that context, I'll book a time that works. Thanks, Arjun",
+   "expected_vs_actual": {
+    "actual": "A meeting was scheduled and missed. You asked for the calendar to be resent. Kunal provided it. You have not booked a new slot in over two weeks, and the file is now quiet.",
+    "expected": "Without a named kind of work, no playbook applies. The brief's goals are to raise, hire, get into programs, and land design partners. If Sparkreach is relevant to any of these, the file should be categorised and tracked. If not, it should be closed.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You missed a meeting slot with Kunal Mehta on 2026-07-08 morning and asked him to resend his calendar link.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Sorry I missed our slot this morning. Please resend the calendar link - I will book it again."
+    },
+    {
+     "claim": "Kunal Mehta replied the same day with his calendar link and invited you to book any time that works.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "here is my calendar: cal.sparkreach.test/kunal. Block any time that works for you."
+    },
+    {
+     "claim": "The file has been quiet for 14 days since Kunal's last message on 2026-07-08 10:30 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in your court: Kunal provided his calendar and is waiting for you to book a time.",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No kind of work is named for this file in the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Sparkreach has no role in the brief and no stated connection to any of your goals.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was extracted from the mail in this file.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A meeting was scheduled, you missed it, you asked for the calendar to be resent, Kunal provided it, and you have not booked a new slot in over two weeks. The file's purpose is unclear, and the silence is yours, not his.",
+    "rivals": [
+     "Sparkreach is a low-priority intro that was never meant to be a meeting, and the file should be closed.",
+     "Kunal has moved on and is no longer interested, and the silence signals that the meeting is no longer wanted.",
+     "The meeting is important but has been deprioritised by other work, and a rebook now would be opportunistic rather than genuine."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A note from you on what Sparkreach does, how they were introduced, and why the meeting matters to your goals.",
+     "proposition": "Sparkreach is a potential design partner, investor, or vendor that was introduced to you but not yet categorised in the brief."
+    },
+    {
+     "needs": "A decision on whether to rebook or to close the file with a note to Kunal.",
+     "proposition": "The meeting was important when it was first scheduled but has since been superseded by other priorities."
+    },
+    {
+     "needs": "A booking or a message to Kunal within the next few days to confirm or cancel.",
+     "proposition": "Kunal is waiting for you to book and will remain available, but will not follow up again."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4"
+     ],
+     "claim": "You have not booked a meeting with Kunal despite having his calendar link for over two weeks."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Kunal's silence is likely not disinterest but normal administrative waiting: he gave you what you asked for and is now waiting for your move."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "fact:6"
+     ],
+     "claim": "The file's purpose and Sparkreach's relevance to your company remain unclear from the dossier."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-07-25",
+    "for_whom": "yourself and Kunal Mehta",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f2",
+     "own:3",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "fact:4",
+     "fact:5",
+     "fact:6",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Clarify what Sparkreach is, why the meeting matters to your company, and whether it is still a priority. Then either book a specific time with Kunal or send a note closing the file.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A missed meeting slot should be followed by an explanation of what happened and a specific proposed time, not a request to resend the calendar.",
+     "kind": "practice",
+     "why": "Asking someone to resend what they already gave reads as disorganisation and makes them less likely to wait for a rebook."
+    },
+    {
+     "claim": "When the purpose of a meeting is not clear from the file, the meeting is often not urgent enough to rebook after a miss.",
+     "kind": "base_rate",
+     "why": "Urgent meetings get rebooked immediately; unclear ones drift."
+    },
+    {
+     "claim": "A file with no stated role in the brief and no named kind of work should be closed or clarified before any outbound move is made.",
+     "kind": "practice",
+     "why": "Sending a meeting request to someone whose relevance is unknown wastes both parties' time and signals that your company does not know what it is doing."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "When a counterparty provides what was asked for and goes quiet, they are waiting for the requester to act, not signalling disinterest.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A meeting request that is missed and then rebooked is often not rebooked, especially when the requester has not stated why the first slot was missed or what changed.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "Administrative silence lasting over two weeks after a calendar is shared usually means the requester has deprioritised the meeting, not that the counterparty has lost interest.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:role"
+    ],
+    "kind": null,
+    "why": "The brief names no kind of work for Sparkreach, and the dossier does not show enough context to propose one. The file could be an intro, a partner, a vendor, or something else entirely. This must be clarified before the file can be judged."
+   },
+   "scenarios": {
+    "act": "You clarify what Sparkreach is and why the meeting matters. You either book a specific time with Kunal or send a note explaining that the meeting is no longer needed. Either way, the file is resolved and the relationship is cleared.",
+    "best": "Sparkreach is a valuable design partner or investor. You book a meeting with Kunal, the meeting goes well, and a partnership or investment opportunity opens. The file moves to the next stage of work.",
+    "do_nothing": "The file remains quiet. Kunal will not follow up again. In a month, the file will be 45 days quiet and may be marked dormant. The opportunity, if there was one, will have been lost. If Sparkreach was important, this will be a missed connection.",
+    "signals_to_watch": [
+     "Whether you can articulate in one sentence why Sparkreach matters to your company.",
+     "Whether Kunal responds to a new message from you, and how quickly.",
+     "Whether the meeting, if booked, produces a clear next step or closes with no follow-up."
+    ],
+    "worst": "You book a meeting with Kunal without knowing why, the meeting is awkward or unproductive, and you waste both parties' time. Kunal's impression of your company is that it is disorganised. The file closes with no value."
+   },
+   "unknowns": [
+    {
+     "question": "What is Sparkreach, and what is the purpose of the meeting with Kunal Mehta?",
+     "relevance": "Without knowing why this meeting matters, you cannot decide whether to rebook, close the file, or deprioritise it. The file's silence may be because the meeting was never important enough to rebook after the miss."
+    },
+    {
+     "question": "How was Sparkreach introduced to you, and by whom?",
+     "relevance": "If Sparkreach was introduced by a connector or a trusted source, the meeting may be worth rebooting. If it was an unsolicited outreach, the miss may have been the right call."
+    },
+    {
+     "question": "What happened on 2026-07-08 morning that caused you to miss the slot?",
+     "relevance": "If the miss was a scheduling error, a rebook with an apology makes sense. If it was a deprioritisation, sending a meeting request now may waste Kunal's time."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-07-25. If you have not clarified Sparkreach's relevance or booked a meeting by then, close the file. Do not send a reminder or chase to Kunal; the ball is in your court, and a chase would read as pressure or disorganisation."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You missed a meeting slot with Kunal Mehta on 2026-07-08 morning and asked him to resend his calendar link.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Sorry I missed our slot this morning. Please resend the calendar link - I will book it again.\"\n    },\n    {\n      \"claim\": \"Kunal Mehta replied the same day with his calendar link and invited you to book any time that works.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"here is my calendar: cal.sparkreach.test/kunal. Block any time that works for you.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 14 days since Kunal's last message on 2026-07-08 10:30 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in your court: Kunal provided his calendar and is waiting for you to book a time.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No kind of work is named for this file in the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Sparkreach has no role in the brief and no stated connection to any of your goals.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was extracted from the mail in this file.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"You have not booked a meeting with Kunal despite having his calendar link for over two weeks.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"Kunal's silence is likely not disinterest but normal administrative waiting: he gave you what you asked for and is now waiting for your move.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"claim\": \"The file's purpose and Sparkreach's relevance to your company remain unclear from the dossier.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"fact:6\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a counterparty provides what was asked for and goes quiet, they are waiting for the requester to act, not signalling disinterest.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A meeting request that is missed and then rebooked is often not rebooked, especially when the requester has not stated why the first slot was missed or what changed.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Administrative silence lasting over two weeks after a calendar is shared usually means the requester has deprioritised the meeting, not that the counterparty has lost interest.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A missed meeting slot should be followed by an explanation of what happened and a specific proposed time, not a request to resend the calendar.\",\n      \"why\": \"Asking someone to resend what they already gave reads as disorganisation and makes them less likely to wait for a rebook.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When the purpose of a meeting is not clear from the file, the meeting is often not urgent enough to rebook after a miss.\",\n      \"why\": \"Urgent meetings get rebooked immediately; unclear ones drift.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A file with no stated role in the brief and no named kind of work should be closed or clarified before any outbound move is made.\",\n      \"why\": \"Sending a meeting request to someone whose relevance is unknown wastes both parties' time and signals that your company does not know what it is doing.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Sparkreach is a potential design partner, investor, or vendor that was introduced to you but not yet categorised in the brief.\",\n      \"needs\": \"A note from you on what Sparkreach does, how they were introduced, and why the meeting matters to your goals.\"\n    },\n    {\n      \"proposition\": \"The meeting was important when it was first scheduled but has since been superseded by other priorities.\",\n      \"needs\": \"A decision on whether to rebook or to close the file with a note to Kunal.\"\n    },\n    {\n      \"proposition\": \"Kunal is waiting for you to book and will remain available, but will not follow up again.\",\n      \"needs\": \"A booking or a message to Kunal within the next few days to confirm or cancel.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Sparkreach, and what is the purpose of the meeting with Kunal Mehta?\",\n      \"relevance\": \"Without knowing why this meeting matters, you cannot decide whether to rebook, close the file, or deprioritise it. The file's silence may be because the meeting was never important enough to rebook after the miss.\"\n    },\n    {\n      \"question\": \"How was Sparkreach introduced to you, and by whom?\",\n      \"relevance\": \"If Sparkreach was introduced by a connector or a trusted source, the meeting may be worth rebooting. If it was an unsolicited outreach, the miss may have been the right call.\"\n    },\n    {\n      \"question\": \"What happened on 2026-07-08 morning that caused you to miss the slot?\",\n      \"relevance\": \"If the miss was a scheduling error, a rebook with an apology makes sense. If it was a deprioritisation, sending a meeting request now may waste Kunal's time.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A meeting was scheduled, you missed it, you asked for the calendar to be resent, Kunal provided it, and you have not booked a new slot in over two weeks. The file's purpose is unclear, and the silence is yours, not his.\",\n    \"rivals\": [\n      \"Sparkreach is a low-priority intro that was never meant to be a meeting, and the file should be closed.\",\n      \"Kunal has moved on and is no longer interested, and the silence signals that the meeting is no longer wanted.\",\n      \"The meeting is important but has been deprioritised by other work, and a rebook now would be opportunistic rather than genuine.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The brief names no kind of work for Sparkreach, and the dossier does not show enough context to propose one. The file could be an intro, a partner, a vendor, or something else entirely. This must be clarified before the file can be judged.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a named kind of work, no playbook applies. The brief's goals are to raise, hire, get into programs, and land design partners. If Sparkreach is relevant to any of these, the file should be categorised and tracked. If not, it should be closed.\",\n    \"actual\": \"A meeting was scheduled and missed. You asked for the calendar to be resent. Kunal provided it. You have not booked a new slot in over two weeks, and the file is now quiet.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. Kunal will not follow up again. In a month, the file will be 45 days quiet and may be marked dormant. The opportunity, if there was one, will have been lost. If Sparkreach was important, this will be a missed connection.\",\n    \"act\": \"You clarify what Sparkreach is and why the meeting matters. You either book a specific time with Kunal or send a note explaining that the meeting is no longer needed. Either way, the file is resolved and the relationship is cleared.\",\n    \"best\": \"Sparkreach is a valuable design partner or investor. You book a meeting with Kunal, the meeting goes well, and a partnership or investment opportunity opens. The file moves to the next stage of work.\",\n    \"worst\": \"You book a meeting with Kunal without knowing why, the meeting is awkward or unproductive, and you waste both parties' time. Kunal's impression of your company is that it is disorganised. The file closes with no value.\",\n    \"signals_to_watch\": [\n      \"Whether you can articulate in one sentence why Sparkreach matters to your company.\",\n      \"Whether Kunal responds to a new message from you, and how quickly.\",\n      \"Whether the meeting, if booked, produces a clear next step or closes with no follow-up.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Sparkreach has no stated role in the brief and no clear connection to your stated goals, so the stakes are low.\",\n      \"The file has been quiet for over two weeks, and Kunal is waiting for your move, so urgency is medium: a decision is needed soon to avoid further drift.\",\n      \"A wrong move here \u2014 booking a meeting you do not need or sending a confusing message \u2014 is reversible: you can cancel or clarify later.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Clarify what Sparkreach is, why the meeting matters to your company, and whether it is still a priority. Then either book a specific time with Kunal or send a note closing the file.\",\n    \"for_whom\": \"yourself and Kunal Mehta\",\n    \"by_when\": \"2026-07-25\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"fact:4\",\n      \"fact:5\",\n      \"fact:6\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f2\",\n      \"own:3\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If you decide the meeting is no longer needed, send a brief note to Kunal thanking him for the calendar and letting him know you will not be able to meet at this time. This clears the file and preserves the relationship.\",\n  \"wait_or_stop\": \"Wait until 2026-07-25. If you have not clarified Sparkreach's relevance or booked a meeting by then, close the file. Do not send a reminder or chase to Kunal; the ball is in your court, and a chase would read as pressure or disorganisation.\",\n  \"done_when\": \"Either a meeting is booked with Kunal and a calendar invite is sent, or a note is sent to Kunal closing the file with thanks. The file is then resolved and no longer quiet.\",\n  \"draft\": \"Hi Kunal, I apologise for the delay in getting back to you. I want to make sure we use your time well \u2014 could you remind me what Sparkreach does and what you had in mind for a conversation? Once I have that context, I'll book a time that works. Thanks, Arjun\"\n}",
+  "site": "expert"
+ }
+}

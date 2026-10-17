@@ -1,0 +1,254 @@
+{
+ "851453d7bd50815a81537181d042615e24c1e42859ee3f3148277e9dfc5873fb": {
+  "framed": true,
+  "input_tokens": 13414,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3799,
+  "parsed": {
+   "alternative": "If the founder confirms eligibility and decides to apply, the next move is to prepare the application and submit it before 30 September. This requires: (1) obtaining the application form and requirements from University Startup Cell; (2) assigning an owner and a deadline for each section (deck, metrics, co-founder profiles, any recommendation); (3) preparing the application in parallel with the other six programmes already in motion; (4) submitting before the deadline and filing the receipt.",
+   "appraisal": {
+    "reasons": [
+     "The deadline is fixed at 30 September, which is 23 days away from the message date of 2026-09-07. This is enough time to prepare an application if the company decides to apply, but not enough time to delay the decision.",
+     "A seed grant is non-dilutive capital and can accelerate the company's progress without diluting equity, making it valuable if the company is eligible and the application is competitive.",
+     "The company is already applying to five other programmes (Lakshya Accelerator, Gulf Launchpad, DIT Incubation Cell, TechBridge Foundation, Awadh Enterprise Centre, State Startup Mission), so the effort to apply to a seventh programme must be weighed against the return and the founder's capacity.",
+     "If the company does not apply, the opportunity is lost until the next intake, which is unknown. If the company applies and is rejected, the rejection carries no re-application date unless the programme publishes one.",
+     "A wrong decision to apply (when the company is ineligible or the effort is not worth the return) is reversible: the company can simply not submit. A wrong decision not to apply (when the company is eligible and the grant would be valuable) is also reversible, but only at the next intake, which may be months away."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The founder has confirmed eligibility, decided to apply or not to apply, and if applying, has assigned owners and deadlines for each section of the application. If applying, done is when the application is submitted before 30 September and the receipt is filed. If not applying, done is when the file is closed with the reason and the date.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "No application has been submitted. The file shows only a broadcast message about the deadline. The company has not yet decided to apply. The file is not yet at the 'applied' stage; it is at a decision point before application.",
+    "expected": "The playbook expects that at the 'applied' stage, an application has been submitted, a receipt has been filed, and the file is waiting for the programme's deadline to pass and its review to begin. The programme is quiet, which is normal; the file's calendar is set by the programme's published deadline and decision date. The next move is to track the deadline and prepare for the 'under_review' stage.",
+    "stage": "applied"
+   },
+   "facts": [
+    {
+     "claim": "University Startup Cell sent a message about a seed grant application deadline of 30 September.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Seed grant applications close 30 Sep Dear Founder, Applications for the university seed grant close on 30 Sep. Startups incubated on campus may apply. University Startup Cell"
+    },
+    {
+     "claim": "This is the first and only contact from University Startup Cell in the file.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows no prior relationship history, reply times, or engagement pattern with University Startup Cell.",
+     "evidence": [
+      "num:usual_gap",
+      "num:longest_gap",
+      "num:their_reply_time:grants@unistartupcell.test",
+      "num:your_reply_time:grants@unistartupcell.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The message contains no promise, no ask, and no open commitment from either party.",
+     "evidence": [
+      "none:promises",
+      "file:Open asks"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is categorized as a program application, but holds no record of an application having been submitted to University Startup Cell.",
+     "evidence": [
+      "file:kind",
+      "brief:cbl_#18"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The company brief lists University Startup Cell as applied, placing it among six other program applications.",
+     "evidence": [
+      "brief:cbl_#18"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.54 days since the single message arrived.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A university seed grant programme has announced its application deadline. The company has not yet applied. The decision is whether to apply, and if so, how to prepare and submit before the deadline passes.",
+    "rivals": [
+     "This is a status update on an application already submitted, and the message is a reminder to track the programme's decision calendar.",
+     "This is a low-priority programme notification that can be filed and revisited only if the company has capacity after higher-priority fundraising and programme work.",
+     "This is an eligibility check: the company may not meet the programme's requirements, and applying would be a waste of time."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder that the company meets the eligibility criteria stated in the message.",
+     "proposition": "Your company is incubated on campus or has a campus affiliation that makes it eligible for this grant."
+    },
+    {
+     "needs": "A search of the company's records for a submitted application, a confirmation email from the programme, or a portal login showing application status.",
+     "proposition": "An application to University Startup Cell has already been submitted, and this message is a reminder about the deadline."
+    },
+    {
+     "needs": "A decision from the founder about whether to apply, and if so, a plan to prepare and submit before 30 September.",
+     "proposition": "The founder intends to apply to this programme and has allocated time and resources to prepare the application."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "own:1"
+     ],
+     "claim": "The message is a broadcast notification to all eligible startups, not a personalized communication about your application status."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:5",
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "The next move is ours: to decide whether to apply, and if so, to prepare and submit an application before 30 September."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "The deadline of 30 September is fixed and will not move for this company."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "none:we_wrote",
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "No application has been submitted yet, because the file shows no receipt, no confirmation, and no portal status."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-10",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+     "own:2",
+     "own:4"
+    ],
+    "rests_on": [
+     "fact:1",
+     "inference:2",
+     "unknown:1",
+     "unknown:4"
+    ],
+    "to": null,
+    "what": "confirm eligibility and decide whether to apply",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A university seed grant is typically non-dilutive capital, often smaller than venture rounds but faster to close, and carries fewer governance demands than institutional investors.",
+     "kind": "practice",
+     "why": "University programmes prioritize supporting early-stage founders over financial returns, and their legal agreements are simpler than venture documents."
+    },
+    {
+     "claim": "University programmes often require the startup to be incubated on campus or to have a campus affiliation to be eligible.",
+     "kind": "base_rate",
+     "why": "The message itself states 'Startups incubated on campus may apply', which is a common eligibility gate."
+    },
+    {
+     "claim": "A university programme's silence after a deadline passes is not a rejection; it is the normal rhythm of a batch review.",
+     "kind": "counter_pattern",
+     "why": "Universities operate on academic calendars and committee schedules, not investor response times, and they publish their decision dates separately from their application deadlines."
+    },
+    {
+     "claim": "The decision to apply to a university programme should be made early enough to prepare a complete application, not in the final days before the deadline.",
+     "kind": "practice",
+     "why": "A rushed application loses the chance to gather metrics, refine the pitch, and have co-founders complete their own profiles, all of which are typically required."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+      "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+     ],
+     "claim": "A programme's broadcast notification about a deadline is a signal to act, not a response to prior action.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "Applications to university-based programmes are typically cohort-based, with a single deadline and a batch review after it closes.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "A programme application left unsubmitted past its deadline is lost on the calendar, not on merit.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#18",
+     "evt_#1"
+    ],
+    "kind": "program",
+    "why": "The message is from a programme, the file is categorized as a programme application, and the brief lists it among six other programme applications. The work is to apply, track the application through the programme's calendar, and respond to its decision."
+   },
+   "scenarios": {
+    "act": "The founder decides to apply, prepares the application, and submits it before 30 September. The file moves to the 'applied' stage. The company's application enters the programme's batch review. The file then waits for the programme's decision, which typically arrives within 28 days of the deadline, though university programmes often take longer.",
+    "best": "The company applies, is selected, and receives a seed grant that accelerates fundraising and product development. The grant is non-dilutive, the programme provides mentorship and network access, and the company graduates to the next funding round with momentum.",
+    "do_nothing": "The deadline of 30 September passes without an application. The file closes as 'declined' with the reason 'not applied'. The company loses the opportunity to apply to this programme until its next intake, which is unknown. If the programme is a good fit and the company later regrets not applying, re-application will require waiting for the next cycle and re-preparing the application from scratch.",
+    "signals_to_watch": [
+     "A decision from the founder about whether to apply, and by when.",
+     "Confirmation of eligibility: is the company incubated on campus or does it meet the programme's affiliation requirement?",
+     "The application form and its requirements: how much work is needed, and how does it compare to the other six programmes already in motion?",
+     "The programme's published decision date or typical timeline: when should the file expect to hear back?",
+     "Submission confirmation: has the application been received by the programme, and is there a portal or email confirmation?"
+    ],
+    "worst": "The company applies, is rejected, and receives no feedback or re-application date. The effort spent on the application is lost. The company does not re-apply because the rejection feels final, and the programme's next intake is unknown or far away."
+   },
+   "unknowns": [
+    {
+     "question": "Is your company eligible for this grant \u2014 specifically, is it incubated on campus or does it have the affiliation the programme requires?",
+     "relevance": "Eligibility determines whether applying is worth the effort; an ineligible application wastes time and produces a rejection that carries no re-application date."
+    },
+    {
+     "question": "Has an application already been submitted to University Startup Cell, and if so, what is its status?",
+     "relevance": "If an application is already in, the file should move to the 'applied' stage and track the programme's decision calendar; if not, the decision to apply must be made now."
+    },
+    {
+     "question": "What is the programme's typical timeline from application deadline to decision, and what is its selection process?",
+     "relevance": "The playbook assumes a 14-day 'applied' stage and a 28-day 'under_review' stage, but university programmes often operate on longer calendars; knowing the actual timeline prevents false urgency and false patience."
+    },
+    {
+     "question": "What does the programme ask for in its application form, and how much work is required to prepare a competitive submission?",
+     "relevance": "The effort required determines whether this programme should be prioritized against the five other active programme applications already in motion."
+    },
+    {
+     "question": "Does the programme publish its decision date, or does it only notify applicants after the deadline passes?",
+     "relevance": "If the programme publishes a decision date, that date becomes the file's calendar; if it does not, the file will be dormant for an unknown period, and the playbook's 90-day prior becomes the only guide."
+    }
+   ],
+   "wait_or_stop": "Wait until the founder confirms eligibility and the decision to apply. If the founder decides not to apply, close the file with the reason 'not applied' and the date 2026-09-30 (the deadline). If the founder decides to apply, move to the 'applied' stage and set the file's calendar by the programme's published decision date or by the playbook's 28-day prior for 'under_review'."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"University Startup Cell sent a message about a seed grant application deadline of 30 September.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Seed grant applications close 30 Sep Dear Founder, Applications for the university seed grant close on 30 Sep. Startups incubated on campus may apply. University Startup Cell\"\n    },\n    {\n      \"claim\": \"This is the first and only contact from University Startup Cell in the file.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows no prior relationship history, reply times, or engagement pattern with University Startup Cell.\",\n      \"evidence\": [\n        \"num:usual_gap\",\n        \"num:longest_gap\",\n        \"num:their_reply_time:grants@unistartupcell.test\",\n        \"num:your_reply_time:grants@unistartupcell.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The message contains no promise, no ask, and no open commitment from either party.\",\n      \"evidence\": [\n        \"none:promises\",\n        \"file:Open asks\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is categorized as a program application, but holds no record of an application having been submitted to University Startup Cell.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"brief:cbl_#18\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The company brief lists University Startup Cell as applied, placing it among six other program applications.\",\n      \"evidence\": [\n        \"brief:cbl_#18\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.54 days since the single message arrived.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The message is a broadcast notification to all eligible startups, not a personalized communication about your application status.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: to decide whether to apply, and if so, to prepare and submit an application before 30 September.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:5\",\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    },\n    {\n      \"claim\": \"The deadline of 30 September is fixed and will not move for this company.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"claim\": \"No application has been submitted yet, because the file shows no receipt, no confirmation, and no portal status.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"none:we_wrote\",\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme's broadcast notification about a deadline is a signal to act, not a response to prior action.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n        \"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Applications to university-based programmes are typically cohort-based, with a single deadline and a batch review after it closes.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A programme application left unsubmitted past its deadline is lost on the calendar, not on merit.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A university seed grant is typically non-dilutive capital, often smaller than venture rounds but faster to close, and carries fewer governance demands than institutional investors.\",\n      \"why\": \"University programmes prioritize supporting early-stage founders over financial returns, and their legal agreements are simpler than venture documents.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"University programmes often require the startup to be incubated on campus or to have a campus affiliation to be eligible.\",\n      \"why\": \"The message itself states 'Startups incubated on campus may apply', which is a common eligibility gate.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A university programme's silence after a deadline passes is not a rejection; it is the normal rhythm of a batch review.\",\n      \"why\": \"Universities operate on academic calendars and committee schedules, not investor response times, and they publish their decision dates separately from their application deadlines.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The decision to apply to a university programme should be made early enough to prepare a complete application, not in the final days before the deadline.\",\n      \"why\": \"A rushed application loses the chance to gather metrics, refine the pitch, and have co-founders complete their own profiles, all of which are typically required.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Your company is incubated on campus or has a campus affiliation that makes it eligible for this grant.\",\n      \"needs\": \"Confirmation from the founder that the company meets the eligibility criteria stated in the message.\"\n    },\n    {\n      \"proposition\": \"An application to University Startup Cell has already been submitted, and this message is a reminder about the deadline.\",\n      \"needs\": \"A search of the company's records for a submitted application, a confirmation email from the programme, or a portal login showing application status.\"\n    },\n    {\n      \"proposition\": \"The founder intends to apply to this programme and has allocated time and resources to prepare the application.\",\n      \"needs\": \"A decision from the founder about whether to apply, and if so, a plan to prepare and submit before 30 September.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is your company eligible for this grant \u2014 specifically, is it incubated on campus or does it have the affiliation the programme requires?\",\n      \"relevance\": \"Eligibility determines whether applying is worth the effort; an ineligible application wastes time and produces a rejection that carries no re-application date.\"\n    },\n    {\n      \"question\": \"Has an application already been submitted to University Startup Cell, and if so, what is its status?\",\n      \"relevance\": \"If an application is already in, the file should move to the 'applied' stage and track the programme's decision calendar; if not, the decision to apply must be made now.\"\n    },\n    {\n      \"question\": \"What is the programme's typical timeline from application deadline to decision, and what is its selection process?\",\n      \"relevance\": \"The playbook assumes a 14-day 'applied' stage and a 28-day 'under_review' stage, but university programmes often operate on longer calendars; knowing the actual timeline prevents false urgency and false patience.\"\n    },\n    {\n      \"question\": \"What does the programme ask for in its application form, and how much work is required to prepare a competitive submission?\",\n      \"relevance\": \"The effort required determines whether this programme should be prioritized against the five other active programme applications already in motion.\"\n    },\n    {\n      \"question\": \"Does the programme publish its decision date, or does it only notify applicants after the deadline passes?\",\n      \"relevance\": \"If the programme publishes a decision date, that date becomes the file's calendar; if it does not, the file will be dormant for an unknown period, and the playbook's 90-day prior becomes the only guide.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A university seed grant programme has announced its application deadline. The company has not yet applied. The decision is whether to apply, and if so, how to prepare and submit before the deadline passes.\",\n    \"rivals\": [\n      \"This is a status update on an application already submitted, and the message is a reminder to track the programme's decision calendar.\",\n      \"This is a low-priority programme notification that can be filed and revisited only if the company has capacity after higher-priority fundraising and programme work.\",\n      \"This is an eligibility check: the company may not meet the programme's requirements, and applying would be a waste of time.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The message is from a programme, the file is categorized as a programme application, and the brief lists it among six other programme applications. The work is to apply, track the application through the programme's calendar, and respond to its decision.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#18\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"applied\",\n    \"expected\": \"The playbook expects that at the 'applied' stage, an application has been submitted, a receipt has been filed, and the file is waiting for the programme's deadline to pass and its review to begin. The programme is quiet, which is normal; the file's calendar is set by the programme's published deadline and decision date. The next move is to track the deadline and prepare for the 'under_review' stage.\",\n    \"actual\": \"No application has been submitted. The file shows only a broadcast message about the deadline. The company has not yet decided to apply. The file is not yet at the 'applied' stage; it is at a decision point before application.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The deadline of 30 September passes without an application. The file closes as 'declined' with the reason 'not applied'. The company loses the opportunity to apply to this programme until its next intake, which is unknown. If the programme is a good fit and the company later regrets not applying, re-application will require waiting for the next cycle and re-preparing the application from scratch.\",\n    \"act\": \"The founder decides to apply, prepares the application, and submits it before 30 September. The file moves to the 'applied' stage. The company's application enters the programme's batch review. The file then waits for the programme's decision, which typically arrives within 28 days of the deadline, though university programmes often take longer.\",\n    \"best\": \"The company applies, is selected, and receives a seed grant that accelerates fundraising and product development. The grant is non-dilutive, the programme provides mentorship and network access, and the company graduates to the next funding round with momentum.\",\n    \"worst\": \"The company applies, is rejected, and receives no feedback or re-application date. The effort spent on the application is lost. The company does not re-apply because the rejection feels final, and the programme's next intake is unknown or far away.\",\n    \"signals_to_watch\": [\n      \"A decision from the founder about whether to apply, and by when.\",\n      \"Confirmation of eligibility: is the company incubated on campus or does it meet the programme's affiliation requirement?\",\n      \"The application form and its requirements: how much work is needed, and how does it compare to the other six programmes already in motion?\",\n      \"The programme's published decision date or typical timeline: when should the file expect to hear back?\",\n      \"Submission confirmation: has the application been received by the programme, and is there a portal or email confirmation?\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The deadline is fixed at 30 September, which is 23 days away from the message date of 2026-09-07. This is enough time to prepare an application if the company decides to apply, but not enough time to delay the decision.\",\n      \"A seed grant is non-dilutive capital and can accelerate the company's progress without diluting equity, making it valuable if the company is eligible and the application is competitive.\",\n      \"The company is already applying to five other programmes (Lakshya Accelerator, Gulf Launchpad, DIT Incubation Cell, TechBridge Foundation, Awadh Enterprise Centre, State Startup Mission), so the effort to apply to a seventh programme must be weighed against the return and the founder's capacity.\",\n      \"If the company does not apply, the opportunity is lost until the next intake, which is unknown. If the company applies and is rejected, the rejection carries no re-application date unless the programme publishes one.\",\n      \"A wrong decision to apply (when the company is ineligible or the effort is not worth the return) is reversible: the company can simply not submit. A wrong decision not to apply (when the company is eligible and the grant would be valuable) is also reversible, but only at the next intake, which may be months away.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"confirm eligibility and decide whether to apply\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-10\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"inference:2\",\n      \"unknown:1\",\n      \"unknown:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\",\n      \"own:2\",\n      \"own:4\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder confirms eligibility and decides to apply, the next move is to prepare the application and submit it before 30 September. This requires: (1) obtaining the application form and requirements from University Startup Cell; (2) assigning an owner and a deadline for each section (deck, metrics, co-founder profiles, any recommendation); (3) preparing the application in parallel with the other six programmes already in motion; (4) submitting before the deadline and filing the receipt.\",\n  \"wait_or_stop\": \"Wait until the founder confirms eligibility and the decision to apply. If the founder decides not to apply, close the file with the reason 'not applied' and the date 2026-09-30 (the deadline). If the founder decides to apply, move to the 'applied' stage and set the file's calendar by the programme's published decision date or by the playbook's 28-day prior for 'under_review'.\",\n  \"done_when\": \"The founder has confirmed eligibility, decided to apply or not to apply, and if applying, has assigned owners and deadlines for each section of the application. If applying, done is when the application is submitted before 30 September and the receipt is filed. If not applying, done is when the file is closed with the reason and the date.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

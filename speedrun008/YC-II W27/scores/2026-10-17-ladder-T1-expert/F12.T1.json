@@ -1,0 +1,1393 @@
+{
+ "1ee19ea095d7a24258093e1617389e3f8969841e0695263b3e9885d85575dbbf": {
+  "framed": true,
+  "input_tokens": 12466,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3856,
+  "parsed": {
+   "alternative": "If the retention data is not ready and cannot be prepared by 2026-09-29, send a message to Neeraj Joshi by 2026-09-28 acknowledging the ask, explaining what customer data you do have (usage, engagement, NPS, or other metrics), and proposing to send that instead or to walk through it on the call. This keeps the conversation honest and often moves it forward.",
+   "appraisal": {
+    "reasons": [
+     "This is one of five seed-stage investors written to in the wave; Harbor Point is not the only prospect, so a pass here is not fatal to the round.",
+     "The call is 11 days away, giving a window to prepare and send the data or to reframe the ask.",
+     "If the data is weak or does not exist, you can acknowledge it and propose an alternative; the conversation is not over until the investor says no.",
+     "The investor has booked a call, which signals interest, but the ask for data before the call is a gate that could become a pass if not handled well.",
+     "A wrong move here\u2014going silent, sending weak data, or missing the deadline\u2014reads as disorganization and damages the relationship; a right move\u2014sending strong data quickly or being honest about what you have\u2014keeps the door open."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The data or a message explaining what you have is sent to Neeraj Joshi by 2026-09-29, and the call happens on 2026-10-08 09:00 UTC with a named next step confirmed in writing the same day.",
+   "draft": "Hi Neeraj,\n\nThanks for the ask. I'm attaching retention data for our first three pilot customers\u2014[brief summary of what it shows: e.g., 'all three are still active after three months, with average weekly usage at X']. Happy to walk through the details on the call or to answer any questions before then.\n\nLooking forward to 8 Oct.\n\nArjun",
+   "expected_vs_actual": {
+    "actual": "The investor has booked a call and asked for a specific deliverable\u2014retention data on pilot customers\u2014before the call. This is a gate, not a standard prep step. The founder has not yet sent the data, and the call is 11 days away. The file shows whose move it is: ours.",
+    "expected": "At the first-call stage, the playbook expects the investor to have agreed to a meeting, which has happened. The playbook also expects that before the call, the founder will have prepared: their stage, sector and cheque size; what the investor has backed; what the partner has written or invested in; the numbers that matter and how they moved; and a demo if the product can be shown. The playbook expects the founder to be ready to name the next step to ask for and to leave with 'an attempted close or at very minimum absolute clarity on next steps'.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Neeraj Joshi at Harbor Point Partners wrote on 2026-09-27 10:00 UTC asking to see retention data for the first three pilot customers before a call scheduled for 2026-10-08 09:00 UTC.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers."
+    },
+    {
+     "claim": "A meeting is booked for 2026-10-08 09:00 UTC with Harbor Point Partners.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows whose move it is: ours, with an open ask since 2026-09-27 10:00 UTC.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first touch with Harbor Point Partners; no prior history is recorded.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.33 days since the last touch.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in Harbor Point's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An investor has booked a first call and asked for a specific deliverable\u2014retention data on pilot customers\u2014before the call. This is a gate: the investor wants to see traction before spending time. The next move is ours, and it is time-sensitive because the call is 11 days away.",
+    "rivals": [
+     "This is a soft pass disguised as a request: the investor is looking for a reason to decline and will use weak data as the excuse.",
+     "This is a routine diligence step and the investor is genuinely interested; the data is just a normal part of the first-call prep.",
+     "The investor is testing whether you move fast and have your numbers ready; the data itself matters less than the speed and quality of the response."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation that the data is available and that it shows customers staying (or a clear definition of what 'retention' means for this product at this stage).",
+     "proposition": "The retention data exists and is strong, and sending it will move the conversation to a substantive first call."
+    },
+    {
+     "needs": "An honest assessment of what customer data you have, what it shows, and whether it is worth sending or whether you should reframe the ask.",
+     "proposition": "The retention data does not exist or is weak, and the investor is using it as a screen to pass without saying no."
+    },
+    {
+     "needs": "A sense of whether Neeraj Joshi has a pattern of asking for data before calls (which would suggest it is routine) or whether this is unusual for them (which would suggest it is a screen).",
+     "proposition": "The investor is genuinely interested and this is a normal diligence step, not a gate."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The investor has named a specific deliverable\u2014retention data for three pilot customers\u2014as a condition for the call to proceed productively."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "fact:1"
+     ],
+     "claim": "The next move is ours: we must either send the retention data or communicate that we cannot meet this ask before the call date."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "file:first_touch"
+     ],
+     "claim": "The call is booked 11 days away, giving a window to prepare and send the requested material."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "This is a first-call stage conversation: the investor has moved from initial contact to a named meeting, which signals interest, but the ask for specific data before the call is a gate\u2014a signal that they want to see traction before committing time to a deeper discussion."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-29",
+    "for_whom": "Neeraj Joshi at Harbor Point Partners",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "cap:founder_office.fundraising.investor_relations#f3",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "inference:2",
+     "inference:4"
+    ],
+    "to": "neeraj@harborpoint.test",
+    "what": "Prepare and send the retention data for your first three pilot customers to Neeraj Joshi, or if the data is not ready or is weak, send a message acknowledging the ask, explaining what you have, and proposing what you can show instead.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When an investor names a deliverable before a call, sending it within two business days\u2014not waiting until the day before\u2014signals that you move fast and have your numbers ready, which is itself a data point about the company.",
+     "kind": "practice",
+     "why": "Investors see hundreds of plans; the ones that move quickly on asks stand out, and the ones that scramble at the last minute read as disorganized."
+    },
+    {
+     "claim": "A request for retention data on pilot customers can also signal that the investor is looking for a reason to pass: if the data is weak, they have their out; if it is strong, they move to the next gate.",
+     "kind": "counter_pattern",
+     "why": "Not all asks are genuine interest; some are filters. The response matters more than the ask itself."
+    },
+    {
+     "claim": "If the retention data is not ready or is weak, the move is to acknowledge the ask, explain what you have and what you do not, and propose what you can show instead\u2014not to go silent or to send weak data hoping it will pass.",
+     "kind": "practice",
+     "why": "Silence reads as evasion; a clear answer, even if it is not what they asked for, keeps the conversation honest and often moves it forward."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "Investors at the first-call stage often ask for specific metrics or customer data before the call to screen for traction and avoid wasting time on companies without proof points.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "A request for data before a booked call, when the call is already on the calendar, signals the investor is serious enough to have a condition but not yet committed; silence on delivery of that data reads as either inability to produce it or lack of urgency.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "At early-stage firms, diligence includes reference calls and customer conversations; a request for retention data on pilot customers is a lightweight version of that, testing whether the company has customers at all and whether they are staying.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#9"
+    ],
+    "kind": "investor",
+    "why": "The file is correctly classified as investor work. Neeraj Joshi is a partner at Harbor Point Partners, a seed-stage fund; the work is to move this conversation to a decision on whether they will invest."
+   },
+   "scenarios": {
+    "act": "If you send the retention data within two business days, the investor has time to review it before the call, and the call can be substantive. If the data is strong, it moves the conversation forward. If it is weak, the investor has time to decide whether to proceed or pass, and you have time to prepare a response. If you cannot send the data, you acknowledge the ask, explain what you have, and propose an alternative\u2014which keeps the conversation honest and often moves it forward.",
+    "best": "The retention data is strong, you send it within two business days, the investor reviews it and comes to the call ready to move forward, and the call ends with a named next step\u2014a partners' meeting, a data room, or a commitment to move to diligence.",
+    "do_nothing": "If nothing is done, the call date approaches without the data being sent. On the call date, either the investor will ask why the data was not sent (signaling they expected it and are now skeptical), or they will proceed without it (signaling it was not a hard gate). Either way, silence on the ask reads as disorganization or evasion. The conversation is at risk of stalling or moving to a soft pass.",
+    "signals_to_watch": [
+     "Whether the data is ready and what it shows (strong retention, weak retention, or no data).",
+     "How quickly you respond to the ask (within two business days is fast; waiting until the day before the call is late).",
+     "The tone of the investor's response to the data (if they ask follow-up questions, they are engaged; if they go quiet, they are deciding).",
+     "Whether the call happens on time and what the investor says on the call (if they reference the data and ask about next steps, they are moving forward; if they do not mention it, they are passing)."
+    ],
+    "worst": "The retention data is weak or does not exist, you go silent on the ask, the investor interprets the silence as evasion or disorganization, and the call becomes a soft pass. The investor does not say no, but they do not move forward either, and the conversation drifts into the 90-day quiet that signals a no for this round."
+   },
+   "unknowns": [
+    {
+     "question": "Do you have retention data for three pilot customers, and if so, what does it show?",
+     "relevance": "This determines whether the next move is to send the data, to reframe what you can show, or to acknowledge that you do not have it yet and propose an alternative."
+    },
+    {
+     "question": "What does 'retention' mean in the context of your product\u2014how long have customers been using it, and at what rate are they staying?",
+     "relevance": "The investor's ask may be ambiguous; clarifying what they mean will help you decide whether you can answer it."
+    },
+    {
+     "question": "Is this a standard ask from Harbor Point Partners, or is it unusual for them?",
+     "relevance": "If it is standard, it is a normal gate; if it is unusual, it may signal skepticism or a specific concern about your traction."
+    },
+    {
+     "question": "What is the quality of the relationship with Neeraj Joshi\u2014was this a warm introduction, and does he have a pattern of moving companies forward or screening them out?",
+     "relevance": "The tone of his ask and the likelihood that sending data will move the conversation depend on whether he is a genuine prospect or a polite pass."
+    }
+   ],
+   "wait_or_stop": "Wait until you have confirmed what data you have and what it shows. Do not wait past 2026-09-29 to send something; if the data is not ready, send a message explaining what you have and what you can show instead. Do not go silent on the ask. If the investor does not reply to the data or the message by 2026-10-06, send a brief note confirming the call time and offering to answer any questions before the call. If the investor cancels or postpones the call without explanation, treat it as a soft pass and move to the update list."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Neeraj Joshi at Harbor Point Partners wrote on 2026-09-27 10:00 UTC asking to see retention data for the first three pilot customers before a call scheduled for 2026-10-08 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers.\"\n    },\n    {\n      \"claim\": \"A meeting is booked for 2026-10-08 09:00 UTC with Harbor Point Partners.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows whose move it is: ours, with an open ask since 2026-09-27 10:00 UTC.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first touch with Harbor Point Partners; no prior history is recorded.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.33 days since the last touch.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in Harbor Point's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The investor has named a specific deliverable\u2014retention data for three pilot customers\u2014as a condition for the call to proceed productively.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: we must either send the retention data or communicate that we cannot meet this ask before the call date.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The call is booked 11 days away, giving a window to prepare and send the requested material.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:first_touch\"\n      ]\n    },\n    {\n      \"claim\": \"This is a first-call stage conversation: the investor has moved from initial contact to a named meeting, which signals interest, but the ask for specific data before the call is a gate\u2014a signal that they want to see traction before committing time to a deeper discussion.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Investors at the first-call stage often ask for specific metrics or customer data before the call to screen for traction and avoid wasting time on companies without proof points.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A request for data before a booked call, when the call is already on the calendar, signals the investor is serious enough to have a condition but not yet committed; silence on delivery of that data reads as either inability to produce it or lack of urgency.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"At early-stage firms, diligence includes reference calls and customer conversations; a request for retention data on pilot customers is a lightweight version of that, testing whether the company has customers at all and whether they are staying.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When an investor names a deliverable before a call, sending it within two business days\u2014not waiting until the day before\u2014signals that you move fast and have your numbers ready, which is itself a data point about the company.\",\n      \"why\": \"Investors see hundreds of plans; the ones that move quickly on asks stand out, and the ones that scramble at the last minute read as disorganized.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A request for retention data on pilot customers can also signal that the investor is looking for a reason to pass: if the data is weak, they have their out; if it is strong, they move to the next gate.\",\n      \"why\": \"Not all asks are genuine interest; some are filters. The response matters more than the ask itself.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"If the retention data is not ready or is weak, the move is to acknowledge the ask, explain what you have and what you do not, and propose what you can show instead\u2014not to go silent or to send weak data hoping it will pass.\",\n      \"why\": \"Silence reads as evasion; a clear answer, even if it is not what they asked for, keeps the conversation honest and often moves it forward.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The retention data exists and is strong, and sending it will move the conversation to a substantive first call.\",\n      \"needs\": \"Confirmation that the data is available and that it shows customers staying (or a clear definition of what 'retention' means for this product at this stage).\"\n    },\n    {\n      \"proposition\": \"The retention data does not exist or is weak, and the investor is using it as a screen to pass without saying no.\",\n      \"needs\": \"An honest assessment of what customer data you have, what it shows, and whether it is worth sending or whether you should reframe the ask.\"\n    },\n    {\n      \"proposition\": \"The investor is genuinely interested and this is a normal diligence step, not a gate.\",\n      \"needs\": \"A sense of whether Neeraj Joshi has a pattern of asking for data before calls (which would suggest it is routine) or whether this is unusual for them (which would suggest it is a screen).\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Do you have retention data for three pilot customers, and if so, what does it show?\",\n      \"relevance\": \"This determines whether the next move is to send the data, to reframe what you can show, or to acknowledge that you do not have it yet and propose an alternative.\"\n    },\n    {\n      \"question\": \"What does 'retention' mean in the context of your product\u2014how long have customers been using it, and at what rate are they staying?\",\n      \"relevance\": \"The investor's ask may be ambiguous; clarifying what they mean will help you decide whether you can answer it.\"\n    },\n    {\n      \"question\": \"Is this a standard ask from Harbor Point Partners, or is it unusual for them?\",\n      \"relevance\": \"If it is standard, it is a normal gate; if it is unusual, it may signal skepticism or a specific concern about your traction.\"\n    },\n    {\n      \"question\": \"What is the quality of the relationship with Neeraj Joshi\u2014was this a warm introduction, and does he have a pattern of moving companies forward or screening them out?\",\n      \"relevance\": \"The tone of his ask and the likelihood that sending data will move the conversation depend on whether he is a genuine prospect or a polite pass.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An investor has booked a first call and asked for a specific deliverable\u2014retention data on pilot customers\u2014before the call. This is a gate: the investor wants to see traction before spending time. The next move is ours, and it is time-sensitive because the call is 11 days away.\",\n    \"rivals\": [\n      \"This is a soft pass disguised as a request: the investor is looking for a reason to decline and will use weak data as the excuse.\",\n      \"This is a routine diligence step and the investor is genuinely interested; the data is just a normal part of the first-call prep.\",\n      \"The investor is testing whether you move fast and have your numbers ready; the data itself matters less than the speed and quality of the response.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is correctly classified as investor work. Neeraj Joshi is a partner at Harbor Point Partners, a seed-stage fund; the work is to move this conversation to a decision on whether they will invest.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#9\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"At the first-call stage, the playbook expects the investor to have agreed to a meeting, which has happened. The playbook also expects that before the call, the founder will have prepared: their stage, sector and cheque size; what the investor has backed; what the partner has written or invested in; the numbers that matter and how they moved; and a demo if the product can be shown. The playbook expects the founder to be ready to name the next step to ask for and to leave with 'an attempted close or at very minimum absolute clarity on next steps'.\",\n    \"actual\": \"The investor has booked a call and asked for a specific deliverable\u2014retention data on pilot customers\u2014before the call. This is a gate, not a standard prep step. The founder has not yet sent the data, and the call is 11 days away. The file shows whose move it is: ours.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If nothing is done, the call date approaches without the data being sent. On the call date, either the investor will ask why the data was not sent (signaling they expected it and are now skeptical), or they will proceed without it (signaling it was not a hard gate). Either way, silence on the ask reads as disorganization or evasion. The conversation is at risk of stalling or moving to a soft pass.\",\n    \"act\": \"If you send the retention data within two business days, the investor has time to review it before the call, and the call can be substantive. If the data is strong, it moves the conversation forward. If it is weak, the investor has time to decide whether to proceed or pass, and you have time to prepare a response. If you cannot send the data, you acknowledge the ask, explain what you have, and propose an alternative\u2014which keeps the conversation honest and often moves it forward.\",\n    \"best\": \"The retention data is strong, you send it within two business days, the investor reviews it and comes to the call ready to move forward, and the call ends with a named next step\u2014a partners' meeting, a data room, or a commitment to move to diligence.\",\n    \"worst\": \"The retention data is weak or does not exist, you go silent on the ask, the investor interprets the silence as evasion or disorganization, and the call becomes a soft pass. The investor does not say no, but they do not move forward either, and the conversation drifts into the 90-day quiet that signals a no for this round.\",\n    \"signals_to_watch\": [\n      \"Whether the data is ready and what it shows (strong retention, weak retention, or no data).\",\n      \"How quickly you respond to the ask (within two business days is fast; waiting until the day before the call is late).\",\n      \"The tone of the investor's response to the data (if they ask follow-up questions, they are engaged; if they go quiet, they are deciding).\",\n      \"Whether the call happens on time and what the investor says on the call (if they reference the data and ask about next steps, they are moving forward; if they do not mention it, they are passing).\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is one of five seed-stage investors written to in the wave; Harbor Point is not the only prospect, so a pass here is not fatal to the round.\",\n      \"The call is 11 days away, giving a window to prepare and send the data or to reframe the ask.\",\n      \"If the data is weak or does not exist, you can acknowledge it and propose an alternative; the conversation is not over until the investor says no.\",\n      \"The investor has booked a call, which signals interest, but the ask for data before the call is a gate that could become a pass if not handled well.\",\n      \"A wrong move here\u2014going silent, sending weak data, or missing the deadline\u2014reads as disorganization and damages the relationship; a right move\u2014sending strong data quickly or being honest about what you have\u2014keeps the door open.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Prepare and send the retention data for your first three pilot customers to Neeraj Joshi, or if the data is not ready or is weak, send a message acknowledging the ask, explaining what you have, and proposing what you can show instead.\",\n    \"for_whom\": \"Neeraj Joshi at Harbor Point Partners\",\n    \"by_when\": \"2026-09-29\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:3\",\n      \"inference:2\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"cap:founder_office.fundraising.investor_relations#f3\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"neeraj@harborpoint.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the retention data is not ready and cannot be prepared by 2026-09-29, send a message to Neeraj Joshi by 2026-09-28 acknowledging the ask, explaining what customer data you do have (usage, engagement, NPS, or other metrics), and proposing to send that instead or to walk through it on the call. This keeps the conversation honest and often moves it forward.\",\n  \"wait_or_stop\": \"Wait until you have confirmed what data you have and what it shows. Do not wait past 2026-09-29 to send something; if the data is not ready, send a message explaining what you have and what you can show instead. Do not go silent on the ask. If the investor does not reply to the data or the message by 2026-10-06, send a brief note confirming the call time and offering to answer any questions before the call. If the investor cancels or postpones the call without explanation, treat it as a soft pass and move to the update list.\",\n  \"done_when\": \"The data or a message explaining what you have is sent to Neeraj Joshi by 2026-09-29, and the call happens on 2026-10-08 09:00 UTC with a named next step confirmed in writing the same day.\",\n  \"draft\": \"Hi Neeraj,\\n\\nThanks for the ask. I'm attaching retention data for our first three pilot customers\u2014[brief summary of what it shows: e.g., 'all three are still active after three months, with average weekly usage at X']. Happy to walk through the details on the call or to answer any questions before then.\\n\\nLooking forward to 8 Oct.\\n\\nArjun\"\n}",
+  "site": "expert"
+ },
+ "2fe2263acb692637149b3a80937f4416096c13f3dad3d2fc20cf4b95a1233243": {
+  "framed": true,
+  "input_tokens": 12641,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3587,
+  "parsed": {
+   "alternative": "If the retention data does not exist or is incomplete, call Neeraj Joshi before 2026-10-06 to say so, and offer to reschedule the call or to send what exists with an honest frame. This is better than silence or a last-minute scramble.",
+   "appraisal": {
+    "reasons": [
+     "Harbor Point Partners is one of five investors in the seed wave, and the company is raising the seed round as a primary goal.",
+     "The investor has named a specific ask and a date for a call, which is a signal of genuine interest and a test of the founder's execution.",
+     "Silence on the ask before the call signals lost momentum to the investor, and the asymmetry is structural: the investor sees many companies and loses nothing by dropping one.",
+     "A first call that ends without a named next step is usually a soft no, and the founder learns of it only when the round has moved on.",
+     "The playbook's heuristic that investors do not chase applies here: our silence on their ask reads as lost momentum, and the cost is high."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The retention data is sent to Neeraj Joshi before 2026-10-06, with a frame that says what it shows and what it means. The call on 2026-10-08 ends with a named next step and a date, confirmed in writing the same day.",
+   "draft": "Hi Neeraj, Attached is the retention data for our first three pilot customers. [One sentence on what it shows.] [One sentence on what it means for the company.] Looking forward to our call on the 8th. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The investor has named a specific ask\u2014retention data for the first three pilot customers\u2014and a date for the call. The founder has not yet sent the data. The call is booked for 2026-10-08, which is two days away from the last touch on 2026-09-27.",
+    "expected": "The playbook expects that before a first call, the founder has prepared: they know the investor's stage, sector, cheque size, what they have backed, and any portfolio company that competes. The founder has named the next step to ask for and prepared the numbers that matter. The call ends with a named next step and a date, confirmed in writing the same day.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Harbor Point Partners wrote on 2026-09-27 asking to see retention data for the first three pilot customers before a call scheduled for 2026-10-08.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers."
+    },
+    {
+     "claim": "A meeting is booked for 2026-10-08 09:00 UTC with Harbor Point Partners.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 9.08 days since the last touch on 2026-09-27 10:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The open ask is that they wait on us, open since 2026-09-27 10:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "We have not written in this file.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is investor, and Harbor Point Partners is one of five investors written to in the seed wave.",
+     "evidence": [
+      "file:kind",
+      "brief:cbl_#9"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A specific ask from an investor before a booked call, with the ball in the founder's court. The investor has named what they need to decide, and the founder has not yet sent it. This is a test of execution and responsiveness, not a stall.",
+    "rivals": [
+     "A soft pass disguised as a meeting: the investor asked for data as a way to defer without saying no, and the call will not happen or will be a rejection.",
+     "A routine information request with no urgency: the investor is gathering data as part of their process, and the timing does not matter as long as it arrives before the call."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder that the data is available and what it shows.",
+     "proposition": "The retention data exists and is ready to send."
+    },
+    {
+     "needs": "Confirmation from the founder of what data is available, what is missing, and by when it will be ready.",
+     "proposition": "The retention data does not yet exist or is incomplete."
+    },
+    {
+     "needs": "Evidence that the investor has engaged substantively with the company before this ask\u2014prior calls, questions, or a warm introduction from a trusted source.",
+     "proposition": "Harbor Point Partners is a genuine prospect and not a soft pass dressed as a meeting."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:5"
+     ],
+     "claim": "The ball is in our court: Harbor Point Partners has asked for retention data and named a date for the call, and we have not yet sent the data."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The file is in the first_call stage: a meeting is booked with a decision-maker, but no partners' meeting or diligence has been opened."
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "fact:1"
+     ],
+     "claim": "Silence past the date they gave, or a new question each time the last is answered, is the warning sign in diligence; but we are not yet in diligence\u2014we are in the stage before the first call, with a call booked and a specific ask named."
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+      "inference:1"
+     ],
+     "claim": "The playbook's heuristic that investors do not chase applies here: our silence on their ask reads as lost momentum, and the asymmetry is structural\u2014they see many companies and lose nothing by dropping one."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-06",
+    "for_whom": "Neeraj Joshi at Harbor Point Partners",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:5",
+     "inference:1",
+     "inference:4"
+    ],
+    "to": "neeraj@harborpoint.test",
+    "what": "send the retention data for the first three pilot customers to Neeraj Joshi, with a brief frame of what it shows and what it means for the company",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A specific ask named by an investor before a call is a test of execution and responsiveness, not just a request for information. Meeting it on time signals that the founder moves fast and listens.",
+     "kind": "practice",
+     "why": "Investors use pre-call asks to gauge how a founder operates under a deadline. A founder who delivers the data before the call, without being reminded, demonstrates the discipline that matters in a partner."
+    },
+    {
+     "claim": "Sending retention data the day before a call, after silence, reads differently than sending it within two days of the ask.",
+     "kind": "counter_pattern",
+     "why": "The timing signals whether the founder prioritized the investor's request or scrambled at the last moment. The data itself is the same; the message about the founder's attention is not."
+    },
+    {
+     "claim": "A founder who sends the data should frame it briefly: what it shows, what it means for the company, and what question it answers for the investor.",
+     "kind": "practice",
+     "why": "Raw data without context is a compliance move; framed data is a conversation move. The investor asked for retention to decide something; the founder's job is to say what."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.before_an_investor_call",
+      "fact:1"
+     ],
+     "claim": "An investor who names a specific ask and a date for a call expects the ask to be met before the call, not during it.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "A first call that ends without a named next step is usually a soft no; one that names a step and a date is the firm's process until that date passes.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "At early-stage firms, about one company in three whose management the firm meets is reviewed at a partners' meeting.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#9"
+    ],
+    "kind": "investor",
+    "why": "The file is about a venture capital firm in the seed-stage fundraising process, with a booked call and a specific ask before it."
+   },
+   "scenarios": {
+    "act": "The founder sends the retention data to Neeraj Joshi before 2026-10-08, with a brief frame of what it shows and what it means. The investor arrives at the call prepared and sees that the founder listens and moves fast. The call is more productive because the investor can ask follow-up questions rather than asking for the data. If the data is strong, the investor's confidence rises. If the data is weak, the investor has time to think about what it means before the call, and the conversation is more honest.",
+    "best": "The founder sends the retention data by 2026-10-06, with a clear frame. The investor reviews it before the call and comes prepared with specific questions. The call is substantive and ends with a named next step\u2014a partners' meeting, a data room, or a commitment to move forward. The investor's confidence in the founder's execution is high.",
+    "do_nothing": "The founder does not send the retention data before the call. The investor arrives at the call without the information they asked for, which signals that the founder either does not have it, does not prioritize the investor's request, or is disorganized. The call is likely to be shorter and less productive. The investor's confidence in the founder's execution drops. If the data is weak, the investor is relieved not to have seen it in advance. If the data is strong, the investor is frustrated that the founder did not send it. Either way, the momentum stalls.",
+    "signals_to_watch": [
+     "Whether the founder has the retention data and what it shows.",
+     "Whether the founder sends the data before the call, and how it is framed.",
+     "Whether the investor asks follow-up questions about the data before the call, or waits until the call to ask.",
+     "Whether the call ends with a named next step and a date, or with silence."
+    ],
+    "worst": "The founder does not send the data, or sends it the day before the call with no frame. The investor arrives unprepared or frustrated. The call is tense or short. The investor decides not to move forward, or defers with a soft pass. The founder learns of the decision only when the round has moved on without Harbor Point Partners."
+   },
+   "unknowns": [
+    {
+     "question": "Does the retention data for the first three pilot customers exist, and what does it show?",
+     "relevance": "If the data does not exist or is poor, the move changes from sending it to deciding whether to reschedule the call or to send what exists with an honest frame."
+    },
+    {
+     "question": "Who at Harbor Point Partners is the decision-maker on this call, and what is their role in the firm's investment process?",
+     "relevance": "If this is an associate or a partner who cannot commit, the call's outcome is constrained, and the move after the call changes."
+    },
+    {
+     "question": "How warm is the introduction to Harbor Point Partners, and who introduced the company?",
+     "relevance": "A cold email to a generic address has a different baseline than a warm introduction from a founder the investor has backed. The file does not say."
+    },
+    {
+     "question": "What is the company's actual retention for the first three pilot customers?",
+     "relevance": "If retention is strong, the move is to send it with confidence. If it is weak, the move is to frame it honestly and prepare for the question it will raise."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-10-08 for the call. If the call ends without a named next step and a date, record it as a soft no and move Harbor Point Partners to the update list with a condition to reopen. Do not send a check-in after the call unless the investor asks for one. Stop counting Harbor Point Partners as a live prospect if the call ends with silence or a pass."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Harbor Point Partners wrote on 2026-09-27 asking to see retention data for the first three pilot customers before a call scheduled for 2026-10-08.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers.\"\n    },\n    {\n      \"claim\": \"A meeting is booked for 2026-10-08 09:00 UTC with Harbor Point Partners.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 9.08 days since the last touch on 2026-09-27 10:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The open ask is that they wait on us, open since 2026-09-27 10:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"We have not written in this file.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is investor, and Harbor Point Partners is one of five investors written to in the seed wave.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"brief:cbl_#9\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in our court: Harbor Point Partners has asked for retention data and named a date for the call, and we have not yet sent the data.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:5\"\n      ]\n    },\n    {\n      \"claim\": \"The file is in the first_call stage: a meeting is booked with a decision-maker, but no partners' meeting or diligence has been opened.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"Silence past the date they gave, or a new question each time the last is answered, is the warning sign in diligence; but we are not yet in diligence\u2014we are in the stage before the first call, with a call booked and a specific ask named.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The playbook's heuristic that investors do not chase applies here: our silence on their ask reads as lost momentum, and the asymmetry is structural\u2014they see many companies and lose nothing by dropping one.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n        \"inference:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who names a specific ask and a date for a call expects the ask to be met before the call, not during it.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A first call that ends without a named next step is usually a soft no; one that names a step and a date is the firm's process until that date passes.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"At early-stage firms, about one company in three whose management the firm meets is reviewed at a partners' meeting.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A specific ask named by an investor before a call is a test of execution and responsiveness, not just a request for information. Meeting it on time signals that the founder moves fast and listens.\",\n      \"why\": \"Investors use pre-call asks to gauge how a founder operates under a deadline. A founder who delivers the data before the call, without being reminded, demonstrates the discipline that matters in a partner.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Sending retention data the day before a call, after silence, reads differently than sending it within two days of the ask.\",\n      \"why\": \"The timing signals whether the founder prioritized the investor's request or scrambled at the last moment. The data itself is the same; the message about the founder's attention is not.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A founder who sends the data should frame it briefly: what it shows, what it means for the company, and what question it answers for the investor.\",\n      \"why\": \"Raw data without context is a compliance move; framed data is a conversation move. The investor asked for retention to decide something; the founder's job is to say what.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The retention data exists and is ready to send.\",\n      \"needs\": \"Confirmation from the founder that the data is available and what it shows.\"\n    },\n    {\n      \"proposition\": \"The retention data does not yet exist or is incomplete.\",\n      \"needs\": \"Confirmation from the founder of what data is available, what is missing, and by when it will be ready.\"\n    },\n    {\n      \"proposition\": \"Harbor Point Partners is a genuine prospect and not a soft pass dressed as a meeting.\",\n      \"needs\": \"Evidence that the investor has engaged substantively with the company before this ask\u2014prior calls, questions, or a warm introduction from a trusted source.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the retention data for the first three pilot customers exist, and what does it show?\",\n      \"relevance\": \"If the data does not exist or is poor, the move changes from sending it to deciding whether to reschedule the call or to send what exists with an honest frame.\"\n    },\n    {\n      \"question\": \"Who at Harbor Point Partners is the decision-maker on this call, and what is their role in the firm's investment process?\",\n      \"relevance\": \"If this is an associate or a partner who cannot commit, the call's outcome is constrained, and the move after the call changes.\"\n    },\n    {\n      \"question\": \"How warm is the introduction to Harbor Point Partners, and who introduced the company?\",\n      \"relevance\": \"A cold email to a generic address has a different baseline than a warm introduction from a founder the investor has backed. The file does not say.\"\n    },\n    {\n      \"question\": \"What is the company's actual retention for the first three pilot customers?\",\n      \"relevance\": \"If retention is strong, the move is to send it with confidence. If it is weak, the move is to frame it honestly and prepare for the question it will raise.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A specific ask from an investor before a booked call, with the ball in the founder's court. The investor has named what they need to decide, and the founder has not yet sent it. This is a test of execution and responsiveness, not a stall.\",\n    \"rivals\": [\n      \"A soft pass disguised as a meeting: the investor asked for data as a way to defer without saying no, and the call will not happen or will be a rejection.\",\n      \"A routine information request with no urgency: the investor is gathering data as part of their process, and the timing does not matter as long as it arrives before the call.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is about a venture capital firm in the seed-stage fundraising process, with a booked call and a specific ask before it.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#9\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"The playbook expects that before a first call, the founder has prepared: they know the investor's stage, sector, cheque size, what they have backed, and any portfolio company that competes. The founder has named the next step to ask for and prepared the numbers that matter. The call ends with a named next step and a date, confirmed in writing the same day.\",\n    \"actual\": \"The investor has named a specific ask\u2014retention data for the first three pilot customers\u2014and a date for the call. The founder has not yet sent the data. The call is booked for 2026-10-08, which is two days away from the last touch on 2026-09-27.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not send the retention data before the call. The investor arrives at the call without the information they asked for, which signals that the founder either does not have it, does not prioritize the investor's request, or is disorganized. The call is likely to be shorter and less productive. The investor's confidence in the founder's execution drops. If the data is weak, the investor is relieved not to have seen it in advance. If the data is strong, the investor is frustrated that the founder did not send it. Either way, the momentum stalls.\",\n    \"act\": \"The founder sends the retention data to Neeraj Joshi before 2026-10-08, with a brief frame of what it shows and what it means. The investor arrives at the call prepared and sees that the founder listens and moves fast. The call is more productive because the investor can ask follow-up questions rather than asking for the data. If the data is strong, the investor's confidence rises. If the data is weak, the investor has time to think about what it means before the call, and the conversation is more honest.\",\n    \"best\": \"The founder sends the retention data by 2026-10-06, with a clear frame. The investor reviews it before the call and comes prepared with specific questions. The call is substantive and ends with a named next step\u2014a partners' meeting, a data room, or a commitment to move forward. The investor's confidence in the founder's execution is high.\",\n    \"worst\": \"The founder does not send the data, or sends it the day before the call with no frame. The investor arrives unprepared or frustrated. The call is tense or short. The investor decides not to move forward, or defers with a soft pass. The founder learns of the decision only when the round has moved on without Harbor Point Partners.\",\n    \"signals_to_watch\": [\n      \"Whether the founder has the retention data and what it shows.\",\n      \"Whether the founder sends the data before the call, and how it is framed.\",\n      \"Whether the investor asks follow-up questions about the data before the call, or waits until the call to ask.\",\n      \"Whether the call ends with a named next step and a date, or with silence.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Harbor Point Partners is one of five investors in the seed wave, and the company is raising the seed round as a primary goal.\",\n      \"The investor has named a specific ask and a date for a call, which is a signal of genuine interest and a test of the founder's execution.\",\n      \"Silence on the ask before the call signals lost momentum to the investor, and the asymmetry is structural: the investor sees many companies and loses nothing by dropping one.\",\n      \"A first call that ends without a named next step is usually a soft no, and the founder learns of it only when the round has moved on.\",\n      \"The playbook's heuristic that investors do not chase applies here: our silence on their ask reads as lost momentum, and the cost is high.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the retention data for the first three pilot customers to Neeraj Joshi, with a brief frame of what it shows and what it means for the company\",\n    \"for_whom\": \"Neeraj Joshi at Harbor Point Partners\",\n    \"by_when\": \"2026-10-06\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:5\",\n      \"inference:1\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"neeraj@harborpoint.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the retention data does not exist or is incomplete, call Neeraj Joshi before 2026-10-06 to say so, and offer to reschedule the call or to send what exists with an honest frame. This is better than silence or a last-minute scramble.\",\n  \"wait_or_stop\": \"Wait until 2026-10-08 for the call. If the call ends without a named next step and a date, record it as a soft no and move Harbor Point Partners to the update list with a condition to reopen. Do not send a check-in after the call unless the investor asks for one. Stop counting Harbor Point Partners as a live prospect if the call ends with silence or a pass.\",\n  \"done_when\": \"The retention data is sent to Neeraj Joshi before 2026-10-06, with a frame that says what it shows and what it means. The call on 2026-10-08 ends with a named next step and a date, confirmed in writing the same day.\",\n  \"draft\": \"Hi Neeraj, Attached is the retention data for our first three pilot customers. [One sentence on what it shows.] [One sentence on what it means for the company.] Looking forward to our call on the 8th. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "316b64111efe9930b8a801e1d87ef4dcf6aae946f45bb425940450db9d0d28fa": {
+  "framed": true,
+  "input_tokens": 12569,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3674,
+  "parsed": {
+   "alternative": "If the retention data is not ready or is weak, call Neeraj Joshi before 2026-10-01 to discuss what you can send and what the data will show. Renegotiate the scope or the date if needed, but do not go silent or send weak data without context.",
+   "appraisal": {
+    "reasons": [
+     "This is one of five investors in the seed wave; losing this conversation is costly but not fatal.",
+     "The call is 11 days away, so there is time to act, but not much.",
+     "If the data is weak or missing, the conversation can be renegotiated or the investor can be re-approached later; it is not irreversible.",
+     "The investor has shown genuine interest by asking for material and booking a call; this is a live opportunity.",
+     "The playbook says the first_call stage typically lasts 14 days, and we are at day zero of that window."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The retention data has been sent to Neeraj Joshi by 2026-10-01, with a note confirming the call on 2026-10-08 09:00 UTC. The investor has received it and either replied with a question or confirmed the call.",
+   "draft": "Hi Neeraj, Thanks for the note. I'm attaching the retention data for our first three pilot customers. [Brief narrative: what the data shows, what you learned, what you're doing about churn if relevant.] Looking forward to the call on October 8th. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The investor has asked for retention data for the first three pilot customers before a call on 2026-10-08 09:00 UTC. This is a named next step with a date. The ball is in our court: we have not sent the data yet, and the investor is waiting for it. The file shows an open ask, and whose_move is ours.",
+    "expected": "At the first_call stage, the playbook expects the investor to decide whether to spend more time. The investor may ask for material, schedule a partners' meeting, or go silent. If they ask for material, sending it promptly is the move that keeps the conversation alive. The playbook says: 'The funnel is measured (Gompers, Gornall, Kaplan & Strebulaev): one in four opportunities lead to meeting the management; one-third of those are reviewed at a partners' meeting.' Quiet at this stage usually means a soft no; a named next step and a date means the investor is still deciding.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Harbor Point Partners wrote on 2026-09-27 10:00 UTC asking to see retention data for the first three pilot customers before a call scheduled for 2026-10-08 09:00 UTC.",
+     "evidence": [
+      "evt_#1",
+      "evt_#2"
+     ],
+     "quote": "Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers."
+    },
+    {
+     "claim": "The file shows an open ask: they wait on us, open since 2026-09-27 10:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first touch with Harbor Point Partners; the file was created on 2026-09-27 10:00 UTC.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Harbor Point Partners was written to in the seed wave as part of the raise effort.",
+     "evidence": [
+      "brief:cbl_#9"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The meeting is booked for 2026-10-08 09:00 UTC, which is 11 days from the last touch.",
+     "evidence": [
+      "evt_#2",
+      "sit:sit_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in Harbor Point's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found low risk, high engagement, and no blocking dependency.",
+     "evidence": [
+      "ru:core.temporal",
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's whose_move is ours: we owe the retention data.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An investor in the first_call stage has asked for specific material before a booked meeting. The move is to deliver it on time and in good form. This is a live conversation with momentum, and the next step is ours.",
+    "rivals": [
+     "The investor is testing whether you can execute on a simple request; if you miss the deadline or send weak data, they will interpret it as a sign of poor execution.",
+     "The investor is gathering material for a partners' meeting and this is a gate; sending strong data here is the move that gets you to the next stage.",
+     "The investor is doing preliminary diligence and may not be serious; the quality of the data and the speed of delivery will tell them whether you are."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder that the data is ready and what it shows.",
+     "proposition": "The retention data exists and is strong enough to send as-is."
+    },
+    {
+     "needs": "The founder's assessment of the data quality and what story it tells.",
+     "proposition": "The retention data exists but is weak or incomplete, and needs framing or context before sending."
+    },
+    {
+     "needs": "The founder's honest assessment of what can be delivered by 2026-10-08 09:00 UTC and what the investor should expect.",
+     "proposition": "The retention data does not exist or cannot be compiled in time."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The investor has named a specific deliverable and a date by which they need it: retention data for the first three pilot customers, due before 2026-10-08 09:00 UTC."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:5"
+     ],
+     "claim": "This is a first_call stage conversation: a meeting is booked with a named decision-maker (Neeraj Joshi), and they have asked for material before the call."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "file:whose_move"
+     ],
+     "claim": "The ball is in our court: we have not yet sent the retention data, and the investor is waiting for it before the call."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.before_an_investor_call"
+     ],
+     "claim": "The investor's request is a signal of genuine interest: they are preparing for the call and want to understand customer stickiness, which is a material question for a founder-facing AI tool."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-01",
+    "for_whom": "Neeraj Joshi at Harbor Point Partners",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "cap:founder_office.fundraising.investor_relations#f3",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:8",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "neeraj@harborpoint.test",
+    "what": "Compile the retention data for the first three pilot customers, write a short narrative explaining what it shows and what you learned, and send it to Neeraj Joshi with a note confirming the call on 2026-10-08 09:00 UTC.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When an investor names a deliverable and a date, treat it as a hard deadline, not a soft request. Send it at least two business days before the call so they have time to review and form questions.",
+     "kind": "practice",
+     "why": "An investor who asks for material is signaling they are serious enough to prepare; sending it late or incomplete reads as disorganization and kills momentum at the moment it matters most."
+    },
+    {
+     "claim": "Retention data should be presented with context: absolute numbers, cohort retention curves, and what you learned from churn. Raw numbers without narrative invite the investor to fill in the worst interpretation.",
+     "kind": "practice",
+     "why": "Investors see many companies; the ones that survive the first call are the ones that tell a story, not just report a metric."
+    },
+    {
+     "claim": "Do not send retention data that is weak or ambiguous and hope the call will explain it away. If the data is weak, send it with the story of what you are doing about it.",
+     "kind": "counter_pattern",
+     "why": "An investor who sees weak retention before the call has time to decide not to show up or to show up with a closed mind. Transparency before the call is better than surprise during it."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.before_an_investor_call",
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "When an investor asks for specific material before a booked call, sending it promptly and completely is the move that advances the conversation; delay or partial answers read as lack of momentum.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.before_an_investor_call"
+     ],
+     "claim": "Retention data for pilot customers is a standard diligence question for B2B SaaS and founder tools; having it ready and clear is table stakes.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "At the first_call stage, one in three companies whose management the firm meets is reviewed at a partners' meeting; the quality of material sent before the call influences that decision.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [],
+    "kind": null,
+    "why": "The file is correctly classified as investor work. Harbor Point Partners is a venture capital firm, Neeraj Joshi is a partner, and this is a seed-stage fundraising conversation."
+   },
+   "scenarios": {
+    "act": "If you send the retention data now, with context and narrative, the investor has time to review it, form questions, and prepare for the call. If the data is strong, they will show up ready to move forward. If the data is weak, they will show up with a plan to address it, which is better than surprise. Either way, you signal that you listen, execute, and are organized.",
+    "best": "The retention data is strong, you send it by 2026-10-01, the investor reviews it and sends a note saying they are excited, the call on 2026-10-08 09:00 UTC is productive, and they move to a partners' meeting or ask for diligence material.",
+    "do_nothing": "If nothing is done, the call on 2026-10-08 09:00 UTC will happen without the investor having seen the retention data. The investor will either ask for it on the call (wasting time and signaling we did not listen), or will show up with a closed mind because they could not prepare. Either way, the conversation loses momentum. The playbook says: 'Left alone, an investor conversation does not pause: it decays into a no that nobody sends, and the founder learns of it only when the round has moved on without that investor.'",
+    "signals_to_watch": [
+     "Whether the retention data can be compiled by 2026-10-01 (at least a week before the call).",
+     "Whether the investor replies to the data with a question or a note of interest.",
+     "Whether the investor shows up to the call on 2026-10-08 09:00 UTC and whether they ask follow-up questions or move to the next step."
+    ],
+    "worst": "The retention data does not exist or is very weak, you send it late or not at all, the investor shows up unprepared or does not show up, and the conversation stalls or ends."
+   },
+   "unknowns": [
+    {
+     "question": "Does the retention data for the first three pilot customers exist, and what does it show?",
+     "relevance": "This determines whether the move is to send the data as-is, to send it with context and narrative, or to renegotiate the date or scope with the investor."
+    },
+    {
+     "question": "How many pilot customers does Nimbus Labs have, and how long have they been in use?",
+     "relevance": "This determines whether retention data is even meaningful yet, and whether the investor's question is reasonable or a sign they do not understand the stage."
+    },
+    {
+     "question": "What is Neeraj Joshi's role at Harbor Point Partners, and is he the decision-maker or a scout?",
+     "relevance": "This determines whether his request is a gate to a partners' meeting or a preliminary filter, and how much weight to give his question."
+    }
+   ],
+   "wait_or_stop": "Wait until you have confirmed that the retention data can be compiled and what it shows. Do not wait past 2026-10-01 to send it. If the data cannot be compiled by then, call Neeraj Joshi to renegotiate. Do not stop; this is a live conversation with momentum."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Harbor Point Partners wrote on 2026-09-27 10:00 UTC asking to see retention data for the first three pilot customers before a call scheduled for 2026-10-08 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"evt_#2\"\n      ],\n      \"quote\": \"Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers.\"\n    },\n    {\n      \"claim\": \"The file shows an open ask: they wait on us, open since 2026-09-27 10:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first touch with Harbor Point Partners; the file was created on 2026-09-27 10:00 UTC.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Harbor Point Partners was written to in the seed wave as part of the raise effort.\",\n      \"evidence\": [\n        \"brief:cbl_#9\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The meeting is booked for 2026-10-08 09:00 UTC, which is 11 days from the last touch.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"sit:sit_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in Harbor Point's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found low risk, high engagement, and no blocking dependency.\",\n      \"evidence\": [\n        \"ru:core.temporal\",\n        \"ru:core.dependency\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's whose_move is ours: we owe the retention data.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The investor has named a specific deliverable and a date by which they need it: retention data for the first three pilot customers, due before 2026-10-08 09:00 UTC.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"This is a first_call stage conversation: a meeting is booked with a named decision-maker (Neeraj Joshi), and they have asked for material before the call.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:5\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in our court: we have not yet sent the retention data, and the investor is waiting for it before the call.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The investor's request is a signal of genuine interest: they are preparing for the call and want to understand customer stickiness, which is a material question for a founder-facing AI tool.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an investor asks for specific material before a booked call, sending it promptly and completely is the move that advances the conversation; delay or partial answers read as lack of momentum.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Retention data for pilot customers is a standard diligence question for B2B SaaS and founder tools; having it ready and clear is table stakes.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"At the first_call stage, one in three companies whose management the firm meets is reviewed at a partners' meeting; the quality of material sent before the call influences that decision.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When an investor names a deliverable and a date, treat it as a hard deadline, not a soft request. Send it at least two business days before the call so they have time to review and form questions.\",\n      \"why\": \"An investor who asks for material is signaling they are serious enough to prepare; sending it late or incomplete reads as disorganization and kills momentum at the moment it matters most.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Retention data should be presented with context: absolute numbers, cohort retention curves, and what you learned from churn. Raw numbers without narrative invite the investor to fill in the worst interpretation.\",\n      \"why\": \"Investors see many companies; the ones that survive the first call are the ones that tell a story, not just report a metric.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Do not send retention data that is weak or ambiguous and hope the call will explain it away. If the data is weak, send it with the story of what you are doing about it.\",\n      \"why\": \"An investor who sees weak retention before the call has time to decide not to show up or to show up with a closed mind. Transparency before the call is better than surprise during it.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The retention data exists and is strong enough to send as-is.\",\n      \"needs\": \"Confirmation from the founder that the data is ready and what it shows.\"\n    },\n    {\n      \"proposition\": \"The retention data exists but is weak or incomplete, and needs framing or context before sending.\",\n      \"needs\": \"The founder's assessment of the data quality and what story it tells.\"\n    },\n    {\n      \"proposition\": \"The retention data does not exist or cannot be compiled in time.\",\n      \"needs\": \"The founder's honest assessment of what can be delivered by 2026-10-08 09:00 UTC and what the investor should expect.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the retention data for the first three pilot customers exist, and what does it show?\",\n      \"relevance\": \"This determines whether the move is to send the data as-is, to send it with context and narrative, or to renegotiate the date or scope with the investor.\"\n    },\n    {\n      \"question\": \"How many pilot customers does Nimbus Labs have, and how long have they been in use?\",\n      \"relevance\": \"This determines whether retention data is even meaningful yet, and whether the investor's question is reasonable or a sign they do not understand the stage.\"\n    },\n    {\n      \"question\": \"What is Neeraj Joshi's role at Harbor Point Partners, and is he the decision-maker or a scout?\",\n      \"relevance\": \"This determines whether his request is a gate to a partners' meeting or a preliminary filter, and how much weight to give his question.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An investor in the first_call stage has asked for specific material before a booked meeting. The move is to deliver it on time and in good form. This is a live conversation with momentum, and the next step is ours.\",\n    \"rivals\": [\n      \"The investor is testing whether you can execute on a simple request; if you miss the deadline or send weak data, they will interpret it as a sign of poor execution.\",\n      \"The investor is gathering material for a partners' meeting and this is a gate; sending strong data here is the move that gets you to the next stage.\",\n      \"The investor is doing preliminary diligence and may not be serious; the quality of the data and the speed of delivery will tell them whether you are.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The file is correctly classified as investor work. Harbor Point Partners is a venture capital firm, Neeraj Joshi is a partner, and this is a seed-stage fundraising conversation.\",\n    \"evidence\": []\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"At the first_call stage, the playbook expects the investor to decide whether to spend more time. The investor may ask for material, schedule a partners' meeting, or go silent. If they ask for material, sending it promptly is the move that keeps the conversation alive. The playbook says: 'The funnel is measured (Gompers, Gornall, Kaplan & Strebulaev): one in four opportunities lead to meeting the management; one-third of those are reviewed at a partners' meeting.' Quiet at this stage usually means a soft no; a named next step and a date means the investor is still deciding.\",\n    \"actual\": \"The investor has asked for retention data for the first three pilot customers before a call on 2026-10-08 09:00 UTC. This is a named next step with a date. The ball is in our court: we have not sent the data yet, and the investor is waiting for it. The file shows an open ask, and whose_move is ours.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If nothing is done, the call on 2026-10-08 09:00 UTC will happen without the investor having seen the retention data. The investor will either ask for it on the call (wasting time and signaling we did not listen), or will show up with a closed mind because they could not prepare. Either way, the conversation loses momentum. The playbook says: 'Left alone, an investor conversation does not pause: it decays into a no that nobody sends, and the founder learns of it only when the round has moved on without that investor.'\",\n    \"act\": \"If you send the retention data now, with context and narrative, the investor has time to review it, form questions, and prepare for the call. If the data is strong, they will show up ready to move forward. If the data is weak, they will show up with a plan to address it, which is better than surprise. Either way, you signal that you listen, execute, and are organized.\",\n    \"best\": \"The retention data is strong, you send it by 2026-10-01, the investor reviews it and sends a note saying they are excited, the call on 2026-10-08 09:00 UTC is productive, and they move to a partners' meeting or ask for diligence material.\",\n    \"worst\": \"The retention data does not exist or is very weak, you send it late or not at all, the investor shows up unprepared or does not show up, and the conversation stalls or ends.\",\n    \"signals_to_watch\": [\n      \"Whether the retention data can be compiled by 2026-10-01 (at least a week before the call).\",\n      \"Whether the investor replies to the data with a question or a note of interest.\",\n      \"Whether the investor shows up to the call on 2026-10-08 09:00 UTC and whether they ask follow-up questions or move to the next step.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is one of five investors in the seed wave; losing this conversation is costly but not fatal.\",\n      \"The call is 11 days away, so there is time to act, but not much.\",\n      \"If the data is weak or missing, the conversation can be renegotiated or the investor can be re-approached later; it is not irreversible.\",\n      \"The investor has shown genuine interest by asking for material and booking a call; this is a live opportunity.\",\n      \"The playbook says the first_call stage typically lasts 14 days, and we are at day zero of that window.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Compile the retention data for the first three pilot customers, write a short narrative explaining what it shows and what you learned, and send it to Neeraj Joshi with a note confirming the call on 2026-10-08 09:00 UTC.\",\n    \"for_whom\": \"Neeraj Joshi at Harbor Point Partners\",\n    \"by_when\": \"2026-10-01\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:8\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"cap:founder_office.fundraising.investor_relations#f3\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"neeraj@harborpoint.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the retention data is not ready or is weak, call Neeraj Joshi before 2026-10-01 to discuss what you can send and what the data will show. Renegotiate the scope or the date if needed, but do not go silent or send weak data without context.\",\n    \"wait_or_stop\": \"Wait until you have confirmed that the retention data can be compiled and what it shows. Do not wait past 2026-10-01 to send it. If the data cannot be compiled by then, call Neeraj Joshi to renegotiate. Do not stop; this is a live conversation with momentum.\",\n  \"done_when\": \"The retention data has been sent to Neeraj Joshi by 2026-10-01, with a note confirming the call on 2026-10-08 09:00 UTC. The investor has received it and either replied with a question or confirmed the call.\",\n  \"draft\": \"Hi Neeraj, Thanks for the note. I'm attaching the retention data for our first three pilot customers. [Brief narrative: what the data shows, what you learned, what you're doing about churn if relevant.] Looking forward to the call on October 8th. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "67c3b67a170b37cb93b20e43bf60f681cb0dca2e68a01c64038c645536bbce88": {
+  "framed": true,
+  "input_tokens": 12397,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3688,
+  "parsed": {
+   "alternative": "If the retention data is weak or missing, call Neeraj before October 6 to reset expectations: 'We want to make sure the October 8 call is as useful as possible. Our retention data is still coming in from the pilots, and I want to be honest about where we are. Would it help to talk through what we know so far, or would you prefer to wait until we have a fuller picture?' This move is costly\u2014it signals uncertainty\u2014but it is better than sending weak data or missing the deadline.",
+   "appraisal": {
+    "reasons": [
+     "Harbor Point is one of five investors written to in the seed wave; losing momentum with one does not kill the round, but it signals weakness to others.",
+     "The data request is a gate: if the founder fails to deliver, the investor's confidence drops and recovery is hard.",
+     "The call is 11 days away, which is enough time to prepare but not enough to recover from a late or poor delivery.",
+     "Retention data is a leading indicator; if it is weak, no amount of preparation will save the conversation, but if it is strong, preparation will unlock the next step.",
+     "The investor is moving the conversation forward by naming a specific ask and a date; this is a signal of interest, not a soft pass, and the founder should treat it as such."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The retention data is sent to Neeraj by October 6, with a clear frame and an offer to walk through it on the call. Neeraj confirms receipt and the October 8 call happens as scheduled. On the call, Neeraj asks follow-up questions about the data or the pilots, or names a next step (partners' meeting, references, data room). The conversation moves forward.",
+   "expected_vs_actual": {
+    "actual": "Harbor Point asked for retention data on the first three pilot customers before the call. The founder has not yet sent it. The call is booked for October 8, which is 11 days away. The ask is open and the ball is in the founder's court.",
+    "expected": "At the first-call stage, the investor is deciding whether to spend more time. The playbook expects the founder to prepare for the call by knowing the investor's stage, sector, cheque size, and portfolio; to name the next step to ask for; and to leave with clarity on next steps. The investor may ask for data, references, or a demo. If they ask for something specific before the call, the founder should deliver it on time and in the form requested.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Harbor Point Partners requested retention data for the first three pilot customers before a scheduled call on October 8.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers."
+    },
+    {
+     "claim": "A meeting is booked with Harbor Point Partners for October 8, 2026 at 09:00 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first contact with Harbor Point Partners; they were written to in the seed wave.",
+     "evidence": [
+      "file:first_touch",
+      "brief:cbl_#9"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows an open ask: the retention data question, open since 2026-09-27 10:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we owe the retention data before the call.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was extracted from Harbor Point's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found low risk, high engagement, and no blocking dependency.",
+     "evidence": [
+      "ru:core.risk",
+      "ru:core.temporal",
+      "ru:core.dependency"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A seed-stage investor is running a first-call process and has asked for a specific data point to evaluate before the meeting. The founder must deliver it on time and in a form that supports the investment thesis.",
+    "rivals": [
+     "Harbor Point is screening out and the data request is a courtesy before a pass.",
+     "The investor is testing responsiveness and follow-through, not seriously evaluating the company yet.",
+     "The data request is a standard diligence step and does not signal higher interest than any other investor in the wave."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The call itself, and whether they ask for more data, references, or a data room after it.",
+     "proposition": "Harbor Point is moving toward a partners' meeting or diligence request after the October 8 call."
+    },
+    {
+     "needs": "Confirmation from the founder that the data is available and what it shows.",
+     "proposition": "The retention data exists and is strong enough to present."
+    },
+    {
+     "needs": "The actual retention numbers and how they compare to the investor's thesis.",
+     "proposition": "Harbor Point is screening out companies with weak retention and will pass if the data is poor."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#1"
+     ],
+     "claim": "Harbor Point's request for retention data is a substantive ask, not a soft pass or deferral."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "pb:founder_office.pb.investor_relations.before_an_investor_call"
+     ],
+     "claim": "The investor is moving the conversation forward by naming a specific data point and a date, signaling active interest."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "fact:2",
+      "cap:admin.executive_support.commitment_tracking#f1"
+     ],
+     "claim": "The next move is ours and time-sensitive: the data must be ready before October 8 to avoid appearing unprepared or losing momentum."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "This is a first-call stage conversation: the investor has not yet committed, and the call itself is the next gate."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-06",
+    "for_whom": "Neeraj Joshi at Harbor Point Partners",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:5",
+     "inference:3"
+    ],
+    "to": "neeraj@harborpoint.test",
+    "what": "Prepare the retention data for the first three pilot customers, frame it with context (cohort size, retention period, trend, and how it compares to your thesis), and send it to Neeraj Joshi by October 6, with a note confirming the October 8 call and offering to walk through the data on the call if helpful.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Retention data on pilot customers is a leading indicator of product-market fit and unit economics; it is one of the first things a seed investor will want to see.",
+     "kind": "practice",
+     "why": "Retention answers whether customers stay, which is the foundation of a defensible business model. Pilots are the earliest proof point."
+    },
+    {
+     "claim": "When an investor names a specific data point and a date, they are usually serious about the next step; silence after that date is a soft no.",
+     "kind": "base_rate",
+     "why": "Investors who are not interested do not ask for data; those who do are running a process. The date becomes the clock."
+    },
+    {
+     "claim": "Retention data should be presented with context: how many customers, how long they have been retained, what the cohort looks like, and what the trend is.",
+     "kind": "practice",
+     "why": "Raw numbers without context invite misinterpretation. A founder who can frame the data controls the narrative."
+    },
+    {
+     "claim": "A founder who scrambles to produce data they do not have, or who inflates it, will be caught in diligence and lose the investor's trust permanently.",
+     "kind": "counter_pattern",
+     "why": "Investors talk to customers. A discrepancy between what you claim and what they hear is the end of the conversation."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.before_an_investor_call",
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "Investors who ask for specific data before a call are screening for traction and operational rigor; providing it on time signals competence.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "A request for retention data on pilot customers is a diligence signal: the investor is moving from interest to evaluation.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "An investor who asks for data but does not specify format, timeline or detail may be testing responsiveness rather than seriously evaluating.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#9",
+     "file:kind"
+    ],
+    "kind": "investor",
+    "why": "The file is correctly classified as investor work. Harbor Point Partners is a seed-stage fund, the work is raising the seed round, and the conversation is a first-call stage investor evaluation."
+   },
+   "scenarios": {
+    "act": "The founder prepares the retention data, frames it with context, and sends it to Neeraj Joshi by October 6 at the latest. The data is clear, honest, and presented in a way that supports the investment thesis. Neeraj has time to review it before the call and comes prepared with follow-up questions. The call is substantive and moves to the next step (partners' meeting, diligence, or a clear pass).",
+    "best": "The retention data is strong and shows a clear trend. Neeraj is impressed by the founder's preparation and the quality of the data. The October 8 call moves quickly to a partners' meeting or a request for references and customer calls. Harbor Point enters diligence and becomes a live investor in the round.",
+    "do_nothing": "The founder does not send the retention data before October 8. The call happens without it, and the founder either admits they do not have it (signaling lack of rigor or traction) or presents it on the call unprepared (signaling disorganization). Harbor Point's confidence drops. The conversation likely stalls after the call, and the investor moves on to other companies. The founder learns of the pass only when the round has moved on without them.",
+    "signals_to_watch": [
+     "Whether the founder has the retention data and what it shows.",
+     "Whether the data is sent before October 6 (giving Neeraj time to review).",
+     "Neeraj's tone and questions on the October 8 call: are they probing deeper or wrapping up?",
+     "Whether Neeraj asks for the next step (partners' meeting, references, data room) or goes quiet after the call.",
+     "Whether other investors in the wave move faster, creating pressure on Harbor Point to decide."
+    ],
+    "worst": "The retention data is weak, missing, or contradicts what the founder has claimed elsewhere. The founder sends it late or in a form that is hard to interpret. Neeraj cancels the call or attends it skeptical. The conversation ends with a soft pass: 'come back when retention improves' or 'we want to see more traction.' The investor is taken off the active list and moved to the update list, if at all."
+   },
+   "unknowns": [
+    {
+     "question": "Does the retention data exist, and what does it show?",
+     "relevance": "If retention is weak or data is missing, the move changes from 'prepare and send' to 'find out what we have and decide whether to present it or reframe the conversation.'"
+    },
+    {
+     "question": "What format does Harbor Point expect the data in, and how detailed should it be?",
+     "relevance": "A spreadsheet, a slide, a narrative, or a dashboard will each land differently. The investor's preference is not stated."
+    },
+    {
+     "question": "Has Harbor Point invested in similar companies, and what retention benchmarks do they use?",
+     "relevance": "Knowing their bar would let you frame the data against their expectations rather than in a vacuum."
+    },
+    {
+     "question": "Is there a relationship between Neeraj Joshi and the founder, or is this a cold introduction?",
+     "relevance": "The warmth of the relationship affects how much benefit of the doubt the investor will give if the data is ambiguous."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline is October 6 to give Neeraj time to review. If the data is not ready by October 5, call Neeraj that day to reset. Do not send data on October 7 or 8; that reads as disorganized. If the data is genuinely not available, do not invent it; instead, reframe the call as a conversation about the pilots and what you have learned so far. Stop if Harbor Point passes after the call; record the reason and the condition for reopening, then move them to the update list."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Harbor Point Partners requested retention data for the first three pilot customers before a scheduled call on October 8.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers.\"\n    },\n    {\n      \"claim\": \"A meeting is booked with Harbor Point Partners for October 8, 2026 at 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first contact with Harbor Point Partners; they were written to in the seed wave.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"brief:cbl_#9\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows an open ask: the retention data question, open since 2026-09-27 10:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we owe the retention data before the call.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was extracted from Harbor Point's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found low risk, high engagement, and no blocking dependency.\",\n      \"evidence\": [\n        \"ru:core.risk\",\n        \"ru:core.temporal\",\n        \"ru:core.dependency\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Harbor Point's request for retention data is a substantive ask, not a soft pass or deferral.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The investor is moving the conversation forward by naming a specific data point and a date, signaling active interest.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours and time-sensitive: the data must be ready before October 8 to avoid appearing unprepared or losing momentum.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"fact:2\",\n        \"cap:admin.executive_support.commitment_tracking#f1\"\n      ]\n    },\n    {\n      \"claim\": \"This is a first-call stage conversation: the investor has not yet committed, and the call itself is the next gate.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Investors who ask for specific data before a call are screening for traction and operational rigor; providing it on time signals competence.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A request for retention data on pilot customers is a diligence signal: the investor is moving from interest to evaluation.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An investor who asks for data but does not specify format, timeline or detail may be testing responsiveness rather than seriously evaluating.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Retention data on pilot customers is a leading indicator of product-market fit and unit economics; it is one of the first things a seed investor will want to see.\",\n      \"why\": \"Retention answers whether customers stay, which is the foundation of a defensible business model. Pilots are the earliest proof point.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When an investor names a specific data point and a date, they are usually serious about the next step; silence after that date is a soft no.\",\n      \"why\": \"Investors who are not interested do not ask for data; those who do are running a process. The date becomes the clock.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Retention data should be presented with context: how many customers, how long they have been retained, what the cohort looks like, and what the trend is.\",\n      \"why\": \"Raw numbers without context invite misinterpretation. A founder who can frame the data controls the narrative.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who scrambles to produce data they do not have, or who inflates it, will be caught in diligence and lose the investor's trust permanently.\",\n      \"why\": \"Investors talk to customers. A discrepancy between what you claim and what they hear is the end of the conversation.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Harbor Point is moving toward a partners' meeting or diligence request after the October 8 call.\",\n      \"needs\": \"The call itself, and whether they ask for more data, references, or a data room after it.\"\n    },\n    {\n      \"proposition\": \"The retention data exists and is strong enough to present.\",\n      \"needs\": \"Confirmation from the founder that the data is available and what it shows.\"\n    },\n    {\n      \"proposition\": \"Harbor Point is screening out companies with weak retention and will pass if the data is poor.\",\n      \"needs\": \"The actual retention numbers and how they compare to the investor's thesis.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the retention data exist, and what does it show?\",\n      \"relevance\": \"If retention is weak or data is missing, the move changes from 'prepare and send' to 'find out what we have and decide whether to present it or reframe the conversation.'\"\n    },\n    {\n      \"question\": \"What format does Harbor Point expect the data in, and how detailed should it be?\",\n      \"relevance\": \"A spreadsheet, a slide, a narrative, or a dashboard will each land differently. The investor's preference is not stated.\"\n    },\n    {\n      \"question\": \"Has Harbor Point invested in similar companies, and what retention benchmarks do they use?\",\n      \"relevance\": \"Knowing their bar would let you frame the data against their expectations rather than in a vacuum.\"\n    },\n    {\n      \"question\": \"Is there a relationship between Neeraj Joshi and the founder, or is this a cold introduction?\",\n      \"relevance\": \"The warmth of the relationship affects how much benefit of the doubt the investor will give if the data is ambiguous.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A seed-stage investor is running a first-call process and has asked for a specific data point to evaluate before the meeting. The founder must deliver it on time and in a form that supports the investment thesis.\",\n    \"rivals\": [\n      \"Harbor Point is screening out and the data request is a courtesy before a pass.\",\n      \"The investor is testing responsiveness and follow-through, not seriously evaluating the company yet.\",\n      \"The data request is a standard diligence step and does not signal higher interest than any other investor in the wave.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is correctly classified as investor work. Harbor Point Partners is a seed-stage fund, the work is raising the seed round, and the conversation is a first-call stage investor evaluation.\",\n    \"evidence\": [\n      \"brief:cbl_#9\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"At the first-call stage, the investor is deciding whether to spend more time. The playbook expects the founder to prepare for the call by knowing the investor's stage, sector, cheque size, and portfolio; to name the next step to ask for; and to leave with clarity on next steps. The investor may ask for data, references, or a demo. If they ask for something specific before the call, the founder should deliver it on time and in the form requested.\",\n    \"actual\": \"Harbor Point asked for retention data on the first three pilot customers before the call. The founder has not yet sent it. The call is booked for October 8, which is 11 days away. The ask is open and the ball is in the founder's court.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not send the retention data before October 8. The call happens without it, and the founder either admits they do not have it (signaling lack of rigor or traction) or presents it on the call unprepared (signaling disorganization). Harbor Point's confidence drops. The conversation likely stalls after the call, and the investor moves on to other companies. The founder learns of the pass only when the round has moved on without them.\",\n    \"act\": \"The founder prepares the retention data, frames it with context, and sends it to Neeraj Joshi by October 6 at the latest. The data is clear, honest, and presented in a way that supports the investment thesis. Neeraj has time to review it before the call and comes prepared with follow-up questions. The call is substantive and moves to the next step (partners' meeting, diligence, or a clear pass).\",\n    \"best\": \"The retention data is strong and shows a clear trend. Neeraj is impressed by the founder's preparation and the quality of the data. The October 8 call moves quickly to a partners' meeting or a request for references and customer calls. Harbor Point enters diligence and becomes a live investor in the round.\",\n    \"worst\": \"The retention data is weak, missing, or contradicts what the founder has claimed elsewhere. The founder sends it late or in a form that is hard to interpret. Neeraj cancels the call or attends it skeptical. The conversation ends with a soft pass: 'come back when retention improves' or 'we want to see more traction.' The investor is taken off the active list and moved to the update list, if at all.\",\n    \"signals_to_watch\": [\n      \"Whether the founder has the retention data and what it shows.\",\n      \"Whether the data is sent before October 6 (giving Neeraj time to review).\",\n      \"Neeraj's tone and questions on the October 8 call: are they probing deeper or wrapping up?\",\n      \"Whether Neeraj asks for the next step (partners' meeting, references, data room) or goes quiet after the call.\",\n      \"Whether other investors in the wave move faster, creating pressure on Harbor Point to decide.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Harbor Point is one of five investors written to in the seed wave; losing momentum with one does not kill the round, but it signals weakness to others.\",\n      \"The data request is a gate: if the founder fails to deliver, the investor's confidence drops and recovery is hard.\",\n      \"The call is 11 days away, which is enough time to prepare but not enough to recover from a late or poor delivery.\",\n      \"Retention data is a leading indicator; if it is weak, no amount of preparation will save the conversation, but if it is strong, preparation will unlock the next step.\",\n      \"The investor is moving the conversation forward by naming a specific ask and a date; this is a signal of interest, not a soft pass, and the founder should treat it as such.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Prepare the retention data for the first three pilot customers, frame it with context (cohort size, retention period, trend, and how it compares to your thesis), and send it to Neeraj Joshi by October 6, with a note confirming the October 8 call and offering to walk through the data on the call if helpful.\",\n    \"for_whom\": \"Neeraj Joshi at Harbor Point Partners\",\n    \"by_when\": \"2026-10-06\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:5\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"neeraj@harborpoint.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the retention data is weak or missing, call Neeraj before October 6 to reset expectations: 'We want to make sure the October 8 call is as useful as possible. Our retention data is still coming in from the pilots, and I want to be honest about where we are. Would it help to talk through what we know so far, or would you prefer to wait until we have a fuller picture?' This move is costly\u2014it signals uncertainty\u2014but it is better than sending weak data or missing the deadline.\",\n  \"wait_or_stop\": \"Do not wait. The deadline is October 6 to give Neeraj time to review. If the data is not ready by October 5, call Neeraj that day to reset. Do not send data on October 7 or 8; that reads as disorganized. If the data is genuinely not available, do not invent it; instead, reframe the call as a conversation about the pilots and what you have learned so far. Stop if Harbor Point passes after the call; record the reason and the condition for reopening, then move them to the update list.\",\n  \"done_when\": \"The retention data is sent to Neeraj by October 6, with a clear frame and an offer to walk through it on the call. Neeraj confirms receipt and the October 8 call happens as scheduled. On the call, Neeraj asks follow-up questions about the data or the pilots, or names a next step (partners' meeting, references, data room). The conversation moves forward.\"\n}",
+  "site": "expert"
+ },
+ "7de7b5b83653cfe0637408e8186356dfe35e5620c8185f52f8f7742e82887119": {
+  "framed": true,
+  "input_tokens": 12593,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3428,
+  "parsed": {
+   "alternative": "If the company does not have retention data on three pilot customers, or the data is incomplete or unfavorable, send a brief note to Neeraj Joshi explaining what data the company does have, why, and what it shows. Offer to walk through it in the call. This move is honest and keeps the conversation alive; it is better than silence or a delayed response.",
+   "appraisal": {
+    "reasons": [
+     "This is one of five investors in the seed wave; Harbor Point is not the only path to funding, but it is a live conversation at a critical stage.",
+     "The meeting is 2 days away; the window to send the data and have it reviewed is narrow.",
+     "A failure to send the data, or a weak answer, will likely end this conversation for this round; reversing a soft no is possible but costly and requires new traction.",
+     "The investor has named a specific ask, which is a signal of engagement; meeting it or failing to meet it will shape their decision."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The data is sent to Neeraj Joshi by 2026-10-07, the investor receives it and does not reply with a question or a cancellation, and the call happens on 2026-10-08 as booked. Done is the call itself, and what matters is whether the investor names a next step and a date at the end of it.",
+   "draft": "Hi Neeraj, Thanks for asking to see retention on our first three pilots before the call. Attached is the data. The headline: [one insight from the data \u2014 e.g., 'all three are still active after three months, and two have expanded their usage']. Looking forward to walking through what this means on the 8th. \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "The investor asked for retention data before the call, not after. The company has not yet sent it. The meeting is booked for 2 days away. The file has been quiet for 9 days since the ask was made.",
+    "expected": "After a first call that named a next step and a date, the investor is deciding whether to spend more time. The playbook expects silence to be the work of the investor's process, not a signal of disinterest, until the date passes. The founder's move is to send what was asked for, confirm the next step in writing, and prepare for the call.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Harbor Point Partners asked for retention data on the first three pilot customers before a scheduled call on 8 October.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers."
+    },
+    {
+     "claim": "A meeting is booked with Harbor Point Partners for 2026-10-08 09:00 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 9.08 days since the last touch on 2026-09-27 10:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we owe a reply to their ask for retention data.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in Harbor Point's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first and only touch with Harbor Point Partners; they were written to in the seed wave.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "brief:cbl_#9"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An investor has moved from first contact to first call by booking a meeting and naming a specific ask for data. The company owes a reply before the meeting, and the quality of the data and the speed of the reply will signal whether the company is serious and has traction. This is a live first-call conversation at a critical moment.",
+    "rivals": [
+     "The investor is gathering data from many companies and this is a filtering call, not a serious evaluation; the ask is routine and the meeting may not happen if the data is weak.",
+     "The investor is testing whether the company will respond to a request; the real evaluation happens after the call, not before, and the data is secondary to the founder's ability to articulate the business."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder that the data exists and is accurate enough to send.",
+     "proposition": "The company has retention data on the first three pilot customers and can send it."
+    },
+    {
+     "needs": "A decision from the founder on whether to send what exists, to explain the gap, or to ask for a delay in the call.",
+     "proposition": "The company does not yet have retention data on three pilot customers, or the data is incomplete or unfavorable."
+    },
+    {
+     "needs": "The quality of the retention data and the investor's reaction in the call itself.",
+     "proposition": "Harbor Point is seriously evaluating and will move to a partners' meeting if the data is strong."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "fact:1"
+     ],
+     "claim": "The investor has moved from first contact to first call stage by booking the meeting and naming a condition for it."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "The ask for retention data is a diligence signal: the investor is evaluating whether to spend more time and is testing whether the company has traction worth reviewing."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:4",
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "Silence from us now, with a meeting booked and a named ask outstanding, reads to the investor as either the company lacks the data or has lost momentum."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:4",
+      "own:1"
+     ],
+     "claim": "The move is ours and urgent: the meeting is 2 days away, and the data must be sent before it to be useful to them."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-07",
+    "for_whom": "Neeraj Joshi at Harbor Point Partners",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "own:1",
+     "own:2",
+     "own:3",
+     "cap:founder_office.fundraising.investor_relations#f3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:4",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "neeraj@harborpoint.test",
+    "what": "send the retention data on the first three pilot customers to Neeraj Joshi, with a brief note thanking him for the ask and naming one insight from the data that the call can build on",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Data sent the day before a call, rather than the day of, gives the investor time to review and form a question, which deepens the conversation.",
+     "kind": "practice",
+     "why": "An investor who reads the data cold in the call is in receive mode; one who has read it is in question mode, and questions mean engagement."
+    },
+    {
+     "claim": "Retention data on three pilot customers is a small ask; if the company has it, sending it costs nothing and signals confidence.",
+     "kind": "base_rate",
+     "why": "An investor interprets a delayed or partial answer to a small ask as either the company does not have the data or does not want to share it, either of which is a signal."
+    },
+    {
+     "claim": "A message sent before a call should confirm the data is attached, thank them for the ask, and name one insight from the data that the call can build on.",
+     "kind": "practice",
+     "why": "This move converts a compliance task into a conversation starter and shows the founder has thought about what the data means."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "An investor who names a specific ask before a call is signaling they are seriously evaluating; investors who do not intend to move do not ask for data.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "A first call that ends with a named next step and a date is the stage where one in three companies that reach it move to a partners' meeting.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "An investor asking for data before a call, rather than after, suggests they may be filtering at the first-call stage rather than committing to a partners' meeting.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#9",
+     "file:kind",
+     "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+    ],
+    "kind": "investor",
+    "why": "The file is correctly classified as investor work. Harbor Point Partners is a venture capital firm, the work is to raise a seed round, and the conversation is at the first-call stage of the investor playbook."
+   },
+   "scenarios": {
+    "act": "The company sends the retention data before the call, with a brief note thanking the investor for the ask and naming one insight. The investor arrives prepared and the call becomes a conversation about what the data means and what comes next. The investor is more likely to move to a partners' meeting or to ask for diligence material.",
+    "best": "The retention data is strong, the company sends it the day before the call with a clear insight, the investor comes to the call with questions, and the call ends with a named next step and a date for a partners' meeting or a diligence request.",
+    "do_nothing": "The company sends nothing before the call. The investor arrives at the meeting without the data they asked for, which reads as either the company does not have it or does not take the investor seriously. The call becomes defensive or explanatory rather than exploratory. The investor is less likely to move to a partners' meeting. The conversation decays into a soft no.",
+    "signals_to_watch": [
+     "Whether the company has retention data and how strong it is.",
+     "Whether the data is sent before the call or not sent at all.",
+     "The investor's tone and questions in the call itself.",
+     "Whether the investor names a next step and a date at the end of the call.",
+     "Whether the investor asks for diligence material or a partners' meeting."
+    ],
+    "worst": "The company does not have retention data, or the data is weak. The company sends nothing or sends an explanation. The investor arrives at the call without what they asked for, interprets it as a lack of traction or seriousness, and the call ends with a soft pass or a deferral."
+   },
+   "unknowns": [
+    {
+     "question": "Does the company have retention data on the first three pilot customers, and if so, what does it show?",
+     "relevance": "This determines whether the move is to send the data, to explain why it is not ready, or to ask for a delay. A strong retention story changes the urgency and tone of the message."
+    },
+    {
+     "question": "What is Harbor Point's stage and check size, and have they backed companies in this space before?",
+     "relevance": "This would inform whether they are a likely funder or a data-gathering exercise, and whether the call is a real evaluation or a courtesy."
+    },
+    {
+     "question": "How many other investors are at the first-call stage or beyond, and is there momentum elsewhere in the round?",
+     "relevance": "If this is the only live conversation, the stakes are higher; if there are others, this call is one of many and the pressure is lower."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The meeting is 2 days away and the investor asked for the data before it. Sending it now is the move. If the company does not have the data, send an explanation the same day, not the day of the call. Stop if the investor does not reply to the data or does not show up for the call; that is a signal to move on."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Harbor Point Partners asked for retention data on the first three pilot customers before a scheduled call on 8 October.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers.\"\n    },\n    {\n      \"claim\": \"A meeting is booked with Harbor Point Partners for 2026-10-08 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 9.08 days since the last touch on 2026-09-27 10:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we owe a reply to their ask for retention data.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in Harbor Point's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first and only touch with Harbor Point Partners; they were written to in the seed wave.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"brief:cbl_#9\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The investor has moved from first contact to first call stage by booking the meeting and naming a condition for it.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The ask for retention data is a diligence signal: the investor is evaluating whether to spend more time and is testing whether the company has traction worth reviewing.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"claim\": \"Silence from us now, with a meeting booked and a named ask outstanding, reads to the investor as either the company lacks the data or has lost momentum.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:4\",\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"claim\": \"The move is ours and urgent: the meeting is 2 days away, and the data must be sent before it to be useful to them.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:4\",\n        \"own:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who names a specific ask before a call is signaling they are seriously evaluating; investors who do not intend to move do not ask for data.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A first call that ends with a named next step and a date is the stage where one in three companies that reach it move to a partners' meeting.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An investor asking for data before a call, rather than after, suggests they may be filtering at the first-call stage rather than committing to a partners' meeting.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Data sent the day before a call, rather than the day of, gives the investor time to review and form a question, which deepens the conversation.\",\n      \"why\": \"An investor who reads the data cold in the call is in receive mode; one who has read it is in question mode, and questions mean engagement.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Retention data on three pilot customers is a small ask; if the company has it, sending it costs nothing and signals confidence.\",\n      \"why\": \"An investor interprets a delayed or partial answer to a small ask as either the company does not have the data or does not want to share it, either of which is a signal.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A message sent before a call should confirm the data is attached, thank them for the ask, and name one insight from the data that the call can build on.\",\n      \"why\": \"This move converts a compliance task into a conversation starter and shows the founder has thought about what the data means.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The company has retention data on the first three pilot customers and can send it.\",\n      \"needs\": \"Confirmation from the founder that the data exists and is accurate enough to send.\"\n    },\n    {\n      \"proposition\": \"The company does not yet have retention data on three pilot customers, or the data is incomplete or unfavorable.\",\n      \"needs\": \"A decision from the founder on whether to send what exists, to explain the gap, or to ask for a delay in the call.\"\n    },\n    {\n      \"proposition\": \"Harbor Point is seriously evaluating and will move to a partners' meeting if the data is strong.\",\n      \"needs\": \"The quality of the retention data and the investor's reaction in the call itself.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the company have retention data on the first three pilot customers, and if so, what does it show?\",\n      \"relevance\": \"This determines whether the move is to send the data, to explain why it is not ready, or to ask for a delay. A strong retention story changes the urgency and tone of the message.\"\n    },\n    {\n      \"question\": \"What is Harbor Point's stage and check size, and have they backed companies in this space before?\",\n      \"relevance\": \"This would inform whether they are a likely funder or a data-gathering exercise, and whether the call is a real evaluation or a courtesy.\"\n    },\n    {\n      \"question\": \"How many other investors are at the first-call stage or beyond, and is there momentum elsewhere in the round?\",\n      \"relevance\": \"If this is the only live conversation, the stakes are higher; if there are others, this call is one of many and the pressure is lower.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An investor has moved from first contact to first call by booking a meeting and naming a specific ask for data. The company owes a reply before the meeting, and the quality of the data and the speed of the reply will signal whether the company is serious and has traction. This is a live first-call conversation at a critical moment.\",\n    \"rivals\": [\n      \"The investor is gathering data from many companies and this is a filtering call, not a serious evaluation; the ask is routine and the meeting may not happen if the data is weak.\",\n      \"The investor is testing whether the company will respond to a request; the real evaluation happens after the call, not before, and the data is secondary to the founder's ability to articulate the business.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is correctly classified as investor work. Harbor Point Partners is a venture capital firm, the work is to raise a seed round, and the conversation is at the first-call stage of the investor playbook.\",\n    \"evidence\": [\n      \"brief:cbl_#9\",\n      \"file:kind\",\n      \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"After a first call that named a next step and a date, the investor is deciding whether to spend more time. The playbook expects silence to be the work of the investor's process, not a signal of disinterest, until the date passes. The founder's move is to send what was asked for, confirm the next step in writing, and prepare for the call.\",\n    \"actual\": \"The investor asked for retention data before the call, not after. The company has not yet sent it. The meeting is booked for 2 days away. The file has been quiet for 9 days since the ask was made.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The company sends nothing before the call. The investor arrives at the meeting without the data they asked for, which reads as either the company does not have it or does not take the investor seriously. The call becomes defensive or explanatory rather than exploratory. The investor is less likely to move to a partners' meeting. The conversation decays into a soft no.\",\n    \"act\": \"The company sends the retention data before the call, with a brief note thanking the investor for the ask and naming one insight. The investor arrives prepared and the call becomes a conversation about what the data means and what comes next. The investor is more likely to move to a partners' meeting or to ask for diligence material.\",\n    \"best\": \"The retention data is strong, the company sends it the day before the call with a clear insight, the investor comes to the call with questions, and the call ends with a named next step and a date for a partners' meeting or a diligence request.\",\n    \"worst\": \"The company does not have retention data, or the data is weak. The company sends nothing or sends an explanation. The investor arrives at the call without what they asked for, interprets it as a lack of traction or seriousness, and the call ends with a soft pass or a deferral.\",\n    \"signals_to_watch\": [\n      \"Whether the company has retention data and how strong it is.\",\n      \"Whether the data is sent before the call or not sent at all.\",\n      \"The investor's tone and questions in the call itself.\",\n      \"Whether the investor names a next step and a date at the end of the call.\",\n      \"Whether the investor asks for diligence material or a partners' meeting.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"This is one of five investors in the seed wave; Harbor Point is not the only path to funding, but it is a live conversation at a critical stage.\",\n      \"The meeting is 2 days away; the window to send the data and have it reviewed is narrow.\",\n      \"A failure to send the data, or a weak answer, will likely end this conversation for this round; reversing a soft no is possible but costly and requires new traction.\",\n      \"The investor has named a specific ask, which is a signal of engagement; meeting it or failing to meet it will shape their decision.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the retention data on the first three pilot customers to Neeraj Joshi, with a brief note thanking him for the ask and naming one insight from the data that the call can build on\",\n    \"for_whom\": \"Neeraj Joshi at Harbor Point Partners\",\n    \"by_when\": \"2026-10-07\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"own:1\",\n      \"own:2\",\n      \"own:3\",\n      \"cap:founder_office.fundraising.investor_relations#f3\"\n    ],\n    \"to\": \"neeraj@harborpoint.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the company does not have retention data on three pilot customers, or the data is incomplete or unfavorable, send a brief note to Neeraj Joshi explaining what data the company does have, why, and what it shows. Offer to walk through it in the call. This move is honest and keeps the conversation alive; it is better than silence or a delayed response.\",\n  \"wait_or_stop\": \"Do not wait. The meeting is 2 days away and the investor asked for the data before it. Sending it now is the move. If the company does not have the data, send an explanation the same day, not the day of the call. Stop if the investor does not reply to the data or does not show up for the call; that is a signal to move on.\",\n  \"done_when\": \"The data is sent to Neeraj Joshi by 2026-10-07, the investor receives it and does not reply with a question or a cancellation, and the call happens on 2026-10-08 as booked. Done is the call itself, and what matters is whether the investor names a next step and a date at the end of it.\",\n  \"draft\": \"Hi Neeraj, Thanks for asking to see retention on our first three pilots before the call. Attached is the data. The headline: [one insight from the data \u2014 e.g., 'all three are still active after three months, and two have expanded their usage']. Looking forward to walking through what this means on the 8th. \u2014 Arjun\"\n}",
+  "site": "expert"
+ },
+ "f7b8349edf586a41584a76e815a4d5c4f604072f3028ca88a11bd6a9c50f0a09": {
+  "framed": true,
+  "input_tokens": 12524,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3093,
+  "parsed": {
+   "alternative": "If the retention data does not exist or is weak, call Neeraj Joshi today to say you have the data but want to walk through it in the call so you can explain the context. This buys time and keeps the conversation moving, but it signals that the data is not strong enough to stand on its own.",
+   "appraisal": {
+    "reasons": [
+     "This is one of five investors in the seed wave; losing this one does not end the round, but losing momentum with all of them does.",
+     "The call is in two days; the window to send the data before it is closing.",
+     "A failure to send the data reads as disorganization, which is reversible only by a strong call; a strong call is harder to deliver without the data.",
+     "An investor who has scheduled a call and named a condition is further along than most; this is a moment to move fast."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The data is sent to Neeraj Joshi before the call, with a frame that says what it means. The investor replies or arrives at the call prepared. The call ends with a named next step and a date, or with a clear reason why the investor is passing.",
+   "draft": "Hi Neeraj, I have the retention data for our three pilot customers attached. The headline: [one sentence about what the data shows and why it matters]. Looking forward to walking through this on the 8th and talking through what comes next. \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "The investor has scheduled a call and named a condition for it: retention data for three pilot customers. The founder has not yet sent the data. The call is in two days.",
+    "expected": "The investor is deciding whether to spend more time. At this stage, the playbook expects the founder to have prepared the numbers that matter, to have named the next step to ask for, and to have confirmed it in writing. Silence after a first call that named no next step is usually a soft no; silence after one that named a step and a date is the firm's process until that date passes.",
+    "stage": "first_call"
+   },
+   "facts": [
+    {
+     "claim": "Harbor Point Partners asked for retention data for the first three pilot customers before a scheduled call on 8 October.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers."
+    },
+    {
+     "claim": "A meeting is booked with Harbor Point Partners for 2026-10-08 09:00 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 9.08 days since the last touch on 2026-09-27 10:00 UTC.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we owe a reply to their ask for retention data.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in Harbor Point's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first and only touch with Harbor Point Partners; their reply time and our reply time to them are not yet measured.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch",
+      "num:their_reply_time:neeraj@harborpoint.test",
+      "num:your_reply_time:neeraj@harborpoint.test"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An investor has scheduled a first call and asked for specific data before it. The founder has two days to send it. This is a positive signal and a time-sensitive ask.",
+    "rivals": [
+     "An investor is gathering options and will not decide until they have compared multiple companies; the ask is routine diligence, not a sign of serious interest.",
+     "An investor is testing whether the founder can execute; the ask is as much about speed and organization as about the data itself."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder that the data is available and what it shows.",
+     "proposition": "The retention data exists and is strong enough to send."
+    },
+    {
+     "needs": "A conversation with the founder about whether to send it, reframe it, or address it in the call instead.",
+     "proposition": "The retention data exists but is weak, and the founder is hesitating to send it."
+    },
+    {
+     "needs": "A decision about whether to tell the investor now or in the call, and what to say instead.",
+     "proposition": "The retention data does not exist or is incomplete."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "Harbor Point Partners has moved from first contact to first call: they have scheduled a meeting and named a condition for it."
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The ask is specific and measurable: retention data for three named pilot customers, not a vague request for more information."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:4"
+     ],
+     "claim": "The next move is ours and time-sensitive: the meeting is 2 days away, and the data must be sent before it to be useful."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "ru:core.risk"
+     ],
+     "claim": "This is a positive signal: an investor who asks for specific data before a call is doing diligence, not declining."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-07",
+    "for_whom": "Neeraj Joshi at Harbor Point Partners",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.before_an_investor_call",
+     "own:1",
+     "own:2",
+     "cap:admin.executive_support.commitment_tracking#f1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:4",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "neeraj@harborpoint.test",
+    "what": "Confirm with the founder that the retention data for the three pilot customers exists and is ready to send; if it does, send it to Neeraj Joshi today with a one-line frame that says what it means for the business; if it does not, decide whether to tell the investor now or in the call.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A specific ask answered the day it arrives, before the meeting, keeps the investor's attention and signals momentum.",
+     "kind": "practice",
+     "why": "Investors see founders who move fast as founders who move fast; a delay reads as either the data does not exist or the founder is not organized."
+    },
+    {
+     "claim": "Retention data for pilot customers is usually the first question an investor asks when evaluating product-market fit at seed stage.",
+     "kind": "base_rate",
+     "why": "Retention is the only metric that cannot be faked, and it is the one metric that predicts whether a company will raise again."
+    },
+    {
+     "claim": "The data should be sent with a one-line frame that answers the question they did not ask: what does this number mean for the business.",
+     "kind": "practice",
+     "why": "Raw retention numbers without context invite the investor to interpret them pessimistically; a frame that says 'this is why it matters' keeps the conversation on your terms."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+     ],
+     "claim": "An investor who schedules a first call and names a condition for it is moving the conversation forward, not stalling.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.before_an_investor_call"
+     ],
+     "claim": "A specific ask for customer data before a call signals the investor is preparing to evaluate the company seriously.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "An investor who asks for data but does not specify what to do with it or what threshold matters may be gathering options rather than deciding.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [],
+    "kind": null,
+    "why": "The file is correctly classified as investor work."
+   },
+   "scenarios": {
+    "act": "The founder sends the retention data today or tomorrow, with a one-line frame that says what it means. The investor arrives at the call prepared and sees a founder who moves fast. The call focuses on what the data means for the business and what the investor needs to decide. The conversation is more likely to move to a partners' meeting or to a named next step.",
+    "best": "The retention data is strong, the founder sends it with a clear frame, the investor arrives at the call impressed by the speed and the numbers, and the call ends with a partners' meeting booked or a request for diligence material.",
+    "do_nothing": "The founder does not send the data before the call. The investor arrives at the call without the information they asked for, which reads as disorganization or evasion. The call becomes a conversation about why the data was not sent rather than about what the data means. The investor's confidence in the founder's execution drops. The conversation is unlikely to move to a partners' meeting.",
+    "signals_to_watch": [
+     "Whether the founder has the data and what it shows.",
+     "Whether the investor replies to the data before the call, or waits to discuss it in the call.",
+     "Whether the call ends with a named next step and a date, or with silence.",
+     "Whether the investor asks follow-up questions about the data, or moves on to other topics."
+    ],
+    "worst": "The retention data does not exist or is very weak, the founder sends it anyway, the investor sees a company with no traction, and the call ends with a pass or a deferral."
+   },
+   "unknowns": [
+    {
+     "question": "Does the retention data for the three pilot customers exist, and what does it show?",
+     "relevance": "This determines whether the next move is to send the data, to reframe it, or to prepare an explanation for the call."
+    },
+    {
+     "question": "What is Harbor Point's investment thesis, and what retention threshold would they consider strong?",
+     "relevance": "Without knowing what they are looking for, the data could be framed to emphasize the right story or to miss the point entirely."
+    },
+    {
+     "question": "Is there a warm relationship between the founder and Neeraj Joshi, or is this a cold introduction that has moved fast?",
+     "relevance": "A warm relationship changes the tone of the reply; a cold one that has moved this fast suggests the investor is seriously interested and the founder should not waste the momentum."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The call is in two days. Send the data today or tomorrow, or call the investor today to explain why you cannot. Waiting until the call is the worst option: it reads as disorganization and wastes the investor's time. Stop if the founder says the data does not exist and does not want to send it; in that case, prepare for the call to be about why the data is not available, and be ready to explain what you are doing instead to measure retention."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Harbor Point Partners asked for retention data for the first three pilot customers before a scheduled call on 8 October.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers.\"\n    },\n    {\n      \"claim\": \"A meeting is booked with Harbor Point Partners for 2026-10-08 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 9.08 days since the last touch on 2026-09-27 10:00 UTC.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we owe a reply to their ask for retention data.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in Harbor Point's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first and only touch with Harbor Point Partners; their reply time and our reply time to them are not yet measured.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\",\n        \"num:their_reply_time:neeraj@harborpoint.test\",\n        \"num:your_reply_time:neeraj@harborpoint.test\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Harbor Point Partners has moved from first contact to first call: they have scheduled a meeting and named a condition for it.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The ask is specific and measurable: retention data for three named pilot customers, not a vague request for more information.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours and time-sensitive: the meeting is 2 days away, and the data must be sent before it to be useful.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"This is a positive signal: an investor who asks for specific data before a call is doing diligence, not declining.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"ru:core.risk\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who schedules a first call and names a condition for it is moving the conversation forward, not stalling.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A specific ask for customer data before a call signals the investor is preparing to evaluate the company seriously.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.before_an_investor_call\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An investor who asks for data but does not specify what to do with it or what threshold matters may be gathering options rather than deciding.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A specific ask answered the day it arrives, before the meeting, keeps the investor's attention and signals momentum.\",\n      \"why\": \"Investors see founders who move fast as founders who move fast; a delay reads as either the data does not exist or the founder is not organized.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Retention data for pilot customers is usually the first question an investor asks when evaluating product-market fit at seed stage.\",\n      \"why\": \"Retention is the only metric that cannot be faked, and it is the one metric that predicts whether a company will raise again.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The data should be sent with a one-line frame that answers the question they did not ask: what does this number mean for the business.\",\n      \"why\": \"Raw retention numbers without context invite the investor to interpret them pessimistically; a frame that says 'this is why it matters' keeps the conversation on your terms.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The retention data exists and is strong enough to send.\",\n      \"needs\": \"Confirmation from the founder that the data is available and what it shows.\"\n    },\n    {\n      \"proposition\": \"The retention data exists but is weak, and the founder is hesitating to send it.\",\n      \"needs\": \"A conversation with the founder about whether to send it, reframe it, or address it in the call instead.\"\n    },\n    {\n      \"proposition\": \"The retention data does not exist or is incomplete.\",\n      \"needs\": \"A decision about whether to tell the investor now or in the call, and what to say instead.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the retention data for the three pilot customers exist, and what does it show?\",\n      \"relevance\": \"This determines whether the next move is to send the data, to reframe it, or to prepare an explanation for the call.\"\n    },\n    {\n      \"question\": \"What is Harbor Point's investment thesis, and what retention threshold would they consider strong?\",\n      \"relevance\": \"Without knowing what they are looking for, the data could be framed to emphasize the right story or to miss the point entirely.\"\n    },\n    {\n      \"question\": \"Is there a warm relationship between the founder and Neeraj Joshi, or is this a cold introduction that has moved fast?\",\n      \"relevance\": \"A warm relationship changes the tone of the reply; a cold one that has moved this fast suggests the investor is seriously interested and the founder should not waste the momentum.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An investor has scheduled a first call and asked for specific data before it. The founder has two days to send it. This is a positive signal and a time-sensitive ask.\",\n    \"rivals\": [\n      \"An investor is gathering options and will not decide until they have compared multiple companies; the ask is routine diligence, not a sign of serious interest.\",\n      \"An investor is testing whether the founder can execute; the ask is as much about speed and organization as about the data itself.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The file is correctly classified as investor work.\",\n    \"evidence\": []\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"first_call\",\n    \"expected\": \"The investor is deciding whether to spend more time. At this stage, the playbook expects the founder to have prepared the numbers that matter, to have named the next step to ask for, and to have confirmed it in writing. Silence after a first call that named no next step is usually a soft no; silence after one that named a step and a date is the firm's process until that date passes.\",\n    \"actual\": \"The investor has scheduled a call and named a condition for it: retention data for three pilot customers. The founder has not yet sent the data. The call is in two days.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not send the data before the call. The investor arrives at the call without the information they asked for, which reads as disorganization or evasion. The call becomes a conversation about why the data was not sent rather than about what the data means. The investor's confidence in the founder's execution drops. The conversation is unlikely to move to a partners' meeting.\",\n    \"act\": \"The founder sends the retention data today or tomorrow, with a one-line frame that says what it means. The investor arrives at the call prepared and sees a founder who moves fast. The call focuses on what the data means for the business and what the investor needs to decide. The conversation is more likely to move to a partners' meeting or to a named next step.\",\n    \"best\": \"The retention data is strong, the founder sends it with a clear frame, the investor arrives at the call impressed by the speed and the numbers, and the call ends with a partners' meeting booked or a request for diligence material.\",\n    \"worst\": \"The retention data does not exist or is very weak, the founder sends it anyway, the investor sees a company with no traction, and the call ends with a pass or a deferral.\",\n    \"signals_to_watch\": [\n      \"Whether the founder has the data and what it shows.\",\n      \"Whether the investor replies to the data before the call, or waits to discuss it in the call.\",\n      \"Whether the call ends with a named next step and a date, or with silence.\",\n      \"Whether the investor asks follow-up questions about the data, or moves on to other topics.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is one of five investors in the seed wave; losing this one does not end the round, but losing momentum with all of them does.\",\n      \"The call is in two days; the window to send the data before it is closing.\",\n      \"A failure to send the data reads as disorganization, which is reversible only by a strong call; a strong call is harder to deliver without the data.\",\n      \"An investor who has scheduled a call and named a condition is further along than most; this is a moment to move fast.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Confirm with the founder that the retention data for the three pilot customers exists and is ready to send; if it does, send it to Neeraj Joshi today with a one-line frame that says what it means for the business; if it does not, decide whether to tell the investor now or in the call.\",\n    \"for_whom\": \"Neeraj Joshi at Harbor Point Partners\",\n    \"by_when\": \"2026-10-07\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.before_an_investor_call\",\n      \"own:1\",\n      \"own:2\",\n      \"cap:admin.executive_support.commitment_tracking#f1\"\n    ],\n    \"to\": \"neeraj@harborpoint.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the retention data does not exist or is weak, call Neeraj Joshi today to say you have the data but want to walk through it in the call so you can explain the context. This buys time and keeps the conversation moving, but it signals that the data is not strong enough to stand on its own.\",\n  \"wait_or_stop\": \"Do not wait. The call is in two days. Send the data today or tomorrow, or call the investor today to explain why you cannot. Waiting until the call is the worst option: it reads as disorganization and wastes the investor's time. Stop if the founder says the data does not exist and does not want to send it; in that case, prepare for the call to be about why the data is not available, and be ready to explain what you are doing instead to measure retention.\",\n  \"done_when\": \"The data is sent to Neeraj Joshi before the call, with a frame that says what it means. The investor replies or arrives at the call prepared. The call ends with a named next step and a date, or with a clear reason why the investor is passing.\",\n  \"draft\": \"Hi Neeraj, I have the retention data for our three pilot customers attached. The headline: [one sentence about what the data shows and why it matters]. Looking forward to walking through this on the 8th and talking through what comes next. \u2014 Arjun\"\n}",
+  "site": "expert"
+ }
+}

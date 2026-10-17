@@ -1,0 +1,906 @@
+{
+ "1f6a61c57e0c6e9258c12b067c8fa27b6126ea1e97e9f669e38e484f7b16194c": {
+  "framed": true,
+  "input_tokens": 7440,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2868,
+  "parsed": {
+   "alternative": "If the founder is uncertain about the fit or has a scheduling conflict, send a brief message asking for more context about Quillstack or proposing a time the following week; this keeps the door open without committing to a time that may not work",
+   "appraisal": {
+    "reasons": [
+     "The introduction is from a connector the founder is actively using; a poor response damages the connector's trust and future introductions",
+     "The meeting request is direct and time-sensitive; a delayed response risks losing the person's availability and interest",
+     "The file is still within normal response windows; a response now is timely, but a response after three to five business days will read as a low priority",
+     "The person at Quillstack is a CTO, suggesting a technical or strategic fit; the meeting could be valuable, but the founder's judgment on the fit is not yet known"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The founder has sent a response confirming or proposing a meeting time, or declining with a reason; the person at Quillstack has acknowledged and the meeting is on the calendar, or the introduction is closed with a polite decline",
+   "draft": "Hi Nikhil, thanks for reaching out. Thursday works for me \u2014 how about 2pm your time? If that doesn't suit, I'm flexible next week. Looking forward to the conversation. Arjun",
+   "expected_vs_actual": {
+    "actual": "The founder has not yet responded; the file is quiet 0.33 days after the request, which is within normal response windows but approaching the point where a response becomes overdue",
+    "expected": "After an introduction, the founder should respond to a meeting request within one to two business days with a specific time or a clear constraint; the response should be warm and professional, reflecting the connector's vouching",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced the founder to a person at Quillstack on 2026-08-06 at 08:00 UTC",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Nikhil Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "The person at Quillstack asked for a meeting on Thursday or next week, with the ball in the founder's court to confirm availability",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Are you around on Thursday for a 30-minute call? If not, what times work for you next week?"
+    },
+    {
+     "claim": "The file has been quiet for 0.33 days as of 2026-08-09 18:00 UTC, within the usual gap of 3.09 days that closed before",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was extracted from the mail",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The founder has not yet written in this file",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as active account admin with the ball in the founder's court",
+     "evidence": [
+      "file:whose_move",
+      "sit:sit_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction from a connector has moved to a direct meeting request; the founder owes a response on availability, and the next step is to confirm or propose a time.",
+    "rivals": [
+     "This is an exploratory introduction with low priority, and the founder may choose not to respond if the fit is unclear.",
+     "The founder has already decided not to take the meeting and is waiting for the right moment to decline politely."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The dossier does not name Quillstack in the brief; a clarification of why Introly introduced them would settle whether this is a strategic introduction or exploratory",
+     "proposition": "Quillstack is a potential design partner, investor, or vendor for Nimbus Labs"
+    },
+    {
+     "needs": "A check with the founder on their calendar and intent would settle whether the move is blocked by a scheduling conflict or by uncertainty about the value of the meeting",
+     "proposition": "The founder has already decided whether Thursday works and is simply waiting to send the response"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "file:whose_move"
+     ],
+     "claim": "The founder owes a response: the person asked a direct question about meeting availability and is waiting for an answer"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "This is a live introduction that has not yet moved to a substantive relationship; the next step is to confirm or propose a meeting"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The file is still within normal response windows; 0.33 days of quiet is not a signal of disinterest"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop_#1",
+    "by_when": "2026-08-10",
+    "for_whom": "the person at Quillstack",
+    "guided_by": [
+     "own:1",
+     "own:3",
+     "sig:admin.sit.live_account_admin",
+     "cap:admin.executive_support.commitment_tracking#f1"
+    ],
+    "rests_on": [
+     "fact:2",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "nikhil@quillstack.test",
+    "what": "respond to the meeting request with a specific time on Thursday or a list of times next week, or a clear reason why neither works",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting request from an introduction should be answered the same day or next business day, with a specific time or a clear constraint; delay past that window signals either disinterest or disorganization to the other party",
+     "kind": "practice",
+     "why": "The person has made themselves available and is waiting; a prompt response preserves momentum and respect for their time"
+    },
+    {
+     "claim": "Chasing a meeting request before the founder has answered it reads as pressure and damages the relationship; the rule is to discharge the ask, not to remind the other party of it",
+     "kind": "counter_pattern",
+     "why": "The ball is in the founder's court; a reminder before the founder has moved is the error the engine flags as most expensive"
+    },
+    {
+     "claim": "An introduction from a connector like Introly is a warm introduction and carries implicit trust; the founder's response time and tone set the tone for the relationship",
+     "kind": "practice",
+     "why": "The connector has vouched for both parties; a slow or perfunctory response reflects on the founder's professionalism"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "A direct meeting request from an introduction typically expects a response within one to two business days",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Introductions that move to a confirmed meeting have higher conversion to substantive work than those that stall at the availability stage",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:introduced_by",
+     "evt_#2",
+     "brief:cbl_#27"
+    ],
+    "kind": "intro",
+    "why": "The file is an introduction from Introly, a connector named in the brief; the person at Quillstack is not yet a counterparty in any of the founder's stated work, and the relationship is at the stage of a first meeting request"
+   },
+   "scenarios": {
+    "act": "The founder responds with a specific time on Thursday or a list of times next week; the meeting is scheduled, and the relationship moves to a substantive conversation",
+    "best": "The founder responds promptly with a time that works; the meeting happens; the person at Quillstack is impressed by the founder's professionalism and responsiveness; a partnership, investment, or customer relationship begins",
+    "do_nothing": "The file remains open with the ball in the founder's court; after three to five business days of no response, the person at Quillstack may assume the founder is not interested and move on; the introduction is lost, and the connector's trust is slightly eroded",
+    "signals_to_watch": [
+     "A response from the founder confirming or proposing a meeting time",
+     "A follow-up message from Quillstack after three to five business days, escalating the request or withdrawing it",
+     "A message from Introly checking on the introduction"
+    ],
+    "worst": "The founder does not respond; the person at Quillstack interprets silence as disinterest; the introduction is wasted; the connector's future introductions carry less weight"
+   },
+   "unknowns": [
+    {
+     "question": "What is Quillstack, and why did Introly introduce them to the founder?",
+     "relevance": "The brief does not name Quillstack or its role; knowing whether this is a potential investor, partner, customer, or hire would determine the priority and tone of the response"
+    },
+    {
+     "question": "Does the founder have availability on Thursday or next week, and does the founder want to take the meeting?",
+     "relevance": "The response depends on the founder's calendar and judgment; a response that confirms or proposes a time is the only move that closes the ask"
+    },
+    {
+     "question": "Is there a reason the founder has not yet answered, such as a blocker or a decision to deprioritize?",
+     "relevance": "If the founder is uncertain about the meeting's value or has other constraints, the move might be to clarify the fit before confirming, rather than to accept the meeting"
+    }
+   ],
+   "wait_or_stop": "Do not wait; the request is direct and time-sensitive. Stop if the founder decides the fit is not strategic and chooses to decline politely. Otherwise, respond by end of business 2026-08-10 to keep the thread warm."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced the founder to a person at Quillstack on 2026-08-06 at 08:00 UTC\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Nikhil Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"The person at Quillstack asked for a meeting on Thursday or next week, with the ball in the founder's court to confirm availability\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Are you around on Thursday for a 30-minute call? If not, what times work for you next week?\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.33 days as of 2026-08-09 18:00 UTC, within the usual gap of 3.09 days that closed before\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was extracted from the mail\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The founder has not yet written in this file\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as active account admin with the ball in the founder's court\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"sit:sit_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The founder owes a response: the person asked a direct question about meeting availability and is waiting for an answer\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"This is a live introduction that has not yet moved to a substantive relationship; the next step is to confirm or propose a meeting\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"claim\": \"The file is still within normal response windows; 0.33 days of quiet is not a signal of disinterest\",\n      \"based_on\": [\n        \"fact:3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A direct meeting request from an introduction typically expects a response within one to two business days\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions that move to a confirmed meeting have higher conversion to substantive work than those that stall at the availability stage\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting request from an introduction should be answered the same day or next business day, with a specific time or a clear constraint; delay past that window signals either disinterest or disorganization to the other party\",\n      \"why\": \"The person has made themselves available and is waiting; a prompt response preserves momentum and respect for their time\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing a meeting request before the founder has answered it reads as pressure and damages the relationship; the rule is to discharge the ask, not to remind the other party of it\",\n      \"why\": \"The ball is in the founder's court; a reminder before the founder has moved is the error the engine flags as most expensive\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction from a connector like Introly is a warm introduction and carries implicit trust; the founder's response time and tone set the tone for the relationship\",\n      \"why\": \"The connector has vouched for both parties; a slow or perfunctory response reflects on the founder's professionalism\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Quillstack is a potential design partner, investor, or vendor for Nimbus Labs\",\n      \"needs\": \"The dossier does not name Quillstack in the brief; a clarification of why Introly introduced them would settle whether this is a strategic introduction or exploratory\"\n    },\n    {\n      \"proposition\": \"The founder has already decided whether Thursday works and is simply waiting to send the response\",\n      \"needs\": \"A check with the founder on their calendar and intent would settle whether the move is blocked by a scheduling conflict or by uncertainty about the value of the meeting\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Quillstack, and why did Introly introduce them to the founder?\",\n      \"relevance\": \"The brief does not name Quillstack or its role; knowing whether this is a potential investor, partner, customer, or hire would determine the priority and tone of the response\"\n    },\n    {\n      \"question\": \"Does the founder have availability on Thursday or next week, and does the founder want to take the meeting?\",\n      \"relevance\": \"The response depends on the founder's calendar and judgment; a response that confirms or proposes a time is the only move that closes the ask\"\n    },\n    {\n      \"question\": \"Is there a reason the founder has not yet answered, such as a blocker or a decision to deprioritize?\",\n      \"relevance\": \"If the founder is uncertain about the meeting's value or has other constraints, the move might be to clarify the fit before confirming, rather than to accept the meeting\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction from a connector has moved to a direct meeting request; the founder owes a response on availability, and the next step is to confirm or propose a time.\",\n    \"rivals\": [\n      \"This is an exploratory introduction with low priority, and the founder may choose not to respond if the fit is unclear.\",\n      \"The founder has already decided not to take the meeting and is waiting for the right moment to decline politely.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is an introduction from Introly, a connector named in the brief; the person at Quillstack is not yet a counterparty in any of the founder's stated work, and the relationship is at the stage of a first meeting request\",\n    \"evidence\": [\n      \"file:introduced_by\",\n      \"evt_#2\",\n      \"brief:cbl_#27\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"After an introduction, the founder should respond to a meeting request within one to two business days with a specific time or a clear constraint; the response should be warm and professional, reflecting the connector's vouching\",\n    \"actual\": \"The founder has not yet responded; the file is quiet 0.33 days after the request, which is within normal response windows but approaching the point where a response becomes overdue\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open with the ball in the founder's court; after three to five business days of no response, the person at Quillstack may assume the founder is not interested and move on; the introduction is lost, and the connector's trust is slightly eroded\",\n    \"act\": \"The founder responds with a specific time on Thursday or a list of times next week; the meeting is scheduled, and the relationship moves to a substantive conversation\",\n    \"best\": \"The founder responds promptly with a time that works; the meeting happens; the person at Quillstack is impressed by the founder's professionalism and responsiveness; a partnership, investment, or customer relationship begins\",\n    \"worst\": \"The founder does not respond; the person at Quillstack interprets silence as disinterest; the introduction is wasted; the connector's future introductions carry less weight\",\n    \"signals_to_watch\": [\n      \"A response from the founder confirming or proposing a meeting time\",\n      \"A follow-up message from Quillstack after three to five business days, escalating the request or withdrawing it\",\n      \"A message from Introly checking on the introduction\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The introduction is from a connector the founder is actively using; a poor response damages the connector's trust and future introductions\",\n      \"The meeting request is direct and time-sensitive; a delayed response risks losing the person's availability and interest\",\n      \"The file is still within normal response windows; a response now is timely, but a response after three to five business days will read as a low priority\",\n      \"The person at Quillstack is a CTO, suggesting a technical or strategic fit; the meeting could be valuable, but the founder's judgment on the fit is not yet known\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"respond to the meeting request with a specific time on Thursday or a list of times next week, or a clear reason why neither works\",\n    \"for_whom\": \"the person at Quillstack\",\n    \"by_when\": \"2026-08-10\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:3\",\n      \"sig:admin.sit.live_account_admin\",\n      \"cap:admin.executive_support.commitment_tracking#f1\"\n    ],\n    \"to\": \"nikhil@quillstack.test\",\n    \"answers\": \"loop_#1\"\n  },\n  \"alternative\": \"If the founder is uncertain about the fit or has a scheduling conflict, send a brief message asking for more context about Quillstack or proposing a time the following week; this keeps the door open without committing to a time that may not work\",\n  \"wait_or_stop\": \"Do not wait; the request is direct and time-sensitive. Stop if the founder decides the fit is not strategic and chooses to decline politely. Otherwise, respond by end of business 2026-08-10 to keep the thread warm.\",\n  \"done_when\": \"The founder has sent a response confirming or proposing a meeting time, or declining with a reason; the person at Quillstack has acknowledged and the meeting is on the calendar, or the introduction is closed with a polite decline\",\n  \"draft\": \"Hi Nikhil, thanks for reaching out. Thursday works for me \u2014 how about 2pm your time? If that doesn't suit, I'm flexible next week. Looking forward to the conversation. Arjun\"\n}",
+  "site": "expert"
+ },
+ "3d91e06e8bdedcdce930f2da6cd60dc0e50f1f9871ffe5c234e8165d18f821b6": {
+  "framed": true,
+  "input_tokens": 7084,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3192,
+  "parsed": {
+   "alternative": "If Arjun confirms that Quillstack is not relevant to any stated goal, close the file and mark it as exploratory or deprioritized. If Arjun confirms that it is relevant but he has decided not to pursue it now, move the file to a wait state with a clear trigger for when to revisit it.",
+   "appraisal": {
+    "reasons": [
+     "No promise was made in the introduction, so there is no commitment to fulfill.",
+     "The file is less than a day old and has not yet been acted on.",
+     "The relevance of Quillstack to Nimbus Labs' goals is unknown.",
+     "A follow-up sent now is reversible; a follow-up sent later is also possible, though the thread will be cooler.",
+     "The connector (Introly) has stepped back and made no commitment to follow up.",
+     "ru:core.risk shows risk as low, with reasons: do_nothing_exposure, momentum_unmeasured, relationship_unmeasured."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Arjun has sent a warm follow-up to Nikhil naming the purpose and asking for a next step, or has confirmed that the introduction is not relevant and the file is closed.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "No follow-up has been sent. The file is less than a day old and the ball is in Arjun's court.",
+    "expected": "The brief names no playbook for this kind of work. In the absence of a playbook, the expectation from the file's own history is that a connector introduction is followed by a warm opening from the founder within hours or a day, naming the purpose and asking for a next step.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced Arjun to Nikhil Bose, CTO of Quillstack, on 2026-08-06 at 08:00 UTC.",
+     "evidence": [
+      "evt_#1",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Nikhil Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here."
+    },
+    {
+     "claim": "No reply has been received from Nikhil Bose or Quillstack since the introduction.",
+     "evidence": [
+      "file:last_touch",
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days since first touch.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was made in the introduction mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The move is ours: we have not yet written to Nikhil Bose.",
+     "evidence": [
+      "file:whose_move",
+      "none:we_wrote"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A cold introduction from a connector to a CTO at another company, with no stated purpose or promise. The ball is in Arjun's court to make the first substantive move. The file is less than a day old and has not yet been acted on.",
+    "rivals": [
+     "A potential design partner or vendor relationship that Introly identified, waiting for Arjun to open the conversation.",
+     "An exploratory introduction that Arjun has not yet decided to pursue, and which may be deprioritized relative to his stated goals.",
+     "A follow-up that Arjun intended to make but has not yet, and which is now at risk of cooling."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Arjun's own notes on why Introly suggested this introduction, or what he intended to explore with Nikhil.",
+     "proposition": "Nikhil Bose or Quillstack is a potential design partner, investor, or hire for Nimbus Labs."
+    },
+    {
+     "needs": "Confirmation from Arjun that no reply has been received, or that a reply exists outside the tracked channels.",
+     "proposition": "Nikhil Bose has already replied to Arjun outside the mail system tracked by the file."
+    },
+    {
+     "needs": "Arjun's own judgment on whether Quillstack is relevant to any of his current goals.",
+     "proposition": "The introduction was exploratory and Arjun has not yet decided whether to pursue it."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "evt_#1",
+      "file:introduced_by",
+      "none:promises"
+     ],
+     "claim": "This is a cold introduction from a connector, not a warm lead with an existing relationship or stated interest."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "evt_#1"
+     ],
+     "claim": "The ball is in our court: Introly made the introduction and stepped back with 'I'll let you two take it from here,' leaving the next move to Arjun."
+    },
+    {
+     "based_on": [
+      "ru:core.opportunity",
+      "ru:core.relationship"
+     ],
+     "claim": "No context exists yet about why Quillstack or Nikhil Bose matters to Nimbus Labs' goals, or what the intended conversation is."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-06",
+    "for_whom": "Arjun, and then Nikhil Bose",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Clarify with Arjun whether Quillstack or Nikhil Bose is relevant to any of his stated goals, and if so, what the intended conversation is. Then, if relevant, send a warm follow-up to Nikhil naming the purpose and asking for a next step.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A founder should follow a connector introduction within the same day with a brief, specific message that names why the conversation matters and what you are asking for.",
+     "kind": "practice",
+     "why": "The introduction itself carries no obligation; the founder's follow-up is what converts it into a real lead. Silence after an introduction reads as either disinterest or poor execution."
+    },
+    {
+     "claim": "Most cold introductions to CTOs at other companies go unanswered unless the founder's follow-up gives them a reason to engage.",
+     "kind": "base_rate",
+     "why": "CTOs are busy; they do not reply to introductions alone. They reply when they see a fit, a problem they care about, or a clear ask."
+    },
+    {
+     "claim": "The first message after an introduction should be short, should name the connection (the mutual introducer), should state what you are building and why it might matter to them, and should ask for a specific next step.",
+     "kind": "practice",
+     "why": "This is the moment to set the frame. A vague or delayed follow-up loses the momentum the introduction created."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Introductions from connectors are typically followed by a warm opening from the founder within hours or a day, or they cool quickly.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "When a connector introduces two people and steps back, the introduced party often waits for the founder to make the first substantive move.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "none:promises",
+      "ru:core.opportunity"
+     ],
+     "claim": "A connector introduction with no stated purpose or promise is often exploratory; the recipient may not reply if they see no immediate relevance.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:introduced_by",
+     "file:role",
+     "evt_#1"
+    ],
+    "kind": "intro",
+    "why": "The file is explicitly introduced by Introly, a connector. The brief names Introly as 'an AI agent that introduces the founder to people.' The introduction carries no stated purpose, promise, or ask; it is a pure connector introduction."
+   },
+   "scenarios": {
+    "act": "Arjun sends a brief, warm follow-up to Nikhil within the next few hours, naming Introly as the mutual introducer, stating what Nimbus Labs is building, and asking for a specific next step (a call, a coffee, a question answered). Nikhil either replies with interest, declines politely, or does not reply. If he replies with interest, a conversation begins. If he declines or does not reply, the file is closed or moved to a wait state.",
+    "best": "Nikhil replies within a day or two with interest. A conversation begins. Nikhil becomes a design partner, an investor, a hire, or a valuable connection. The introduction pays off.",
+    "do_nothing": "The introduction cools. Nikhil Bose receives no follow-up and assumes either that Arjun is not interested or that the introduction was not serious. After a week or two, the thread is dead. The connector's credibility with Nikhil is slightly diminished, and the opportunity (if there is one) is lost.",
+    "signals_to_watch": [
+     "Whether Nikhil replies to a follow-up within two to three days.",
+     "Whether Nikhil's reply expresses interest, polite decline, or no reply at all.",
+     "Whether the conversation leads to a stated next step (a call, a meeting, a question answered) or remains exploratory.",
+     "Whether Quillstack is relevant to any of Nimbus Labs' stated goals, or whether the introduction was exploratory and low-priority."
+    ],
+    "worst": "Arjun sends a follow-up that is vague, generic, or does not name a clear ask. Nikhil does not reply. The file goes dormant. Months later, Arjun wonders why the introduction did not work, not realizing that his follow-up was the problem."
+   },
+   "unknowns": [
+    {
+     "question": "Why did Introly introduce Nikhil Bose to Arjun? What is the intended fit or conversation?",
+     "relevance": "Without knowing the purpose, the next move cannot be framed. A follow-up to a CTO should be specific to why the founder thinks the conversation matters."
+    },
+    {
+     "question": "Is Quillstack relevant to any of Nimbus Labs' stated goals: fundraising, accelerator entry, hiring, design partnerships, or compliance?",
+     "relevance": "If Quillstack is not relevant to any goal, the file should be closed. If it is, the follow-up should name that relevance."
+    },
+    {
+     "question": "Has Arjun already decided not to pursue this introduction, or is he waiting for a signal?",
+     "relevance": "If the founder has deprioritized this, the file should be marked as such. If he is waiting, the file should be moved to a wait state with a clear trigger."
+    }
+   ],
+   "wait_or_stop": "Wait until Arjun clarifies the purpose of the introduction. If he confirms it is not relevant, stop and close the file. If he confirms it is relevant, act immediately with a follow-up. If Nikhil does not reply to a follow-up within three days, wait another week before deciding whether to follow up again or close the file."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced Arjun to Nikhil Bose, CTO of Quillstack, on 2026-08-06 at 08:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Nikhil Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\"\n    },\n    {\n      \"claim\": \"No reply has been received from Nikhil Bose or Quillstack since the introduction.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days since first touch.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was made in the introduction mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The move is ours: we have not yet written to Nikhil Bose.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a cold introduction from a connector, not a warm lead with an existing relationship or stated interest.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"file:introduced_by\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in our court: Introly made the introduction and stepped back with 'I'll let you two take it from here,' leaving the next move to Arjun.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"No context exists yet about why Quillstack or Nikhil Bose matters to Nimbus Labs' goals, or what the intended conversation is.\",\n      \"based_on\": [\n        \"ru:core.opportunity\",\n        \"ru:core.relationship\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions from connectors are typically followed by a warm opening from the founder within hours or a day, or they cool quickly.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a connector introduces two people and steps back, the introduced party often waits for the founder to make the first substantive move.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A connector introduction with no stated purpose or promise is often exploratory; the recipient may not reply if they see no immediate relevance.\",\n      \"based_on\": [\n        \"none:promises\",\n        \"ru:core.opportunity\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A founder should follow a connector introduction within the same day with a brief, specific message that names why the conversation matters and what you are asking for.\",\n      \"why\": \"The introduction itself carries no obligation; the founder's follow-up is what converts it into a real lead. Silence after an introduction reads as either disinterest or poor execution.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most cold introductions to CTOs at other companies go unanswered unless the founder's follow-up gives them a reason to engage.\",\n      \"why\": \"CTOs are busy; they do not reply to introductions alone. They reply when they see a fit, a problem they care about, or a clear ask.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The first message after an introduction should be short, should name the connection (the mutual introducer), should state what you are building and why it might matter to them, and should ask for a specific next step.\",\n      \"why\": \"This is the moment to set the frame. A vague or delayed follow-up loses the momentum the introduction created.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Nikhil Bose or Quillstack is a potential design partner, investor, or hire for Nimbus Labs.\",\n      \"needs\": \"Arjun's own notes on why Introly suggested this introduction, or what he intended to explore with Nikhil.\"\n    },\n    {\n      \"proposition\": \"Nikhil Bose has already replied to Arjun outside the mail system tracked by the file.\",\n      \"needs\": \"Confirmation from Arjun that no reply has been received, or that a reply exists outside the tracked channels.\"\n    },\n    {\n      \"proposition\": \"The introduction was exploratory and Arjun has not yet decided whether to pursue it.\",\n      \"needs\": \"Arjun's own judgment on whether Quillstack is relevant to any of his current goals.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Why did Introly introduce Nikhil Bose to Arjun? What is the intended fit or conversation?\",\n      \"relevance\": \"Without knowing the purpose, the next move cannot be framed. A follow-up to a CTO should be specific to why the founder thinks the conversation matters.\"\n    },\n    {\n      \"question\": \"Is Quillstack relevant to any of Nimbus Labs' stated goals: fundraising, accelerator entry, hiring, design partnerships, or compliance?\",\n      \"relevance\": \"If Quillstack is not relevant to any goal, the file should be closed. If it is, the follow-up should name that relevance.\"\n    },\n    {\n      \"question\": \"Has Arjun already decided not to pursue this introduction, or is he waiting for a signal?\",\n      \"relevance\": \"If the founder has deprioritized this, the file should be marked as such. If he is waiting, the file should be moved to a wait state with a clear trigger.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A cold introduction from a connector to a CTO at another company, with no stated purpose or promise. The ball is in Arjun's court to make the first substantive move. The file is less than a day old and has not yet been acted on.\",\n    \"rivals\": [\n      \"A potential design partner or vendor relationship that Introly identified, waiting for Arjun to open the conversation.\",\n      \"An exploratory introduction that Arjun has not yet decided to pursue, and which may be deprioritized relative to his stated goals.\",\n      \"A follow-up that Arjun intended to make but has not yet, and which is now at risk of cooling.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is explicitly introduced by Introly, a connector. The brief names Introly as 'an AI agent that introduces the founder to people.' The introduction carries no stated purpose, promise, or ask; it is a pure connector introduction.\",\n    \"evidence\": [\n      \"file:introduced_by\",\n      \"file:role\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this kind of work. In the absence of a playbook, the expectation from the file's own history is that a connector introduction is followed by a warm opening from the founder within hours or a day, naming the purpose and asking for a next step.\",\n    \"actual\": \"No follow-up has been sent. The file is less than a day old and the ball is in Arjun's court.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The introduction cools. Nikhil Bose receives no follow-up and assumes either that Arjun is not interested or that the introduction was not serious. After a week or two, the thread is dead. The connector's credibility with Nikhil is slightly diminished, and the opportunity (if there is one) is lost.\",\n    \"act\": \"Arjun sends a brief, warm follow-up to Nikhil within the next few hours, naming Introly as the mutual introducer, stating what Nimbus Labs is building, and asking for a specific next step (a call, a coffee, a question answered). Nikhil either replies with interest, declines politely, or does not reply. If he replies with interest, a conversation begins. If he declines or does not reply, the file is closed or moved to a wait state.\",\n    \"best\": \"Nikhil replies within a day or two with interest. A conversation begins. Nikhil becomes a design partner, an investor, a hire, or a valuable connection. The introduction pays off.\",\n    \"worst\": \"Arjun sends a follow-up that is vague, generic, or does not name a clear ask. Nikhil does not reply. The file goes dormant. Months later, Arjun wonders why the introduction did not work, not realizing that his follow-up was the problem.\",\n    \"signals_to_watch\": [\n      \"Whether Nikhil replies to a follow-up within two to three days.\",\n      \"Whether Nikhil's reply expresses interest, polite decline, or no reply at all.\",\n      \"Whether the conversation leads to a stated next step (a call, a meeting, a question answered) or remains exploratory.\",\n      \"Whether Quillstack is relevant to any of Nimbus Labs' stated goals, or whether the introduction was exploratory and low-priority.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"No promise was made in the introduction, so there is no commitment to fulfill.\",\n      \"The file is less than a day old and has not yet been acted on.\",\n      \"The relevance of Quillstack to Nimbus Labs' goals is unknown.\",\n      \"A follow-up sent now is reversible; a follow-up sent later is also possible, though the thread will be cooler.\",\n      \"The connector (Introly) has stepped back and made no commitment to follow up.\",\n      \"ru:core.risk shows risk as low, with reasons: do_nothing_exposure, momentum_unmeasured, relationship_unmeasured.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Clarify with Arjun whether Quillstack or Nikhil Bose is relevant to any of his stated goals, and if so, what the intended conversation is. Then, if relevant, send a warm follow-up to Nikhil naming the purpose and asking for a next step.\",\n    \"for_whom\": \"Arjun, and then Nikhil Bose\",\n    \"by_when\": \"2026-08-06\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If Arjun confirms that Quillstack is not relevant to any stated goal, close the file and mark it as exploratory or deprioritized. If Arjun confirms that it is relevant but he has decided not to pursue it now, move the file to a wait state with a clear trigger for when to revisit it.\",\n  \"wait_or_stop\": \"Wait until Arjun clarifies the purpose of the introduction. If he confirms it is not relevant, stop and close the file. If he confirms it is relevant, act immediately with a follow-up. If Nikhil does not reply to a follow-up within three days, wait another week before deciding whether to follow up again or close the file.\",\n  \"done_when\": \"Arjun has sent a warm follow-up to Nikhil naming the purpose and asking for a next step, or has confirmed that the introduction is not relevant and the file is closed.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "8a431b732da4194561331d1d33858ac8652b58eab8d5d51d96edd74e7c54c5ba": {
+  "framed": true,
+  "input_tokens": 7317,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2948,
+  "parsed": {
+   "alternative": "Reply with your availability and ask Nikhil what Quillstack does and why he wanted to connect; this gives you context before the meeting but may slow the scheduling",
+   "appraisal": {
+    "reasons": [
+     "This is an introduction, not a commitment; a slow reply is not a broken promise, but it does signal disinterest",
+     "The meeting is a low-cost find-out move; the stakes are low unless Quillstack turns out to be a key partner or investor",
+     "A reply within one business day is reversible; a reply after a week is costly because it reads as disinterest",
+     "The connector's credibility is at stake, which is a medium-term asset"
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "medium"
+   },
+   "done_when": "The meeting is scheduled and confirmed on both sides; you have researched Quillstack and prepared for the call",
+   "draft": "Hi Nikhil, thanks for reaching out. Thursday works for me \u2014 how about 2pm your time? If that doesn't suit, I'm flexible next week. Looking forward to connecting. Arjun",
+   "expected_vs_actual": {
+    "actual": "Nikhil has asked for a meeting on Thursday or next week; you have not yet replied",
+    "expected": "An introduction from a connector is expected to move to a meeting request within a few days; the next step is for the founder to confirm availability and schedule the call",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Nikhil Bose, CTO of Quillstack, was introduced to you by Introly on 2026-08-06 at 08:00 UTC",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Nikhil Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "Nikhil Bose asked you to meet on Thursday or proposed alternative times for next week, in a message sent 2026-08-09 at 10:05 UTC",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Are you around on Thursday for a 30-minute call? If not, what times work for you next week?"
+    },
+    {
+     "claim": "The ball is in your court: you have not yet replied to Nikhil's meeting request",
+     "evidence": [
+      "file:whose_move",
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.33 days since the last message, which is within the normal gap this thread has shown before",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for Quillstack",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was made in the mail from Quillstack",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction from a connector has moved to the meeting-scheduling stage; the next move is to confirm your availability and show that you value the introduction",
+    "rivals": [
+     "This is a low-priority introduction that can wait until you have more bandwidth",
+     "This is a test of your responsiveness by the connector, and a slow reply will damage the relationship",
+     "Quillstack is a potential blocker or dependency for one of your current goals, and the meeting is urgent"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The meeting itself, or a search of Quillstack's public profile, would show what they do and why Introly introduced them",
+     "proposition": "Quillstack is a potential design partner, investor, or customer for Nimbus Labs"
+    },
+    {
+     "needs": "The meeting would clarify Quillstack's interest and what they are looking for from you",
+     "proposition": "Nikhil Bose is reaching out on behalf of Quillstack to explore a partnership or investment"
+    },
+    {
+     "needs": "A pattern of similar introductions from Introly, or a note from Introly about the batch, would show whether this is one of many or a targeted match",
+     "proposition": "This is a low-priority introduction that Introly made as part of a batch"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "This is a live introduction that has moved to the meeting-scheduling stage"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:2"
+     ],
+     "claim": "The next move is yours: you must respond with your availability"
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "ru:core.temporal"
+     ],
+     "claim": "The thread is still warm and engaged; the 0.33-day quiet period is normal for this conversation"
+    },
+    {
+     "based_on": [
+      "evt_#2",
+      "evt_#1"
+     ],
+     "claim": "The purpose of the meeting is not yet clear from the mail; Nikhil has not stated what Quillstack does or why the introduction was made"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop_#1",
+    "by_when": "2026-08-10",
+    "for_whom": "Nikhil Bose",
+    "guided_by": [
+     "sig:admin.sit.live_account_admin",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:3",
+     "inference:2"
+    ],
+    "to": "nikhil@quillstack.test",
+    "what": "reply to Nikhil with your availability for a 30-minute call, offering a specific time slot on Thursday or early next week",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting request from a CTO introduced by a connector deserves a same-day or next-day reply, because the connector's credibility is on the line and the person has made themselves available",
+     "kind": "practice",
+     "why": "The connector has vouched for both parties; a slow reply signals that you do not value the introduction or the person's time"
+    },
+    {
+     "claim": "When you do not know what the other party does or why they want to meet, the meeting itself is the find-out move, not a reply",
+     "kind": "base_rate",
+     "why": "A meeting with a CTO at a company you have not researched is a low-cost way to learn whether there is a fit; the reply should confirm availability, not ask for context"
+    },
+    {
+     "claim": "A reply that offers a specific time slot closes the loop faster than a reply that asks for their preference",
+     "kind": "practice",
+     "why": "It shows you have looked at your calendar and are serious; it also gives them a clear yes or no to decide on"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "An introduction followed by a meeting request within three days signals genuine interest and a warm handoff",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "When the ball is in your court on a meeting request, a reply within one business day maintains momentum",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence on a meeting request after three days begins to read as disinterest, even when the quiet is within normal gaps",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "file:introduced_by",
+     "brief:cbl_#27"
+    ],
+    "kind": "intro",
+    "why": "The brief names Introly as a connector whose mail is an introduction, not a stranger; Quillstack was introduced by Introly; the file's role is intro; and no other kind of work has been named or is evident from the mail"
+   },
+   "scenarios": {
+    "act": "You reply with your availability, confirm the meeting, and prepare by researching Quillstack. The meeting happens, and you learn whether there is a partnership, investment, or other opportunity. The connector's credibility is reinforced.",
+    "best": "Quillstack is a design partner or investor that accelerates one of your current goals; the meeting leads to a concrete next step; the connector becomes a trusted source of introductions",
+    "do_nothing": "The thread goes quiet. After a week, Nikhil may assume you are not interested and move on. The connector's credibility is slightly damaged. You lose the chance to learn what Quillstack does and whether there is a fit.",
+    "signals_to_watch": [
+     "Whether Nikhil replies to your availability confirmation",
+     "What Quillstack does and whether it aligns with your current goals",
+     "Whether the meeting leads to a concrete next step or ends with no follow-up",
+     "Whether Introly makes other introductions that are similarly well-targeted or poorly-targeted"
+    ],
+    "worst": "Quillstack is not a fit, the meeting is a waste of time, and you learn that Introly's introductions are not well-targeted; the connector's credibility is damaged"
+   },
+   "unknowns": [
+    {
+     "question": "What does Quillstack do, and why did Introly introduce Nikhil to you?",
+     "relevance": "This would determine whether the meeting is worth your time and how to prepare for it; it would also show whether Quillstack is a fit for any of your current goals (raising, hiring, partnerships, programs)"
+    },
+    {
+     "question": "Is Nikhil's Thursday a specific date, or a standing reference to the coming Thursday?",
+     "relevance": "If it is a standing reference and today is past Thursday, your reply needs to clarify which Thursday he meant; if it is the coming Thursday, you need to know today's date to judge whether you can make it"
+    },
+    {
+     "question": "What is Introly's track record for introductions that lead to material outcomes for your company?",
+     "relevance": "This would inform how much priority to give to this meeting relative to your other work in motion"
+    }
+   ],
+   "wait_or_stop": "Do not wait. Reply by end of business tomorrow. If Nikhil does not respond to your availability within three days, send one follow-up asking for his preference. If he does not respond to the follow-up, close the file as dormant after seven days of silence."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Nikhil Bose, CTO of Quillstack, was introduced to you by Introly on 2026-08-06 at 08:00 UTC\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Nikhil Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"Nikhil Bose asked you to meet on Thursday or proposed alternative times for next week, in a message sent 2026-08-09 at 10:05 UTC\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Are you around on Thursday for a 30-minute call? If not, what times work for you next week?\"\n    },\n    {\n      \"claim\": \"The ball is in your court: you have not yet replied to Nikhil's meeting request\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.33 days since the last message, which is within the normal gap this thread has shown before\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for Quillstack\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was made in the mail from Quillstack\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a live introduction that has moved to the meeting-scheduling stage\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is yours: you must respond with your availability\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The thread is still warm and engaged; the 0.33-day quiet period is normal for this conversation\",\n      \"based_on\": [\n        \"fact:4\",\n        \"ru:core.temporal\"\n      ]\n    },\n    {\n      \"claim\": \"The purpose of the meeting is not yet clear from the mail; Nikhil has not stated what Quillstack does or why the introduction was made\",\n      \"based_on\": [\n        \"evt_#2\",\n        \"evt_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An introduction followed by a meeting request within three days signals genuine interest and a warm handoff\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When the ball is in your court on a meeting request, a reply within one business day maintains momentum\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence on a meeting request after three days begins to read as disinterest, even when the quiet is within normal gaps\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting request from a CTO introduced by a connector deserves a same-day or next-day reply, because the connector's credibility is on the line and the person has made themselves available\",\n      \"why\": \"The connector has vouched for both parties; a slow reply signals that you do not value the introduction or the person's time\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When you do not know what the other party does or why they want to meet, the meeting itself is the find-out move, not a reply\",\n      \"why\": \"A meeting with a CTO at a company you have not researched is a low-cost way to learn whether there is a fit; the reply should confirm availability, not ask for context\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A reply that offers a specific time slot closes the loop faster than a reply that asks for their preference\",\n      \"why\": \"It shows you have looked at your calendar and are serious; it also gives them a clear yes or no to decide on\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Quillstack is a potential design partner, investor, or customer for Nimbus Labs\",\n      \"needs\": \"The meeting itself, or a search of Quillstack's public profile, would show what they do and why Introly introduced them\"\n    },\n    {\n      \"proposition\": \"Nikhil Bose is reaching out on behalf of Quillstack to explore a partnership or investment\",\n      \"needs\": \"The meeting would clarify Quillstack's interest and what they are looking for from you\"\n    },\n    {\n      \"proposition\": \"This is a low-priority introduction that Introly made as part of a batch\",\n      \"needs\": \"A pattern of similar introductions from Introly, or a note from Introly about the batch, would show whether this is one of many or a targeted match\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Quillstack do, and why did Introly introduce Nikhil to you?\",\n      \"relevance\": \"This would determine whether the meeting is worth your time and how to prepare for it; it would also show whether Quillstack is a fit for any of your current goals (raising, hiring, partnerships, programs)\"\n    },\n    {\n      \"question\": \"Is Nikhil's Thursday a specific date, or a standing reference to the coming Thursday?\",\n      \"relevance\": \"If it is a standing reference and today is past Thursday, your reply needs to clarify which Thursday he meant; if it is the coming Thursday, you need to know today's date to judge whether you can make it\"\n    },\n    {\n      \"question\": \"What is Introly's track record for introductions that lead to material outcomes for your company?\",\n      \"relevance\": \"This would inform how much priority to give to this meeting relative to your other work in motion\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction from a connector has moved to the meeting-scheduling stage; the next move is to confirm your availability and show that you value the introduction\",\n    \"rivals\": [\n      \"This is a low-priority introduction that can wait until you have more bandwidth\",\n      \"This is a test of your responsiveness by the connector, and a slow reply will damage the relationship\",\n      \"Quillstack is a potential blocker or dependency for one of your current goals, and the meeting is urgent\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The brief names Introly as a connector whose mail is an introduction, not a stranger; Quillstack was introduced by Introly; the file's role is intro; and no other kind of work has been named or is evident from the mail\",\n    \"evidence\": [\n      \"file:role\",\n      \"file:introduced_by\",\n      \"brief:cbl_#27\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"An introduction from a connector is expected to move to a meeting request within a few days; the next step is for the founder to confirm availability and schedule the call\",\n    \"actual\": \"Nikhil has asked for a meeting on Thursday or next week; you have not yet replied\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The thread goes quiet. After a week, Nikhil may assume you are not interested and move on. The connector's credibility is slightly damaged. You lose the chance to learn what Quillstack does and whether there is a fit.\",\n    \"act\": \"You reply with your availability, confirm the meeting, and prepare by researching Quillstack. The meeting happens, and you learn whether there is a partnership, investment, or other opportunity. The connector's credibility is reinforced.\",\n    \"best\": \"Quillstack is a design partner or investor that accelerates one of your current goals; the meeting leads to a concrete next step; the connector becomes a trusted source of introductions\",\n    \"worst\": \"Quillstack is not a fit, the meeting is a waste of time, and you learn that Introly's introductions are not well-targeted; the connector's credibility is damaged\",\n    \"signals_to_watch\": [\n      \"Whether Nikhil replies to your availability confirmation\",\n      \"What Quillstack does and whether it aligns with your current goals\",\n      \"Whether the meeting leads to a concrete next step or ends with no follow-up\",\n      \"Whether Introly makes other introductions that are similarly well-targeted or poorly-targeted\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"This is an introduction, not a commitment; a slow reply is not a broken promise, but it does signal disinterest\",\n      \"The meeting is a low-cost find-out move; the stakes are low unless Quillstack turns out to be a key partner or investor\",\n      \"A reply within one business day is reversible; a reply after a week is costly because it reads as disinterest\",\n      \"The connector's credibility is at stake, which is a medium-term asset\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"reply to Nikhil with your availability for a 30-minute call, offering a specific time slot on Thursday or early next week\",\n    \"for_whom\": \"Nikhil Bose\",\n    \"by_when\": \"2026-08-10\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"sig:admin.sit.live_account_admin\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"nikhil@quillstack.test\",\n    \"answers\": \"loop_#1\"\n  },\n  \"alternative\": \"Reply with your availability and ask Nikhil what Quillstack does and why he wanted to connect; this gives you context before the meeting but may slow the scheduling\",\n  \"wait_or_stop\": \"Do not wait. Reply by end of business tomorrow. If Nikhil does not respond to your availability within three days, send one follow-up asking for his preference. If he does not respond to the follow-up, close the file as dormant after seven days of silence.\",\n  \"done_when\": \"The meeting is scheduled and confirmed on both sides; you have researched Quillstack and prepared for the call\",\n  \"draft\": \"Hi Nikhil, thanks for reaching out. Thursday works for me \u2014 how about 2pm your time? If that doesn't suit, I'm flexible next week. Looking forward to connecting. Arjun\"\n}",
+  "site": "expert"
+ },
+ "fce9234c003a95461d4c212d19429cc76e8fb481f491bd51444dc9ee9f998ec9": {
+  "framed": true,
+  "input_tokens": 7187,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3074,
+  "parsed": {
+   "alternative": "If the founder knows why Introly made this introduction and believes it is high-value, they could send a brief reply to the recipient that adds context or value, such as a link to Nimbus Labs' product or a specific question about Quillstack. This move should be made only if the founder has a clear reason to believe the introduction is worth pursuing.",
+   "appraisal": {
+    "reasons": [
+     "ru:core.risk: risk is low; the introduction carries no commitment or promise",
+     "ru:core.priority: urgency is low; the file is too new to require action",
+     "ru:core.dependency: no blocking dependency is observed; the file does not block other work",
+     "cap:admin.executive_support.commitment_tracking#f3: administrative silence is normal process, not a signal of disinterest",
+     "The file has no open ask and no playbook; it is a courtesy introduction, not a live lead"
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "The file is done when the recipient replies and a conversation begins, or when one week has passed with no reply and the founder decides to close the file or move it to a watch list.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The introduction was sent 0.42 days ago. No reply has been received. This is within the normal window for a cold introduction.",
+    "expected": "Without a playbook, the expectation is that an introduction will either generate a reply within a week or will be forgotten. The file should remain open until the recipient replies or a reason to follow up emerges.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "An introduction was made on 2026-08-06 at 08:00 UTC by Introly, connecting the founder to a person at Quillstack.",
+     "evidence": [
+      "evt_#1",
+      "file:introduced_by",
+      "file:first_touch"
+     ],
+     "quote": "Arjun, meet Nikhil Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here."
+    },
+    {
+     "claim": "No reply has been received since the introduction.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days since first touch.",
+     "evidence": [
+      "num:days_quiet",
+      "file:first_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise or commitment was made in the introduction mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in their court: the introduction was sent to them and awaits their response.",
+     "evidence": [
+      "file:whose_move",
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This file has no playbook: the brief names no kind of work for Quillstack.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is categorized as admin domain work, introduced by a connector.",
+     "evidence": [
+      "file:domains",
+      "file:role",
+      "brief:cbl_#27"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A cold introduction made by an automated connector, awaiting the recipient's response. The file is too new to judge whether it will generate engagement.",
+    "rivals": [
+     "A potential partnership or investment opportunity that requires immediate follow-up to maintain momentum.",
+     "A low-signal introduction that will be ignored and should be closed rather than tracked."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The founder's own knowledge of why Introly made this introduction, or a reply from the recipient that clarifies their interest.",
+     "proposition": "Quillstack is a potential design partner, investor, or customer for Nimbus Labs."
+    },
+    {
+     "needs": "A reply from the recipient, or silence beyond a week, which would suggest the introduction did not land.",
+     "proposition": "The recipient will reply within a week and express interest in a conversation."
+    },
+    {
+     "needs": "Silence beyond two weeks, or a signal from the founder that they have moved on.",
+     "proposition": "The recipient will not reply, and the introduction will be forgotten."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "file:introduced_by",
+      "evt_#1"
+     ],
+     "claim": "This is a cold introduction made by an automated connector, not a warm referral or an existing relationship."
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "file:first_touch"
+     ],
+     "claim": "The introduction names a specific role (CTO) and a specific company (Quillstack), suggesting the connector had some targeting logic, but no prior relationship is evident."
+    },
+    {
+     "based_on": [
+      "num:days_quiet",
+      "ru:core.relationship",
+      "ru:core.timeline"
+     ],
+     "claim": "The file's status is indeterminate: it is too early to know whether the introduction will generate engagement or will be ignored."
+    },
+    {
+     "based_on": [
+      "file:whose_move",
+      "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball"
+     ],
+     "claim": "No action is owed by the founder at this moment, as the introduction was sent by the connector and the next move belongs to the recipient."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-13",
+    "for_whom": "the founder",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:5",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "do nothing; wait for the recipient to reply",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An introduction from a connector is a courtesy, not a commitment. The recipient decides whether to engage, and silence for a day or two is expected.",
+     "kind": "practice",
+     "why": "Connectors send many introductions; recipients filter by relevance and bandwidth. Treating an introduction as a live lead before the recipient has signaled interest inflates the pipeline and wastes attention on noise."
+    },
+    {
+     "claim": "Most cold introductions from automated agents do not generate a reply within the first week.",
+     "kind": "base_rate",
+     "why": "Automated introductions lack the social weight of a personal referral. They are easy to ignore and easy to defer. The recipient must decide whether the introduction is worth their time, and that decision takes longer than the introduction itself."
+    },
+    {
+     "claim": "A file with no playbook and no open ask should not be tracked as a live item until the recipient replies or a reason to follow up emerges.",
+     "kind": "practice",
+     "why": "Tracking introduces overhead and creates false urgency. The file should be closed or moved to a watch list until there is a signal that the recipient is interested or a reason to believe they have forgotten."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "file:introduced_by",
+      "ru:core.risk"
+     ],
+     "claim": "Cold introductions made by automated connectors have low reply rates in the first day.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence in the first hours after an introduction is normal process, not disinterest.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1"
+     ],
+     "claim": "Chasing an introduction before the recipient has had time to read it damages the relationship and reads as pressure.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "brief:cbl_#27",
+     "evt_#1"
+    ],
+    "kind": "intro",
+    "why": "The dossier explicitly names this file's role as 'intro \u2014 the brief says: Introly \u2014 an AI agent that introduces the founder to people'. The file records an introduction made by Introly, not a relationship the founder initiated."
+   },
+   "scenarios": {
+    "act": "The founder could reply to the introduction with a message that adds context or value, or could ask Introly why the introduction was made. Either move risks appearing too eager or too needy, and could damage the relationship before it starts.",
+    "best": "The recipient replies within a week, expresses interest, and a conversation begins. The introduction generates a meeting, a partnership, or an investment opportunity.",
+    "do_nothing": "The file remains open and quiet. If the recipient replies within a week, the founder can engage. If they do not reply within two weeks, the file can be closed or moved to a watch list. No action is required from the founder in the meantime.",
+    "signals_to_watch": [
+     "A reply from the recipient within a week",
+     "A second message from Introly about this introduction",
+     "Silence beyond two weeks, which would suggest the introduction did not land",
+     "A signal from the founder that they have moved on or that they know more about Quillstack"
+    ],
+    "worst": "The recipient does not reply, and the introduction is forgotten. The founder wastes time tracking a dead lead and misses other opportunities."
+   },
+   "unknowns": [
+    {
+     "question": "Why did Introly make this introduction? What is the intended relationship between Nimbus Labs and Quillstack?",
+     "relevance": "The answer would clarify whether this is a potential investor, partner, customer, or hire, and would determine the appropriate follow-up strategy and timeline."
+    },
+    {
+     "question": "Does the founder know Quillstack or have any prior relationship with them?",
+     "relevance": "A prior relationship would change the urgency and the tone of any follow-up; a cold introduction requires different handling than a warm one."
+    },
+    {
+     "question": "What is Quillstack's business, and does it align with Nimbus Labs' goals?",
+     "relevance": "Alignment would determine whether this introduction is worth pursuing and how to frame a follow-up if the recipient does not reply."
+    },
+    {
+     "question": "Has the founder received other introductions from Introly, and what has been the outcome?",
+     "relevance": "The track record of Introly's introductions would inform the expected reply rate and the value of this introduction."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-13 (one week after the introduction). If the recipient has not replied by then, the file can be closed or moved to a watch list. If the recipient replies before then, engage immediately. Do not send a follow-up message to the recipient before one week has passed."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"An introduction was made on 2026-08-06 at 08:00 UTC by Introly, connecting the founder to a person at Quillstack.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:introduced_by\",\n        \"file:first_touch\"\n      ],\n      \"quote\": \"Arjun, meet Nikhil Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\"\n    },\n    {\n      \"claim\": \"No reply has been received since the introduction.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days since first touch.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"file:first_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise or commitment was made in the introduction mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in their court: the introduction was sent to them and awaits their response.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This file has no playbook: the brief names no kind of work for Quillstack.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is categorized as admin domain work, introduced by a connector.\",\n      \"evidence\": [\n        \"file:domains\",\n        \"file:role\",\n        \"brief:cbl_#27\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a cold introduction made by an automated connector, not a warm referral or an existing relationship.\",\n      \"based_on\": [\n        \"file:introduced_by\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The introduction names a specific role (CTO) and a specific company (Quillstack), suggesting the connector had some targeting logic, but no prior relationship is evident.\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"file:first_touch\"\n      ]\n    },\n    {\n      \"claim\": \"The file's status is indeterminate: it is too early to know whether the introduction will generate engagement or will be ignored.\",\n      \"based_on\": [\n        \"num:days_quiet\",\n        \"ru:core.relationship\",\n        \"ru:core.timeline\"\n      ]\n    },\n    {\n      \"claim\": \"No action is owed by the founder at this moment, as the introduction was sent by the connector and the next move belongs to the recipient.\",\n      \"based_on\": [\n        \"file:whose_move\",\n        \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Cold introductions made by automated connectors have low reply rates in the first day.\",\n      \"based_on\": [\n        \"file:introduced_by\",\n        \"ru:core.risk\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Administrative silence in the first hours after an introduction is normal process, not disinterest.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing an introduction before the recipient has had time to read it damages the relationship and reads as pressure.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction from a connector is a courtesy, not a commitment. The recipient decides whether to engage, and silence for a day or two is expected.\",\n      \"why\": \"Connectors send many introductions; recipients filter by relevance and bandwidth. Treating an introduction as a live lead before the recipient has signaled interest inflates the pipeline and wastes attention on noise.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most cold introductions from automated agents do not generate a reply within the first week.\",\n      \"why\": \"Automated introductions lack the social weight of a personal referral. They are easy to ignore and easy to defer. The recipient must decide whether the introduction is worth their time, and that decision takes longer than the introduction itself.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A file with no playbook and no open ask should not be tracked as a live item until the recipient replies or a reason to follow up emerges.\",\n      \"why\": \"Tracking introduces overhead and creates false urgency. The file should be closed or moved to a watch list until there is a signal that the recipient is interested or a reason to believe they have forgotten.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Quillstack is a potential design partner, investor, or customer for Nimbus Labs.\",\n      \"needs\": \"The founder's own knowledge of why Introly made this introduction, or a reply from the recipient that clarifies their interest.\"\n    },\n    {\n      \"proposition\": \"The recipient will reply within a week and express interest in a conversation.\",\n      \"needs\": \"A reply from the recipient, or silence beyond a week, which would suggest the introduction did not land.\"\n    },\n    {\n      \"proposition\": \"The recipient will not reply, and the introduction will be forgotten.\",\n      \"needs\": \"Silence beyond two weeks, or a signal from the founder that they have moved on.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Why did Introly make this introduction? What is the intended relationship between Nimbus Labs and Quillstack?\",\n      \"relevance\": \"The answer would clarify whether this is a potential investor, partner, customer, or hire, and would determine the appropriate follow-up strategy and timeline.\"\n    },\n    {\n      \"question\": \"Does the founder know Quillstack or have any prior relationship with them?\",\n      \"relevance\": \"A prior relationship would change the urgency and the tone of any follow-up; a cold introduction requires different handling than a warm one.\"\n    },\n    {\n      \"question\": \"What is Quillstack's business, and does it align with Nimbus Labs' goals?\",\n      \"relevance\": \"Alignment would determine whether this introduction is worth pursuing and how to frame a follow-up if the recipient does not reply.\"\n    },\n    {\n      \"question\": \"Has the founder received other introductions from Introly, and what has been the outcome?\",\n      \"relevance\": \"The track record of Introly's introductions would inform the expected reply rate and the value of this introduction.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A cold introduction made by an automated connector, awaiting the recipient's response. The file is too new to judge whether it will generate engagement.\",\n    \"rivals\": [\n      \"A potential partnership or investment opportunity that requires immediate follow-up to maintain momentum.\",\n      \"A low-signal introduction that will be ignored and should be closed rather than tracked.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The dossier explicitly names this file's role as 'intro \u2014 the brief says: Introly \u2014 an AI agent that introduces the founder to people'. The file records an introduction made by Introly, not a relationship the founder initiated.\",\n    \"evidence\": [\n      \"file:role\",\n      \"brief:cbl_#27\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation is that an introduction will either generate a reply within a week or will be forgotten. The file should remain open until the recipient replies or a reason to follow up emerges.\",\n    \"actual\": \"The introduction was sent 0.42 days ago. No reply has been received. This is within the normal window for a cold introduction.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open and quiet. If the recipient replies within a week, the founder can engage. If they do not reply within two weeks, the file can be closed or moved to a watch list. No action is required from the founder in the meantime.\",\n    \"act\": \"The founder could reply to the introduction with a message that adds context or value, or could ask Introly why the introduction was made. Either move risks appearing too eager or too needy, and could damage the relationship before it starts.\",\n    \"best\": \"The recipient replies within a week, expresses interest, and a conversation begins. The introduction generates a meeting, a partnership, or an investment opportunity.\",\n    \"worst\": \"The recipient does not reply, and the introduction is forgotten. The founder wastes time tracking a dead lead and misses other opportunities.\",\n    \"signals_to_watch\": [\n      \"A reply from the recipient within a week\",\n      \"A second message from Introly about this introduction\",\n      \"Silence beyond two weeks, which would suggest the introduction did not land\",\n      \"A signal from the founder that they have moved on or that they know more about Quillstack\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"ru:core.risk: risk is low; the introduction carries no commitment or promise\",\n      \"ru:core.priority: urgency is low; the file is too new to require action\",\n      \"ru:core.dependency: no blocking dependency is observed; the file does not block other work\",\n      \"cap:admin.executive_support.commitment_tracking#f3: administrative silence is normal process, not a signal of disinterest\",\n      \"The file has no open ask and no playbook; it is a courtesy introduction, not a live lead\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"do nothing; wait for the recipient to reply\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-08-13\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:5\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder knows why Introly made this introduction and believes it is high-value, they could send a brief reply to the recipient that adds context or value, such as a link to Nimbus Labs' product or a specific question about Quillstack. This move should be made only if the founder has a clear reason to believe the introduction is worth pursuing.\",\n  \"wait_or_stop\": \"Wait until 2026-08-13 (one week after the introduction). If the recipient has not replied by then, the file can be closed or moved to a watch list. If the recipient replies before then, engage immediately. Do not send a follow-up message to the recipient before one week has passed.\",\n  \"done_when\": \"The file is done when the recipient replies and a conversation begins, or when one week has passed with no reply and the founder decides to close the file or move it to a watch list.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

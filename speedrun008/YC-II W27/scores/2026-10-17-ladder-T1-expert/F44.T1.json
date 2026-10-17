@@ -1,0 +1,272 @@
+{
+ "8657bf430d5ae51ad9bd8992299b10c0760774fac025cd0a783d84eccf3e3993": {
+  "framed": true,
+  "input_tokens": 8122,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3845,
+  "parsed": {
+   "alternative": "If the deck is not ready or needs revision, send a same-day reply confirming receipt of the inquiry, thanking Kavita for the interest, and proposing a call for tomorrow to discuss the company before sending the deck. This keeps the thread warm and buys time to prepare.",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because Kavita is a warm inbound lead, but she is not yet a committed investor and her check size and fund structure are unknown.",
+     "The urgency is medium because Kavita asked for a meeting this week, which is a time-bound ask, but the company is running multiple parallel investor conversations and this is one of many.",
+     "A wrong move is reversible: a delayed reply can be recovered with a warm follow-up; a poor deck can be revised; a bad meeting can be followed up with a better one.",
+     "The file is quiet for only 0.25 days, so there is still time to reply within the window Kavita named."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "A meeting is scheduled with Kavita for later this week, or she replies with a specific time she prefers. The next stage is the call itself, where the founder learns her conviction, check size, and fund structure.",
+   "draft": "Hi Kavita, thanks so much for the note and for taking the time to look at the demo \u2014 I'm glad it resonated. I'm attaching the deck. I'm free for a call Thursday at 2pm or 4pm PT, or Friday at 10am or 2pm PT. Let me know what works for you. Looking forward to talking. \u2014 Meera",
+   "expected_vs_actual": {
+    "actual": "The file has been quiet for 0.25 days. No reply has been sent. The ask is open and waiting on the founder.",
+    "expected": "The brief names no playbook for this file. In investor relations, the expected stage after an inbound inquiry is a meeting request or a deck send. The expected next move is to send the deck and propose meeting times within 24 hours.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Kavita Rao, an angel investor in health tech, wrote to the founder on 2026-09-18 at 06:00 UTC asking for the company deck and a meeting time this week.",
+     "evidence": [
+      "evt_#1",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": "Kitebird deck? Hi Meera, I'm an angel investor in health tech and loved your clinic scheduling demo. Could you send your deck and a time to talk this week? Kavita Rao"
+    },
+    {
+     "claim": "The file has no kind of work named in the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has no role in the brief.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is tagged as fundraising work.",
+     "evidence": [
+      "file:domains"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The next move is ours: Kavita Rao is waiting for a reply.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.25 days since the initial contact.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time this file has been seen in fundraising work.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@fundraising",
+      "hist:derived.history.times_seen@fundraising"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No prior reply time or engagement pattern has been measured for Kavita Rao.",
+     "evidence": [
+      "num:their_reply_time:kavita.rao.vc@gmail.com",
+      "num:your_reply_time:kavita.rao.vc@gmail.com"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Kavita Rao is not listed in the brief as a connector, investor fund, or known counterparty.",
+     "evidence": [
+      "brief:company",
+      "file:role"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm inbound inquiry from an angel investor who has seen the product and is asking for a deck and a meeting this week. The next move is ours: send the deck and propose meeting times. This is a live investor contact at the earliest stage \u2014 a meeting request.",
+    "rivals": [
+     "A low-friction screening inquiry from an angel running a portfolio-building process, with low conviction and low likelihood of moving beyond the deck stage.",
+     "A connector or portfolio-operations inquiry, where Kavita is not the decision-maker and the real investor is someone else.",
+     "A test of the company's responsiveness and professionalism, where the investor is evaluating how quickly and professionally the founder moves."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply sent within 24 hours; a meeting scheduled within the week; a follow-up from Kavita confirming attendance or rescheduling.",
+     "proposition": "Kavita Rao is a serious angel investor with conviction on the company and will move to a call if the deck and meeting slot are sent promptly."
+    },
+    {
+     "needs": "A reply to the deck with no follow-up; or a follow-up after a week asking for a meeting with no urgency.",
+     "proposition": "Kavita Rao is running a low-friction screening process and will not move beyond the deck stage without a strong signal from other investors."
+    },
+    {
+     "needs": "A reply that asks who the decision-maker is, or a meeting that reveals the structure of her fund or her role in it.",
+     "proposition": "Kavita Rao is a connector or portfolio-operations address, not a decision-maker, and the real investor is someone else."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "Kavita Rao is a warm contact: she references the clinic scheduling demo, suggesting prior exposure to the company's work."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9",
+      "brief:cbl_#10",
+      "brief:cbl_#11"
+     ],
+     "claim": "This is an unsolicited inbound inquiry from an angel investor, not a response to an outbound wave or introduction."
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The ask is concrete and time-bound: deck and a meeting slot this week."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3",
+      "fact:4",
+      "inference:2"
+     ],
+     "claim": "The file should be classified as investor work, not a generic connector or introduction."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-18",
+    "for_whom": "Kavita Rao",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:1",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:3",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "kavita.rao.vc@gmail.com",
+    "what": "send the deck and propose three meeting time slots for later this week",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A same-day or next-day reply to a warm inbound investor inquiry keeps the thread hot and signals seriousness.",
+     "kind": "practice",
+     "why": "Investors see many companies and move on quickly; a delayed reply reads as low priority or low responsiveness, both of which matter in early-stage fundraising."
+    },
+    {
+     "claim": "Angel investors who reference a specific product demo are more likely to move to a call than those who have only read materials.",
+     "kind": "base_rate",
+     "why": "A demo is a higher-friction engagement than a deck; it signals the investor has already spent time and formed an opinion."
+    },
+    {
+     "claim": "The deck and meeting slot should be sent together in a single reply, with the meeting options pre-filled to reduce friction.",
+     "kind": "practice",
+     "why": "Each back-and-forth delays momentum; offering three specific time slots removes the coordination cost and signals respect for the investor's time."
+    },
+    {
+     "claim": "An angel investor asking for a deck without a prior introduction or warm connector is more likely to be a low-conviction inquiry or a portfolio-building exercise.",
+     "kind": "counter_pattern",
+     "why": "Serious investors often come through warm intros or have already done preliminary diligence; a cold ask for a deck can indicate a low bar for engagement."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3",
+      "cap:founder_office.fundraising.investor_relations#f5"
+     ],
+     "claim": "Inbound investor inquiries that name a specific ask and a time window convert at higher rates than outbound cold waves.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#q"
+     ],
+     "claim": "An investor who has seen a demo and references it by name is further along than one who has only read a pitch deck.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "A request for a deck and a meeting in the same message, without a prior relationship, can indicate a low-friction screening process rather than serious intent.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Silence after a warm inbound inquiry for over a week is usually a soft no or a deprioritization.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "evt_#1",
+     "sit:sit_#1"
+    ],
+    "kind": "investor",
+    "why": "Kavita Rao identifies herself as an angel investor, asks for the deck and a meeting, and is a live investor contact in the fundraising domain. The brief names no kind of work for this file, but the file's domains tag and the mail's content make it clear this is investor relations work."
+   },
+   "scenarios": {
+    "act": "The founder sends the deck and three meeting time slots within 24 hours. Kavita confirms a meeting or proposes an alternative time. A call is scheduled for later in the week. The founder learns Kavita's check size, fund structure, and investment thesis. A decision is made within two weeks.",
+    "best": "Kavita is a serious angel with conviction and a check size that fits the round. She moves to a call within two days, commits to a follow-on meeting with her fund's partners, and leads or co-leads a seed round. The company gains a warm investor and a connector to her network.",
+    "do_nothing": "After three days, Kavita Rao's inquiry goes unanswered. She moves on to another company or assumes the founder is not responsive. The warm lead cools and is lost. After a week, the inquiry is buried in the inbox and the window to reply has passed.",
+    "signals_to_watch": [
+     "Kavita's reply time to the deck send: same day or next day signals high interest; more than three days signals low priority.",
+     "Whether Kavita confirms a meeting or asks for more information: a confirmed meeting is progress; a request for more information is a soft no.",
+     "Whether Kavita mentions other investors, her fund, or her check size: this signals whether she is a decision-maker or a scout.",
+     "Whether Kavita's meeting leads to a partners' meeting or a term sheet: this determines whether she is a lead investor or a follow-on."
+    ],
+    "worst": "Kavita is a low-conviction scout or connector. She receives the deck, does not reply, or replies weeks later with a pass. The company has spent time on a dead-end lead and lost momentum with other investors by not running the round in parallel."
+   },
+   "unknowns": [
+    {
+     "question": "Is Kavita Rao an independent angel or part of a fund? Does she have check-writing authority, or is she a scout or connector?",
+     "relevance": "This determines whether she is a decision-maker or a gatekeeper, and whether a meeting with her leads to a term sheet or to a partner meeting."
+    },
+    {
+     "question": "What is her typical check size, and does it fit the round size the company is raising?",
+     "relevance": "An angel writing five thousand dollars is a different conversation than one writing fifty thousand; the company's round size and stage determine whether this is a lead investor or a follow-on."
+    },
+    {
+     "question": "How did Kavita Rao see the clinic scheduling demo? Was it a public demo, a user, a portfolio company, or a direct introduction?",
+     "relevance": "This determines how warm the contact is and whether there are other warm paths to her network or to other investors."
+    },
+    {
+     "question": "Is there a deadline for the company's seed round, and how many other investors are in active conversation?",
+     "relevance": "If the round is closing soon and Kavita is the only warm lead, the urgency is high; if the round is open and there are many leads, this is one of many parallel conversations."
+    }
+   ],
+   "wait_or_stop": "Wait if the deck is not ready and needs more than a few hours to prepare; in that case, send a same-day acknowledgment. Stop if Kavita does not reply to the deck send within a week; follow up once with a brief note and a new meeting proposal, then move on to other investors."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Kavita Rao, an angel investor in health tech, wrote to the founder on 2026-09-18 at 06:00 UTC asking for the company deck and a meeting time this week.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": \"Kitebird deck? Hi Meera, I'm an angel investor in health tech and loved your clinic scheduling demo. Could you send your deck and a time to talk this week? Kavita Rao\"\n    },\n    {\n      \"claim\": \"The file has no kind of work named in the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has no role in the brief.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is tagged as fundraising work.\",\n      \"evidence\": [\n        \"file:domains\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The next move is ours: Kavita Rao is waiting for a reply.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.25 days since the initial contact.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time this file has been seen in fundraising work.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@fundraising\",\n        \"hist:derived.history.times_seen@fundraising\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No prior reply time or engagement pattern has been measured for Kavita Rao.\",\n      \"evidence\": [\n        \"num:their_reply_time:kavita.rao.vc@gmail.com\",\n        \"num:your_reply_time:kavita.rao.vc@gmail.com\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Kavita Rao is not listed in the brief as a connector, investor fund, or known counterparty.\",\n      \"evidence\": [\n        \"brief:company\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Kavita Rao is a warm contact: she references the clinic scheduling demo, suggesting prior exposure to the company's work.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"This is an unsolicited inbound inquiry from an angel investor, not a response to an outbound wave or introduction.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\",\n        \"brief:cbl_#10\",\n        \"brief:cbl_#11\"\n      ]\n    },\n    {\n      \"claim\": \"The ask is concrete and time-bound: deck and a meeting slot this week.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"The file should be classified as investor work, not a generic connector or introduction.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\",\n        \"fact:4\",\n        \"inference:2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Inbound investor inquiries that name a specific ask and a time window convert at higher rates than outbound cold waves.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\",\n        \"cap:founder_office.fundraising.investor_relations#f5\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An investor who has seen a demo and references it by name is further along than one who has only read a pitch deck.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#q\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A request for a deck and a meeting in the same message, without a prior relationship, can indicate a low-friction screening process rather than serious intent.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Silence after a warm inbound inquiry for over a week is usually a soft no or a deprioritization.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A same-day or next-day reply to a warm inbound investor inquiry keeps the thread hot and signals seriousness.\",\n      \"why\": \"Investors see many companies and move on quickly; a delayed reply reads as low priority or low responsiveness, both of which matter in early-stage fundraising.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Angel investors who reference a specific product demo are more likely to move to a call than those who have only read materials.\",\n      \"why\": \"A demo is a higher-friction engagement than a deck; it signals the investor has already spent time and formed an opinion.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The deck and meeting slot should be sent together in a single reply, with the meeting options pre-filled to reduce friction.\",\n      \"why\": \"Each back-and-forth delays momentum; offering three specific time slots removes the coordination cost and signals respect for the investor's time.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An angel investor asking for a deck without a prior introduction or warm connector is more likely to be a low-conviction inquiry or a portfolio-building exercise.\",\n      \"why\": \"Serious investors often come through warm intros or have already done preliminary diligence; a cold ask for a deck can indicate a low bar for engagement.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Kavita Rao is a serious angel investor with conviction on the company and will move to a call if the deck and meeting slot are sent promptly.\",\n      \"needs\": \"A reply sent within 24 hours; a meeting scheduled within the week; a follow-up from Kavita confirming attendance or rescheduling.\"\n    },\n    {\n      \"proposition\": \"Kavita Rao is running a low-friction screening process and will not move beyond the deck stage without a strong signal from other investors.\",\n      \"needs\": \"A reply to the deck with no follow-up; or a follow-up after a week asking for a meeting with no urgency.\"\n    },\n    {\n      \"proposition\": \"Kavita Rao is a connector or portfolio-operations address, not a decision-maker, and the real investor is someone else.\",\n      \"needs\": \"A reply that asks who the decision-maker is, or a meeting that reveals the structure of her fund or her role in it.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Is Kavita Rao an independent angel or part of a fund? Does she have check-writing authority, or is she a scout or connector?\",\n      \"relevance\": \"This determines whether she is a decision-maker or a gatekeeper, and whether a meeting with her leads to a term sheet or to a partner meeting.\"\n    },\n    {\n      \"question\": \"What is her typical check size, and does it fit the round size the company is raising?\",\n      \"relevance\": \"An angel writing five thousand dollars is a different conversation than one writing fifty thousand; the company's round size and stage determine whether this is a lead investor or a follow-on.\"\n    },\n    {\n      \"question\": \"How did Kavita Rao see the clinic scheduling demo? Was it a public demo, a user, a portfolio company, or a direct introduction?\",\n      \"relevance\": \"This determines how warm the contact is and whether there are other warm paths to her network or to other investors.\"\n    },\n    {\n      \"question\": \"Is there a deadline for the company's seed round, and how many other investors are in active conversation?\",\n      \"relevance\": \"If the round is closing soon and Kavita is the only warm lead, the urgency is high; if the round is open and there are many leads, this is one of many parallel conversations.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm inbound inquiry from an angel investor who has seen the product and is asking for a deck and a meeting this week. The next move is ours: send the deck and propose meeting times. This is a live investor contact at the earliest stage \u2014 a meeting request.\",\n    \"rivals\": [\n      \"A low-friction screening inquiry from an angel running a portfolio-building process, with low conviction and low likelihood of moving beyond the deck stage.\",\n      \"A connector or portfolio-operations inquiry, where Kavita is not the decision-maker and the real investor is someone else.\",\n      \"A test of the company's responsiveness and professionalism, where the investor is evaluating how quickly and professionally the founder moves.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"Kavita Rao identifies herself as an angel investor, asks for the deck and a meeting, and is a live investor contact in the fundraising domain. The brief names no kind of work for this file, but the file's domains tag and the mail's content make it clear this is investor relations work.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"evt_#1\",\n      \"sit:sit_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this file. In investor relations, the expected stage after an inbound inquiry is a meeting request or a deck send. The expected next move is to send the deck and propose meeting times within 24 hours.\",\n    \"actual\": \"The file has been quiet for 0.25 days. No reply has been sent. The ask is open and waiting on the founder.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"After three days, Kavita Rao's inquiry goes unanswered. She moves on to another company or assumes the founder is not responsive. The warm lead cools and is lost. After a week, the inquiry is buried in the inbox and the window to reply has passed.\",\n    \"act\": \"The founder sends the deck and three meeting time slots within 24 hours. Kavita confirms a meeting or proposes an alternative time. A call is scheduled for later in the week. The founder learns Kavita's check size, fund structure, and investment thesis. A decision is made within two weeks.\",\n    \"best\": \"Kavita is a serious angel with conviction and a check size that fits the round. She moves to a call within two days, commits to a follow-on meeting with her fund's partners, and leads or co-leads a seed round. The company gains a warm investor and a connector to her network.\",\n    \"worst\": \"Kavita is a low-conviction scout or connector. She receives the deck, does not reply, or replies weeks later with a pass. The company has spent time on a dead-end lead and lost momentum with other investors by not running the round in parallel.\",\n    \"signals_to_watch\": [\n      \"Kavita's reply time to the deck send: same day or next day signals high interest; more than three days signals low priority.\",\n      \"Whether Kavita confirms a meeting or asks for more information: a confirmed meeting is progress; a request for more information is a soft no.\",\n      \"Whether Kavita mentions other investors, her fund, or her check size: this signals whether she is a decision-maker or a scout.\",\n      \"Whether Kavita's meeting leads to a partners' meeting or a term sheet: this determines whether she is a lead investor or a follow-on.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because Kavita is a warm inbound lead, but she is not yet a committed investor and her check size and fund structure are unknown.\",\n      \"The urgency is medium because Kavita asked for a meeting this week, which is a time-bound ask, but the company is running multiple parallel investor conversations and this is one of many.\",\n      \"A wrong move is reversible: a delayed reply can be recovered with a warm follow-up; a poor deck can be revised; a bad meeting can be followed up with a better one.\",\n      \"The file is quiet for only 0.25 days, so there is still time to reply within the window Kavita named.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the deck and propose three meeting time slots for later this week\",\n    \"for_whom\": \"Kavita Rao\",\n    \"by_when\": \"2026-09-18\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:1\",\n      \"own:3\"\n    ],\n    \"to\": \"kavita.rao.vc@gmail.com\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the deck is not ready or needs revision, send a same-day reply confirming receipt of the inquiry, thanking Kavita for the interest, and proposing a call for tomorrow to discuss the company before sending the deck. This keeps the thread warm and buys time to prepare.\",\n  \"wait_or_stop\": \"Wait if the deck is not ready and needs more than a few hours to prepare; in that case, send a same-day acknowledgment. Stop if Kavita does not reply to the deck send within a week; follow up once with a brief note and a new meeting proposal, then move on to other investors.\",\n  \"done_when\": \"A meeting is scheduled with Kavita for later this week, or she replies with a specific time she prefers. The next stage is the call itself, where the founder learns her conviction, check size, and fund structure.\",\n  \"draft\": \"Hi Kavita, thanks so much for the note and for taking the time to look at the demo \u2014 I'm glad it resonated. I'm attaching the deck. I'm free for a call Thursday at 2pm or 4pm PT, or Friday at 10am or 2pm PT. Let me know what works for you. Looking forward to talking. \u2014 Meera\"\n}",
+  "site": "expert"
+ }
+}

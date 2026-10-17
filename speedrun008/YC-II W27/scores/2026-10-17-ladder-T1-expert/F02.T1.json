@@ -1,0 +1,1075 @@
+{
+ "0d7e0889dde8fc4e504b2aa91b70a53789c1a633f1a3e87a24ee28201b253a9a": {
+  "framed": true,
+  "input_tokens": 10014,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2867,
+  "parsed": {
+   "alternative": "If the founder confirms there is a follow-up step required, create a new task for it with a specific deadline and owner, and close this file as complete on the recognition itself.",
+   "appraisal": {
+    "reasons": [
+     "The recognition has been granted and is not at risk; the stakes are in keeping the work queue clean and the founder's record accurate.",
+     "There is no time pressure: the certificate is available on the portal and can be retrieved at any time.",
+     "Closing the file or leaving it open does not change the fact of the recognition; the decision is reversible."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The open ask is closed, the founder has confirmed whether a follow-up step is needed, and if not, the file is marked complete and the recognition is recorded in the founder's record of accomplishments.",
+   "draft": "StartupSetu has granted recognition to Nimbus Labs Private Limited \u2014 certificate SSR-CERT-2026-11872 is on the portal. The open ask in the file is now closed. Is there a follow-up step you need to take, such as downloading the certificate or filing it elsewhere? If not, I'll mark this complete.",
+   "expected_vs_actual": {
+    "actual": "Recognition was granted on 2026-09-30 07:03 UTC with certificate number SSR-CERT-2026-11872. The file shows an open ask that is now stale, as the request it tracked has been satisfied and the outcome achieved.",
+    "expected": "No playbook has been authored for this file's capability, so no stage is defined. From the brief, the expected outcome was StartupSetu recognition for Nimbus Labs Private Limited.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "StartupSetu asked for a board resolution within seven days, on 2026-09-29 06:00 UTC.",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": "The examiner requires a board resolution authorising the applicant. Upload it on the StartupSetu portal within 7 days, or the application will be closed."
+    },
+    {
+     "claim": "The board resolution was uploaded and received by StartupSetu on 2026-09-30 06:09 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "We have received the board resolution you uploaded. The examiner will review it and update the application."
+    },
+    {
+     "claim": "StartupSetu granted recognition to Nimbus Labs Private Limited on 2026-09-30 07:03 UTC, with certificate number SSR-CERT-2026-11872.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Recognition granted: SSR-2026-48213 Congratulations. Nimbus Labs Private Limited is recognised under the StartupSetu programme. Certificate number SSR-CERT-2026-11872 is available on the portal."
+    },
+    {
+     "claim": "The file shows an open ask from StartupSetu, marked as waiting on us since 2026-09-29 06:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook has been authored for this file's capability.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as compliance work in the domains of admin and fundraising.",
+     "evidence": [
+      "file:kind",
+      "file:domains"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names StartupSetu as a watched item: the startup recognition portal.",
+     "evidence": [
+      "brief:cbl_#28",
+      "file:role"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A compliance milestone has been achieved: StartupSetu recognition was granted on 2026-09-30 07:03 UTC after the founder uploaded the required board resolution. The file's open ask is now stale and should be closed.",
+    "rivals": [
+     "The file is tracking a different obligation that has not yet been satisfied, and the recognition is a side effect of the work rather than its end state.",
+     "There is a follow-up step required from the founder after recognition is granted, such as certificate retrieval or filing, and the file should remain open until that step is complete."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The loop id loop_#1 would need to be checked against the founder's notes or the mail thread to confirm what it actually tracks.",
+     "proposition": "The open ask in the file refers to a different obligation than the board resolution request."
+    },
+    {
+     "needs": "The brief would need to specify whether certificate retrieval or filing is a tracked obligation, or whether the recognition itself is the end state.",
+     "proposition": "The file should remain open because there is a follow-up step required, such as downloading the certificate or filing it with another authority."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "fact:4"
+     ],
+     "claim": "The open ask recorded in the file is now stale: StartupSetu's request for the board resolution was satisfied on 2026-09-30 06:09 UTC, and recognition was granted on 2026-09-30 07:03 UTC, closing the loop that the file still marks as open."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "The file's whose_move field is not written, but the sequence of events shows the turn passed to StartupSetu after the board resolution was uploaded, and they have now completed their review and issued the recognition."
+    },
+    {
+     "based_on": [
+      "brief:cbl_#3",
+      "fact:3"
+     ],
+     "claim": "The work is complete: the goal stated in the brief was StartupSetu recognition for Nimbus Labs Private Limited, and it has been achieved."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-01",
+    "for_whom": "the founder",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f2",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Close the open ask in the file, confirm with the founder whether there is a follow-up step required (such as certificate retrieval or filing), and if not, mark the file as complete and move the recognition to the founder's record.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A compliance milestone that has been achieved should be marked closed and moved to the founder's record of accomplishments, not left open in the active work file.",
+     "kind": "practice",
+     "why": "An open line on a completed task creates noise in the work queue and obscures what still needs attention; it also trains the reader to distrust the ledger's signal."
+    },
+    {
+     "claim": "Government recognition processes typically issue a certificate or formal notice when approval is granted, and that notice is the deliverable.",
+     "kind": "base_rate",
+     "why": "The founder's next step is to retrieve and file the certificate, not to wait for further communication from the portal."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Government recognition portals go quiet during review as a matter of process, not sentiment, and escalating on quietness alone converts a normal wait into a relationship event.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f2"
+     ],
+     "claim": "A ledger that carries a line after the obligation is discharged performs diligence rather than generating a next action, and should be closed rather than carried.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#3"
+    ],
+    "kind": "compliance",
+    "why": "The file is already marked as compliance work, and the dossier confirms it tracks a government recognition application."
+   },
+   "scenarios": {
+    "act": "Close the open ask, mark the file as complete, and move the recognition to the founder's record of accomplishments. If there is a follow-up step (such as certificate retrieval or filing), create a new, specific task for it.",
+    "best": "The founder retrieves the certificate from the portal, files it with the company's records, and the compliance milestone is fully closed. The file is archived and the recognition is recorded as an achievement.",
+    "do_nothing": "The file remains open with a stale ask, creating noise in the work queue and obscuring active obligations. The founder's record does not reflect that the recognition has been achieved. If the file is reviewed again, the stale ask may trigger a false escalation.",
+    "signals_to_watch": [
+     "Whether the founder has retrieved the certificate from the portal.",
+     "Whether there is a follow-up filing or registration step required with another authority.",
+     "Whether the brief's goals have been updated to reflect that this milestone is complete."
+    ],
+    "worst": "The file is left open indefinitely, the stale ask is mistaken for an active obligation, and the founder is prompted to chase StartupSetu for a response that has already been delivered."
+   },
+   "unknowns": [
+    {
+     "question": "What does the open ask loop_#1 actually refer to?",
+     "relevance": "If it refers to the board resolution request, it should be closed; if it refers to a different obligation, the file's status is misread."
+    },
+    {
+     "question": "Is there a next step the founder owes after receiving the recognition certificate, such as filing it with another body or updating company records?",
+     "relevance": "If yes, that step should be tracked; if no, the file should be closed and the recognition moved to the founder's record."
+    },
+    {
+     "question": "Has the founder retrieved the certificate from the portal, or is that step still pending?",
+     "relevance": "If pending, it is a small but real next action; if done, the work is fully complete."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The recognition has been granted and the open ask is stale. Stop carrying the file as active work once the founder confirms whether a follow-up step is required."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"StartupSetu asked for a board resolution within seven days, on 2026-09-29 06:00 UTC.\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": \"The examiner requires a board resolution authorising the applicant. Upload it on the StartupSetu portal within 7 days, or the application will be closed.\"\n    },\n    {\n      \"claim\": \"The board resolution was uploaded and received by StartupSetu on 2026-09-30 06:09 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"We have received the board resolution you uploaded. The examiner will review it and update the application.\"\n    },\n    {\n      \"claim\": \"StartupSetu granted recognition to Nimbus Labs Private Limited on 2026-09-30 07:03 UTC, with certificate number SSR-CERT-2026-11872.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Recognition granted: SSR-2026-48213 Congratulations. Nimbus Labs Private Limited is recognised under the StartupSetu programme. Certificate number SSR-CERT-2026-11872 is available on the portal.\"\n    },\n    {\n      \"claim\": \"The file shows an open ask from StartupSetu, marked as waiting on us since 2026-09-29 06:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook has been authored for this file's capability.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as compliance work in the domains of admin and fundraising.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:domains\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names StartupSetu as a watched item: the startup recognition portal.\",\n      \"evidence\": [\n        \"brief:cbl_#28\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The open ask recorded in the file is now stale: StartupSetu's request for the board resolution was satisfied on 2026-09-30 06:09 UTC, and recognition was granted on 2026-09-30 07:03 UTC, closing the loop that the file still marks as open.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"The file's whose_move field is not written, but the sequence of events shows the turn passed to StartupSetu after the board resolution was uploaded, and they have now completed their review and issued the recognition.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The work is complete: the goal stated in the brief was StartupSetu recognition for Nimbus Labs Private Limited, and it has been achieved.\",\n      \"based_on\": [\n        \"brief:cbl_#3\",\n        \"fact:3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Government recognition portals go quiet during review as a matter of process, not sentiment, and escalating on quietness alone converts a normal wait into a relationship event.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A ledger that carries a line after the obligation is discharged performs diligence rather than generating a next action, and should be closed rather than carried.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A compliance milestone that has been achieved should be marked closed and moved to the founder's record of accomplishments, not left open in the active work file.\",\n      \"why\": \"An open line on a completed task creates noise in the work queue and obscures what still needs attention; it also trains the reader to distrust the ledger's signal.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Government recognition processes typically issue a certificate or formal notice when approval is granted, and that notice is the deliverable.\",\n      \"why\": \"The founder's next step is to retrieve and file the certificate, not to wait for further communication from the portal.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The open ask in the file refers to a different obligation than the board resolution request.\",\n      \"needs\": \"The loop id loop_#1 would need to be checked against the founder's notes or the mail thread to confirm what it actually tracks.\"\n    },\n    {\n      \"proposition\": \"The file should remain open because there is a follow-up step required, such as downloading the certificate or filing it with another authority.\",\n      \"needs\": \"The brief would need to specify whether certificate retrieval or filing is a tracked obligation, or whether the recognition itself is the end state.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does the open ask loop_#1 actually refer to?\",\n      \"relevance\": \"If it refers to the board resolution request, it should be closed; if it refers to a different obligation, the file's status is misread.\"\n    },\n    {\n      \"question\": \"Is there a next step the founder owes after receiving the recognition certificate, such as filing it with another body or updating company records?\",\n      \"relevance\": \"If yes, that step should be tracked; if no, the file should be closed and the recognition moved to the founder's record.\"\n    },\n    {\n      \"question\": \"Has the founder retrieved the certificate from the portal, or is that step still pending?\",\n      \"relevance\": \"If pending, it is a small but real next action; if done, the work is fully complete.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A compliance milestone has been achieved: StartupSetu recognition was granted on 2026-09-30 07:03 UTC after the founder uploaded the required board resolution. The file's open ask is now stale and should be closed.\",\n    \"rivals\": [\n      \"The file is tracking a different obligation that has not yet been satisfied, and the recognition is a side effect of the work rather than its end state.\",\n      \"There is a follow-up step required from the founder after recognition is granted, such as certificate retrieval or filing, and the file should remain open until that step is complete.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"compliance\",\n    \"why\": \"The file is already marked as compliance work, and the dossier confirms it tracks a government recognition application.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#3\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook has been authored for this file's capability, so no stage is defined. From the brief, the expected outcome was StartupSetu recognition for Nimbus Labs Private Limited.\",\n    \"actual\": \"Recognition was granted on 2026-09-30 07:03 UTC with certificate number SSR-CERT-2026-11872. The file shows an open ask that is now stale, as the request it tracked has been satisfied and the outcome achieved.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open with a stale ask, creating noise in the work queue and obscuring active obligations. The founder's record does not reflect that the recognition has been achieved. If the file is reviewed again, the stale ask may trigger a false escalation.\",\n    \"act\": \"Close the open ask, mark the file as complete, and move the recognition to the founder's record of accomplishments. If there is a follow-up step (such as certificate retrieval or filing), create a new, specific task for it.\",\n    \"best\": \"The founder retrieves the certificate from the portal, files it with the company's records, and the compliance milestone is fully closed. The file is archived and the recognition is recorded as an achievement.\",\n    \"worst\": \"The file is left open indefinitely, the stale ask is mistaken for an active obligation, and the founder is prompted to chase StartupSetu for a response that has already been delivered.\",\n    \"signals_to_watch\": [\n      \"Whether the founder has retrieved the certificate from the portal.\",\n      \"Whether there is a follow-up filing or registration step required with another authority.\",\n      \"Whether the brief's goals have been updated to reflect that this milestone is complete.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The recognition has been granted and is not at risk; the stakes are in keeping the work queue clean and the founder's record accurate.\",\n      \"There is no time pressure: the certificate is available on the portal and can be retrieved at any time.\",\n      \"Closing the file or leaving it open does not change the fact of the recognition; the decision is reversible.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Close the open ask in the file, confirm with the founder whether there is a follow-up step required (such as certificate retrieval or filing), and if not, mark the file as complete and move the recognition to the founder's record.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-10-01\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f2\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder confirms there is a follow-up step required, create a new task for it with a specific deadline and owner, and close this file as complete on the recognition itself.\",\n  \"wait_or_stop\": \"Do not wait. The recognition has been granted and the open ask is stale. Stop carrying the file as active work once the founder confirms whether a follow-up step is required.\",\n  \"done_when\": \"The open ask is closed, the founder has confirmed whether a follow-up step is needed, and if not, the file is marked complete and the recognition is recorded in the founder's record of accomplishments.\",\n  \"draft\": \"StartupSetu has granted recognition to Nimbus Labs Private Limited \u2014 certificate SSR-CERT-2026-11872 is on the portal. The open ask in the file is now closed. Is there a follow-up step you need to take, such as downloading the certificate or filing it elsewhere? If not, I'll mark this complete.\"\n}",
+  "site": "expert"
+ },
+ "223ceb02dc6043c3f6533934b0f15df4729decb9b772b0a3453ca12238a6a998": {
+  "framed": true,
+  "input_tokens": 7129,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2332,
+  "parsed": {
+   "alternative": "If the founder confirms the document has been retrieved and stored, close the file. If the founder confirms it is needed for StartupSetu or another active program, set a reminder to verify its submission by the program's deadline.",
+   "appraisal": {
+    "reasons": [
+     "The document is a compliance requirement for StartupSetu recognition, which is a goal in the brief, so its retrieval matters to the company's progress",
+     "The notification was sent today; there is no stated deadline for retrieval, and government systems typically allow access for weeks or months",
+     "If the document is not retrieved in time, it can be re-requested from DigiVault, so the error is recoverable"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The founder has retrieved the Certificate of Incorporation from DigiVault, confirmed its accuracy, and either stored it for future use or submitted it to the program or application that requires it.",
+   "draft": "Did you retrieve the Certificate of Incorporation from DigiVault? Is it needed for StartupSetu or any of the other programs we're in?",
+   "expected_vs_actual": {
+    "actual": "DigiVault has notified the founder that the document is ready; the founder has not yet retrieved it or confirmed retrieval",
+    "expected": "No playbook is authored for this file; from the brief, the expected stage is that the Certificate of Incorporation is issued and available for retrieval as part of the StartupSetu recognition work",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "DigiVault sent a notification that a Certificate of Incorporation for Nimbus Labs Private Limited has been issued to the account",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Document issued to your DigiVault A Certificate of Incorporation for Nimbus Labs Private Limited has been issued to your DigiVault account. Sign in to view it."
+    },
+    {
+     "claim": "This is the only communication in the file, sent on 2026-09-23 at 09:10 UTC",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.37 days since the last touch",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises were made in the mail",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "We have not written in this file",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as compliance work and DigiVault is listed as a watched counterparty in the brief",
+     "evidence": [
+      "file:kind",
+      "file:role",
+      "brief:cbl_#21"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A government document locker has notified the founder that a compliance document is ready for retrieval; the founder must retrieve and file it",
+    "rivals": [
+     "A counterparty has sent a message requiring a reply or action from the founder",
+     "A compliance deadline is approaching and this document is blocking progress"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation that the StartupSetu application is still active and that this document is a required input",
+     "proposition": "The Certificate of Incorporation is needed for the StartupSetu recognition application"
+    },
+    {
+     "needs": "A note in the file or a message from the founder confirming retrieval and filing",
+     "proposition": "The document has already been retrieved and stored by the founder"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "none:promises"
+     ],
+     "claim": "This is a notification of a completed administrative action, not a request or a commitment requiring a response"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "none:we_wrote"
+     ],
+     "claim": "The ball is in our court to retrieve and review the document, not in DigiVault's court"
+    },
+    {
+     "based_on": [
+      "sit:sit_#1",
+      "fact:1"
+     ],
+     "claim": "The file's situation is account administration: a live account with a positive event (document issued) and no open ask"
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-24",
+    "for_whom": "the founder",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "cap:admin.executive_support.commitment_tracking#f3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "inference:2",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "confirm with the founder whether the Certificate of Incorporation has been retrieved from DigiVault and whether it is needed for any active application or compliance work",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A notification that a document has been issued to a government account is a completion signal, not the start of a conversation",
+     "kind": "practice",
+     "why": "The counterparty has discharged its obligation; the founder's obligation is to retrieve and store the document for compliance purposes"
+    },
+    {
+     "claim": "Compliance documents issued by government systems should be retrieved and filed within a week of notification to avoid loss of access or expiry of temporary links",
+     "kind": "base_rate",
+     "why": "Government portals often expire access links or require periodic re-authentication; delay risks having to re-request the document"
+    },
+    {
+     "claim": "Treating a document-ready notification as requiring a reply to the issuer is a common administrative error that creates noise without value",
+     "kind": "counter_pattern",
+     "why": "No-reply addresses and automated systems do not read replies; the only move that matters is retrieval and storage"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "file:role"
+     ],
+     "claim": "Government document lockers send notifications when documents are ready; the recipient's next move is to retrieve and file them, not to reply",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence from government systems is normal process, not disinterest or a signal requiring escalation",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:role",
+     "brief:cbl_#21"
+    ],
+    "kind": "compliance",
+    "why": "The dossier marks this as compliance work; DigiVault is a government document locker; the document is a Certificate of Incorporation required for regulatory recognition"
+   },
+   "scenarios": {
+    "act": "The founder retrieves the document, reviews it for accuracy, and stores it in the company's records. If it is needed for StartupSetu or another program, it is now available for submission.",
+    "best": "The document is correct, the founder retrieves it immediately, and it is used to complete the StartupSetu recognition application on schedule.",
+    "do_nothing": "The document remains in the DigiVault account unreviewed. If it is needed for an active application, its absence will delay or block that work. If the access link expires, the founder will have to re-request it.",
+    "signals_to_watch": [
+     "A message from the founder confirming retrieval and storage of the document",
+     "A request from StartupSetu or another program for the Certificate of Incorporation",
+     "A follow-up notification from DigiVault indicating the access link has expired"
+    ],
+    "worst": "The document contains an error or is incomplete; the founder does not retrieve it in time; the access link expires; or the document is needed urgently and the founder is unaware of its arrival."
+   },
+   "unknowns": [
+    {
+     "question": "Has the founder retrieved and stored the Certificate of Incorporation from the DigiVault account",
+     "relevance": "If not, the next move is retrieval; if yes, the file can be closed"
+    },
+    {
+     "question": "Is this document required for any of the active applications or compliance work in motion",
+     "relevance": "If it is required for StartupSetu or another program, its retrieval is time-sensitive; if it is not, it can be retrieved at leisure"
+    }
+   ],
+   "wait_or_stop": "Wait until the founder confirms retrieval. Stop if the founder confirms the document has been retrieved and is not needed for any active work. Stop if the founder confirms it has been submitted to StartupSetu or another program."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"DigiVault sent a notification that a Certificate of Incorporation for Nimbus Labs Private Limited has been issued to the account\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Document issued to your DigiVault A Certificate of Incorporation for Nimbus Labs Private Limited has been issued to your DigiVault account. Sign in to view it.\"\n    },\n    {\n      \"claim\": \"This is the only communication in the file, sent on 2026-09-23 at 09:10 UTC\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.37 days since the last touch\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises were made in the mail\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"We have not written in this file\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as compliance work and DigiVault is listed as a watched counterparty in the brief\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\",\n        \"brief:cbl_#21\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a notification of a completed administrative action, not a request or a commitment requiring a response\",\n      \"based_on\": [\n        \"fact:1\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in our court to retrieve and review the document, not in DigiVault's court\",\n      \"based_on\": [\n        \"fact:1\",\n        \"none:we_wrote\"\n      ]\n    },\n    {\n      \"claim\": \"The file's situation is account administration: a live account with a positive event (document issued) and no open ask\",\n      \"based_on\": [\n        \"sit:sit_#1\",\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Government document lockers send notifications when documents are ready; the recipient's next move is to retrieve and file them, not to reply\",\n      \"based_on\": [\n        \"file:role\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Administrative silence from government systems is normal process, not disinterest or a signal requiring escalation\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A notification that a document has been issued to a government account is a completion signal, not the start of a conversation\",\n      \"why\": \"The counterparty has discharged its obligation; the founder's obligation is to retrieve and store the document for compliance purposes\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Compliance documents issued by government systems should be retrieved and filed within a week of notification to avoid loss of access or expiry of temporary links\",\n      \"why\": \"Government portals often expire access links or require periodic re-authentication; delay risks having to re-request the document\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Treating a document-ready notification as requiring a reply to the issuer is a common administrative error that creates noise without value\",\n      \"why\": \"No-reply addresses and automated systems do not read replies; the only move that matters is retrieval and storage\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The Certificate of Incorporation is needed for the StartupSetu recognition application\",\n      \"needs\": \"Confirmation that the StartupSetu application is still active and that this document is a required input\"\n    },\n    {\n      \"proposition\": \"The document has already been retrieved and stored by the founder\",\n      \"needs\": \"A note in the file or a message from the founder confirming retrieval and filing\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the founder retrieved and stored the Certificate of Incorporation from the DigiVault account\",\n      \"relevance\": \"If not, the next move is retrieval; if yes, the file can be closed\"\n    },\n    {\n      \"question\": \"Is this document required for any of the active applications or compliance work in motion\",\n      \"relevance\": \"If it is required for StartupSetu or another program, its retrieval is time-sensitive; if it is not, it can be retrieved at leisure\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A government document locker has notified the founder that a compliance document is ready for retrieval; the founder must retrieve and file it\",\n    \"rivals\": [\n      \"A counterparty has sent a message requiring a reply or action from the founder\",\n      \"A compliance deadline is approaching and this document is blocking progress\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"compliance\",\n    \"why\": \"The dossier marks this as compliance work; DigiVault is a government document locker; the document is a Certificate of Incorporation required for regulatory recognition\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:role\",\n      \"brief:cbl_#21\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook is authored for this file; from the brief, the expected stage is that the Certificate of Incorporation is issued and available for retrieval as part of the StartupSetu recognition work\",\n    \"actual\": \"DigiVault has notified the founder that the document is ready; the founder has not yet retrieved it or confirmed retrieval\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The document remains in the DigiVault account unreviewed. If it is needed for an active application, its absence will delay or block that work. If the access link expires, the founder will have to re-request it.\",\n    \"act\": \"The founder retrieves the document, reviews it for accuracy, and stores it in the company's records. If it is needed for StartupSetu or another program, it is now available for submission.\",\n    \"best\": \"The document is correct, the founder retrieves it immediately, and it is used to complete the StartupSetu recognition application on schedule.\",\n    \"worst\": \"The document contains an error or is incomplete; the founder does not retrieve it in time; the access link expires; or the document is needed urgently and the founder is unaware of its arrival.\",\n    \"signals_to_watch\": [\n      \"A message from the founder confirming retrieval and storage of the document\",\n      \"A request from StartupSetu or another program for the Certificate of Incorporation\",\n      \"A follow-up notification from DigiVault indicating the access link has expired\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The document is a compliance requirement for StartupSetu recognition, which is a goal in the brief, so its retrieval matters to the company's progress\",\n      \"The notification was sent today; there is no stated deadline for retrieval, and government systems typically allow access for weeks or months\",\n      \"If the document is not retrieved in time, it can be re-requested from DigiVault, so the error is recoverable\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"confirm with the founder whether the Certificate of Incorporation has been retrieved from DigiVault and whether it is needed for any active application or compliance work\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-24\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"inference:2\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"cap:admin.executive_support.commitment_tracking#f3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder confirms the document has been retrieved and stored, close the file. If the founder confirms it is needed for StartupSetu or another active program, set a reminder to verify its submission by the program's deadline.\",\n  \"wait_or_stop\": \"Wait until the founder confirms retrieval. Stop if the founder confirms the document has been retrieved and is not needed for any active work. Stop if the founder confirms it has been submitted to StartupSetu or another program.\",\n  \"done_when\": \"The founder has retrieved the Certificate of Incorporation from DigiVault, confirmed its accuracy, and either stored it for future use or submitted it to the program or application that requires it.\",\n  \"draft\": \"Did you retrieve the Certificate of Incorporation from DigiVault? Is it needed for StartupSetu or any of the other programs we're in?\"\n}",
+  "site": "expert"
+ },
+ "55f64b94e2655fa2adb3a6dac6719f1ecbb3252b78970e7deb6f3d40ecae7ca3": {
+  "framed": true,
+  "input_tokens": 7023,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2513,
+  "parsed": {
+   "alternative": "Wait until the StartupSetu file shows activity (a message from StartupSetu or a note from the founder that the application has been submitted), which would confirm that the certificate has been retrieved and used.",
+   "appraisal": {
+    "reasons": [
+     "The certificate is required for StartupSetu recognition, which is a goal in the brief, but it is not blocking other work in motion.",
+     "The notification arrived today; there is no stated deadline, and the file has been quiet for less than a day.",
+     "If the founder has already retrieved the certificate, the file is complete and no action is needed. If not, retrieval is a simple step that can be done at any time before the StartupSetu deadline."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The founder confirms that the certificate has been retrieved from DigiVault and is ready for use, or the StartupSetu file shows that the application has been submitted with the certificate included.",
+   "draft": "DigiVault just notified us that your Certificate of Incorporation is ready in your account. Have you retrieved it? Is it the last piece you need for StartupSetu, or are you waiting on other documents?",
+   "expected_vs_actual": {
+    "actual": "A notification has arrived; no retrieval or use has been recorded in the file.",
+    "expected": "No playbook exists for this file. In a typical compliance workflow, a document notification would be followed by retrieval and use; the file would then close.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "DigiVault issued a Certificate of Incorporation for Nimbus Labs Private Limited to the founder's account on 2026-09-23 at 09:10 UTC.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Document issued to your DigiVault A Certificate of Incorporation for Nimbus Labs Private Limited has been issued to your DigiVault account. Sign in to view it."
+    },
+    {
+     "claim": "This is the only communication in the file; no prior touches exist.",
+     "evidence": [
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.37 days since the message arrived.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was made in the mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as watched in the brief because DigiVault holds the documents for the StartupSetu recognition application.",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#21"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The founder has an active StartupSetu recognition application in motion.",
+     "evidence": [
+      "brief:cbl_#20"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file's capability.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A government document locker has notified the founder that a required compliance document is ready for retrieval. The founder must retrieve it and use it for the StartupSetu recognition application.",
+    "rivals": [
+     "The certificate has already been retrieved and is in use; the notification is a confirmation, not a call to action.",
+     "The certificate is one of several documents needed for StartupSetu; this file tracks only one piece of a larger compliance workflow."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder or a signal in the StartupSetu file that the certificate was submitted.",
+     "proposition": "The founder has already retrieved the certificate and is using it for the StartupSetu application."
+    },
+    {
+     "needs": "A question to the founder about the status of the StartupSetu application and what is blocking it.",
+     "proposition": "The founder has not yet retrieved the certificate because they are waiting for other documents or approvals."
+    },
+    {
+     "needs": "Confirmation from the founder that this is the case, and a date by which they will submit.",
+     "proposition": "The certificate is the last piece needed for StartupSetu recognition, and the founder is ready to submit."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:5",
+      "brief:cbl_#20"
+     ],
+     "claim": "The Certificate of Incorporation is a deliverable the founder needed for the StartupSetu recognition application."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "none:we_wrote"
+     ],
+     "claim": "The next move is the founder's: to retrieve and use the certificate, or to confirm it is ready for submission."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "evt_#1"
+     ],
+     "claim": "This is a notification of document availability, not a request or a commitment that requires a response from the founder."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-24",
+    "for_whom": "the founder",
+    "guided_by": [
+     "own:3",
+     "cap:admin.executive_support.commitment_tracking#f2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "inference:2",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "ask the founder whether the certificate has been retrieved from DigiVault and is ready for use in the StartupSetu application",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A document notification is complete when the document is in hand; chasing the issuer before retrieving it is premature.",
+     "kind": "practice",
+     "why": "The issuer has done their part; the next step belongs to the recipient."
+    },
+    {
+     "claim": "Compliance documents issued by government systems are usually stable and do not require follow-up unless there is an error or a deadline.",
+     "kind": "base_rate",
+     "why": "These systems are designed to deliver documents reliably; the risk of loss or corruption is low."
+    },
+    {
+     "claim": "A file tracking a document's availability should close once the document is confirmed in hand and used.",
+     "kind": "practice",
+     "why": "Carrying a closed task inflates the ledger and obscures the work that still needs doing."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "file:role"
+     ],
+     "claim": "Government document lockers send notifications when documents are ready; the recipient's next move is to retrieve them.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence from government systems is normal process, not disinterest.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:domains",
+     "brief:cbl_#21"
+    ],
+    "kind": "compliance",
+    "why": "The file is marked as compliance in the brief, and the message is a notification from a government document system about a certificate of incorporation."
+   },
+   "scenarios": {
+    "act": "The founder confirms whether the certificate has been retrieved and is ready for use, or retrieves it now if not yet done.",
+    "best": "The founder has already retrieved the certificate and is using it for StartupSetu; the file closes, and the application proceeds on schedule.",
+    "do_nothing": "The certificate remains in the DigiVault account, unconfirmed as retrieved. If the founder needs it for StartupSetu, the application may be delayed. If the founder has already retrieved it, nothing changes.",
+    "signals_to_watch": [
+     "A message from StartupSetu indicating that the application has been received or is under review.",
+     "A message from the founder confirming that the certificate has been retrieved and submitted.",
+     "A message from DigiVault or StartupSetu indicating an error or a request for a different version of the certificate."
+    ],
+    "worst": "The founder does not retrieve the certificate in time, and the StartupSetu application is delayed or rejected due to missing documentation."
+   },
+   "unknowns": [
+    {
+     "question": "Has the founder retrieved the certificate from DigiVault?",
+     "relevance": "If yes, the file is complete and should close. If no, the next move is to retrieve it, and the file should track that."
+    },
+    {
+     "question": "Is the certificate the last document needed for the StartupSetu application, or are others still pending?",
+     "relevance": "If it is the last one, the founder can submit immediately. If others are pending, this file is not blocking the application."
+    },
+    {
+     "question": "What is the deadline for the StartupSetu application?",
+     "relevance": "If there is a deadline, it determines the urgency of retrieving and using the certificate. If there is none, the file has no time pressure."
+    }
+   ],
+   "wait_or_stop": "Wait until the founder confirms the certificate is in hand. Stop tracking this file once the founder confirms retrieval and the certificate is in use for StartupSetu, or once the StartupSetu application is submitted."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"DigiVault issued a Certificate of Incorporation for Nimbus Labs Private Limited to the founder's account on 2026-09-23 at 09:10 UTC.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Document issued to your DigiVault A Certificate of Incorporation for Nimbus Labs Private Limited has been issued to your DigiVault account. Sign in to view it.\"\n    },\n    {\n      \"claim\": \"This is the only communication in the file; no prior touches exist.\",\n      \"evidence\": [\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.37 days since the message arrived.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was made in the mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as watched in the brief because DigiVault holds the documents for the StartupSetu recognition application.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#21\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The founder has an active StartupSetu recognition application in motion.\",\n      \"evidence\": [\n        \"brief:cbl_#20\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file's capability.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The Certificate of Incorporation is a deliverable the founder needed for the StartupSetu recognition application.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:5\",\n        \"brief:cbl_#20\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is the founder's: to retrieve and use the certificate, or to confirm it is ready for submission.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"none:we_wrote\"\n      ]\n    },\n    {\n      \"claim\": \"This is a notification of document availability, not a request or a commitment that requires a response from the founder.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"evt_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Government document lockers send notifications when documents are ready; the recipient's next move is to retrieve them.\",\n      \"based_on\": [\n        \"file:role\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Administrative silence from government systems is normal process, not disinterest.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A document notification is complete when the document is in hand; chasing the issuer before retrieving it is premature.\",\n      \"why\": \"The issuer has done their part; the next step belongs to the recipient.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Compliance documents issued by government systems are usually stable and do not require follow-up unless there is an error or a deadline.\",\n      \"why\": \"These systems are designed to deliver documents reliably; the risk of loss or corruption is low.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A file tracking a document's availability should close once the document is confirmed in hand and used.\",\n      \"why\": \"Carrying a closed task inflates the ledger and obscures the work that still needs doing.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The founder has already retrieved the certificate and is using it for the StartupSetu application.\",\n      \"needs\": \"Confirmation from the founder or a signal in the StartupSetu file that the certificate was submitted.\"\n    },\n    {\n      \"proposition\": \"The founder has not yet retrieved the certificate because they are waiting for other documents or approvals.\",\n      \"needs\": \"A question to the founder about the status of the StartupSetu application and what is blocking it.\"\n    },\n    {\n      \"proposition\": \"The certificate is the last piece needed for StartupSetu recognition, and the founder is ready to submit.\",\n      \"needs\": \"Confirmation from the founder that this is the case, and a date by which they will submit.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the founder retrieved the certificate from DigiVault?\",\n      \"relevance\": \"If yes, the file is complete and should close. If no, the next move is to retrieve it, and the file should track that.\"\n    },\n    {\n      \"question\": \"Is the certificate the last document needed for the StartupSetu application, or are others still pending?\",\n      \"relevance\": \"If it is the last one, the founder can submit immediately. If others are pending, this file is not blocking the application.\"\n    },\n    {\n      \"question\": \"What is the deadline for the StartupSetu application?\",\n      \"relevance\": \"If there is a deadline, it determines the urgency of retrieving and using the certificate. If there is none, the file has no time pressure.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A government document locker has notified the founder that a required compliance document is ready for retrieval. The founder must retrieve it and use it for the StartupSetu recognition application.\",\n    \"rivals\": [\n      \"The certificate has already been retrieved and is in use; the notification is a confirmation, not a call to action.\",\n      \"The certificate is one of several documents needed for StartupSetu; this file tracks only one piece of a larger compliance workflow.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"compliance\",\n    \"why\": \"The file is marked as compliance in the brief, and the message is a notification from a government document system about a certificate of incorporation.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:domains\",\n      \"brief:cbl_#21\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook exists for this file. In a typical compliance workflow, a document notification would be followed by retrieval and use; the file would then close.\",\n    \"actual\": \"A notification has arrived; no retrieval or use has been recorded in the file.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The certificate remains in the DigiVault account, unconfirmed as retrieved. If the founder needs it for StartupSetu, the application may be delayed. If the founder has already retrieved it, nothing changes.\",\n    \"act\": \"The founder confirms whether the certificate has been retrieved and is ready for use, or retrieves it now if not yet done.\",\n    \"best\": \"The founder has already retrieved the certificate and is using it for StartupSetu; the file closes, and the application proceeds on schedule.\",\n    \"worst\": \"The founder does not retrieve the certificate in time, and the StartupSetu application is delayed or rejected due to missing documentation.\",\n    \"signals_to_watch\": [\n      \"A message from StartupSetu indicating that the application has been received or is under review.\",\n      \"A message from the founder confirming that the certificate has been retrieved and submitted.\",\n      \"A message from DigiVault or StartupSetu indicating an error or a request for a different version of the certificate.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The certificate is required for StartupSetu recognition, which is a goal in the brief, but it is not blocking other work in motion.\",\n      \"The notification arrived today; there is no stated deadline, and the file has been quiet for less than a day.\",\n      \"If the founder has already retrieved the certificate, the file is complete and no action is needed. If not, retrieval is a simple step that can be done at any time before the StartupSetu deadline.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"ask the founder whether the certificate has been retrieved from DigiVault and is ready for use in the StartupSetu application\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-24\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"inference:2\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"own:3\",\n      \"cap:admin.executive_support.commitment_tracking#f2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Wait until the StartupSetu file shows activity (a message from StartupSetu or a note from the founder that the application has been submitted), which would confirm that the certificate has been retrieved and used.\",\n    \"wait_or_stop\": \"Wait until the founder confirms the certificate is in hand. Stop tracking this file once the founder confirms retrieval and the certificate is in use for StartupSetu, or once the StartupSetu application is submitted.\",\n  \"done_when\": \"The founder confirms that the certificate has been retrieved from DigiVault and is ready for use, or the StartupSetu file shows that the application has been submitted with the certificate included.\",\n  \"draft\": \"DigiVault just notified us that your Certificate of Incorporation is ready in your account. Have you retrieved it? Is it the last piece you need for StartupSetu, or are you waiting on other documents?\"\n}",
+  "site": "expert"
+ },
+ "d49fb9267e6a3de4b8aa080c10b360a529bcec640d9f3713fb8f05f1c56c9201": {
+  "framed": true,
+  "input_tokens": 9906,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2911,
+  "parsed": {
+   "alternative": "Close the file as complete, log the certificate in a reference file for use in fundraising, and move the recognition to a closed wins list.",
+   "appraisal": {
+    "reasons": [
+     "The recognition has been granted and is not at risk; the stakes are in deploying it effectively, not in securing it.",
+     "No deadline is pending; the certificate is available on the portal and can be retrieved at any time.",
+     "If the file is closed prematurely, it can be reopened; if it is left open, it can be closed later without loss."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "low"
+   },
+   "done_when": "The founder confirms the certificate is retrieved and ready to use, or the file is closed with the certificate logged for reference.",
+   "draft": "The StartupSetu recognition came through on the 30th \u2014 certificate SSR-CERT-2026-11872 is live on the portal. Have you pulled it down? And what was the open ask on this one \u2014 is that resolved now, or is there another step?",
+   "expected_vs_actual": {
+    "actual": "Recognition has been granted with certificate number SSR-CERT-2026-11872, issued on 2026-09-30 07:03 UTC.",
+    "expected": "No playbook is authored for this file, so expected outcomes are not defined. From the brief, the goal was 'StartupSetu recognition for Nimbus Labs Private Limited', which has been achieved.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "StartupSetu granted recognition to Nimbus Labs Private Limited on 2026-09-30 07:03 UTC with certificate number SSR-CERT-2026-11872.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Recognition granted: SSR-2026-48213 Congratulations. Nimbus Labs Private Limited is recognised under the StartupSetu programme. Certificate number SSR-CERT-2026-11872 is available on the portal."
+    },
+    {
+     "claim": "StartupSetu received the board resolution document on 2026-09-30 06:09 UTC, the document that was requested as a clarification.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Application SSR-2026-48213: document received Dear Applicant, We have received the board resolution you uploaded. The examiner will review it and update the application."
+    },
+    {
+     "claim": "StartupSetu requested a board resolution on 2026-09-29 06:00 UTC with a seven-day deadline.",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": "Application SSR-2026-48213: clarification required Dear Applicant, The examiner requires a board resolution authorising the applicant. Upload it on the StartupSetu portal within 7 days, or the application will be closed."
+    },
+    {
+     "claim": "The file shows an open ask from StartupSetu since 2026-09-29 06:00 UTC, marked as 'they wait on us'.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as compliance work, in the domains of admin and fundraising, and is on the watchlist.",
+     "evidence": [
+      "file:kind",
+      "file:domains",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook has been authored for this file's capability.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has not been written to by the company.",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows two active situations: an investor_relationship (fundraising) and an account_admin (admin), both last seen on 2026-09-30.",
+     "evidence": [
+      "sit:sit_#1",
+      "sit:sit_#2"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A compliance milestone has been completed: StartupSetu has granted recognition and issued a certificate. The file should be closed unless a next step is pending.",
+    "rivals": [
+     "The file is tracking an ongoing relationship with StartupSetu that requires periodic renewal or reporting.",
+     "The open ask refers to a different step in the process, and the recognition is not yet final.",
+     "The file is being used to track the deployment of the certificate in fundraising, and the investor_relationship situation is the real work."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The dossier to show what the open ask actually names, or a message from the founder clarifying what was outstanding.",
+     "proposition": "The open ask 'they wait on us' refers to a different step in the StartupSetu process, not the board resolution."
+    },
+    {
+     "needs": "Confirmation from the founder or from StartupSetu's process documentation whether the certificate is automatically available or requires an action.",
+     "proposition": "The certificate must be downloaded or formally accepted on the portal to be considered fully delivered."
+    },
+    {
+     "needs": "Clarification of whether the two situations are independent or whether the recognition is a supporting asset in the fundraising work.",
+     "proposition": "The investor_relationship situation on this file refers to the use of the recognition in fundraising conversations, not to a separate investor relationship."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:4"
+     ],
+     "claim": "The open ask marked 'they wait on us' is now closed: StartupSetu has completed its review and granted recognition, so the ask no longer holds."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3"
+     ],
+     "claim": "The board resolution was uploaded and accepted within the seven-day window, meeting the requirement."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "inference:1"
+     ],
+     "claim": "This file represents a completed compliance milestone, not an ongoing obligation."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:8"
+     ],
+     "claim": "The file's two situations (investor_relationship and account_admin) are both now resolved on the StartupSetu side, though the investor_relationship situation may refer to the broader fundraising context rather than this specific compliance work."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-10-01",
+    "for_whom": "the founder",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f2",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:4",
+     "inference:1",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "confirm with the founder whether the certificate has been retrieved and whether it is ready to deploy, and clarify what the open ask refers to",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A government recognition granted and certified should be logged as a closed win and filed for future reference, not carried as an open item.",
+     "kind": "practice",
+     "why": "Carrying completed compliance work as open creates noise in the file system and obscures what actually needs attention."
+    },
+    {
+     "claim": "Startup recognition certificates are typically used for investor credibility, bank account opening, or government scheme eligibility; the next move is usually to deploy it, not to track it.",
+     "kind": "base_rate",
+     "why": "The certificate's value lies in its use, and the file should close once it is in hand unless a specific deployment is pending."
+    },
+    {
+     "claim": "A compliance file that shows a completed outcome but remains open in the system often indicates the file was not closed because no one confirmed the outcome was final.",
+     "kind": "counter_pattern",
+     "why": "Ambiguity about finality keeps files alive; explicit closure requires someone to say 'this is done'."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Government recognition portals typically go quiet during document review, then issue a decision; silence during review is normal process, not disinterest.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "A compliance milestone that has been granted and certified is complete and requires no further action unless the certificate must be filed or used elsewhere.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:domains",
+     "evt_#1"
+    ],
+    "kind": "compliance",
+    "why": "The dossier marks it as compliance work, and the facts show a government recognition application and its successful completion."
+   },
+   "scenarios": {
+    "act": "The founder confirms the certificate is in hand, closes the file, and logs the certificate for use in investor conversations and other applications.",
+    "best": "The recognition is deployed immediately in the next investor pitch or bank account application, adding credibility and removing friction from those processes.",
+    "do_nothing": "The file remains open with an unresolved open ask. The certificate sits on the portal unused. The founder does not deploy the recognition in fundraising or other contexts where it could add credibility.",
+    "signals_to_watch": [
+     "Whether the founder mentions the certificate in investor conversations or other contexts.",
+     "Whether the file is closed or remains open after this review.",
+     "Whether the open ask is clarified or resolved."
+    ],
+    "worst": "The certificate is never retrieved or used, and the file remains open indefinitely, creating confusion about whether the work is complete."
+   },
+   "unknowns": [
+    {
+     "question": "What does the open ask 'they wait on us' actually refer to, given that the recognition has been granted?",
+     "relevance": "If the ask is already satisfied, the file should be closed; if it refers to something else, the next move depends on what it is."
+    },
+    {
+     "question": "Has the founder downloaded the certificate or taken any action to deploy it?",
+     "relevance": "The file's next move depends on whether the certificate is now in hand and ready to use, or whether retrieval is still pending."
+    },
+    {
+     "question": "Is the investor_relationship situation on this file a separate relationship with an investor, or a reference to the broader fundraising context?",
+     "relevance": "If it is a separate investor relationship, the file may need different handling; if it is contextual, the file is purely compliance."
+    }
+   ],
+   "wait_or_stop": "Wait until the founder confirms the certificate is in hand. Stop if the founder confirms the certificate has been deployed or filed; stop if the founder confirms the open ask refers to something already resolved."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"StartupSetu granted recognition to Nimbus Labs Private Limited on 2026-09-30 07:03 UTC with certificate number SSR-CERT-2026-11872.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Recognition granted: SSR-2026-48213 Congratulations. Nimbus Labs Private Limited is recognised under the StartupSetu programme. Certificate number SSR-CERT-2026-11872 is available on the portal.\"\n    },\n    {\n      \"claim\": \"StartupSetu received the board resolution document on 2026-09-30 06:09 UTC, the document that was requested as a clarification.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Application SSR-2026-48213: document received Dear Applicant, We have received the board resolution you uploaded. The examiner will review it and update the application.\"\n    },\n    {\n      \"claim\": \"StartupSetu requested a board resolution on 2026-09-29 06:00 UTC with a seven-day deadline.\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": \"Application SSR-2026-48213: clarification required Dear Applicant, The examiner requires a board resolution authorising the applicant. Upload it on the StartupSetu portal within 7 days, or the application will be closed.\"\n    },\n    {\n      \"claim\": \"The file shows an open ask from StartupSetu since 2026-09-29 06:00 UTC, marked as 'they wait on us'.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as compliance work, in the domains of admin and fundraising, and is on the watchlist.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:domains\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook has been authored for this file's capability.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has not been written to by the company.\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows two active situations: an investor_relationship (fundraising) and an account_admin (admin), both last seen on 2026-09-30.\",\n      \"evidence\": [\n        \"sit:sit_#1\",\n        \"sit:sit_#2\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The open ask marked 'they wait on us' is now closed: StartupSetu has completed its review and granted recognition, so the ask no longer holds.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"The board resolution was uploaded and accepted within the seven-day window, meeting the requirement.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"This file represents a completed compliance milestone, not an ongoing obligation.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"The file's two situations (investor_relationship and account_admin) are both now resolved on the StartupSetu side, though the investor_relationship situation may refer to the broader fundraising context rather than this specific compliance work.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:8\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Government recognition portals typically go quiet during document review, then issue a decision; silence during review is normal process, not disinterest.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A compliance milestone that has been granted and certified is complete and requires no further action unless the certificate must be filed or used elsewhere.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A government recognition granted and certified should be logged as a closed win and filed for future reference, not carried as an open item.\",\n      \"why\": \"Carrying completed compliance work as open creates noise in the file system and obscures what actually needs attention.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Startup recognition certificates are typically used for investor credibility, bank account opening, or government scheme eligibility; the next move is usually to deploy it, not to track it.\",\n      \"why\": \"The certificate's value lies in its use, and the file should close once it is in hand unless a specific deployment is pending.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A compliance file that shows a completed outcome but remains open in the system often indicates the file was not closed because no one confirmed the outcome was final.\",\n      \"why\": \"Ambiguity about finality keeps files alive; explicit closure requires someone to say 'this is done'.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The open ask 'they wait on us' refers to a different step in the StartupSetu process, not the board resolution.\",\n      \"needs\": \"The dossier to show what the open ask actually names, or a message from the founder clarifying what was outstanding.\"\n    },\n    {\n      \"proposition\": \"The certificate must be downloaded or formally accepted on the portal to be considered fully delivered.\",\n      \"needs\": \"Confirmation from the founder or from StartupSetu's process documentation whether the certificate is automatically available or requires an action.\"\n    },\n    {\n      \"proposition\": \"The investor_relationship situation on this file refers to the use of the recognition in fundraising conversations, not to a separate investor relationship.\",\n      \"needs\": \"Clarification of whether the two situations are independent or whether the recognition is a supporting asset in the fundraising work.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does the open ask 'they wait on us' actually refer to, given that the recognition has been granted?\",\n      \"relevance\": \"If the ask is already satisfied, the file should be closed; if it refers to something else, the next move depends on what it is.\"\n    },\n    {\n      \"question\": \"Has the founder downloaded the certificate or taken any action to deploy it?\",\n      \"relevance\": \"The file's next move depends on whether the certificate is now in hand and ready to use, or whether retrieval is still pending.\"\n    },\n    {\n      \"question\": \"Is the investor_relationship situation on this file a separate relationship with an investor, or a reference to the broader fundraising context?\",\n      \"relevance\": \"If it is a separate investor relationship, the file may need different handling; if it is contextual, the file is purely compliance.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A compliance milestone has been completed: StartupSetu has granted recognition and issued a certificate. The file should be closed unless a next step is pending.\",\n    \"rivals\": [\n      \"The file is tracking an ongoing relationship with StartupSetu that requires periodic renewal or reporting.\",\n      \"The open ask refers to a different step in the process, and the recognition is not yet final.\",\n      \"The file is being used to track the deployment of the certificate in fundraising, and the investor_relationship situation is the real work.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"compliance\",\n    \"why\": \"The dossier marks it as compliance work, and the facts show a government recognition application and its successful completion.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:domains\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook is authored for this file, so expected outcomes are not defined. From the brief, the goal was 'StartupSetu recognition for Nimbus Labs Private Limited', which has been achieved.\",\n    \"actual\": \"Recognition has been granted with certificate number SSR-CERT-2026-11872, issued on 2026-09-30 07:03 UTC.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open with an unresolved open ask. The certificate sits on the portal unused. The founder does not deploy the recognition in fundraising or other contexts where it could add credibility.\",\n    \"act\": \"The founder confirms the certificate is in hand, closes the file, and logs the certificate for use in investor conversations and other applications.\",\n    \"best\": \"The recognition is deployed immediately in the next investor pitch or bank account application, adding credibility and removing friction from those processes.\",\n    \"worst\": \"The certificate is never retrieved or used, and the file remains open indefinitely, creating confusion about whether the work is complete.\",\n    \"signals_to_watch\": [\n      \"Whether the founder mentions the certificate in investor conversations or other contexts.\",\n      \"Whether the file is closed or remains open after this review.\",\n      \"Whether the open ask is clarified or resolved.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The recognition has been granted and is not at risk; the stakes are in deploying it effectively, not in securing it.\",\n      \"No deadline is pending; the certificate is available on the portal and can be retrieved at any time.\",\n      \"If the file is closed prematurely, it can be reopened; if it is left open, it can be closed later without loss.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"confirm with the founder whether the certificate has been retrieved and whether it is ready to deploy, and clarify what the open ask refers to\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-10-01\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:4\",\n      \"inference:1\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f2\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"Close the file as complete, log the certificate in a reference file for use in fundraising, and move the recognition to a closed wins list.\",\n  \"wait_or_stop\": \"Wait until the founder confirms the certificate is in hand. Stop if the founder confirms the certificate has been deployed or filed; stop if the founder confirms the open ask refers to something already resolved.\",\n  \"done_when\": \"The founder confirms the certificate is retrieved and ready to use, or the file is closed with the certificate logged for reference.\",\n  \"draft\": \"The StartupSetu recognition came through on the 30th \u2014 certificate SSR-CERT-2026-11872 is live on the portal. Have you pulled it down? And what was the open ask on this one \u2014 is that resolved now, or is there another step?\"\n}",
+  "site": "expert"
+ },
+ "f6e9bd5daefd332c029648934a866439e20fdc3cdab628f6829a9b55c28f9252": {
+  "framed": true,
+  "input_tokens": 7091,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2962,
+  "parsed": {
+   "alternative": "If the board resolution cannot be executed by 2026-09-30, send a message to StartupSetu requesting a brief extension (2-3 days) and explaining the reason. This is a costly move (it signals delay to a government body) and should only be used if execution is genuinely blocked. Do not use this as a default; use it only if the primary move is impossible.",
+   "appraisal": {
+    "reasons": [
+     "The deadline is 7 days and is absolute; missing it closes the application permanently",
+     "StartupSetu is on the watchlist, indicating its importance to the company's goals",
+     "The brief names startup recognition as a goal; failure here blocks that goal",
+     "A closed application damages credibility with government bodies and may affect future applications",
+     "The consequence is not a delay or a renegotiation; it is a closed application"
+    ],
+    "reversibility": "irreversible",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "The board resolution has been uploaded to the StartupSetu portal and a confirmation of receipt has been received from the portal or from StartupSetu.",
+   "draft": "We have received your request for a board resolution authorizing Nimbus Labs Private Limited. We are preparing the resolution and will upload it to the portal within 24 hours. Thank you for the clarification.",
+   "expected_vs_actual": {
+    "actual": "A formal request was issued 0.5 days ago. No response has been recorded. No upload has been made. The file shows no prior history of contact with StartupSetu, so this is the first formal interaction.",
+    "expected": "No playbook exists for this work, so expectations come from the brief and the file's own history. The brief names StartupSetu recognition as a goal. The file shows this is the first touch with StartupSetu on this application. The expected behavior is to respond to formal requests from government bodies within the stated deadline.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "StartupSetu issued a formal request for a board resolution on 2026-09-29 at 06:00 UTC",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "The examiner requires a board resolution authorising the applicant. Upload it on the StartupSetu portal within 7 days, or the application will be closed."
+    },
+    {
+     "claim": "The deadline to upload the board resolution is 7 days from the request date",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Upload it on the StartupSetu portal within 7 days, or the application will be closed."
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days since the request",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this compliance work",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows no prior history of contact with StartupSetu",
+     "evidence": [
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "StartupSetu is on the watchlist as a critical contact",
+     "evidence": [
+      "brief:cbl_#28"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in your court: you must produce and upload the board resolution",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A government compliance deadline has been issued with a 7-day window and a hard consequence (application closure). The ball is in your court. This is a routine but time-critical administrative task that must be completed before the deadline passes.",
+    "rivals": [
+     "This is a soft request for information that can be addressed when convenient",
+     "This is a negotiable deadline that can be extended if you ask",
+     "This is a signal that the application is in trouble and may not be approved regardless of the resolution"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder or the company's records of the resolution's status",
+     "proposition": "You have already drafted the board resolution and are waiting for a board meeting or written consent to execute it"
+    },
+    {
+     "needs": "Confirmation that no draft exists; if true, the move is to draft and execute immediately",
+     "proposition": "You do not yet have a board resolution and must draft one now"
+    },
+    {
+     "needs": "Confirmation of the document's status and the reason for non-upload",
+     "proposition": "The board resolution exists but has not been uploaded to the portal"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "This is a hard deadline with a defined consequence: failure to act within 7 days closes the application"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "brief:cbl_#20"
+     ],
+     "claim": "The request is not a promise or a soft ask; it is a formal administrative requirement from a government body"
+    },
+    {
+     "based_on": [
+      "inference:1",
+      "fact:1"
+     ],
+     "claim": "The work is time-critical and cannot be deferred or renegotiated"
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "Producing a board resolution requires internal action: a board meeting or written consent, and then upload"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-30",
+    "for_whom": "StartupSetu, via the portal",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f5",
+     "own:2",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Confirm whether a board resolution authorizing Nimbus Labs exists and is ready to upload. If it exists, upload it to the StartupSetu portal immediately. If it does not exist, draft one, execute it (by board meeting or written consent), and upload it within 24 hours.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Board resolutions for startup recognition are routine documents; they should be drafted and executed within one business day",
+     "kind": "practice",
+     "why": "These are standard corporate governance documents that most founders can produce quickly; delay here is almost always a sign of confusion about what is needed, not a sign of complexity"
+    },
+    {
+     "claim": "Founders often misread government deadlines as negotiable or as soft requests; they are neither",
+     "kind": "base_rate",
+     "why": "Government bodies enforce deadlines strictly and without exception; a missed deadline is a closed application, not a rescheduled one"
+    },
+    {
+     "claim": "The time from a compliance request to upload should be measured in hours, not days",
+     "kind": "benchmark",
+     "why": "Every day of delay on a hard deadline is a day of risk; the document should be ready before the request arrives, or drafted and uploaded within 24 hours of the request"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Government compliance deadlines are absolute; missing them closes applications and damages future applications to the same body",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence from government bodies is process, not disinterest, and should not trigger escalation",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "A formal request with a deadline is not silence; it is an active demand that requires immediate response",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#20",
+     "evt_#1"
+    ],
+    "kind": "compliance",
+    "why": "The file is correctly classified as compliance work. It is a formal requirement from a government body (StartupSetu) as part of the startup recognition application process."
+   },
+   "scenarios": {
+    "act": "You draft or retrieve the board resolution, execute it (if not already executed), and upload it to the StartupSetu portal within 24 hours. The examiner reviews it. If it meets the requirement, the application proceeds. If it does not, StartupSetu issues a new request with a new deadline.",
+    "best": "The board resolution already exists and is ready to upload. You upload it today. StartupSetu accepts it. The application proceeds to approval. The startup recognition is granted within the normal timeline.",
+    "do_nothing": "The 7-day deadline passes. The application is closed by StartupSetu. The startup recognition is denied. This blocks the company's ability to claim startup status for tax and regulatory purposes, and damages credibility with other government bodies and investors.",
+    "signals_to_watch": [
+     "Whether the board resolution exists and is ready to upload",
+     "Whether the authorized signatory is available to execute it",
+     "Whether the portal accepts the upload without further requests",
+     "Whether StartupSetu issues a follow-up request or closes the application"
+    ],
+    "worst": "The board resolution does not exist and cannot be executed quickly (signatory unavailable, board meeting required, etc.). The deadline passes. The application is closed. You must reapply, losing time and credibility."
+   },
+   "unknowns": [
+    {
+     "question": "Does a board resolution already exist, and if so, has it been uploaded?",
+     "relevance": "This determines whether the next move is to draft and execute, or to upload an existing document, or to troubleshoot a portal issue"
+    },
+    {
+     "question": "Who is authorized to sign the board resolution, and are they available now?",
+     "relevance": "If the authorized signatory is unavailable, the move must account for that delay or find an alternative path (written consent, etc.)"
+    },
+    {
+     "question": "What exactly does StartupSetu require in the board resolution?",
+     "relevance": "The request says 'a board resolution authorising the applicant' but does not specify what authorization is required; clarification could prevent rejection on resubmission"
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline is 7 days from 2026-09-29, which is 2026-10-06. You have 7 days to act. Stop waiting after 2026-09-30 if the resolution has not been uploaded; escalate to the founder immediately to unblock any constraint (signatory availability, board meeting scheduling, etc.). If the application is closed by StartupSetu, the file should be marked closed and a new application process should begin."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"StartupSetu issued a formal request for a board resolution on 2026-09-29 at 06:00 UTC\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"The examiner requires a board resolution authorising the applicant. Upload it on the StartupSetu portal within 7 days, or the application will be closed.\"\n    },\n    {\n      \"claim\": \"The deadline to upload the board resolution is 7 days from the request date\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Upload it on the StartupSetu portal within 7 days, or the application will be closed.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days since the request\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this compliance work\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows no prior history of contact with StartupSetu\",\n      \"evidence\": [\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"StartupSetu is on the watchlist as a critical contact\",\n      \"evidence\": [\n        \"brief:cbl_#28\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in your court: you must produce and upload the board resolution\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a hard deadline with a defined consequence: failure to act within 7 days closes the application\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The request is not a promise or a soft ask; it is a formal administrative requirement from a government body\",\n      \"based_on\": [\n        \"fact:1\",\n        \"brief:cbl_#20\"\n      ]\n    },\n    {\n      \"claim\": \"The work is time-critical and cannot be deferred or renegotiated\",\n      \"based_on\": [\n        \"inference:1\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"Producing a board resolution requires internal action: a board meeting or written consent, and then upload\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Government compliance deadlines are absolute; missing them closes applications and damages future applications to the same body\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Administrative silence from government bodies is process, not disinterest, and should not trigger escalation\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A formal request with a deadline is not silence; it is an active demand that requires immediate response\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Board resolutions for startup recognition are routine documents; they should be drafted and executed within one business day\",\n      \"why\": \"These are standard corporate governance documents that most founders can produce quickly; delay here is almost always a sign of confusion about what is needed, not a sign of complexity\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founders often misread government deadlines as negotiable or as soft requests; they are neither\",\n      \"why\": \"Government bodies enforce deadlines strictly and without exception; a missed deadline is a closed application, not a rescheduled one\"\n    },\n    {\n      \"kind\": \"benchmark\",\n      \"claim\": \"The time from a compliance request to upload should be measured in hours, not days\",\n      \"why\": \"Every day of delay on a hard deadline is a day of risk; the document should be ready before the request arrives, or drafted and uploaded within 24 hours of the request\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"You have already drafted the board resolution and are waiting for a board meeting or written consent to execute it\",\n      \"needs\": \"Confirmation from the founder or the company's records of the resolution's status\"\n    },\n    {\n      \"proposition\": \"You do not yet have a board resolution and must draft one now\",\n      \"needs\": \"Confirmation that no draft exists; if true, the move is to draft and execute immediately\"\n    },\n    {\n      \"proposition\": \"The board resolution exists but has not been uploaded to the portal\",\n      \"needs\": \"Confirmation of the document's status and the reason for non-upload\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does a board resolution already exist, and if so, has it been uploaded?\",\n      \"relevance\": \"This determines whether the next move is to draft and execute, or to upload an existing document, or to troubleshoot a portal issue\"\n    },\n    {\n      \"question\": \"Who is authorized to sign the board resolution, and are they available now?\",\n      \"relevance\": \"If the authorized signatory is unavailable, the move must account for that delay or find an alternative path (written consent, etc.)\"\n    },\n    {\n      \"question\": \"What exactly does StartupSetu require in the board resolution?\",\n      \"relevance\": \"The request says 'a board resolution authorising the applicant' but does not specify what authorization is required; clarification could prevent rejection on resubmission\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A government compliance deadline has been issued with a 7-day window and a hard consequence (application closure). The ball is in your court. This is a routine but time-critical administrative task that must be completed before the deadline passes.\",\n    \"rivals\": [\n      \"This is a soft request for information that can be addressed when convenient\",\n      \"This is a negotiable deadline that can be extended if you ask\",\n      \"This is a signal that the application is in trouble and may not be approved regardless of the resolution\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"compliance\",\n    \"why\": \"The file is correctly classified as compliance work. It is a formal requirement from a government body (StartupSetu) as part of the startup recognition application process.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#20\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook exists for this work, so expectations come from the brief and the file's own history. The brief names StartupSetu recognition as a goal. The file shows this is the first touch with StartupSetu on this application. The expected behavior is to respond to formal requests from government bodies within the stated deadline.\",\n    \"actual\": \"A formal request was issued 0.5 days ago. No response has been recorded. No upload has been made. The file shows no prior history of contact with StartupSetu, so this is the first formal interaction.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The 7-day deadline passes. The application is closed by StartupSetu. The startup recognition is denied. This blocks the company's ability to claim startup status for tax and regulatory purposes, and damages credibility with other government bodies and investors.\",\n    \"act\": \"You draft or retrieve the board resolution, execute it (if not already executed), and upload it to the StartupSetu portal within 24 hours. The examiner reviews it. If it meets the requirement, the application proceeds. If it does not, StartupSetu issues a new request with a new deadline.\",\n    \"best\": \"The board resolution already exists and is ready to upload. You upload it today. StartupSetu accepts it. The application proceeds to approval. The startup recognition is granted within the normal timeline.\",\n    \"worst\": \"The board resolution does not exist and cannot be executed quickly (signatory unavailable, board meeting required, etc.). The deadline passes. The application is closed. You must reapply, losing time and credibility.\",\n    \"signals_to_watch\": [\n      \"Whether the board resolution exists and is ready to upload\",\n      \"Whether the authorized signatory is available to execute it\",\n      \"Whether the portal accepts the upload without further requests\",\n      \"Whether StartupSetu issues a follow-up request or closes the application\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"irreversible\",\n    \"reasons\": [\n      \"The deadline is 7 days and is absolute; missing it closes the application permanently\",\n      \"StartupSetu is on the watchlist, indicating its importance to the company's goals\",\n      \"The brief names startup recognition as a goal; failure here blocks that goal\",\n      \"A closed application damages credibility with government bodies and may affect future applications\",\n      \"The consequence is not a delay or a renegotiation; it is a closed application\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Confirm whether a board resolution authorizing Nimbus Labs exists and is ready to upload. If it exists, upload it to the StartupSetu portal immediately. If it does not exist, draft one, execute it (by board meeting or written consent), and upload it within 24 hours.\",\n    \"for_whom\": \"StartupSetu, via the portal\",\n    \"by_when\": \"2026-09-30\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f5\",\n      \"own:2\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the board resolution cannot be executed by 2026-09-30, send a message to StartupSetu requesting a brief extension (2-3 days) and explaining the reason. This is a costly move (it signals delay to a government body) and should only be used if execution is genuinely blocked. Do not use this as a default; use it only if the primary move is impossible.\",\n  \"wait_or_stop\": \"Do not wait. The deadline is 7 days from 2026-09-29, which is 2026-10-06. You have 7 days to act. Stop waiting after 2026-09-30 if the resolution has not been uploaded; escalate to the founder immediately to unblock any constraint (signatory availability, board meeting scheduling, etc.). If the application is closed by StartupSetu, the file should be marked closed and a new application process should begin.\",\n  \"done_when\": \"The board resolution has been uploaded to the StartupSetu portal and a confirmation of receipt has been received from the portal or from StartupSetu.\",\n  \"draft\": \"We have received your request for a board resolution authorizing Nimbus Labs Private Limited. We are preparing the resolution and will upload it to the portal within 24 hours. Thank you for the clarification.\"\n}",
+  "site": "expert"
+ }
+}

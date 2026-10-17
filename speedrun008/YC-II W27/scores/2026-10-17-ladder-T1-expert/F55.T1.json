@@ -1,0 +1,951 @@
+{
+ "3677253f138fb2f7be2e01e3a8d349b61f570cb8803bb918aff9ff97df6090c8": {
+  "framed": true,
+  "input_tokens": 7042,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3561,
+  "parsed": {
+   "alternative": "Wait one more week for Rhea to write, on the assumption that the call is scheduled and she will confirm it closer to the date. This is lower-cost but higher-risk: if the call was never booked, the wait wastes time.",
+   "appraisal": {
+    "reasons": [
+     "The file has no context, so we do not know whether Pinegrove is a key prospect or a cold contact; if they are key, the stakes are high; if they are cold, the stakes are low.",
+     "The silence is 22 days old, which is long enough to be concerning but not so long that the opportunity is certainly lost; a message now could revive it.",
+     "A message to confirm the call is low-cost and reversible; if Rhea does not respond, we can close the file; if she does, we have clarity.",
+     "The reasoning engine flagged high risk because the relationship is unmeasured and we have do-nothing exposure; this is a fair warning, but without context, the risk is speculative."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Rhea has confirmed a date and time for the call, or has said she is no longer interested. The file has a clear next step or a clear end.",
+   "draft": "Hi Rhea, I wanted to circle back on our call \u2014 can we lock in a time next week that works for you? I'm keen to discuss [what you want to discuss]. Let me know what day and time suit you best. Thanks, Arjun",
+   "expected_vs_actual": {
+    "actual": "A reschedule request was made and not confirmed; the file has been silent for over three weeks; no outcome is recorded.",
+    "expected": "Without a playbook or a brief entry, there is no stage and no expectation. If this is a partner prospect, the brief expects design partner talks to be in motion; if this is a vendor or a cold contact, there is no expectation.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Rhea Thomas from Pinegrove asked to reschedule a call to the following week.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Can we move our call to next week?"
+    },
+    {
+     "claim": "The file has been quiet for 22.29 days since the last touch on 2026-08-20.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: we have an open ask and have not written in this file.",
+     "evidence": [
+      "file:whose_move",
+      "none:we_wrote",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Pinegrove is not named in the company brief as a counterparty to any work in motion.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for it.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time this file has been seen and judged.",
+     "evidence": [
+      "hist:derived.history.times_seen@admin",
+      "hist:derived.history.prior_card_verdict@admin"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A counterparty asked to reschedule a call over three weeks ago, and we have not confirmed the new time or followed up; the file has no context, so we do not know what we owe or whether the silence is normal.",
+    "rivals": [
+     "The call was rescheduled and is on the calendar; we are simply waiting for it, and the silence is expected.",
+     "Rhea's reschedule request was a soft rejection, and she has moved on; the silence is her way of saying no.",
+     "This is a cold contact or a vendor outreach that was never a real opportunity; the file should be closed."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A record of how we found them, what we asked them to do, and what we promised in return.",
+     "proposition": "Pinegrove is a design partner prospect, and the call was to explore a partnership."
+    },
+    {
+     "needs": "A record of what we were evaluating them for, and whether we asked them to send a proposal or pricing.",
+     "proposition": "Pinegrove is a vendor or service provider, and the call was to evaluate their offering."
+    },
+    {
+     "needs": "A record of the call outcome, or a note that it occurred.",
+     "proposition": "The call was scheduled and happened, and this file is stale."
+    },
+    {
+     "needs": "A follow-up from us that would clarify her interest, or silence that confirms she is no longer engaged.",
+     "proposition": "Rhea's reschedule request was a soft rejection, and she has moved on."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "cap:admin.executive_support.commitment_tracking#q"
+     ],
+     "claim": "Rhea's request to reschedule was a rescheduling proposal, not a commitment to a new date; we have not confirmed the new week or time."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:1"
+     ],
+     "claim": "The 22-day silence since the reschedule request suggests either the new call was scheduled and we are waiting for it, or the reschedule was never confirmed and the call has drifted."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4",
+      "ru:core.relationship",
+      "ru:core.opportunity"
+     ],
+     "claim": "We do not know what Pinegrove is, why we are in contact, or what we promised them, because the file holds no context and the brief names them nowhere."
+    },
+    {
+     "based_on": [
+      "ru:core.risk",
+      "inference:3"
+     ],
+     "claim": "The reasoning engine flagged high risk because the relationship is unmeasured and we have do-nothing exposure, but without knowing what Pinegrove is, the risk cannot be sized."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-12",
+    "for_whom": "Rhea Thomas at Pinegrove",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f4",
+     "cap:admin.executive_support.commitment_tracking#q",
+     "own:1",
+     "own:4"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "rhea@pinegrove.test",
+    "what": "Write to Rhea to confirm the rescheduled call \u2014 ask for a date and time that works for her, and state what you want to discuss. If the call was already scheduled, confirm the date and time and say what you will cover.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a counterparty asks to reschedule and you do not confirm the new time in writing within one business day, the call is lost.",
+     "kind": "practice",
+     "why": "A verbal or implied agreement to reschedule is not a commitment until both parties have written it down; without written confirmation, each party assumes the other will follow up, and neither does."
+    },
+    {
+     "claim": "A file with no context \u2014 no brief entry, no playbook, no relationship history \u2014 is usually a cold intro, a vendor outreach, or a mistake in the system.",
+     "kind": "base_rate",
+     "why": "Warm counterparties are named in the brief; if they are not, the relationship is either new or not yet classified."
+    },
+    {
+     "claim": "A counterparty who reschedules and then vanishes is sometimes testing whether you will chase them; chasing converts a soft no into a hard one.",
+     "kind": "counter_pattern",
+     "why": "The reschedule request is often a polite way to defer; if you follow up, you confirm that you are the one who cares more."
+    },
+    {
+     "claim": "Before chasing a counterparty, establish what you promised them and by when; if you cannot state it in one sentence, you do not know what you owe.",
+     "kind": "practice",
+     "why": "A chase without a clear obligation reads as pressure, not diligence."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f4",
+      "own:1"
+     ],
+     "claim": "A rescheduling request followed by silence usually means the new date was never locked in, and both parties are waiting for the other to confirm.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "A counterparty who asks to reschedule and then goes silent for over three weeks is often no longer interested, or has moved on to other priorities.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence is often process, not disinterest; escalating on quietness alone converts a normal wait into a relationship event.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "brief:cbl_#6"
+    ],
+    "kind": "partner",
+    "why": "The file's domain is admin, and the counterparty is a company with a named contact; the brief lists design partners as a goal, and Pinegrove's name suggests a company that could be a partner. However, this is a guess: the brief does not name Pinegrove, and the file holds no evidence of what kind of work this is."
+   },
+   "scenarios": {
+    "act": "We write to Rhea to confirm the rescheduled call \u2014 the date, time, and what we want to discuss. If she responds, we have clarity; if she does not, we know the opportunity is stalled. If the call was already scheduled, our message confirms it and shows we are organized.",
+    "best": "Rhea responds with a confirmed date and time; the call happens; we learn what Pinegrove is and whether there is a fit. The file moves to a next stage with a clear outcome.",
+    "do_nothing": "The file remains quiet. After 3 days, it will have been silent for 25 days; after 7 days, 29 days; after 14 days, 36 days. Without a stop rule, the file will drift until it is archived or Rhea writes again. If the call was scheduled, it may happen without our input. If it was not, Rhea will assume we are not interested, and the opportunity is lost.",
+    "signals_to_watch": [
+     "Rhea's response time and tone: quick and warm means she is still interested; slow or cool means she has moved on.",
+     "Whether she confirms a date or deflects: a confirmed date means the opportunity is live; a deflection means it is stalled.",
+     "Whether she mentions what the call is about: if she does, we have context; if she does not, we may have lost the thread.",
+     "Whether the call happens on the scheduled date: if it does, the opportunity is real; if it does not, we need to know why."
+    ],
+    "worst": "Rhea does not respond, or responds to say she is no longer interested. We have wasted three weeks and lost the opportunity. Or, we discover that the call was already scheduled and our message looks like we forgot about it, damaging the relationship."
+   },
+   "unknowns": [
+    {
+     "question": "What is Pinegrove, and what is our relationship to them?",
+     "relevance": "Without knowing whether they are a prospect, a partner, a vendor, or a cold contact, we cannot judge whether the silence is normal or alarming, or what the next move should be."
+    },
+    {
+     "question": "What did we ask Rhea to do, or what did we promise her?",
+     "relevance": "If we promised a call and she asked to reschedule, we need to know what the call was for and whether we confirmed the new time; if we did not, we are chasing a ghost commitment."
+    },
+    {
+     "question": "Did the rescheduled call happen, and if so, what was the outcome?",
+     "relevance": "If the call happened, this file should be closed or moved to a new stage; if it did not, we need to know why and whether Rhea is still interested."
+    },
+    {
+     "question": "How did we meet Rhea, and who introduced us?",
+     "relevance": "If she was introduced by a connector, the connector may have context on her interest; if we cold-outreached, the silence may be a normal response rate."
+    },
+    {
+     "question": "What is the status of the rescheduled call \u2014 is it on the calendar, or was it never booked?",
+     "relevance": "If it is on the calendar, we should wait for it; if it was never booked, we need to confirm the date with Rhea or close the file."
+    }
+   ],
+   "wait_or_stop": "Wait until Rhea responds. If she confirms a date, move to scheduling the call. If she does not respond within 5 business days, send one follow-up message; if she still does not respond, close the file and mark it as stalled. Do not chase more than once."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Rhea Thomas from Pinegrove asked to reschedule a call to the following week.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Can we move our call to next week?\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 22.29 days since the last touch on 2026-08-20.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: we have an open ask and have not written in this file.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"none:we_wrote\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Pinegrove is not named in the company brief as a counterparty to any work in motion.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for it.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time this file has been seen and judged.\",\n      \"evidence\": [\n        \"hist:derived.history.times_seen@admin\",\n        \"hist:derived.history.prior_card_verdict@admin\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Rhea's request to reschedule was a rescheduling proposal, not a commitment to a new date; we have not confirmed the new week or time.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"cap:admin.executive_support.commitment_tracking#q\"\n      ]\n    },\n    {\n      \"claim\": \"The 22-day silence since the reschedule request suggests either the new call was scheduled and we are waiting for it, or the reschedule was never confirmed and the call has drifted.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"We do not know what Pinegrove is, why we are in contact, or what we promised them, because the file holds no context and the brief names them nowhere.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\",\n        \"ru:core.relationship\",\n        \"ru:core.opportunity\"\n      ]\n    },\n    {\n      \"claim\": \"The reasoning engine flagged high risk because the relationship is unmeasured and we have do-nothing exposure, but without knowing what Pinegrove is, the risk cannot be sized.\",\n      \"based_on\": [\n        \"ru:core.risk\",\n        \"inference:3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A rescheduling request followed by silence usually means the new date was never locked in, and both parties are waiting for the other to confirm.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f4\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who asks to reschedule and then goes silent for over three weeks is often no longer interested, or has moved on to other priorities.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Administrative silence is often process, not disinterest; escalating on quietness alone converts a normal wait into a relationship event.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a counterparty asks to reschedule and you do not confirm the new time in writing within one business day, the call is lost.\",\n      \"why\": \"A verbal or implied agreement to reschedule is not a commitment until both parties have written it down; without written confirmation, each party assumes the other will follow up, and neither does.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A file with no context \u2014 no brief entry, no playbook, no relationship history \u2014 is usually a cold intro, a vendor outreach, or a mistake in the system.\",\n      \"why\": \"Warm counterparties are named in the brief; if they are not, the relationship is either new or not yet classified.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who reschedules and then vanishes is sometimes testing whether you will chase them; chasing converts a soft no into a hard one.\",\n      \"why\": \"The reschedule request is often a polite way to defer; if you follow up, you confirm that you are the one who cares more.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Before chasing a counterparty, establish what you promised them and by when; if you cannot state it in one sentence, you do not know what you owe.\",\n      \"why\": \"A chase without a clear obligation reads as pressure, not diligence.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Pinegrove is a design partner prospect, and the call was to explore a partnership.\",\n      \"needs\": \"A record of how we found them, what we asked them to do, and what we promised in return.\"\n    },\n    {\n      \"proposition\": \"Pinegrove is a vendor or service provider, and the call was to evaluate their offering.\",\n      \"needs\": \"A record of what we were evaluating them for, and whether we asked them to send a proposal or pricing.\"\n    },\n    {\n      \"proposition\": \"The call was scheduled and happened, and this file is stale.\",\n      \"needs\": \"A record of the call outcome, or a note that it occurred.\"\n    },\n    {\n      \"proposition\": \"Rhea's reschedule request was a soft rejection, and she has moved on.\",\n      \"needs\": \"A follow-up from us that would clarify her interest, or silence that confirms she is no longer engaged.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Pinegrove, and what is our relationship to them?\",\n      \"relevance\": \"Without knowing whether they are a prospect, a partner, a vendor, or a cold contact, we cannot judge whether the silence is normal or alarming, or what the next move should be.\"\n    },\n    {\n      \"question\": \"What did we ask Rhea to do, or what did we promise her?\",\n      \"relevance\": \"If we promised a call and she asked to reschedule, we need to know what the call was for and whether we confirmed the new time; if we did not, we are chasing a ghost commitment.\"\n    },\n    {\n      \"question\": \"Did the rescheduled call happen, and if so, what was the outcome?\",\n      \"relevance\": \"If the call happened, this file should be closed or moved to a new stage; if it did not, we need to know why and whether Rhea is still interested.\"\n    },\n    {\n      \"question\": \"How did we meet Rhea, and who introduced us?\",\n      \"relevance\": \"If she was introduced by a connector, the connector may have context on her interest; if we cold-outreached, the silence may be a normal response rate.\"\n    },\n    {\n      \"question\": \"What is the status of the rescheduled call \u2014 is it on the calendar, or was it never booked?\",\n      \"relevance\": \"If it is on the calendar, we should wait for it; if it was never booked, we need to confirm the date with Rhea or close the file.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A counterparty asked to reschedule a call over three weeks ago, and we have not confirmed the new time or followed up; the file has no context, so we do not know what we owe or whether the silence is normal.\",\n    \"rivals\": [\n      \"The call was rescheduled and is on the calendar; we are simply waiting for it, and the silence is expected.\",\n      \"Rhea's reschedule request was a soft rejection, and she has moved on; the silence is her way of saying no.\",\n      \"This is a cold contact or a vendor outreach that was never a real opportunity; the file should be closed.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The file's domain is admin, and the counterparty is a company with a named contact; the brief lists design partners as a goal, and Pinegrove's name suggests a company that could be a partner. However, this is a guess: the brief does not name Pinegrove, and the file holds no evidence of what kind of work this is.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"brief:cbl_#6\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook or a brief entry, there is no stage and no expectation. If this is a partner prospect, the brief expects design partner talks to be in motion; if this is a vendor or a cold contact, there is no expectation.\",\n    \"actual\": \"A reschedule request was made and not confirmed; the file has been silent for over three weeks; no outcome is recorded.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. After 3 days, it will have been silent for 25 days; after 7 days, 29 days; after 14 days, 36 days. Without a stop rule, the file will drift until it is archived or Rhea writes again. If the call was scheduled, it may happen without our input. If it was not, Rhea will assume we are not interested, and the opportunity is lost.\",\n    \"act\": \"We write to Rhea to confirm the rescheduled call \u2014 the date, time, and what we want to discuss. If she responds, we have clarity; if she does not, we know the opportunity is stalled. If the call was already scheduled, our message confirms it and shows we are organized.\",\n    \"best\": \"Rhea responds with a confirmed date and time; the call happens; we learn what Pinegrove is and whether there is a fit. The file moves to a next stage with a clear outcome.\",\n    \"worst\": \"Rhea does not respond, or responds to say she is no longer interested. We have wasted three weeks and lost the opportunity. Or, we discover that the call was already scheduled and our message looks like we forgot about it, damaging the relationship.\",\n    \"signals_to_watch\": [\n      \"Rhea's response time and tone: quick and warm means she is still interested; slow or cool means she has moved on.\",\n      \"Whether she confirms a date or deflects: a confirmed date means the opportunity is live; a deflection means it is stalled.\",\n      \"Whether she mentions what the call is about: if she does, we have context; if she does not, we may have lost the thread.\",\n      \"Whether the call happens on the scheduled date: if it does, the opportunity is real; if it does not, we need to know why.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file has no context, so we do not know whether Pinegrove is a key prospect or a cold contact; if they are key, the stakes are high; if they are cold, the stakes are low.\",\n      \"The silence is 22 days old, which is long enough to be concerning but not so long that the opportunity is certainly lost; a message now could revive it.\",\n      \"A message to confirm the call is low-cost and reversible; if Rhea does not respond, we can close the file; if she does, we have clarity.\",\n      \"The reasoning engine flagged high risk because the relationship is unmeasured and we have do-nothing exposure; this is a fair warning, but without context, the risk is speculative.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Write to Rhea to confirm the rescheduled call \u2014 ask for a date and time that works for her, and state what you want to discuss. If the call was already scheduled, confirm the date and time and say what you will cover.\",\n    \"for_whom\": \"Rhea Thomas at Pinegrove\",\n    \"by_when\": \"2026-09-12\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f4\",\n      \"cap:admin.executive_support.commitment_tracking#q\",\n      \"own:1\",\n      \"own:4\"\n    ],\n    \"to\": \"rhea@pinegrove.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"Wait one more week for Rhea to write, on the assumption that the call is scheduled and she will confirm it closer to the date. This is lower-cost but higher-risk: if the call was never booked, the wait wastes time.\",\n  \"wait_or_stop\": \"Wait until Rhea responds. If she confirms a date, move to scheduling the call. If she does not respond within 5 business days, send one follow-up message; if she still does not respond, close the file and mark it as stalled. Do not chase more than once.\",\n  \"done_when\": \"Rhea has confirmed a date and time for the call, or has said she is no longer interested. The file has a clear next step or a clear end.\",\n  \"draft\": \"Hi Rhea, I wanted to circle back on our call \u2014 can we lock in a time next week that works for you? I'm keen to discuss [what you want to discuss]. Let me know what day and time suit you best. Thanks, Arjun\"\n}",
+  "site": "expert"
+ },
+ "647674002c3ef16fa68c57dff7ebb0c0bb64529a35d5863a9c7555650a7fce79": {
+  "framed": true,
+  "input_tokens": 7050,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3383,
+  "parsed": {
+   "alternative": "If you cannot decide by tomorrow, send Kabir a brief message today saying you are evaluating the pilot and will have an answer by a specific date (e.g., end of week). This resets the relationship and buys you time without leaving him in silence.",
+   "appraisal": {
+    "reasons": [
+     "The file has been quiet for 17 days, and Kabir's question is direct; a reply is overdue.",
+     "Silence on a partner's direct question damages the relationship and signals disrespect, which is costly to repair.",
+     "If you decide yes after a long silence, Kabir may have already moved on or may negotiate from a position of doubt about your commitment.",
+     "If you decide no and do not tell him, the opportunity is lost and the relationship is damaged.",
+     "The brief names design partners as an active goal, and this may be a fit; not deciding is a cost."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "You have sent Kabir a clear yes or no, with a brief explanation. If yes, you have proposed a start date and next steps. If no, you have thanked him and left the door open for future conversations. The file is either closed or moved to an active pilot stage.",
+   "draft": "Hi Kabir, thanks for checking in. I've been evaluating the pilot and want to make sure we're aligned on what it would look like. Can we hop on a quick call this week to discuss the scope and timeline? I'm keen to explore this if it's a good fit for both of us. \u2014 Arjun",
+   "expected_vs_actual": {
+    "actual": "You have not replied in 17 days. If this is a design partner, the talks have stalled. If this is a new opportunity, it has not been classified or prioritized.",
+    "expected": "Without a playbook, the expectation comes from the brief: if Orchard HQ is a design partner, the brief expects you to be in active talks. A direct question from a partner typically expects a reply within a few days.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Kabir Sethi from Orchard HQ asked whether you are still keen on a pilot, on 2026-08-25.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Are you still keen on the pilot?"
+    },
+    {
+     "claim": "This is the only message in the file; no reply from you has been recorded.",
+     "evidence": [
+      "none:we_wrote",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 17.29 days since the message arrived.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in your court: you have an open ask to answer, and no promise or deadline from Orchard HQ.",
+     "evidence": [
+      "loop:loop_#1",
+      "file:whose_move",
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Orchard HQ is not named in the brief as a work item, investor, program, partner, or hire.",
+     "evidence": [
+      "file:role",
+      "brief:company"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for it.",
+     "evidence": [
+      "none:playbook",
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units flagged high risk due to do-nothing exposure and an unmeasured relationship.",
+     "evidence": [
+      "ru:core.risk"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A potential partner has asked a direct yes-or-no question about a pilot and has been waiting for an answer for over two weeks. The founder has not replied, which signals either that the decision has not been made or that it has been made and not communicated. Either way, the relationship is at risk of cooling.",
+    "rivals": [
+     "This is a low-priority exploratory conversation that the founder is intentionally holding open while evaluating other opportunities; silence is deliberation, not neglect.",
+     "This is a warm introduction from a trusted connector, and the silence is a signal that the founder is not interested; Kabir is waiting for a no, not a yes.",
+     "This is a vendor or design partner that aligns with one of the named goals in the brief (design partners, for example), but the connection was not recorded in the brief; the file is misclassified."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A review of your notes or calendar to see whether this decision was made and recorded elsewhere.",
+     "proposition": "You have decided not to pursue the pilot but have not told Kabir."
+    },
+    {
+     "needs": "Clarity on what information or approval is blocking the decision.",
+     "proposition": "You are still evaluating the pilot but have not yet gathered the information needed to decide."
+    },
+    {
+     "needs": "A comparison of the pilot's potential value against the current roadmap.",
+     "proposition": "The pilot is a good fit, but it has been deprioritized by other work in motion (the seed round, accelerator applications, hiring)."
+    },
+    {
+     "needs": "Confirmation of what Orchard HQ does and whether it aligns with design partner talks or another work stream.",
+     "proposition": "Orchard HQ is a design partner or vendor that fits one of the named goals in the brief, but the connection was not recorded."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "none:promises"
+     ],
+     "claim": "Kabir's question is a genuine inquiry about your commitment, not a statement of Orchard's commitment to you."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence for 17 days after a direct question reads as either disinterest or disorganization to the counterparty."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:4"
+     ],
+     "claim": "You have not yet decided whether to pursue this pilot, or you have decided and not told Kabir."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "file:first_touch"
+     ],
+     "claim": "The file's absence from the brief suggests this is either a new opportunity that arrived after the brief was set, or an exploratory conversation that has not yet been classified."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-12",
+    "for_whom": "yourself and Kabir Sethi",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:2",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:3",
+     "unknown:1"
+    ],
+    "to": null,
+    "what": "Decide whether to pursue the pilot with Orchard HQ, and if so, what the pilot entails and what you are committing to. If you cannot decide today, identify what information or approval is blocking the decision.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A pilot is a commitment of time and attention, not just capital; saying yes to one means saying no to something else.",
+     "kind": "practice",
+     "why": "Pilots are often underestimated as low-cost experiments, but they consume founder cycles and create obligations to the counterparty."
+    },
+    {
+     "claim": "When a founder has not replied to a partner's direct question in over two weeks, the most common reason is that the decision has not been made, not that the decision has been made and forgotten.",
+     "kind": "base_rate",
+     "why": "A yes or no is usually sent quickly; silence signals internal conflict or deprioritization."
+    },
+    {
+     "claim": "Leaving a partner waiting on a yes-or-no answer damages the relationship more than saying no does.",
+     "kind": "practice",
+     "why": "A no closes the door cleanly and lets the partner move on; silence leaves them in limbo and signals disrespect for their time."
+    },
+    {
+     "claim": "Some of the best partnerships begin with a pilot that was not on the founder's roadmap but arrived at the right moment.",
+     "kind": "counter_pattern",
+     "why": "Pilots can be low-risk ways to test fit with a partner before a larger commitment; dismissing them too quickly can miss opportunities."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1",
+      "own:1"
+     ],
+     "claim": "A direct question from a potential partner, left unanswered for over two weeks, typically results in the counterparty moving on or downgrading their interest.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "own:2"
+     ],
+     "claim": "Some exploratory conversations are intentionally left open while the founder evaluates fit; silence in these cases is not neglect but deliberation.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:3"
+     ],
+     "claim": "Pilot programs with vendors or partners typically require a yes-or-no decision within one to two weeks of the initial ask, or momentum is lost.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "brief:cbl_#6"
+    ],
+    "kind": "partner",
+    "why": "Kabir's language ('pilot') and the context (a potential collaboration) suggest this is a design partner or vendor relationship, not an investor, program, or hire. The brief names design partner talks as an active goal, and Orchard HQ may fit that category."
+   },
+   "scenarios": {
+    "act": "If you reply today with a clear yes or no, you reset the relationship and either move into a pilot or close the door cleanly. If you reply with a question or a delay, you buy time but risk further cooling.",
+    "best": "You reply today with a thoughtful yes, explaining why the pilot is a good fit and proposing a start date. Kabir confirms, and the pilot begins within a week. The pilot generates insights that lead to a larger partnership.",
+    "do_nothing": "Kabir will likely send a follow-up message in the next few days, or will move on to another founder. If he moves on, the opportunity is lost. If he follows up, the silence will have cost you credibility and made the negotiation harder.",
+    "signals_to_watch": [
+     "A follow-up message from Kabir (escalation or withdrawal)",
+     "A message from the connector who introduced you, if any (checking in or moving on)",
+     "Your own calendar and notes (whether a decision was made and not communicated)"
+    ],
+    "worst": "You reply today with a no, or you do not reply at all. Kabir interprets the silence as disinterest and moves on. Later, you realize the pilot would have been valuable, but Orchard HQ has already committed to another founder."
+   },
+   "unknowns": [
+    {
+     "question": "What is Orchard HQ, and what does the pilot entail?",
+     "relevance": "The nature of the pilot determines whether it is a strategic fit, a distraction, or a missed opportunity. Without this, the decision cannot be made."
+    },
+    {
+     "question": "How did Kabir Sethi find you, and who introduced you?",
+     "relevance": "If this is a warm introduction from a trusted connector, the relationship carries more weight and silence is more costly. If it is a cold outreach, the stakes are lower."
+    },
+    {
+     "question": "Have you made a decision on this pilot, and if so, what is it?",
+     "relevance": "If you have decided yes, the next move is to confirm with Kabir. If you have decided no, the next move is to tell him. If you have not decided, the next move is to decide."
+    },
+    {
+     "question": "Is this pilot time-sensitive, or can it wait?",
+     "relevance": "If Orchard HQ has a deadline or a cohort start date, urgency is high. If it is open-ended, you have more time to decide."
+    }
+   ],
+   "wait_or_stop": "Wait until you have decided or until you have identified the blocker. Do not wait longer than one more day; silence beyond that will have cost you the relationship. Stop if Orchard HQ sends a follow-up message that withdraws the offer or moves on; at that point, the decision is made for you."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Kabir Sethi from Orchard HQ asked whether you are still keen on a pilot, on 2026-08-25.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Are you still keen on the pilot?\"\n    },\n    {\n      \"claim\": \"This is the only message in the file; no reply from you has been recorded.\",\n      \"evidence\": [\n        \"none:we_wrote\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 17.29 days since the message arrived.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in your court: you have an open ask to answer, and no promise or deadline from Orchard HQ.\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"file:whose_move\",\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Orchard HQ is not named in the brief as a work item, investor, program, partner, or hire.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:company\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for it.\",\n      \"evidence\": [\n        \"none:playbook\",\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units flagged high risk due to do-nothing exposure and an unmeasured relationship.\",\n      \"evidence\": [\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Kabir's question is a genuine inquiry about your commitment, not a statement of Orchard's commitment to you.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"Silence for 17 days after a direct question reads as either disinterest or disorganization to the counterparty.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"claim\": \"You have not yet decided whether to pursue this pilot, or you have decided and not told Kabir.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"The file's absence from the brief suggests this is either a new opportunity that arrived after the brief was set, or an exploratory conversation that has not yet been classified.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"file:first_touch\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A direct question from a potential partner, left unanswered for over two weeks, typically results in the counterparty moving on or downgrading their interest.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Some exploratory conversations are intentionally left open while the founder evaluates fit; silence in these cases is not neglect but deliberation.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Pilot programs with vendors or partners typically require a yes-or-no decision within one to two weeks of the initial ask, or momentum is lost.\",\n      \"based_on\": [\n        \"own:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A pilot is a commitment of time and attention, not just capital; saying yes to one means saying no to something else.\",\n      \"why\": \"Pilots are often underestimated as low-cost experiments, but they consume founder cycles and create obligations to the counterparty.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a founder has not replied to a partner's direct question in over two weeks, the most common reason is that the decision has not been made, not that the decision has been made and forgotten.\",\n      \"why\": \"A yes or no is usually sent quickly; silence signals internal conflict or deprioritization.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Leaving a partner waiting on a yes-or-no answer damages the relationship more than saying no does.\",\n      \"why\": \"A no closes the door cleanly and lets the partner move on; silence leaves them in limbo and signals disrespect for their time.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Some of the best partnerships begin with a pilot that was not on the founder's roadmap but arrived at the right moment.\",\n      \"why\": \"Pilots can be low-risk ways to test fit with a partner before a larger commitment; dismissing them too quickly can miss opportunities.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"You have decided not to pursue the pilot but have not told Kabir.\",\n      \"needs\": \"A review of your notes or calendar to see whether this decision was made and recorded elsewhere.\"\n    },\n    {\n      \"proposition\": \"You are still evaluating the pilot but have not yet gathered the information needed to decide.\",\n      \"needs\": \"Clarity on what information or approval is blocking the decision.\"\n    },\n    {\n      \"proposition\": \"The pilot is a good fit, but it has been deprioritized by other work in motion (the seed round, accelerator applications, hiring).\",\n      \"needs\": \"A comparison of the pilot's potential value against the current roadmap.\"\n    },\n    {\n      \"proposition\": \"Orchard HQ is a design partner or vendor that fits one of the named goals in the brief, but the connection was not recorded.\",\n      \"needs\": \"Confirmation of what Orchard HQ does and whether it aligns with design partner talks or another work stream.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Orchard HQ, and what does the pilot entail?\",\n      \"relevance\": \"The nature of the pilot determines whether it is a strategic fit, a distraction, or a missed opportunity. Without this, the decision cannot be made.\"\n    },\n    {\n      \"question\": \"How did Kabir Sethi find you, and who introduced you?\",\n      \"relevance\": \"If this is a warm introduction from a trusted connector, the relationship carries more weight and silence is more costly. If it is a cold outreach, the stakes are lower.\"\n    },\n    {\n      \"question\": \"Have you made a decision on this pilot, and if so, what is it?\",\n      \"relevance\": \"If you have decided yes, the next move is to confirm with Kabir. If you have decided no, the next move is to tell him. If you have not decided, the next move is to decide.\"\n    },\n    {\n      \"question\": \"Is this pilot time-sensitive, or can it wait?\",\n      \"relevance\": \"If Orchard HQ has a deadline or a cohort start date, urgency is high. If it is open-ended, you have more time to decide.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A potential partner has asked a direct yes-or-no question about a pilot and has been waiting for an answer for over two weeks. The founder has not replied, which signals either that the decision has not been made or that it has been made and not communicated. Either way, the relationship is at risk of cooling.\",\n    \"rivals\": [\n      \"This is a low-priority exploratory conversation that the founder is intentionally holding open while evaluating other opportunities; silence is deliberation, not neglect.\",\n      \"This is a warm introduction from a trusted connector, and the silence is a signal that the founder is not interested; Kabir is waiting for a no, not a yes.\",\n      \"This is a vendor or design partner that aligns with one of the named goals in the brief (design partners, for example), but the connection was not recorded in the brief; the file is misclassified.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"Kabir's language ('pilot') and the context (a potential collaboration) suggest this is a design partner or vendor relationship, not an investor, program, or hire. The brief names design partner talks as an active goal, and Orchard HQ may fit that category.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"brief:cbl_#6\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief: if Orchard HQ is a design partner, the brief expects you to be in active talks. A direct question from a partner typically expects a reply within a few days.\",\n    \"actual\": \"You have not replied in 17 days. If this is a design partner, the talks have stalled. If this is a new opportunity, it has not been classified or prioritized.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Kabir will likely send a follow-up message in the next few days, or will move on to another founder. If he moves on, the opportunity is lost. If he follows up, the silence will have cost you credibility and made the negotiation harder.\",\n    \"act\": \"If you reply today with a clear yes or no, you reset the relationship and either move into a pilot or close the door cleanly. If you reply with a question or a delay, you buy time but risk further cooling.\",\n    \"best\": \"You reply today with a thoughtful yes, explaining why the pilot is a good fit and proposing a start date. Kabir confirms, and the pilot begins within a week. The pilot generates insights that lead to a larger partnership.\",\n    \"worst\": \"You reply today with a no, or you do not reply at all. Kabir interprets the silence as disinterest and moves on. Later, you realize the pilot would have been valuable, but Orchard HQ has already committed to another founder.\",\n    \"signals_to_watch\": [\n      \"A follow-up message from Kabir (escalation or withdrawal)\",\n      \"A message from the connector who introduced you, if any (checking in or moving on)\",\n      \"Your own calendar and notes (whether a decision was made and not communicated)\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The file has been quiet for 17 days, and Kabir's question is direct; a reply is overdue.\",\n      \"Silence on a partner's direct question damages the relationship and signals disrespect, which is costly to repair.\",\n      \"If you decide yes after a long silence, Kabir may have already moved on or may negotiate from a position of doubt about your commitment.\",\n      \"If you decide no and do not tell him, the opportunity is lost and the relationship is damaged.\",\n      \"The brief names design partners as an active goal, and this may be a fit; not deciding is a cost.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Decide whether to pursue the pilot with Orchard HQ, and if so, what the pilot entails and what you are committing to. If you cannot decide today, identify what information or approval is blocking the decision.\",\n    \"for_whom\": \"yourself and Kabir Sethi\",\n    \"by_when\": \"2026-09-12\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:3\",\n      \"unknown:1\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:2\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If you cannot decide by tomorrow, send Kabir a brief message today saying you are evaluating the pilot and will have an answer by a specific date (e.g., end of week). This resets the relationship and buys you time without leaving him in silence.\",\n  \"wait_or_stop\": \"Wait until you have decided or until you have identified the blocker. Do not wait longer than one more day; silence beyond that will have cost you the relationship. Stop if Orchard HQ sends a follow-up message that withdraws the offer or moves on; at that point, the decision is made for you.\",\n  \"done_when\": \"You have sent Kabir a clear yes or no, with a brief explanation. If yes, you have proposed a start date and next steps. If no, you have thanked him and left the door open for future conversations. The file is either closed or moved to an active pilot stage.\",\n  \"draft\": \"Hi Kabir, thanks for checking in. I've been evaluating the pilot and want to make sure we're aligned on what it would look like. Can we hop on a quick call this week to discuss the scope and timeline? I'm keen to explore this if it's a good fit for both of us. \u2014 Arjun\"\n}",
+  "site": "expert"
+ },
+ "e213b6fe1f803ad07b7ea2c5d0ef1962c758242c406cf4b3dabaad4561aa9dbd": {
+  "framed": true,
+  "input_tokens": 8080,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3828,
+  "parsed": {
+   "alternative": "If you learn that Meadow VC is not a fit for your stage or thesis, close the file and move the time to investors on your target list. If you learn that Ishaan is waiting for the round to open in September, wait until then and send a follow-up naming the round and asking for a meeting.",
+   "appraisal": {
+    "reasons": [
+     "Meadow VC is not named in the brief as a target investor, so it is not a priority in the round.",
+     "The file is quiet 28 days after an update with no ask, which is a common state for early-stage investor conversations.",
+     "A follow-up is low-cost and reversible; if Ishaan is not interested, the file can be closed without loss.",
+     "The round is opening in September (as of the update date 2026-08-14), so there is time to move this conversation or to close it.",
+     "The silence is ambiguous and could mean several things; a follow-up will clarify the stage and the next step."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "A meeting is scheduled with Ishaan, or Ishaan has passed with a clear reason and a date on which the conversation might reopen, or the file is closed because Meadow VC is not a fit.",
+   "draft": "Hi Ishaan, thanks for the July update. Before we open the round in September, I'd like to get your thoughts on whether Meadow VC is a fit for where we are. Would you have time for a quick call next week? Arjun",
+   "expected_vs_actual": {
+    "actual": "You sent an update naming three design partners and the seed round opening in September, with no ask and no named next step. Ishaan has not replied in 28 days. No prior stage, meeting, or commitment is recorded.",
+    "expected": "Without a playbook for this file, the expectation comes from the brief and the file's own history. The brief names no work with Meadow VC, so the expectation is that either this is a warm introduction still in the reading phase (where silence is the default), or it is a cold outreach that should have been followed up by now. An update sent without a named next step or ask should not be expected to generate a reply.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You wrote to Ishaan at Meadow VC on 2026-08-14 with a July update naming three design partners live and the seed round opening in September.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Nimbus Labs - July update Hi Ishaan, Our July update: three design partners live, and the seed round opens in September. Arjun"
+    },
+    {
+     "claim": "No reply has been received from Ishaan at Meadow VC since that message 28.25 days ago.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet",
+      "cov:last_mail",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Meadow VC is not named in the brief as a target investor in the seed wave or as engaged.",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise or next step was named in your message to Ishaan.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file records no prior relationship history, reply times, or stage of engagement with Meadow VC.",
+     "evidence": [
+      "file:core.relationship",
+      "num:their_reply_time:ishaan@meadowvc.test",
+      "num:your_reply_time:ishaan@meadowvc.test"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An early-stage investor conversation that has not yet reached a meeting or a named next step, now quiet for 28 days after an update with no ask. The stage is unknown, and the silence is ambiguous: it could be a soft no, a wait for the round to open, or an incomplete introduction.",
+    "rivals": [
+     "A warm introduction that is still in the reading phase, where silence is the default and no action is needed yet.",
+     "A cold outreach that has been passed on quietly, and the file should be closed or moved to a watch list.",
+     "A prior conversation with a named condition or timeline, where the silence is expected and the next move is to wait or to send a follow-up on that timeline.",
+     "An incomplete file where prior correspondence is missing, and the stage cannot be judged without the full history."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A record of who introduced you, when, and what Ishaan said in reply to the introduction.",
+     "proposition": "Meadow VC is a warm introduction from a connector and Ishaan is still reading the company."
+    },
+    {
+     "needs": "A follow-up from you that asks for a meeting or feedback, or a record of Ishaan's response to an earlier message.",
+     "proposition": "Meadow VC is a cold outreach and Ishaan has passed quietly."
+    },
+    {
+     "needs": "A prior conversation in which Ishaan named that condition, or a follow-up from you that asks whether he wants to meet before or after the round opens.",
+     "proposition": "Ishaan is interested but waiting for the seed round to open in September before engaging."
+    },
+    {
+     "needs": "A review of the full thread with Ishaan to establish the stage and any prior commitments.",
+     "proposition": "The file is incomplete and there is prior correspondence not recorded here."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+     ],
+     "claim": "The move is yours: you sent an update without naming a next step or asking for one, and silence since then means Ishaan has not committed to reply."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "file:first_touch"
+     ],
+     "claim": "Meadow VC may be a warm introduction from a connector, a cold outreach, or a follow-up to an earlier conversation not recorded in this file."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "The silence does not yet read as a pass or a no; it reads as a conversation that has not yet reached a stage where silence means anything definite."
+    },
+    {
+     "based_on": [
+      "file:kind",
+      "file:domains",
+      "sit:sit_#1"
+     ],
+     "claim": "The file's kind of work is missing from the brief, which names no work with Meadow VC, yet the dossier classifies it as fundraising and investor_relationship."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-18",
+    "for_whom": "Ishaan at Meadow VC",
+    "guided_by": [
+     "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+     "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": "ishaan@meadowvc.test",
+    "what": "Send a follow-up to Ishaan that names a specific reason to reply: ask for a meeting before the round opens, or ask a question about Meadow VC's fit for your stage and thesis. Do not send another update; ask for a conversation.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An update to an investor without a specific ask or next step is a courtesy, not a move in the round; it does not advance the conversation and should not be counted as progress.",
+     "kind": "practice",
+     "why": "The investor has no reason to reply, and the founder has no way to know whether the investor is still interested or has moved on. The round's momentum comes from investors seeing other investors move, not from receiving updates."
+    },
+    {
+     "claim": "Most investors who have not yet met the founder will not reply to an update email; those who are interested will ask for a meeting or send a question that names a next step.",
+     "kind": "base_rate",
+     "why": "An investor's time is scarce, and a reply to an update is a courtesy they extend only when they are actively considering the company or have already committed to a process."
+    },
+    {
+     "claim": "A file with no prior relationship history, no stage named, and no next step recorded should be treated as a cold or early-stage introduction until evidence shows otherwise.",
+     "kind": "practice",
+     "why": "Without a clear stage, the file cannot be aged or prioritized correctly, and the founder may waste time waiting for a reply that was never promised."
+    },
+    {
+     "claim": "Silence after an update can mean the investor is reading the company, has passed quietly, or is waiting for the next update; without a prior stage or a named next step, the silence is ambiguous.",
+     "kind": "counter_pattern",
+     "why": "The founder cannot know which it is, and the only way to find out is to ask for a meeting or to send a follow-up that names a specific reason to reply."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+      "cap:founder_office.fundraising.investor_relations#f3"
+     ],
+     "claim": "An update sent without a named next step or ask typically receives no reply, because the recipient has no obligation and no clear action.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+     ],
+     "claim": "Silence before a first meeting is the default; silence after a first call that named no next step is usually a soft no.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:founder_office.fundraising.investor_relations#f1"
+     ],
+     "claim": "A warm introduction from a connector may sit quiet for weeks while the investor reads the company and decides whether to engage, and silence in that window is not a signal.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "sit:sit_#1"
+    ],
+    "kind": "investor",
+    "why": "The file is classified as fundraising and investor_relationship in the dossier, and the message is an update to an investor during the seed round. The brief names Meadow VC in no work, but the dossier's situation and domains confirm it is an investor conversation."
+   },
+   "scenarios": {
+    "act": "You send a follow-up that names a specific reason to reply: a meeting request, a question about fit, or a fact that has changed since the update. If Ishaan replies with interest, you move to a meeting. If he passes or defers, you record the reason and the date on which it might reopen.",
+    "best": "Ishaan replies to your follow-up with interest and agrees to a meeting before the round opens. The conversation moves to a stage where you can pitch and learn what he needs to commit.",
+    "do_nothing": "The file remains quiet. After 45 days of silence (the engine's default window), the file may be marked dormant or closed, and Meadow VC will not be in the round. If Ishaan was interested, the lack of a follow-up will have cost the relationship.",
+    "signals_to_watch": [
+     "A reply from Ishaan to a follow-up within a week, naming interest or a meeting.",
+     "A reply that names a condition or a timeline (e.g., 'come back when the round is live').",
+     "No reply after a follow-up, which reads as a soft no.",
+     "A message from Ishaan before you follow up, which would change the stage and the next move."
+    ],
+    "worst": "Ishaan does not reply to the follow-up, or replies with a pass on fit or timing. The file is closed or moved to a watch list, and the time spent on it is lost."
+   },
+   "unknowns": [
+    {
+     "question": "How did you come to write to Ishaan at Meadow VC? Was it a warm introduction, a cold outreach, or a follow-up to an earlier conversation?",
+     "relevance": "The source of the introduction determines whether silence is a soft no, a wait, or ambiguous. A warm introduction carries different expectations than a cold email."
+    },
+    {
+     "question": "What is Meadow VC's stage, cheque size, and thesis? Do they invest in seed-stage AI companies?",
+     "relevance": "If Meadow VC does not fit your stage or thesis, the silence may be a pass on fit rather than on the company, and the file should be closed or moved to a watch list."
+    },
+    {
+     "question": "Is there prior correspondence with Ishaan or Meadow VC that is not recorded in this file?",
+     "relevance": "The stage of the conversation cannot be judged without the full history. A prior meeting, a pass, or a conditional deferral would change the next move entirely."
+    },
+    {
+     "question": "Did you name a next step or ask in your update, or did Ishaan reply to an earlier message with a condition or a timeline?",
+     "relevance": "If Ishaan said 'send me updates' or 'come back when the round opens', the silence is expected and the next move is to wait or to send a follow-up on that timeline."
+    },
+    {
+     "question": "Is Meadow VC on your target list for this round, or is this a secondary outreach?",
+     "relevance": "If Meadow VC is not a priority, the file may not need action now. If it is, the silence after 28 days needs a follow-up to establish whether Ishaan is still interested."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-18 for a reply to the follow-up. If no reply comes by then, and the round is open, send one more follow-up naming the round and asking for a meeting. If Ishaan replies with a pass or a deferral, record the reason and the date on which it might reopen. If Ishaan replies with interest, move to a meeting. Stop if Meadow VC is not a fit for your stage or thesis, or if Ishaan explicitly passes on the company."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You wrote to Ishaan at Meadow VC on 2026-08-14 with a July update naming three design partners live and the seed round opening in September.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Nimbus Labs - July update Hi Ishaan, Our July update: three design partners live, and the seed round opens in September. Arjun\"\n    },\n    {\n      \"claim\": \"No reply has been received from Ishaan at Meadow VC since that message 28.25 days ago.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\",\n        \"cov:last_mail\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Meadow VC is not named in the brief as a target investor in the seed wave or as engaged.\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise or next step was named in your message to Ishaan.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file records no prior relationship history, reply times, or stage of engagement with Meadow VC.\",\n      \"evidence\": [\n        \"file:core.relationship\",\n        \"num:their_reply_time:ishaan@meadowvc.test\",\n        \"num:your_reply_time:ishaan@meadowvc.test\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The move is yours: you sent an update without naming a next step or asking for one, and silence since then means Ishaan has not committed to reply.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"pb:founder_office.heu.investor_relations.investors_do_not_chase\"\n      ]\n    },\n    {\n      \"claim\": \"Meadow VC may be a warm introduction from a connector, a cold outreach, or a follow-up to an earlier conversation not recorded in this file.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"file:first_touch\"\n      ]\n    },\n    {\n      \"claim\": \"The silence does not yet read as a pass or a no; it reads as a conversation that has not yet reached a stage where silence means anything definite.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"claim\": \"The file's kind of work is missing from the brief, which names no work with Meadow VC, yet the dossier classifies it as fundraising and investor_relationship.\",\n      \"based_on\": [\n        \"file:kind\",\n        \"file:domains\",\n        \"sit:sit_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An update sent without a named next step or ask typically receives no reply, because the recipient has no obligation and no clear action.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n        \"cap:founder_office.fundraising.investor_relations#f3\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Silence before a first meeting is the default; silence after a first call that named no next step is usually a soft no.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A warm introduction from a connector may sit quiet for weeks while the investor reads the company and decides whether to engage, and silence in that window is not a signal.\",\n      \"based_on\": [\n        \"cap:founder_office.fundraising.investor_relations#f1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An update to an investor without a specific ask or next step is a courtesy, not a move in the round; it does not advance the conversation and should not be counted as progress.\",\n      \"why\": \"The investor has no reason to reply, and the founder has no way to know whether the investor is still interested or has moved on. The round's momentum comes from investors seeing other investors move, not from receiving updates.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most investors who have not yet met the founder will not reply to an update email; those who are interested will ask for a meeting or send a question that names a next step.\",\n      \"why\": \"An investor's time is scarce, and a reply to an update is a courtesy they extend only when they are actively considering the company or have already committed to a process.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A file with no prior relationship history, no stage named, and no next step recorded should be treated as a cold or early-stage introduction until evidence shows otherwise.\",\n      \"why\": \"Without a clear stage, the file cannot be aged or prioritized correctly, and the founder may waste time waiting for a reply that was never promised.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence after an update can mean the investor is reading the company, has passed quietly, or is waiting for the next update; without a prior stage or a named next step, the silence is ambiguous.\",\n      \"why\": \"The founder cannot know which it is, and the only way to find out is to ask for a meeting or to send a follow-up that names a specific reason to reply.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Meadow VC is a warm introduction from a connector and Ishaan is still reading the company.\",\n      \"needs\": \"A record of who introduced you, when, and what Ishaan said in reply to the introduction.\"\n    },\n    {\n      \"proposition\": \"Meadow VC is a cold outreach and Ishaan has passed quietly.\",\n      \"needs\": \"A follow-up from you that asks for a meeting or feedback, or a record of Ishaan's response to an earlier message.\"\n    },\n    {\n      \"proposition\": \"Ishaan is interested but waiting for the seed round to open in September before engaging.\",\n      \"needs\": \"A prior conversation in which Ishaan named that condition, or a follow-up from you that asks whether he wants to meet before or after the round opens.\"\n    },\n    {\n      \"proposition\": \"The file is incomplete and there is prior correspondence not recorded here.\",\n      \"needs\": \"A review of the full thread with Ishaan to establish the stage and any prior commitments.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"How did you come to write to Ishaan at Meadow VC? Was it a warm introduction, a cold outreach, or a follow-up to an earlier conversation?\",\n      \"relevance\": \"The source of the introduction determines whether silence is a soft no, a wait, or ambiguous. A warm introduction carries different expectations than a cold email.\"\n    },\n    {\n      \"question\": \"What is Meadow VC's stage, cheque size, and thesis? Do they invest in seed-stage AI companies?\",\n      \"relevance\": \"If Meadow VC does not fit your stage or thesis, the silence may be a pass on fit rather than on the company, and the file should be closed or moved to a watch list.\"\n    },\n    {\n      \"question\": \"Is there prior correspondence with Ishaan or Meadow VC that is not recorded in this file?\",\n      \"relevance\": \"The stage of the conversation cannot be judged without the full history. A prior meeting, a pass, or a conditional deferral would change the next move entirely.\"\n    },\n    {\n      \"question\": \"Did you name a next step or ask in your update, or did Ishaan reply to an earlier message with a condition or a timeline?\",\n      \"relevance\": \"If Ishaan said 'send me updates' or 'come back when the round opens', the silence is expected and the next move is to wait or to send a follow-up on that timeline.\"\n    },\n    {\n      \"question\": \"Is Meadow VC on your target list for this round, or is this a secondary outreach?\",\n      \"relevance\": \"If Meadow VC is not a priority, the file may not need action now. If it is, the silence after 28 days needs a follow-up to establish whether Ishaan is still interested.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An early-stage investor conversation that has not yet reached a meeting or a named next step, now quiet for 28 days after an update with no ask. The stage is unknown, and the silence is ambiguous: it could be a soft no, a wait for the round to open, or an incomplete introduction.\",\n    \"rivals\": [\n      \"A warm introduction that is still in the reading phase, where silence is the default and no action is needed yet.\",\n      \"A cold outreach that has been passed on quietly, and the file should be closed or moved to a watch list.\",\n      \"A prior conversation with a named condition or timeline, where the silence is expected and the next move is to wait or to send a follow-up on that timeline.\",\n      \"An incomplete file where prior correspondence is missing, and the stage cannot be judged without the full history.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"investor\",\n    \"why\": \"The file is classified as fundraising and investor_relationship in the dossier, and the message is an update to an investor during the seed round. The brief names Meadow VC in no work, but the dossier's situation and domains confirm it is an investor conversation.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"sit:sit_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook for this file, the expectation comes from the brief and the file's own history. The brief names no work with Meadow VC, so the expectation is that either this is a warm introduction still in the reading phase (where silence is the default), or it is a cold outreach that should have been followed up by now. An update sent without a named next step or ask should not be expected to generate a reply.\",\n    \"actual\": \"You sent an update naming three design partners and the seed round opening in September, with no ask and no named next step. Ishaan has not replied in 28 days. No prior stage, meeting, or commitment is recorded.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains quiet. After 45 days of silence (the engine's default window), the file may be marked dormant or closed, and Meadow VC will not be in the round. If Ishaan was interested, the lack of a follow-up will have cost the relationship.\",\n    \"act\": \"You send a follow-up that names a specific reason to reply: a meeting request, a question about fit, or a fact that has changed since the update. If Ishaan replies with interest, you move to a meeting. If he passes or defers, you record the reason and the date on which it might reopen.\",\n    \"best\": \"Ishaan replies to your follow-up with interest and agrees to a meeting before the round opens. The conversation moves to a stage where you can pitch and learn what he needs to commit.\",\n    \"worst\": \"Ishaan does not reply to the follow-up, or replies with a pass on fit or timing. The file is closed or moved to a watch list, and the time spent on it is lost.\",\n    \"signals_to_watch\": [\n      \"A reply from Ishaan to a follow-up within a week, naming interest or a meeting.\",\n      \"A reply that names a condition or a timeline (e.g., 'come back when the round is live').\",\n      \"No reply after a follow-up, which reads as a soft no.\",\n      \"A message from Ishaan before you follow up, which would change the stage and the next move.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Meadow VC is not named in the brief as a target investor, so it is not a priority in the round.\",\n      \"The file is quiet 28 days after an update with no ask, which is a common state for early-stage investor conversations.\",\n      \"A follow-up is low-cost and reversible; if Ishaan is not interested, the file can be closed without loss.\",\n      \"The round is opening in September (as of the update date 2026-08-14), so there is time to move this conversation or to close it.\",\n      \"The silence is ambiguous and could mean several things; a follow-up will clarify the stage and the next step.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send a follow-up to Ishaan that names a specific reason to reply: ask for a meeting before the round opens, or ask a question about Meadow VC's fit for your stage and thesis. Do not send another update; ask for a conversation.\",\n    \"for_whom\": \"Ishaan at Meadow VC\",\n    \"by_when\": \"2026-09-18\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.investor_relations.run_an_investor_conversation\",\n      \"pb:founder_office.heu.investor_relations.investors_do_not_chase\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"ishaan@meadowvc.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If you learn that Meadow VC is not a fit for your stage or thesis, close the file and move the time to investors on your target list. If you learn that Ishaan is waiting for the round to open in September, wait until then and send a follow-up naming the round and asking for a meeting.\",\n  \"wait_or_stop\": \"Wait until 2026-09-18 for a reply to the follow-up. If no reply comes by then, and the round is open, send one more follow-up naming the round and asking for a meeting. If Ishaan replies with a pass or a deferral, record the reason and the date on which it might reopen. If Ishaan replies with interest, move to a meeting. Stop if Meadow VC is not a fit for your stage or thesis, or if Ishaan explicitly passes on the company.\",\n  \"done_when\": \"A meeting is scheduled with Ishaan, or Ishaan has passed with a clear reason and a date on which the conversation might reopen, or the file is closed because Meadow VC is not a fit.\",\n  \"draft\": \"Hi Ishaan, thanks for the July update. Before we open the round in September, I'd like to get your thoughts on whether Meadow VC is a fit for where we are. Would you have time for a quick call next week? Arjun\"\n}",
+  "site": "expert"
+ },
+ "e9252ed4d783d7265044f5a60faa394b025948edd4eb72bedd3674ab8608f81f": {
+  "framed": true,
+  "input_tokens": 5964,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2614,
+  "parsed": {
+   "alternative": "If the pricing sheet does not exist or you are uncertain about Tanglewood's fit, send a brief reply asking what Tanglewood does and why they are interested in Nimbus Labs' pricing \u2014 this buys time and gathers information before committing to a full response.",
+   "appraisal": {
+    "reasons": [
+     "Inbound sales inquiries are rare at seed stage and represent validation; losing one signals poor execution.",
+     "The delay is already 26.29 days; each additional day increases the risk that Dev has moved on.",
+     "A quick reply costs little and preserves optionality; a non-reply is a missed signal to the market.",
+     "If Tanglewood is a design partner or customer, the relationship could support the seed raise narrative."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "Dev receives your message and either replies with follow-up questions or confirms receipt. If Dev does not reply within seven days, the inquiry is dormant and the file can be closed unless Tanglewood reaches out again.",
+   "draft": "Hi Dev, apologies for the delay. I'd love to send over our pricing sheet \u2014 but first, I'd like to understand what you're building at Tanglewood and how Nimbus Labs might fit. Are you exploring this for your own team, or for a customer? Happy to jump on a quick call if that's easier. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The inquiry has gone unanswered for 26.29 days.",
+    "expected": "The brief names no playbook for this work; without a named kind, there is no stage. A general expectation for inbound sales is a reply within one to two business days.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Dev Malhotra from Tanglewood asked for a pricing sheet on 2026-08-16.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Could you send the pricing sheet?"
+    },
+    {
+     "claim": "The file has been quiet for 26.29 days since the initial contact.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's role in the brief is none.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The move is ours \u2014 we have not yet replied.",
+     "evidence": [
+      "file:whose_move",
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was made in the mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An inbound sales inquiry from a prospect who asked for pricing and has gone unanswered for over three weeks, creating risk of lost opportunity and reputational damage.",
+    "rivals": [
+     "A low-priority vendor inquiry that does not fit the brief's named work and can be safely ignored.",
+     "A design partner exploration that was deprioritized in favor of the seed raise and accelerator goals."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Clarification of what Tanglewood does and why they asked for pricing \u2014 does it fit the brief's design partner or customer profile?",
+     "proposition": "Tanglewood is a potential design partner or customer for Nimbus Labs' AI chief of staff product."
+    },
+    {
+     "needs": "Confirmation that a pricing sheet has been prepared; if not, what is the blocker?",
+     "proposition": "The pricing sheet exists and is ready to send."
+    },
+    {
+     "needs": "Confirmation of whether Tanglewood is a strategic fit or a distraction from the seed raise and accelerator goals.",
+     "proposition": "This inquiry was deprioritized because it does not map to the brief's named work streams."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "file:domains",
+      "file:kind",
+      "file:role"
+     ],
+     "claim": "This is a sales inquiry from a potential customer or partner, not a named work stream in the brief."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "file:whose_move"
+     ],
+     "claim": "The request has gone unanswered for over three weeks, which is a significant delay for a direct ask."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "ru:core.risk"
+     ],
+     "claim": "The silence creates risk: Dev may assume disinterest, move to a competitor, or deprioritize Nimbus."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-12",
+    "for_whom": "Dev Malhotra at Tanglewood",
+    "guided_by": [
+     "own:1",
+     "own:2",
+     "ru:core.temporal"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "dev@tanglewood.test",
+    "what": "send the pricing sheet to Dev Malhotra, or reply explaining why you cannot yet and when you will",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A pricing sheet request answered within a day keeps the prospect warm and signals professionalism.",
+     "kind": "practice",
+     "why": "Founders in seed stage are often resource-constrained and miss inbound; a quick reply to a direct ask costs little and preserves optionality."
+    },
+    {
+     "claim": "Inbound sales inquiries at seed stage are rare and valuable; they represent validation that the product solves a real problem.",
+     "kind": "base_rate",
+     "why": "Most seed-stage work is outbound; inbound means the prospect found you and saw enough to ask a question."
+    },
+    {
+     "claim": "A prospect who asks for pricing but receives no reply often does not follow up a second time.",
+     "kind": "counter_pattern",
+     "why": "The burden of persistence shifts to them; if they care enough, they will chase; if not, silence is their answer."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "file:domains"
+     ],
+     "claim": "A direct request for a pricing sheet is a sales signal \u2014 the prospect is evaluating whether to engage.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "ru:core.temporal"
+     ],
+     "claim": "Unanswered asks in the first month often go cold; the prospect's urgency decays.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:domains",
+     "file:role",
+     "evt_#1"
+    ],
+    "kind": "vendor",
+    "why": "The file is categorized as sales, the contact is a company (Tanglewood), and the ask is for pricing \u2014 the pattern of a vendor or customer inquiry, not a named work stream in the brief."
+   },
+   "scenarios": {
+    "act": "You send the pricing sheet (or a reply explaining why you cannot yet) within one day. Dev receives a response, the thread stays warm, and you learn whether Tanglewood is a customer, partner, or distraction.",
+    "best": "Tanglewood is a design partner or early customer; the pricing sheet sparks a conversation that leads to a partnership or pilot, validating the product and generating case study material for the seed raise.",
+    "do_nothing": "Dev Malhotra assumes disinterest, moves to a competitor, or deprioritizes Nimbus. The inquiry goes cold. If Tanglewood is a strategic fit, the opportunity is lost.",
+    "signals_to_watch": [
+     "Whether Dev replies to your message within three days.",
+     "Whether Dev asks follow-up questions about pricing, features, or use cases.",
+     "Whether Tanglewood expresses interest in a pilot, partnership, or customer engagement.",
+     "Whether this inquiry is part of a pattern of inbound interest or a one-off."
+    ],
+    "worst": "You send the pricing sheet and receive no reply, or Dev replies that Tanglewood has already moved on. The opportunity is lost, and the delay signals poor execution to a prospect."
+   },
+   "unknowns": [
+    {
+     "question": "What does Tanglewood do, and why did they ask for Nimbus Labs' pricing?",
+     "relevance": "This determines whether the inquiry is a customer, partner, or unrelated vendor \u2014 and whether it deserves priority."
+    },
+    {
+     "question": "Does a pricing sheet exist, and if so, what does it say?",
+     "relevance": "If it exists, sending it is a one-minute task; if it does not, the delay may reflect a deeper product or pricing uncertainty."
+    },
+    {
+     "question": "How did Dev Malhotra find Nimbus Labs, and what triggered the ask?",
+     "relevance": "Inbound signals are rare at seed stage; understanding the source tells you whether this is a one-off or a sign of product-market fit."
+    },
+    {
+     "question": "Is Tanglewood a strategic fit for Nimbus Labs' current goals?",
+     "relevance": "If yes, this is a sales opportunity; if no, it may be a distraction from the seed raise and accelerator work."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The inquiry is already 26 days old; each day of silence increases the risk of losing the prospect. If Dev does not reply within seven days of your message, the inquiry has likely gone cold and can be marked dormant. If Tanglewood is not a strategic fit after you learn more, you can deprioritize it, but you must reply first."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Dev Malhotra from Tanglewood asked for a pricing sheet on 2026-08-16.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Could you send the pricing sheet?\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 26.29 days since the initial contact.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's role in the brief is none.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The move is ours \u2014 we have not yet replied.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was made in the mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a sales inquiry from a potential customer or partner, not a named work stream in the brief.\",\n      \"based_on\": [\n        \"file:domains\",\n        \"file:kind\",\n        \"file:role\"\n      ]\n    },\n    {\n      \"claim\": \"The request has gone unanswered for over three weeks, which is a significant delay for a direct ask.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The silence creates risk: Dev may assume disinterest, move to a competitor, or deprioritize Nimbus.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"ru:core.risk\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A direct request for a pricing sheet is a sales signal \u2014 the prospect is evaluating whether to engage.\",\n      \"based_on\": [\n        \"file:domains\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Unanswered asks in the first month often go cold; the prospect's urgency decays.\",\n      \"based_on\": [\n        \"ru:core.temporal\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A pricing sheet request answered within a day keeps the prospect warm and signals professionalism.\",\n      \"why\": \"Founders in seed stage are often resource-constrained and miss inbound; a quick reply to a direct ask costs little and preserves optionality.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Inbound sales inquiries at seed stage are rare and valuable; they represent validation that the product solves a real problem.\",\n      \"why\": \"Most seed-stage work is outbound; inbound means the prospect found you and saw enough to ask a question.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A prospect who asks for pricing but receives no reply often does not follow up a second time.\",\n      \"why\": \"The burden of persistence shifts to them; if they care enough, they will chase; if not, silence is their answer.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Tanglewood is a potential design partner or customer for Nimbus Labs' AI chief of staff product.\",\n      \"needs\": \"Clarification of what Tanglewood does and why they asked for pricing \u2014 does it fit the brief's design partner or customer profile?\"\n    },\n    {\n      \"proposition\": \"The pricing sheet exists and is ready to send.\",\n      \"needs\": \"Confirmation that a pricing sheet has been prepared; if not, what is the blocker?\"\n    },\n    {\n      \"proposition\": \"This inquiry was deprioritized because it does not map to the brief's named work streams.\",\n      \"needs\": \"Confirmation of whether Tanglewood is a strategic fit or a distraction from the seed raise and accelerator goals.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What does Tanglewood do, and why did they ask for Nimbus Labs' pricing?\",\n      \"relevance\": \"This determines whether the inquiry is a customer, partner, or unrelated vendor \u2014 and whether it deserves priority.\"\n    },\n    {\n      \"question\": \"Does a pricing sheet exist, and if so, what does it say?\",\n      \"relevance\": \"If it exists, sending it is a one-minute task; if it does not, the delay may reflect a deeper product or pricing uncertainty.\"\n    },\n    {\n      \"question\": \"How did Dev Malhotra find Nimbus Labs, and what triggered the ask?\",\n      \"relevance\": \"Inbound signals are rare at seed stage; understanding the source tells you whether this is a one-off or a sign of product-market fit.\"\n    },\n    {\n      \"question\": \"Is Tanglewood a strategic fit for Nimbus Labs' current goals?\",\n      \"relevance\": \"If yes, this is a sales opportunity; if no, it may be a distraction from the seed raise and accelerator work.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An inbound sales inquiry from a prospect who asked for pricing and has gone unanswered for over three weeks, creating risk of lost opportunity and reputational damage.\",\n    \"rivals\": [\n      \"A low-priority vendor inquiry that does not fit the brief's named work and can be safely ignored.\",\n      \"A design partner exploration that was deprioritized in favor of the seed raise and accelerator goals.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"vendor\",\n    \"why\": \"The file is categorized as sales, the contact is a company (Tanglewood), and the ask is for pricing \u2014 the pattern of a vendor or customer inquiry, not a named work stream in the brief.\",\n    \"evidence\": [\n      \"file:domains\",\n      \"file:role\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this work; without a named kind, there is no stage. A general expectation for inbound sales is a reply within one to two business days.\",\n    \"actual\": \"The inquiry has gone unanswered for 26.29 days.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Dev Malhotra assumes disinterest, moves to a competitor, or deprioritizes Nimbus. The inquiry goes cold. If Tanglewood is a strategic fit, the opportunity is lost.\",\n    \"act\": \"You send the pricing sheet (or a reply explaining why you cannot yet) within one day. Dev receives a response, the thread stays warm, and you learn whether Tanglewood is a customer, partner, or distraction.\",\n    \"best\": \"Tanglewood is a design partner or early customer; the pricing sheet sparks a conversation that leads to a partnership or pilot, validating the product and generating case study material for the seed raise.\",\n    \"worst\": \"You send the pricing sheet and receive no reply, or Dev replies that Tanglewood has already moved on. The opportunity is lost, and the delay signals poor execution to a prospect.\",\n    \"signals_to_watch\": [\n      \"Whether Dev replies to your message within three days.\",\n      \"Whether Dev asks follow-up questions about pricing, features, or use cases.\",\n      \"Whether Tanglewood expresses interest in a pilot, partnership, or customer engagement.\",\n      \"Whether this inquiry is part of a pattern of inbound interest or a one-off.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Inbound sales inquiries are rare at seed stage and represent validation; losing one signals poor execution.\",\n      \"The delay is already 26.29 days; each additional day increases the risk that Dev has moved on.\",\n      \"A quick reply costs little and preserves optionality; a non-reply is a missed signal to the market.\",\n      \"If Tanglewood is a design partner or customer, the relationship could support the seed raise narrative.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send the pricing sheet to Dev Malhotra, or reply explaining why you cannot yet and when you will\",\n    \"for_whom\": \"Dev Malhotra at Tanglewood\",\n    \"by_when\": \"2026-09-12\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:2\",\n      \"ru:core.temporal\"\n    ],\n    \"to\": \"dev@tanglewood.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the pricing sheet does not exist or you are uncertain about Tanglewood's fit, send a brief reply asking what Tanglewood does and why they are interested in Nimbus Labs' pricing \u2014 this buys time and gathers information before committing to a full response.\",\n  \"wait_or_stop\": \"Do not wait. The inquiry is already 26 days old; each day of silence increases the risk of losing the prospect. If Dev does not reply within seven days of your message, the inquiry has likely gone cold and can be marked dormant. If Tanglewood is not a strategic fit after you learn more, you can deprioritize it, but you must reply first.\",\n  \"done_when\": \"Dev receives your message and either replies with follow-up questions or confirms receipt. If Dev does not reply within seven days, the inquiry is dormant and the file can be closed unless Tanglewood reaches out again.\",\n  \"draft\": \"Hi Dev, apologies for the delay. I'd love to send over our pricing sheet \u2014 but first, I'd like to understand what you're building at Tanglewood and how Nimbus Labs might fit. Are you exploring this for your own team, or for a customer? Happy to jump on a quick call if that's easier. Best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

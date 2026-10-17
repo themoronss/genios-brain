@@ -1,0 +1,692 @@
+{
+ "80cb1236b20d303da5ba7b5a1b786e0793243fdcacb6070aa8cb18c0107278ad": {
+  "framed": true,
+  "input_tokens": 7570,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3295,
+  "parsed": {
+   "alternative": "If the founder believes the prospect may be revisited later, send only a reply to Introly confirming the decline, and leave Zara's thread open without a closing message. This preserves optionality but risks leaving Introly without closure.",
+   "appraisal": {
+    "reasons": [
+     "The prospect has already declined and is unlikely to convert; the stakes are the founder's relationship with the connector and the quality of future introductions, not the prospect itself",
+     "Introly's follow-up on 2026-08-12 signals that a response is expected soon; the window for graceful closure is narrow",
+     "A brief closing message can be sent at any time and does not commit the founder to anything; the move is fully reversible"
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "medium"
+   },
+   "done_when": "Zara has received a professional closing message, Introly has received confirmation that the introduction did not convert, and both threads are marked complete in the file.",
+   "draft": "Hi Zara, thank you for taking the time to meet. I appreciate you letting me know about your vendor commitment\u2014best of luck with them. If circumstances change and you'd like to explore Nimbus Labs, I'd be happy to reconnect. All the best, Arjun",
+   "expected_vs_actual": {
+    "actual": "Zara declined on 2026-08-05. The founder has not sent a closing message to Zara. Introly followed up on 2026-08-12 asking whether the two had connected. The file remains open with no recorded outbound message from the founder.",
+    "expected": "When an introduction is declined, the founder should acknowledge the decline to the prospect and update the connector within a few days. A queued card to send a closing message indicates a prior judgment that this should happen.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced the founder to someone at Northlake on 2026-08-05 06:00 UTC",
+     "evidence": [
+      "evt_#3",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Zara Hussain, who runs operations at Northlake and is looking at tools for her team. Zara, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "Zara Hussain replied the same day declining to engage, citing a prior vendor commitment",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "We've just signed with another vendor, so I'll pass for now. Best of luck with Nimbus Labs."
+    },
+    {
+     "claim": "Introly sent a follow-up check-in on 2026-08-12 06:00 UTC asking whether the two had connected",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Did you and Zara connect? Hi Arjun, a week ago I introduced you to Zara Hussain at Northlake. Did the two of you get a chance to connect?"
+    },
+    {
+     "claim": "No outbound message from the founder to Zara Hussain is recorded in the file",
+     "evidence": [
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days as of the dossier timestamp",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was queued to send a closing message to Zara Hussain",
+     "evidence": [
+      "card:card_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is not named by the brief",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A declined introduction that requires closure: Zara Hussain declined on 2026-08-05 citing a prior vendor commitment, and the founder has not yet acknowledged the decline or updated the connector. Introly's follow-up on 2026-08-12 signals that closure is expected.",
+    "rivals": [
+     "A dormant prospect that may be revisited later if circumstances change: Zara's decline was conditional on her current vendor relationship, and the founder may choose to re-engage if that relationship ends",
+     "An incomplete introduction where the founder has not yet engaged substantively: The founder may have intended to send a message to Zara and simply has not yet done so"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A review of the founder's intent on the queued card and the reason for the delay",
+     "proposition": "The founder intended to send a closing message to Zara Hussain but has not yet done so"
+    },
+    {
+     "needs": "Explicit confirmation from the founder that the file should be closed without further outreach",
+     "proposition": "The founder has decided not to send a closing message and the card should be discarded"
+    },
+    {
+     "needs": "Clarification of whether Introly expects a direct reply or whether the founder's action with Zara is sufficient",
+     "proposition": "Introly's follow-up check-in is a routine connector practice and does not require a response from the founder"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The introduction did not result in engagement; Zara declined before any substantive conversation occurred"
+    },
+    {
+     "based_on": [
+      "fact:3"
+     ],
+     "claim": "Introly's follow-up check-in on 2026-08-12 suggests the connector is tracking the outcome and expects a report back"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:4"
+     ],
+     "claim": "The ball is in the founder's court: Zara has declined and the founder has not yet closed the loop with either Zara or Introly"
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "review:ffp-dcb03bc8869d2ee730bf459a"
+     ],
+     "claim": "The queued card to send a closing message to Zara Hussain represents a prior judgment that the file should be closed gracefully"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-13",
+    "for_whom": "Zara Hussain and Introly",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:2",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:3",
+     "fact:4",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "zara@northlake.test",
+    "what": "send a brief closing message to Zara Hussain thanking her for her time and wishing her well with her vendor, and reply to Introly confirming that Zara declined due to a prior commitment",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A prospect who declines on the grounds of a prior vendor commitment has made a binary decision, not a deferral; the appropriate response is acknowledgment and closure, not persistence",
+     "kind": "practice",
+     "why": "Reopening a declined prospect consumes founder time and damages the connector's credibility for future introductions"
+    },
+    {
+     "claim": "When a connector follows up to ask whether an introduction connected, the founder owes them a status update within a few days, whether the outcome was positive or not",
+     "kind": "practice",
+     "why": "Connectors track their hit rate and use founder feedback to calibrate future introductions; silence reads as either disinterest or poor process"
+    },
+    {
+     "claim": "Introductions that result in same-day declines rarely convert to later engagement, even if circumstances change",
+     "kind": "base_rate",
+     "why": "A prospect who has already committed to a vendor is unlikely to revisit the decision unless their vendor fails or their needs shift materially"
+    },
+    {
+     "claim": "A queued card that sits unexecuted for over a week signals either that the founder disagreed with it or that it was deprioritized; either way, it should be reviewed and either executed or explicitly closed",
+     "kind": "practice",
+     "why": "Stale cards in a queue create noise and obscure the actual state of work in motion"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "When an introduction results in a same-day decline citing a prior commitment, further outreach to the prospect is unlikely to change the outcome",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "A connector's follow-up check-in after a declined introduction signals they expect closure or a status update from the founder",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "fact:7",
+      "none:playbook"
+     ],
+     "claim": "The file remains open with no playbook and no clear next action, despite a prior card queued to close it",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "file:introduced_by",
+     "brief:cbl_#27"
+    ],
+    "kind": "intro",
+    "why": "The file documents an introduction made by Introly, a connector. The brief names Introly as a connector whose role is to introduce the founder to people. The work is the management of that introduction and its outcome."
+   },
+   "scenarios": {
+    "act": "The founder sends a brief closing message to Zara thanking her and wishing her well, and replies to Introly confirming that Zara declined due to a prior vendor commitment. Both threads are closed. The connector receives feedback and the file is marked complete.",
+    "best": "The founder sends both messages today. Introly receives timely feedback and marks the introduction as a learning point for future calibration. Zara receives a professional closing that leaves the door open for future contact if circumstances change. The founder's relationship with Introly is strengthened.",
+    "do_nothing": "Introly's follow-up goes unanswered. The connector does not receive closure on the introduction and may reduce the quality or frequency of future introductions. The file remains open indefinitely, consuming attention without generating value. The founder's reputation with Introly as a responsive partner is diminished.",
+    "signals_to_watch": [
+     "Whether Introly sends a second follow-up or escalates the check-in",
+     "Whether the founder executes the queued card or explicitly closes it",
+     "Whether Zara reaches out again or the thread goes silent"
+    ],
+    "worst": "The founder does not respond to Introly. Introly assumes the introduction was ignored or mishandled. The founder's credibility as a responsive partner is damaged, and Introly reduces the priority or quality of future introductions. The file remains open and becomes a source of ambient guilt."
+   },
+   "unknowns": [
+    {
+     "question": "Did the founder send any message to Zara Hussain that is not captured in the file's mail record?",
+     "relevance": "If the founder has already closed the loop with Zara, the file should be marked closed and Introly should be notified; if not, the next move is clear"
+    },
+    {
+     "question": "What was the founder's reasoning for queuing the card to send a closing message, and why has it not been executed?",
+     "relevance": "This determines whether the file is awaiting execution of a prior decision or whether the decision itself needs to be revisited"
+    },
+    {
+     "question": "Does Introly expect a direct reply to their check-in, or is the founder's action with Zara sufficient to close the loop?",
+     "relevance": "This determines whether the next move is to reply to Introly, to Zara, or to both"
+    }
+   ],
+   "wait_or_stop": "Do not wait. Introly's follow-up on 2026-08-12 signals that closure is expected within days. Stop if Zara replies to the closing message or if Introly confirms receipt of the status update."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced the founder to someone at Northlake on 2026-08-05 06:00 UTC\",\n      \"evidence\": [\n        \"evt_#3\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Zara Hussain, who runs operations at Northlake and is looking at tools for her team. Zara, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"Zara Hussain replied the same day declining to engage, citing a prior vendor commitment\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"We've just signed with another vendor, so I'll pass for now. Best of luck with Nimbus Labs.\"\n    },\n    {\n      \"claim\": \"Introly sent a follow-up check-in on 2026-08-12 06:00 UTC asking whether the two had connected\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Did you and Zara connect? Hi Arjun, a week ago I introduced you to Zara Hussain at Northlake. Did the two of you get a chance to connect?\"\n    },\n    {\n      \"claim\": \"No outbound message from the founder to Zara Hussain is recorded in the file\",\n      \"evidence\": [\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days as of the dossier timestamp\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was queued to send a closing message to Zara Hussain\",\n      \"evidence\": [\n        \"card:card_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is not named by the brief\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The introduction did not result in engagement; Zara declined before any substantive conversation occurred\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"Introly's follow-up check-in on 2026-08-12 suggests the connector is tracking the outcome and expects a report back\",\n      \"based_on\": [\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in the founder's court: Zara has declined and the founder has not yet closed the loop with either Zara or Introly\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"The queued card to send a closing message to Zara Hussain represents a prior judgment that the file should be closed gracefully\",\n      \"based_on\": [\n        \"fact:6\",\n        \"review:ffp-dcb03bc8869d2ee730bf459a\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When an introduction results in a same-day decline citing a prior commitment, further outreach to the prospect is unlikely to change the outcome\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A connector's follow-up check-in after a declined introduction signals they expect closure or a status update from the founder\",\n      \"based_on\": [\n        \"fact:3\",\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"The file remains open with no playbook and no clear next action, despite a prior card queued to close it\",\n      \"based_on\": [\n        \"fact:6\",\n        \"fact:7\",\n        \"none:playbook\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A prospect who declines on the grounds of a prior vendor commitment has made a binary decision, not a deferral; the appropriate response is acknowledgment and closure, not persistence\",\n      \"why\": \"Reopening a declined prospect consumes founder time and damages the connector's credibility for future introductions\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a connector follows up to ask whether an introduction connected, the founder owes them a status update within a few days, whether the outcome was positive or not\",\n      \"why\": \"Connectors track their hit rate and use founder feedback to calibrate future introductions; silence reads as either disinterest or poor process\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions that result in same-day declines rarely convert to later engagement, even if circumstances change\",\n      \"why\": \"A prospect who has already committed to a vendor is unlikely to revisit the decision unless their vendor fails or their needs shift materially\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A queued card that sits unexecuted for over a week signals either that the founder disagreed with it or that it was deprioritized; either way, it should be reviewed and either executed or explicitly closed\",\n      \"why\": \"Stale cards in a queue create noise and obscure the actual state of work in motion\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The founder intended to send a closing message to Zara Hussain but has not yet done so\",\n      \"needs\": \"A review of the founder's intent on the queued card and the reason for the delay\"\n    },\n    {\n      \"proposition\": \"The founder has decided not to send a closing message and the card should be discarded\",\n      \"needs\": \"Explicit confirmation from the founder that the file should be closed without further outreach\"\n    },\n    {\n      \"proposition\": \"Introly's follow-up check-in is a routine connector practice and does not require a response from the founder\",\n      \"needs\": \"Clarification of whether Introly expects a direct reply or whether the founder's action with Zara is sufficient\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Did the founder send any message to Zara Hussain that is not captured in the file's mail record?\",\n      \"relevance\": \"If the founder has already closed the loop with Zara, the file should be marked closed and Introly should be notified; if not, the next move is clear\"\n    },\n    {\n      \"question\": \"What was the founder's reasoning for queuing the card to send a closing message, and why has it not been executed?\",\n      \"relevance\": \"This determines whether the file is awaiting execution of a prior decision or whether the decision itself needs to be revisited\"\n    },\n    {\n      \"question\": \"Does Introly expect a direct reply to their check-in, or is the founder's action with Zara sufficient to close the loop?\",\n      \"relevance\": \"This determines whether the next move is to reply to Introly, to Zara, or to both\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A declined introduction that requires closure: Zara Hussain declined on 2026-08-05 citing a prior vendor commitment, and the founder has not yet acknowledged the decline or updated the connector. Introly's follow-up on 2026-08-12 signals that closure is expected.\",\n    \"rivals\": [\n      \"A dormant prospect that may be revisited later if circumstances change: Zara's decline was conditional on her current vendor relationship, and the founder may choose to re-engage if that relationship ends\",\n      \"An incomplete introduction where the founder has not yet engaged substantively: The founder may have intended to send a message to Zara and simply has not yet done so\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file documents an introduction made by Introly, a connector. The brief names Introly as a connector whose role is to introduce the founder to people. The work is the management of that introduction and its outcome.\",\n    \"evidence\": [\n      \"file:role\",\n      \"file:introduced_by\",\n      \"brief:cbl_#27\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"When an introduction is declined, the founder should acknowledge the decline to the prospect and update the connector within a few days. A queued card to send a closing message indicates a prior judgment that this should happen.\",\n    \"actual\": \"Zara declined on 2026-08-05. The founder has not sent a closing message to Zara. Introly followed up on 2026-08-12 asking whether the two had connected. The file remains open with no recorded outbound message from the founder.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Introly's follow-up goes unanswered. The connector does not receive closure on the introduction and may reduce the quality or frequency of future introductions. The file remains open indefinitely, consuming attention without generating value. The founder's reputation with Introly as a responsive partner is diminished.\",\n    \"act\": \"The founder sends a brief closing message to Zara thanking her and wishing her well, and replies to Introly confirming that Zara declined due to a prior vendor commitment. Both threads are closed. The connector receives feedback and the file is marked complete.\",\n    \"best\": \"The founder sends both messages today. Introly receives timely feedback and marks the introduction as a learning point for future calibration. Zara receives a professional closing that leaves the door open for future contact if circumstances change. The founder's relationship with Introly is strengthened.\",\n    \"worst\": \"The founder does not respond to Introly. Introly assumes the introduction was ignored or mishandled. The founder's credibility as a responsive partner is damaged, and Introly reduces the priority or quality of future introductions. The file remains open and becomes a source of ambient guilt.\",\n    \"signals_to_watch\": [\n      \"Whether Introly sends a second follow-up or escalates the check-in\",\n      \"Whether the founder executes the queued card or explicitly closes it\",\n      \"Whether Zara reaches out again or the thread goes silent\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The prospect has already declined and is unlikely to convert; the stakes are the founder's relationship with the connector and the quality of future introductions, not the prospect itself\",\n      \"Introly's follow-up on 2026-08-12 signals that a response is expected soon; the window for graceful closure is narrow\",\n      \"A brief closing message can be sent at any time and does not commit the founder to anything; the move is fully reversible\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a brief closing message to Zara Hussain thanking her for her time and wishing her well with her vendor, and reply to Introly confirming that Zara declined due to a prior commitment\",\n    \"for_whom\": \"Zara Hussain and Introly\",\n    \"by_when\": \"2026-08-13\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:3\",\n      \"fact:4\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:2\",\n      \"own:3\"\n    ],\n    \"to\": \"zara@northlake.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder believes the prospect may be revisited later, send only a reply to Introly confirming the decline, and leave Zara's thread open without a closing message. This preserves optionality but risks leaving Introly without closure.\",\n  \"wait_or_stop\": \"Do not wait. Introly's follow-up on 2026-08-12 signals that closure is expected within days. Stop if Zara replies to the closing message or if Introly confirms receipt of the status update.\",\n  \"done_when\": \"Zara has received a professional closing message, Introly has received confirmation that the introduction did not convert, and both threads are marked complete in the file.\",\n  \"draft\": \"Hi Zara, thank you for taking the time to meet. I appreciate you letting me know about your vendor commitment\u2014best of luck with them. If circumstances change and you'd like to explore Nimbus Labs, I'd be happy to reconnect. All the best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "8b0958536ae344dbe7732ebe023bf8f1a16ff24e66821b8bb18344a98d165aa4": {
+  "framed": true,
+  "input_tokens": 7440,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3704,
+  "parsed": {
+   "alternative": "Do nothing and let the file age out. If Introly sends another follow-up, respond then. This is lower-effort but risks damaging the relationship with the connector.",
+   "appraisal": {
+    "reasons": [
+     "The prospect has declined clearly and is not a current opportunity",
+     "The connector's follow-up is routine, not urgent",
+     "A thank-you message can be sent at any time and will not change the prospect's decision",
+     "The relationship with Introly is not critical to the company's current goals, though it is a source of introductions",
+     "Closing the file or responding to the connector are both low-cost actions"
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "A thank-you message has been sent to Introly, and the file is marked closed. The relationship with Introly is preserved for future introductions.",
+   "draft": "Hi Introly, thanks for the introduction to Zara. She mentioned they've just signed with another vendor, so the timing isn't right for now. I appreciate you thinking of us. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The prospect declined on 2026-08-05. No reply from you has been recorded. A card was queued to send a thank-you but was not sent. The connector sent a follow-up check-in on 2026-08-12 asking whether you connected. The file has been quiet for 0.5 days.",
+    "expected": "The brief names no playbook for this file. In the absence of a playbook, the expected behavior for an introduction that ends in a prospect's rejection is that the founder either thanks the connector for the introduction or closes the file. A queued card suggests the founder intended to send a thank-you but did not.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to Zara Hussain at Northlake on 2026-08-05 at 06:00 UTC",
+     "evidence": [
+      "evt_#3",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Zara Hussain, who runs operations at Northlake and is looking at tools for her team. Zara, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "Zara Hussain declined the introduction the same day, citing that Northlake had just signed with another vendor",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "We've just signed with another vendor, so I'll pass for now. Best of luck with Nimbus Labs."
+    },
+    {
+     "claim": "Introly sent a follow-up check-in on 2026-08-12 at 06:00 UTC asking whether you and Zara connected",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Did you and Zara connect? Hi Arjun, a week ago I introduced you to Zara Hussain at Northlake. Did the two of you get a chance to connect?"
+    },
+    {
+     "claim": "No reply from you to Zara Hussain has been recorded in the file",
+     "evidence": [
+      "none:we_wrote",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days as of the last touch on 2026-08-12 at 06:00 UTC",
+     "evidence": [
+      "num:days_quiet",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card was queued on 2026-08-05 at 18:00 UTC to send a brief closing message to Zara Hussain thanking her",
+     "evidence": [
+      "card:card_#1",
+      "review:ffp-dcb03bc8869d2ee730bf459a"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file; it is not listed among the company's work in motion",
+     "evidence": [
+      "file:kind",
+      "brief:company"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A cold introduction from an AI connector to a prospect who has declined, with a follow-up check-in from the connector asking whether you engaged. The file is dormant: the prospect said no, you have not replied, and the connector is checking in. The question is whether to close the file or to send a thank-you to the connector.",
+    "rivals": [
+     "A prospect who is genuinely interested but has a current vendor contract and may be open to a conversation later; the rejection is a delay, not a no, and the follow-up is a signal to re-engage",
+     "A connector who is tracking whether you are responsive to introductions and whose follow-up is a test of your professionalism; the file is a measure of your engagement, not a sales opportunity"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from you of what the card was meant to say and why it was not sent",
+     "proposition": "The queued card was intended to be sent to Zara Hussain as a thank-you for her time, but was not sent because you decided not to respond to a rejection"
+    },
+    {
+     "needs": "Knowledge of Introly's typical follow-up cadence and whether it sends the same message to all introductions regardless of outcome",
+     "proposition": "Introly's follow-up is a routine check-in and does not signal that Introly expects you to have engaged further with Zara"
+    },
+    {
+     "needs": "Confirmation of whether you asked Introly to introduce you to Northlake specifically, or whether Introly selected the target",
+     "proposition": "This introduction was part of a broader outreach campaign by Introly on your behalf, and Northlake was one of many targets"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "file:introduced_by",
+      "evt_#3"
+     ],
+     "claim": "The introduction was a cold outreach by Introly on behalf of Nimbus Labs to a prospect at Northlake, not a warm introduction to an existing relationship"
+    },
+    {
+     "based_on": [
+      "evt_#2"
+     ],
+     "claim": "Zara Hussain's reply constitutes a clear rejection, not a delay or a request for follow-up"
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "none:we_wrote"
+     ],
+     "claim": "The ball is in your court: Introly is asking whether you connected with Zara, implying you should have replied to her by now"
+    },
+    {
+     "based_on": [
+      "card:card_#1",
+      "evt_#2",
+      "review:ffp-dcb03bc8869d2ee730bf459a"
+     ],
+     "claim": "The queued card to thank Zara was created after her rejection and has not been sent"
+    },
+    {
+     "based_on": [
+      "evt_#1",
+      "file:last_touch"
+     ],
+     "claim": "Introly's follow-up check-in on day 7 suggests the connector is tracking whether the introduction bore fruit and expects you to have engaged"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-13",
+    "for_whom": "Introly",
+    "guided_by": [
+     "own:1",
+     "own:4",
+     "cap:admin.executive_support.commitment_tracking#f1"
+    ],
+    "rests_on": [
+     "fact:3",
+     "fact:4",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": "hello@introly.test",
+    "what": "send a brief thank-you message to Introly acknowledging the introduction and Zara's response, and close the file",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a connector introduces you to someone and that person declines, a brief thank-you to the connector closes the loop and preserves the relationship for future introductions",
+     "kind": "practice",
+     "why": "The connector invested effort; acknowledging the outcome, even a negative one, signals professionalism and keeps the door open"
+    },
+    {
+     "claim": "Responding to a prospect's rejection can signal that you did not hear them or that you are seeking to change their mind, both of which damage the relationship",
+     "kind": "counter_pattern",
+     "why": "A clear no is a boundary; respecting it is more important than courtesy"
+    },
+    {
+     "claim": "Introductions from AI agents or automated connectors are lower-signal than warm introductions from humans; they are often sent in batches and the connector's follow-up is routine, not a sign of urgency",
+     "kind": "base_rate",
+     "why": "Introly is an agent; its check-in is a programmed reminder, not a personal investment in the outcome"
+    },
+    {
+     "claim": "A queued card that is not sent within a day of its creation is usually forgotten or deprioritized; it should be either sent immediately or deleted",
+     "kind": "practice",
+     "why": "Cards that sit in a queue become stale and lose their context; the longer they wait, the less likely they are to be sent at all"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1",
+      "own:1"
+     ],
+     "claim": "When a prospect declines in an introduction thread, the founder's silence leaves the connector uncertain whether the introduction was received or whether follow-up is needed",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "A rejection stated clearly ('I'll pass for now') does not require a response from the founder; responding to a no can read as either not accepting the answer or seeking to negotiate",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:3"
+     ],
+     "claim": "Introductions that end in a prospect's stated rejection are typically closed by the connector, not by the founder",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "file:introduced_by",
+     "brief:cbl_#27"
+    ],
+    "kind": "intro",
+    "why": "The file is an introduction from Introly to a prospect at Northlake. The brief names Introly as a connector whose mail is an introduction, not a stranger. The file's role is intro, as stated in the dossier."
+   },
+   "scenarios": {
+    "act": "You send a brief thank-you to Introly acknowledging the introduction and Zara's response. This closes the loop with the connector, preserves the relationship for future introductions, and signals that you are responsive and professional. The file is then closed.",
+    "best": "You send a thank-you to Introly, the connector acknowledges it, and the relationship is preserved. Introly continues to send you introductions in the future, some of which may be warm prospects. The file is closed cleanly.",
+    "do_nothing": "The file remains open and quiet. Introly's follow-up goes unanswered. If Introly sends another check-in, the silence will read as either disinterest or poor follow-up on your part. The file will eventually age out and be marked dormant, but the relationship with Introly will have been damaged by the lack of response to its check-in.",
+    "signals_to_watch": [
+     "Whether Introly sends another follow-up or stops sending introductions",
+     "Whether Zara Hussain reaches out again after her vendor contract expires",
+     "Whether you receive other introductions from Introly in the coming weeks"
+    ],
+    "worst": "You do not respond to Introly's follow-up. Introly interprets the silence as disinterest or poor follow-up and stops sending you introductions. The relationship with the connector is damaged, and you lose access to future introductions from Introly."
+   },
+   "unknowns": [
+    {
+     "question": "Did you ask Introly to introduce you to Northlake, or did Introly select the target and send the introduction without your prior approval?",
+     "relevance": "If you did not ask for this introduction, it is a cold outreach by a connector on your behalf; if you did, it is a targeted prospect and the rejection is more significant"
+    },
+    {
+     "question": "What was the queued card meant to say, and why was it not sent?",
+     "relevance": "If the card was a thank-you to Zara, sending it now would close the loop; if it was something else, the decision not to send it may have been deliberate"
+    },
+    {
+     "question": "Is Northlake a strategic prospect for Nimbus Labs, or was it one of many targets in a broad outreach campaign?",
+     "relevance": "If Northlake is strategic, the rejection warrants follow-up or a different approach; if it is one of many, the rejection is a normal outcome and the file should be closed"
+    },
+    {
+     "question": "What is Introly's business model, and does it have a financial or reputational stake in whether introductions succeed?",
+     "relevance": "If Introly is paid on success, its follow-up is a sales tactic; if it is a free service, the follow-up is routine and carries no signal"
+    }
+   ],
+   "wait_or_stop": "Stop if Zara Hussain reaches out again after her vendor contract expires; wait for Introly's next follow-up only if you choose not to respond now. Otherwise, close the file after sending the thank-you."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to Zara Hussain at Northlake on 2026-08-05 at 06:00 UTC\",\n      \"evidence\": [\n        \"evt_#3\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Zara Hussain, who runs operations at Northlake and is looking at tools for her team. Zara, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"Zara Hussain declined the introduction the same day, citing that Northlake had just signed with another vendor\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"We've just signed with another vendor, so I'll pass for now. Best of luck with Nimbus Labs.\"\n    },\n    {\n      \"claim\": \"Introly sent a follow-up check-in on 2026-08-12 at 06:00 UTC asking whether you and Zara connected\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Did you and Zara connect? Hi Arjun, a week ago I introduced you to Zara Hussain at Northlake. Did the two of you get a chance to connect?\"\n    },\n    {\n      \"claim\": \"No reply from you to Zara Hussain has been recorded in the file\",\n      \"evidence\": [\n        \"none:we_wrote\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days as of the last touch on 2026-08-12 at 06:00 UTC\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card was queued on 2026-08-05 at 18:00 UTC to send a brief closing message to Zara Hussain thanking her\",\n      \"evidence\": [\n        \"card:card_#1\",\n        \"review:ffp-dcb03bc8869d2ee730bf459a\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file; it is not listed among the company's work in motion\",\n      \"evidence\": [\n        \"file:kind\",\n        \"brief:company\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The introduction was a cold outreach by Introly on behalf of Nimbus Labs to a prospect at Northlake, not a warm introduction to an existing relationship\",\n      \"based_on\": [\n        \"file:introduced_by\",\n        \"evt_#3\"\n      ]\n    },\n    {\n      \"claim\": \"Zara Hussain's reply constitutes a clear rejection, not a delay or a request for follow-up\",\n      \"based_on\": [\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in your court: Introly is asking whether you connected with Zara, implying you should have replied to her by now\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"none:we_wrote\"\n      ]\n    },\n    {\n      \"claim\": \"The queued card to thank Zara was created after her rejection and has not been sent\",\n      \"based_on\": [\n        \"card:card_#1\",\n        \"evt_#2\",\n        \"review:ffp-dcb03bc8869d2ee730bf459a\"\n      ]\n    },\n    {\n      \"claim\": \"Introly's follow-up check-in on day 7 suggests the connector is tracking whether the introduction bore fruit and expects you to have engaged\",\n      \"based_on\": [\n        \"evt_#1\",\n        \"file:last_touch\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a prospect declines in an introduction thread, the founder's silence leaves the connector uncertain whether the introduction was received or whether follow-up is needed\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A rejection stated clearly ('I'll pass for now') does not require a response from the founder; responding to a no can read as either not accepting the answer or seeking to negotiate\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions that end in a prospect's stated rejection are typically closed by the connector, not by the founder\",\n      \"based_on\": [\n        \"own:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a connector introduces you to someone and that person declines, a brief thank-you to the connector closes the loop and preserves the relationship for future introductions\",\n      \"why\": \"The connector invested effort; acknowledging the outcome, even a negative one, signals professionalism and keeps the door open\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Responding to a prospect's rejection can signal that you did not hear them or that you are seeking to change their mind, both of which damage the relationship\",\n      \"why\": \"A clear no is a boundary; respecting it is more important than courtesy\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions from AI agents or automated connectors are lower-signal than warm introductions from humans; they are often sent in batches and the connector's follow-up is routine, not a sign of urgency\",\n      \"why\": \"Introly is an agent; its check-in is a programmed reminder, not a personal investment in the outcome\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A queued card that is not sent within a day of its creation is usually forgotten or deprioritized; it should be either sent immediately or deleted\",\n      \"why\": \"Cards that sit in a queue become stale and lose their context; the longer they wait, the less likely they are to be sent at all\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The queued card was intended to be sent to Zara Hussain as a thank-you for her time, but was not sent because you decided not to respond to a rejection\",\n      \"needs\": \"Confirmation from you of what the card was meant to say and why it was not sent\"\n    },\n    {\n      \"proposition\": \"Introly's follow-up is a routine check-in and does not signal that Introly expects you to have engaged further with Zara\",\n      \"needs\": \"Knowledge of Introly's typical follow-up cadence and whether it sends the same message to all introductions regardless of outcome\"\n    },\n    {\n      \"proposition\": \"This introduction was part of a broader outreach campaign by Introly on your behalf, and Northlake was one of many targets\",\n      \"needs\": \"Confirmation of whether you asked Introly to introduce you to Northlake specifically, or whether Introly selected the target\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Did you ask Introly to introduce you to Northlake, or did Introly select the target and send the introduction without your prior approval?\",\n      \"relevance\": \"If you did not ask for this introduction, it is a cold outreach by a connector on your behalf; if you did, it is a targeted prospect and the rejection is more significant\"\n    },\n    {\n      \"question\": \"What was the queued card meant to say, and why was it not sent?\",\n      \"relevance\": \"If the card was a thank-you to Zara, sending it now would close the loop; if it was something else, the decision not to send it may have been deliberate\"\n    },\n    {\n      \"question\": \"Is Northlake a strategic prospect for Nimbus Labs, or was it one of many targets in a broad outreach campaign?\",\n      \"relevance\": \"If Northlake is strategic, the rejection warrants follow-up or a different approach; if it is one of many, the rejection is a normal outcome and the file should be closed\"\n    },\n    {\n      \"question\": \"What is Introly's business model, and does it have a financial or reputational stake in whether introductions succeed?\",\n      \"relevance\": \"If Introly is paid on success, its follow-up is a sales tactic; if it is a free service, the follow-up is routine and carries no signal\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A cold introduction from an AI connector to a prospect who has declined, with a follow-up check-in from the connector asking whether you engaged. The file is dormant: the prospect said no, you have not replied, and the connector is checking in. The question is whether to close the file or to send a thank-you to the connector.\",\n    \"rivals\": [\n      \"A prospect who is genuinely interested but has a current vendor contract and may be open to a conversation later; the rejection is a delay, not a no, and the follow-up is a signal to re-engage\",\n      \"A connector who is tracking whether you are responsive to introductions and whose follow-up is a test of your professionalism; the file is a measure of your engagement, not a sales opportunity\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is an introduction from Introly to a prospect at Northlake. The brief names Introly as a connector whose mail is an introduction, not a stranger. The file's role is intro, as stated in the dossier.\",\n    \"evidence\": [\n      \"file:role\",\n      \"file:introduced_by\",\n      \"brief:cbl_#27\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"The brief names no playbook for this file. In the absence of a playbook, the expected behavior for an introduction that ends in a prospect's rejection is that the founder either thanks the connector for the introduction or closes the file. A queued card suggests the founder intended to send a thank-you but did not.\",\n    \"actual\": \"The prospect declined on 2026-08-05. No reply from you has been recorded. A card was queued to send a thank-you but was not sent. The connector sent a follow-up check-in on 2026-08-12 asking whether you connected. The file has been quiet for 0.5 days.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open and quiet. Introly's follow-up goes unanswered. If Introly sends another check-in, the silence will read as either disinterest or poor follow-up on your part. The file will eventually age out and be marked dormant, but the relationship with Introly will have been damaged by the lack of response to its check-in.\",\n    \"act\": \"You send a brief thank-you to Introly acknowledging the introduction and Zara's response. This closes the loop with the connector, preserves the relationship for future introductions, and signals that you are responsive and professional. The file is then closed.\",\n    \"best\": \"You send a thank-you to Introly, the connector acknowledges it, and the relationship is preserved. Introly continues to send you introductions in the future, some of which may be warm prospects. The file is closed cleanly.\",\n    \"worst\": \"You do not respond to Introly's follow-up. Introly interprets the silence as disinterest or poor follow-up and stops sending you introductions. The relationship with the connector is damaged, and you lose access to future introductions from Introly.\",\n    \"signals_to_watch\": [\n      \"Whether Introly sends another follow-up or stops sending introductions\",\n      \"Whether Zara Hussain reaches out again after her vendor contract expires\",\n      \"Whether you receive other introductions from Introly in the coming weeks\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The prospect has declined clearly and is not a current opportunity\",\n      \"The connector's follow-up is routine, not urgent\",\n      \"A thank-you message can be sent at any time and will not change the prospect's decision\",\n      \"The relationship with Introly is not critical to the company's current goals, though it is a source of introductions\",\n      \"Closing the file or responding to the connector are both low-cost actions\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a brief thank-you message to Introly acknowledging the introduction and Zara's response, and close the file\",\n    \"for_whom\": \"Introly\",\n    \"by_when\": \"2026-08-13\",\n    \"rests_on\": [\n      \"fact:3\",\n      \"fact:4\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"own:1\",\n      \"own:4\",\n      \"cap:admin.executive_support.commitment_tracking#f1\"\n    ],\n    \"to\": \"hello@introly.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Do nothing and let the file age out. If Introly sends another follow-up, respond then. This is lower-effort but risks damaging the relationship with the connector.\",\n  \"wait_or_stop\": \"Stop if Zara Hussain reaches out again after her vendor contract expires; wait for Introly's next follow-up only if you choose not to respond now. Otherwise, close the file after sending the thank-you.\",\n  \"done_when\": \"A thank-you message has been sent to Introly, and the file is marked closed. The relationship with Introly is preserved for future introductions.\",\n  \"draft\": \"Hi Introly, thanks for the introduction to Zara. She mentioned they've just signed with another vendor, so the timing isn't right for now. I appreciate you thinking of us. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "fc914217a75d50bde633697f4a01d79c81315080b07de02ac0249b710b10d09e": {
+  "framed": true,
+  "input_tokens": 7232,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2491,
+  "parsed": {
+   "alternative": "Do nothing and let the file close naturally after two weeks of silence. This is lower effort but leaves the thread open and creates false work.",
+   "appraisal": {
+    "reasons": [
+     "Northlake is not a named prospect in the brief; the introduction was exploratory",
+     "The counterparty has declined clearly and politely; there is no open commitment or promise",
+     "The file is only hours old and has no history of engagement",
+     "A wrong move here would only damage a relationship that has not yet formed"
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Zara has received your closing message, the file is marked closed with the reason documented, and a revisit date is set in your calendar if the vendor contract renewal is predictable.",
+   "draft": "Hi Zara, thanks so much for taking the time to chat. I appreciate you letting me know about the vendor commitment \u2014 best of luck with them, and with everything at Northlake. If things change down the line, I'd be happy to reconnect. All the best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The counterparty replied within hours with a clear reason for declining: they have signed with another vendor. No conversation occurred; the thread closed immediately.",
+    "expected": "An introduction typically opens a conversation; the expectation is that you and the counterparty exchange information and explore fit. If there is fit, a next step is agreed. If there is no fit, the thread closes.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Introly introduced you to Zara Hussain at Northlake on 2026-08-05 06:00 UTC",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Zara Hussain, who runs operations at Northlake and is looking at tools for her team. Zara, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "Zara Hussain declined the introduction on 2026-08-05 12:40 UTC, stating they have signed with another vendor",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "We've just signed with another vendor, so I'll pass for now. Best of luck with Nimbus Labs."
+    },
+    {
+     "claim": "The file has been quiet for 0.22 days, within the gap that closed before",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was made in the mail",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief names no kind of work for this file",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in their court: they have declined and there is no open ask from you",
+     "evidence": [
+      "file:whose_move",
+      "Open asks: none"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A closed introduction: Northlake declined because they have already committed to a vendor. The thread is complete and requires no action.",
+    "rivals": [
+     "A soft no: Northlake is interested but not now, and the relationship should be kept warm for later",
+     "An incomplete introduction: the timing was wrong, and a follow-up at a better moment might succeed"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "a signal from Northlake or a material change in Nimbus Labs' product or positioning",
+     "proposition": "Northlake might become a prospect again if their vendor relationship ends or if Nimbus Labs pivots its offering"
+    },
+    {
+     "needs": "knowledge of when Northlake's vendor contract is up for renewal, or whether they had already committed before the introduction",
+     "proposition": "Zara Hussain might have been a warm introduction but the timing was wrong"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "evt_#1"
+     ],
+     "claim": "This is a closed introduction, not an active opportunity"
+    },
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "Northlake is not a prospect for Nimbus Labs at this time"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:4",
+      "file:whose_move"
+     ],
+     "claim": "There is no next move owed to Northlake or Zara Hussain"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-05",
+    "for_whom": "Zara Hussain",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:4",
+     "inference:3"
+    ],
+    "to": "zara@northlake.test",
+    "what": "send a brief closing message to Zara Hussain thanking her for her time and wishing Northlake well; document the reason for the decline and the likely renewal date of their vendor contract; close the file",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An introduction that ends with a vendor commitment should be closed in the file, not carried as active",
+     "kind": "practice",
+     "why": "carrying it creates false work and teaches the team to ignore signals of closure"
+    },
+    {
+     "claim": "Most introductions that close within hours do not reopen unless the counterparty reaches back",
+     "kind": "base_rate",
+     "why": "a decision made that quickly is usually firm; reopening requires their initiative, not yours"
+    },
+    {
+     "claim": "A founder sometimes revisits a closed introduction months later if circumstances change \u2014 a new product, a new need, a new vendor relationship ending",
+     "kind": "counter_pattern",
+     "why": "the relationship is not damaged by the close; it is only dormant"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Introductions that close with a vendor commitment are terminal unless circumstances change",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A polite decline with a stated reason and a closing wish is a clean close, not a soft no",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:introduced_by",
+     "file:role",
+     "brief:cbl_#27"
+    ],
+    "kind": "intro",
+    "why": "The file is an introduction made by Introly, a connector named in the brief. It has no other purpose in the brief."
+   },
+   "scenarios": {
+    "act": "You send a brief, warm closing message to Zara Hussain, thanking her for the introduction and wishing her well. The thread closes cleanly. Northlake is moved to a revisit list with a note on when their vendor contract might expire.",
+    "best": "You close the file cleanly, document the reason for the decline, and set a calendar reminder to revisit Northlake in six to twelve months if their vendor contract is likely to be up for renewal. The relationship is preserved without effort.",
+    "do_nothing": "The file remains open and quiet. After two weeks, it will be flagged as dormant. After a month, it will be archived. Northlake will not be contacted again unless you initiate.",
+    "signals_to_watch": [
+     "A message from Zara or Northlake reaching back out",
+     "A change in Northlake's public positioning or vendor announcements",
+     "A request from Introly to reconnect with Zara on a different topic"
+    ],
+    "worst": "You send a follow-up message asking if there is any way to stay in touch or if circumstances might change. Zara interprets this as pressure and does not reply. The thread becomes awkward and the relationship is damaged."
+   },
+   "unknowns": [
+    {
+     "question": "Did you send a reply to Zara Hussain after her decline, or did the thread end with her message?",
+     "relevance": "if you replied, the file's closure is mutual; if you did not, there is a courtesy move owed"
+    },
+    {
+     "question": "Is Northlake a design partner prospect, a customer prospect, or neither?",
+     "relevance": "the brief lists design partners as a goal; if Northlake fits that category, the decline may be less terminal"
+    },
+    {
+     "question": "What is the typical contract length for the vendor Northlake signed with?",
+     "relevance": "it would tell you when to revisit the relationship, if at all"
+    }
+   ],
+   "wait_or_stop": "Stop: the introduction is closed. Do not wait for a reply or a change of heart. If Northlake reaches back out, reopen the file and treat it as a new introduction."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Introly introduced you to Zara Hussain at Northlake on 2026-08-05 06:00 UTC\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Zara Hussain, who runs operations at Northlake and is looking at tools for her team. Zara, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"Zara Hussain declined the introduction on 2026-08-05 12:40 UTC, stating they have signed with another vendor\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"We've just signed with another vendor, so I'll pass for now. Best of luck with Nimbus Labs.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.22 days, within the gap that closed before\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was made in the mail\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief names no kind of work for this file\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in their court: they have declined and there is no open ask from you\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"Open asks: none\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a closed introduction, not an active opportunity\",\n      \"based_on\": [\n        \"fact:2\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"Northlake is not a prospect for Nimbus Labs at this time\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"There is no next move owed to Northlake or Zara Hussain\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:4\",\n        \"file:whose_move\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions that close with a vendor commitment are terminal unless circumstances change\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A polite decline with a stated reason and a closing wish is a clean close, not a soft no\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An introduction that ends with a vendor commitment should be closed in the file, not carried as active\",\n      \"why\": \"carrying it creates false work and teaches the team to ignore signals of closure\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most introductions that close within hours do not reopen unless the counterparty reaches back\",\n      \"why\": \"a decision made that quickly is usually firm; reopening requires their initiative, not yours\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder sometimes revisits a closed introduction months later if circumstances change \u2014 a new product, a new need, a new vendor relationship ending\",\n      \"why\": \"the relationship is not damaged by the close; it is only dormant\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Northlake might become a prospect again if their vendor relationship ends or if Nimbus Labs pivots its offering\",\n      \"needs\": \"a signal from Northlake or a material change in Nimbus Labs' product or positioning\"\n    },\n    {\n      \"proposition\": \"Zara Hussain might have been a warm introduction but the timing was wrong\",\n      \"needs\": \"knowledge of when Northlake's vendor contract is up for renewal, or whether they had already committed before the introduction\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Did you send a reply to Zara Hussain after her decline, or did the thread end with her message?\",\n      \"relevance\": \"if you replied, the file's closure is mutual; if you did not, there is a courtesy move owed\"\n    },\n    {\n      \"question\": \"Is Northlake a design partner prospect, a customer prospect, or neither?\",\n      \"relevance\": \"the brief lists design partners as a goal; if Northlake fits that category, the decline may be less terminal\"\n    },\n    {\n      \"question\": \"What is the typical contract length for the vendor Northlake signed with?\",\n      \"relevance\": \"it would tell you when to revisit the relationship, if at all\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A closed introduction: Northlake declined because they have already committed to a vendor. The thread is complete and requires no action.\",\n    \"rivals\": [\n      \"A soft no: Northlake is interested but not now, and the relationship should be kept warm for later\",\n      \"An incomplete introduction: the timing was wrong, and a follow-up at a better moment might succeed\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is an introduction made by Introly, a connector named in the brief. It has no other purpose in the brief.\",\n    \"evidence\": [\n      \"file:introduced_by\",\n      \"file:role\",\n      \"brief:cbl_#27\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"An introduction typically opens a conversation; the expectation is that you and the counterparty exchange information and explore fit. If there is fit, a next step is agreed. If there is no fit, the thread closes.\",\n    \"actual\": \"The counterparty replied within hours with a clear reason for declining: they have signed with another vendor. No conversation occurred; the thread closed immediately.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open and quiet. After two weeks, it will be flagged as dormant. After a month, it will be archived. Northlake will not be contacted again unless you initiate.\",\n    \"act\": \"You send a brief, warm closing message to Zara Hussain, thanking her for the introduction and wishing her well. The thread closes cleanly. Northlake is moved to a revisit list with a note on when their vendor contract might expire.\",\n    \"best\": \"You close the file cleanly, document the reason for the decline, and set a calendar reminder to revisit Northlake in six to twelve months if their vendor contract is likely to be up for renewal. The relationship is preserved without effort.\",\n    \"worst\": \"You send a follow-up message asking if there is any way to stay in touch or if circumstances might change. Zara interprets this as pressure and does not reply. The thread becomes awkward and the relationship is damaged.\",\n    \"signals_to_watch\": [\n      \"A message from Zara or Northlake reaching back out\",\n      \"A change in Northlake's public positioning or vendor announcements\",\n      \"A request from Introly to reconnect with Zara on a different topic\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"Northlake is not a named prospect in the brief; the introduction was exploratory\",\n      \"The counterparty has declined clearly and politely; there is no open commitment or promise\",\n      \"The file is only hours old and has no history of engagement\",\n      \"A wrong move here would only damage a relationship that has not yet formed\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"send a brief closing message to Zara Hussain thanking her for her time and wishing Northlake well; document the reason for the decline and the likely renewal date of their vendor contract; close the file\",\n    \"for_whom\": \"Zara Hussain\",\n    \"by_when\": \"2026-08-05\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"zara@northlake.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Do nothing and let the file close naturally after two weeks of silence. This is lower effort but leaves the thread open and creates false work.\",\n  \"wait_or_stop\": \"Stop: the introduction is closed. Do not wait for a reply or a change of heart. If Northlake reaches back out, reopen the file and treat it as a new introduction.\",\n  \"done_when\": \"Zara has received your closing message, the file is marked closed with the reason documented, and a revisit date is set in your calendar if the vendor contract renewal is predictable.\",\n  \"draft\": \"Hi Zara, thanks so much for taking the time to chat. I appreciate you letting me know about the vendor commitment \u2014 best of luck with them, and with everything at Northlake. If things change down the line, I'd be happy to reconnect. All the best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

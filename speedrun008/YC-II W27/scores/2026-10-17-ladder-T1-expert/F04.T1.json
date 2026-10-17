@@ -1,0 +1,444 @@
+{
+ "41d9ceb13b3f6c12f65628d2dd819a829c64c99d00c0b8006d3f0897f7b184d8": {
+  "framed": true,
+  "input_tokens": 7457,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2797,
+  "parsed": {
+   "alternative": "If you do not know who Brandt Labs is or whether they are a strategic fit, send a brief message to Introly asking for context on Brandt Labs and their relevance to Nimbus Labs, then confirm the meeting once you have that context. This delays the response by a few hours but ensures you are making an informed decision",
+   "appraisal": {
+    "reasons": [
+     "The stakes are medium because the brief names design partners as a goal, and Brandt Labs may or may not be a fit; a missed intro is recoverable but costly",
+     "The urgency is medium because the counterparty has offered specific time slots and is waiting; delay beyond one business day will likely result in the slots being filled",
+     "A wrong move is reversible: if the founder declines or delays, the counterparty may still respond to a later message, though with lower probability; if the founder confirms, the meeting can be rescheduled if needed"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The meeting is confirmed on the founder's calendar for one of the offered times, or a polite decline has been sent with a reason",
+   "draft": "Hi, thanks for reaching out. Tuesday afternoon works well for me\u2014how about 2 PM your time? Looking forward to seeing what you're building. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The meeting request was sent at 2026-08-06 11:40 UTC; as of 2026-08-06 18:00 UTC (the file's last sync), no response has been recorded. The file is now 0.26 days quiet, longer than any prior gap",
+    "expected": "Without a playbook, the expectation comes from the brief's goals: the founder is raising, hiring, and seeking design partners. An intro that converts to a meeting request should be evaluated against these goals and either scheduled or declined within one business day",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "An introduction was made by Introly on 2026-08-06 07:00 UTC to connect the founder with someone at Brandt Labs",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Sofia Brandt, who runs operations at Brandt Labs. Sofia, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "A meeting request was sent at 2026-08-06 11:40 UTC asking for a product demo",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Would you have 20 minutes next week to show me the product? Tuesday or Wednesday afternoon works for me."
+    },
+    {
+     "claim": "The file has been quiet for 0.26 days, longer than the single prior gap of 0.19 days that was closed",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in the founder's court: a meeting request awaits a response",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for it",
+     "evidence": [
+      "file:kind",
+      "none:playbook"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction has converted to a meeting request with specific time options; the founder must respond to confirm or renegotiate, or the counterparty will move on",
+    "rivals": [
+     "This is a low-priority intro that can wait until the founder has bandwidth",
+     "The founder has already responded and the file is simply not updated",
+     "Brandt Labs is not a strategic fit and the meeting should be declined"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The founder's knowledge of who Brandt Labs is, what they do, and whether they fit the design partner or customer profile",
+     "proposition": "Brandt Labs is a potential design partner or customer for Nimbus Labs"
+    },
+    {
+     "needs": "A check of the founder's calendar or a direct question to confirm whether the meeting is already booked",
+     "proposition": "The founder has already scheduled the meeting and the file is simply not updated"
+    },
+    {
+     "needs": "A brief on Brandt Labs' business, size, and relevance to Nimbus Labs' goals",
+     "proposition": "The founder is uncertain whether to take the meeting and is waiting for more context about Brandt Labs"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "sig:admin.sit.live_account_admin"
+     ],
+     "claim": "This is a live account administration situation: an introduction has converted to a meeting request, and the founder must respond to keep the thread warm"
+    },
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "The counterparty has offered two specific time slots and is waiting for confirmation, making this a scheduling decision rather than a discovery question"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The file's silence is not yet a signal of disinterest; it is the founder's turn to move, and the quiet period is still within normal response windows"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-07",
+    "for_whom": "the counterparty at Brandt Labs",
+    "guided_by": [
+     "sig:admin.sit.live_account_admin",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:4",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "hello@introly.test",
+    "what": "confirm one of the offered meeting times or propose an alternative time that works for your calendar",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting request with specific time options should be answered the same day or the next morning; delay beyond that requires a renegotiation message, not silence",
+     "kind": "practice",
+     "why": "The counterparty has made a concrete offer and is holding those slots mentally; silence reads as either disinterest or disorganization, both of which damage the relationship before it forms"
+    },
+    {
+     "claim": "Introductions that convert to meeting requests within hours are high-signal: the counterparty is genuinely interested and has moved fast",
+     "kind": "base_rate",
+     "why": "Most introductions sit for days before any response; immediate follow-up with a specific ask means the person has already decided to explore"
+    },
+    {
+     "claim": "A founder who delays responding to a meeting request from an operations leader at another company often loses the slot and the relationship cools",
+     "kind": "counter_pattern",
+     "why": "Operations leaders manage calendars tightly and move on quickly; they do not chase; a delayed response reads as low priority"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin",
+      "own:1"
+     ],
+     "claim": "An introduction followed by a meeting request typically expects a response within one business day to preserve momentum",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "own:2"
+     ],
+     "claim": "When a counterparty offers two specific time slots, they are signaling availability and readiness; silence beyond one business day converts readiness into doubt",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:introduced_by",
+     "file:role",
+     "evt_#2"
+    ],
+    "kind": "intro",
+    "why": "The file originated as an introduction from Introly and has not yet converted to a defined work stream; it remains in the intro phase until the founder decides whether to pursue it as a partner, customer, or other relationship"
+   },
+   "scenarios": {
+    "act": "The founder confirms one of the offered time slots or proposes an alternative. The meeting is scheduled and the founder can evaluate Brandt Labs as a design partner, customer, or other relationship",
+    "best": "The founder responds within hours, confirms a meeting, and discovers that Brandt Labs is a valuable design partner or customer. The relationship accelerates and creates value for Nimbus Labs",
+    "do_nothing": "The counterparty will assume the founder is not interested and will not follow up. The relationship ends before it begins. If Brandt Labs is a strategic fit, this is a missed opportunity",
+    "signals_to_watch": [
+     "Whether the counterparty sends a follow-up message or moves on",
+     "Whether the founder's calendar shows a meeting scheduled with Brandt Labs",
+     "Whether the founder provides context about Brandt Labs and their strategic relevance"
+    ],
+    "worst": "The founder responds after several days, the counterparty has already moved on, and the slot is no longer available. The relationship cools and the opportunity is lost"
+   },
+   "unknowns": [
+    {
+     "question": "Who is Brandt Labs and what do they do?",
+     "relevance": "This determines whether the meeting is strategically valuable and whether it should be prioritized over other work in motion"
+    },
+    {
+     "question": "Has the founder already responded to this request outside the mail system tracked by the file?",
+     "relevance": "If the meeting is already scheduled, the file is stale and no action is needed; if not, the delay is now material"
+    },
+    {
+     "question": "Is there a reason the founder has not yet responded\u2014a blocker, a conflict, or uncertainty about the value?",
+     "relevance": "If there is a blocker, the move is to surface it and renegotiate; if there is uncertainty, the move is to find out; if there is neither, the move is to confirm"
+    }
+   ],
+   "wait_or_stop": "Wait only if you need context on Brandt Labs to decide whether the meeting is worth your time; in that case, ask Introly for a brief and respond within one business day. Stop if you determine that Brandt Labs is not a strategic fit; in that case, send a polite decline the same day. Do not wait beyond one business day without responding, as the counterparty will assume disinterest"
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"An introduction was made by Introly on 2026-08-06 07:00 UTC to connect the founder with someone at Brandt Labs\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Sofia Brandt, who runs operations at Brandt Labs. Sofia, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"A meeting request was sent at 2026-08-06 11:40 UTC asking for a product demo\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Would you have 20 minutes next week to show me the product? Tuesday or Wednesday afternoon works for me.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.26 days, longer than the single prior gap of 0.19 days that was closed\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in the founder's court: a meeting request awaits a response\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for it\",\n      \"evidence\": [\n        \"file:kind\",\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a live account administration situation: an introduction has converted to a meeting request, and the founder must respond to keep the thread warm\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"sig:admin.sit.live_account_admin\"\n      ]\n    },\n    {\n      \"claim\": \"The counterparty has offered two specific time slots and is waiting for confirmation, making this a scheduling decision rather than a discovery question\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The file's silence is not yet a signal of disinterest; it is the founder's turn to move, and the quiet period is still within normal response windows\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An introduction followed by a meeting request typically expects a response within one business day to preserve momentum\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\",\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a counterparty offers two specific time slots, they are signaling availability and readiness; silence beyond one business day converts readiness into doubt\",\n      \"based_on\": [\n        \"fact:2\",\n        \"own:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting request with specific time options should be answered the same day or the next morning; delay beyond that requires a renegotiation message, not silence\",\n      \"why\": \"The counterparty has made a concrete offer and is holding those slots mentally; silence reads as either disinterest or disorganization, both of which damage the relationship before it forms\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Introductions that convert to meeting requests within hours are high-signal: the counterparty is genuinely interested and has moved fast\",\n      \"why\": \"Most introductions sit for days before any response; immediate follow-up with a specific ask means the person has already decided to explore\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who delays responding to a meeting request from an operations leader at another company often loses the slot and the relationship cools\",\n      \"why\": \"Operations leaders manage calendars tightly and move on quickly; they do not chase; a delayed response reads as low priority\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Brandt Labs is a potential design partner or customer for Nimbus Labs\",\n      \"needs\": \"The founder's knowledge of who Brandt Labs is, what they do, and whether they fit the design partner or customer profile\"\n    },\n    {\n      \"proposition\": \"The founder has already scheduled the meeting and the file is simply not updated\",\n      \"needs\": \"A check of the founder's calendar or a direct question to confirm whether the meeting is already booked\"\n    },\n    {\n      \"proposition\": \"The founder is uncertain whether to take the meeting and is waiting for more context about Brandt Labs\",\n      \"needs\": \"A brief on Brandt Labs' business, size, and relevance to Nimbus Labs' goals\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Who is Brandt Labs and what do they do?\",\n      \"relevance\": \"This determines whether the meeting is strategically valuable and whether it should be prioritized over other work in motion\"\n    },\n    {\n      \"question\": \"Has the founder already responded to this request outside the mail system tracked by the file?\",\n      \"relevance\": \"If the meeting is already scheduled, the file is stale and no action is needed; if not, the delay is now material\"\n    },\n    {\n      \"question\": \"Is there a reason the founder has not yet responded\u2014a blocker, a conflict, or uncertainty about the value?\",\n      \"relevance\": \"If there is a blocker, the move is to surface it and renegotiate; if there is uncertainty, the move is to find out; if there is neither, the move is to confirm\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction has converted to a meeting request with specific time options; the founder must respond to confirm or renegotiate, or the counterparty will move on\",\n    \"rivals\": [\n      \"This is a low-priority intro that can wait until the founder has bandwidth\",\n      \"The founder has already responded and the file is simply not updated\",\n      \"Brandt Labs is not a strategic fit and the meeting should be declined\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file originated as an introduction from Introly and has not yet converted to a defined work stream; it remains in the intro phase until the founder decides whether to pursue it as a partner, customer, or other relationship\",\n    \"evidence\": [\n      \"file:introduced_by\",\n      \"file:role\",\n      \"evt_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief's goals: the founder is raising, hiring, and seeking design partners. An intro that converts to a meeting request should be evaluated against these goals and either scheduled or declined within one business day\",\n    \"actual\": \"The meeting request was sent at 2026-08-06 11:40 UTC; as of 2026-08-06 18:00 UTC (the file's last sync), no response has been recorded. The file is now 0.26 days quiet, longer than any prior gap\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The counterparty will assume the founder is not interested and will not follow up. The relationship ends before it begins. If Brandt Labs is a strategic fit, this is a missed opportunity\",\n    \"act\": \"The founder confirms one of the offered time slots or proposes an alternative. The meeting is scheduled and the founder can evaluate Brandt Labs as a design partner, customer, or other relationship\",\n    \"best\": \"The founder responds within hours, confirms a meeting, and discovers that Brandt Labs is a valuable design partner or customer. The relationship accelerates and creates value for Nimbus Labs\",\n    \"worst\": \"The founder responds after several days, the counterparty has already moved on, and the slot is no longer available. The relationship cools and the opportunity is lost\",\n    \"signals_to_watch\": [\n      \"Whether the counterparty sends a follow-up message or moves on\",\n      \"Whether the founder's calendar shows a meeting scheduled with Brandt Labs\",\n      \"Whether the founder provides context about Brandt Labs and their strategic relevance\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The stakes are medium because the brief names design partners as a goal, and Brandt Labs may or may not be a fit; a missed intro is recoverable but costly\",\n      \"The urgency is medium because the counterparty has offered specific time slots and is waiting; delay beyond one business day will likely result in the slots being filled\",\n      \"A wrong move is reversible: if the founder declines or delays, the counterparty may still respond to a later message, though with lower probability; if the founder confirms, the meeting can be rescheduled if needed\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"confirm one of the offered meeting times or propose an alternative time that works for your calendar\",\n    \"for_whom\": \"the counterparty at Brandt Labs\",\n    \"by_when\": \"2026-08-07\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"sig:admin.sit.live_account_admin\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"hello@introly.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If you do not know who Brandt Labs is or whether they are a strategic fit, send a brief message to Introly asking for context on Brandt Labs and their relevance to Nimbus Labs, then confirm the meeting once you have that context. This delays the response by a few hours but ensures you are making an informed decision\",\n  \"wait_or_stop\": \"Wait only if you need context on Brandt Labs to decide whether the meeting is worth your time; in that case, ask Introly for a brief and respond within one business day. Stop if you determine that Brandt Labs is not a strategic fit; in that case, send a polite decline the same day. Do not wait beyond one business day without responding, as the counterparty will assume disinterest\",\n  \"done_when\": \"The meeting is confirmed on the founder's calendar for one of the offered times, or a polite decline has been sent with a reason\",\n  \"draft\": \"Hi, thanks for reaching out. Tuesday afternoon works well for me\u2014how about 2 PM your time? Looking forward to seeing what you're building. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "b4eaa413be528e5a1212a5390294d6de9b7e249323ad8467fa94b51023086c9a": {
+  "framed": true,
+  "input_tokens": 7273,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3286,
+  "parsed": {
+   "alternative": "If the founder is uncertain about the value of the meeting, send a brief message to Sofia asking what problem Brandt Labs is trying to solve, and whether she is exploring a partnership or evaluating tools for internal use. This buys time and gives the founder context before committing to the meeting.",
+   "appraisal": {
+    "reasons": [
+     "A meeting with an operations leader at a potential partner is a valuable opportunity, but not a crisis. The founder can still recover the relationship by confirming the meeting within one business day.",
+     "The urgency is medium because Sofia has named specific days and times, which suggests she is serious and has limited availability. A delay of more than one business day will signal disinterest.",
+     "A wrong move\u2014such as confirming and then canceling\u2014is reversible but costly. A non-move\u2014silence\u2014is also reversible but becomes more costly with each passing day.",
+     "The stakes are medium because this is one of many design partner conversations in motion. It is not a funding round or a compliance deadline, but it is a genuine opportunity."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Sofia has confirmed the meeting time, and the founder's calendar is blocked for the call. The meeting happens on the scheduled day and time.",
+   "draft": "Hi Sofia, thanks for reaching out\u2014lovely to connect. Tuesday afternoon works well for me. How about 2 PM your time? I'll send a calendar invite. Looking forward to showing you what we're building. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "The founder has not yet replied to Sofia's request. The file has been quiet for 0.26 days since the request was made.",
+    "expected": "In a live account admin situation with a positive reply and a meeting request, the expected next move is to confirm the meeting within one business day. The expected outcome is a scheduled call.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Sofia Brandt, Head of Operations at Brandt Labs, was introduced to the founder by Introly on 2026-08-06 at 07:00 UTC.",
+     "evidence": [
+      "evt_#2",
+      "file:introduced_by"
+     ],
+     "quote": "Arjun, meet Sofia Brandt, who runs operations at Brandt Labs. Sofia, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders."
+    },
+    {
+     "claim": "Sofia Brandt replied at 11:40 UTC the same day requesting a 20-minute product demo on Tuesday or Wednesday afternoon.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Would you have 20 minutes next week to show me the product? Tuesday or Wednesday afternoon works for me."
+    },
+    {
+     "claim": "The file has been quiet for 0.26 days, longer than any prior gap it closed.",
+     "evidence": [
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in the founder's court: Sofia has made an explicit request and is waiting for a response.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file because the brief names no kind of work for it.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is categorized as admin domain, introduced by a connector.",
+     "evidence": [
+      "file:domains",
+      "file:role"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A warm introduction has converted to a meeting request from an operations leader at a potential partner company. The founder has not yet confirmed. The next move is to confirm the meeting or to explain why it cannot happen.",
+    "rivals": [
+     "This is a low-priority intro that can wait until the founder has more time.",
+     "The founder is uncertain about the value of the meeting and is waiting for more information about Brandt Labs before committing.",
+     "The founder has not seen the message, and it is sitting in an unread queue."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A conversation with Sofia to understand what problem she is trying to solve, and whether Brandt Labs is a design partner or a customer.",
+     "proposition": "Sofia Brandt is exploring a partnership or pilot with Nimbus Labs because Brandt Labs has an internal operations workflow that could benefit from an AI chief of staff."
+    },
+    {
+     "needs": "Research on Brandt Labs' funding, stage, and current leadership structure.",
+     "proposition": "Brandt Labs is a venture-backed company or a growth-stage startup, and Sofia is evaluating tools for the founder or the leadership team."
+    },
+    {
+     "needs": "A check of the founder's calendar and task list to see whether the request was seen and deferred, or missed.",
+     "proposition": "The founder has not yet replied because the meeting request arrived late in the day and was not prioritized."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "sig:admin.sit.live_account_admin",
+      "fact:2",
+      "sit:sit_#1"
+     ],
+     "claim": "This is a live account admin situation: a positive reply with a meeting request, the earliest stage of engagement."
+    },
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "Sofia's request is a genuine commitment to meet, not a polite deflection: she named specific days and a time window, and she initiated the reply herself."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The silence since 11:40 UTC on the same day is not yet a signal of disinterest; it is the founder's delay in responding to a fresh request."
+    },
+    {
+     "based_on": [
+      "file:role",
+      "file:introduced_by",
+      "brief:cbl_#6"
+     ],
+     "claim": "The kind of work is intro, not a separate category: Brandt Labs is a potential design partner or customer, introduced by a connector to explore a product fit conversation."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-08-07",
+    "for_whom": "Sofia Brandt",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:3",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:2",
+     "fact:4",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "sofia@brandtlabs.test",
+    "what": "confirm the meeting with Sofia for Tuesday or Wednesday afternoon, or offer an alternative time if the founder is not available.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting request from an operations leader at a potential partner company is a high-signal event: it means they have read the pitch, understood the product, and decided it is worth their time.",
+     "kind": "practice",
+     "why": "Operations leaders are gatekeepers; they do not take meetings on speculation. A request from Sofia means Brandt Labs has a use case or a partnership hypothesis in mind."
+    },
+    {
+     "claim": "Founder-to-operations-leader conversations often lead to design partnerships or pilot agreements, because operations leaders control the budget and the decision to try new tools.",
+     "kind": "base_rate",
+     "why": "An operations leader's interest is not theoretical; it is rooted in a problem they are trying to solve."
+    },
+    {
+     "claim": "A delay of more than one business day in confirming a meeting with a warm introduction damages the relationship more than a polite decline would.",
+     "kind": "practice",
+     "why": "The requester interprets delay as a signal that the founder is not serious, or that the company is disorganized. A decline is honest; a delay is ambiguous and reads as dismissal."
+    },
+    {
+     "claim": "Founder silence on a meeting request is often not neglect but conflict: the founder is uncertain whether the meeting is worth the time, or is waiting for a signal from elsewhere.",
+     "kind": "counter_pattern",
+     "why": "Founders often delay on meetings that do not fit their current narrative or timeline, even when the meeting is valuable."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A meeting request from a warm introduction, answered the same day or next morning, converts to a scheduled meeting in over ninety percent of cases.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "A meeting request left unanswered for more than one business day begins to signal either disinterest or disorganization to the requester.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "A connector-introduced person who names specific days and times is more likely to follow through than one who says only 'let's meet sometime.'",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:role",
+     "file:introduced_by",
+     "evt_#2",
+     "brief:cbl_#6"
+    ],
+    "kind": "intro",
+    "why": "The file is a connector-introduced conversation with a potential partner or customer. It is not yet a formal partnership, hiring, or compliance matter. It is an exploratory meeting request from a warm introduction."
+   },
+   "scenarios": {
+    "act": "The founder confirms the meeting for Tuesday or Wednesday afternoon, or offers an alternative time. Sofia confirms the meeting. The call happens, and the founder learns whether Brandt Labs is a design partner, a customer, or neither. A partnership or pilot may follow.",
+    "best": "Sofia is an operations leader at a growth-stage startup with a real problem that Nimbus Labs can solve. The meeting leads to a design partnership or a pilot agreement. Brandt Labs becomes a reference customer and a source of product feedback.",
+    "do_nothing": "After three days of silence, Sofia will assume the founder is not interested and will move on to other tools or partners. The relationship will cool, and the opportunity to explore a partnership or pilot will be lost. After seven days, Sofia will likely not follow up again.",
+    "signals_to_watch": [
+     "Whether Sofia replies to the founder's confirmation within one business day.",
+     "Whether Sofia attends the meeting on the scheduled day and time.",
+     "Whether Sofia asks follow-up questions during the meeting, or whether she is polite but disengaged.",
+     "Whether Sofia asks for a pilot or a design partnership agreement after the meeting."
+    ],
+    "worst": "The founder confirms the meeting but then cancels or reschedules multiple times. Sofia loses confidence in the founder's reliability. The relationship ends, and Brandt Labs becomes a negative reference in the market."
+   },
+   "unknowns": [
+    {
+     "question": "What is Brandt Labs' business, stage, and size?",
+     "relevance": "This determines whether Sofia is a design partner, a customer, or a potential investor. It also determines the value of the meeting and the urgency of the response."
+    },
+    {
+     "question": "Has the founder seen Sofia's message, and if so, why has he not replied?",
+     "relevance": "If the founder has seen it and chosen not to reply, the next move is different than if he has not seen it. If he is uncertain about the meeting, the next move is to clarify the value proposition before confirming."
+    },
+    {
+     "question": "What is the founder's calendar availability for Tuesday or Wednesday of next week?",
+     "relevance": "If the founder is not available, the response must offer an alternative, which requires a calendar check before replying."
+    },
+    {
+     "question": "Is Brandt Labs on the brief's watchlist or partner list, or is this a new introduction?",
+     "relevance": "If Brandt Labs is already a known partner or prospect, the meeting has a different context. If it is new, the meeting is a discovery conversation."
+    }
+   ],
+   "wait_or_stop": "Do not wait. Confirm the meeting by end of business on 2026-08-07. If the founder is not available on Tuesday or Wednesday, offer an alternative time the same day. Do not stop; this is a live opportunity."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Sofia Brandt, Head of Operations at Brandt Labs, was introduced to the founder by Introly on 2026-08-06 at 07:00 UTC.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"file:introduced_by\"\n      ],\n      \"quote\": \"Arjun, meet Sofia Brandt, who runs operations at Brandt Labs. Sofia, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders.\"\n    },\n    {\n      \"claim\": \"Sofia Brandt replied at 11:40 UTC the same day requesting a 20-minute product demo on Tuesday or Wednesday afternoon.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Would you have 20 minutes next week to show me the product? Tuesday or Wednesday afternoon works for me.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.26 days, longer than any prior gap it closed.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in the founder's court: Sofia has made an explicit request and is waiting for a response.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file because the brief names no kind of work for it.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is categorized as admin domain, introduced by a connector.\",\n      \"evidence\": [\n        \"file:domains\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"This is a live account admin situation: a positive reply with a meeting request, the earliest stage of engagement.\",\n      \"based_on\": [\n        \"sig:admin.sit.live_account_admin\",\n        \"fact:2\",\n        \"sit:sit_#1\"\n      ]\n    },\n    {\n      \"claim\": \"Sofia's request is a genuine commitment to meet, not a polite deflection: she named specific days and a time window, and she initiated the reply herself.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The silence since 11:40 UTC on the same day is not yet a signal of disinterest; it is the founder's delay in responding to a fresh request.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"claim\": \"The kind of work is intro, not a separate category: Brandt Labs is a potential design partner or customer, introduced by a connector to explore a product fit conversation.\",\n      \"based_on\": [\n        \"file:role\",\n        \"file:introduced_by\",\n        \"brief:cbl_#6\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A meeting request from a warm introduction, answered the same day or next morning, converts to a scheduled meeting in over ninety percent of cases.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A meeting request left unanswered for more than one business day begins to signal either disinterest or disorganization to the requester.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A connector-introduced person who names specific days and times is more likely to follow through than one who says only 'let's meet sometime.'\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting request from an operations leader at a potential partner company is a high-signal event: it means they have read the pitch, understood the product, and decided it is worth their time.\",\n      \"why\": \"Operations leaders are gatekeepers; they do not take meetings on speculation. A request from Sofia means Brandt Labs has a use case or a partnership hypothesis in mind.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founder-to-operations-leader conversations often lead to design partnerships or pilot agreements, because operations leaders control the budget and the decision to try new tools.\",\n      \"why\": \"An operations leader's interest is not theoretical; it is rooted in a problem they are trying to solve.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A delay of more than one business day in confirming a meeting with a warm introduction damages the relationship more than a polite decline would.\",\n      \"why\": \"The requester interprets delay as a signal that the founder is not serious, or that the company is disorganized. A decline is honest; a delay is ambiguous and reads as dismissal.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Founder silence on a meeting request is often not neglect but conflict: the founder is uncertain whether the meeting is worth the time, or is waiting for a signal from elsewhere.\",\n      \"why\": \"Founders often delay on meetings that do not fit their current narrative or timeline, even when the meeting is valuable.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Sofia Brandt is exploring a partnership or pilot with Nimbus Labs because Brandt Labs has an internal operations workflow that could benefit from an AI chief of staff.\",\n      \"needs\": \"A conversation with Sofia to understand what problem she is trying to solve, and whether Brandt Labs is a design partner or a customer.\"\n    },\n    {\n      \"proposition\": \"Brandt Labs is a venture-backed company or a growth-stage startup, and Sofia is evaluating tools for the founder or the leadership team.\",\n      \"needs\": \"Research on Brandt Labs' funding, stage, and current leadership structure.\"\n    },\n    {\n      \"proposition\": \"The founder has not yet replied because the meeting request arrived late in the day and was not prioritized.\",\n      \"needs\": \"A check of the founder's calendar and task list to see whether the request was seen and deferred, or missed.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Brandt Labs' business, stage, and size?\",\n      \"relevance\": \"This determines whether Sofia is a design partner, a customer, or a potential investor. It also determines the value of the meeting and the urgency of the response.\"\n    },\n    {\n      \"question\": \"Has the founder seen Sofia's message, and if so, why has he not replied?\",\n      \"relevance\": \"If the founder has seen it and chosen not to reply, the next move is different than if he has not seen it. If he is uncertain about the meeting, the next move is to clarify the value proposition before confirming.\"\n    },\n    {\n      \"question\": \"What is the founder's calendar availability for Tuesday or Wednesday of next week?\",\n      \"relevance\": \"If the founder is not available, the response must offer an alternative, which requires a calendar check before replying.\"\n    },\n    {\n      \"question\": \"Is Brandt Labs on the brief's watchlist or partner list, or is this a new introduction?\",\n      \"relevance\": \"If Brandt Labs is already a known partner or prospect, the meeting has a different context. If it is new, the meeting is a discovery conversation.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A warm introduction has converted to a meeting request from an operations leader at a potential partner company. The founder has not yet confirmed. The next move is to confirm the meeting or to explain why it cannot happen.\",\n    \"rivals\": [\n      \"This is a low-priority intro that can wait until the founder has more time.\",\n      \"The founder is uncertain about the value of the meeting and is waiting for more information about Brandt Labs before committing.\",\n      \"The founder has not seen the message, and it is sitting in an unread queue.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file is a connector-introduced conversation with a potential partner or customer. It is not yet a formal partnership, hiring, or compliance matter. It is an exploratory meeting request from a warm introduction.\",\n    \"evidence\": [\n      \"file:role\",\n      \"file:introduced_by\",\n      \"evt_#2\",\n      \"brief:cbl_#6\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"In a live account admin situation with a positive reply and a meeting request, the expected next move is to confirm the meeting within one business day. The expected outcome is a scheduled call.\",\n    \"actual\": \"The founder has not yet replied to Sofia's request. The file has been quiet for 0.26 days since the request was made.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"After three days of silence, Sofia will assume the founder is not interested and will move on to other tools or partners. The relationship will cool, and the opportunity to explore a partnership or pilot will be lost. After seven days, Sofia will likely not follow up again.\",\n    \"act\": \"The founder confirms the meeting for Tuesday or Wednesday afternoon, or offers an alternative time. Sofia confirms the meeting. The call happens, and the founder learns whether Brandt Labs is a design partner, a customer, or neither. A partnership or pilot may follow.\",\n    \"best\": \"Sofia is an operations leader at a growth-stage startup with a real problem that Nimbus Labs can solve. The meeting leads to a design partnership or a pilot agreement. Brandt Labs becomes a reference customer and a source of product feedback.\",\n    \"worst\": \"The founder confirms the meeting but then cancels or reschedules multiple times. Sofia loses confidence in the founder's reliability. The relationship ends, and Brandt Labs becomes a negative reference in the market.\",\n    \"signals_to_watch\": [\n      \"Whether Sofia replies to the founder's confirmation within one business day.\",\n      \"Whether Sofia attends the meeting on the scheduled day and time.\",\n      \"Whether Sofia asks follow-up questions during the meeting, or whether she is polite but disengaged.\",\n      \"Whether Sofia asks for a pilot or a design partnership agreement after the meeting.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"A meeting with an operations leader at a potential partner is a valuable opportunity, but not a crisis. The founder can still recover the relationship by confirming the meeting within one business day.\",\n      \"The urgency is medium because Sofia has named specific days and times, which suggests she is serious and has limited availability. A delay of more than one business day will signal disinterest.\",\n      \"A wrong move\u2014such as confirming and then canceling\u2014is reversible but costly. A non-move\u2014silence\u2014is also reversible but becomes more costly with each passing day.\",\n      \"The stakes are medium because this is one of many design partner conversations in motion. It is not a funding round or a compliance deadline, but it is a genuine opportunity.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"confirm the meeting with Sofia for Tuesday or Wednesday afternoon, or offer an alternative time if the founder is not available.\",\n    \"for_whom\": \"Sofia Brandt\",\n    \"by_when\": \"2026-08-07\",\n    \"rests_on\": [\n      \"fact:2\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:3\",\n      \"own:1\"\n    ],\n    \"to\": \"sofia@brandtlabs.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder is uncertain about the value of the meeting, send a brief message to Sofia asking what problem Brandt Labs is trying to solve, and whether she is exploring a partnership or evaluating tools for internal use. This buys time and gives the founder context before committing to the meeting.\",\n  \"wait_or_stop\": \"Do not wait. Confirm the meeting by end of business on 2026-08-07. If the founder is not available on Tuesday or Wednesday, offer an alternative time the same day. Do not stop; this is a live opportunity.\",\n  \"done_when\": \"Sofia has confirmed the meeting time, and the founder's calendar is blocked for the call. The meeting happens on the scheduled day and time.\",\n  \"draft\": \"Hi Sofia, thanks for reaching out\u2014lovely to connect. Tuesday afternoon works well for me. How about 2 PM your time? I'll send a calendar invite. Looking forward to showing you what we're building. Best, Arjun\"\n}",
+  "site": "expert"
+ }
+}

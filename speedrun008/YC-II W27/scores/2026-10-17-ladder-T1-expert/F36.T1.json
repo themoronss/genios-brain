@@ -1,0 +1,243 @@
+{
+ "cea399be7a6c4abd43c2fff1350cccb49803668691065c537f52928bb3117c28": {
+  "framed": true,
+  "input_tokens": 7060,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3025,
+  "parsed": {
+   "alternative": "Clarify the file's kind and role in the brief by asking yourself: Is partnerco.test a design partner, a vendor, or a potential customer? Once classified, decide whether to keep the file active or close it. If it is a design partner, add it to the brief and set a follow-up date. If it is a vendor or transactional relationship, close the file after the integration is complete or after two weeks of silence.",
+   "appraisal": {
+    "reasons": [
+     "No promise or commitment has been made by the counterparty, so there is no obligation to track.",
+     "The file has been quiet for less than half a day, which is well within normal processing time.",
+     "The brief does not name partnerco.test as a priority, and the file's role in the brief is none.",
+     "A follow-up message can be sent at any time without cost if the counterparty does not respond.",
+     "The work is administrative and does not block any of your core goals (raise, hire, get into programs, land design partners)."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Done when Ravi replies with feedback, a timeline, or a decision to proceed or decline the integration. If the file goes dormant after two weeks, done is when you have decided to close it or escalate it.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "You have sent the document; the counterparty has not yet replied.",
+    "expected": "Without a playbook or a named kind of work, there is no stage. If this is a partner relationship, the expected stage would be 'initial engagement' or 'integration discussion,' in which the counterparty reviews the document and provides feedback or next steps.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You sent an integration document to Ravi at partnerco.test on 2026-09-02 at 09:00 UTC.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Integration doc Hi Ravi, Here's the integration doc you asked for. Let me know if anything's unclear. Arjun"
+    },
+    {
+     "claim": "No reply has been received from partnerco.test since the document was sent.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.38 days as of the dossier timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was extracted from the mail in this file.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The brief does not name a kind of work for this file.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time this file has been judged.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@admin",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's role in the brief is none.",
+     "evidence": [
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in their court: you have sent what was asked for.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A transactional exchange in which you have delivered a requested document and are now waiting for the counterparty to review and respond. The silence is normal and does not yet warrant action.",
+    "rivals": [
+     "A stalled partnership discussion in which the counterparty has lost interest or deprioritized the work.",
+     "A vendor or design partner relationship that should be tracked as an active item in the brief but is not yet classified."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Clarification from you on whether partnerco.test is one of the named design partners (Orbitly, Cleanwave, Novacore, Memloop) or a new vendor relationship.",
+     "proposition": "This is a design partner or vendor relationship that should be tracked as such."
+    },
+    {
+     "needs": "A follow-up conversation with Ravi after a week to understand the review timeline.",
+     "proposition": "Ravi is waiting for internal approval before responding."
+    },
+    {
+     "needs": "A signal from Ravi about the priority or timeline, or a decision to close the file if no response comes within two weeks.",
+     "proposition": "The integration is not a priority for partnerco.test and the file should be deprioritized."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The counterparty has received the deliverable and is now processing or reviewing it."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The silence is consistent with normal administrative processing, not disinterest or rejection."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "none:promises"
+     ],
+     "claim": "There is no commitment or promise in this exchange that you are tracking or that could be overdue."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "cap:admin.executive_support.commitment_tracking#f6"
+     ],
+     "claim": "This file should not be treated as a commitment-tracking item because no obligation was made by the counterparty."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-09",
+    "for_whom": "partnerco.test",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "wait for a reply from Ravi; do not send a follow-up message until at least one week has passed",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Do not chase a document you have sent until at least a week has passed and the recipient's normal response window has closed.",
+     "kind": "practice",
+     "why": "A chase before the recipient has had time to review reads as pressure and damages the relationship; it also violates the rule against chasing while the ball is in their court."
+    },
+    {
+     "claim": "Integration discussions with potential partners often move slowly because they require internal review, legal clearance, or technical evaluation.",
+     "kind": "base_rate",
+     "why": "The counterparty may be waiting for internal stakeholders to weigh in before responding."
+    },
+    {
+     "claim": "A file with no playbook and no role in the brief should not be carried as an active item; it should be closed or reclassified.",
+     "kind": "counter_pattern",
+     "why": "Carrying items with no defined work type inflates the ledger and obscures genuine commitments."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Integration documents sent to potential partners typically receive acknowledgment or feedback within three to five business days.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence after sending a requested document does not indicate rejection; it often indicates the recipient is reviewing it or has deprioritized it.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "fact:6"
+     ],
+     "claim": "A file with no extracted promise and no named kind of work in the brief is often a transactional exchange rather than a tracked commitment.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#1",
+     "file:domains"
+    ],
+    "kind": "partner",
+    "why": "The mail references an 'integration doc' and the counterparty is named partnerco.test, suggesting a potential partnership or integration. The brief lists design partners (Orbitly, Cleanwave, Novacore, Memloop) but does not name partnerco.test, so this may be a new partner relationship or a vendor relationship that should be classified."
+   },
+   "scenarios": {
+    "act": "You send a follow-up message to Ravi asking for feedback or a timeline. This risks being perceived as pressure if the counterparty is still reviewing; it also violates the rule against chasing while the ball is in their court.",
+    "best": "Ravi reviews the document, finds it acceptable, and proposes next steps for integration within a week. The partnership moves forward.",
+    "do_nothing": "The file remains open and quiet. After one week, if no reply has come, the file will be quiet for over a week. After two weeks, it will be quiet for two weeks, and a decision will be needed on whether to follow up or close the file.",
+    "signals_to_watch": [
+     "A reply from Ravi with feedback or a timeline.",
+     "A request for clarification or additional information.",
+     "Silence beyond one week, which would suggest deprioritization or lack of interest.",
+     "A message from another contact at partnerco.test, which would suggest the file has moved to a different stakeholder."
+    ],
+    "worst": "Ravi does not respond, and the file goes dormant. After two weeks of silence, you must decide whether to escalate, close the file, or try a different contact at partnerco.test."
+   },
+   "unknowns": [
+    {
+     "question": "What is partnerco.test's role in your strategy? Is it a design partner, a vendor, a potential customer, or something else?",
+     "relevance": "The kind of work determines how long to wait, what follow-up is appropriate, and whether this file should be active at all."
+    },
+    {
+     "question": "What did Ravi ask for, and what was the context of that ask?",
+     "relevance": "The original request would clarify whether the integration doc was a response to a formal ask or a proactive offer, which changes the urgency and follow-up strategy."
+    },
+    {
+     "question": "Is there a timeline or deadline associated with this integration work?",
+     "relevance": "Without a deadline, the file has no urgency; with one, it may need escalation if Ravi does not respond in time."
+    },
+    {
+     "question": "Has Ravi or partnerco.test been in contact with you before, or is this a cold outreach?",
+     "relevance": "A new relationship may take longer to respond; an existing one may warrant a faster follow-up."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-09 (one week from the document send). If no reply has come by then, send a brief follow-up asking for feedback or a timeline. If no reply comes by 2026-09-16 (two weeks), close the file or escalate to a different contact at partnerco.test. Stop waiting if Ravi replies or if you receive a signal that the integration is no longer a priority."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You sent an integration document to Ravi at partnerco.test on 2026-09-02 at 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Integration doc Hi Ravi, Here's the integration doc you asked for. Let me know if anything's unclear. Arjun\"\n    },\n    {\n      \"claim\": \"No reply has been received from partnerco.test since the document was sent.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.38 days as of the dossier timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was extracted from the mail in this file.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The brief does not name a kind of work for this file.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time this file has been judged.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@admin\",\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's role in the brief is none.\",\n      \"evidence\": [\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in their court: you have sent what was asked for.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The counterparty has received the deliverable and is now processing or reviewing it.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The silence is consistent with normal administrative processing, not disinterest or rejection.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"claim\": \"There is no commitment or promise in this exchange that you are tracking or that could be overdue.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"none:promises\"\n      ]\n    },\n    {\n      \"claim\": \"This file should not be treated as a commitment-tracking item because no obligation was made by the counterparty.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"cap:admin.executive_support.commitment_tracking#f6\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Integration documents sent to potential partners typically receive acknowledgment or feedback within three to five business days.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence after sending a requested document does not indicate rejection; it often indicates the recipient is reviewing it or has deprioritized it.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A file with no extracted promise and no named kind of work in the brief is often a transactional exchange rather than a tracked commitment.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"fact:6\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Do not chase a document you have sent until at least a week has passed and the recipient's normal response window has closed.\",\n      \"why\": \"A chase before the recipient has had time to review reads as pressure and damages the relationship; it also violates the rule against chasing while the ball is in their court.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Integration discussions with potential partners often move slowly because they require internal review, legal clearance, or technical evaluation.\",\n      \"why\": \"The counterparty may be waiting for internal stakeholders to weigh in before responding.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A file with no playbook and no role in the brief should not be carried as an active item; it should be closed or reclassified.\",\n      \"why\": \"Carrying items with no defined work type inflates the ledger and obscures genuine commitments.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"This is a design partner or vendor relationship that should be tracked as such.\",\n      \"needs\": \"Clarification from you on whether partnerco.test is one of the named design partners (Orbitly, Cleanwave, Novacore, Memloop) or a new vendor relationship.\"\n    },\n    {\n      \"proposition\": \"Ravi is waiting for internal approval before responding.\",\n      \"needs\": \"A follow-up conversation with Ravi after a week to understand the review timeline.\"\n    },\n    {\n      \"proposition\": \"The integration is not a priority for partnerco.test and the file should be deprioritized.\",\n      \"needs\": \"A signal from Ravi about the priority or timeline, or a decision to close the file if no response comes within two weeks.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is partnerco.test's role in your strategy? Is it a design partner, a vendor, a potential customer, or something else?\",\n      \"relevance\": \"The kind of work determines how long to wait, what follow-up is appropriate, and whether this file should be active at all.\"\n    },\n    {\n      \"question\": \"What did Ravi ask for, and what was the context of that ask?\",\n      \"relevance\": \"The original request would clarify whether the integration doc was a response to a formal ask or a proactive offer, which changes the urgency and follow-up strategy.\"\n    },\n    {\n      \"question\": \"Is there a timeline or deadline associated with this integration work?\",\n      \"relevance\": \"Without a deadline, the file has no urgency; with one, it may need escalation if Ravi does not respond in time.\"\n    },\n    {\n      \"question\": \"Has Ravi or partnerco.test been in contact with you before, or is this a cold outreach?\",\n      \"relevance\": \"A new relationship may take longer to respond; an existing one may warrant a faster follow-up.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A transactional exchange in which you have delivered a requested document and are now waiting for the counterparty to review and respond. The silence is normal and does not yet warrant action.\",\n    \"rivals\": [\n      \"A stalled partnership discussion in which the counterparty has lost interest or deprioritized the work.\",\n      \"A vendor or design partner relationship that should be tracked as an active item in the brief but is not yet classified.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"partner\",\n    \"why\": \"The mail references an 'integration doc' and the counterparty is named partnerco.test, suggesting a potential partnership or integration. The brief lists design partners (Orbitly, Cleanwave, Novacore, Memloop) but does not name partnerco.test, so this may be a new partner relationship or a vendor relationship that should be classified.\",\n    \"evidence\": [\n      \"evt_#1\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook or a named kind of work, there is no stage. If this is a partner relationship, the expected stage would be 'initial engagement' or 'integration discussion,' in which the counterparty reviews the document and provides feedback or next steps.\",\n    \"actual\": \"You have sent the document; the counterparty has not yet replied.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The file remains open and quiet. After one week, if no reply has come, the file will be quiet for over a week. After two weeks, it will be quiet for two weeks, and a decision will be needed on whether to follow up or close the file.\",\n    \"act\": \"You send a follow-up message to Ravi asking for feedback or a timeline. This risks being perceived as pressure if the counterparty is still reviewing; it also violates the rule against chasing while the ball is in their court.\",\n    \"best\": \"Ravi reviews the document, finds it acceptable, and proposes next steps for integration within a week. The partnership moves forward.\",\n    \"worst\": \"Ravi does not respond, and the file goes dormant. After two weeks of silence, you must decide whether to escalate, close the file, or try a different contact at partnerco.test.\",\n    \"signals_to_watch\": [\n      \"A reply from Ravi with feedback or a timeline.\",\n      \"A request for clarification or additional information.\",\n      \"Silence beyond one week, which would suggest deprioritization or lack of interest.\",\n      \"A message from another contact at partnerco.test, which would suggest the file has moved to a different stakeholder.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"No promise or commitment has been made by the counterparty, so there is no obligation to track.\",\n      \"The file has been quiet for less than half a day, which is well within normal processing time.\",\n      \"The brief does not name partnerco.test as a priority, and the file's role in the brief is none.\",\n      \"A follow-up message can be sent at any time without cost if the counterparty does not respond.\",\n      \"The work is administrative and does not block any of your core goals (raise, hire, get into programs, land design partners).\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for a reply from Ravi; do not send a follow-up message until at least one week has passed\",\n    \"for_whom\": \"partnerco.test\",\n    \"by_when\": \"2026-09-09\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Clarify the file's kind and role in the brief by asking yourself: Is partnerco.test a design partner, a vendor, or a potential customer? Once classified, decide whether to keep the file active or close it. If it is a design partner, add it to the brief and set a follow-up date. If it is a vendor or transactional relationship, close the file after the integration is complete or after two weeks of silence.\",\n  \"wait_or_stop\": \"Wait until 2026-09-09 (one week from the document send). If no reply has come by then, send a brief follow-up asking for feedback or a timeline. If no reply comes by 2026-09-16 (two weeks), close the file or escalate to a different contact at partnerco.test. Stop waiting if Ravi replies or if you receive a signal that the integration is no longer a priority.\",\n  \"done_when\": \"Done when Ravi replies with feedback, a timeline, or a decision to proceed or decline the integration. If the file goes dormant after two weeks, done is when you have decided to close it or escalate it.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

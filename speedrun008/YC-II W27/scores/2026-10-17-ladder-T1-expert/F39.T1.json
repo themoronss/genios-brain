@@ -1,0 +1,454 @@
+{
+ "479d518c5dbc090873e6dd16549659d6241b7e1e8f153ca02796a1fd66d87d40": {
+  "framed": true,
+  "input_tokens": 7140,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2717,
+  "parsed": {
+   "alternative": "If the founder confirms that this file is a priority (e.g., a design partner or investor prospect), move to act: send a gentle follow-up to Rohan after three business days if no reply arrives, reiterating the two time options and asking for confirmation.",
+   "appraisal": {
+    "reasons": [
+     "The file has no stated role in the brief and no named counterparty in any active work stream.",
+     "The founder has made a clear offer and is waiting for a reply; there is no commitment at risk.",
+     "The file is less than one business day old; normal processing time has not elapsed.",
+     "If the meeting does not happen, the founder can reschedule or close the file with no cost."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "The founder has clarified the purpose and priority of this file, and either a meeting time is confirmed or the file is closed.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The founder has offered two times and is waiting for a reply. The file is quiet and has no stated purpose.",
+    "expected": "Without a playbook or a stated kind of work, the expectation is that the file would either be named in the brief or closed. If it is a courtesy intro, the expectation is that the founder would confirm a time and attend. If it is a priority, the expectation is that it would be tracked as such.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Arjun offered two meeting times to Rohan at castlerock.test: Thursday 3 pm or Friday 11 am IST.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "I'm free Thursday 3 pm or Friday 11 am IST, whichever suits you."
+    },
+    {
+     "claim": "The file has no stated kind of work in the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Castle Rock appears in no part of the company brief's goals, work in motion, or watchlist.",
+     "evidence": [
+      "brief:company",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The last mail in the file is from Arjun, sent 2026-09-10 08:00 UTC, and no reply has been received since.",
+     "evidence": [
+      "cov:last_mail",
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days as of the dossier timestamp.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in Castle Rock's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency and low risk.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A meeting request awaiting confirmation. The founder has offered two times; the counterparty has not yet replied. The file is too new to judge whether this is a priority or a courtesy.",
+    "rivals": [
+     "A cold or misdirected inquiry that should be triaged or closed.",
+     "A warm intro from a connector, in which case the founder's move is to wait for the counterparty to confirm.",
+     "A follow-up to an earlier conversation that the dossier does not show, in which case the context is incomplete."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A record of how Rohan or Castle Rock was introduced, or a note in the founder's own context about why this conversation started.",
+     "proposition": "Castle Rock is a design partner prospect, aligned with the brief's goal to land design partners."
+    },
+    {
+     "needs": "The name of the connector or the context in which the founder agreed to take this call.",
+     "proposition": "Castle Rock is a potential investor or strategic partner, and this is a warm intro from someone the founder trusts."
+    },
+    {
+     "needs": "Confirmation from the founder about whether this conversation is a priority or a courtesy.",
+     "proposition": "This is a cold outreach or a misdirected inquiry, and the file should be closed or moved to a lower queue."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:4"
+     ],
+     "claim": "The ball is in Castle Rock's court: Arjun has made an offer and is waiting for Rohan to choose a time."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "file:role"
+     ],
+     "claim": "Castle Rock is not a named counterparty in any of the founder's active work streams, making its purpose unclear."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "fact:5",
+      "cov:conn_golden_gmail"
+     ],
+     "claim": "The file is too new and too quiet to judge whether this is a cold outreach, a warm intro, or something else."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-13",
+    "for_whom": "the founder",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:4",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "wait for Rohan to reply to the meeting offer, and clarify with the founder why this file matters and whether it is a priority",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting offer with two specific times is a low-friction ask that rarely requires follow-up before three business days have passed.",
+     "kind": "practice",
+     "why": "The recipient has clear options and can reply at their convenience; the offer is self-contained and needs no clarification."
+    },
+    {
+     "claim": "When a file has no stated purpose in the brief and no role in any active work stream, the first question is whether it belongs in the founder's queue at all.",
+     "kind": "base_rate",
+     "why": "A file without context consumes attention that should go to named priorities; it may be a cold lead, a misdirected intro, or work that should be delegated."
+    },
+    {
+     "claim": "Chasing a meeting offer before the recipient has had a full business day to reply reads as pressure and damages the relationship.",
+     "kind": "practice",
+     "why": "The recipient is not late; they are on time. A chase converts a normal wait into a signal that you are impatient or disorganized."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A meeting request with two time options offered typically receives a reply within one to three business days.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Administrative silence in the first half-day after a meeting offer is not silence; it is normal processing time.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:role",
+     "brief:company"
+    ],
+    "kind": "intro",
+    "why": "The file shows a single exchange with no stated business purpose, no role in the brief, and no prior history in the dossier. It reads as an introduction or a courtesy meeting, not as work toward a named goal. If it were a design partner, investor, or program application, the brief would name it."
+   },
+   "scenarios": {
+    "act": "The founder clarifies with the connector or their own notes why this meeting matters, and either prioritizes it or closes the file. If it is a priority, the founder may send a gentle follow-up after three business days if no reply arrives.",
+    "best": "Rohan replies promptly, the meeting is productive, and it leads to a design partnership, investor interest, or a useful introduction.",
+    "do_nothing": "Rohan replies within one to three business days with a time preference, and the meeting is scheduled. The file moves to a calendar hold. If Rohan does not reply within a week, the file remains quiet and the founder may choose to follow up or close it.",
+    "signals_to_watch": [
+     "A reply from Rohan confirming a time within one to three business days.",
+     "No reply after five business days, which would signal that the meeting is not a priority for Castle Rock.",
+     "A reply that declines or postpones indefinitely, which would signal that the file should be closed.",
+     "A message from the connector or the founder's own notes clarifying the purpose and priority of this file."
+    ],
+    "worst": "Rohan does not reply, the founder chases multiple times, and the file becomes a source of friction or a time sink with no return."
+   },
+   "unknowns": [
+    {
+     "question": "Who is Rohan, and how did this conversation begin?",
+     "relevance": "The purpose of the file and its priority depend entirely on whether this is a warm intro, a cold lead, or a follow-up to an earlier conversation the dossier does not show."
+    },
+    {
+     "question": "What does Castle Rock do, and why is the founder talking to them?",
+     "relevance": "Without knowing Castle Rock's business, it is impossible to judge whether this file serves any of the founder's stated goals or is a distraction."
+    },
+    {
+     "question": "Is this file part of a larger conversation thread that the dossier's 60-day lookback did not capture?",
+     "relevance": "If the conversation started before 2026-07-12, the dossier may be showing only the tail end of a longer relationship, and the context would change the judgment."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-13 (three business days from the offer). If Rohan has not replied by then, ask the founder whether to follow up or close the file. If Rohan replies before then, move the file to a calendar hold. Stop if the founder confirms this is not a priority or if Rohan declines."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Arjun offered two meeting times to Rohan at castlerock.test: Thursday 3 pm or Friday 11 am IST.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"I'm free Thursday 3 pm or Friday 11 am IST, whichever suits you.\"\n    },\n    {\n      \"claim\": \"The file has no stated kind of work in the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Castle Rock appears in no part of the company brief's goals, work in motion, or watchlist.\",\n      \"evidence\": [\n        \"brief:company\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The last mail in the file is from Arjun, sent 2026-09-10 08:00 UTC, and no reply has been received since.\",\n      \"evidence\": [\n        \"cov:last_mail\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days as of the dossier timestamp.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in Castle Rock's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency and low risk.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The ball is in Castle Rock's court: Arjun has made an offer and is waiting for Rohan to choose a time.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"Castle Rock is not a named counterparty in any of the founder's active work streams, making its purpose unclear.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"file:role\"\n      ]\n    },\n    {\n      \"claim\": \"The file is too new and too quiet to judge whether this is a cold outreach, a warm intro, or something else.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"fact:5\",\n        \"cov:conn_golden_gmail\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A meeting request with two time options offered typically receives a reply within one to three business days.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Administrative silence in the first half-day after a meeting offer is not silence; it is normal processing time.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting offer with two specific times is a low-friction ask that rarely requires follow-up before three business days have passed.\",\n      \"why\": \"The recipient has clear options and can reply at their convenience; the offer is self-contained and needs no clarification.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a file has no stated purpose in the brief and no role in any active work stream, the first question is whether it belongs in the founder's queue at all.\",\n      \"why\": \"A file without context consumes attention that should go to named priorities; it may be a cold lead, a misdirected intro, or work that should be delegated.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Chasing a meeting offer before the recipient has had a full business day to reply reads as pressure and damages the relationship.\",\n      \"why\": \"The recipient is not late; they are on time. A chase converts a normal wait into a signal that you are impatient or disorganized.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Castle Rock is a design partner prospect, aligned with the brief's goal to land design partners.\",\n      \"needs\": \"A record of how Rohan or Castle Rock was introduced, or a note in the founder's own context about why this conversation started.\"\n    },\n    {\n      \"proposition\": \"Castle Rock is a potential investor or strategic partner, and this is a warm intro from someone the founder trusts.\",\n      \"needs\": \"The name of the connector or the context in which the founder agreed to take this call.\"\n    },\n    {\n      \"proposition\": \"This is a cold outreach or a misdirected inquiry, and the file should be closed or moved to a lower queue.\",\n      \"needs\": \"Confirmation from the founder about whether this conversation is a priority or a courtesy.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Who is Rohan, and how did this conversation begin?\",\n      \"relevance\": \"The purpose of the file and its priority depend entirely on whether this is a warm intro, a cold lead, or a follow-up to an earlier conversation the dossier does not show.\"\n    },\n    {\n      \"question\": \"What does Castle Rock do, and why is the founder talking to them?\",\n      \"relevance\": \"Without knowing Castle Rock's business, it is impossible to judge whether this file serves any of the founder's stated goals or is a distraction.\"\n    },\n    {\n      \"question\": \"Is this file part of a larger conversation thread that the dossier's 60-day lookback did not capture?\",\n      \"relevance\": \"If the conversation started before 2026-07-12, the dossier may be showing only the tail end of a longer relationship, and the context would change the judgment.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A meeting request awaiting confirmation. The founder has offered two times; the counterparty has not yet replied. The file is too new to judge whether this is a priority or a courtesy.\",\n    \"rivals\": [\n      \"A cold or misdirected inquiry that should be triaged or closed.\",\n      \"A warm intro from a connector, in which case the founder's move is to wait for the counterparty to confirm.\",\n      \"A follow-up to an earlier conversation that the dossier does not show, in which case the context is incomplete.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"intro\",\n    \"why\": \"The file shows a single exchange with no stated business purpose, no role in the brief, and no prior history in the dossier. It reads as an introduction or a courtesy meeting, not as work toward a named goal. If it were a design partner, investor, or program application, the brief would name it.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:role\",\n      \"brief:company\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook or a stated kind of work, the expectation is that the file would either be named in the brief or closed. If it is a courtesy intro, the expectation is that the founder would confirm a time and attend. If it is a priority, the expectation is that it would be tracked as such.\",\n    \"actual\": \"The founder has offered two times and is waiting for a reply. The file is quiet and has no stated purpose.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Rohan replies within one to three business days with a time preference, and the meeting is scheduled. The file moves to a calendar hold. If Rohan does not reply within a week, the file remains quiet and the founder may choose to follow up or close it.\",\n    \"act\": \"The founder clarifies with the connector or their own notes why this meeting matters, and either prioritizes it or closes the file. If it is a priority, the founder may send a gentle follow-up after three business days if no reply arrives.\",\n    \"best\": \"Rohan replies promptly, the meeting is productive, and it leads to a design partnership, investor interest, or a useful introduction.\",\n    \"worst\": \"Rohan does not reply, the founder chases multiple times, and the file becomes a source of friction or a time sink with no return.\",\n    \"signals_to_watch\": [\n      \"A reply from Rohan confirming a time within one to three business days.\",\n      \"No reply after five business days, which would signal that the meeting is not a priority for Castle Rock.\",\n      \"A reply that declines or postpones indefinitely, which would signal that the file should be closed.\",\n      \"A message from the connector or the founder's own notes clarifying the purpose and priority of this file.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file has no stated role in the brief and no named counterparty in any active work stream.\",\n      \"The founder has made a clear offer and is waiting for a reply; there is no commitment at risk.\",\n      \"The file is less than one business day old; normal processing time has not elapsed.\",\n      \"If the meeting does not happen, the founder can reschedule or close the file with no cost.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"wait for Rohan to reply to the meeting offer, and clarify with the founder why this file matters and whether it is a priority\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-13\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder confirms that this file is a priority (e.g., a design partner or investor prospect), move to act: send a gentle follow-up to Rohan after three business days if no reply arrives, reiterating the two time options and asking for confirmation.\",\n  \"wait_or_stop\": \"Wait until 2026-09-13 (three business days from the offer). If Rohan has not replied by then, ask the founder whether to follow up or close the file. If Rohan replies before then, move the file to a calendar hold. Stop if the founder confirms this is not a priority or if Rohan declines.\",\n  \"done_when\": \"The founder has clarified the purpose and priority of this file, and either a meeting time is confirmed or the file is closed.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "dfa1276ec5c7f527bb6e008d8c420c38c989a0894dd65c87db14ef0e93b676b8": {
+  "framed": true,
+  "input_tokens": 7071,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3084,
+  "parsed": {
+   "alternative": "If the founder confirms that Castle Rock is a high-priority investor or partner, set a reminder to follow up with Rohan on 2026-09-17 if no reply has been received by then. A single follow-up after five business days is acceptable if the stakes are high.",
+   "appraisal": {
+    "reasons": [
+     "The file has no stated role in the brief's goals and no named kind of work.",
+     "A scheduling exchange is routine and low-stakes; a missed meeting can be rescheduled.",
+     "The ball is in Rohan's court; Arjun has made a complete offer and has no move to make now.",
+     "Less than half a day has passed; silence at this stage is normal and carries no signal.",
+     "The file is not on the watchlist and has no stated deadline or commitment."
+    ],
+    "reversibility": "reversible",
+    "stakes": "low",
+    "urgency": "low"
+   },
+   "done_when": "Rohan replies with a confirmed meeting time, or the founder clarifies the file's purpose and priority. If neither happens within ten business days, the file is closed or moved to dormant status.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "Arjun has sent a meeting offer with two specific times. No reply has been received. The file is 0.42 days old.",
+    "expected": "Without a named kind of work, no playbook applies. From the brief's goals and the file's history: a meeting request is expected to receive a reply within one to three business days, or to be followed up once if silence extends past five days.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "Arjun offered two meeting times to Rohan at castlerock.test: Thursday 3 pm or Friday 11 am IST.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "I'm free Thursday 3 pm or Friday 11 am IST, whichever suits you."
+    },
+    {
+     "claim": "The file has no stated kind of work in the brief.",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Castle Rock has not replied since Arjun's message on 2026-09-10 08:00 UTC.",
+     "evidence": [
+      "file:last_touch",
+      "cov:last_mail",
+      "cov:conn_golden_gmail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is 0.42 days quiet as of the dossier's read time.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promise was found in Castle Rock's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in Castle Rock's court: Arjun has made an offer and is waiting for Rohan to choose a time.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is the first time this file has been seen or judged.",
+     "evidence": [
+      "hist:derived.history.prior_card_verdict@admin",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A scheduling exchange in progress: Arjun has offered two meeting times to Rohan at an unnamed company, and is waiting for a reply. The file is less than half a day old and carries no stated commitment or deadline.",
+    "rivals": [
+     "An administrative task that has been filed but not yet classified\u2014the work may not belong in the active list until the founder confirms its purpose.",
+     "A cold outreach or low-priority conversation that may not warrant active tracking if no reply comes within a week.",
+     "A meeting that will not happen: Rohan may have deprioritized or may not intend to reply, and silence will eventually signal this."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "The founder's word on what Castle Rock is and why Rohan matters to Nimbus Labs' goals.",
+     "proposition": "Castle Rock is an investor, program, or partner that the founder is pursuing but has not yet named in the brief."
+    },
+    {
+     "needs": "Confirmation from the founder or context from the meeting itself.",
+     "proposition": "Castle Rock is a vendor, service provider, or administrative contact whose role will become clear once the meeting happens."
+    },
+    {
+     "needs": "A reply from rohan@castlerock.test, or silence past the three-day mark.",
+     "proposition": "Rohan will reply within three business days with a time preference."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:6",
+      "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball"
+     ],
+     "claim": "Arjun has discharged his part of the commitment by offering specific times; the next move belongs to Rohan."
+    },
+    {
+     "based_on": [
+      "file:domains",
+      "file:kind",
+      "file:role"
+     ],
+     "claim": "The file's domain is admin, but its actual work is not yet named\u2014it could be an intro, a vendor relationship, or a business development conversation."
+    },
+    {
+     "based_on": [
+      "file:role",
+      "brief:company"
+     ],
+     "claim": "Castle Rock is not on the watchlist, not a named investor, program, hire, or partner in the brief, and has no stated role in Nimbus Labs' goals."
+    },
+    {
+     "based_on": [
+      "num:days_quiet",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The silence so far is normal: less than half a day has passed since Arjun's offer, and administrative silence in scheduling is routine process, not disinterest."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-15",
+    "for_whom": "the founder",
+    "guided_by": [
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:6",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Wait for Rohan's reply. Do not send a follow-up message before five business days have passed. In the meantime, ask the founder to clarify what Castle Rock is and why this meeting matters to Nimbus Labs' goals, so the file can be classified and prioritized.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A meeting offer with two specific times is a complete move; chasing it before three to five business days have passed reads as pressure and damages the relationship.",
+     "kind": "practice",
+     "why": "The counterparty has the information they need to decide. A reminder before they have had time to check their calendar or consult their team converts a normal wait into a relationship event."
+    },
+    {
+     "claim": "When the ball is in the other party's court on a scheduling matter, the cost of doing nothing for a week is near zero; the cost of a premature chase is real.",
+     "kind": "base_rate",
+     "why": "A meeting request is reversible and low-stakes. A chase message is not."
+    },
+    {
+     "claim": "A file with no stated kind of work and no role in the brief should not be carried as active unless the founder has named it or it has generated a commitment.",
+     "kind": "counter_pattern",
+     "why": "A ledger that carries unclassified work produces no next action and becomes a cost centre. The register exists to generate one move per line; a line that cannot generate one should be closed or reclassified."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "When a founder offers two specific meeting times, the counterparty usually replies within one to three business days to confirm or propose an alternative.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A counterparty who does not reply to a meeting offer within a week often does not intend to meet, but silence alone does not prove disinterest\u2014they may be in a review cycle, on leave, or deprioritizing.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "Administrative silence in the first 24 to 48 hours of a scheduling exchange is the norm, not a signal of trouble.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "file:role"
+    ],
+    "kind": null,
+    "why": "The dossier does not name a kind of work for this file, and the facts do not yet show whether it is an investor, program, partner, vendor, or intro. The founder must name it."
+   },
+   "scenarios": {
+    "act": "Arjun sends a follow-up message before three business days have passed. This risks reading as pressure and may damage the relationship. Not recommended.",
+    "best": "Rohan replies within two business days, confirms one of the offered times, and the meeting is scheduled. The file then transitions to a meeting-prep or post-meeting state, and its purpose becomes clear.",
+    "do_nothing": "Rohan replies within three business days with a time preference, and the meeting is scheduled. Or, silence extends past five to seven days, and the file becomes dormant unless Arjun chooses to follow up. The file remains open but generates no move.",
+    "signals_to_watch": [
+     "A reply from rohan@castlerock.test confirming or proposing a meeting time.",
+     "Silence past five business days, which would suggest Rohan is not prioritizing the meeting.",
+     "A message from Rohan proposing a different time or asking for more information, which would indicate interest but a scheduling conflict.",
+     "The founder's clarification of what Castle Rock is and why the meeting matters to Nimbus Labs' goals."
+    ],
+    "worst": "Rohan does not reply, and silence extends past two weeks. The file becomes dormant, and Arjun must decide whether to close it or make one final outreach. If Castle Rock is a key investor or partner, the silence signals deprioritization or disinterest."
+   },
+   "unknowns": [
+    {
+     "question": "What is Castle Rock, and what is Rohan's role in Nimbus Labs' strategy?",
+     "relevance": "The file's kind of work, its priority, and whether it belongs in the active list at all depend on this. Without it, the file cannot be judged against the brief's goals."
+    },
+    {
+     "question": "Who introduced Arjun to Rohan, or how did this conversation start?",
+     "relevance": "If this is a cold outreach, the reply rate and timeline expectations are different than if it came through a connector or a warm introduction."
+    },
+    {
+     "question": "What is the intended outcome of the meeting?",
+     "relevance": "A meeting to explore a partnership, close a vendor contract, or gather feedback has different urgency and follow-up patterns."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-15 (five business days from the offer). If Rohan has not replied by then, send one follow-up message. If silence extends past 2026-09-22 (ten business days), close the file unless the founder has named it as a priority."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Arjun offered two meeting times to Rohan at castlerock.test: Thursday 3 pm or Friday 11 am IST.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"I'm free Thursday 3 pm or Friday 11 am IST, whichever suits you.\"\n    },\n    {\n      \"claim\": \"The file has no stated kind of work in the brief.\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Castle Rock has not replied since Arjun's message on 2026-09-10 08:00 UTC.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"cov:last_mail\",\n        \"cov:conn_golden_gmail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is 0.42 days quiet as of the dossier's read time.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promise was found in Castle Rock's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in Castle Rock's court: Arjun has made an offer and is waiting for Rohan to choose a time.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is the first time this file has been seen or judged.\",\n      \"evidence\": [\n        \"hist:derived.history.prior_card_verdict@admin\",\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Arjun has discharged his part of the commitment by offering specific times; the next move belongs to Rohan.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\"\n      ]\n    },\n    {\n      \"claim\": \"The file's domain is admin, but its actual work is not yet named\u2014it could be an intro, a vendor relationship, or a business development conversation.\",\n      \"based_on\": [\n        \"file:domains\",\n        \"file:kind\",\n        \"file:role\"\n      ]\n    },\n    {\n      \"claim\": \"Castle Rock is not on the watchlist, not a named investor, program, hire, or partner in the brief, and has no stated role in Nimbus Labs' goals.\",\n      \"based_on\": [\n        \"file:role\",\n        \"brief:company\"\n      ]\n    },\n    {\n      \"claim\": \"The silence so far is normal: less than half a day has passed since Arjun's offer, and administrative silence in scheduling is routine process, not disinterest.\",\n      \"based_on\": [\n        \"num:days_quiet\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a founder offers two specific meeting times, the counterparty usually replies within one to three business days to confirm or propose an alternative.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A counterparty who does not reply to a meeting offer within a week often does not intend to meet, but silence alone does not prove disinterest\u2014they may be in a review cycle, on leave, or deprioritizing.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Administrative silence in the first 24 to 48 hours of a scheduling exchange is the norm, not a signal of trouble.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A meeting offer with two specific times is a complete move; chasing it before three to five business days have passed reads as pressure and damages the relationship.\",\n      \"why\": \"The counterparty has the information they need to decide. A reminder before they have had time to check their calendar or consult their team converts a normal wait into a relationship event.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When the ball is in the other party's court on a scheduling matter, the cost of doing nothing for a week is near zero; the cost of a premature chase is real.\",\n      \"why\": \"A meeting request is reversible and low-stakes. A chase message is not.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A file with no stated kind of work and no role in the brief should not be carried as active unless the founder has named it or it has generated a commitment.\",\n      \"why\": \"A ledger that carries unclassified work produces no next action and becomes a cost centre. The register exists to generate one move per line; a line that cannot generate one should be closed or reclassified.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Castle Rock is an investor, program, or partner that the founder is pursuing but has not yet named in the brief.\",\n      \"needs\": \"The founder's word on what Castle Rock is and why Rohan matters to Nimbus Labs' goals.\"\n    },\n    {\n      \"proposition\": \"Castle Rock is a vendor, service provider, or administrative contact whose role will become clear once the meeting happens.\",\n      \"needs\": \"Confirmation from the founder or context from the meeting itself.\"\n    },\n    {\n      \"proposition\": \"Rohan will reply within three business days with a time preference.\",\n      \"needs\": \"A reply from rohan@castlerock.test, or silence past the three-day mark.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is Castle Rock, and what is Rohan's role in Nimbus Labs' strategy?\",\n      \"relevance\": \"The file's kind of work, its priority, and whether it belongs in the active list at all depend on this. Without it, the file cannot be judged against the brief's goals.\"\n    },\n    {\n      \"question\": \"Who introduced Arjun to Rohan, or how did this conversation start?\",\n      \"relevance\": \"If this is a cold outreach, the reply rate and timeline expectations are different than if it came through a connector or a warm introduction.\"\n    },\n    {\n      \"question\": \"What is the intended outcome of the meeting?\",\n      \"relevance\": \"A meeting to explore a partnership, close a vendor contract, or gather feedback has different urgency and follow-up patterns.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A scheduling exchange in progress: Arjun has offered two meeting times to Rohan at an unnamed company, and is waiting for a reply. The file is less than half a day old and carries no stated commitment or deadline.\",\n    \"rivals\": [\n      \"An administrative task that has been filed but not yet classified\u2014the work may not belong in the active list until the founder confirms its purpose.\",\n      \"A cold outreach or low-priority conversation that may not warrant active tracking if no reply comes within a week.\",\n      \"A meeting that will not happen: Rohan may have deprioritized or may not intend to reply, and silence will eventually signal this.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The dossier does not name a kind of work for this file, and the facts do not yet show whether it is an investor, program, partner, vendor, or intro. The founder must name it.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a named kind of work, no playbook applies. From the brief's goals and the file's history: a meeting request is expected to receive a reply within one to three business days, or to be followed up once if silence extends past five days.\",\n    \"actual\": \"Arjun has sent a meeting offer with two specific times. No reply has been received. The file is 0.42 days old.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Rohan replies within three business days with a time preference, and the meeting is scheduled. Or, silence extends past five to seven days, and the file becomes dormant unless Arjun chooses to follow up. The file remains open but generates no move.\",\n    \"act\": \"Arjun sends a follow-up message before three business days have passed. This risks reading as pressure and may damage the relationship. Not recommended.\",\n    \"best\": \"Rohan replies within two business days, confirms one of the offered times, and the meeting is scheduled. The file then transitions to a meeting-prep or post-meeting state, and its purpose becomes clear.\",\n    \"worst\": \"Rohan does not reply, and silence extends past two weeks. The file becomes dormant, and Arjun must decide whether to close it or make one final outreach. If Castle Rock is a key investor or partner, the silence signals deprioritization or disinterest.\",\n    \"signals_to_watch\": [\n      \"A reply from rohan@castlerock.test confirming or proposing a meeting time.\",\n      \"Silence past five business days, which would suggest Rohan is not prioritizing the meeting.\",\n      \"A message from Rohan proposing a different time or asking for more information, which would indicate interest but a scheduling conflict.\",\n      \"The founder's clarification of what Castle Rock is and why the meeting matters to Nimbus Labs' goals.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"low\",\n    \"urgency\": \"low\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The file has no stated role in the brief's goals and no named kind of work.\",\n      \"A scheduling exchange is routine and low-stakes; a missed meeting can be rescheduled.\",\n      \"The ball is in Rohan's court; Arjun has made a complete offer and has no move to make now.\",\n      \"Less than half a day has passed; silence at this stage is normal and carries no signal.\",\n      \"The file is not on the watchlist and has no stated deadline or commitment.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Wait for Rohan's reply. Do not send a follow-up message before five business days have passed. In the meantime, ask the founder to clarify what Castle Rock is and why this meeting matters to Nimbus Labs' goals, so the file can be classified and prioritized.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-15\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:6\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder confirms that Castle Rock is a high-priority investor or partner, set a reminder to follow up with Rohan on 2026-09-17 if no reply has been received by then. A single follow-up after five business days is acceptable if the stakes are high.\",\n  \"wait_or_stop\": \"Wait until 2026-09-15 (five business days from the offer). If Rohan has not replied by then, send one follow-up message. If silence extends past 2026-09-22 (ten business days), close the file unless the founder has named it as a priority.\",\n  \"done_when\": \"Rohan replies with a confirmed meeting time, or the founder clarifies the file's purpose and priority. If neither happens within ten business days, the file is closed or moved to dormant status.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ }
+}

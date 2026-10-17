@@ -1,0 +1,1327 @@
+{
+ "047997ed38b0bc47c14fa85304d25f71791e45450a7e9102e69073643ff9e57c": {
+  "framed": true,
+  "input_tokens": 7132,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3337,
+  "parsed": {
+   "alternative": "Wait until 10 Aug (two days before the deadline) and send a follow-up only if you have not heard from her. This gives her time to consider without pressure, but risks the deadline passing without resolution. This is weaker than acting now because it cedes the initiative and leaves the board approval status unresolved.",
+   "appraisal": {
+    "reasons": [
+     "Hiring a Founding AI Engineer is a stated goal in the brief and is critical to product development and fundraising credibility.",
+     "The deadline of 12 Aug is seven days away, creating a near-term decision point.",
+     "If the offer lapses, you will have lost momentum with a candidate who was willing to accept, and recruiting a replacement will take weeks.",
+     "A conditional offer that is not resolved before the deadline creates ambiguity about whether the offer is still open, which damages your credibility with the candidate.",
+     "The ESOP pool approval is a material condition that you control, and failure to resolve it before the deadline is a failure of execution on your side."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "Kavitha Nair has either accepted the offer in writing, asked for a specific change or clarification that you can address, or declined. The board approval status is confirmed and communicated to her. If she accepts, the next step is to send engagement documents once the board approves the ESOP pool.",
+   "draft": "Hi Kavitha, Following up on the offer I sent yesterday. I want to make sure you have everything you need to make a decision by 12 Aug. The one thing on our end is the board approval of the ESOP pool \u2014 I'm checking on that today and will confirm the timeline by end of day tomorrow. In the meantime, if you have any questions about the role, the equity terms, or anything else, please let me know. Looking forward to having you on the team. Best, Arjun",
+   "expected_vs_actual": {
+    "actual": "An offer was made with a 12 Aug deadline and a condition on board approval. No reply has been received in the first day. The board approval status is not documented in the file.",
+    "expected": "In a typical hiring process, an offer is followed by acceptance or negotiation within a few days. The candidate either accepts, asks for changes, or declines. A conditional offer should include a clear timeline for resolving the condition.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You made an offer to Kavitha Nair for the Founding AI Engineer role on 2026-08-05 at 10:00 UTC, conditional on board approval of the ESOP pool, with a confirmation deadline of 12 Aug.",
+     "evidence": [
+      "evt_#1",
+      "brief:cbl_#22"
+     ],
+     "quote": "Delighted to offer you the Founding AI Engineer role at Nimbus Labs: the salary we discussed and 0.8% in ESOPs vesting over four years, subject to the board approving the ESOP pool. Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves."
+    },
+    {
+     "claim": "No reply has been received from Kavitha Nair since the offer was sent.",
+     "evidence": [
+      "cov:conn_golden_gmail",
+      "cov:last_mail"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows no prior reply time or engagement history with Kavitha Nair.",
+     "evidence": [
+      "num:their_reply_time:kavitha.nair@inboxmail.test",
+      "num:your_reply_time:kavitha.nair@inboxmail.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in their court: you have made an offer and are waiting for acceptance.",
+     "evidence": [
+      "file:whose_move",
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The offer is conditional on board approval of the ESOP pool, which has not yet been confirmed.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "subject to the board approving the ESOP pool"
+    }
+   ],
+   "frames": {
+    "primary": "A conditional offer awaiting acceptance, with a near-term deadline and an unresolved dependency on board approval. The candidate has not replied, and the next move is to clarify the path to resolution before the deadline passes.",
+    "rivals": [
+     "A stalled negotiation where the candidate is waiting for you to resolve the ESOP pool approval before she can commit.",
+     "A declining offer where the candidate is avoiding an explicit no and will let the deadline pass.",
+     "A normal decision process where the candidate is simply taking time to consider, and silence is not a signal."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A reply from her before the deadline, or a request for extension.",
+     "proposition": "Kavitha Nair is considering the offer and will reply before 12 Aug."
+    },
+    {
+     "needs": "A direct question from her about the ESOP pool approval, or a message from you clarifying when that will be resolved.",
+     "proposition": "Kavitha Nair is waiting for clarity on the board approval timeline before committing."
+    },
+    {
+     "needs": "A follow-up message from you that creates space for her to say no without awkwardness, or a reply from her stating her decision.",
+     "proposition": "Kavitha Nair has declined the offer but has not yet communicated it."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#1"
+     ],
+     "claim": "The deadline of 12 Aug is seven days away from the offer date, creating a near-term decision point."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "ru:core.dependency"
+     ],
+     "claim": "The offer's conditionality on board approval introduces a dependency that may not be resolved before the candidate's confirmation deadline."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence from the candidate at this stage could mean consideration, rejection, or simply delay in a decision process, and cannot be read as disinterest without more information."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-06",
+    "for_whom": "Kavitha Nair",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.executive_support.commitment_tracking#f3",
+     "own:3",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:5",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "kavitha.nair@inboxmail.test",
+    "what": "Send a message to Kavitha Nair that clarifies the board approval timeline, confirms the offer is still open, and creates space for her to ask questions or raise concerns. Do not chase or pressure; instead, remove obstacles to her decision.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An offer with a hard deadline should be accompanied by a clear path to resolution of any conditions, or the deadline becomes a pressure tactic rather than a decision point.",
+     "kind": "practice",
+     "why": "Candidates sense when a deadline is real versus when it is a courtesy, and a deadline that cannot be met because of conditions outside the candidate's control damages credibility."
+    },
+    {
+     "claim": "Founding hires often negotiate or seek clarification on equity terms, vesting schedules, and the timing of board approvals before accepting.",
+     "kind": "base_rate",
+     "why": "These are material terms that affect the candidate's risk and upside, and a candidate who does not ask questions may not be the right fit for a founding role."
+    },
+    {
+     "claim": "Silence from a candidate after an offer is not a reason to chase; it is a reason to clarify the path forward and remove obstacles to their decision.",
+     "kind": "counter_pattern",
+     "why": "A chase message reads as pressure and often hardens a candidate's hesitation into a no. A message that removes a blocker or clarifies a condition reads as partnership."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Candidates for founding roles often take several days to consider an offer, particularly when equity vesting and board approvals are involved.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "own:2"
+     ],
+     "claim": "A candidate who does not reply within a week of an offer with a stated deadline is more likely to be declining than accepting, though silence alone is not rejection.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:3"
+     ],
+     "claim": "Offers conditional on board approval often create friction because the candidate cannot commit until the company has committed, and the company cannot commit until the candidate has accepted.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#5",
+     "evt_#1"
+    ],
+    "kind": "hiring",
+    "why": "The file is correctly classified as hiring. The work is an offer made to a candidate for a founding role, and the next move is to manage the candidate's decision process and resolve the conditions that block acceptance."
+   },
+   "scenarios": {
+    "act": "You clarify the board approval timeline and remove obstacles to her decision. You either confirm that the ESOP pool is approved (removing a major condition) or give her a realistic date when it will be. You create space for her to ask questions or raise concerns. This increases the likelihood of a yes or a clear no before the deadline.",
+    "best": "Kavitha Nair replies within two days confirming that the board approval is the only thing she is waiting for. You confirm that the pool is approved or will be by a specific date. She accepts the offer. You move to engagement documents and onboarding.",
+    "do_nothing": "The deadline of 12 Aug approaches. If Kavitha Nair does not reply by then, the offer lapses. You will not know whether she declined, was waiting for board approval, or simply did not prioritize the decision. The Founding AI Engineer role remains unfilled, delaying product development and team building.",
+    "signals_to_watch": [
+     "A reply from Kavitha Nair before 12 Aug, asking for clarification or accepting.",
+     "A message from the board or finance confirming or delaying ESOP pool approval.",
+     "Silence past 12 Aug, which would indicate the offer has lapsed.",
+     "An indirect signal through a mutual contact that she is interested but waiting for clarity."
+    ],
+    "worst": "The board approval is delayed beyond 12 Aug. Kavitha Nair lets the deadline pass without replying. You are left uncertain whether she declined or is still considering. You must either extend the deadline (signaling weakness) or move on to other candidates (losing time and momentum)."
+   },
+   "unknowns": [
+    {
+     "question": "Has the board approved the ESOP pool, or is that approval still pending?",
+     "relevance": "If the pool is not yet approved, the offer cannot be finalized, and the 12 Aug deadline may be unrealistic. If it is approved, you can remove a major obstacle to her decision."
+    },
+    {
+     "question": "What is Kavitha Nair's typical response time, and does she have a history of slow decision-making?",
+     "relevance": "Without baseline data on her communication style, silence cannot be interpreted as disinterest or delay."
+    },
+    {
+     "question": "Did Kavitha Nair raise any concerns or questions during the offer conversation that might explain her silence?",
+     "relevance": "If she had reservations about equity terms, salary, or role scope, silence might indicate she is thinking through those concerns rather than ignoring the offer."
+    },
+    {
+     "question": "Is there a competing offer or other opportunity she is considering?",
+     "relevance": "If she is in active negotiation elsewhere, her timeline may not align with yours, and a hard deadline may accelerate a no rather than a yes."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-10 for a reply. If no reply by then, send a final message on 2026-08-11 confirming that the offer expires on 2026-08-12 unless she confirms acceptance. Do not extend the deadline unless the board approval is still pending and you have a clear new date for it. Stop pursuing the offer after 2026-08-12 if she has not replied; move to the next candidate on your list."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You made an offer to Kavitha Nair for the Founding AI Engineer role on 2026-08-05 at 10:00 UTC, conditional on board approval of the ESOP pool, with a confirmation deadline of 12 Aug.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"brief:cbl_#22\"\n      ],\n      \"quote\": \"Delighted to offer you the Founding AI Engineer role at Nimbus Labs: the salary we discussed and 0.8% in ESOPs vesting over four years, subject to the board approving the ESOP pool. Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves.\"\n    },\n    {\n      \"claim\": \"No reply has been received from Kavitha Nair since the offer was sent.\",\n      \"evidence\": [\n        \"cov:conn_golden_gmail\",\n        \"cov:last_mail\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows no prior reply time or engagement history with Kavitha Nair.\",\n      \"evidence\": [\n        \"num:their_reply_time:kavitha.nair@inboxmail.test\",\n        \"num:your_reply_time:kavitha.nair@inboxmail.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in their court: you have made an offer and are waiting for acceptance.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The offer is conditional on board approval of the ESOP pool, which has not yet been confirmed.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"subject to the board approving the ESOP pool\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The deadline of 12 Aug is seven days away from the offer date, creating a near-term decision point.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The offer's conditionality on board approval introduces a dependency that may not be resolved before the candidate's confirmation deadline.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"ru:core.dependency\"\n      ]\n    },\n    {\n      \"claim\": \"Silence from the candidate at this stage could mean consideration, rejection, or simply delay in a decision process, and cannot be read as disinterest without more information.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Candidates for founding roles often take several days to consider an offer, particularly when equity vesting and board approvals are involved.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A candidate who does not reply within a week of an offer with a stated deadline is more likely to be declining than accepting, though silence alone is not rejection.\",\n      \"based_on\": [\n        \"own:2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Offers conditional on board approval often create friction because the candidate cannot commit until the company has committed, and the company cannot commit until the candidate has accepted.\",\n      \"based_on\": [\n        \"own:3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An offer with a hard deadline should be accompanied by a clear path to resolution of any conditions, or the deadline becomes a pressure tactic rather than a decision point.\",\n      \"why\": \"Candidates sense when a deadline is real versus when it is a courtesy, and a deadline that cannot be met because of conditions outside the candidate's control damages credibility.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founding hires often negotiate or seek clarification on equity terms, vesting schedules, and the timing of board approvals before accepting.\",\n      \"why\": \"These are material terms that affect the candidate's risk and upside, and a candidate who does not ask questions may not be the right fit for a founding role.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence from a candidate after an offer is not a reason to chase; it is a reason to clarify the path forward and remove obstacles to their decision.\",\n      \"why\": \"A chase message reads as pressure and often hardens a candidate's hesitation into a no. A message that removes a blocker or clarifies a condition reads as partnership.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Kavitha Nair is considering the offer and will reply before 12 Aug.\",\n      \"needs\": \"A reply from her before the deadline, or a request for extension.\"\n    },\n    {\n      \"proposition\": \"Kavitha Nair is waiting for clarity on the board approval timeline before committing.\",\n      \"needs\": \"A direct question from her about the ESOP pool approval, or a message from you clarifying when that will be resolved.\"\n    },\n    {\n      \"proposition\": \"Kavitha Nair has declined the offer but has not yet communicated it.\",\n      \"needs\": \"A follow-up message from you that creates space for her to say no without awkwardness, or a reply from her stating her decision.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the board approved the ESOP pool, or is that approval still pending?\",\n      \"relevance\": \"If the pool is not yet approved, the offer cannot be finalized, and the 12 Aug deadline may be unrealistic. If it is approved, you can remove a major obstacle to her decision.\"\n    },\n    {\n      \"question\": \"What is Kavitha Nair's typical response time, and does she have a history of slow decision-making?\",\n      \"relevance\": \"Without baseline data on her communication style, silence cannot be interpreted as disinterest or delay.\"\n    },\n    {\n      \"question\": \"Did Kavitha Nair raise any concerns or questions during the offer conversation that might explain her silence?\",\n      \"relevance\": \"If she had reservations about equity terms, salary, or role scope, silence might indicate she is thinking through those concerns rather than ignoring the offer.\"\n    },\n    {\n      \"question\": \"Is there a competing offer or other opportunity she is considering?\",\n      \"relevance\": \"If she is in active negotiation elsewhere, her timeline may not align with yours, and a hard deadline may accelerate a no rather than a yes.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A conditional offer awaiting acceptance, with a near-term deadline and an unresolved dependency on board approval. The candidate has not replied, and the next move is to clarify the path to resolution before the deadline passes.\",\n    \"rivals\": [\n      \"A stalled negotiation where the candidate is waiting for you to resolve the ESOP pool approval before she can commit.\",\n      \"A declining offer where the candidate is avoiding an explicit no and will let the deadline pass.\",\n      \"A normal decision process where the candidate is simply taking time to consider, and silence is not a signal.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"hiring\",\n    \"why\": \"The file is correctly classified as hiring. The work is an offer made to a candidate for a founding role, and the next move is to manage the candidate's decision process and resolve the conditions that block acceptance.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#5\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"In a typical hiring process, an offer is followed by acceptance or negotiation within a few days. The candidate either accepts, asks for changes, or declines. A conditional offer should include a clear timeline for resolving the condition.\",\n    \"actual\": \"An offer was made with a 12 Aug deadline and a condition on board approval. No reply has been received in the first day. The board approval status is not documented in the file.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The deadline of 12 Aug approaches. If Kavitha Nair does not reply by then, the offer lapses. You will not know whether she declined, was waiting for board approval, or simply did not prioritize the decision. The Founding AI Engineer role remains unfilled, delaying product development and team building.\",\n    \"act\": \"You clarify the board approval timeline and remove obstacles to her decision. You either confirm that the ESOP pool is approved (removing a major condition) or give her a realistic date when it will be. You create space for her to ask questions or raise concerns. This increases the likelihood of a yes or a clear no before the deadline.\",\n    \"best\": \"Kavitha Nair replies within two days confirming that the board approval is the only thing she is waiting for. You confirm that the pool is approved or will be by a specific date. She accepts the offer. You move to engagement documents and onboarding.\",\n    \"worst\": \"The board approval is delayed beyond 12 Aug. Kavitha Nair lets the deadline pass without replying. You are left uncertain whether she declined or is still considering. You must either extend the deadline (signaling weakness) or move on to other candidates (losing time and momentum).\",\n    \"signals_to_watch\": [\n      \"A reply from Kavitha Nair before 12 Aug, asking for clarification or accepting.\",\n      \"A message from the board or finance confirming or delaying ESOP pool approval.\",\n      \"Silence past 12 Aug, which would indicate the offer has lapsed.\",\n      \"An indirect signal through a mutual contact that she is interested but waiting for clarity.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Hiring a Founding AI Engineer is a stated goal in the brief and is critical to product development and fundraising credibility.\",\n      \"The deadline of 12 Aug is seven days away, creating a near-term decision point.\",\n      \"If the offer lapses, you will have lost momentum with a candidate who was willing to accept, and recruiting a replacement will take weeks.\",\n      \"A conditional offer that is not resolved before the deadline creates ambiguity about whether the offer is still open, which damages your credibility with the candidate.\",\n      \"The ESOP pool approval is a material condition that you control, and failure to resolve it before the deadline is a failure of execution on your side.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Send a message to Kavitha Nair that clarifies the board approval timeline, confirms the offer is still open, and creates space for her to ask questions or raise concerns. Do not chase or pressure; instead, remove obstacles to her decision.\",\n    \"for_whom\": \"Kavitha Nair\",\n    \"by_when\": \"2026-08-06\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:5\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.executive_support.commitment_tracking#f3\",\n      \"own:3\",\n      \"own:2\"\n    ],\n    \"to\": \"kavitha.nair@inboxmail.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"Wait until 10 Aug (two days before the deadline) and send a follow-up only if you have not heard from her. This gives her time to consider without pressure, but risks the deadline passing without resolution. This is weaker than acting now because it cedes the initiative and leaves the board approval status unresolved.\",\n  \"wait_or_stop\": \"Wait until 2026-08-10 for a reply. If no reply by then, send a final message on 2026-08-11 confirming that the offer expires on 2026-08-12 unless she confirms acceptance. Do not extend the deadline unless the board approval is still pending and you have a clear new date for it. Stop pursuing the offer after 2026-08-12 if she has not replied; move to the next candidate on your list.\",\n  \"done_when\": \"Kavitha Nair has either accepted the offer in writing, asked for a specific change or clarification that you can address, or declined. The board approval status is confirmed and communicated to her. If she accepts, the next step is to send engagement documents once the board approves the ESOP pool.\",\n  \"draft\": \"Hi Kavitha, Following up on the offer I sent yesterday. I want to make sure you have everything you need to make a decision by 12 Aug. The one thing on our end is the board approval of the ESOP pool \u2014 I'm checking on that today and will confirm the timeline by end of day tomorrow. In the meantime, if you have any questions about the role, the equity terms, or anything else, please let me know. Looking forward to having you on the team. Best, Arjun\"\n}",
+  "site": "expert"
+ },
+ "1ed9c37461928282f0a1b692ea8197143c6a30c292c9000e88e9036332bd7684": {
+  "framed": true,
+  "input_tokens": 7703,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3283,
+  "parsed": {
+   "alternative": "Wait until the 12th to see whether Kavitha confirms. If she does and the board has not approved, send her a message explaining the delay and giving a new timeline for documents. If she does not confirm, follow up to understand why.",
+   "appraisal": {
+    "reasons": [
+     "Hiring a Founding AI Engineer is a stated goal in the brief and critical to the company's ability to build product.",
+     "A candidate who confirms and then waits for documents is at risk of withdrawing; losing this hire would require restarting the search.",
+     "The offer is conditional on board approval, which is within your control; failure to secure it before Kavitha confirms creates a self-inflicted delay.",
+     "The 12th is the stated confirmation date; the window to act is narrow."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "high",
+    "urgency": "medium"
+   },
+   "done_when": "You have confirmed the board approval status and communicated it to Kavitha, or you have a clear timeline for board approval and have told her when to expect documents. Kavitha confirms by the 12th. Documents are sent within one business day of her confirmation.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The offer was sent on 2026-08-05. Kavitha replied on 2026-08-07 saying she would confirm by the 12th once she reads the documents. As of 2026-08-10, she has not yet confirmed, but the 12th has not passed. The engagement documents are conditional on board approval of the ESOP pool, which has not been confirmed.",
+    "expected": "In a typical hiring flow, after an offer is sent, the candidate confirms within a few days, and documents are sent immediately. The offer is then signed and the hire is closed.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You offered the Founding AI Engineer role with salary and 0.8% in ESOPs vesting over four years, subject to board approval of the ESOP pool, with confirmation requested by a specific date.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Delighted to offer you the Founding AI Engineer role at Nimbus Labs: the salary we discussed and 0.8% in ESOPs vesting over four years, subject to the board approving the ESOP pool. Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves."
+    },
+    {
+     "claim": "Kavitha Nair replied that she is excited and will confirm once she has read the documents, with confirmation expected by the 12th.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Thank you! I'm excited. I'll confirm by the 12th once I've read the documents."
+    },
+    {
+     "claim": "The file has been quiet for 3.17 days since Kavitha's last reply on 2026-08-07 08:00 UTC.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Kavitha's reply time when she has responded is 1.92 days.",
+     "evidence": [
+      "num:their_reply_time:kavitha.nair@inboxmail.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The longest closed gap in this thread is 1.92 days, and the current quiet period of 3.17 days is longer than any gap previously closed.",
+     "evidence": [
+      "num:longest_gap",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook has been authored for this file's capability.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in Kavitha's court: she committed to confirm by the 12th once she reads the documents.",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": "I'll confirm by the 12th once I've read the documents."
+    },
+    {
+     "claim": "A card was surfaced asking whether the board has approved the ESOP pool.",
+     "evidence": [
+      "card:card_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A conditional offer awaiting two things: the candidate's confirmation by a stated date, and internal board approval of the ESOP pool. The candidate has committed to confirm by the 12th; the company's move is to secure board approval before that date so documents can be sent immediately.",
+    "rivals": [
+     "A stalled offer: the candidate is silent past her expected review time, signaling doubt or a change in circumstances.",
+     "A process delay: the company is waiting for board approval and has not communicated the timeline to the candidate, leaving her uncertain whether to confirm."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from you or from the board records.",
+     "proposition": "The board has already approved the ESOP pool and engagement documents are ready to send."
+    },
+    {
+     "needs": "A status update from the board or from whoever is driving the approval.",
+     "proposition": "The board has not yet approved the ESOP pool, and you are waiting for that approval."
+    },
+    {
+     "needs": "No action until the 12th; if she does not confirm by then, a follow-up is warranted.",
+     "proposition": "Kavitha is reviewing the offer terms and will confirm by the 12th as stated."
+    },
+    {
+     "needs": "A direct conversation with her to surface any blockers.",
+     "proposition": "Kavitha has concerns about the offer or the ESOP terms and is delaying confirmation."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The offer's completion depends on two conditions: Kavitha's confirmation by the 12th, and board approval of the ESOP pool before engagement documents can be sent."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Kavitha's silence does not yet signal disinterest; she stated she would confirm by the 12th, and the current quiet period is within a reasonable window for document review."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "card:card_#1"
+     ],
+     "claim": "The blocking constraint is not Kavitha's move but your own: whether the board has approved the ESOP pool, which determines whether engagement documents can be sent."
+    },
+    {
+     "based_on": [
+      "fact:7",
+      "cap:admin.executive_support.commitment_tracking#f1"
+     ],
+     "claim": "Chasing Kavitha before the 12th would violate the rule against reminding someone who is waiting on us, and would read as pressure rather than support."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-10",
+    "for_whom": "yourself and Kavitha",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:3",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:3",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "Find out whether the board has approved the ESOP pool, and if not, when it will. Then communicate the status to Kavitha so she knows what to expect.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An offer that is conditional on internal approval (board sign-off) should not be sent to the candidate until that approval is secured, or the candidate should be told explicitly when to expect the documents and why.",
+     "kind": "practice",
+     "why": "Candidates read conditional offers as uncertain, and silence from the company on the condition creates doubt about the offer's seriousness."
+    },
+    {
+     "claim": "Most candidates who say they will confirm by a date do so, or communicate a delay, within a few days of that date.",
+     "kind": "base_rate",
+     "why": "Confirmation is a low-friction act; silence past the date usually means the candidate is waiting for something from you, or has moved on."
+    },
+    {
+     "claim": "The move before the 12th is not to chase the candidate but to ensure the board approval is in hand, so that when she confirms, you can send documents the same day.",
+     "kind": "practice",
+     "why": "A candidate who confirms and then waits for documents loses confidence in the offer."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "When a candidate commits to a date for confirmation, silence until that date is normal process, not disinterest.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:5"
+     ],
+     "claim": "A candidate who says she will confirm by a date and then goes quiet past that date signals either a problem or a change in circumstances.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#22"
+    ],
+    "kind": "hiring",
+    "why": "The file is about an offer to a candidate for a role, with confirmation and conditions pending."
+   },
+   "scenarios": {
+    "act": "If you act now by confirming board approval status and communicating it to Kavitha, you remove uncertainty and keep the process moving. If the board has approved, you can tell her documents are ready and will be sent the moment she confirms. If the board has not approved, you can give her a realistic timeline and ask if she has any concerns in the meantime.",
+    "best": "The board has approved the ESOP pool. Kavitha confirms by the 12th. Documents are sent the same day. The hire closes within a week.",
+    "do_nothing": "If nothing is done, Kavitha will confirm by the 12th as stated, or she will not. If she confirms and the board has approved the ESOP pool, documents can be sent and the hire closes. If she confirms and the board has not approved, you will have to tell her the documents are delayed, damaging confidence. If she does not confirm by the 12th, you will need to follow up to understand why.",
+    "signals_to_watch": [
+     "Whether Kavitha confirms by the 12th as stated.",
+     "Whether the board approves the ESOP pool before the 12th.",
+     "Whether Kavitha reaches out with questions or concerns before the 12th.",
+     "Whether you receive any signal from the board about the approval timeline."
+    ],
+    "worst": "The board has not approved the ESOP pool and will not for weeks. Kavitha confirms by the 12th. You tell her documents are delayed. She loses confidence and withdraws. The hire falls through."
+   },
+   "unknowns": [
+    {
+     "question": "Has the board approved the ESOP pool?",
+     "relevance": "If yes, you can send engagement documents immediately when Kavitha confirms, closing the loop. If no, you need to know the timeline for approval, so you can set expectations with Kavitha."
+    },
+    {
+     "question": "What is Kavitha's actual deadline for confirmation\u2014is it the 12th of August, or is that a soft target?",
+     "relevance": "If it is a hard deadline, you should follow up on the 12th if she has not confirmed. If it is soft, silence past the 12th is less alarming."
+    },
+    {
+     "question": "Are there any concerns or questions Kavitha has about the offer that she has not raised?",
+     "relevance": "If she is silent because she is uncertain, a proactive conversation could unblock her. If she is silent because she is reviewing, a conversation could be premature."
+    }
+   ],
+   "wait_or_stop": "Wait until the 12th if the board approval is in hand and you are confident documents can be sent the same day Kavitha confirms. Stop waiting and escalate if the board approval is not in hand by the 11th, because you will need to reset expectations with Kavitha. Do not chase Kavitha before the 12th."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You offered the Founding AI Engineer role with salary and 0.8% in ESOPs vesting over four years, subject to board approval of the ESOP pool, with confirmation requested by a specific date.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Delighted to offer you the Founding AI Engineer role at Nimbus Labs: the salary we discussed and 0.8% in ESOPs vesting over four years, subject to the board approving the ESOP pool. Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves.\"\n    },\n    {\n      \"claim\": \"Kavitha Nair replied that she is excited and will confirm once she has read the documents, with confirmation expected by the 12th.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Thank you! I'm excited. I'll confirm by the 12th once I've read the documents.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 3.17 days since Kavitha's last reply on 2026-08-07 08:00 UTC.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Kavitha's reply time when she has responded is 1.92 days.\",\n      \"evidence\": [\n        \"num:their_reply_time:kavitha.nair@inboxmail.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The longest closed gap in this thread is 1.92 days, and the current quiet period of 3.17 days is longer than any gap previously closed.\",\n      \"evidence\": [\n        \"num:longest_gap\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook has been authored for this file's capability.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in Kavitha's court: she committed to confirm by the 12th once she reads the documents.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": \"I'll confirm by the 12th once I've read the documents.\"\n    },\n    {\n      \"claim\": \"A card was surfaced asking whether the board has approved the ESOP pool.\",\n      \"evidence\": [\n        \"card:card_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The offer's completion depends on two conditions: Kavitha's confirmation by the 12th, and board approval of the ESOP pool before engagement documents can be sent.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"Kavitha's silence does not yet signal disinterest; she stated she would confirm by the 12th, and the current quiet period is within a reasonable window for document review.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"claim\": \"The blocking constraint is not Kavitha's move but your own: whether the board has approved the ESOP pool, which determines whether engagement documents can be sent.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"card:card_#1\"\n      ]\n    },\n    {\n      \"claim\": \"Chasing Kavitha before the 12th would violate the rule against reminding someone who is waiting on us, and would read as pressure rather than support.\",\n      \"based_on\": [\n        \"fact:7\",\n        \"cap:admin.executive_support.commitment_tracking#f1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"When a candidate commits to a date for confirmation, silence until that date is normal process, not disinterest.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A candidate who says she will confirm by a date and then goes quiet past that date signals either a problem or a change in circumstances.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:5\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An offer that is conditional on internal approval (board sign-off) should not be sent to the candidate until that approval is secured, or the candidate should be told explicitly when to expect the documents and why.\",\n      \"why\": \"Candidates read conditional offers as uncertain, and silence from the company on the condition creates doubt about the offer's seriousness.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Most candidates who say they will confirm by a date do so, or communicate a delay, within a few days of that date.\",\n      \"why\": \"Confirmation is a low-friction act; silence past the date usually means the candidate is waiting for something from you, or has moved on.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The move before the 12th is not to chase the candidate but to ensure the board approval is in hand, so that when she confirms, you can send documents the same day.\",\n      \"why\": \"A candidate who confirms and then waits for documents loses confidence in the offer.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The board has already approved the ESOP pool and engagement documents are ready to send.\",\n      \"needs\": \"Confirmation from you or from the board records.\"\n    },\n    {\n      \"proposition\": \"The board has not yet approved the ESOP pool, and you are waiting for that approval.\",\n      \"needs\": \"A status update from the board or from whoever is driving the approval.\"\n    },\n    {\n      \"proposition\": \"Kavitha is reviewing the offer terms and will confirm by the 12th as stated.\",\n      \"needs\": \"No action until the 12th; if she does not confirm by then, a follow-up is warranted.\"\n    },\n    {\n      \"proposition\": \"Kavitha has concerns about the offer or the ESOP terms and is delaying confirmation.\",\n      \"needs\": \"A direct conversation with her to surface any blockers.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the board approved the ESOP pool?\",\n      \"relevance\": \"If yes, you can send engagement documents immediately when Kavitha confirms, closing the loop. If no, you need to know the timeline for approval, so you can set expectations with Kavitha.\"\n    },\n    {\n      \"question\": \"What is Kavitha's actual deadline for confirmation\u2014is it the 12th of August, or is that a soft target?\",\n      \"relevance\": \"If it is a hard deadline, you should follow up on the 12th if she has not confirmed. If it is soft, silence past the 12th is less alarming.\"\n    },\n    {\n      \"question\": \"Are there any concerns or questions Kavitha has about the offer that she has not raised?\",\n      \"relevance\": \"If she is silent because she is uncertain, a proactive conversation could unblock her. If she is silent because she is reviewing, a conversation could be premature.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A conditional offer awaiting two things: the candidate's confirmation by a stated date, and internal board approval of the ESOP pool. The candidate has committed to confirm by the 12th; the company's move is to secure board approval before that date so documents can be sent immediately.\",\n    \"rivals\": [\n      \"A stalled offer: the candidate is silent past her expected review time, signaling doubt or a change in circumstances.\",\n      \"A process delay: the company is waiting for board approval and has not communicated the timeline to the candidate, leaving her uncertain whether to confirm.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"hiring\",\n    \"why\": \"The file is about an offer to a candidate for a role, with confirmation and conditions pending.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#22\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"In a typical hiring flow, after an offer is sent, the candidate confirms within a few days, and documents are sent immediately. The offer is then signed and the hire is closed.\",\n    \"actual\": \"The offer was sent on 2026-08-05. Kavitha replied on 2026-08-07 saying she would confirm by the 12th once she reads the documents. As of 2026-08-10, she has not yet confirmed, but the 12th has not passed. The engagement documents are conditional on board approval of the ESOP pool, which has not been confirmed.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If nothing is done, Kavitha will confirm by the 12th as stated, or she will not. If she confirms and the board has approved the ESOP pool, documents can be sent and the hire closes. If she confirms and the board has not approved, you will have to tell her the documents are delayed, damaging confidence. If she does not confirm by the 12th, you will need to follow up to understand why.\",\n    \"act\": \"If you act now by confirming board approval status and communicating it to Kavitha, you remove uncertainty and keep the process moving. If the board has approved, you can tell her documents are ready and will be sent the moment she confirms. If the board has not approved, you can give her a realistic timeline and ask if she has any concerns in the meantime.\",\n    \"best\": \"The board has approved the ESOP pool. Kavitha confirms by the 12th. Documents are sent the same day. The hire closes within a week.\",\n    \"worst\": \"The board has not approved the ESOP pool and will not for weeks. Kavitha confirms by the 12th. You tell her documents are delayed. She loses confidence and withdraws. The hire falls through.\",\n    \"signals_to_watch\": [\n      \"Whether Kavitha confirms by the 12th as stated.\",\n      \"Whether the board approves the ESOP pool before the 12th.\",\n      \"Whether Kavitha reaches out with questions or concerns before the 12th.\",\n      \"Whether you receive any signal from the board about the approval timeline.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"Hiring a Founding AI Engineer is a stated goal in the brief and critical to the company's ability to build product.\",\n      \"A candidate who confirms and then waits for documents is at risk of withdrawing; losing this hire would require restarting the search.\",\n      \"The offer is conditional on board approval, which is within your control; failure to secure it before Kavitha confirms creates a self-inflicted delay.\",\n      \"The 12th is the stated confirmation date; the window to act is narrow.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Find out whether the board has approved the ESOP pool, and if not, when it will. Then communicate the status to Kavitha so she knows what to expect.\",\n    \"for_whom\": \"yourself and Kavitha\",\n    \"by_when\": \"2026-08-10\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:3\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:3\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Wait until the 12th to see whether Kavitha confirms. If she does and the board has not approved, send her a message explaining the delay and giving a new timeline for documents. If she does not confirm, follow up to understand why.\",\n    \"wait_or_stop\": \"Wait until the 12th if the board approval is in hand and you are confident documents can be sent the same day Kavitha confirms. Stop waiting and escalate if the board approval is not in hand by the 11th, because you will need to reset expectations with Kavitha. Do not chase Kavitha before the 12th.\",\n  \"done_when\": \"You have confirmed the board approval status and communicated it to Kavitha, or you have a clear timeline for board approval and have told her when to expect documents. Kavitha confirms by the 12th. Documents are sent within one business day of her confirmation.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "29227163952d7be27dcb7233f4a50a759129190fc1018ed830cc0e7f2db82613": {
+  "framed": true,
+  "input_tokens": 7469,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2605,
+  "parsed": {
+   "alternative": "If the board approval is confirmed and ready, send the engagement documents to Kavitha immediately without waiting, with a brief note that you are sending them ahead of schedule to give her time to review before the 12th.",
+   "appraisal": {
+    "reasons": [
+     "The hire is a stated goal in the brief: Hire a Founding AI Engineer.",
+     "Kavitha is engaged and has committed to a specific date; losing her now would require restarting the search.",
+     "The constraint is internal (board approval), not external (candidate hesitation), so the risk is yours to manage.",
+     "A missed confirmation date will damage the relationship and may cause the candidate to withdraw."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Kavitha confirms her acceptance by the 12th, or you have renegotiated a new confirmation date with her and she has agreed to it in writing.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The candidate replied within two days, expressed enthusiasm, and committed to confirm by the 12th after reading documents. No documents have been sent yet. The file is quiet, which is normal for a candidate in review.",
+    "expected": "Without a playbook, the expectation comes from the brief: you are hiring a Founding AI Engineer. The offer was made with a confirmation deadline of the 12th and a promise of engagement documents after board approval.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You offered Kavitha Nair the Founding AI Engineer role with a stated confirmation deadline.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Please confirm your acceptance by 12 Aug"
+    },
+    {
+     "claim": "Kavitha replied that she is excited and will confirm by the 12th once she has read the documents.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "I'm excited. I'll confirm by the 12th once I've read the documents."
+    },
+    {
+     "claim": "The file shows no playbook for this kind of work.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in Kavitha's court: she has stated she will confirm by a date she named.",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": "I'll confirm by the 12th"
+    },
+    {
+     "claim": "The file has been quiet for less than a day since Kavitha's last message.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "You promised engagement documents would follow once the board approves the ESOP pool.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "the engagement documents will follow once the board approves"
+    }
+   ],
+   "frames": {
+    "primary": "A hiring offer in motion, with the candidate engaged and committed to a confirmation date, pending your delivery of engagement documents contingent on board approval of the ESOP pool.",
+    "rivals": [
+     "A hiring offer stalling because the candidate is hesitant and needs to be reminded.",
+     "A hiring offer waiting for the candidate to move, when the real constraint is internal board approval."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder or the board record that the ESOP pool is approved.",
+     "proposition": "The board has already approved the ESOP pool and you are ready to send engagement documents."
+    },
+    {
+     "needs": "The status of the board approval and the expected date it will be decided.",
+     "proposition": "The board approval is still pending and you cannot send documents until it is complete."
+    },
+    {
+     "needs": "Clarification of whether the documents are a prerequisite to her confirmation or a follow-up after it.",
+     "proposition": "Kavitha will confirm by the 12th regardless of whether she has received the engagement documents."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "fact:4"
+     ],
+     "claim": "Kavitha has not yet confirmed, but she has committed to do so by a stated date and is reading the documents as a prerequisite."
+    },
+    {
+     "based_on": [
+      "fact:6",
+      "fact:4"
+     ],
+     "claim": "The next move is yours: you must prepare and send the engagement documents before Kavitha's confirmation date, contingent on board approval of the ESOP pool."
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1",
+      "fact:4"
+     ],
+     "claim": "Chasing Kavitha now would violate the rule against reminding someone who is waiting on us, and would read as pressure rather than support."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-09",
+    "for_whom": "yourself and Kavitha Nair",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "cap:admin.heu.commitment_tracking.forgotten_beats_broken_for_damage",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:6",
+     "inference:2",
+     "unknown:1",
+     "unknown:2"
+    ],
+    "to": null,
+    "what": "Confirm the status and expected date of board approval of the ESOP pool. If approved, send the engagement documents to Kavitha immediately. If not approved, contact Kavitha before the 12th to reset the confirmation date.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A hiring offer's critical path is the board approval of the ESOP pool, not the candidate's confirmation.",
+     "kind": "practice",
+     "why": "You cannot send engagement documents until the board acts; the candidate's timeline is secondary to your internal constraint."
+    },
+    {
+     "claim": "Candidates who ask to read documents before confirming rarely reject the offer; they are protecting themselves and the company.",
+     "kind": "base_rate",
+     "why": "This is due diligence, not hesitation. A candidate who reads carefully is more likely to stay."
+    },
+    {
+     "claim": "The move that matters now is internal: getting the board to approve the ESOP pool so you can send the documents before Kavitha's deadline.",
+     "kind": "practice",
+     "why": "The hiring file's real constraint is not Kavitha; it is your own process. Tracking her confirmation date while the board approval is pending inverts the priority."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "num:their_reply_time:kavitha.nair@inboxmail.test"
+     ],
+     "claim": "A candidate who replies within two days and commits to a specific confirmation date is engaged and moving forward.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "evt_#1"
+     ],
+     "claim": "A candidate who conditions confirmation on reading documents is performing due diligence, not stalling.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "Silence from a candidate after a positive reply is not disinterest; it is the normal process of review.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": null,
+   "scenarios": {
+    "act": "You confirm the board approval status. If approved, you send the engagement documents immediately. If not approved, you contact Kavitha before the 12th to reset expectations and agree on a new confirmation date.",
+    "best": "The board approves the ESOP pool within days. You send the engagement documents to Kavitha. She reads them, confirms by the 12th, and the hire closes on schedule.",
+    "do_nothing": "Kavitha reads the documents (if sent) and confirms by the 12th, or she does not receive them and her confirmation date slips. If the board has not approved the ESOP pool by the 12th, you will have missed your own deadline and must renegotiate with Kavitha.",
+    "signals_to_watch": [
+     "Board approval of the ESOP pool and the date it is expected.",
+     "Kavitha's reply on or before the 12th, confirming or requesting a new date.",
+     "Any message from Kavitha asking for the engagement documents before the 12th."
+    ],
+    "worst": "The board approval is delayed past the 12th. You do not send documents. Kavitha's confirmation date passes unmet. She loses confidence in the offer and the hire stalls or fails."
+   },
+   "unknowns": [
+    {
+     "question": "Has the board approved the ESOP pool?",
+     "relevance": "This determines whether you can send the engagement documents before Kavitha's confirmation date. If not approved, you must renegotiate the timeline with Kavitha before the 12th."
+    },
+    {
+     "question": "What is the expected date of board approval?",
+     "relevance": "If approval will come after the 12th, you must contact Kavitha before then to reset expectations, or the offer will appear to stall."
+    },
+    {
+     "question": "Does Kavitha need the engagement documents before she confirms, or after?",
+     "relevance": "Her message says she will confirm once she has read the documents, which implies they are a prerequisite. If they are not ready, her confirmation date may slip."
+    }
+   ],
+   "wait_or_stop": "Wait until you have confirmed the board approval status. Do not contact Kavitha to chase or remind her; she has committed to a date and is reading. Stop if the board approval is delayed past the 12th and you have not renegotiated with Kavitha by then."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You offered Kavitha Nair the Founding AI Engineer role with a stated confirmation deadline.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Please confirm your acceptance by 12 Aug\"\n    },\n    {\n      \"claim\": \"Kavitha replied that she is excited and will confirm by the 12th once she has read the documents.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"I'm excited. I'll confirm by the 12th once I've read the documents.\"\n    },\n    {\n      \"claim\": \"The file shows no playbook for this kind of work.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in Kavitha's court: she has stated she will confirm by a date she named.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": \"I'll confirm by the 12th\"\n    },\n    {\n      \"claim\": \"The file has been quiet for less than a day since Kavitha's last message.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"You promised engagement documents would follow once the board approves the ESOP pool.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"the engagement documents will follow once the board approves\"\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Kavitha has not yet confirmed, but she has committed to do so by a stated date and is reading the documents as a prerequisite.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is yours: you must prepare and send the engagement documents before Kavitha's confirmation date, contingent on board approval of the ESOP pool.\",\n      \"based_on\": [\n        \"fact:6\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"Chasing Kavitha now would violate the rule against reminding someone who is waiting on us, and would read as pressure rather than support.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\",\n        \"fact:4\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A candidate who replies within two days and commits to a specific confirmation date is engaged and moving forward.\",\n      \"based_on\": [\n        \"num:their_reply_time:kavitha.nair@inboxmail.test\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A candidate who conditions confirmation on reading documents is performing due diligence, not stalling.\",\n      \"based_on\": [\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence from a candidate after a positive reply is not disinterest; it is the normal process of review.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A hiring offer's critical path is the board approval of the ESOP pool, not the candidate's confirmation.\",\n      \"why\": \"You cannot send engagement documents until the board acts; the candidate's timeline is secondary to your internal constraint.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Candidates who ask to read documents before confirming rarely reject the offer; they are protecting themselves and the company.\",\n      \"why\": \"This is due diligence, not hesitation. A candidate who reads carefully is more likely to stay.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The move that matters now is internal: getting the board to approve the ESOP pool so you can send the documents before Kavitha's deadline.\",\n      \"why\": \"The hiring file's real constraint is not Kavitha; it is your own process. Tracking her confirmation date while the board approval is pending inverts the priority.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The board has already approved the ESOP pool and you are ready to send engagement documents.\",\n      \"needs\": \"Confirmation from the founder or the board record that the ESOP pool is approved.\"\n    },\n    {\n      \"proposition\": \"The board approval is still pending and you cannot send documents until it is complete.\",\n      \"needs\": \"The status of the board approval and the expected date it will be decided.\"\n    },\n    {\n      \"proposition\": \"Kavitha will confirm by the 12th regardless of whether she has received the engagement documents.\",\n      \"needs\": \"Clarification of whether the documents are a prerequisite to her confirmation or a follow-up after it.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the board approved the ESOP pool?\",\n      \"relevance\": \"This determines whether you can send the engagement documents before Kavitha's confirmation date. If not approved, you must renegotiate the timeline with Kavitha before the 12th.\"\n    },\n    {\n      \"question\": \"What is the expected date of board approval?\",\n      \"relevance\": \"If approval will come after the 12th, you must contact Kavitha before then to reset expectations, or the offer will appear to stall.\"\n    },\n    {\n      \"question\": \"Does Kavitha need the engagement documents before she confirms, or after?\",\n      \"relevance\": \"Her message says she will confirm once she has read the documents, which implies they are a prerequisite. If they are not ready, her confirmation date may slip.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A hiring offer in motion, with the candidate engaged and committed to a confirmation date, pending your delivery of engagement documents contingent on board approval of the ESOP pool.\",\n    \"rivals\": [\n      \"A hiring offer stalling because the candidate is hesitant and needs to be reminded.\",\n      \"A hiring offer waiting for the candidate to move, when the real constraint is internal board approval.\"\n    ]\n  },\n  \"proposed_kind\": null,\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"Without a playbook, the expectation comes from the brief: you are hiring a Founding AI Engineer. The offer was made with a confirmation deadline of the 12th and a promise of engagement documents after board approval.\",\n    \"actual\": \"The candidate replied within two days, expressed enthusiasm, and committed to confirm by the 12th after reading documents. No documents have been sent yet. The file is quiet, which is normal for a candidate in review.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Kavitha reads the documents (if sent) and confirms by the 12th, or she does not receive them and her confirmation date slips. If the board has not approved the ESOP pool by the 12th, you will have missed your own deadline and must renegotiate with Kavitha.\",\n    \"act\": \"You confirm the board approval status. If approved, you send the engagement documents immediately. If not approved, you contact Kavitha before the 12th to reset expectations and agree on a new confirmation date.\",\n    \"best\": \"The board approves the ESOP pool within days. You send the engagement documents to Kavitha. She reads them, confirms by the 12th, and the hire closes on schedule.\",\n    \"worst\": \"The board approval is delayed past the 12th. You do not send documents. Kavitha's confirmation date passes unmet. She loses confidence in the offer and the hire stalls or fails.\",\n    \"signals_to_watch\": [\n      \"Board approval of the ESOP pool and the date it is expected.\",\n      \"Kavitha's reply on or before the 12th, confirming or requesting a new date.\",\n      \"Any message from Kavitha asking for the engagement documents before the 12th.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The hire is a stated goal in the brief: Hire a Founding AI Engineer.\",\n      \"Kavitha is engaged and has committed to a specific date; losing her now would require restarting the search.\",\n      \"The constraint is internal (board approval), not external (candidate hesitation), so the risk is yours to manage.\",\n      \"A missed confirmation date will damage the relationship and may cause the candidate to withdraw.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Confirm the status and expected date of board approval of the ESOP pool. If approved, send the engagement documents to Kavitha immediately. If not approved, contact Kavitha before the 12th to reset the confirmation date.\",\n    \"for_whom\": \"yourself and Kavitha Nair\",\n    \"by_when\": \"2026-08-09\",\n    \"rests_on\": [\n      \"fact:6\",\n      \"inference:2\",\n      \"unknown:1\",\n      \"unknown:2\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"cap:admin.heu.commitment_tracking.forgotten_beats_broken_for_damage\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the board approval is confirmed and ready, send the engagement documents to Kavitha immediately without waiting, with a brief note that you are sending them ahead of schedule to give her time to review before the 12th.\",\n  \"wait_or_stop\": \"Wait until you have confirmed the board approval status. Do not contact Kavitha to chase or remind her; she has committed to a date and is reading. Stop if the board approval is delayed past the 12th and you have not renegotiated with Kavitha by then.\",\n  \"done_when\": \"Kavitha confirms her acceptance by the 12th, or you have renegotiated a new confirmation date with her and she has agreed to it in writing.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "a27ff8e8f6b8af6b774c88dbae93072a41a889a1205614bdfb5b2cb133f9fcea": {
+  "framed": true,
+  "input_tokens": 7421,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2954,
+  "parsed": {
+   "alternative": "If the board has not approved the ESOP pool and will not by 12 August, contact Kavitha immediately (before 12 August) to renegotiate the confirmation date or to offer a conditional offer letter that allows her to confirm acceptance subject to final documentation. This converts a potential broken promise into a managed one.",
+   "appraisal": {
+    "reasons": [
+     "A Founding AI Engineer is a critical hire for an AI-focused company at seed stage; losing this candidate to a competitor or to loss of confidence is costly.",
+     "The confirmation deadline is 12 August, which is five days away; if the board has not approved the ESOP pool, there is little time to remedy it.",
+     "If Kavitha withdraws after committing, it signals to the market that the company is disorganized and may damage your ability to recruit other strong candidates.",
+     "The hire is contingent on an internal approval (board ESOP pool sign-off) that is outside the hiring manager's direct control, creating execution risk."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "Kavitha confirms acceptance in writing, the board approves the ESOP pool, engagement documents are signed by both parties, and a start date is agreed.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The offer was made conditional on board approval of the ESOP pool, and engagement documents are promised only after that approval. Kavitha has committed to confirm by 12 August, but the company's ability to close the hire by that date depends on board approval, which is not yet confirmed in the file.",
+    "expected": "In a typical seed-stage hiring process, after an offer is made and a candidate commits to confirm, the company should have engagement documents ready to send immediately upon confirmation, or before the confirmation date if possible. The ESOP pool should be approved by the board before the offer is made, not after.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You offered Kavitha Nair the Founding AI Engineer role with stated salary, 0.8% ESOPs vesting over four years, and a confirmation deadline of 12 August, conditional on board approval of the ESOP pool.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Delighted to offer you the Founding AI Engineer role at Nimbus Labs: the salary we discussed and 0.8% in ESOPs vesting over four years, subject to the board approving the ESOP pool. Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves."
+    },
+    {
+     "claim": "Kavitha replied 1.92 days later, expressing excitement and committing to confirm by 12 August after reading the documents.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Thank you! I'm excited. I'll confirm by the 12th once I've read the documents."
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days as of the dossier's timestamp, within the normal gap pattern between touches.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in Kavitha's court: she has committed to confirm by 12 August and is reading the documents.",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No playbook exists for this file's capability.",
+     "evidence": [
+      "none:playbook"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A strong candidate has committed to confirm acceptance of a Founding AI Engineer offer by 12 August, contingent on reading the engagement documents. The company must ensure the board approves the ESOP pool and documents are ready before that date, or the hire will stall.",
+    "rivals": [
+     "A candidate is in the process of due diligence and may withdraw if documents are not ready or if concerns surface during review.",
+     "A hiring process that is blocked by an internal approval (board ESOP pool sign-off) and at risk of missing the candidate's confirmation deadline."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from you or the board that the ESOP pool is approved and documents are prepared.",
+     "proposition": "The board has already approved the ESOP pool and engagement documents are ready to send."
+    },
+    {
+     "needs": "The date of the next board meeting and the likelihood of ESOP pool approval at that meeting.",
+     "proposition": "The board has not yet approved the ESOP pool, and engagement documents cannot be sent until it does."
+    },
+    {
+     "needs": "No action required; wait for her confirmation by the stated date.",
+     "proposition": "Kavitha will confirm acceptance by 12 August as committed."
+    },
+    {
+     "needs": "Readiness to negotiate on salary, equity, vesting, or start date if she does.",
+     "proposition": "Kavitha will raise concerns or conditions when she confirms, rather than accepting unconditionally."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "evt_#1"
+     ],
+     "claim": "Kavitha's reply signals genuine interest and a clear next step: she will confirm by 12 August, which is five days away from the dossier's timestamp of 2026-08-07."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#2"
+     ],
+     "claim": "The engagement documents have not yet been sent, as the offer letter states they will follow once the board approves the ESOP pool."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "ru:core.dependency"
+     ],
+     "claim": "A blocker exists: board approval of the ESOP pool is required before engagement documents can be sent, and this approval status is not stated in the file."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-08",
+    "for_whom": "yourself and Kavitha (indirectly)",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f5",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Confirm with the board or finance lead whether the ESOP pool has been approved, and whether engagement documents are ready to send. If not approved, confirm the date of approval and ensure documents are drafted and reviewed so they can be sent immediately upon approval.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a candidate commits to confirm by a specific date, the hiring manager should ensure all promised documents are ready before that date, not after.",
+     "kind": "practice",
+     "why": "A candidate who finds documents missing or delayed on their confirmation date loses confidence in the company's execution and may withdraw."
+    },
+    {
+     "claim": "Founding engineer hires at seed stage often hinge on ESOP pool approval, which is frequently the slowest step in the hiring process.",
+     "kind": "base_rate",
+     "why": "Board meetings are infrequent, and ESOP pool sizing requires legal and financial review; delays here are common and often invisible to the candidate."
+    },
+    {
+     "claim": "Silence from a candidate between their commitment and their confirmation date is normal and should not trigger outreach.",
+     "kind": "counter_pattern",
+     "why": "The candidate is reading documents as promised; a check-in reads as pressure and can signal that the company doubts their commitment."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "num:their_reply_time:kavitha.nair@inboxmail.test",
+      "evt_#1"
+     ],
+     "claim": "A candidate who replies positively within two days and commits to a specific confirmation date is likely to follow through.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A candidate's commitment to confirm by a date does not guarantee acceptance; reading documents often surfaces concerns.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#22",
+     "evt_#2"
+    ],
+    "kind": "hiring",
+    "why": "The file is explicitly about an offer to a candidate for a Founding AI Engineer role, with acceptance pending."
+   },
+   "scenarios": {
+    "act": "You confirm immediately that the board has approved the ESOP pool (or will by 12 August) and that engagement documents are ready to send upon her confirmation. This removes uncertainty and reinforces her confidence.",
+    "best": "The board has already approved the ESOP pool, documents are ready, Kavitha confirms acceptance by 12 August, and the hire closes on schedule. She starts as planned.",
+    "do_nothing": "Kavitha confirms by 12 August as promised. If the board has approved the ESOP pool and documents are ready, the hire closes. If the board has not approved, or documents are not ready, Kavitha's confirmation is incomplete, and the hire stalls. The candidate may lose confidence and withdraw.",
+    "signals_to_watch": [
+     "Kavitha's confirmation message on or before 12 August: acceptance, negotiation, or withdrawal.",
+     "Board approval of the ESOP pool: confirmed or delayed.",
+     "Readiness of engagement documents: drafted, reviewed, or pending.",
+     "Any message from Kavitha before 12 August raising concerns or asking questions about the documents."
+    ],
+    "worst": "The board has not approved the ESOP pool and will not by 12 August. Kavitha confirms but cannot sign engagement documents. She loses confidence, assumes the company is disorganized, and withdraws to pursue other offers."
+   },
+   "unknowns": [
+    {
+     "question": "Has the board approved the ESOP pool?",
+     "relevance": "If not approved, engagement documents cannot be sent by 12 August, and Kavitha's confirmation will be incomplete. This is a blocker that must be resolved before her confirmation date."
+    },
+    {
+     "question": "Are the engagement documents drafted and ready to send?",
+     "relevance": "If not, they must be prepared immediately so they can be sent as soon as the board approves, or Kavitha's confirmation will be delayed."
+    },
+    {
+     "question": "What is Kavitha's likely response: acceptance, negotiation, or withdrawal?",
+     "relevance": "Her reply will determine whether the hire is closed or whether further negotiation is needed."
+    }
+   ],
+   "wait_or_stop": "Wait for Kavitha's confirmation by 12 August. Do not send a reminder or check-in before that date; it will read as pressure and undermine her confidence. If she does not confirm by 12 August, send one follow-up message on 13 August asking for an update. If she does not respond within two days, assume the hire has stalled and escalate to understand why."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You offered Kavitha Nair the Founding AI Engineer role with stated salary, 0.8% ESOPs vesting over four years, and a confirmation deadline of 12 August, conditional on board approval of the ESOP pool.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Delighted to offer you the Founding AI Engineer role at Nimbus Labs: the salary we discussed and 0.8% in ESOPs vesting over four years, subject to the board approving the ESOP pool. Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves.\"\n    },\n    {\n      \"claim\": \"Kavitha replied 1.92 days later, expressing excitement and committing to confirm by 12 August after reading the documents.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Thank you! I'm excited. I'll confirm by the 12th once I've read the documents.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days as of the dossier's timestamp, within the normal gap pattern between touches.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in Kavitha's court: she has committed to confirm by 12 August and is reading the documents.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No playbook exists for this file's capability.\",\n      \"evidence\": [\n        \"none:playbook\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Kavitha's reply signals genuine interest and a clear next step: she will confirm by 12 August, which is five days away from the dossier's timestamp of 2026-08-07.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The engagement documents have not yet been sent, as the offer letter states they will follow once the board approves the ESOP pool.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"A blocker exists: board approval of the ESOP pool is required before engagement documents can be sent, and this approval status is not stated in the file.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"ru:core.dependency\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A candidate who replies positively within two days and commits to a specific confirmation date is likely to follow through.\",\n      \"based_on\": [\n        \"num:their_reply_time:kavitha.nair@inboxmail.test\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A candidate's commitment to confirm by a date does not guarantee acceptance; reading documents often surfaces concerns.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a candidate commits to confirm by a specific date, the hiring manager should ensure all promised documents are ready before that date, not after.\",\n      \"why\": \"A candidate who finds documents missing or delayed on their confirmation date loses confidence in the company's execution and may withdraw.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founding engineer hires at seed stage often hinge on ESOP pool approval, which is frequently the slowest step in the hiring process.\",\n      \"why\": \"Board meetings are infrequent, and ESOP pool sizing requires legal and financial review; delays here are common and often invisible to the candidate.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence from a candidate between their commitment and their confirmation date is normal and should not trigger outreach.\",\n      \"why\": \"The candidate is reading documents as promised; a check-in reads as pressure and can signal that the company doubts their commitment.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The board has already approved the ESOP pool and engagement documents are ready to send.\",\n      \"needs\": \"Confirmation from you or the board that the ESOP pool is approved and documents are prepared.\"\n    },\n    {\n      \"proposition\": \"The board has not yet approved the ESOP pool, and engagement documents cannot be sent until it does.\",\n      \"needs\": \"The date of the next board meeting and the likelihood of ESOP pool approval at that meeting.\"\n    },\n    {\n      \"proposition\": \"Kavitha will confirm acceptance by 12 August as committed.\",\n      \"needs\": \"No action required; wait for her confirmation by the stated date.\"\n    },\n    {\n      \"proposition\": \"Kavitha will raise concerns or conditions when she confirms, rather than accepting unconditionally.\",\n      \"needs\": \"Readiness to negotiate on salary, equity, vesting, or start date if she does.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the board approved the ESOP pool?\",\n      \"relevance\": \"If not approved, engagement documents cannot be sent by 12 August, and Kavitha's confirmation will be incomplete. This is a blocker that must be resolved before her confirmation date.\"\n    },\n    {\n      \"question\": \"Are the engagement documents drafted and ready to send?\",\n      \"relevance\": \"If not, they must be prepared immediately so they can be sent as soon as the board approves, or Kavitha's confirmation will be delayed.\"\n    },\n    {\n      \"question\": \"What is Kavitha's likely response: acceptance, negotiation, or withdrawal?\",\n      \"relevance\": \"Her reply will determine whether the hire is closed or whether further negotiation is needed.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A strong candidate has committed to confirm acceptance of a Founding AI Engineer offer by 12 August, contingent on reading the engagement documents. The company must ensure the board approves the ESOP pool and documents are ready before that date, or the hire will stall.\",\n    \"rivals\": [\n      \"A candidate is in the process of due diligence and may withdraw if documents are not ready or if concerns surface during review.\",\n      \"A hiring process that is blocked by an internal approval (board ESOP pool sign-off) and at risk of missing the candidate's confirmation deadline.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"hiring\",\n    \"why\": \"The file is explicitly about an offer to a candidate for a Founding AI Engineer role, with acceptance pending.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#22\",\n      \"evt_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"In a typical seed-stage hiring process, after an offer is made and a candidate commits to confirm, the company should have engagement documents ready to send immediately upon confirmation, or before the confirmation date if possible. The ESOP pool should be approved by the board before the offer is made, not after.\",\n    \"actual\": \"The offer was made conditional on board approval of the ESOP pool, and engagement documents are promised only after that approval. Kavitha has committed to confirm by 12 August, but the company's ability to close the hire by that date depends on board approval, which is not yet confirmed in the file.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Kavitha confirms by 12 August as promised. If the board has approved the ESOP pool and documents are ready, the hire closes. If the board has not approved, or documents are not ready, Kavitha's confirmation is incomplete, and the hire stalls. The candidate may lose confidence and withdraw.\",\n    \"act\": \"You confirm immediately that the board has approved the ESOP pool (or will by 12 August) and that engagement documents are ready to send upon her confirmation. This removes uncertainty and reinforces her confidence.\",\n    \"best\": \"The board has already approved the ESOP pool, documents are ready, Kavitha confirms acceptance by 12 August, and the hire closes on schedule. She starts as planned.\",\n    \"worst\": \"The board has not approved the ESOP pool and will not by 12 August. Kavitha confirms but cannot sign engagement documents. She loses confidence, assumes the company is disorganized, and withdraws to pursue other offers.\",\n    \"signals_to_watch\": [\n      \"Kavitha's confirmation message on or before 12 August: acceptance, negotiation, or withdrawal.\",\n      \"Board approval of the ESOP pool: confirmed or delayed.\",\n      \"Readiness of engagement documents: drafted, reviewed, or pending.\",\n      \"Any message from Kavitha before 12 August raising concerns or asking questions about the documents.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"A Founding AI Engineer is a critical hire for an AI-focused company at seed stage; losing this candidate to a competitor or to loss of confidence is costly.\",\n      \"The confirmation deadline is 12 August, which is five days away; if the board has not approved the ESOP pool, there is little time to remedy it.\",\n      \"If Kavitha withdraws after committing, it signals to the market that the company is disorganized and may damage your ability to recruit other strong candidates.\",\n      \"The hire is contingent on an internal approval (board ESOP pool sign-off) that is outside the hiring manager's direct control, creating execution risk.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Confirm with the board or finance lead whether the ESOP pool has been approved, and whether engagement documents are ready to send. If not approved, confirm the date of approval and ensure documents are drafted and reviewed so they can be sent immediately upon approval.\",\n    \"for_whom\": \"yourself and Kavitha (indirectly)\",\n    \"by_when\": \"2026-08-08\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f5\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the board has not approved the ESOP pool and will not by 12 August, contact Kavitha immediately (before 12 August) to renegotiate the confirmation date or to offer a conditional offer letter that allows her to confirm acceptance subject to final documentation. This converts a potential broken promise into a managed one.\",\n  \"wait_or_stop\": \"Wait for Kavitha's confirmation by 12 August. Do not send a reminder or check-in before that date; it will read as pressure and undermine her confidence. If she does not confirm by 12 August, send one follow-up message on 13 August asking for an update. If she does not respond within two days, assume the hire has stalled and escalate to understand why.\",\n  \"done_when\": \"Kavitha confirms acceptance in writing, the board approves the ESOP pool, engagement documents are signed by both parties, and a start date is agreed.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "bcf541680c797f0c1ac7e429ad78890c1753970d74822d499852a0e01de7f1f8": {
+  "framed": true,
+  "input_tokens": 7454,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3231,
+  "parsed": {
+   "alternative": "If the board has already approved the ESOP pool, send engagement documents to Kavitha immediately with a note saying you are sending them as promised and look forward to her confirmation by 12 August. If the board has not approved, contact Kavitha before 12 August to renegotiate the deadline or the terms, rather than letting the deadline pass in silence.",
+   "appraisal": {
+    "reasons": [
+     "This is a founding hire for a key role (Founding AI Engineer) at a seed-stage company raising capital.",
+     "The 12 August deadline is two days away.",
+     "The offer is conditional on board approval, which is not yet confirmed.",
+     "A failed hire or a renegotiation at this stage damages credibility with the candidate and delays the company's progress.",
+     "The candidate has shown strong interest and quick response, making this a live opportunity.",
+     "Losing this hire to a competitor or to a broken promise would be costly to reverse."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "Kavitha confirms her acceptance by 12 August, engagement documents are signed, and the hire is closed. Or, if the board does not approve the ESOP pool, you have renegotiated with Kavitha and she has agreed to new terms or a new timeline.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "Offer sent 5 August. Candidate replied 7 August saying she is excited and will confirm by 12 August once she reads documents. No confirmation yet as of 10 August. Board approval status unknown. Engagement documents not yet sent.",
+    "expected": "No playbook is authored for this file. From the brief, the goal is to hire a Founding AI Engineer. The expected sequence is: offer sent, candidate reviews, candidate confirms, board approves ESOP pool, engagement documents sent, candidate signs, hire closes.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You offered Kavitha Nair the Founding AI Engineer role with stated salary, 0.8% ESOPs vesting over four years, subject to board approval of the ESOP pool, with a confirmation deadline of 12 August.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Delighted to offer you the Founding AI Engineer role at Nimbus Labs: the salary we discussed and 0.8% in ESOPs vesting over four years, subject to the board approving the ESOP pool. Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves."
+    },
+    {
+     "claim": "Kavitha replied on 7 August, 1.92 days after your offer, saying she is excited and will confirm by the 12th once she has read the documents.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Thank you! I'm excited. I'll confirm by the 12th once I've read the documents."
+    },
+    {
+     "claim": "The file has been quiet for 3.17 days as of the dossier date (10 August), longer than any gap it closed before.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in Kavitha's court: she said she will confirm by 12 August, and you are waiting for her confirmation.",
+     "evidence": [
+      "evt_#1",
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The offer is conditional on board approval of the ESOP pool, which has not yet been confirmed.",
+     "evidence": [
+      "evt_#2",
+      "card:card_#1"
+     ],
+     "quote": "subject to the board approving the ESOP pool"
+    },
+    {
+     "claim": "A card surfaced asking 'Has the board approved the ESOP pool?' and was created but not yet resolved.",
+     "evidence": [
+      "card:card_#1"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A conditional offer awaiting internal board approval and candidate confirmation. The candidate has committed to a date and is reading documents. The real blocker is internal, not external.",
+    "rivals": [
+     "A candidate who is hesitating or has lost interest, signaled by silence.",
+     "A candidate who is reviewing carefully and will confirm as promised, with no action needed from you."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder or the board that the ESOP pool is approved and documents are ready to send.",
+     "proposition": "The board has already approved the ESOP pool and you are ready to send documents."
+    },
+    {
+     "needs": "A check with the board on the status of ESOP pool approval and the timeline for it.",
+     "proposition": "The board has not yet approved the ESOP pool, and the 12 August deadline is at risk."
+    },
+    {
+     "needs": "No action until 12 August; if no confirmation arrives by then, a single follow-up message asking for her status.",
+     "proposition": "Kavitha is reading the documents and will confirm on or before 12 August as promised."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "Kavitha's reply shows active engagement and intent to accept, contingent on reading the documents."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The 12 August deadline is two days away from the dossier date (10 August), making this time-sensitive."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:5"
+     ],
+     "claim": "The blocking dependency is internal: board approval of the ESOP pool must happen before engagement documents can be sent, which Kavitha needs to review before she can confirm."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "cap:admin.executive_support.commitment_tracking#f1"
+     ],
+     "claim": "Silence from you now is appropriate because Kavitha explicitly said she will confirm by the 12th; chasing before that date would read as pressure or doubt in her decision."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-10",
+    "for_whom": "the board or the person responsible for ESOP pool approval",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f5",
+     "own:3",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:5",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Check with the board on the status of ESOP pool approval and confirm that engagement documents are ready to send. Do this today (10 August) so you have time to act on the answer before 12 August.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A conditional offer that depends on internal board approval should not be sent to a candidate until the condition is met or a firm timeline for it is known.",
+     "kind": "practice",
+     "why": "Sending a conditional offer creates a false deadline for the candidate and exposes you to the risk that the condition fails, forcing a renegotiation or withdrawal that damages the relationship and your credibility."
+    },
+    {
+     "claim": "Chasing a candidate before their stated confirmation date, even if they go quiet, converts a normal review period into a relationship event and signals doubt.",
+     "kind": "counter_pattern",
+     "why": "The candidate has committed to a date; respecting it shows confidence in them and in the offer. A reminder before the date reads as either incompetence or pressure."
+    },
+    {
+     "claim": "The real blocker here is not Kavitha's silence but the absence of board approval for the ESOP pool.",
+     "kind": "practice",
+     "why": "You cannot send engagement documents until the board acts. Kavitha cannot confirm until she reads them. The path forward is internal, not external."
+    },
+    {
+     "claim": "In a seed-stage hire, the time from offer to signed documents is usually one to two weeks, with the candidate's review taking three to five days.",
+     "kind": "benchmark",
+     "why": "Equity terms and vesting schedules require careful reading. A candidate who asks for time to read is being prudent, not hesitant."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "num:their_reply_time:kavitha.nair@inboxmail.test",
+      "fact:2"
+     ],
+     "claim": "A candidate who replies within two days and says they are excited is likely to accept.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:3"
+     ],
+     "claim": "A candidate who says they will confirm by a date but goes quiet before that date sometimes signals hesitation or a competing offer.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Candidates often take the full time they ask for to review documents, especially equity terms.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#22",
+     "evt_#2"
+    ],
+    "kind": "hiring",
+    "why": "The file is explicitly about an offer to a candidate for the Founding AI Engineer role, with terms, conditions, and a confirmation deadline."
+   },
+   "scenarios": {
+    "act": "You check with the board immediately on ESOP pool approval. If approved, you send engagement documents to Kavitha at once, giving her time to review before 12 August. If not approved, you contact Kavitha before 12 August to renegotiate the deadline or the terms.",
+    "best": "Board approves ESOP pool by 11 August. You send documents to Kavitha by 11 August. She reviews and confirms by 12 August. Hire closes on schedule.",
+    "do_nothing": "Kavitha confirms by 12 August as promised. You then discover the board has not approved the ESOP pool, forcing a renegotiation or delay. Alternatively, Kavitha does not confirm by 12 August, and you must follow up, risking the appearance of pressure or doubt.",
+    "signals_to_watch": [
+     "Board approval of ESOP pool by 11 August.",
+     "Kavitha's confirmation message by 12 August.",
+     "Any message from Kavitha before 12 August asking for more time or raising concerns.",
+     "Any message from the board indicating delay or rejection of ESOP pool approval."
+    ],
+    "worst": "Board does not approve ESOP pool. Kavitha confirms by 12 August but cannot sign documents. You must renegotiate with her, risking the offer or losing her to a competitor."
+   },
+   "unknowns": [
+    {
+     "question": "Has the board approved the ESOP pool?",
+     "relevance": "If not, you cannot send engagement documents, and Kavitha cannot confirm. The 12 August deadline becomes impossible to meet, and you must renegotiate with her before that date."
+    },
+    {
+     "question": "Are the engagement documents ready to send once the board approves?",
+     "relevance": "If they are not, there is a second internal blocker that will delay the hire further."
+    },
+    {
+     "question": "Does Kavitha have any competing offers or other reasons to hesitate?",
+     "relevance": "Her silence could signal a competing offer or internal doubt. If so, a proactive conversation before 12 August might be warranted, but only if the documents are ready."
+    }
+   ],
+   "wait_or_stop": "Wait until you have confirmation from the board on ESOP pool approval. Do not wait past 11 August to act; if the board has not approved by then, contact Kavitha to renegotiate. Do not chase Kavitha before 12 August unless you have a blocker to report or a renegotiation to propose. Stop if Kavitha withdraws or if the board rejects the ESOP pool and you cannot renegotiate terms she will accept."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You offered Kavitha Nair the Founding AI Engineer role with stated salary, 0.8% ESOPs vesting over four years, subject to board approval of the ESOP pool, with a confirmation deadline of 12 August.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Delighted to offer you the Founding AI Engineer role at Nimbus Labs: the salary we discussed and 0.8% in ESOPs vesting over four years, subject to the board approving the ESOP pool. Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves.\"\n    },\n    {\n      \"claim\": \"Kavitha replied on 7 August, 1.92 days after your offer, saying she is excited and will confirm by the 12th once she has read the documents.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Thank you! I'm excited. I'll confirm by the 12th once I've read the documents.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 3.17 days as of the dossier date (10 August), longer than any gap it closed before.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in Kavitha's court: she said she will confirm by 12 August, and you are waiting for her confirmation.\",\n      \"evidence\": [\n        \"evt_#1\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The offer is conditional on board approval of the ESOP pool, which has not yet been confirmed.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"card:card_#1\"\n      ],\n      \"quote\": \"subject to the board approving the ESOP pool\"\n    },\n    {\n      \"claim\": \"A card surfaced asking 'Has the board approved the ESOP pool?' and was created but not yet resolved.\",\n      \"evidence\": [\n        \"card:card_#1\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Kavitha's reply shows active engagement and intent to accept, contingent on reading the documents.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The 12 August deadline is two days away from the dossier date (10 August), making this time-sensitive.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The blocking dependency is internal: board approval of the ESOP pool must happen before engagement documents can be sent, which Kavitha needs to review before she can confirm.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:5\"\n      ]\n    },\n    {\n      \"claim\": \"Silence from you now is appropriate because Kavitha explicitly said she will confirm by the 12th; chasing before that date would read as pressure or doubt in her decision.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"cap:admin.executive_support.commitment_tracking#f1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A candidate who replies within two days and says they are excited is likely to accept.\",\n      \"based_on\": [\n        \"num:their_reply_time:kavitha.nair@inboxmail.test\",\n        \"fact:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A candidate who says they will confirm by a date but goes quiet before that date sometimes signals hesitation or a competing offer.\",\n      \"based_on\": [\n        \"fact:3\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Candidates often take the full time they ask for to review documents, especially equity terms.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A conditional offer that depends on internal board approval should not be sent to a candidate until the condition is met or a firm timeline for it is known.\",\n      \"why\": \"Sending a conditional offer creates a false deadline for the candidate and exposes you to the risk that the condition fails, forcing a renegotiation or withdrawal that damages the relationship and your credibility.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Chasing a candidate before their stated confirmation date, even if they go quiet, converts a normal review period into a relationship event and signals doubt.\",\n      \"why\": \"The candidate has committed to a date; respecting it shows confidence in them and in the offer. A reminder before the date reads as either incompetence or pressure.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"The real blocker here is not Kavitha's silence but the absence of board approval for the ESOP pool.\",\n      \"why\": \"You cannot send engagement documents until the board acts. Kavitha cannot confirm until she reads them. The path forward is internal, not external.\"\n    },\n    {\n      \"kind\": \"benchmark\",\n      \"claim\": \"In a seed-stage hire, the time from offer to signed documents is usually one to two weeks, with the candidate's review taking three to five days.\",\n      \"why\": \"Equity terms and vesting schedules require careful reading. A candidate who asks for time to read is being prudent, not hesitant.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The board has already approved the ESOP pool and you are ready to send documents.\",\n      \"needs\": \"Confirmation from the founder or the board that the ESOP pool is approved and documents are ready to send.\"\n    },\n    {\n      \"proposition\": \"The board has not yet approved the ESOP pool, and the 12 August deadline is at risk.\",\n      \"needs\": \"A check with the board on the status of ESOP pool approval and the timeline for it.\"\n    },\n    {\n      \"proposition\": \"Kavitha is reading the documents and will confirm on or before 12 August as promised.\",\n      \"needs\": \"No action until 12 August; if no confirmation arrives by then, a single follow-up message asking for her status.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the board approved the ESOP pool?\",\n      \"relevance\": \"If not, you cannot send engagement documents, and Kavitha cannot confirm. The 12 August deadline becomes impossible to meet, and you must renegotiate with her before that date.\"\n    },\n    {\n      \"question\": \"Are the engagement documents ready to send once the board approves?\",\n      \"relevance\": \"If they are not, there is a second internal blocker that will delay the hire further.\"\n    },\n    {\n      \"question\": \"Does Kavitha have any competing offers or other reasons to hesitate?\",\n      \"relevance\": \"Her silence could signal a competing offer or internal doubt. If so, a proactive conversation before 12 August might be warranted, but only if the documents are ready.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A conditional offer awaiting internal board approval and candidate confirmation. The candidate has committed to a date and is reading documents. The real blocker is internal, not external.\",\n    \"rivals\": [\n      \"A candidate who is hesitating or has lost interest, signaled by silence.\",\n      \"A candidate who is reviewing carefully and will confirm as promised, with no action needed from you.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"hiring\",\n    \"why\": \"The file is explicitly about an offer to a candidate for the Founding AI Engineer role, with terms, conditions, and a confirmation deadline.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#22\",\n      \"evt_#2\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook is authored for this file. From the brief, the goal is to hire a Founding AI Engineer. The expected sequence is: offer sent, candidate reviews, candidate confirms, board approves ESOP pool, engagement documents sent, candidate signs, hire closes.\",\n    \"actual\": \"Offer sent 5 August. Candidate replied 7 August saying she is excited and will confirm by 12 August once she reads documents. No confirmation yet as of 10 August. Board approval status unknown. Engagement documents not yet sent.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Kavitha confirms by 12 August as promised. You then discover the board has not approved the ESOP pool, forcing a renegotiation or delay. Alternatively, Kavitha does not confirm by 12 August, and you must follow up, risking the appearance of pressure or doubt.\",\n    \"act\": \"You check with the board immediately on ESOP pool approval. If approved, you send engagement documents to Kavitha at once, giving her time to review before 12 August. If not approved, you contact Kavitha before 12 August to renegotiate the deadline or the terms.\",\n    \"best\": \"Board approves ESOP pool by 11 August. You send documents to Kavitha by 11 August. She reviews and confirms by 12 August. Hire closes on schedule.\",\n    \"worst\": \"Board does not approve ESOP pool. Kavitha confirms by 12 August but cannot sign documents. You must renegotiate with her, risking the offer or losing her to a competitor.\",\n    \"signals_to_watch\": [\n      \"Board approval of ESOP pool by 11 August.\",\n      \"Kavitha's confirmation message by 12 August.\",\n      \"Any message from Kavitha before 12 August asking for more time or raising concerns.\",\n      \"Any message from the board indicating delay or rejection of ESOP pool approval.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"This is a founding hire for a key role (Founding AI Engineer) at a seed-stage company raising capital.\",\n      \"The 12 August deadline is two days away.\",\n      \"The offer is conditional on board approval, which is not yet confirmed.\",\n      \"A failed hire or a renegotiation at this stage damages credibility with the candidate and delays the company's progress.\",\n      \"The candidate has shown strong interest and quick response, making this a live opportunity.\",\n      \"Losing this hire to a competitor or to a broken promise would be costly to reverse.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Check with the board on the status of ESOP pool approval and confirm that engagement documents are ready to send. Do this today (10 August) so you have time to act on the answer before 12 August.\",\n    \"for_whom\": \"the board or the person responsible for ESOP pool approval\",\n    \"by_when\": \"2026-08-10\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:5\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f5\",\n      \"own:3\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the board has already approved the ESOP pool, send engagement documents to Kavitha immediately with a note saying you are sending them as promised and look forward to her confirmation by 12 August. If the board has not approved, contact Kavitha before 12 August to renegotiate the deadline or the terms, rather than letting the deadline pass in silence.\",\n  \"wait_or_stop\": \"Wait until you have confirmation from the board on ESOP pool approval. Do not wait past 11 August to act; if the board has not approved by then, contact Kavitha to renegotiate. Do not chase Kavitha before 12 August unless you have a blocker to report or a renegotiation to propose. Stop if Kavitha withdraws or if the board rejects the ESOP pool and you cannot renegotiate terms she will accept.\",\n  \"done_when\": \"Kavitha confirms her acceptance by 12 August, engagement documents are signed, and the hire is closed. Or, if the board does not approve the ESOP pool, you have renegotiated with Kavitha and she has agreed to new terms or a new timeline.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "bd3ee8047fe36f071e44990ef429e7414b90ebc92bee02781f8bfcca16745553": {
+  "framed": true,
+  "input_tokens": 7352,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3406,
+  "parsed": {
+   "alternative": "If the board has not approved the ESOP pool by 2026-08-09, send Kavitha a message on 2026-08-09 stating that the board approval is pending and offering to extend the confirmation deadline to 2026-08-15 or a date after the board decision. This renegotiates the deadline before it is broken, which is far less damaging than missing it.",
+   "appraisal": {
+    "reasons": [
+     "The Founding AI Engineer role is a stated goal in the brief and is critical to the company's ability to build and raise; losing this hire would delay both.",
+     "The offer is conditional on board approval, which you do not control; if the board delays, you break your commitment to Kavitha and damage your credibility with her.",
+     "Kavitha has set a clear deadline and shown strong engagement; a misstep now \u2014 either by chasing her or by missing your own deadline \u2014 would be costly to repair.",
+     "The hire is reversible in the sense that Kavitha can still withdraw, but once she signs, reversing it would be expensive and disruptive."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "high",
+    "urgency": "medium"
+   },
+   "done_when": "Kavitha signs the engagement documents and the hire is formally closed in your systems.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "Offer sent on 2026-08-05; candidate replied on 2026-08-07 with conditional acceptance pending document review and confirmation by 12 August; board approval status unknown; engagement documents not yet sent.",
+    "expected": "No playbook is authored for this file; the brief names the goal as hiring a Founding AI Engineer, and the work in motion is the offer to Kavitha Nair. The expected sequence is: offer sent, candidate confirms, board approves ESOP pool, engagement documents sent, candidate signs, hire closes.",
+    "stage": null
+   },
+   "facts": [
+    {
+     "claim": "You offered Kavitha Nair the Founding AI Engineer role with stated salary, 0.8% ESOPs vesting over four years subject to board approval, and asked for confirmation by 12 August with engagement documents to follow after board approval.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Delighted to offer you the Founding AI Engineer role at Nimbus Labs: the salary we discussed and 0.8% in ESOPs vesting over four years, subject to the board approving the ESOP pool. Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves."
+    },
+    {
+     "claim": "Kavitha replied on 2026-08-07 08:00 UTC, two days after the offer, saying she is excited and will confirm by the 12th once she has read the documents.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Thank you! I'm excited. I'll confirm by the 12th once I've read the documents."
+    },
+    {
+     "claim": "The file shows no promises extracted from the mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Kavitha's reply time was 1.92 days; your reply time to her is not measured.",
+     "evidence": [
+      "num:their_reply_time:kavitha.nair@inboxmail.test",
+      "num:your_reply_time:kavitha.nair@inboxmail.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.42 days, within the gaps it closed before.",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency and low risk.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "A card to send a message to Kavitha Nair was created and surfaced, and this is the first time this file has been seen.",
+     "evidence": [
+      "card:card_#1",
+      "hist:derived.history.prior_card_verdict@admin",
+      "hist:derived.history.times_seen@admin"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A hiring offer awaiting candidate confirmation by a stated deadline, with the candidate showing strong engagement and the company holding a conditional commitment pending board approval of equity.",
+    "rivals": [
+     "A hiring offer at risk because the company cannot fulfill its terms (board approval and documents) by the candidate's deadline.",
+     "A hiring offer that is stalled because the candidate is using the document review as a delay tactic while she considers other options."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Her confirmation message by 2026-08-12.",
+     "proposition": "Kavitha will confirm by 12 August as stated."
+    },
+    {
+     "needs": "A board decision on the ESOP pool, and its timing relative to 12 August.",
+     "proposition": "The board will approve the ESOP pool in time for you to send engagement documents before or shortly after Kavitha's confirmation."
+    },
+    {
+     "needs": "Her response after reading the documents, or a follow-up question from her.",
+     "proposition": "Kavitha's review of the documents will reveal issues that delay or block her acceptance."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "Kavitha has not yet confirmed acceptance; she has stated a condition \u2014 reading the documents \u2014 and a deadline of 12 August for her confirmation."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "inference:1"
+     ],
+     "claim": "The ball is in Kavitha's court: she must read documents and confirm by 12 August; you are waiting on her move."
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The offer is conditional on board approval of the ESOP pool, which has not yet happened; you have not yet sent the engagement documents."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:2"
+     ],
+     "claim": "No promise was extracted because Kavitha's statement is a conditional acceptance pending document review, not a commitment to a specific deliverable by a specific date from you."
+    }
+   ],
+   "mode": "wait",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-08-11",
+    "for_whom": "the board (for ESOP approval) and Kavitha Nair (for documents, if approved)",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "own:1",
+     "own:2",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Confirm with the board that the ESOP pool has been approved, or secure a commitment that it will be approved by 2026-08-11; if approved, prepare and send the engagement documents to Kavitha by 2026-08-11; do not send any message to Kavitha before 12 August unless she asks a question or the board approval is delayed.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "In hiring, a candidate's explicit commitment to a deadline \u2014 even a conditional one \u2014 should be honored without follow-up until that deadline passes.",
+     "kind": "practice",
+     "why": "Candidates are managing multiple offers and processes; a premature check-in signals either that you do not trust them or that you are desperate, both of which weaken your negotiating position and their confidence in you."
+    },
+    {
+     "claim": "Candidates who ask for time to read documents and set their own confirmation date almost always meet that date if they are genuinely interested.",
+     "kind": "base_rate",
+     "why": "The act of setting a date is a commitment device; they are signaling to themselves and to you that they are serious."
+    },
+    {
+     "claim": "The real blocker here is not Kavitha's move but yours: the board must approve the ESOP pool before you can send the engagement documents.",
+     "kind": "counter_pattern",
+     "why": "You have made a promise conditional on something you do not control; the risk is that the board delays, not that Kavitha does."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "fact:2",
+      "num:their_reply_time:kavitha.nair@inboxmail.test"
+     ],
+     "claim": "A candidate who replies within two days and expresses excitement is showing strong engagement and intent to move forward.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:2"
+     ],
+     "claim": "A candidate who sets their own deadline for confirmation and conditions it on document review is managing their own process and is unlikely to need chasing.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f1"
+     ],
+     "claim": "Sending a reminder before the stated deadline, when the other party has already said they will move by that date, reads as pressure and damages the relationship.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#22",
+     "file:kind"
+    ],
+    "kind": null,
+    "why": "The file is correctly classified as hiring; the brief names it as such and the work is the Founding AI Engineer role offer to Kavitha Nair."
+   },
+   "scenarios": {
+    "act": "You send Kavitha a message before 12 August to check on her progress or to send the engagement documents. If the board has approved, this accelerates the process and shows responsiveness. If the board has not approved, this exposes the constraint and forces a renegotiation of the deadline. If Kavitha has not yet read the documents, this message reads as pressure and damages the relationship.",
+    "best": "The board approves the ESOP pool by 2026-08-10. You send Kavitha the engagement documents by 2026-08-11. Kavitha confirms by 2026-08-12. The hire closes on schedule with no friction.",
+    "do_nothing": "Kavitha confirms by 12 August as stated. If the board has approved the ESOP pool, you send engagement documents and the hire closes. If the board has not approved, you miss your own deadline, Kavitha loses confidence, and the offer is at risk. The file remains quiet until 12 August or until Kavitha reaches out with a question.",
+    "signals_to_watch": [
+     "A message from Kavitha before 12 August asking for the documents or clarifying a question \u2014 signals she is actively reading and engaged.",
+     "Silence from Kavitha until 12 August \u2014 signals she is on track and does not need anything from you.",
+     "A message from Kavitha after 12 August without a confirmation \u2014 signals she is delayed or reconsidering.",
+     "A message from the board on ESOP pool approval \u2014 signals whether you can fulfill your offer on time.",
+     "A message from Kavitha asking to extend the deadline \u2014 signals she needs more time or is managing another process."
+    ],
+    "worst": "The board does not approve the ESOP pool by 12 August. You cannot send the engagement documents. Kavitha's deadline passes unmet. She withdraws the offer or demands a renegotiation. The hire is delayed or lost."
+   },
+   "unknowns": [
+    {
+     "question": "Has the board approved the ESOP pool, or is that still pending?",
+     "relevance": "If the board has not approved it, you cannot send the engagement documents by Kavitha's deadline, which breaks your offer's terms and may cause her to withdraw or lose confidence."
+    },
+    {
+     "question": "What documents is Kavitha waiting to read, and where are they?",
+     "relevance": "If the documents do not exist or are not ready, you cannot fulfill your offer, and Kavitha's confirmation will be blocked by your own constraint, not hers."
+    },
+    {
+     "question": "Is there any other offer or process Kavitha is managing in parallel?",
+     "relevance": "If she is in active negotiation with another company, the 12 August deadline may be driven by their timeline, not hers, and she may withdraw if they move faster."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-08-12 for Kavitha's confirmation. If she confirms, close the hire. If she does not confirm by 2026-08-12 and has not asked for an extension, send one follow-up message on 2026-08-13 asking for her status. If she does not respond by 2026-08-15, mark the offer as withdrawn and move to the next candidate. Stop if Kavitha explicitly withdraws or if the board rejects the ESOP pool."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"You offered Kavitha Nair the Founding AI Engineer role with stated salary, 0.8% ESOPs vesting over four years subject to board approval, and asked for confirmation by 12 August with engagement documents to follow after board approval.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Delighted to offer you the Founding AI Engineer role at Nimbus Labs: the salary we discussed and 0.8% in ESOPs vesting over four years, subject to the board approving the ESOP pool. Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves.\"\n    },\n    {\n      \"claim\": \"Kavitha replied on 2026-08-07 08:00 UTC, two days after the offer, saying she is excited and will confirm by the 12th once she has read the documents.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Thank you! I'm excited. I'll confirm by the 12th once I've read the documents.\"\n    },\n    {\n      \"claim\": \"The file shows no promises extracted from the mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Kavitha's reply time was 1.92 days; your reply time to her is not measured.\",\n      \"evidence\": [\n        \"num:their_reply_time:kavitha.nair@inboxmail.test\",\n        \"num:your_reply_time:kavitha.nair@inboxmail.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.42 days, within the gaps it closed before.\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency and low risk.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"A card to send a message to Kavitha Nair was created and surfaced, and this is the first time this file has been seen.\",\n      \"evidence\": [\n        \"card:card_#1\",\n        \"hist:derived.history.prior_card_verdict@admin\",\n        \"hist:derived.history.times_seen@admin\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"Kavitha has not yet confirmed acceptance; she has stated a condition \u2014 reading the documents \u2014 and a deadline of 12 August for her confirmation.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"claim\": \"The ball is in Kavitha's court: she must read documents and confirm by 12 August; you are waiting on her move.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"The offer is conditional on board approval of the ESOP pool, which has not yet happened; you have not yet sent the engagement documents.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"No promise was extracted because Kavitha's statement is a conditional acceptance pending document review, not a commitment to a specific deliverable by a specific date from you.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A candidate who replies within two days and expresses excitement is showing strong engagement and intent to move forward.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"num:their_reply_time:kavitha.nair@inboxmail.test\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A candidate who sets their own deadline for confirmation and conditions it on document review is managing their own process and is unlikely to need chasing.\",\n      \"based_on\": [\n        \"fact:2\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Sending a reminder before the stated deadline, when the other party has already said they will move by that date, reads as pressure and damages the relationship.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"In hiring, a candidate's explicit commitment to a deadline \u2014 even a conditional one \u2014 should be honored without follow-up until that deadline passes.\",\n      \"why\": \"Candidates are managing multiple offers and processes; a premature check-in signals either that you do not trust them or that you are desperate, both of which weaken your negotiating position and their confidence in you.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Candidates who ask for time to read documents and set their own confirmation date almost always meet that date if they are genuinely interested.\",\n      \"why\": \"The act of setting a date is a commitment device; they are signaling to themselves and to you that they are serious.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"The real blocker here is not Kavitha's move but yours: the board must approve the ESOP pool before you can send the engagement documents.\",\n      \"why\": \"You have made a promise conditional on something you do not control; the risk is that the board delays, not that Kavitha does.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Kavitha will confirm by 12 August as stated.\",\n      \"needs\": \"Her confirmation message by 2026-08-12.\"\n    },\n    {\n      \"proposition\": \"The board will approve the ESOP pool in time for you to send engagement documents before or shortly after Kavitha's confirmation.\",\n      \"needs\": \"A board decision on the ESOP pool, and its timing relative to 12 August.\"\n    },\n    {\n      \"proposition\": \"Kavitha's review of the documents will reveal issues that delay or block her acceptance.\",\n      \"needs\": \"Her response after reading the documents, or a follow-up question from her.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the board approved the ESOP pool, or is that still pending?\",\n      \"relevance\": \"If the board has not approved it, you cannot send the engagement documents by Kavitha's deadline, which breaks your offer's terms and may cause her to withdraw or lose confidence.\"\n    },\n    {\n      \"question\": \"What documents is Kavitha waiting to read, and where are they?\",\n      \"relevance\": \"If the documents do not exist or are not ready, you cannot fulfill your offer, and Kavitha's confirmation will be blocked by your own constraint, not hers.\"\n    },\n    {\n      \"question\": \"Is there any other offer or process Kavitha is managing in parallel?\",\n      \"relevance\": \"If she is in active negotiation with another company, the 12 August deadline may be driven by their timeline, not hers, and she may withdraw if they move faster.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A hiring offer awaiting candidate confirmation by a stated deadline, with the candidate showing strong engagement and the company holding a conditional commitment pending board approval of equity.\",\n    \"rivals\": [\n      \"A hiring offer at risk because the company cannot fulfill its terms (board approval and documents) by the candidate's deadline.\",\n      \"A hiring offer that is stalled because the candidate is using the document review as a delay tactic while she considers other options.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The file is correctly classified as hiring; the brief names it as such and the work is the Founding AI Engineer role offer to Kavitha Nair.\",\n    \"evidence\": [\n      \"brief:cbl_#22\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": null,\n    \"expected\": \"No playbook is authored for this file; the brief names the goal as hiring a Founding AI Engineer, and the work in motion is the offer to Kavitha Nair. The expected sequence is: offer sent, candidate confirms, board approves ESOP pool, engagement documents sent, candidate signs, hire closes.\",\n    \"actual\": \"Offer sent on 2026-08-05; candidate replied on 2026-08-07 with conditional acceptance pending document review and confirmation by 12 August; board approval status unknown; engagement documents not yet sent.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"Kavitha confirms by 12 August as stated. If the board has approved the ESOP pool, you send engagement documents and the hire closes. If the board has not approved, you miss your own deadline, Kavitha loses confidence, and the offer is at risk. The file remains quiet until 12 August or until Kavitha reaches out with a question.\",\n    \"act\": \"You send Kavitha a message before 12 August to check on her progress or to send the engagement documents. If the board has approved, this accelerates the process and shows responsiveness. If the board has not approved, this exposes the constraint and forces a renegotiation of the deadline. If Kavitha has not yet read the documents, this message reads as pressure and damages the relationship.\",\n    \"best\": \"The board approves the ESOP pool by 2026-08-10. You send Kavitha the engagement documents by 2026-08-11. Kavitha confirms by 2026-08-12. The hire closes on schedule with no friction.\",\n    \"worst\": \"The board does not approve the ESOP pool by 12 August. You cannot send the engagement documents. Kavitha's deadline passes unmet. She withdraws the offer or demands a renegotiation. The hire is delayed or lost.\",\n    \"signals_to_watch\": [\n      \"A message from Kavitha before 12 August asking for the documents or clarifying a question \u2014 signals she is actively reading and engaged.\",\n      \"Silence from Kavitha until 12 August \u2014 signals she is on track and does not need anything from you.\",\n      \"A message from Kavitha after 12 August without a confirmation \u2014 signals she is delayed or reconsidering.\",\n      \"A message from the board on ESOP pool approval \u2014 signals whether you can fulfill your offer on time.\",\n      \"A message from Kavitha asking to extend the deadline \u2014 signals she needs more time or is managing another process.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The Founding AI Engineer role is a stated goal in the brief and is critical to the company's ability to build and raise; losing this hire would delay both.\",\n      \"The offer is conditional on board approval, which you do not control; if the board delays, you break your commitment to Kavitha and damage your credibility with her.\",\n      \"Kavitha has set a clear deadline and shown strong engagement; a misstep now \u2014 either by chasing her or by missing your own deadline \u2014 would be costly to repair.\",\n      \"The hire is reversible in the sense that Kavitha can still withdraw, but once she signs, reversing it would be expensive and disruptive.\"\n    ]\n  },\n  \"mode\": \"wait\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Confirm with the board that the ESOP pool has been approved, or secure a commitment that it will be approved by 2026-08-11; if approved, prepare and send the engagement documents to Kavitha by 2026-08-11; do not send any message to Kavitha before 12 August unless she asks a question or the board approval is delayed.\",\n    \"for_whom\": \"the board (for ESOP approval) and Kavitha Nair (for documents, if approved)\",\n    \"by_when\": \"2026-08-11\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"own:1\",\n      \"own:2\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the board has not approved the ESOP pool by 2026-08-09, send Kavitha a message on 2026-08-09 stating that the board approval is pending and offering to extend the confirmation deadline to 2026-08-15 or a date after the board decision. This renegotiates the deadline before it is broken, which is far less damaging than missing it.\",\n    \"wait_or_stop\": \"Wait until 2026-08-12 for Kavitha's confirmation. If she confirms, close the hire. If she does not confirm by 2026-08-12 and has not asked for an extension, send one follow-up message on 2026-08-13 asking for her status. If she does not respond by 2026-08-15, mark the offer as withdrawn and move to the next candidate. Stop if Kavitha explicitly withdraws or if the board rejects the ESOP pool.\",\n    \"done_when\": \"Kavitha signs the engagement documents and the hire is formally closed in your systems.\",\n    \"draft\": null\n}",
+  "site": "expert"
+ }
+}

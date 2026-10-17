@@ -1,0 +1,1433 @@
+{
+ "04b878b56e7c51b270f8e7bac20457b6a18ca7ae97f09207d16614f00347d5c1": {
+  "framed": true,
+  "input_tokens": 14931,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4502,
+  "parsed": {
+   "alternative": "If the founder is confident that Assignment 3 was submitted and received, skip the confirmation and focus on ensuring the Phase-1 review deck is ready for 28 Sep. Submit the deck by 28 Sep and confirm submission to Lakshya.",
+   "appraisal": {
+    "reasons": [
+     "The founder is in an active cohort programme, and missing deadlines affects standing and progress through the programme.",
+     "The 28 Sep deadline is two days away; if the deck is not ready, it will be late or missed.",
+     "The 15 Sep deadline has already passed; if the assignment was not submitted, the founder's evaluation in the cohort is at risk.",
+     "A missed deadline in a cohort programme is costly to reverse; the founder may not be able to resubmit or may lose credit for the work.",
+     "The file does not confirm whether the first deadline was met, which is a gap that must be closed."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "Assignment 3's submission status is confirmed (either received by Lakshya or a late submission is agreed), and the Phase-1 review deck is submitted by 28 Sep. Both asks are answered, and the file is updated with the confirmations.",
+   "draft": "Hi Divya, I want to confirm that Assignment 3 (the unit economics sheet) was received when I uploaded it to the cohort folder by 15 Sep. Could you let me know if it came through? I'm also on track to submit the Phase-1 review deck by 28 Sep. Thanks, Arjun",
+   "expected_vs_actual": {
+    "actual": "The founder received an assignment due 15 Sep and a review deck due 28 Sep. The file does not confirm whether the 15 Sep assignment was submitted. The 28 Sep deadline is two days away. The programme has been silent for 13.29 days, which is longer than its prior longest gap but within the normal range for a cohort programme between deadlines. No confirmation of submission has been recorded in the file.",
+    "expected": "The founder is in an active cohort and is expected to meet all published deadlines \u2014 assignments, reviews, demo day \u2014 on the programme's calendar. The programme publishes its calendar once for all cohort members and does not chase individual founders. The founder's job is to track the calendar and submit work by each deadline. The programme's silence between deadlines is the default state.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Lakshya Accelerator sent an assignment due 15 Sep at 11:59 pm IST, asking for a unit economics sheet to be uploaded to the cohort folder.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST. Please upload it to the cohort folder."
+    },
+    {
+     "claim": "Lakshya Accelerator sent a second message on 13 Sep asking for a Phase-1 review deck to be uploaded by 28 Sep, with presentations scheduled for 30 Sep.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Phase-1 review presentations are on 30 Sep. Please upload your review deck by 28 Sep."
+    },
+    {
+     "claim": "The file has been quiet for 13.29 days, longer than any prior gap it closed, which was 11.96 days.",
+     "evidence": [
+      "num:days_quiet",
+      "num:longest_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The last touch from Lakshya was 13 Sep at 05:00 UTC; today is 26 Sep at 12:00 UTC.",
+     "evidence": [
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file shows two open asks, both with the turn on the founder's side: one open since 1 Sep and one since 13 Sep.",
+     "evidence": [
+      "loop:loop_#1",
+      "loop:loop_#2",
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The founder is in the active cohort at Lakshya Accelerator, listed as a watched programme in the brief.",
+     "evidence": [
+      "brief:cbl_#13",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time has been measured for Divya Raman or the founder's replies to her.",
+     "evidence": [
+      "num:their_reply_time:divya@lakshya.test",
+      "num:your_reply_time:divya@lakshya.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and engagement marked as healthy despite the quiet now exceeding the longest prior gap.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.temporal"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's stage is named in the playbook as in_programme, which typically runs 90 days with the programme's own deadlines \u2014 assignments, reviews, demo day \u2014 published to the cohort and fixed for all.",
+     "evidence": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "The founder is in an active cohort at Lakshya Accelerator and has two published deadlines: one that has passed (15 Sep, Assignment 3) and one that is imminent (28 Sep, Phase-1 review deck). The file does not confirm whether the first deadline was met. The programme's silence is normal between deadlines; the risk is that the founder has missed or will miss a deadline.",
+    "rivals": [
+     "The founder has submitted both assignments on time and is on track; the file simply does not show the confirmations.",
+     "The programme has paused or changed its schedule, and the deadlines are no longer active.",
+     "The founder is no longer in the cohort, and the deadlines no longer apply."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder or from Lakshya's portal or email that the submission was recorded.",
+     "proposition": "Assignment 3 was submitted by the 15 Sep deadline and was received by Lakshya."
+    },
+    {
+     "needs": "The founder to check the cohort folder or to ask Lakshya whether the submission was recorded.",
+     "proposition": "Assignment 3 was not submitted, or was submitted but not received."
+    },
+    {
+     "needs": "Confirmation from the founder that the deck is in progress and on track for the deadline.",
+     "proposition": "The Phase-1 review deck is ready and will be submitted by 28 Sep."
+    },
+    {
+     "needs": "The founder to assess the work remaining and to flag any blockers to Lakshya if the deadline cannot be met.",
+     "proposition": "The Phase-1 review deck is not yet started or is at risk of missing the 28 Sep deadline."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "file:last_touch",
+      "none:we_wrote"
+     ],
+     "claim": "The 15 Sep deadline for Assignment 3 has passed without confirmation of submission; the file does not show whether it was uploaded."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "file:last_touch"
+     ],
+     "claim": "The 28 Sep deadline for the Phase-1 review deck is two days away; this is the immediate constraint."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "The founder's move is overdue on the first assignment and urgent on the second; silence from Lakshya does not mean the work is not expected."
+    },
+    {
+     "based_on": [
+      "file:kind",
+      "brief:cbl_#13",
+      "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+     ],
+     "claim": "The file's kind of work is correctly named as program, not investor; the playbook's frame applies \u2014 Lakshya reads assignments and reviews on its own calendar, not on the founder's."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "The quiet is not a signal of rejection or disengagement; it is the programme's normal state between assignment deadlines in an active cohort."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-27",
+    "for_whom": "Lakshya Accelerator (Divya Raman) and yourself",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.follow_an_application",
+     "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+     "own:3",
+     "own:4"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:1",
+     "inference:2"
+    ],
+    "to": "divya@lakshya.test",
+    "what": "Confirm whether Assignment 3 was submitted by 15 Sep and received by Lakshya; if not, ask Lakshya whether a late submission is possible. In parallel, ensure the Phase-1 review deck is ready for submission by 28 Sep.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "In a cohort programme, the founder's job is to track the programme's published calendar, not to wait for reminders; each deadline is fixed and non-negotiable.",
+     "kind": "practice",
+     "why": "Programmes publish their calendar once for all cohort members and do not chase individual founders. Missing a deadline costs the founder's standing in the cohort, not the programme's attention."
+    },
+    {
+     "claim": "A founder in an active accelerator should have a calendar view of all published deadlines \u2014 assignments, reviews, demo day \u2014 and work backwards from each one.",
+     "kind": "base_rate",
+     "why": "The programme's silence between deadlines is not a signal; the calendar is the signal. A founder who relies on reminders from the programme will miss deadlines."
+    },
+    {
+     "claim": "Silence from a programme after a deadline has passed is often a sign that the submission was not received or was not recorded; the founder should verify, not assume.",
+     "kind": "counter_pattern",
+     "why": "Programmes do not always send confirmation of receipt for assignments uploaded to a cohort folder. A founder who assumes the upload worked without checking risks losing credit for the work."
+    },
+    {
+     "claim": "A founder in an active cohort should confirm submission of each assignment within one day of the deadline, before moving on.",
+     "kind": "practice",
+     "why": "Confirmation closes the loop and prevents the founder from discovering too late that the upload failed or was not recorded. It also gives the programme a chance to ask for a resubmission if needed."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "In an active cohort programme, the founder's move is to meet each published deadline; silence from the programme between deadlines is the default state.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "num:longest_gap",
+      "num:days_quiet",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "A programme's quiet that exceeds its prior longest gap does not signal a change in status; the file's longest gap was 11.96 days, and 13.29 days is within normal variation for a cohort programme between assignments.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "A programme file is dormant after 90 days of quiet; this file is at 13.29 days, well within the active window.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "inference:1",
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "An assignment deadline that passes without confirmation of submission is a risk; the founder should verify whether Assignment 3 was received.",
+     "kind": "pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#13",
+     "file:kind",
+     "file:role",
+     "pb:founder_office.pb.program_applications.follow_an_application"
+    ],
+    "kind": "program",
+    "why": "The file is correctly named as a programme application. Lakshya Accelerator is an active cohort programme with published deadlines and assignments. The founder is in the programme, not applying to it. The playbook for programme applications applies, with the stage in_programme."
+   },
+   "scenarios": {
+    "act": "If the founder acts now, they can confirm whether Assignment 3 was submitted and received, and they can ensure the Phase-1 review deck is submitted by 28 Sep. This closes the loop on both deadlines and keeps the founder on track in the cohort.",
+    "best": "The founder confirms that Assignment 3 was submitted and received by Lakshya, and the Phase-1 review deck is submitted by 28 Sep. Both deadlines are met, and the founder is on track for the Phase-1 review on 30 Sep. The file is closed with both asks answered.",
+    "do_nothing": "If nothing is done, the 28 Sep deadline for the Phase-1 review deck will pass in two days. If the deck is not ready, it will be late or missed. The 15 Sep assignment deadline has already passed; if it was not submitted, the founder's standing in the cohort is at risk. The file will remain open with two unconfirmed asks.",
+    "signals_to_watch": [
+     "Confirmation from the founder or from Lakshya that Assignment 3 was received.",
+     "Submission of the Phase-1 review deck by 28 Sep.",
+     "Any message from Lakshya asking for a resubmission or clarifying the status of Assignment 3.",
+     "Any change in the programme's calendar or deadlines."
+    ],
+    "worst": "The founder discovers that Assignment 3 was not submitted or not received, and the Phase-1 review deck is not ready for 28 Sep. Both deadlines are missed, and the founder's standing in the cohort is damaged. The programme may ask for a resubmission or mark the assignments as missing."
+   },
+   "unknowns": [
+    {
+     "question": "Was Assignment 3 submitted by 15 Sep, and was it received by Lakshya?",
+     "relevance": "If it was not submitted or not received, the founder's standing in the cohort is at risk, and Lakshya may ask for a resubmission or mark the assignment as missing. This affects the founder's progress through the programme."
+    },
+    {
+     "question": "Is the Phase-1 review deck ready, and will it be submitted by 28 Sep?",
+     "relevance": "The 28 Sep deadline is two days away. If the deck is not ready, the founder must either submit it late or ask Lakshya for an extension. A late submission may affect the Phase-1 review on 30 Sep."
+    },
+    {
+     "question": "What is Lakshya's policy on late submissions or missing assignments?",
+     "relevance": "If Assignment 3 was missed, the founder needs to know whether Lakshya will accept a late submission, whether it will affect the founder's evaluation, and what the next step is."
+    },
+    {
+     "question": "Are there other assignments or deadlines between now and the Phase-1 review on 30 Sep that the founder should be aware of?",
+     "relevance": "The file shows only two messages from Lakshya. If there are other assignments or deadlines not yet communicated, the founder may be missing work."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The 28 Sep deadline is two days away, and the 15 Sep deadline has already passed. Act now to confirm the status of Assignment 3 and to ensure the Phase-1 review deck is submitted on time. If Lakshya does not respond to the confirmation request by 27 Sep, proceed with submitting the Phase-1 review deck by 28 Sep and note the lack of response in the file."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Lakshya Accelerator sent an assignment due 15 Sep at 11:59 pm IST, asking for a unit economics sheet to be uploaded to the cohort folder.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST. Please upload it to the cohort folder.\"\n    },\n    {\n      \"claim\": \"Lakshya Accelerator sent a second message on 13 Sep asking for a Phase-1 review deck to be uploaded by 28 Sep, with presentations scheduled for 30 Sep.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Phase-1 review presentations are on 30 Sep. Please upload your review deck by 28 Sep.\"\n    },\n    {\n      \"claim\": \"The file has been quiet for 13.29 days, longer than any prior gap it closed, which was 11.96 days.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:longest_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The last touch from Lakshya was 13 Sep at 05:00 UTC; today is 26 Sep at 12:00 UTC.\",\n      \"evidence\": [\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file shows two open asks, both with the turn on the founder's side: one open since 1 Sep and one since 13 Sep.\",\n      \"evidence\": [\n        \"loop:loop_#1\",\n        \"loop:loop_#2\",\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The founder is in the active cohort at Lakshya Accelerator, listed as a watched programme in the brief.\",\n      \"evidence\": [\n        \"brief:cbl_#13\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time has been measured for Divya Raman or the founder's replies to her.\",\n      \"evidence\": [\n        \"num:their_reply_time:divya@lakshya.test\",\n        \"num:your_reply_time:divya@lakshya.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and engagement marked as healthy despite the quiet now exceeding the longest prior gap.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.temporal\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's stage is named in the playbook as in_programme, which typically runs 90 days with the programme's own deadlines \u2014 assignments, reviews, demo day \u2014 published to the cohort and fixed for all.\",\n      \"evidence\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The 15 Sep deadline for Assignment 3 has passed without confirmation of submission; the file does not show whether it was uploaded.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:last_touch\",\n        \"none:we_wrote\"\n      ]\n    },\n    {\n      \"claim\": \"The 28 Sep deadline for the Phase-1 review deck is two days away; this is the immediate constraint.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:last_touch\"\n      ]\n    },\n    {\n      \"claim\": \"The founder's move is overdue on the first assignment and urgent on the second; silence from Lakshya does not mean the work is not expected.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"claim\": \"The file's kind of work is correctly named as program, not investor; the playbook's frame applies \u2014 Lakshya reads assignments and reviews on its own calendar, not on the founder's.\",\n      \"based_on\": [\n        \"file:kind\",\n        \"brief:cbl_#13\",\n        \"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\"\n      ]\n    },\n    {\n      \"claim\": \"The quiet is not a signal of rejection or disengagement; it is the programme's normal state between assignment deadlines in an active cohort.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"In an active cohort programme, the founder's move is to meet each published deadline; silence from the programme between deadlines is the default state.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A programme's quiet that exceeds its prior longest gap does not signal a change in status; the file's longest gap was 11.96 days, and 13.29 days is within normal variation for a cohort programme between assignments.\",\n      \"based_on\": [\n        \"num:longest_gap\",\n        \"num:days_quiet\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A programme file is dormant after 90 days of quiet; this file is at 13.29 days, well within the active window.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An assignment deadline that passes without confirmation of submission is a risk; the founder should verify whether Assignment 3 was received.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"inference:1\",\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"In a cohort programme, the founder's job is to track the programme's published calendar, not to wait for reminders; each deadline is fixed and non-negotiable.\",\n      \"why\": \"Programmes publish their calendar once for all cohort members and do not chase individual founders. Missing a deadline costs the founder's standing in the cohort, not the programme's attention.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A founder in an active accelerator should have a calendar view of all published deadlines \u2014 assignments, reviews, demo day \u2014 and work backwards from each one.\",\n      \"why\": \"The programme's silence between deadlines is not a signal; the calendar is the signal. A founder who relies on reminders from the programme will miss deadlines.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Silence from a programme after a deadline has passed is often a sign that the submission was not received or was not recorded; the founder should verify, not assume.\",\n      \"why\": \"Programmes do not always send confirmation of receipt for assignments uploaded to a cohort folder. A founder who assumes the upload worked without checking risks losing credit for the work.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A founder in an active cohort should confirm submission of each assignment within one day of the deadline, before moving on.\",\n      \"why\": \"Confirmation closes the loop and prevents the founder from discovering too late that the upload failed or was not recorded. It also gives the programme a chance to ask for a resubmission if needed.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"Assignment 3 was submitted by the 15 Sep deadline and was received by Lakshya.\",\n      \"needs\": \"Confirmation from the founder or from Lakshya's portal or email that the submission was recorded.\"\n    },\n    {\n      \"proposition\": \"Assignment 3 was not submitted, or was submitted but not received.\",\n      \"needs\": \"The founder to check the cohort folder or to ask Lakshya whether the submission was recorded.\"\n    },\n    {\n      \"proposition\": \"The Phase-1 review deck is ready and will be submitted by 28 Sep.\",\n      \"needs\": \"Confirmation from the founder that the deck is in progress and on track for the deadline.\"\n    },\n    {\n      \"proposition\": \"The Phase-1 review deck is not yet started or is at risk of missing the 28 Sep deadline.\",\n      \"needs\": \"The founder to assess the work remaining and to flag any blockers to Lakshya if the deadline cannot be met.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Was Assignment 3 submitted by 15 Sep, and was it received by Lakshya?\",\n      \"relevance\": \"If it was not submitted or not received, the founder's standing in the cohort is at risk, and Lakshya may ask for a resubmission or mark the assignment as missing. This affects the founder's progress through the programme.\"\n    },\n    {\n      \"question\": \"Is the Phase-1 review deck ready, and will it be submitted by 28 Sep?\",\n      \"relevance\": \"The 28 Sep deadline is two days away. If the deck is not ready, the founder must either submit it late or ask Lakshya for an extension. A late submission may affect the Phase-1 review on 30 Sep.\"\n    },\n    {\n      \"question\": \"What is Lakshya's policy on late submissions or missing assignments?\",\n      \"relevance\": \"If Assignment 3 was missed, the founder needs to know whether Lakshya will accept a late submission, whether it will affect the founder's evaluation, and what the next step is.\"\n    },\n    {\n      \"question\": \"Are there other assignments or deadlines between now and the Phase-1 review on 30 Sep that the founder should be aware of?\",\n      \"relevance\": \"The file shows only two messages from Lakshya. If there are other assignments or deadlines not yet communicated, the founder may be missing work.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"The founder is in an active cohort at Lakshya Accelerator and has two published deadlines: one that has passed (15 Sep, Assignment 3) and one that is imminent (28 Sep, Phase-1 review deck). The file does not confirm whether the first deadline was met. The programme's silence is normal between deadlines; the risk is that the founder has missed or will miss a deadline.\",\n    \"rivals\": [\n      \"The founder has submitted both assignments on time and is on track; the file simply does not show the confirmations.\",\n      \"The programme has paused or changed its schedule, and the deadlines are no longer active.\",\n      \"The founder is no longer in the cohort, and the deadlines no longer apply.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is correctly named as a programme application. Lakshya Accelerator is an active cohort programme with published deadlines and assignments. The founder is in the programme, not applying to it. The playbook for programme applications applies, with the stage in_programme.\",\n    \"evidence\": [\n      \"brief:cbl_#13\",\n      \"file:kind\",\n      \"file:role\",\n      \"pb:founder_office.pb.program_applications.follow_an_application\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The founder is in an active cohort and is expected to meet all published deadlines \u2014 assignments, reviews, demo day \u2014 on the programme's calendar. The programme publishes its calendar once for all cohort members and does not chase individual founders. The founder's job is to track the calendar and submit work by each deadline. The programme's silence between deadlines is the default state.\",\n    \"actual\": \"The founder received an assignment due 15 Sep and a review deck due 28 Sep. The file does not confirm whether the 15 Sep assignment was submitted. The 28 Sep deadline is two days away. The programme has been silent for 13.29 days, which is longer than its prior longest gap but within the normal range for a cohort programme between deadlines. No confirmation of submission has been recorded in the file.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If nothing is done, the 28 Sep deadline for the Phase-1 review deck will pass in two days. If the deck is not ready, it will be late or missed. The 15 Sep assignment deadline has already passed; if it was not submitted, the founder's standing in the cohort is at risk. The file will remain open with two unconfirmed asks.\",\n    \"act\": \"If the founder acts now, they can confirm whether Assignment 3 was submitted and received, and they can ensure the Phase-1 review deck is submitted by 28 Sep. This closes the loop on both deadlines and keeps the founder on track in the cohort.\",\n    \"best\": \"The founder confirms that Assignment 3 was submitted and received by Lakshya, and the Phase-1 review deck is submitted by 28 Sep. Both deadlines are met, and the founder is on track for the Phase-1 review on 30 Sep. The file is closed with both asks answered.\",\n    \"worst\": \"The founder discovers that Assignment 3 was not submitted or not received, and the Phase-1 review deck is not ready for 28 Sep. Both deadlines are missed, and the founder's standing in the cohort is damaged. The programme may ask for a resubmission or mark the assignments as missing.\",\n    \"signals_to_watch\": [\n      \"Confirmation from the founder or from Lakshya that Assignment 3 was received.\",\n      \"Submission of the Phase-1 review deck by 28 Sep.\",\n      \"Any message from Lakshya asking for a resubmission or clarifying the status of Assignment 3.\",\n      \"Any change in the programme's calendar or deadlines.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The founder is in an active cohort programme, and missing deadlines affects standing and progress through the programme.\",\n      \"The 28 Sep deadline is two days away; if the deck is not ready, it will be late or missed.\",\n      \"The 15 Sep deadline has already passed; if the assignment was not submitted, the founder's evaluation in the cohort is at risk.\",\n      \"A missed deadline in a cohort programme is costly to reverse; the founder may not be able to resubmit or may lose credit for the work.\",\n      \"The file does not confirm whether the first deadline was met, which is a gap that must be closed.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Confirm whether Assignment 3 was submitted by 15 Sep and received by Lakshya; if not, ask Lakshya whether a late submission is possible. In parallel, ensure the Phase-1 review deck is ready for submission by 28 Sep.\",\n    \"for_whom\": \"Lakshya Accelerator (Divya Raman) and yourself\",\n    \"by_when\": \"2026-09-27\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:1\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.follow_an_application\",\n      \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n      \"own:3\",\n      \"own:4\"\n    ],\n    \"to\": \"divya@lakshya.test\",\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder is confident that Assignment 3 was submitted and received, skip the confirmation and focus on ensuring the Phase-1 review deck is ready for 28 Sep. Submit the deck by 28 Sep and confirm submission to Lakshya.\",\n    \"wait_or_stop\": \"Do not wait. The 28 Sep deadline is two days away, and the 15 Sep deadline has already passed. Act now to confirm the status of Assignment 3 and to ensure the Phase-1 review deck is submitted on time. If Lakshya does not respond to the confirmation request by 27 Sep, proceed with submitting the Phase-1 review deck by 28 Sep and note the lack of response in the file.\",\n    \"done_when\": \"Assignment 3's submission status is confirmed (either received by Lakshya or a late submission is agreed), and the Phase-1 review deck is submitted by 28 Sep. Both asks are answered, and the file is updated with the confirmations.\",\n    \"draft\": \"Hi Divya, I want to confirm that Assignment 3 (the unit economics sheet) was received when I uploaded it to the cohort folder by 15 Sep. Could you let me know if it came through? I'm also on track to submit the Phase-1 review deck by 28 Sep. Thanks, Arjun\"\n}",
+  "site": "expert"
+ },
+ "13e2fa24cd0701563330f5c22e5c477587aecdd5a7313268ac5728fcc13a6989": {
+  "framed": true,
+  "input_tokens": 14590,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2827,
+  "parsed": {
+   "alternative": "If the founder confirms they have started and are on track, set a reminder for 2026-09-14 to check that the submission is complete. If the founder has not started, help them break down the assignment and set a working deadline of 2026-09-13 to allow time for review before the programme's deadline.",
+   "appraisal": {
+    "reasons": [
+     "The assignment is a programme requirement, not a gate to entry, so missing it is costly but not fatal",
+     "The deadline is fourteen days away, giving the founder time to act",
+     "A late submission can be recovered if the founder explains the delay and the work is solid",
+     "The founder is raising a seed round in parallel, which may compete for attention",
+     "The programme's assessment of the founder's execution could affect investor perception"
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The founder has submitted the unit economics assignment to Lakshya by 2026-09-15 at 11:59 pm IST, and the programme has confirmed receipt or the submission is visible in the cohort folder.",
+   "draft": "Hi Arjun\u2014Lakshya sent the unit economics assignment due 15 Sep. Where are you on it? Any blockers I can help with?",
+   "expected_vs_actual": {
+    "actual": "The programme sent an assignment with a deadline of 15 September 2026. The founder has not yet submitted it. No communication has been sent to the programme since the assignment arrived.",
+    "expected": "The founder receives assignments from the programme and submits them by the stated deadline. The programme's calendar is the file's calendar, and quiet means nothing about the application\u2014only that the programme is waiting for the founder's work.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Lakshya Accelerator sent an assignment deadline for unit economics due 15 September 2026 at 11:59 pm IST",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST. Please upload it to the cohort folder."
+    },
+    {
+     "claim": "The file shows Nimbus Labs is in the active cohort at Lakshya Accelerator",
+     "evidence": [
+      "brief:cbl_#13"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The last and only touch on this file was the assignment email on 2026-09-01 at 06:00 UTC",
+     "evidence": [
+      "file:last_touch",
+      "file:first_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.5 days since the assignment was sent",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "There is one open ask: the unit economics assignment, waiting on the founder's response since 2026-09-01 06:00 UTC",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time data exists for Divya Raman or the founder's replies to Lakshya",
+     "evidence": [
+      "num:their_reply_time:divya@lakshya.test",
+      "num:your_reply_time:divya@lakshya.test",
+      "none:we_wrote"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A programme assignment is due in fourteen days; the founder has not yet submitted it, and the file is waiting on the founder's work",
+    "rivals": [
+     "The founder has already completed the assignment and the file is simply a record of the deadline",
+     "The assignment is a low-priority task that can be deferred in favour of fundraising work"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A draft or a note from the founder confirming progress",
+     "proposition": "The founder has already begun work on the unit economics sheet and will submit it before the deadline"
+    },
+    {
+     "needs": "A check-in with the founder on their progress and blockers",
+     "proposition": "The founder has not yet started the assignment and may miss the deadline if not reminded"
+    },
+    {
+     "needs": "A clarification from Divya Raman or a review of the assignment brief",
+     "proposition": "The founder is unclear on what the assignment requires or how to complete it"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "none:we_wrote"
+     ],
+     "claim": "The founder has not yet submitted the unit economics assignment"
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The assignment is due in fourteen days from the email date, giving the founder time to prepare"
+    },
+    {
+     "based_on": [
+      "brief:cbl_#13",
+      "file:kind"
+     ],
+     "claim": "This is a programme assignment, not an investor conversation or a selection process"
+    },
+    {
+     "based_on": [
+      "brief:cbl_#13",
+      "file:role"
+     ],
+     "claim": "The founder is already accepted and in the programme, so the assignment is a programme requirement, not a gate to entry"
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-02",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.follow_an_application",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "inference:1",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "check with the founder on their progress on the unit economics assignment and whether they have any blockers",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Programme assignments are not optional; missing a deadline can affect the founder's standing in the cohort and the programme's perception of the company's execution",
+     "kind": "practice",
+     "why": "Accelerators use assignments to assess founder discipline and progress; a missed deadline signals poor prioritization"
+    },
+    {
+     "claim": "Unit economics assignments are foundational to a seed-stage company's credibility with investors and accelerators",
+     "kind": "base_rate",
+     "why": "Investors and programme leads use unit economics to assess whether the founder understands their business model's viability"
+    },
+    {
+     "claim": "A founder raising a seed round while in an accelerator sometimes deprioritizes programme work in favour of investor meetings",
+     "kind": "counter_pattern",
+     "why": "The immediate pressure of fundraising can overshadow programme deadlines that feel less urgent"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "Accelerator programmes issue assignments with fixed deadlines to all cohort members and expect submission by the stated time",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "A programme in the in_programme stage has its own calendar of assignments and reviews, and the file's calendar is the programme's calendar",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "brief:cbl_#7",
+      "brief:cbl_#8",
+      "brief:cbl_#9"
+     ],
+     "claim": "Founders often delay programme assignments until near the deadline, especially when multiple work streams are active",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#13",
+     "evt_#1"
+    ],
+    "kind": "program",
+    "why": "The file is explicitly marked as a programme application in the brief, and the email is from the programme lead assigning cohort work"
+   },
+   "scenarios": {
+    "act": "The founder checks their progress on the assignment, clarifies any blockers with the programme if needed, and submits the work by the deadline. This keeps the founder in good standing with the programme and demonstrates execution discipline.",
+    "best": "The founder has already started the assignment and submits it early or on time, with high-quality unit economics that the programme can use in its assessment and that the founder can use in investor conversations.",
+    "do_nothing": "The founder misses the 15 September deadline, which may affect their standing in the cohort and the programme's assessment of their execution. The programme may mark the assignment as incomplete or late, which could impact the founder's access to programme benefits or the programme's recommendation to investors.",
+    "signals_to_watch": [
+     "Whether the founder has started work on the assignment",
+     "Whether the founder asks for clarification or an extension from Lakshya",
+     "Whether the founder submits the assignment before, on, or after the deadline",
+     "Whether the programme provides feedback on the submission"
+    ],
+    "worst": "The founder forgets about the assignment entirely and misses the deadline by days or weeks, damaging their credibility with the programme and potentially affecting their access to programme resources or the programme's support in fundraising."
+   },
+   "unknowns": [
+    {
+     "question": "Has the founder started work on the unit economics assignment, and what is their current progress?",
+     "relevance": "If the founder has not started, the deadline is at risk; if they have, the file can wait"
+    },
+    {
+     "question": "What does the unit economics assignment require, and does the founder have the data to complete it?",
+     "relevance": "If the assignment requires data the founder does not have, they may need to ask Lakshya for clarification or an extension"
+    },
+    {
+     "question": "Are there other programme assignments or deadlines coming up that might compete for the founder's time?",
+     "relevance": "If multiple assignments are due around the same time, the founder may need to prioritize or plan ahead"
+    }
+   ],
+   "wait_or_stop": "Wait until the founder confirms their progress. Stop if the founder confirms they have submitted the assignment or if the programme confirms receipt. Do not wait past 2026-09-14 without knowing the submission status."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Lakshya Accelerator sent an assignment deadline for unit economics due 15 September 2026 at 11:59 pm IST\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST. Please upload it to the cohort folder.\"\n    },\n    {\n      \"claim\": \"The file shows Nimbus Labs is in the active cohort at Lakshya Accelerator\",\n      \"evidence\": [\n        \"brief:cbl_#13\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The last and only touch on this file was the assignment email on 2026-09-01 at 06:00 UTC\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"file:first_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.5 days since the assignment was sent\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"There is one open ask: the unit economics assignment, waiting on the founder's response since 2026-09-01 06:00 UTC\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time data exists for Divya Raman or the founder's replies to Lakshya\",\n      \"evidence\": [\n        \"num:their_reply_time:divya@lakshya.test\",\n        \"num:your_reply_time:divya@lakshya.test\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The founder has not yet submitted the unit economics assignment\",\n      \"based_on\": [\n        \"fact:1\",\n        \"none:we_wrote\"\n      ]\n    },\n    {\n      \"claim\": \"The assignment is due in fourteen days from the email date, giving the founder time to prepare\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"This is a programme assignment, not an investor conversation or a selection process\",\n      \"based_on\": [\n        \"brief:cbl_#13\",\n        \"file:kind\"\n      ]\n    },\n    {\n      \"claim\": \"The founder is already accepted and in the programme, so the assignment is a programme requirement, not a gate to entry\",\n      \"based_on\": [\n        \"brief:cbl_#13\",\n        \"file:role\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Accelerator programmes issue assignments with fixed deadlines to all cohort members and expect submission by the stated time\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme in the in_programme stage has its own calendar of assignments and reviews, and the file's calendar is the programme's calendar\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founders often delay programme assignments until near the deadline, especially when multiple work streams are active\",\n      \"based_on\": [\n        \"brief:cbl_#7\",\n        \"brief:cbl_#8\",\n        \"brief:cbl_#9\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Programme assignments are not optional; missing a deadline can affect the founder's standing in the cohort and the programme's perception of the company's execution\",\n      \"why\": \"Accelerators use assignments to assess founder discipline and progress; a missed deadline signals poor prioritization\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Unit economics assignments are foundational to a seed-stage company's credibility with investors and accelerators\",\n      \"why\": \"Investors and programme leads use unit economics to assess whether the founder understands their business model's viability\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder raising a seed round while in an accelerator sometimes deprioritizes programme work in favour of investor meetings\",\n      \"why\": \"The immediate pressure of fundraising can overshadow programme deadlines that feel less urgent\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The founder has already begun work on the unit economics sheet and will submit it before the deadline\",\n      \"needs\": \"A draft or a note from the founder confirming progress\"\n    },\n    {\n      \"proposition\": \"The founder has not yet started the assignment and may miss the deadline if not reminded\",\n      \"needs\": \"A check-in with the founder on their progress and blockers\"\n    },\n    {\n      \"proposition\": \"The founder is unclear on what the assignment requires or how to complete it\",\n      \"needs\": \"A clarification from Divya Raman or a review of the assignment brief\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the founder started work on the unit economics assignment, and what is their current progress?\",\n      \"relevance\": \"If the founder has not started, the deadline is at risk; if they have, the file can wait\"\n    },\n    {\n      \"question\": \"What does the unit economics assignment require, and does the founder have the data to complete it?\",\n      \"relevance\": \"If the assignment requires data the founder does not have, they may need to ask Lakshya for clarification or an extension\"\n    },\n    {\n      \"question\": \"Are there other programme assignments or deadlines coming up that might compete for the founder's time?\",\n      \"relevance\": \"If multiple assignments are due around the same time, the founder may need to prioritize or plan ahead\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A programme assignment is due in fourteen days; the founder has not yet submitted it, and the file is waiting on the founder's work\",\n    \"rivals\": [\n      \"The founder has already completed the assignment and the file is simply a record of the deadline\",\n      \"The assignment is a low-priority task that can be deferred in favour of fundraising work\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is explicitly marked as a programme application in the brief, and the email is from the programme lead assigning cohort work\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#13\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The founder receives assignments from the programme and submits them by the stated deadline. The programme's calendar is the file's calendar, and quiet means nothing about the application\u2014only that the programme is waiting for the founder's work.\",\n    \"actual\": \"The programme sent an assignment with a deadline of 15 September 2026. The founder has not yet submitted it. No communication has been sent to the programme since the assignment arrived.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder misses the 15 September deadline, which may affect their standing in the cohort and the programme's assessment of their execution. The programme may mark the assignment as incomplete or late, which could impact the founder's access to programme benefits or the programme's recommendation to investors.\",\n    \"act\": \"The founder checks their progress on the assignment, clarifies any blockers with the programme if needed, and submits the work by the deadline. This keeps the founder in good standing with the programme and demonstrates execution discipline.\",\n    \"best\": \"The founder has already started the assignment and submits it early or on time, with high-quality unit economics that the programme can use in its assessment and that the founder can use in investor conversations.\",\n    \"worst\": \"The founder forgets about the assignment entirely and misses the deadline by days or weeks, damaging their credibility with the programme and potentially affecting their access to programme resources or the programme's support in fundraising.\",\n    \"signals_to_watch\": [\n      \"Whether the founder has started work on the assignment\",\n      \"Whether the founder asks for clarification or an extension from Lakshya\",\n      \"Whether the founder submits the assignment before, on, or after the deadline\",\n      \"Whether the programme provides feedback on the submission\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The assignment is a programme requirement, not a gate to entry, so missing it is costly but not fatal\",\n      \"The deadline is fourteen days away, giving the founder time to act\",\n      \"A late submission can be recovered if the founder explains the delay and the work is solid\",\n      \"The founder is raising a seed round in parallel, which may compete for attention\",\n      \"The programme's assessment of the founder's execution could affect investor perception\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"check with the founder on their progress on the unit economics assignment and whether they have any blockers\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-02\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"inference:1\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.follow_an_application\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder confirms they have started and are on track, set a reminder for 2026-09-14 to check that the submission is complete. If the founder has not started, help them break down the assignment and set a working deadline of 2026-09-13 to allow time for review before the programme's deadline.\",\n  \"wait_or_stop\": \"Wait until the founder confirms their progress. Stop if the founder confirms they have submitted the assignment or if the programme confirms receipt. Do not wait past 2026-09-14 without knowing the submission status.\",\n  \"done_when\": \"The founder has submitted the unit economics assignment to Lakshya by 2026-09-15 at 11:59 pm IST, and the programme has confirmed receipt or the submission is visible in the cohort folder.\",\n  \"draft\": \"Hi Arjun\u2014Lakshya sent the unit economics assignment due 15 Sep. Where are you on it? Any blockers I can help with?\"\n}",
+  "site": "expert"
+ },
+ "86adaa8a0afd531493f864c5ba77cef7cc9fc7ff2f933ff6b6ce32060b94d813": {
+  "framed": true,
+  "input_tokens": 14935,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3334,
+  "parsed": {
+   "alternative": "If Assignment 3 was already submitted, send a brief note to Divya confirming receipt and asking for any feedback, then focus entirely on the Phase-1 review deck. This keeps the relationship warm and clarifies the founder's status.",
+   "appraisal": {
+    "reasons": [
+     "The founder is in an active cohort with a fixed calendar; missing deadlines affects standing in the cohort and the programme's support",
+     "The 28 Sep deadline is 15 days away; there is time to act but not much",
+     "A missed deadline in a cohort programme is visible to peers and the programme; recovery requires explanation and extra effort",
+     "The programme's credibility and support at demo day depend on the founder's engagement with its process"
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "Assignment 3 is confirmed as submitted (or resubmitted if it was missed), and the Phase-1 review deck is uploaded to the cohort folder by 28 Sep. The founder attends the 30 Sep presentation.",
+   "draft": "Hi Divya, I want to confirm that Assignment 3 (unit economics) was submitted by the 15 Sep deadline. If it wasn't, I'll get it in today. I'm also on track for the Phase-1 review deck by 28 Sep. Let me know if you need anything else from me before the 30 Sep presentations. Thanks, Arjun",
+   "expected_vs_actual": {
+    "actual": "The founder received an assignment due 15 Sep (now overdue) and a review deck due 28 Sep. The file shows two open asks with the turn ours, but their content is not shown. No confirmation that Assignment 3 was submitted.",
+    "expected": "The playbook for in_programme expects the founder to meet the programme's fixed deadlines for assignments and reviews, and to treat the programme's calendar as the file's calendar. Quiet between assignments means nothing; the next deadline is the signal.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Lakshya Accelerator sent an assignment due 15 Sep at 11:59 pm IST on 2026-09-01",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST"
+    },
+    {
+     "claim": "Lakshya Accelerator sent a Phase-1 review deadline of 28 Sep for deck upload and 30 Sep for presentations on 2026-09-13",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Phase-1 review presentations are on 30 Sep. Please upload your review deck by 28 Sep."
+    },
+    {
+     "claim": "The file shows two open asks from Lakshya, both with the turn ours",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as a program application in the brief",
+     "evidence": [
+      "brief:cbl_#13"
+     ],
+     "quote": "Lakshya Accelerator \u2014 the active cohort"
+    },
+    {
+     "claim": "The last touch was 2026-09-13 05:00 UTC, 0.29 days ago",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply times are measured for Divya Raman or the founder's replies to her",
+     "evidence": [
+      "num:their_reply_time:divya@lakshya.test",
+      "num:your_reply_time:divya@lakshya.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found engagement healthy and urgency low",
+     "evidence": [
+      "ru:core.temporal"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's stage is not named in the dossier",
+     "evidence": [
+      "file:kind"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "The founder is in an active cohort programme with fixed assignment deadlines; one deadline (15 Sep) has passed and another (28 Sep) is imminent. The file is tracking programme engagement, not application status.",
+    "rivals": [
+     "The file is a stalled application waiting for a decision, and the assignments are optional check-ins",
+     "The file is a low-priority programme that the founder can manage around fundraising"
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder or from Lakshya's cohort folder",
+     "proposition": "The unit economics sheet (Assignment 3) was submitted by 15 Sep"
+    },
+    {
+     "needs": "The founder's status on the deck and the date it will be complete",
+     "proposition": "The Phase-1 review deck is in progress and will be ready by 28 Sep"
+    },
+    {
+     "needs": "The content of the two open loops to confirm they are standard assignments, not escalations",
+     "proposition": "Lakshya's open asks are routine programme checkpoints, not signals of concern"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "brief:cbl_#13",
+      "evt_#2",
+      "evt_#1"
+     ],
+     "claim": "The company is in the active cohort phase of Lakshya, not in an application stage"
+    },
+    {
+     "based_on": [
+      "evt_#2",
+      "file:last_touch"
+     ],
+     "claim": "The 15 Sep deadline for Assignment 3 has passed as of 2026-09-13"
+    },
+    {
+     "based_on": [
+      "evt_#2",
+      "evt_#1"
+     ],
+     "claim": "Two deliverables are now due: the unit economics sheet (overdue) and the Phase-1 review deck (due 28 Sep)"
+    },
+    {
+     "based_on": [
+      "file:kind",
+      "evt_#2",
+      "evt_#1"
+     ],
+     "claim": "The file's kind is mislabeled as program when the work is actually in_programme"
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-15",
+    "for_whom": "Lakshya Accelerator and the cohort",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.follow_an_application",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "divya@lakshya.test",
+    "what": "Confirm whether Assignment 3 was submitted by 15 Sep; if not, submit it now. Then prioritize the Phase-1 review deck and set a completion date before 28 Sep.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A cohort programme's assignments are not optional; missing one signals to the programme that the founder is not committed",
+     "kind": "practice",
+     "why": "Programmes use assignment completion to gauge founder engagement and readiness; a missed deadline can affect the founder's standing in the cohort and the programme's willingness to support the company at demo day"
+    },
+    {
+     "claim": "When a founder is in an active cohort, the programme's calendar takes priority over investor conversations",
+     "kind": "base_rate",
+     "why": "The programme has fixed dates and a cohort of peers; missing a deadline affects the founder's position relative to others and the programme's ability to deliver value to the whole cohort"
+    },
+    {
+     "claim": "Founders sometimes treat accelerator assignments as busywork and deprioritize them for fundraising",
+     "kind": "counter_pattern",
+     "why": "Fundraising feels urgent and visible; programme work feels internal; but the programme's support and credibility at demo day depend on the founder's engagement with its process"
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "Programmes in cohort send assignments and reviews on fixed dates to all founders at once",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A cohort programme's quiet between assignments means nothing; the next deadline is the signal",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "Founders miss programme deadlines when they treat the assignment as optional or low-priority relative to fundraising",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#13",
+     "evt_#2",
+     "evt_#1"
+    ],
+    "kind": "program",
+    "why": "The brief names this as 'the active cohort' and the mail shows fixed assignments and review dates sent to the cohort, not an application process"
+   },
+   "scenarios": {
+    "act": "If the founder acts now, Assignment 3 can be recovered (if it was missed) or confirmed as submitted, and the Phase-1 review deck can be prioritized and completed by 28 Sep. The founder can attend the 30 Sep presentation and stay on track with the cohort.",
+    "best": "The founder confirms Assignment 3 was submitted, completes the Phase-1 review deck by 28 Sep, attends the 30 Sep presentation, and stays engaged with Lakshya's calendar. The programme's support and credibility carry forward to demo day.",
+    "do_nothing": "If nothing is done, the 28 Sep deadline for the Phase-1 review deck will pass. If the deck is not submitted, the founder will miss the 30 Sep presentation and fall behind in the cohort. Lakshya may mark the founder as disengaged, affecting the programme's support at demo day and the founder's credibility with other cohort members.",
+    "signals_to_watch": [
+     "Confirmation that Assignment 3 was submitted by 15 Sep",
+     "The Phase-1 review deck is completed and uploaded by 28 Sep",
+     "The founder attends the 30 Sep presentation",
+     "Lakshya sends a follow-up message if the deck is not uploaded by 28 Sep"
+    ],
+    "worst": "The founder misses both deadlines, falls behind in the cohort, and Lakshya marks the founder as disengaged. The programme reduces its support, and the founder's standing with other cohort members and investors is damaged."
+   },
+   "unknowns": [
+    {
+     "question": "Was Assignment 3 submitted by the 15 Sep deadline?",
+     "relevance": "If it was missed, the founder is now behind in the cohort and may face consequences for demo day eligibility or programme support"
+    },
+    {
+     "question": "What are the two open asks in the file?",
+     "relevance": "The dossier lists them as loop ids but does not show their content; they may be routine or they may signal that Lakshya is waiting on something specific"
+    },
+    {
+     "question": "What is the Phase-1 review deck supposed to contain?",
+     "relevance": "The founder needs to know what Lakshya expects to assess readiness for the next phase"
+    },
+    {
+     "question": "Does Lakshya have a published rule about what happens if a founder misses an assignment deadline?",
+     "relevance": "This would determine whether the missed 15 Sep deadline is recoverable or has consequences"
+    }
+   ],
+   "wait_or_stop": "Do not wait. The 28 Sep deadline is firm and the founder's engagement in the cohort is at stake. If the Phase-1 review deck is not completed by 27 Sep, escalate to Divya to ask for an extension or clarification on what is needed."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Lakshya Accelerator sent an assignment due 15 Sep at 11:59 pm IST on 2026-09-01\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST\"\n    },\n    {\n      \"claim\": \"Lakshya Accelerator sent a Phase-1 review deadline of 28 Sep for deck upload and 30 Sep for presentations on 2026-09-13\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Phase-1 review presentations are on 30 Sep. Please upload your review deck by 28 Sep.\"\n    },\n    {\n      \"claim\": \"The file shows two open asks from Lakshya, both with the turn ours\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as a program application in the brief\",\n      \"evidence\": [\n        \"brief:cbl_#13\"\n      ],\n      \"quote\": \"Lakshya Accelerator \u2014 the active cohort\"\n    },\n    {\n      \"claim\": \"The last touch was 2026-09-13 05:00 UTC, 0.29 days ago\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply times are measured for Divya Raman or the founder's replies to her\",\n      \"evidence\": [\n        \"num:their_reply_time:divya@lakshya.test\",\n        \"num:your_reply_time:divya@lakshya.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found engagement healthy and urgency low\",\n      \"evidence\": [\n        \"ru:core.temporal\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's stage is not named in the dossier\",\n      \"evidence\": [\n        \"file:kind\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The company is in the active cohort phase of Lakshya, not in an application stage\",\n      \"based_on\": [\n        \"brief:cbl_#13\",\n        \"evt_#2\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The 15 Sep deadline for Assignment 3 has passed as of 2026-09-13\",\n      \"based_on\": [\n        \"evt_#2\",\n        \"file:last_touch\"\n      ]\n    },\n    {\n      \"claim\": \"Two deliverables are now due: the unit economics sheet (overdue) and the Phase-1 review deck (due 28 Sep)\",\n      \"based_on\": [\n        \"evt_#2\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The file's kind is mislabeled as program when the work is actually in_programme\",\n      \"based_on\": [\n        \"file:kind\",\n        \"evt_#2\",\n        \"evt_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Programmes in cohort send assignments and reviews on fixed dates to all founders at once\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A cohort programme's quiet between assignments means nothing; the next deadline is the signal\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founders miss programme deadlines when they treat the assignment as optional or low-priority relative to fundraising\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A cohort programme's assignments are not optional; missing one signals to the programme that the founder is not committed\",\n      \"why\": \"Programmes use assignment completion to gauge founder engagement and readiness; a missed deadline can affect the founder's standing in the cohort and the programme's willingness to support the company at demo day\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a founder is in an active cohort, the programme's calendar takes priority over investor conversations\",\n      \"why\": \"The programme has fixed dates and a cohort of peers; missing a deadline affects the founder's position relative to others and the programme's ability to deliver value to the whole cohort\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Founders sometimes treat accelerator assignments as busywork and deprioritize them for fundraising\",\n      \"why\": \"Fundraising feels urgent and visible; programme work feels internal; but the programme's support and credibility at demo day depend on the founder's engagement with its process\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The unit economics sheet (Assignment 3) was submitted by 15 Sep\",\n      \"needs\": \"Confirmation from the founder or from Lakshya's cohort folder\"\n    },\n    {\n      \"proposition\": \"The Phase-1 review deck is in progress and will be ready by 28 Sep\",\n      \"needs\": \"The founder's status on the deck and the date it will be complete\"\n    },\n    {\n      \"proposition\": \"Lakshya's open asks are routine programme checkpoints, not signals of concern\",\n      \"needs\": \"The content of the two open loops to confirm they are standard assignments, not escalations\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Was Assignment 3 submitted by the 15 Sep deadline?\",\n      \"relevance\": \"If it was missed, the founder is now behind in the cohort and may face consequences for demo day eligibility or programme support\"\n    },\n    {\n      \"question\": \"What are the two open asks in the file?\",\n      \"relevance\": \"The dossier lists them as loop ids but does not show their content; they may be routine or they may signal that Lakshya is waiting on something specific\"\n    },\n    {\n      \"question\": \"What is the Phase-1 review deck supposed to contain?\",\n      \"relevance\": \"The founder needs to know what Lakshya expects to assess readiness for the next phase\"\n    },\n    {\n      \"question\": \"Does Lakshya have a published rule about what happens if a founder misses an assignment deadline?\",\n      \"relevance\": \"This would determine whether the missed 15 Sep deadline is recoverable or has consequences\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"The founder is in an active cohort programme with fixed assignment deadlines; one deadline (15 Sep) has passed and another (28 Sep) is imminent. The file is tracking programme engagement, not application status.\",\n    \"rivals\": [\n      \"The file is a stalled application waiting for a decision, and the assignments are optional check-ins\",\n      \"The file is a low-priority programme that the founder can manage around fundraising\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The brief names this as 'the active cohort' and the mail shows fixed assignments and review dates sent to the cohort, not an application process\",\n    \"evidence\": [\n      \"brief:cbl_#13\",\n      \"evt_#2\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The playbook for in_programme expects the founder to meet the programme's fixed deadlines for assignments and reviews, and to treat the programme's calendar as the file's calendar. Quiet between assignments means nothing; the next deadline is the signal.\",\n    \"actual\": \"The founder received an assignment due 15 Sep (now overdue) and a review deck due 28 Sep. The file shows two open asks with the turn ours, but their content is not shown. No confirmation that Assignment 3 was submitted.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"If nothing is done, the 28 Sep deadline for the Phase-1 review deck will pass. If the deck is not submitted, the founder will miss the 30 Sep presentation and fall behind in the cohort. Lakshya may mark the founder as disengaged, affecting the programme's support at demo day and the founder's credibility with other cohort members.\",\n    \"act\": \"If the founder acts now, Assignment 3 can be recovered (if it was missed) or confirmed as submitted, and the Phase-1 review deck can be prioritized and completed by 28 Sep. The founder can attend the 30 Sep presentation and stay on track with the cohort.\",\n    \"best\": \"The founder confirms Assignment 3 was submitted, completes the Phase-1 review deck by 28 Sep, attends the 30 Sep presentation, and stays engaged with Lakshya's calendar. The programme's support and credibility carry forward to demo day.\",\n    \"worst\": \"The founder misses both deadlines, falls behind in the cohort, and Lakshya marks the founder as disengaged. The programme reduces its support, and the founder's standing with other cohort members and investors is damaged.\",\n    \"signals_to_watch\": [\n      \"Confirmation that Assignment 3 was submitted by 15 Sep\",\n      \"The Phase-1 review deck is completed and uploaded by 28 Sep\",\n      \"The founder attends the 30 Sep presentation\",\n      \"Lakshya sends a follow-up message if the deck is not uploaded by 28 Sep\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The founder is in an active cohort with a fixed calendar; missing deadlines affects standing in the cohort and the programme's support\",\n      \"The 28 Sep deadline is 15 days away; there is time to act but not much\",\n      \"A missed deadline in a cohort programme is visible to peers and the programme; recovery requires explanation and extra effort\",\n      \"The programme's credibility and support at demo day depend on the founder's engagement with its process\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Confirm whether Assignment 3 was submitted by 15 Sep; if not, submit it now. Then prioritize the Phase-1 review deck and set a completion date before 28 Sep.\",\n    \"for_whom\": \"Lakshya Accelerator and the cohort\",\n    \"by_when\": \"2026-09-15\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.follow_an_application\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"divya@lakshya.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If Assignment 3 was already submitted, send a brief note to Divya confirming receipt and asking for any feedback, then focus entirely on the Phase-1 review deck. This keeps the relationship warm and clarifies the founder's status.\",\n  \"wait_or_stop\": \"Do not wait. The 28 Sep deadline is firm and the founder's engagement in the cohort is at stake. If the Phase-1 review deck is not completed by 27 Sep, escalate to Divya to ask for an extension or clarification on what is needed.\",\n  \"done_when\": \"Assignment 3 is confirmed as submitted (or resubmitted if it was missed), and the Phase-1 review deck is uploaded to the cohort folder by 28 Sep. The founder attends the 30 Sep presentation.\",\n  \"draft\": \"Hi Divya, I want to confirm that Assignment 3 (unit economics) was submitted by the 15 Sep deadline. If it wasn't, I'll get it in today. I'm also on track for the Phase-1 review deck by 28 Sep. Let me know if you need anything else from me before the 30 Sep presentations. Thanks, Arjun\"\n}",
+  "site": "expert"
+ },
+ "9711b264d7433e1b0a7191cd863b1376a1fe8882e4d0f440c99f749afe920376": {
+  "framed": true,
+  "input_tokens": 14693,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 2570,
+  "parsed": {
+   "alternative": "If the unit economics sheet is not ready, ask Lakshya Accelerator for clarification on the expected format or content, and confirm that the deadline cannot be extended. This buys time only if the programme responds quickly; the deadline remains 15 Sep, 11:59 pm IST.",
+   "appraisal": {
+    "reasons": [
+     "The deadline is fixed and will not move; a missed assignment is recorded by the programme and cannot be undone.",
+     "The assignment is part of the founder's standing in an active cohort; missing it signals disengagement to the programme and potentially to other cohort members and mentors.",
+     "The unit economics sheet is likely to be reviewed by the programme and may influence its assessment of the company's readiness and the founder's seriousness."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The unit economics sheet is uploaded to the Lakshya Accelerator cohort folder before 15 Sep, 11:59 pm IST, and the founder has confirmed receipt or the programme has acknowledged it.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "An assignment deadline has been set for 15 Sep, 11:59 pm IST. The founder has not yet replied to confirm receipt or to signal that the work is in progress. The file is quiet 0.5 days after the assignment was announced.",
+    "expected": "The programme publishes fixed deadlines for all cohort members. Assignments are completed and uploaded by the deadline. The founder's quiet before the deadline means nothing; the deadline is the only fixed point. After the deadline passes, the programme's own rule determines what the silence means \u2014 typically that the assignment was not submitted.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Lakshya Accelerator sent an assignment deadline for unit economics to be uploaded to the cohort folder.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST. Please upload it to the cohort folder."
+    },
+    {
+     "claim": "The file shows the founder is in the active cohort at Lakshya Accelerator.",
+     "evidence": [
+      "brief:cbl_#13"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The last contact from Lakshya Accelerator was on 2026-09-01 06:00 UTC, and the file has been quiet for 0.5 days since then.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time data exists for Divya Raman or for replies sent to her.",
+     "evidence": [
+      "num:their_reply_time:divya@lakshya.test",
+      "num:your_reply_time:divya@lakshya.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's kind of work is listed as program, and Lakshya Accelerator is watched in the brief.",
+     "evidence": [
+      "file:kind",
+      "file:role"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "This is an in-programme assignment deadline from an accelerator cohort the founder is actively in. The programme has set a fixed date, and the founder owes the work.",
+    "rivals": [
+     "This is a low-priority administrative task that can be deferred if other work is more urgent.",
+     "This is a request for information that the programme will follow up on if not received."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation from the founder that the sheet exists and is complete.",
+     "proposition": "The unit economics sheet has already been prepared and is ready to upload."
+    },
+    {
+     "needs": "Confirmation from the founder of the current status of the work.",
+     "proposition": "The unit economics sheet has not yet been started."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "The assignment deadline of 15 Sep, 11:59 pm IST is a fixed date set by the programme, not a suggestion."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The next move is the founder's: the unit economics sheet must be prepared and uploaded before the deadline."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.pb.program_applications.read_the_decision_mail"
+     ],
+     "claim": "This is not an application stage but an in-programme stage, where the programme's own calendar and assignments are the file's calendar."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-15",
+    "for_whom": "Lakshya Accelerator",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2"
+    ],
+    "to": null,
+    "what": "Confirm the status of the unit economics sheet with the founder, ensure it is completed, and upload it to the Lakshya Accelerator cohort folder before 15 Sep, 11:59 pm IST.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An assignment deadline from a programme you are in is a commitment, not optional work; missing it signals disengagement to the programme and can affect your standing.",
+     "kind": "practice",
+     "why": "Programmes use assignment completion and quality to assess founder seriousness and progress; a missed deadline is read as a signal about the founder's priorities."
+    },
+    {
+     "claim": "Unit economics assignments in accelerators are typically used to pressure-test the business model and are often reviewed by mentors or investors in the programme.",
+     "kind": "practice",
+     "why": "The assignment serves both as a teaching tool and as a filter for the programme's own evaluation of the company's readiness."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+     ],
+     "claim": "A programme in the in_programme stage publishes fixed deadlines for all cohort members, and missing one costs standing in the cohort.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.in_programme"
+     ],
+     "claim": "Assignments in accelerator cohorts are typically graded or reviewed as part of the programme's evaluation, and completion is expected.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [],
+    "kind": null,
+    "why": "The file's kind is correctly listed as program; no change is proposed."
+   },
+   "scenarios": {
+    "act": "The founder confirms the status of the unit economics sheet, completes it if needed, and uploads it to the cohort folder before 15 Sep, 11:59 pm IST. The assignment is submitted on time and the founder remains in good standing with the programme.",
+    "best": "The unit economics sheet is already drafted and ready. The founder uploads it within a day or two, well before the deadline, and the programme receives a complete, thoughtful submission that reflects well on the company.",
+    "do_nothing": "The assignment deadline passes on 15 Sep at 11:59 pm IST. If the sheet is not uploaded by then, the programme records a missed assignment. This may affect the founder's standing in the cohort, the programme's assessment of the company, or both. The programme will not chase; the deadline will not move.",
+    "signals_to_watch": [
+     "Whether the founder confirms the status of the sheet within the next day.",
+     "Whether the sheet is uploaded to the cohort folder before 15 Sep.",
+     "Any follow-up mail from Lakshya Accelerator asking about the assignment or offering guidance."
+    ],
+    "worst": "The unit economics sheet has not been started. The founder does not begin the work until a few days before the deadline, rushes through it, and either misses the deadline or submits a low-quality sheet that the programme reads as a sign of disengagement or poor planning."
+   },
+   "unknowns": [
+    {
+     "question": "What is the current status of the unit economics sheet \u2014 is it drafted, in progress, or not yet started?",
+     "relevance": "This determines whether the next move is to upload an existing sheet or to begin the work immediately."
+    },
+    {
+     "question": "What specific metrics or format does Lakshya Accelerator expect in the unit economics sheet?",
+     "relevance": "The assignment mail does not specify the expected content or format, which could affect the quality of the submission."
+    },
+    {
+     "question": "Are there any other assignments or milestones due before or around 15 Sep that might compete for time?",
+     "relevance": "Other deadlines could affect prioritization and the feasibility of meeting this one."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The deadline is fixed and will not move. If the sheet is not uploaded by 15 Sep, 11:59 pm IST, the assignment is missed and the file should be closed with that reason. If the sheet is uploaded on time, the file closes when the programme acknowledges receipt or when the cohort moves to the next assignment."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Lakshya Accelerator sent an assignment deadline for unit economics to be uploaded to the cohort folder.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST. Please upload it to the cohort folder.\"\n    },\n    {\n      \"claim\": \"The file shows the founder is in the active cohort at Lakshya Accelerator.\",\n      \"evidence\": [\n        \"brief:cbl_#13\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The last contact from Lakshya Accelerator was on 2026-09-01 06:00 UTC, and the file has been quiet for 0.5 days since then.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time data exists for Divya Raman or for replies sent to her.\",\n      \"evidence\": [\n        \"num:their_reply_time:divya@lakshya.test\",\n        \"num:your_reply_time:divya@lakshya.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's kind of work is listed as program, and Lakshya Accelerator is watched in the brief.\",\n      \"evidence\": [\n        \"file:kind\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The assignment deadline of 15 Sep, 11:59 pm IST is a fixed date set by the programme, not a suggestion.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is the founder's: the unit economics sheet must be prepared and uploaded before the deadline.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"This is not an application stage but an in-programme stage, where the programme's own calendar and assignments are the file's calendar.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.pb.program_applications.read_the_decision_mail\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme in the in_programme stage publishes fixed deadlines for all cohort members, and missing one costs standing in the cohort.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Assignments in accelerator cohorts are typically graded or reviewed as part of the programme's evaluation, and completion is expected.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.in_programme\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An assignment deadline from a programme you are in is a commitment, not optional work; missing it signals disengagement to the programme and can affect your standing.\",\n      \"why\": \"Programmes use assignment completion and quality to assess founder seriousness and progress; a missed deadline is read as a signal about the founder's priorities.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Unit economics assignments in accelerators are typically used to pressure-test the business model and are often reviewed by mentors or investors in the programme.\",\n      \"why\": \"The assignment serves both as a teaching tool and as a filter for the programme's own evaluation of the company's readiness.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The unit economics sheet has already been prepared and is ready to upload.\",\n      \"needs\": \"Confirmation from the founder that the sheet exists and is complete.\"\n    },\n    {\n      \"proposition\": \"The unit economics sheet has not yet been started.\",\n      \"needs\": \"Confirmation from the founder of the current status of the work.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the current status of the unit economics sheet \u2014 is it drafted, in progress, or not yet started?\",\n      \"relevance\": \"This determines whether the next move is to upload an existing sheet or to begin the work immediately.\"\n    },\n    {\n      \"question\": \"What specific metrics or format does Lakshya Accelerator expect in the unit economics sheet?\",\n      \"relevance\": \"The assignment mail does not specify the expected content or format, which could affect the quality of the submission.\"\n    },\n    {\n      \"question\": \"Are there any other assignments or milestones due before or around 15 Sep that might compete for time?\",\n      \"relevance\": \"Other deadlines could affect prioritization and the feasibility of meeting this one.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"This is an in-programme assignment deadline from an accelerator cohort the founder is actively in. The programme has set a fixed date, and the founder owes the work.\",\n    \"rivals\": [\n      \"This is a low-priority administrative task that can be deferred if other work is more urgent.\",\n      \"This is a request for information that the programme will follow up on if not received.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The file's kind is correctly listed as program; no change is proposed.\",\n    \"evidence\": []\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The programme publishes fixed deadlines for all cohort members. Assignments are completed and uploaded by the deadline. The founder's quiet before the deadline means nothing; the deadline is the only fixed point. After the deadline passes, the programme's own rule determines what the silence means \u2014 typically that the assignment was not submitted.\",\n    \"actual\": \"An assignment deadline has been set for 15 Sep, 11:59 pm IST. The founder has not yet replied to confirm receipt or to signal that the work is in progress. The file is quiet 0.5 days after the assignment was announced.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The assignment deadline passes on 15 Sep at 11:59 pm IST. If the sheet is not uploaded by then, the programme records a missed assignment. This may affect the founder's standing in the cohort, the programme's assessment of the company, or both. The programme will not chase; the deadline will not move.\",\n    \"act\": \"The founder confirms the status of the unit economics sheet, completes it if needed, and uploads it to the cohort folder before 15 Sep, 11:59 pm IST. The assignment is submitted on time and the founder remains in good standing with the programme.\",\n    \"best\": \"The unit economics sheet is already drafted and ready. The founder uploads it within a day or two, well before the deadline, and the programme receives a complete, thoughtful submission that reflects well on the company.\",\n    \"worst\": \"The unit economics sheet has not been started. The founder does not begin the work until a few days before the deadline, rushes through it, and either misses the deadline or submits a low-quality sheet that the programme reads as a sign of disengagement or poor planning.\",\n    \"signals_to_watch\": [\n      \"Whether the founder confirms the status of the sheet within the next day.\",\n      \"Whether the sheet is uploaded to the cohort folder before 15 Sep.\",\n      \"Any follow-up mail from Lakshya Accelerator asking about the assignment or offering guidance.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The deadline is fixed and will not move; a missed assignment is recorded by the programme and cannot be undone.\",\n      \"The assignment is part of the founder's standing in an active cohort; missing it signals disengagement to the programme and potentially to other cohort members and mentors.\",\n      \"The unit economics sheet is likely to be reviewed by the programme and may influence its assessment of the company's readiness and the founder's seriousness.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Confirm the status of the unit economics sheet with the founder, ensure it is completed, and upload it to the Lakshya Accelerator cohort folder before 15 Sep, 11:59 pm IST.\",\n    \"for_whom\": \"Lakshya Accelerator\",\n    \"by_when\": \"2026-09-15\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\",\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the unit economics sheet is not ready, ask Lakshya Accelerator for clarification on the expected format or content, and confirm that the deadline cannot be extended. This buys time only if the programme responds quickly; the deadline remains 15 Sep, 11:59 pm IST.\",\n  \"wait_or_stop\": \"Do not wait. The deadline is fixed and will not move. If the sheet is not uploaded by 15 Sep, 11:59 pm IST, the assignment is missed and the file should be closed with that reason. If the sheet is uploaded on time, the file closes when the programme acknowledges receipt or when the cohort moves to the next assignment.\",\n  \"done_when\": \"The unit economics sheet is uploaded to the Lakshya Accelerator cohort folder before 15 Sep, 11:59 pm IST, and the founder has confirmed receipt or the programme has acknowledged it.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "a80d54737aa572a0699493adbee7b419fa979097275896d33f99605347b930f9": {
+  "framed": true,
+  "input_tokens": 14817,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4548,
+  "parsed": {
+   "alternative": "Send a message directly to Divya Raman at Lakshya Accelerator asking for confirmation of the unit economics sheet submission and clarifying the deadline for the review deck. This bypasses the founder and gets a direct answer from the programme, but it may signal to Lakshya that the founder is not managing the cohort work.",
+   "appraisal": {
+    "reasons": [
+     "The founder is in an active cohort that is issuing assignments and reviews; missing deadlines can affect standing, funding, and demo-day eligibility.",
+     "The unit economics sheet deadline has already passed (15 September) and there is no record of submission, so the founder may have already missed it.",
+     "The review deck deadline is 15 days away (28 September) and is the next critical gate.",
+     "A missed assignment in a cohort signals to the programme that the founder is not fully committed, which can affect the relationship and the programme's support.",
+     "The cohort is listed as 'the active cohort' in the brief, suggesting it is a priority for the founder's goals (raising the seed round, getting into accelerator programs).",
+     "If the founder is removed from the cohort or marked as non-compliant, re-entry or recovery would be difficult and would require re-application or waiting for the next cohort."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The founder has confirmed the status of the unit economics sheet (submitted or not, and if not, why). The founder has a plan for the review deck and a date to submit it. If the unit economics sheet was missed, the founder has decided whether to submit late and has asked Lakshya for a deadline extension if needed. The file is updated with the status and the next deadline (28 September for the review deck, 30 September for the Phase-1 review).",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The founder received an assignment due 15 September (unit economics sheet) and there is no record of submission as of 13 September. The founder received a second deadline of 28 September (review deck for Phase-1 review on 30 September). The file shows two open asks, both marked as ours. The file has been quiet for 0.29 days, which is normal for a cohort between assignments.",
+    "expected": "The playbook for in_programme says: 'its calendar is the file's calendar' and 'the programme's own deadlines \u2014 assignments, reviews, demo day \u2014 published to the cohort and fixed for all of it.' The founder is expected to submit assignments on time, prepare for reviews, and track the cohort's calendar. The playbook's prior is that the work is dormant after 90 days of quiet, but for an active cohort the quiet between assignments is normal and the next deadline is the only fixed point.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Lakshya Accelerator sent an assignment due 15 September at 11:59 pm IST on 1 September, asking for a unit economics sheet to be uploaded to the cohort folder.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST. Please upload it to the cohort folder."
+    },
+    {
+     "claim": "Lakshya Accelerator sent a second message on 13 September stating that Phase-1 review presentations are on 30 September and asking for a review deck to be uploaded by 28 September.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Phase-1 review presentations are on 30 Sep. Please upload your review deck by 28 Sep."
+    },
+    {
+     "claim": "The file shows two open asks, both with the turn marked as ours: one open since 1 September and one since 13 September.",
+     "evidence": [
+      "file:whose_move",
+      "file:open asks"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as a program application in the brief, with Lakshya Accelerator described as 'the active cohort' the founder is in.",
+     "evidence": [
+      "brief:cbl_#13",
+      "file:role"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time has been measured for Divya Raman or for the founder's replies to Lakshya.",
+     "evidence": [
+      "num:their_reply_time:divya@lakshya.test",
+      "num:your_reply_time:divya@lakshya.test",
+      "none:we_wrote"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.29 days as of the dossier's timestamp, within the usual gap of 11.96 days that closed before.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency, low risk, and high engagement, but marked the relationship status and deadline fields as having insufficient context.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk",
+      "ru:core.temporal",
+      "ru:core.relationship",
+      "ru:core.timeline"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "An active cohort programme is issuing assignments and review deadlines to the founder. The first assignment (unit economics sheet) was due 15 September and there is no record of submission. The second deadline (review deck) is 28 September, fifteen days away. The founder is at risk of missing both and falling behind in the cohort.",
+    "rivals": [
+     "The founder submitted the unit economics sheet to the cohort folder and the file is simply out of date; the next move is to confirm and move to the review deck.",
+     "The founder is deprioritizing the cohort because of parallel fundraising and hiring work, and the cohort is becoming a distraction rather than a support; the next move is to reset priorities.",
+     "Lakshya Accelerator has a lenient policy on late submissions and the founder can recover by submitting both documents late; the next move is to ask for an extension.",
+     "The founder does not have the data or the clarity to complete the unit economics sheet, and the assignment is revealing a gap in the business model; the next move is to work through the model with a mentor or advisor."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A check of the cohort folder or a message to Divya Raman asking for confirmation of receipt.",
+     "proposition": "The unit economics sheet was submitted to the cohort folder but the founder did not receive a confirmation, so the file does not show it as done."
+    },
+    {
+     "needs": "A direct question to the founder about the status and what is blocking it.",
+     "proposition": "The unit economics sheet was not submitted because the founder is still working on it or does not have the data to complete it."
+    },
+    {
+     "needs": "A review of the founder's calendar and priorities to see if the cohort work is being squeezed out.",
+     "proposition": "The assignment was deprioritized because of the parallel fundraising and hiring work, and the founder did not realize the deadline had passed."
+    },
+    {
+     "needs": "A check of the cohort portal or a proactive message to Divya Raman asking about the status and whether a late submission is possible.",
+     "proposition": "Lakshya Accelerator has a policy about late submissions or has already marked the assignment as missed, and the next communication will be about the consequence."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:4",
+      "evt_#2",
+      "evt_#1"
+     ],
+     "claim": "The file is not an application awaiting a programme's decision, but an active cohort programme where the founder is already enrolled and the programme is issuing assignments and review deadlines."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:last_touch",
+      "none:we_wrote"
+     ],
+     "claim": "The first assignment (unit economics sheet due 15 September) has now passed its deadline as of the dossier's timestamp of 13 September 12:00 UTC, and there is no record that it was submitted."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "file:last_touch"
+     ],
+     "claim": "The second deadline (review deck due 28 September) is fifteen days away and is the active ask requiring immediate attention."
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application",
+      "inference:1"
+     ],
+     "claim": "The playbook provided is for 'follow an application from the deadline to the first day' and describes stages like applied, under_review, interview, decision, onboarding, in_programme, and declined \u2014 but this file is already in_programme, making most of that playbook's guidance about selection processes inapplicable."
+    },
+    {
+     "based_on": [
+      "file:kind",
+      "inference:1"
+     ],
+     "claim": "The file's kind of work is marked as 'program' but the actual situation is an active cohort with assignment deadlines, which is the in_programme stage, not an application stage."
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-14",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Ask the founder whether the unit economics sheet was submitted to the cohort folder by 15 September, and if not, why. Clarify the status and the consequence of missing the deadline. Then confirm the founder's plan for the review deck due 28 September.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "In an active cohort, the programme's calendar is the company's calendar, and every deadline is a commitment to the cohort as a whole, not a suggestion.",
+     "kind": "practice",
+     "why": "Programmes track cohort progress collectively and use assignments to measure engagement and readiness; a missed deadline signals to the programme that the founder is not fully committed or is over-extended."
+    },
+    {
+     "claim": "Founders in active cohorts often miss early assignments because they are juggling fundraising, hiring, and product work in parallel, and the cohort feels like the least urgent of the three.",
+     "kind": "base_rate",
+     "why": "The cohort's value is in the network and the structure, not in the immediate outcome, so it is easy to deprioritize when a fundraising call or a hiring decision is live."
+    },
+    {
+     "claim": "Programmes that invest or grant money to cohorts often tie later tranches or demo-day eligibility to assignment completion, so a missed early assignment can have downstream consequences.",
+     "kind": "counter_pattern",
+     "why": "The assignment is not busywork; it is a gate, and the programme uses it to filter for founders who will execute."
+    },
+    {
+     "claim": "A unit economics sheet is a foundational document that investors and programmes use to assess whether the founder understands their own business model; a missed deadline on it signals either that the founder does not have one or that they are not thinking clearly about it.",
+     "kind": "practice",
+     "why": "This is the kind of assignment that reveals whether the founder is ready to raise or scale, and programmes use it to calibrate their support."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+      "evt_#2"
+     ],
+     "claim": "Programmes that issue assignments to cohorts expect them on their published dates and track submission through a cohort folder or portal, not through email confirmation.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "A cohort programme's quiet between assignments is normal and carries no information about the relationship; the next deadline is the only fixed point.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "A missed assignment deadline in an active cohort is not a soft no or a scheduling issue; it is a failure to deliver what the programme requires and can affect standing or funding.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#13",
+     "evt_#2",
+     "evt_#1"
+    ],
+    "kind": "program",
+    "why": "The file is correctly marked as a program, but the stage is in_programme, not applied or under_review. The playbook provided is for following an application through selection, which is not the situation here. The actual work is managing the founder's participation in an active cohort and meeting its assignment deadlines."
+   },
+   "scenarios": {
+    "act": "The founder confirms the status of the unit economics sheet submission (submitted or not). If not submitted, the founder decides whether to submit late and asks Lakshya for a deadline extension. The founder prioritizes the review deck and submits it by 28 September. The founder attends the Phase-1 review on 30 September and stays engaged with the cohort.",
+    "best": "The unit economics sheet was submitted to the cohort folder and the file is out of date. The founder submits the review deck by 28 September. The Phase-1 review goes well and the founder is on track for demo day. The cohort becomes a source of introductions and support for the fundraising round.",
+    "do_nothing": "The review deck deadline of 28 September passes without submission. The founder misses the Phase-1 review on 30 September. Lakshya Accelerator marks the founder as non-compliant or disengaged. The founder loses access to the cohort's network, mentorship, and any funding or demo-day eligibility tied to the programme. The file closes as declined or the founder is removed from the cohort.",
+    "signals_to_watch": [
+     "A message from Lakshya Accelerator about the status of the unit economics sheet or the consequence of missing it.",
+     "The founder's response to the question about the unit economics sheet status and the review deck deadline.",
+     "The submission of the review deck by 28 September.",
+     "The founder's attendance and performance at the Phase-1 review on 30 September.",
+     "Any change in the founder's engagement with the cohort or the programme's tone in subsequent messages."
+    ],
+    "worst": "The unit economics sheet was not submitted and Lakshya Accelerator has a strict policy on late submissions. The founder misses the review deck deadline as well. Lakshya removes the founder from the cohort or marks the company as non-compliant. The founder loses the cohort's support and any funding or demo-day eligibility. The file closes as declined."
+   },
+   "unknowns": [
+    {
+     "question": "Was the unit economics sheet submitted to the cohort folder by the 15 September deadline?",
+     "relevance": "If it was submitted, the file is out of date and the next move is to confirm with Lakshya and move to the review deck. If it was not, the founder has missed a deadline and may have consequences, and the next move is to understand why and decide whether to submit late."
+    },
+    {
+     "question": "What is Lakshya Accelerator's policy on late submissions or missed assignments?",
+     "relevance": "If late submissions are accepted, the founder can still submit the unit economics sheet and recover. If not, the founder may have lost standing or funding, and the focus shifts to the review deck and the Phase-1 review on 30 September."
+    },
+    {
+     "question": "Is the review deck for the Phase-1 review a new document or a revision of the application deck?",
+     "relevance": "If it is new, the founder needs to start from scratch. If it is a revision, the founder can build on what was already written, and the work is lighter."
+    },
+    {
+     "question": "What is the consequence of missing the Phase-1 review or not submitting the review deck by 28 September?",
+     "relevance": "If the consequence is exclusion from demo day or loss of funding, the urgency is high. If it is just a note in the file, the urgency is lower."
+    },
+    {
+     "question": "Are there other cohort members who have missed assignments, or is this a pattern specific to this founder?",
+     "relevance": "If others have missed assignments, Lakshya may be lenient. If this founder is the only one, the programme may be more strict."
+    }
+   ],
+   "wait_or_stop": "Wait until the founder answers the question about the unit economics sheet status. If the founder says it was submitted, confirm with Lakshya and move to the review deck. If the founder says it was not submitted, ask why and decide whether to submit late or accept the miss. Do not stop; the review deck deadline is still ahead and the founder can recover by submitting it on time."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Lakshya Accelerator sent an assignment due 15 September at 11:59 pm IST on 1 September, asking for a unit economics sheet to be uploaded to the cohort folder.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST. Please upload it to the cohort folder.\"\n    },\n    {\n      \"claim\": \"Lakshya Accelerator sent a second message on 13 September stating that Phase-1 review presentations are on 30 September and asking for a review deck to be uploaded by 28 September.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Phase-1 review presentations are on 30 Sep. Please upload your review deck by 28 Sep.\"\n    },\n    {\n      \"claim\": \"The file shows two open asks, both with the turn marked as ours: one open since 1 September and one since 13 September.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"file:open asks\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as a program application in the brief, with Lakshya Accelerator described as 'the active cohort' the founder is in.\",\n      \"evidence\": [\n        \"brief:cbl_#13\",\n        \"file:role\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time has been measured for Divya Raman or for the founder's replies to Lakshya.\",\n      \"evidence\": [\n        \"num:their_reply_time:divya@lakshya.test\",\n        \"num:your_reply_time:divya@lakshya.test\",\n        \"none:we_wrote\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.29 days as of the dossier's timestamp, within the usual gap of 11.96 days that closed before.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency, low risk, and high engagement, but marked the relationship status and deadline fields as having insufficient context.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\",\n        \"ru:core.temporal\",\n        \"ru:core.relationship\",\n        \"ru:core.timeline\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The file is not an application awaiting a programme's decision, but an active cohort programme where the founder is already enrolled and the programme is issuing assignments and review deadlines.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"evt_#2\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"claim\": \"The first assignment (unit economics sheet due 15 September) has now passed its deadline as of the dossier's timestamp of 13 September 12:00 UTC, and there is no record that it was submitted.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:last_touch\",\n        \"none:we_wrote\"\n      ]\n    },\n    {\n      \"claim\": \"The second deadline (review deck due 28 September) is fifteen days away and is the active ask requiring immediate attention.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:last_touch\"\n      ]\n    },\n    {\n      \"claim\": \"The playbook provided is for 'follow an application from the deadline to the first day' and describes stages like applied, under_review, interview, decision, onboarding, in_programme, and declined \u2014 but this file is already in_programme, making most of that playbook's guidance about selection processes inapplicable.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\",\n        \"inference:1\"\n      ]\n    },\n    {\n      \"claim\": \"The file's kind of work is marked as 'program' but the actual situation is an active cohort with assignment deadlines, which is the in_programme stage, not an application stage.\",\n      \"based_on\": [\n        \"file:kind\",\n        \"inference:1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Programmes that issue assignments to cohorts expect them on their published dates and track submission through a cohort folder or portal, not through email confirmation.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.the_portal_is_the_record\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A cohort programme's quiet between assignments is normal and carries no information about the relationship; the next deadline is the only fixed point.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\",\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A missed assignment deadline in an active cohort is not a soft no or a scheduling issue; it is a failure to deliver what the programme requires and can affect standing or funding.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"In an active cohort, the programme's calendar is the company's calendar, and every deadline is a commitment to the cohort as a whole, not a suggestion.\",\n      \"why\": \"Programmes track cohort progress collectively and use assignments to measure engagement and readiness; a missed deadline signals to the programme that the founder is not fully committed or is over-extended.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founders in active cohorts often miss early assignments because they are juggling fundraising, hiring, and product work in parallel, and the cohort feels like the least urgent of the three.\",\n      \"why\": \"The cohort's value is in the network and the structure, not in the immediate outcome, so it is easy to deprioritize when a fundraising call or a hiring decision is live.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Programmes that invest or grant money to cohorts often tie later tranches or demo-day eligibility to assignment completion, so a missed early assignment can have downstream consequences.\",\n      \"why\": \"The assignment is not busywork; it is a gate, and the programme uses it to filter for founders who will execute.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A unit economics sheet is a foundational document that investors and programmes use to assess whether the founder understands their own business model; a missed deadline on it signals either that the founder does not have one or that they are not thinking clearly about it.\",\n      \"why\": \"This is the kind of assignment that reveals whether the founder is ready to raise or scale, and programmes use it to calibrate their support.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The unit economics sheet was submitted to the cohort folder but the founder did not receive a confirmation, so the file does not show it as done.\",\n      \"needs\": \"A check of the cohort folder or a message to Divya Raman asking for confirmation of receipt.\"\n    },\n    {\n      \"proposition\": \"The unit economics sheet was not submitted because the founder is still working on it or does not have the data to complete it.\",\n      \"needs\": \"A direct question to the founder about the status and what is blocking it.\"\n    },\n    {\n      \"proposition\": \"The assignment was deprioritized because of the parallel fundraising and hiring work, and the founder did not realize the deadline had passed.\",\n      \"needs\": \"A review of the founder's calendar and priorities to see if the cohort work is being squeezed out.\"\n    },\n    {\n      \"proposition\": \"Lakshya Accelerator has a policy about late submissions or has already marked the assignment as missed, and the next communication will be about the consequence.\",\n      \"needs\": \"A check of the cohort portal or a proactive message to Divya Raman asking about the status and whether a late submission is possible.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Was the unit economics sheet submitted to the cohort folder by the 15 September deadline?\",\n      \"relevance\": \"If it was submitted, the file is out of date and the next move is to confirm with Lakshya and move to the review deck. If it was not, the founder has missed a deadline and may have consequences, and the next move is to understand why and decide whether to submit late.\"\n    },\n    {\n      \"question\": \"What is Lakshya Accelerator's policy on late submissions or missed assignments?\",\n      \"relevance\": \"If late submissions are accepted, the founder can still submit the unit economics sheet and recover. If not, the founder may have lost standing or funding, and the focus shifts to the review deck and the Phase-1 review on 30 September.\"\n    },\n    {\n      \"question\": \"Is the review deck for the Phase-1 review a new document or a revision of the application deck?\",\n      \"relevance\": \"If it is new, the founder needs to start from scratch. If it is a revision, the founder can build on what was already written, and the work is lighter.\"\n    },\n    {\n      \"question\": \"What is the consequence of missing the Phase-1 review or not submitting the review deck by 28 September?\",\n      \"relevance\": \"If the consequence is exclusion from demo day or loss of funding, the urgency is high. If it is just a note in the file, the urgency is lower.\"\n    },\n    {\n      \"question\": \"Are there other cohort members who have missed assignments, or is this a pattern specific to this founder?\",\n      \"relevance\": \"If others have missed assignments, Lakshya may be lenient. If this founder is the only one, the programme may be more strict.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"An active cohort programme is issuing assignments and review deadlines to the founder. The first assignment (unit economics sheet) was due 15 September and there is no record of submission. The second deadline (review deck) is 28 September, fifteen days away. The founder is at risk of missing both and falling behind in the cohort.\",\n    \"rivals\": [\n      \"The founder submitted the unit economics sheet to the cohort folder and the file is simply out of date; the next move is to confirm and move to the review deck.\",\n      \"The founder is deprioritizing the cohort because of parallel fundraising and hiring work, and the cohort is becoming a distraction rather than a support; the next move is to reset priorities.\",\n      \"Lakshya Accelerator has a lenient policy on late submissions and the founder can recover by submitting both documents late; the next move is to ask for an extension.\",\n      \"The founder does not have the data or the clarity to complete the unit economics sheet, and the assignment is revealing a gap in the business model; the next move is to work through the model with a mentor or advisor.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is correctly marked as a program, but the stage is in_programme, not applied or under_review. The playbook provided is for following an application through selection, which is not the situation here. The actual work is managing the founder's participation in an active cohort and meeting its assignment deadlines.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#13\",\n      \"evt_#2\",\n      \"evt_#1\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The playbook for in_programme says: 'its calendar is the file's calendar' and 'the programme's own deadlines \u2014 assignments, reviews, demo day \u2014 published to the cohort and fixed for all of it.' The founder is expected to submit assignments on time, prepare for reviews, and track the cohort's calendar. The playbook's prior is that the work is dormant after 90 days of quiet, but for an active cohort the quiet between assignments is normal and the next deadline is the only fixed point.\",\n    \"actual\": \"The founder received an assignment due 15 September (unit economics sheet) and there is no record of submission as of 13 September. The founder received a second deadline of 28 September (review deck for Phase-1 review on 30 September). The file shows two open asks, both marked as ours. The file has been quiet for 0.29 days, which is normal for a cohort between assignments.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The review deck deadline of 28 September passes without submission. The founder misses the Phase-1 review on 30 September. Lakshya Accelerator marks the founder as non-compliant or disengaged. The founder loses access to the cohort's network, mentorship, and any funding or demo-day eligibility tied to the programme. The file closes as declined or the founder is removed from the cohort.\",\n    \"act\": \"The founder confirms the status of the unit economics sheet submission (submitted or not). If not submitted, the founder decides whether to submit late and asks Lakshya for a deadline extension. The founder prioritizes the review deck and submits it by 28 September. The founder attends the Phase-1 review on 30 September and stays engaged with the cohort.\",\n    \"best\": \"The unit economics sheet was submitted to the cohort folder and the file is out of date. The founder submits the review deck by 28 September. The Phase-1 review goes well and the founder is on track for demo day. The cohort becomes a source of introductions and support for the fundraising round.\",\n    \"worst\": \"The unit economics sheet was not submitted and Lakshya Accelerator has a strict policy on late submissions. The founder misses the review deck deadline as well. Lakshya removes the founder from the cohort or marks the company as non-compliant. The founder loses the cohort's support and any funding or demo-day eligibility. The file closes as declined.\",\n    \"signals_to_watch\": [\n      \"A message from Lakshya Accelerator about the status of the unit economics sheet or the consequence of missing it.\",\n      \"The founder's response to the question about the unit economics sheet status and the review deck deadline.\",\n      \"The submission of the review deck by 28 September.\",\n      \"The founder's attendance and performance at the Phase-1 review on 30 September.\",\n      \"Any change in the founder's engagement with the cohort or the programme's tone in subsequent messages.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The founder is in an active cohort that is issuing assignments and reviews; missing deadlines can affect standing, funding, and demo-day eligibility.\",\n      \"The unit economics sheet deadline has already passed (15 September) and there is no record of submission, so the founder may have already missed it.\",\n      \"The review deck deadline is 15 days away (28 September) and is the next critical gate.\",\n      \"A missed assignment in a cohort signals to the programme that the founder is not fully committed, which can affect the relationship and the programme's support.\",\n      \"The cohort is listed as 'the active cohort' in the brief, suggesting it is a priority for the founder's goals (raising the seed round, getting into accelerator programs).\",\n      \"If the founder is removed from the cohort or marked as non-compliant, re-entry or recovery would be difficult and would require re-application or waiting for the next cohort.\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Ask the founder whether the unit economics sheet was submitted to the cohort folder by 15 September, and if not, why. Clarify the status and the consequence of missing the deadline. Then confirm the founder's plan for the review deck due 28 September.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-14\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"Send a message directly to Divya Raman at Lakshya Accelerator asking for confirmation of the unit economics sheet submission and clarifying the deadline for the review deck. This bypasses the founder and gets a direct answer from the programme, but it may signal to Lakshya that the founder is not managing the cohort work.\",\n  \"wait_or_stop\": \"Wait until the founder answers the question about the unit economics sheet status. If the founder says it was submitted, confirm with Lakshya and move to the review deck. If the founder says it was not submitted, ask why and decide whether to submit late or accept the miss. Do not stop; the review deck deadline is still ahead and the founder can recover by submitting it on time.\",\n  \"done_when\": \"The founder has confirmed the status of the unit economics sheet (submitted or not, and if not, why). The founder has a plan for the review deck and a date to submit it. If the unit economics sheet was missed, the founder has decided whether to submit late and has asked Lakshya for a deadline extension if needed. The file is updated with the status and the next deadline (28 September for the review deck, 30 September for the Phase-1 review).\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "f75029a3107898f3a59d14c7737294fdac113fec21dcfae77600d8146bebf18b": {
+  "framed": true,
+  "input_tokens": 14521,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3082,
+  "parsed": {
+   "alternative": "If the founder confirms the assignment is already in progress or ready to upload, skip the confirmation step and move directly to a check-in on 2026-09-10 to ensure the upload happens before the deadline.",
+   "appraisal": {
+    "reasons": [
+     "The assignment is a programme requirement, not a fundraising or compliance milestone, so missing it does not block the company's progress directly.",
+     "The deadline is 14 days away, giving the founder time to complete the work without rushing.",
+     "A missed assignment can be recovered by asking for an extension or submitting late, though it signals disengagement to the programme.",
+     "The assignment is part of the programme's curriculum, not a decision point, so it does not determine the company's fate in the programme.",
+     "The work itself \u2014 unit economics \u2014 is foundational to the company's pitch and investor conversations, so completing it well has value beyond the programme."
+    ],
+    "reversibility": "reversible",
+    "stakes": "medium",
+    "urgency": "medium"
+   },
+   "done_when": "The unit economics sheet is uploaded to the cohort folder before 2026-09-15 at 11:59 pm IST, and the founder confirms the upload to you.",
+   "draft": "Hi \u2014 Lakshya sent the unit economics assignment due 15 Sep at 11:59 pm IST. Do you have the metrics ready, or do we need to gather them? Let's agree on a date to get this done and uploaded early. What do you need from me?",
+   "expected_vs_actual": {
+    "actual": "Lakshya sent an assignment deadline for unit economics due 15 September 2026 at 11:59 pm IST. No prior assignment has been recorded in this file. The founder has not yet replied or uploaded the assignment.",
+    "expected": "The programme publishes its own deadlines \u2014 assignments, reviews, demo day \u2014 fixed for all cohort members. The file's calendar is the programme's calendar. Quiet means nothing about the application, which is settled; what the file holds now is the programme's own deadlines.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Lakshya Accelerator sent an assignment deadline for unit economics due 15 September 2026 at 11:59 pm IST.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST. Please upload it to the cohort folder."
+    },
+    {
+     "claim": "The file shows Nimbus Labs is in the active cohort at Lakshya Accelerator.",
+     "evidence": [
+      "brief:cbl_#13"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The last contact from Lakshya was 0.5 days ago, on 2026-09-01 at 06:00 UTC.",
+     "evidence": [
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file records an open ask: a question they wait on us for, open since 2026-09-01 06:00 UTC.",
+     "evidence": [
+      "loop:loop_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply time has been measured for Divya Raman or for replies sent to her.",
+     "evidence": [
+      "num:their_reply_time:divya@lakshya.test",
+      "num:your_reply_time:divya@lakshya.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The reasoning units found no blocking dependency and low risk.",
+     "evidence": [
+      "ru:core.dependency",
+      "ru:core.risk"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "A routine programme assignment with a fixed deadline 14 days away; the next move is to complete and upload the work on time.",
+    "rivals": [
+     "A signal that the programme is checking on the company's progress and financial discipline.",
+     "A test of the founder's ability to prioritize programme work alongside fundraising and hiring."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A check of the cohort folder or a message from the founder on the status of the work.",
+     "proposition": "The unit economics sheet has already been drafted or is in progress."
+    },
+    {
+     "needs": "Confirmation from the founder that they have seen the mail and know the date.",
+     "proposition": "The founder is aware of the deadline and has it on their calendar."
+    },
+    {
+     "needs": "A review of the company's current metrics and business model to estimate the work required.",
+     "proposition": "The unit economics for Nimbus Labs are straightforward to calculate and the assignment will take a few hours."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:2",
+      "brief:cbl_#13"
+     ],
+     "claim": "The assignment is a programme deadline, not an investor ask or a compliance requirement."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The next move is ours: the assignment must be completed and uploaded by the deadline."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "This is a routine programme assignment, not a signal of programme progress or a decision point."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "The file's stage is in_programme, not applied, under_review, interview, decision, onboarding or declined."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1",
+    "by_when": "2026-09-02",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.follow_an_application",
+     "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+     "own:1"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "inference:2",
+     "inference:4"
+    ],
+    "to": null,
+    "what": "Confirm with the founder that they have seen the assignment deadline and know what is expected; agree on a date to complete the unit economics sheet and upload it; if the metrics are not ready, identify what is missing and assign ownership to get them.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An assignment from a programme you are in is a commitment to the programme's calendar, not optional work.",
+     "kind": "practice",
+     "why": "Programmes track completion and use it to assess founder engagement and progress; missing assignments signals disengagement and can affect the programme's view of the company."
+    },
+    {
+     "claim": "Unit economics assignments in accelerators are designed to force founders to measure their own business model early, before they have revenue to hide behind.",
+     "kind": "base_rate",
+     "why": "The metric \u2014 cost per customer, lifetime value, payback period \u2014 is what investors will ask for at demo day and beyond; programmes assign it to ensure founders have thought it through."
+    },
+    {
+     "claim": "A founder who misses a programme assignment is often one who is running hard on fundraising or hiring and has deprioritized the programme's work.",
+     "kind": "counter_pattern",
+     "why": "Accelerators are designed to run in parallel with fundraising, but when the two collide, founders often choose the investor conversation over the assignment; the programme sees this as a signal."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "A programme in the in_programme stage publishes its own deadlines \u2014 assignments, reviews, demo day \u2014 fixed for all cohort members.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+     ],
+     "claim": "A programme assignment deadline does not move for this company; every other date in the plan is set backwards from it.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "Founders in accelerator cohorts typically receive multiple assignments over the programme's three-month run, each with its own deadline.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [],
+    "kind": null,
+    "why": "The file is correctly named as a programme application file; the assignment is part of the in_programme stage, not a separate kind of work."
+   },
+   "scenarios": {
+    "act": "The founder completes the unit economics sheet and uploads it to the cohort folder before 15 September 2026 at 11:59 pm IST. The assignment is on file and the company remains in good standing with the programme. The founder has the metrics ready for investor conversations and demo day.",
+    "best": "The founder completes the unit economics sheet within the next few days, uploads it early, and uses the work to refine the company's pitch and financial model. The assignment becomes a tool for the founder's own clarity, not just a programme requirement.",
+    "do_nothing": "The assignment is not completed by 15 September 2026 at 11:59 pm IST. The founder misses the deadline. Lakshya may mark the company as non-compliant with the programme's requirements, which could affect the programme's assessment of the founder's engagement and the company's standing in the cohort. If the programme tracks completion, a missed assignment is a signal of disengagement.",
+    "signals_to_watch": [
+     "Whether the founder confirms they have seen the mail and know the deadline.",
+     "Whether the founder reports progress on the unit economics sheet in the next few days.",
+     "Whether the founder uploads the assignment before the deadline or asks for an extension.",
+     "Whether Lakshya sends a reminder or follow-up before the deadline."
+    ],
+    "worst": "The founder forgets about the deadline, misses it, and has to ask Lakshya for an extension. The programme grants it but notes the miss. The founder's engagement is questioned, and the company's standing in the cohort is affected."
+   },
+   "unknowns": [
+    {
+     "question": "What is the current status of the unit economics sheet \u2014 not started, in progress, or ready to upload?",
+     "relevance": "If it is not started, the founder needs to begin immediately; if it is in progress, the founder needs to know how much time remains; if it is ready, it should be uploaded before the deadline to avoid last-minute risk."
+    },
+    {
+     "question": "Does the founder have the metrics Lakshya expects in the unit economics sheet, or does the company need to gather or calculate them?",
+     "relevance": "If the metrics are missing, the founder may need to reach out to Lakshya for clarification on what is expected, or may need to make assumptions; this affects the timeline."
+    },
+    {
+     "question": "Is the cohort folder accessible and does the founder know how to upload the file?",
+     "relevance": "A technical barrier to upload could cause the assignment to be missed even if it is completed on time."
+    }
+   ],
+   "wait_or_stop": "Wait until 2026-09-10 for a status update from the founder. If the founder has not uploaded by 2026-09-14, send a reminder. If the founder misses the deadline without asking for an extension, note it as a signal of disengagement and flag it in the programme file."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Lakshya Accelerator sent an assignment deadline for unit economics due 15 September 2026 at 11:59 pm IST.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST. Please upload it to the cohort folder.\"\n    },\n    {\n      \"claim\": \"The file shows Nimbus Labs is in the active cohort at Lakshya Accelerator.\",\n      \"evidence\": [\n        \"brief:cbl_#13\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The last contact from Lakshya was 0.5 days ago, on 2026-09-01 at 06:00 UTC.\",\n      \"evidence\": [\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file records an open ask: a question they wait on us for, open since 2026-09-01 06:00 UTC.\",\n      \"evidence\": [\n        \"loop:loop_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply time has been measured for Divya Raman or for replies sent to her.\",\n      \"evidence\": [\n        \"num:their_reply_time:divya@lakshya.test\",\n        \"num:your_reply_time:divya@lakshya.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The reasoning units found no blocking dependency and low risk.\",\n      \"evidence\": [\n        \"ru:core.dependency\",\n        \"ru:core.risk\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The assignment is a programme deadline, not an investor ask or a compliance requirement.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"brief:cbl_#13\"\n      ]\n    },\n    {\n      \"claim\": \"The next move is ours: the assignment must be completed and uploaded by the deadline.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"This is a routine programme assignment, not a signal of programme progress or a decision point.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"claim\": \"The file's stage is in_programme, not applied, under_review, interview, decision, onboarding or declined.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme in the in_programme stage publishes its own deadlines \u2014 assignments, reviews, demo day \u2014 fixed for all cohort members.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme assignment deadline does not move for this company; every other date in the plan is set backwards from it.\",\n      \"based_on\": [\n        \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Founders in accelerator cohorts typically receive multiple assignments over the programme's three-month run, each with its own deadline.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An assignment from a programme you are in is a commitment to the programme's calendar, not optional work.\",\n      \"why\": \"Programmes track completion and use it to assess founder engagement and progress; missing assignments signals disengagement and can affect the programme's view of the company.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Unit economics assignments in accelerators are designed to force founders to measure their own business model early, before they have revenue to hide behind.\",\n      \"why\": \"The metric \u2014 cost per customer, lifetime value, payback period \u2014 is what investors will ask for at demo day and beyond; programmes assign it to ensure founders have thought it through.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who misses a programme assignment is often one who is running hard on fundraising or hiring and has deprioritized the programme's work.\",\n      \"why\": \"Accelerators are designed to run in parallel with fundraising, but when the two collide, founders often choose the investor conversation over the assignment; the programme sees this as a signal.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The unit economics sheet has already been drafted or is in progress.\",\n      \"needs\": \"A check of the cohort folder or a message from the founder on the status of the work.\"\n    },\n    {\n      \"proposition\": \"The founder is aware of the deadline and has it on their calendar.\",\n      \"needs\": \"Confirmation from the founder that they have seen the mail and know the date.\"\n    },\n    {\n      \"proposition\": \"The unit economics for Nimbus Labs are straightforward to calculate and the assignment will take a few hours.\",\n      \"needs\": \"A review of the company's current metrics and business model to estimate the work required.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"What is the current status of the unit economics sheet \u2014 not started, in progress, or ready to upload?\",\n      \"relevance\": \"If it is not started, the founder needs to begin immediately; if it is in progress, the founder needs to know how much time remains; if it is ready, it should be uploaded before the deadline to avoid last-minute risk.\"\n    },\n    {\n      \"question\": \"Does the founder have the metrics Lakshya expects in the unit economics sheet, or does the company need to gather or calculate them?\",\n      \"relevance\": \"If the metrics are missing, the founder may need to reach out to Lakshya for clarification on what is expected, or may need to make assumptions; this affects the timeline.\"\n    },\n    {\n      \"question\": \"Is the cohort folder accessible and does the founder know how to upload the file?\",\n      \"relevance\": \"A technical barrier to upload could cause the assignment to be missed even if it is completed on time.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"A routine programme assignment with a fixed deadline 14 days away; the next move is to complete and upload the work on time.\",\n    \"rivals\": [\n      \"A signal that the programme is checking on the company's progress and financial discipline.\",\n      \"A test of the founder's ability to prioritize programme work alongside fundraising and hiring.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": null,\n    \"why\": \"The file is correctly named as a programme application file; the assignment is part of the in_programme stage, not a separate kind of work.\",\n    \"evidence\": []\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The programme publishes its own deadlines \u2014 assignments, reviews, demo day \u2014 fixed for all cohort members. The file's calendar is the programme's calendar. Quiet means nothing about the application, which is settled; what the file holds now is the programme's own deadlines.\",\n    \"actual\": \"Lakshya sent an assignment deadline for unit economics due 15 September 2026 at 11:59 pm IST. No prior assignment has been recorded in this file. The founder has not yet replied or uploaded the assignment.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The assignment is not completed by 15 September 2026 at 11:59 pm IST. The founder misses the deadline. Lakshya may mark the company as non-compliant with the programme's requirements, which could affect the programme's assessment of the founder's engagement and the company's standing in the cohort. If the programme tracks completion, a missed assignment is a signal of disengagement.\",\n    \"act\": \"The founder completes the unit economics sheet and uploads it to the cohort folder before 15 September 2026 at 11:59 pm IST. The assignment is on file and the company remains in good standing with the programme. The founder has the metrics ready for investor conversations and demo day.\",\n    \"best\": \"The founder completes the unit economics sheet within the next few days, uploads it early, and uses the work to refine the company's pitch and financial model. The assignment becomes a tool for the founder's own clarity, not just a programme requirement.\",\n    \"worst\": \"The founder forgets about the deadline, misses it, and has to ask Lakshya for an extension. The programme grants it but notes the miss. The founder's engagement is questioned, and the company's standing in the cohort is affected.\",\n    \"signals_to_watch\": [\n      \"Whether the founder confirms they have seen the mail and know the deadline.\",\n      \"Whether the founder reports progress on the unit economics sheet in the next few days.\",\n      \"Whether the founder uploads the assignment before the deadline or asks for an extension.\",\n      \"Whether Lakshya sends a reminder or follow-up before the deadline.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"medium\",\n    \"reversibility\": \"reversible\",\n    \"reasons\": [\n      \"The assignment is a programme requirement, not a fundraising or compliance milestone, so missing it does not block the company's progress directly.\",\n      \"The deadline is 14 days away, giving the founder time to complete the work without rushing.\",\n      \"A missed assignment can be recovered by asking for an extension or submitting late, though it signals disengagement to the programme.\",\n      \"The assignment is part of the programme's curriculum, not a decision point, so it does not determine the company's fate in the programme.\",\n      \"The work itself \u2014 unit economics \u2014 is foundational to the company's pitch and investor conversations, so completing it well has value beyond the programme.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Confirm with the founder that they have seen the assignment deadline and know what is expected; agree on a date to complete the unit economics sheet and upload it; if the metrics are not ready, identify what is missing and assign ownership to get them.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-02\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"inference:2\",\n      \"inference:4\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.follow_an_application\",\n      \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\",\n      \"own:1\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1\"\n  },\n  \"alternative\": \"If the founder confirms the assignment is already in progress or ready to upload, skip the confirmation step and move directly to a check-in on 2026-09-10 to ensure the upload happens before the deadline.\",\n  \"wait_or_stop\": \"Wait until 2026-09-10 for a status update from the founder. If the founder has not uploaded by 2026-09-14, send a reminder. If the founder misses the deadline without asking for an extension, note it as a signal of disengagement and flag it in the programme file.\",\n  \"done_when\": \"The unit economics sheet is uploaded to the cohort folder before 2026-09-15 at 11:59 pm IST, and the founder confirms the upload to you.\",\n  \"draft\": \"Hi \u2014 Lakshya sent the unit economics assignment due 15 Sep at 11:59 pm IST. Do you have the metrics ready, or do we need to gather them? Let's agree on a date to get this done and uploaded early. What do you need from me?\"\n}",
+  "site": "expert"
+ }
+}

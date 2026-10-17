@@ -1,0 +1,3632 @@
+{
+ "model": "ladder:T1",
+ "site": "expert",
+ "date": "2026-10-17",
+ "cases": [
+  {
+   "case": "F01",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "0 cards about StartupSetu/SSR-2026-48213 over every sweep; expected exactly 1",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "own_names_the_file": 1,
+    "ungrounded": 1,
+    "unknown_evidence": 2,
+    "wrong_number": 1
+   },
+   "noted": {
+    "speaks_of_you": 5
+   },
+   "held_share": 0.0,
+   "facts": 7,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 4,
+   "own_lines": 3,
+   "own_dropped": 1,
+   "tokens_in": 8070,
+   "tokens_out": 2831,
+   "cost_micro_usd": 22225,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 22225
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F02",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 2,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 5,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 3
+   },
+   "fates": {
+    "shown": 3
+   },
+   "dropped": {
+    "no_recipient": 3,
+    "own_states_a_number": 1,
+    "ungrounded": 1,
+    "unknown_evidence": 2,
+    "unsupported": 4,
+    "wrong_number": 2
+   },
+   "noted": {
+    "speaks_of_you": 14,
+    "unheld_number": 2
+   },
+   "held_share": 0.0,
+   "facts": 20,
+   "facts_quoting": 6,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 4,
+   "own_lines": 8,
+   "own_dropped": 1,
+   "tokens_in": 41163,
+   "tokens_out": 13585,
+   "cost_micro_usd": 109088,
+   "ladder": {
+    "stood": {
+     "1": 3
+    },
+    "attempts": {
+     "1:first": 3,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 109088
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F03",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 5,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 3
+   },
+   "fates": {
+    "shown": 3
+   },
+   "dropped": {
+    "ungrounded": 1,
+    "unsupported": 2,
+    "wrong_number": 2
+   },
+   "noted": {
+    "speaks_of_you": 6,
+    "unheld_number": 1
+   },
+   "held_share": 0.0,
+   "facts": 22,
+   "facts_quoting": 8,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 7,
+   "own_lines": 10,
+   "own_dropped": 0,
+   "tokens_in": 37184,
+   "tokens_out": 18047,
+   "cost_micro_usd": 127419,
+   "ladder": {
+    "stood": {
+     "1": 3
+    },
+    "attempts": {
+     "1:first": 3,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 127419
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F04",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "held": 1
+   },
+   "dropped": {
+    "recipient_is_connector": 1,
+    "wrong_number": 1
+   },
+   "noted": {
+    "own_disagrees": 1,
+    "speaks_of_you": 4
+   },
+   "held_share": 1.0,
+   "facts": 5,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 5,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 14730,
+   "tokens_out": 6083,
+   "cost_micro_usd": 45145,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 45145
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F05",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 4,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "held": 1,
+    "shown": 1
+   },
+   "dropped": {
+    "own_names_the_file": 1,
+    "own_states_a_number": 1,
+    "unknown_evidence": 2,
+    "unsupported": 2
+   },
+   "noted": {
+    "speaks_of_you": 7
+   },
+   "held_share": 0.5,
+   "facts": 12,
+   "facts_quoting": 3,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 7,
+   "own_lines": 6,
+   "own_dropped": 2,
+   "tokens_in": 29163,
+   "tokens_out": 12225,
+   "cost_micro_usd": 90288,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 90288
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F06",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 4,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 2
+   },
+   "dropped": {
+    "own_names_the_file": 1,
+    "ungrounded": 1,
+    "unknown_evidence": 2,
+    "unquoted": 1,
+    "unsupported": 1,
+    "wrong_number": 5
+   },
+   "noted": {
+    "speaks_of_you": 8
+   },
+   "held_share": 0.0,
+   "facts": 14,
+   "facts_quoting": 3,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 8,
+   "own_lines": 6,
+   "own_dropped": 1,
+   "tokens_in": 29028,
+   "tokens_out": 12082,
+   "cost_micro_usd": 89438,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 89438
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F07",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 3,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 3
+   },
+   "fates": {
+    "shown": 3
+   },
+   "dropped": {
+    "own_names_the_file": 2,
+    "own_states_a_number": 2,
+    "unknown_evidence": 3,
+    "wrong_number": 6
+   },
+   "noted": {
+    "speaks_of_you": 1,
+    "unheld_number": 2
+   },
+   "held_share": 0.0,
+   "facts": 24,
+   "facts_quoting": 8,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 7,
+   "own_lines": 10,
+   "own_dropped": 4,
+   "tokens_in": 22360,
+   "tokens_out": 10563,
+   "cost_micro_usd": 75175,
+   "ladder": {
+    "stood": {
+     "1": 3
+    },
+    "attempts": {
+     "1:first": 3
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 75175
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F08",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 2
+   },
+   "dropped": {
+    "own_names_the_file": 1,
+    "ungrounded": 2,
+    "unsupported": 3,
+    "wrong_number": 2
+   },
+   "noted": {},
+   "held_share": 0.0,
+   "facts": 12,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 4,
+   "own_lines": 8,
+   "own_dropped": 1,
+   "tokens_in": 14195,
+   "tokens_out": 5668,
+   "cost_micro_usd": 42535,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 42535
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F09",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "unknown_evidence": 1,
+    "unsupported": 1,
+    "wrong_number": 1
+   },
+   "noted": {},
+   "held_share": 0.0,
+   "facts": 7,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 3,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 8247,
+   "tokens_out": 3369,
+   "cost_micro_usd": 25092,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 25092
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F10",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "unsupported": 1
+   },
+   "noted": {
+    "speaks_of_you": 5
+   },
+   "held_share": 0.0,
+   "facts": 6,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 5,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 11368,
+   "tokens_out": 4282,
+   "cost_micro_usd": 32778,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 32778
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F11",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "held": 1
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "unsupported": 1,
+    "wrong_number": 3
+   },
+   "noted": {
+    "speaks_of_you": 1
+   },
+   "held_share": 1.0,
+   "facts": 8,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 6,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 22856,
+   "tokens_out": 8419,
+   "cost_micro_usd": 64951,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 64951
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F12",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "card card_5cdaf7cb4c2ec79725369355 about Neeraj/Harbor Point does not say ['retention']",
+   "calls": 6,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "held": 2
+   },
+   "dropped": {
+    "ungrounded": 2,
+    "unsupported": 4,
+    "wrong_number": 12
+   },
+   "noted": {
+    "speaks_of_you": 2
+   },
+   "held_share": 1.0,
+   "facts": 12,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 9,
+   "own_lines": 6,
+   "own_dropped": 0,
+   "tokens_in": 75190,
+   "tokens_out": 21326,
+   "cost_micro_usd": 181820,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 181820
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F13",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "ungrounded": 1,
+    "unsupported": 4
+   },
+   "noted": {
+    "speaks_of_you": 4
+   },
+   "held_share": 0.0,
+   "facts": 6,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 7,
+   "own_lines": 4,
+   "own_dropped": 0,
+   "tokens_in": 12329,
+   "tokens_out": 4109,
+   "cost_micro_usd": 32874,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 32874
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F14",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 5,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 3
+   },
+   "fates": {
+    "held": 2,
+    "shown": 1
+   },
+   "dropped": {
+    "engine_is_no_fact": 5,
+    "unknown_evidence": 2,
+    "unsupported": 7,
+    "wrong_number": 4
+   },
+   "noted": {
+    "speaks_of_you": 4
+   },
+   "held_share": 0.667,
+   "facts": 23,
+   "facts_quoting": 6,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 28,
+   "own_lines": 10,
+   "own_dropped": 0,
+   "tokens_in": 58267,
+   "tokens_out": 20158,
+   "cost_micro_usd": 159057,
+   "ladder": {
+    "stood": {
+     "1": 3
+    },
+    "attempts": {
+     "1:first": 3,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 159057
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F15",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 6,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 5
+   },
+   "fates": {
+    "shown": 5
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "not_ours_to_answer": 2,
+    "own_names_the_file": 1,
+    "ungrounded": 4,
+    "unknown_evidence": 2,
+    "unsupported": 9,
+    "wrong_number": 6
+   },
+   "noted": {
+    "speaks_of_you": 11
+   },
+   "held_share": 0.0,
+   "facts": 36,
+   "facts_quoting": 5,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 22,
+   "own_lines": 19,
+   "own_dropped": 1,
+   "tokens_in": 49314,
+   "tokens_out": 23577,
+   "cost_micro_usd": 167199,
+   "ladder": {
+    "stood": {
+     "1": 5
+    },
+    "attempts": {
+     "1:first": 5,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 167199
+    }
+   },
+   "authored_verdict": "fail"
+  },
+  {
+   "case": "F16",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "unknown_evidence": 3,
+    "unsupported": 1
+   },
+   "noted": {},
+   "held_share": 0.0,
+   "facts": 7,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 2,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 8102,
+   "tokens_out": 2913,
+   "cost_micro_usd": 22667,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 22667
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F17",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "card card_34d10e23285e1d63be090d95 about Gulf Launchpad/Amira does not say ['interview']",
+   "calls": 4,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "held": 2
+   },
+   "dropped": {
+    "no_recipient": 1,
+    "unknown_evidence": 1,
+    "unsupported": 1,
+    "wrong_number": 6
+   },
+   "noted": {
+    "speaks_of_you": 3,
+    "unheld_number": 1
+   },
+   "held_share": 1.0,
+   "facts": 12,
+   "facts_quoting": 4,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 10,
+   "own_lines": 6,
+   "own_dropped": 0,
+   "tokens_in": 58911,
+   "tokens_out": 13363,
+   "cost_micro_usd": 125726,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 125726
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F18",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "0 lines about Sabarmati in today; expected exactly 1",
+   "calls": 0,
+   "truncated_calls": 0,
+   "reviews": {},
+   "fates": {},
+   "dropped": {},
+   "noted": {},
+   "held_share": null,
+   "facts": 0,
+   "facts_quoting": 0,
+   "misquoted": 0,
+   "misquote_rate": null,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": null,
+   "engine_lines": 0,
+   "own_lines": 0,
+   "own_dropped": 0,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "cost_micro_usd": 0,
+   "ladder": {
+    "stood": {},
+    "attempts": {},
+    "climbs": {},
+    "cost_micro_usd": {}
+   },
+   "authored_verdict": "fail"
+  },
+  {
+   "case": "F19",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 3,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 4,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "held": 1,
+    "shown": 1
+   },
+   "dropped": {
+    "no_recipient": 1,
+    "unknown_evidence": 4,
+    "unsupported": 1,
+    "wrong_number": 1
+   },
+   "noted": {
+    "speaks_of_you": 12
+   },
+   "held_share": 0.5,
+   "facts": 15,
+   "facts_quoting": 5,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 2,
+   "unknown_evidence_rate": 0.133,
+   "engine_lines": 6,
+   "own_lines": 7,
+   "own_dropped": 0,
+   "tokens_in": 56085,
+   "tokens_out": 15527,
+   "cost_micro_usd": 133720,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 133720
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F20",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "the today line about TechBridge does not say ['27 Sep']: 'TechBridge Foundation: What is the current status of the application to TechBridge Foundation? By 20 Sep.'",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "engine_is_no_fact": 2,
+    "no_recipient": 1,
+    "unknown_evidence": 2,
+    "unsupported": 1
+   },
+   "noted": {
+    "speaks_of_you": 3
+   },
+   "held_share": 0.0,
+   "facts": 7,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 1,
+   "unknown_evidence_rate": 0.143,
+   "engine_lines": 4,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 29101,
+   "tokens_out": 6483,
+   "cost_micro_usd": 61516,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 61516
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F21",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 3,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 2
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "unknown_evidence": 3,
+    "unsupported": 1
+   },
+   "noted": {
+    "speaks_of_you": 1
+   },
+   "held_share": 0.0,
+   "facts": 15,
+   "facts_quoting": 3,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 10,
+   "own_lines": 7,
+   "own_dropped": 0,
+   "tokens_in": 43877,
+   "tokens_out": 10487,
+   "cost_micro_usd": 96312,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 96312
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F22",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "the today line about University Startup Cell does not say ['30 Sep']: 'University Startup Cell: A university seed grant programme has announced its application deadline. The company has not yet applied. The decision is whether to apply, and if so, how to prepare and submit before the deadline passes. Is your company eligible for this grant \u2014 specifically, is it incubated on campus or does it have the affiliation the programme requires? By 10 Sep.'",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "own_names_the_file": 4,
+    "unknown_evidence": 3,
+    "wrong_number": 2
+   },
+   "noted": {
+    "speaks_of_you": 3,
+    "unheld_number": 1
+   },
+   "held_share": 0.0,
+   "facts": 7,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 1,
+   "unknown_evidence_rate": 0.143,
+   "engine_lines": 7,
+   "own_lines": 4,
+   "own_dropped": 4,
+   "tokens_in": 13414,
+   "tokens_out": 3799,
+   "cost_micro_usd": 32409,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 32409
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F23",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "the today line about State Startup Mission does not say ['registration number']: \"State Startup Mission: A government scheme application in the early administrative phase, with registration confirmed and the programme sending routine updates while it waits for its own review window to close or open. What is the State Startup Mission's published application deadline, and when did the company submit its application? By 7 Oct.\"",
+   "calls": 5,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 3
+   },
+   "fates": {
+    "shown": 3
+   },
+   "dropped": {
+    "engine_is_no_fact": 6,
+    "unknown_evidence": 3,
+    "unsupported": 2,
+    "wrong_number": 4
+   },
+   "noted": {
+    "speaks_of_you": 3
+   },
+   "held_share": 0.0,
+   "facts": 25,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 21,
+   "own_lines": 9,
+   "own_dropped": 0,
+   "tokens_in": 69225,
+   "tokens_out": 18148,
+   "cost_micro_usd": 159965,
+   "ladder": {
+    "stood": {
+     "1": 3
+    },
+    "attempts": {
+     "1:first": 3,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 159965
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F24",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 2,
+   "forbidden": [
+    [
+     "card_142aa1c94537928baf8be022",
+     "missed"
+    ]
+   ],
+   "reason": "card_142aa1c94537928baf8be022 says 'missed'",
+   "calls": 7,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 3
+   },
+   "fates": {
+    "held": 1,
+    "shown": 2
+   },
+   "dropped": {
+    "engine_is_no_fact": 3,
+    "misquoted": 1,
+    "no_recipient": 1,
+    "ungrounded": 1,
+    "unsupported": 2,
+    "wrong_number": 10
+   },
+   "noted": {
+    "speaks_of_you": 14
+   },
+   "held_share": 0.333,
+   "facts": 23,
+   "facts_quoting": 6,
+   "misquoted": 1,
+   "misquote_rate": 0.167,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 15,
+   "own_lines": 10,
+   "own_dropped": 0,
+   "tokens_in": 103077,
+   "tokens_out": 23690,
+   "cost_micro_usd": 221527,
+   "ladder": {
+    "stood": {
+     "1": 3
+    },
+    "attempts": {
+     "1:first": 3,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 221527
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F25",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 6,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 3
+   },
+   "fates": {
+    "shown": 3
+   },
+   "dropped": {
+    "own_names_the_file": 1,
+    "own_states_a_number": 1,
+    "ungrounded": 3,
+    "unknown_evidence": 3,
+    "unsupported": 1,
+    "wrong_number": 3
+   },
+   "noted": {},
+   "held_share": 0.0,
+   "facts": 19,
+   "facts_quoting": 9,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 7,
+   "own_lines": 9,
+   "own_dropped": 2,
+   "tokens_in": 44531,
+   "tokens_out": 18816,
+   "cost_micro_usd": 138611,
+   "ladder": {
+    "stood": {
+     "1": 3
+    },
+    "attempts": {
+     "1:first": 3,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 138611
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F26",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "wrong_number": 2
+   },
+   "noted": {
+    "speaks_of_you": 5
+   },
+   "held_share": 0.0,
+   "facts": 6,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 3,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 14448,
+   "tokens_out": 6282,
+   "cost_micro_usd": 45858,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 45858
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F27",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "card card_f2e4cbb1f26f81f7167c2959 about Varun/Cleanwave does not say ['webhook']",
+   "calls": 4,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "held": 1,
+    "shown": 1
+   },
+   "dropped": {
+    "ungrounded": 2,
+    "wrong_number": 6
+   },
+   "noted": {
+    "speaks_of_you": 4
+   },
+   "held_share": 0.5,
+   "facts": 14,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 3,
+   "own_lines": 6,
+   "own_dropped": 0,
+   "tokens_in": 29038,
+   "tokens_out": 12478,
+   "cost_micro_usd": 91428,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 91428
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F28",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "card card_06a5a26063c2031808ca0d13 about Ishita/Novacore does not say ['security questionnaire']",
+   "calls": 3,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 2
+   },
+   "dropped": {
+    "recipient_not_on_file": 1,
+    "ungrounded": 3,
+    "wrong_number": 7
+   },
+   "noted": {
+    "speaks_of_you": 7
+   },
+   "held_share": 0.0,
+   "facts": 12,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 5,
+   "own_lines": 7,
+   "own_dropped": 0,
+   "tokens_in": 21633,
+   "tokens_out": 9550,
+   "cost_micro_usd": 69383,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 69383
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F29",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "card card_57ae9a1e1a933d0d3565bd7a about Aman/Memloop does not say ['pricing'] | line bl_0a95496628085f295773deb9 says 'happened'",
+   "calls": 5,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 3
+   },
+   "fates": {
+    "held": 2,
+    "shown": 1
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "ungrounded": 6,
+    "wrong_number": 7
+   },
+   "noted": {
+    "speaks_of_you": 2
+   },
+   "held_share": 0.667,
+   "facts": 22,
+   "facts_quoting": 3,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 4,
+   "own_lines": 10,
+   "own_dropped": 0,
+   "tokens_in": 38386,
+   "tokens_out": 17082,
+   "cost_micro_usd": 123796,
+   "ladder": {
+    "stood": {
+     "1": 3
+    },
+    "attempts": {
+     "1:first": 3,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 123796
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F30",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "ungrounded": 1,
+    "unsupported": 1,
+    "wrong_number": 1
+   },
+   "noted": {
+    "speaks_of_you": 7
+   },
+   "held_share": 0.0,
+   "facts": 6,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 0,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 12304,
+   "tokens_out": 6320,
+   "cost_micro_usd": 43904,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 43904
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F31",
+   "kind": "must_abstain",
+   "verdict": "fail",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "0 cards about Assignment 4 over every sweep; expected exactly 1",
+   "calls": 3,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "held": 1
+   },
+   "dropped": {
+    "unsupported": 2
+   },
+   "noted": {
+    "speaks_of_you": 4
+   },
+   "held_share": 1.0,
+   "facts": 6,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 4,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 43853,
+   "tokens_out": 9463,
+   "cost_micro_usd": 91168,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 91168
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F32",
+   "kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 0,
+   "truncated_calls": 0,
+   "reviews": {},
+   "fates": {},
+   "dropped": {},
+   "noted": {},
+   "held_share": null,
+   "facts": 0,
+   "facts_quoting": 0,
+   "misquoted": 0,
+   "misquote_rate": null,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": null,
+   "engine_lines": 0,
+   "own_lines": 0,
+   "own_dropped": 0,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "cost_micro_usd": 0,
+   "ladder": {
+    "stood": {},
+    "attempts": {},
+    "climbs": {},
+    "cost_micro_usd": {}
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F33",
+   "kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 0,
+   "truncated_calls": 0,
+   "reviews": {},
+   "fates": {},
+   "dropped": {},
+   "noted": {},
+   "held_share": null,
+   "facts": 0,
+   "facts_quoting": 0,
+   "misquoted": 0,
+   "misquote_rate": null,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": null,
+   "engine_lines": 0,
+   "own_lines": 0,
+   "own_dropped": 0,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "cost_micro_usd": 0,
+   "ladder": {
+    "stood": {},
+    "attempts": {},
+    "climbs": {},
+    "cost_micro_usd": {}
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F34",
+   "kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 0,
+   "truncated_calls": 0,
+   "reviews": {},
+   "fates": {},
+   "dropped": {},
+   "noted": {},
+   "held_share": null,
+   "facts": 0,
+   "facts_quoting": 0,
+   "misquoted": 0,
+   "misquote_rate": null,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": null,
+   "engine_lines": 0,
+   "own_lines": 0,
+   "own_dropped": 0,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "cost_micro_usd": 0,
+   "ladder": {
+    "stood": {},
+    "attempts": {},
+    "climbs": {},
+    "cost_micro_usd": {}
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F35",
+   "kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "misquoted": 1,
+    "wrong_number": 1
+   },
+   "noted": {
+    "speaks_of_you": 5
+   },
+   "held_share": 0.0,
+   "facts": 6,
+   "facts_quoting": 2,
+   "misquoted": 1,
+   "misquote_rate": 0.5,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 5,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 29041,
+   "tokens_out": 7076,
+   "cost_micro_usd": 64421,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 64421
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F36",
+   "kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "ungrounded": 1,
+    "unsupported": 1,
+    "wrong_number": 1
+   },
+   "noted": {},
+   "held_share": 0.0,
+   "facts": 8,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 3,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 7060,
+   "tokens_out": 3025,
+   "cost_micro_usd": 22185,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 22185
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F37",
+   "kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "held": 1
+   },
+   "dropped": {
+    "ungrounded": 1,
+    "unknown_evidence": 1,
+    "unsupported": 1,
+    "wrong_number": 2
+   },
+   "noted": {
+    "speaks_of_you": 2,
+    "unheld_number": 1
+   },
+   "held_share": 1.0,
+   "facts": 6,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 5,
+   "own_lines": 4,
+   "own_dropped": 0,
+   "tokens_in": 16712,
+   "tokens_out": 6959,
+   "cost_micro_usd": 51507,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 51507
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F38",
+   "kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "own_states_a_number": 1,
+    "wrong_number": 2
+   },
+   "noted": {
+    "speaks_of_you": 5
+   },
+   "held_share": 0.0,
+   "facts": 10,
+   "facts_quoting": 3,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 3,
+   "own_lines": 3,
+   "own_dropped": 1,
+   "tokens_in": 7126,
+   "tokens_out": 3496,
+   "cost_micro_usd": 24606,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 24606
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F39",
+   "kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "ungrounded": 1,
+    "unquoted": 1,
+    "wrong_number": 1
+   },
+   "noted": {
+    "speaks_of_you": 6
+   },
+   "held_share": 0.0,
+   "facts": 7,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 2,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 14211,
+   "tokens_out": 5801,
+   "cost_micro_usd": 43216,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 43216
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F40",
+   "kind": "must_abstain",
+   "verdict": "fail",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "1 card about Meera/Tallgrass/meera@tallgrass.test over every sweep; expected exactly 0 | the today line names what the case forbids: 'Meera: An undocumented meeting with an unknown counterparty, whose purpose, origin, and next step are all unclear. The file is a placeholder for a conversation that has not yet been categorized or acted upon. a question waits for your answer on its card. By 16 Aug.'",
+   "calls": 4,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 2
+   },
+   "dropped": {
+    "no_recipient": 1,
+    "own_names_the_file": 1,
+    "unknown_evidence": 2,
+    "unsupported": 1,
+    "wrong_number": 3
+   },
+   "noted": {
+    "own_disagrees": 1,
+    "speaks_of_you": 9
+   },
+   "held_share": 0.0,
+   "facts": 13,
+   "facts_quoting": 0,
+   "misquoted": 0,
+   "misquote_rate": null,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 5,
+   "own_lines": 6,
+   "own_dropped": 1,
+   "tokens_in": 28764,
+   "tokens_out": 13691,
+   "cost_micro_usd": 97219,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 97219
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F41",
+   "kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "unsupported": 6,
+    "wrong_number": 2
+   },
+   "noted": {
+    "speaks_of_you": 3,
+    "unheld_number": 1
+   },
+   "held_share": 0.0,
+   "facts": 8,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 5,
+   "own_lines": 4,
+   "own_dropped": 0,
+   "tokens_in": 7091,
+   "tokens_out": 3532,
+   "cost_micro_usd": 24751,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 24751
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F42",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "unsupported": 5,
+    "wrong_number": 1
+   },
+   "noted": {
+    "speaks_of_you": 4,
+    "unheld_number": 1
+   },
+   "held_share": 0.0,
+   "facts": 7,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 7,
+   "own_lines": 4,
+   "own_dropped": 0,
+   "tokens_in": 12367,
+   "tokens_out": 4766,
+   "cost_micro_usd": 36197,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 36197
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F43",
+   "kind": "must_abstain",
+   "verdict": "fail",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "1 card about Ira/Northwind over every sweep; expected exactly 0 | the today line names what the case forbids: \"Northwind: A cold or weakly-sourced prospecting outreach to an investor not in the brief's named set, sent less than a day ago, with no reply yet \u2014 which is the default at this stage and carries no signal. Was Northwind sourced through a connector or a warm introduction, or is this a cold outreach? By 12 Aug.\"",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "unknown_evidence": 1,
+    "wrong_number": 2
+   },
+   "noted": {
+    "speaks_of_you": 4
+   },
+   "held_share": 0.0,
+   "facts": 6,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 5,
+   "own_lines": 4,
+   "own_dropped": 0,
+   "tokens_in": 8143,
+   "tokens_out": 3659,
+   "cost_micro_usd": 26438,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 26438
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F44",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "unsupported": 1,
+    "wrong_number": 1
+   },
+   "noted": {
+    "speaks_of_you": 2,
+    "unheld_number": 1
+   },
+   "held_share": 0.0,
+   "facts": 9,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 4,
+   "own_lines": 4,
+   "own_dropped": 0,
+   "tokens_in": 8122,
+   "tokens_out": 3845,
+   "cost_micro_usd": 27347,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 27347
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F45",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "0 lines about Meera/Bluepeak in today; expected exactly 1",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 1,
+    "suppressed": 1
+   },
+   "dropped": {
+    "answered": 1,
+    "engine_is_no_fact": 2,
+    "ungrounded": 3,
+    "unknown_evidence": 2,
+    "unquoted": 1,
+    "wrong_number": 4
+   },
+   "noted": {
+    "speaks_of_you": 1
+   },
+   "held_share": 0.0,
+   "facts": 18,
+   "facts_quoting": 3,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 5,
+   "own_lines": 8,
+   "own_dropped": 0,
+   "tokens_in": 16337,
+   "tokens_out": 8391,
+   "cost_micro_usd": 58292,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 58292
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F46",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "held": 1
+   },
+   "dropped": {
+    "ungrounded": 1,
+    "unknown_evidence": 1,
+    "unquoted": 1,
+    "wrong_number": 2
+   },
+   "noted": {
+    "speaks_of_you": 3
+   },
+   "held_share": 1.0,
+   "facts": 8,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 3,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 16761,
+   "tokens_out": 7562,
+   "cost_micro_usd": 54571,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 54571
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F47",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "held": 1
+   },
+   "dropped": {
+    "misquoted": 1,
+    "unsupported": 3
+   },
+   "noted": {
+    "speaks_of_you": 2
+   },
+   "held_share": 1.0,
+   "facts": 5,
+   "facts_quoting": 2,
+   "misquoted": 1,
+   "misquote_rate": 0.5,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 1,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 16328,
+   "tokens_out": 5318,
+   "cost_micro_usd": 42918,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 42918
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F48",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "0 cards about Tarun/Quillstack over every sweep; expected exactly 1",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 2
+   },
+   "dropped": {
+    "ungrounded": 1,
+    "unquoted": 1,
+    "unsupported": 3,
+    "wrong_number": 6
+   },
+   "noted": {
+    "speaks_of_you": 2,
+    "unheld_number": 1
+   },
+   "held_share": 0.0,
+   "facts": 13,
+   "facts_quoting": 3,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 6,
+   "own_lines": 6,
+   "own_dropped": 0,
+   "tokens_in": 14332,
+   "tokens_out": 6117,
+   "cost_micro_usd": 44917,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 44917
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F49",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "card card_fe221c8a6a687646be0eccf8 about Kunal/Sparkreach does not say ['book']",
+   "calls": 3,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "held": 1
+   },
+   "dropped": {
+    "unsupported": 1,
+    "wrong_number": 2
+   },
+   "noted": {
+    "speaks_of_you": 2
+   },
+   "held_share": 1.0,
+   "facts": 8,
+   "facts_quoting": 3,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 2,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 21803,
+   "tokens_out": 9649,
+   "cost_micro_usd": 70048,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 70048
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F50",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "0 cards about Owen/Saltmarsh over every sweep; expected exactly 1",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "unknown_evidence": 2,
+    "unsupported": 1,
+    "wrong_number": 3
+   },
+   "noted": {},
+   "held_share": 0.0,
+   "facts": 6,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 1,
+   "unknown_evidence_rate": 0.167,
+   "engine_lines": 4,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 16559,
+   "tokens_out": 6802,
+   "cost_micro_usd": 50569,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 50569
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F51",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "card card_ab0360407cbf5d13c335565d about Sana/Brightloop does not say ['4 Aug']",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "own_names_the_file": 1,
+    "wrong_number": 1
+   },
+   "noted": {},
+   "held_share": 0.0,
+   "facts": 6,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 3,
+   "own_lines": 3,
+   "own_dropped": 1,
+   "tokens_in": 7036,
+   "tokens_out": 3216,
+   "cost_micro_usd": 23116,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 23116
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F52",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "0 cards about Gautam/Ridgeline over every sweep; expected exactly 1",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 2
+   },
+   "dropped": {
+    "ungrounded": 1,
+    "unsupported": 5,
+    "wrong_number": 3
+   },
+   "noted": {
+    "speaks_of_you": 3
+   },
+   "held_share": 0.0,
+   "facts": 11,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 5,
+   "own_lines": 6,
+   "own_dropped": 0,
+   "tokens_in": 14072,
+   "tokens_out": 6266,
+   "cost_micro_usd": 45402,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 45402
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F53",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "0 lines about Larkspur in today; expected exactly 1",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 2
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "ungrounded": 4,
+    "unknown_evidence": 3,
+    "unquoted": 1,
+    "unsupported": 4,
+    "wrong_number": 2
+   },
+   "noted": {
+    "speaks_of_you": 2,
+    "unheld_number": 1
+   },
+   "held_share": 0.0,
+   "facts": 19,
+   "facts_quoting": 8,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 1,
+   "unknown_evidence_rate": 0.053,
+   "engine_lines": 1,
+   "own_lines": 8,
+   "own_dropped": 0,
+   "tokens_in": 12660,
+   "tokens_out": 6986,
+   "cost_micro_usd": 47590,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 47590
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F54",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 3,
+   "cards_about_the_subject": 3,
+   "forbidden": [
+    [
+     "card_02c80ebbc78f7565fc55c891",
+     "events@bluebayhub.test"
+    ]
+   ],
+   "reason": "card_02c80ebbc78f7565fc55c891 says 'events@bluebayhub.test'",
+   "calls": 12,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 6
+   },
+   "fates": {
+    "held": 1,
+    "shown": 5
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "misquoted": 2,
+    "no_recipient": 1,
+    "own_names_the_file": 2,
+    "ungrounded": 3,
+    "unknown_evidence": 6,
+    "unsupported": 3,
+    "wrong_number": 4
+   },
+   "noted": {
+    "own_disagrees": 1,
+    "speaks_of_you": 24
+   },
+   "held_share": 0.167,
+   "facts": 37,
+   "facts_quoting": 2,
+   "misquoted": 2,
+   "misquote_rate": 1.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 10,
+   "own_lines": 18,
+   "own_dropped": 2,
+   "tokens_in": 86302,
+   "tokens_out": 35639,
+   "cost_micro_usd": 264497,
+   "ladder": {
+    "stood": {
+     "1": 6
+    },
+    "attempts": {
+     "1:first": 6,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 264497
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F55",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 3,
+   "cards_about_the_subject": 3,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 4,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 4
+   },
+   "fates": {
+    "shown": 4
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "no_recipient": 1,
+    "ungrounded": 2,
+    "unknown_evidence": 2,
+    "unsupported": 1,
+    "wrong_number": 6
+   },
+   "noted": {
+    "own_disagrees": 2,
+    "speaks_of_you": 3,
+    "unheld_number": 3
+   },
+   "held_share": 0.0,
+   "facts": 24,
+   "facts_quoting": 4,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 1,
+   "unknown_evidence_rate": 0.042,
+   "engine_lines": 18,
+   "own_lines": 15,
+   "own_dropped": 0,
+   "tokens_in": 28136,
+   "tokens_out": 13386,
+   "cost_micro_usd": 95066,
+   "ladder": {
+    "stood": {
+     "1": 4
+    },
+    "attempts": {
+     "1:first": 4
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 95066
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F56",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "gate",
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "0 cards about Authwise over every sweep; expected exactly 1",
+   "calls": 0,
+   "truncated_calls": 0,
+   "reviews": {},
+   "fates": {},
+   "dropped": {},
+   "noted": {},
+   "held_share": null,
+   "facts": 0,
+   "facts_quoting": 0,
+   "misquoted": 0,
+   "misquote_rate": null,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": null,
+   "engine_lines": 0,
+   "own_lines": 0,
+   "own_dropped": 0,
+   "tokens_in": 0,
+   "tokens_out": 0,
+   "cost_micro_usd": 0,
+   "ladder": {
+    "stood": {},
+    "attempts": {},
+    "climbs": {},
+    "cost_micro_usd": {}
+   },
+   "authored_verdict": "fail"
+  },
+  {
+   "case": "F57",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "card card_483ffd01471a9c9ef3276314 about Zoya/Pinecrest does not say ['NDA']",
+   "calls": 4,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 3
+   },
+   "fates": {
+    "shown": 3
+   },
+   "dropped": {
+    "ungrounded": 1,
+    "unknown_evidence": 1,
+    "unsupported": 3,
+    "wrong_number": 6
+   },
+   "noted": {
+    "speaks_of_you": 6
+   },
+   "held_share": 0.0,
+   "facts": 20,
+   "facts_quoting": 5,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 7,
+   "own_lines": 10,
+   "own_dropped": 0,
+   "tokens_in": 29060,
+   "tokens_out": 12867,
+   "cost_micro_usd": 93395,
+   "ladder": {
+    "stood": {
+     "1": 3
+    },
+    "attempts": {
+     "1:first": 3,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 93395
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F58",
+   "kind": "must_abstain",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 0,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "unsupported": 1,
+    "wrong_number": 1
+   },
+   "noted": {
+    "speaks_of_you": 3
+   },
+   "held_share": 0.0,
+   "facts": 6,
+   "facts_quoting": 2,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 4,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 14309,
+   "tokens_out": 6038,
+   "cost_micro_usd": 44499,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 44499
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F59",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 3,
+   "cards_about_the_subject": 3,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 9,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 5
+   },
+   "fates": {
+    "held": 1,
+    "shown": 4
+   },
+   "dropped": {
+    "own_names_the_file": 1,
+    "own_states_a_number": 1,
+    "ungrounded": 2,
+    "unknown_evidence": 1,
+    "unquoted": 1,
+    "unsupported": 3,
+    "wrong_number": 6
+   },
+   "noted": {
+    "own_disagrees": 1,
+    "speaks_of_you": 10
+   },
+   "held_share": 0.2,
+   "facts": 31,
+   "facts_quoting": 7,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 13,
+   "own_lines": 16,
+   "own_dropped": 2,
+   "tokens_in": 67735,
+   "tokens_out": 27858,
+   "cost_micro_usd": 207025,
+   "ladder": {
+    "stood": {
+     "1": 5
+    },
+    "attempts": {
+     "1:first": 5,
+     "1:repair": 4
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 207025
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F60",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 3,
+   "cards_about_the_subject": 3,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 5,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 3
+   },
+   "fates": {
+    "shown": 3
+   },
+   "dropped": {
+    "ungrounded": 1,
+    "unknown_evidence": 3,
+    "unsupported": 1,
+    "wrong_number": 1
+   },
+   "noted": {
+    "own_disagrees": 1,
+    "speaks_of_you": 8
+   },
+   "held_share": 0.0,
+   "facts": 21,
+   "facts_quoting": 5,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 2,
+   "unknown_evidence_rate": 0.095,
+   "engine_lines": 8,
+   "own_lines": 10,
+   "own_dropped": 0,
+   "tokens_in": 41072,
+   "tokens_out": 18688,
+   "cost_micro_usd": 134512,
+   "ladder": {
+    "stood": {
+     "1": 3
+    },
+    "attempts": {
+     "1:first": 3,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 134512
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F61",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 2,
+   "cards_about_the_subject": 2,
+   "forbidden": [],
+   "reason": "0 cards about Omkar/Redfern over every sweep; expected exactly 1",
+   "calls": 5,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 4
+   },
+   "fates": {
+    "shown": 4
+   },
+   "dropped": {
+    "engine_is_no_fact": 2,
+    "misquoted": 1,
+    "no_recipient": 1,
+    "own_names_the_file": 2,
+    "ungrounded": 5,
+    "unknown_evidence": 5,
+    "unsupported": 3,
+    "wrong_number": 3
+   },
+   "noted": {
+    "own_disagrees": 1,
+    "speaks_of_you": 18,
+    "unheld_number": 1
+   },
+   "held_share": 0.0,
+   "facts": 28,
+   "facts_quoting": 9,
+   "misquoted": 1,
+   "misquote_rate": 0.111,
+   "unknown_evidence": 1,
+   "unknown_evidence_rate": 0.036,
+   "engine_lines": 11,
+   "own_lines": 13,
+   "own_dropped": 2,
+   "tokens_in": 40216,
+   "tokens_out": 18718,
+   "cost_micro_usd": 133806,
+   "ladder": {
+    "stood": {
+     "1": 4
+    },
+    "attempts": {
+     "1:first": 4,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 133806
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F62",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 2,
+   "cards_about_the_subject": 1,
+   "forbidden": [
+    [
+     "card_55c137fe869858af282ca06b",
+     "4 pm"
+    ]
+   ],
+   "reason": "1 card about Farhan/Bluewater over every sweep; expected exactly 0 | card_55c137fe869858af282ca06b says '4 pm'",
+   "calls": 3,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 2
+   },
+   "dropped": {
+    "own_names_the_file": 1,
+    "ungrounded": 1,
+    "unknown_evidence": 1
+   },
+   "noted": {
+    "speaks_of_you": 6
+   },
+   "held_share": 0.0,
+   "facts": 13,
+   "facts_quoting": 4,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 5,
+   "own_lines": 7,
+   "own_dropped": 1,
+   "tokens_in": 22040,
+   "tokens_out": 9143,
+   "cost_micro_usd": 67755,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 67755
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F63",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "0 cards about Ishaan/Corvane over every sweep; expected exactly 1",
+   "calls": 2,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "no_recipient": 1
+   },
+   "noted": {},
+   "held_share": 0.0,
+   "facts": 5,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 2,
+   "own_lines": 3,
+   "own_dropped": 0,
+   "tokens_in": 14395,
+   "tokens_out": 6460,
+   "cost_micro_usd": 46695,
+   "ladder": {
+    "stood": {
+     "1": 1
+    },
+    "attempts": {
+     "1:first": 1,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 46695
+    }
+   },
+   "authored_verdict": "fail"
+  },
+  {
+   "case": "F64",
+   "kind": "must_abstain",
+   "verdict": "fail",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 0,
+   "forbidden": [],
+   "reason": "1 card about Zara/Northlake over every sweep; expected exactly 0 | 1 card about Introly over every sweep; expected exactly 0 | the today line names what the case forbids: 'Northlake: What is the next step with Northlake? We held the one we found: a fact your move rests on names someone its lines do not. By 13 Aug.'; the changed line names what the case forbids: 'Northlake: Introly wrote.'",
+   "calls": 3,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "held": 1,
+    "shown": 1
+   },
+   "dropped": {
+    "ungrounded": 1,
+    "unknown_evidence": 1,
+    "unsupported": 1
+   },
+   "noted": {
+    "speaks_of_you": 3
+   },
+   "held_share": 0.5,
+   "facts": 13,
+   "facts_quoting": 5,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 1,
+   "unknown_evidence_rate": 0.077,
+   "engine_lines": 2,
+   "own_lines": 7,
+   "own_dropped": 0,
+   "tokens_in": 22242,
+   "tokens_out": 9490,
+   "cost_micro_usd": 69692,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 69692
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F65",
+   "kind": "must_detect",
+   "verdict": "pass",
+   "lost_at": null,
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "what the founder sees is what the case expects",
+   "calls": 3,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 2
+   },
+   "dropped": {
+    "engine_is_no_fact": 8,
+    "misquoted": 1,
+    "ungrounded": 1,
+    "unknown_evidence": 1,
+    "unsupported": 4,
+    "wrong_number": 6
+   },
+   "noted": {
+    "speaks_of_you": 11
+   },
+   "held_share": 0.0,
+   "facts": 19,
+   "facts_quoting": 3,
+   "misquoted": 1,
+   "misquote_rate": 0.333,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 22,
+   "own_lines": 8,
+   "own_dropped": 0,
+   "tokens_in": 37189,
+   "tokens_out": 12942,
+   "cost_micro_usd": 101899,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 101899
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F66",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "act 0 after sweep 0 was not played: no open card about Ines/Northfield | 0 cards about Ines/Northfield over every sweep; expected exactly 1 | no card about Marcus/Harbor Point ended cleared \u2014 card card_b56c8028bc7d37df16c60326 ended open or unrecorded",
+   "calls": 3,
+   "truncated_calls": 0,
+   "reviews": {
+    "valid": 2
+   },
+   "fates": {
+    "shown": 2
+   },
+   "dropped": {
+    "unknown_evidence": 1,
+    "unsupported": 3,
+    "wrong_number": 1
+   },
+   "noted": {
+    "speaks_of_you": 4
+   },
+   "held_share": 0.0,
+   "facts": 13,
+   "facts_quoting": 3,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 1,
+   "unknown_evidence_rate": 0.077,
+   "engine_lines": 14,
+   "own_lines": 7,
+   "own_dropped": 0,
+   "tokens_in": 36910,
+   "tokens_out": 11274,
+   "cost_micro_usd": 93280,
+   "ladder": {
+    "stood": {
+     "1": 2
+    },
+    "attempts": {
+     "1:first": 2,
+     "1:repair": 1
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 93280
+    }
+   },
+   "authored_verdict": "pass"
+  },
+  {
+   "case": "F67",
+   "kind": "must_detect",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "cards": 1,
+   "cards_about_the_subject": 1,
+   "forbidden": [],
+   "reason": "act 0 after sweep 0 was not played: no open card about Nadia/TechBridge | 0 cards about Nadia/TechBridge over every sweep; expected exactly 1",
+   "calls": 1,
+   "truncated_calls": 0,
+   "reviews": {
+    "failed": 2,
+    "valid": 1
+   },
+   "fates": {
+    "shown": 1
+   },
+   "dropped": {
+    "engine_is_no_fact": 1,
+    "unsupported": 3
+   },
+   "noted": {
+    "speaks_of_you": 6,
+    "unheld_number": 1
+   },
+   "held_share": 0.0,
+   "facts": 8,
+   "facts_quoting": 1,
+   "misquoted": 0,
+   "misquote_rate": 0.0,
+   "unknown_evidence": 0,
+   "unknown_evidence_rate": 0.0,
+   "engine_lines": 6,
+   "own_lines": 4,
+   "own_dropped": 0,
+   "tokens_in": 13410,
+   "tokens_out": 3846,
+   "cost_micro_usd": 32640,
+   "ladder": {
+    "stood": {
+     "1": 3
+    },
+    "attempts": {
+     "1:first": 3,
+     "1:repair": 2
+    },
+    "climbs": {},
+    "cost_micro_usd": {
+     "1": 32640
+    }
+   },
+   "authored_verdict": "pass"
+  }
+ ],
+ "recall": 0.509,
+ "precision": 0.915,
+ "abstain_failures": 4,
+ "forbidden_outputs": 3,
+ "reviews": {
+  "failed": 2,
+  "valid": 119
+ },
+ "fates": {
+  "held": 22,
+  "shown": 96,
+  "suppressed": 1
+ },
+ "dropped": {
+  "answered": 1,
+  "engine_is_no_fact": 41,
+  "misquoted": 7,
+  "no_recipient": 12,
+  "not_ours_to_answer": 2,
+  "own_names_the_file": 20,
+  "own_states_a_number": 7,
+  "recipient_is_connector": 1,
+  "recipient_not_on_file": 1,
+  "ungrounded": 59,
+  "unknown_evidence": 72,
+  "unquoted": 7,
+  "unsupported": 110,
+  "wrong_number": 167
+ },
+ "noted": {
+  "own_disagrees": 8,
+  "speaks_of_you": 297,
+  "unheld_number": 18
+ },
+ "facts": 822,
+ "facts_quoting": 188,
+ "misquoted": 7,
+ "unknown_evidence": 12,
+ "engine_lines": 423,
+ "own_lines": 394,
+ "own_dropped": 27,
+ "tokens_in": 1746990,
+ "tokens_out": 643231,
+ "cost_micro_usd": 4963145,
+ "held_share": 0.185,
+ "misquote_rate": 0.037,
+ "unknown_evidence_rate": 0.015,
+ "ladder": {
+  "stood": {
+   "1": 121
+  },
+  "attempts": {
+   "1:first": 121,
+   "1:repair": 57
+  },
+  "climbs": {},
+  "cost_micro_usd": {
+   "1": 4963145
+  }
+ },
+ "cost_usd": 4.9631,
+ "calls": 190,
+ "truncated_calls": 0,
+ "thinking": null,
+ "ceiling": null,
+ "per_call_usd": null,
+ "max_usd": 5.0,
+ "stopped_at_cap": "F67",
+ "spent_usd": 4.9631,
+ "ladder_tiers": [
+  "T1"
+ ],
+ "rungs": {
+  "T1": {
+   "model": "claude-haiku-4-5-20251001",
+   "calls": 190,
+   "truncated_calls": 0,
+   "tokens_in": 1746990,
+   "tokens_out": 643231,
+   "cost_usd": 4.9631
+  }
+ },
+ "moved": [
+  "F01",
+  "F12",
+  "F15",
+  "F17",
+  "F20",
+  "F22",
+  "F23",
+  "F24",
+  "F27",
+  "F28",
+  "F29",
+  "F31",
+  "F40",
+  "F43",
+  "F45",
+  "F48",
+  "F49",
+  "F50",
+  "F51",
+  "F52",
+  "F53",
+  "F54",
+  "F57",
+  "F61",
+  "F62",
+  "F64",
+  "F66",
+  "F67"
+ ]
+}

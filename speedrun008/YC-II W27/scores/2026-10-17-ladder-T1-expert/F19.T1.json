@@ -1,0 +1,1059 @@
+{
+ "0d7e6e782e016c5dab5709799a75d4cbb5b773d3c75b6302834ce590dce8617f": {
+  "framed": true,
+  "input_tokens": 14330,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3790,
+  "parsed": {
+   "alternative": "If the founder confirms that all three items are ready, send them directly to the incubation cell on the founder's behalf with a brief note acknowledging the delay and confirming the billing name. This moves the work forward immediately without waiting for the founder to compose the message.",
+   "appraisal": {
+    "reasons": [
+     "The founder is in an active program (Lakshya Accelerator) and has applied to six others; losing standing in this program due to non-compliance would damage credibility with other programs.",
+     "Two of the three asks have passed their deadlines; the monthly report is over two weeks late, and the invoice is due in six days.",
+     "Non-compliance with an incubation program can result in removal from the cohort, loss of co-working space, and damage to the founder's reputation with the program and its network.",
+     "The asks are administrative and low-effort; they should have been answered immediately when received.",
+     "The founder is in active fundraising and has multiple programs in motion; losing one program due to administrative oversight is a costly distraction."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The founder has provided the signed agreement, the monthly progress report, and the billing name confirmation. All three items have been sent to the incubation cell, and the incubation cell has acknowledged receipt. The invoice is paid by 30 Sep, or a revised payment date has been agreed with the incubation cell.",
+   "draft": "Hi\u2014I need to flag three open asks from the incubation cell, all waiting on us. The monthly report was due 15 Sep and hasn't been submitted. The invoice is due 30 Sep and we haven't confirmed the billing name. And we still need to send the signed incubation agreement. Can you confirm: do you have all three ready to go, or is there a blocker on any of them? If they're ready, I'll send them today. If there's a blocker, let me know what it is and we'll sort it.",
+   "expected_vs_actual": {
+    "actual": "The founder has not answered three asks from the incubation cell. The monthly progress report was due on 15 Sep and has not been submitted. The invoice is due on 30 Sep and the billing name has not been confirmed. The signed agreement has not been provided. All three asks remain open.",
+    "expected": "The founder is in an active program and should be meeting all administrative deadlines: signed agreements, progress reports, and billing confirmations. The playbook expects quiet to mean nothing\u2014the program's own calendar is the file's calendar, and the founder's obligations are to meet the program's deadlines.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "Three open asks are waiting on the founder's reply, all from the incubation cell.",
+     "evidence": [
+      "file:open_asks"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "On 2026-09-07, the incubation cell asked for a signed incubation agreement to activate the seat.",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": "Please share the signed incubation agreement so we can activate your seat."
+    },
+    {
+     "claim": "On 2026-09-07, the incubation cell asked for a monthly progress report due on 15 Sep to be submitted on the portal.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Your monthly progress report is due on 15 Sep. Please submit it on the portal."
+    },
+    {
+     "claim": "On 2026-09-24, the incubation cell asked for confirmation of the billing name for two co-working seats, with invoice due on 30 Sep.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "The invoice for your two co-working seats is due on 30 Sep. Could you confirm the billing name?"
+    },
+    {
+     "claim": "The file shows the founder is in the Lakshya Accelerator active cohort and has applied to six other programs.",
+     "evidence": [
+      "brief:cbl_#13",
+      "brief:cbl_#14",
+      "brief:cbl_#15",
+      "brief:cbl_#16",
+      "brief:cbl_#17",
+      "brief:cbl_#18"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's last touch was 2026-09-24 09:00 UTC, and it has been quiet for 0.38 days since then.",
+     "evidence": [
+      "file:last_touch",
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as 'whose move: ours', meaning the founder holds the ball on all three open asks.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "The founder is in an active incubation program with three overdue or near-due administrative asks. Two of the three asks have passed their deadlines without response, and the founder holds the ball on all three. This is a compliance and administrative management issue, not a program selection issue.",
+    "rivals": [
+     "The founder has deprioritized the incubation program in favor of fundraising and other opportunities, and is implicitly deciding to let the seat lapse.",
+     "The founder is blocked on one or more of the asks (e.g., legal review of the agreement, unclear reporting requirements) and has not communicated the blocker to the incubation cell.",
+     "The founder is unaware that the asks are overdue or has not seen the messages from the incubation cell."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A direct question to the founder: Do you have the signed agreement and the progress report drafted, or is there a blocker?",
+     "proposition": "The founder has the signed agreement and the progress report ready but has not submitted them due to competing priorities."
+    },
+    {
+     "needs": "Confirmation from the founder on whether the requirements are clear, or a request to the incubation cell for clarification.",
+     "proposition": "The founder is unclear on what the incubation cell requires or how to submit the progress report on the portal."
+    },
+    {
+     "needs": "A conversation with the founder about the program's role in the current strategy.",
+     "proposition": "The founder intends to leave the program or has deprioritized it in favor of other opportunities."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "file:whose_move"
+     ],
+     "claim": "The founder has not answered any of the three asks from the incubation cell since they were made."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "fact:4"
+     ],
+     "claim": "Two of the three asks have passed their stated deadlines: the monthly report was due 15 Sep, and the invoice is due 30 Sep."
+    },
+    {
+     "based_on": [
+      "fact:3",
+      "file:last_touch"
+     ],
+     "claim": "The monthly report ask has been open for over two weeks past its deadline without a response."
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "brief:cbl_#13"
+     ],
+     "claim": "The founder is in an active program (Lakshya) and has multiple applications pending, making administrative compliance with the incubation cell a live obligation."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1, loop:loop_#2, loop:loop_#3",
+    "by_when": "2026-09-25",
+    "for_whom": "the founder",
+    "guided_by": [
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "cap:admin.executive_support.commitment_tracking#q",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "fact:4",
+     "inference:1",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Check with the founder immediately on the status of the signed incubation agreement, the monthly progress report, and the billing name confirmation. Ask whether each item is ready to send, or whether there is a blocker. If ready, send all three to the incubation cell today. If there is a blocker, resolve it or communicate the blocker to the incubation cell with a revised date.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "A founder in an active program who misses administrative deadlines risks losing the seat or incurring penalties, even if the program itself is still in early stages.",
+     "kind": "practice",
+     "why": "Programs enforce their own rules strictly; non-compliance is grounds for removal, and the cost of re-applying is higher than the cost of compliance now."
+    },
+    {
+     "claim": "When a founder holds the ball on three separate asks from the same counterparty, the pattern usually signals either a blocker (missing information, unclear requirement) or deprioritization.",
+     "kind": "base_rate",
+     "why": "Three asks from one source that go unanswered together suggest a systemic issue, not three independent oversights."
+    },
+    {
+     "claim": "A signed agreement and a progress report are typically the minimum compliance burden for an incubation program; missing either one can suspend benefits or trigger a review.",
+     "kind": "practice",
+     "why": "Programs use these documents to track portfolio health and legal standing; they are not optional."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "brief:cbl_#2",
+      "fact:1"
+     ],
+     "claim": "Administrative asks from programs go unanswered when the founder is focused on fundraising or other higher-priority work.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "A programme with a cohort deadline selects after its window closes; the one thing to check at the applied stage is the receipt and whether the programme has published its own deadline.",
+     "kind": "base_rate"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "fact:3",
+      "fact:4"
+     ],
+     "claim": "An incubation cell's administrative asks\u2014signed agreements, progress reports, billing confirmations\u2014are not optional even when the founder is in active fundraising.",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "evt_#3",
+     "evt_#2",
+     "evt_#1",
+     "file:domains"
+    ],
+    "kind": "compliance",
+    "why": "The file is about administrative obligations to an incubation program: a signed agreement, a progress report, and billing confirmation. These are compliance and administrative management tasks, not program selection or fundraising."
+   },
+   "scenarios": {
+    "act": "The founder answers all three asks immediately: provides the signed agreement, submits the progress report (late, but submitted), and confirms the billing name. The incubation cell receives the compliance items and the founder's standing is restored. The invoice is paid on time or shortly after, and the seat remains active.",
+    "best": "The founder has all three items ready and sends them today. The incubation cell accepts the late report and confirms receipt. The invoice is paid by 30 Sep. The founder's compliance is restored, and the program continues without interruption.",
+    "do_nothing": "The founder misses the 30 Sep invoice deadline. The incubation cell may suspend the co-working seats or charge a late fee. The monthly report remains overdue, and the program may flag the founder for non-compliance. The signed agreement is never provided, and the seat may be deactivated. The founder's standing in the program deteriorates, and the program may remove the company from the cohort.",
+    "signals_to_watch": [
+     "Whether the founder responds to the prompt with the signed agreement and progress report within one day.",
+     "Whether the founder confirms the billing name by 30 Sep.",
+     "Whether the incubation cell sends a follow-up message after 30 Sep indicating non-payment or suspension.",
+     "Whether the founder's status on the program's portal changes to reflect non-compliance or suspension."
+    ],
+    "worst": "The founder does not respond to this prompt. The 30 Sep invoice deadline passes. The incubation cell suspends the co-working seats and flags the company for non-compliance. The program removes the company from the cohort. The founder loses the program's support and any benefits it provides."
+   },
+   "unknowns": [
+    {
+     "question": "Does the founder have the signed incubation agreement, or is there a blocker (e.g., legal review, terms disagreement)?",
+     "relevance": "If the agreement is ready, it can be sent today; if there is a blocker, the next move is to resolve it, not to send a reminder."
+    },
+    {
+     "question": "Has the founder drafted the monthly progress report, or does the founder need guidance on what to include?",
+     "relevance": "The report was due on 15 Sep; if it is drafted, it is overdue and must be sent immediately; if not, the founder needs to know what the incubation cell expects."
+    },
+    {
+     "question": "What is the founder's current priority ranking of the incubation program relative to fundraising and other programs?",
+     "relevance": "If the program is low priority, the founder may choose to let the seat lapse; if it is high priority, the asks must be answered immediately."
+    },
+    {
+     "question": "Does the incubation cell have a policy on late submissions, or will a late report be accepted?",
+     "relevance": "If late submissions are accepted, the urgency is lower; if the program has a hard deadline, the report must be submitted immediately."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The monthly report is already overdue by over two weeks, and the invoice is due in six days. Stop only if the founder confirms that the program is being abandoned or that there is a legal blocker to signing the agreement."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"Three open asks are waiting on the founder's reply, all from the incubation cell.\",\n      \"evidence\": [\n        \"file:open_asks\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"On 2026-09-07, the incubation cell asked for a signed incubation agreement to activate the seat.\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": \"Please share the signed incubation agreement so we can activate your seat.\"\n    },\n    {\n      \"claim\": \"On 2026-09-07, the incubation cell asked for a monthly progress report due on 15 Sep to be submitted on the portal.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Your monthly progress report is due on 15 Sep. Please submit it on the portal.\"\n    },\n    {\n      \"claim\": \"On 2026-09-24, the incubation cell asked for confirmation of the billing name for two co-working seats, with invoice due on 30 Sep.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"The invoice for your two co-working seats is due on 30 Sep. Could you confirm the billing name?\"\n    },\n    {\n      \"claim\": \"The file shows the founder is in the Lakshya Accelerator active cohort and has applied to six other programs.\",\n      \"evidence\": [\n        \"brief:cbl_#13\",\n        \"brief:cbl_#14\",\n        \"brief:cbl_#15\",\n        \"brief:cbl_#16\",\n        \"brief:cbl_#17\",\n        \"brief:cbl_#18\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's last touch was 2026-09-24 09:00 UTC, and it has been quiet for 0.38 days since then.\",\n      \"evidence\": [\n        \"file:last_touch\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as 'whose move: ours', meaning the founder holds the ball on all three open asks.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The founder has not answered any of the three asks from the incubation cell since they were made.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"Two of the three asks have passed their stated deadlines: the monthly report was due 15 Sep, and the invoice is due 30 Sep.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"fact:4\"\n      ]\n    },\n    {\n      \"claim\": \"The monthly report ask has been open for over two weeks past its deadline without a response.\",\n      \"based_on\": [\n        \"fact:3\",\n        \"file:last_touch\"\n      ]\n    },\n    {\n      \"claim\": \"The founder is in an active program (Lakshya) and has multiple applications pending, making administrative compliance with the incubation cell a live obligation.\",\n      \"based_on\": [\n        \"fact:5\",\n        \"brief:cbl_#13\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Administrative asks from programs go unanswered when the founder is focused on fundraising or other higher-priority work.\",\n      \"based_on\": [\n        \"brief:cbl_#2\",\n        \"fact:1\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A programme with a cohort deadline selects after its window closes; the one thing to check at the applied stage is the receipt and whether the programme has published its own deadline.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"An incubation cell's administrative asks\u2014signed agreements, progress reports, billing confirmations\u2014are not optional even when the founder is in active fundraising.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"fact:3\",\n        \"fact:4\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A founder in an active program who misses administrative deadlines risks losing the seat or incurring penalties, even if the program itself is still in early stages.\",\n      \"why\": \"Programs enforce their own rules strictly; non-compliance is grounds for removal, and the cost of re-applying is higher than the cost of compliance now.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a founder holds the ball on three separate asks from the same counterparty, the pattern usually signals either a blocker (missing information, unclear requirement) or deprioritization.\",\n      \"why\": \"Three asks from one source that go unanswered together suggest a systemic issue, not three independent oversights.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A signed agreement and a progress report are typically the minimum compliance burden for an incubation program; missing either one can suspend benefits or trigger a review.\",\n      \"why\": \"Programs use these documents to track portfolio health and legal standing; they are not optional.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The founder has the signed agreement and the progress report ready but has not submitted them due to competing priorities.\",\n      \"needs\": \"A direct question to the founder: Do you have the signed agreement and the progress report drafted, or is there a blocker?\"\n    },\n    {\n      \"proposition\": \"The founder is unclear on what the incubation cell requires or how to submit the progress report on the portal.\",\n      \"needs\": \"Confirmation from the founder on whether the requirements are clear, or a request to the incubation cell for clarification.\"\n    },\n    {\n      \"proposition\": \"The founder intends to leave the program or has deprioritized it in favor of other opportunities.\",\n      \"needs\": \"A conversation with the founder about the program's role in the current strategy.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Does the founder have the signed incubation agreement, or is there a blocker (e.g., legal review, terms disagreement)?\",\n      \"relevance\": \"If the agreement is ready, it can be sent today; if there is a blocker, the next move is to resolve it, not to send a reminder.\"\n    },\n    {\n      \"question\": \"Has the founder drafted the monthly progress report, or does the founder need guidance on what to include?\",\n      \"relevance\": \"The report was due on 15 Sep; if it is drafted, it is overdue and must be sent immediately; if not, the founder needs to know what the incubation cell expects.\"\n    },\n    {\n      \"question\": \"What is the founder's current priority ranking of the incubation program relative to fundraising and other programs?\",\n      \"relevance\": \"If the program is low priority, the founder may choose to let the seat lapse; if it is high priority, the asks must be answered immediately.\"\n    },\n    {\n      \"question\": \"Does the incubation cell have a policy on late submissions, or will a late report be accepted?\",\n      \"relevance\": \"If late submissions are accepted, the urgency is lower; if the program has a hard deadline, the report must be submitted immediately.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"The founder is in an active incubation program with three overdue or near-due administrative asks. Two of the three asks have passed their deadlines without response, and the founder holds the ball on all three. This is a compliance and administrative management issue, not a program selection issue.\",\n    \"rivals\": [\n      \"The founder has deprioritized the incubation program in favor of fundraising and other opportunities, and is implicitly deciding to let the seat lapse.\",\n      \"The founder is blocked on one or more of the asks (e.g., legal review of the agreement, unclear reporting requirements) and has not communicated the blocker to the incubation cell.\",\n      \"The founder is unaware that the asks are overdue or has not seen the messages from the incubation cell.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"compliance\",\n    \"why\": \"The file is about administrative obligations to an incubation program: a signed agreement, a progress report, and billing confirmation. These are compliance and administrative management tasks, not program selection or fundraising.\",\n    \"evidence\": [\n      \"evt_#3\",\n      \"evt_#2\",\n      \"evt_#1\",\n      \"file:domains\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The founder is in an active program and should be meeting all administrative deadlines: signed agreements, progress reports, and billing confirmations. The playbook expects quiet to mean nothing\u2014the program's own calendar is the file's calendar, and the founder's obligations are to meet the program's deadlines.\",\n    \"actual\": \"The founder has not answered three asks from the incubation cell. The monthly progress report was due on 15 Sep and has not been submitted. The invoice is due on 30 Sep and the billing name has not been confirmed. The signed agreement has not been provided. All three asks remain open.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder misses the 30 Sep invoice deadline. The incubation cell may suspend the co-working seats or charge a late fee. The monthly report remains overdue, and the program may flag the founder for non-compliance. The signed agreement is never provided, and the seat may be deactivated. The founder's standing in the program deteriorates, and the program may remove the company from the cohort.\",\n    \"act\": \"The founder answers all three asks immediately: provides the signed agreement, submits the progress report (late, but submitted), and confirms the billing name. The incubation cell receives the compliance items and the founder's standing is restored. The invoice is paid on time or shortly after, and the seat remains active.\",\n    \"best\": \"The founder has all three items ready and sends them today. The incubation cell accepts the late report and confirms receipt. The invoice is paid by 30 Sep. The founder's compliance is restored, and the program continues without interruption.\",\n    \"worst\": \"The founder does not respond to this prompt. The 30 Sep invoice deadline passes. The incubation cell suspends the co-working seats and flags the company for non-compliance. The program removes the company from the cohort. The founder loses the program's support and any benefits it provides.\",\n    \"signals_to_watch\": [\n      \"Whether the founder responds to the prompt with the signed agreement and progress report within one day.\",\n      \"Whether the founder confirms the billing name by 30 Sep.\",\n      \"Whether the incubation cell sends a follow-up message after 30 Sep indicating non-payment or suspension.\",\n      \"Whether the founder's status on the program's portal changes to reflect non-compliance or suspension.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The founder is in an active program (Lakshya Accelerator) and has applied to six others; losing standing in this program due to non-compliance would damage credibility with other programs.\",\n      \"Two of the three asks have passed their deadlines; the monthly report is over two weeks late, and the invoice is due in six days.\",\n      \"Non-compliance with an incubation program can result in removal from the cohort, loss of co-working space, and damage to the founder's reputation with the program and its network.\",\n      \"The asks are administrative and low-effort; they should have been answered immediately when received.\",\n      \"The founder is in active fundraising and has multiple programs in motion; losing one program due to administrative oversight is a costly distraction.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Check with the founder immediately on the status of the signed incubation agreement, the monthly progress report, and the billing name confirmation. Ask whether each item is ready to send, or whether there is a blocker. If ready, send all three to the incubation cell today. If there is a blocker, resolve it or communicate the blocker to the incubation cell with a revised date.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-25\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"fact:4\",\n      \"inference:1\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"cap:admin.executive_support.commitment_tracking#q\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1, loop:loop_#2, loop:loop_#3\"\n  },\n  \"alternative\": \"If the founder confirms that all three items are ready, send them directly to the incubation cell on the founder's behalf with a brief note acknowledging the delay and confirming the billing name. This moves the work forward immediately without waiting for the founder to compose the message.\",\n  \"wait_or_stop\": \"Do not wait. The monthly report is already overdue by over two weeks, and the invoice is due in six days. Stop only if the founder confirms that the program is being abandoned or that there is a legal blocker to signing the agreement.\",\n  \"done_when\": \"The founder has provided the signed agreement, the monthly progress report, and the billing name confirmation. All three items have been sent to the incubation cell, and the incubation cell has acknowledged receipt. The invoice is paid by 30 Sep, or a revised payment date has been agreed with the incubation cell.\",\n  \"draft\": \"Hi\u2014I need to flag three open asks from the incubation cell, all waiting on us. The monthly report was due 15 Sep and hasn't been submitted. The invoice is due 30 Sep and we haven't confirmed the billing name. And we still need to send the signed incubation agreement. Can you confirm: do you have all three ready to go, or is there a blocker on any of them? If they're ready, I'll send them today. If there's a blocker, let me know what it is and we'll sort it.\"\n}",
+  "site": "expert"
+ },
+ "1feae95b24b6b9e7663e3c8420992258daa3ae096b004a99b9ffb1ad72662163": {
+  "framed": true,
+  "input_tokens": 13949,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3573,
+  "parsed": {
+   "alternative": "If the founder confirms that both deliverables are complete, send a brief mail to the programme confirming receipt of the requests and stating that the agreement has been signed and the report will be submitted by the deadline, to keep the relationship warm and show responsiveness.",
+   "appraisal": {
+    "reasons": [
+     "The founder has been accepted to a programme and the seat is conditional on signing the agreement and submitting the report.",
+     "The report has a stated deadline of 15 Sep, which is imminent.",
+     "If the founder misses the deadline or does not sign the agreement, the seat can be revoked and given to another company, and the founder loses the opportunity.",
+     "The playbook says that an offer can lapse if the agreement goes unsigned, and a rejection that came with a re-application date is filed as final.",
+     "The programme is on the watchlist, meaning it is a priority for the founder."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "The founder confirms that the incubation agreement has been signed and sent to the programme, and that the monthly progress report has been submitted on the portal by the deadline. The programme confirms receipt of both.",
+   "draft": null,
+   "expected_vs_actual": {
+    "actual": "The programme has sent a request for the signed agreement and a request for the monthly progress report. The founder has not yet responded to either request, and both are waiting on the founder's action.",
+    "expected": "The playbook expects that after acceptance, the programme will send its agreement or contract, the founder will sign it, and the founder will provide any documents the programme needs before the programme's first day. The playbook also expects that once in the programme, the founder will submit regular progress reports on the programme's schedule.",
+    "stage": "onboarding"
+   },
+   "facts": [
+    {
+     "claim": "An incubation programme wrote asking for a signed incubation agreement to activate the seat.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Please share the signed incubation agreement so we can activate your seat."
+    },
+    {
+     "claim": "The same programme wrote asking for a monthly progress report due on a specific date.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Your monthly progress report is due on 15 Sep. Please submit it on the portal."
+    },
+    {
+     "claim": "Both messages arrived within one hour on 2026-09-07, with the agreement request first.",
+     "evidence": [
+      "evt_#2",
+      "evt_#1"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.5 days since the last message.",
+     "evidence": [
+      "file:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No promises were found in the programme's mail.",
+     "evidence": [
+      "none:promises"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as 'whose move: ours' with two open asks waiting on us.",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1",
+      "loop:loop_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The programme is listed in the watchlist as a programme the founder is in.",
+     "evidence": [
+      "brief:cbl_#13",
+      "brief:cbl_#15"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply times have been measured for either contact at the programme.",
+     "evidence": [
+      "num:their_reply_time:naveen@ditincubator.test",
+      "num:your_reply_time:naveen@ditincubator.test",
+      "num:their_reply_time:ritika@ditincubator.test",
+      "num:your_reply_time:ritika@ditincubator.test"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "The founder has been accepted to an incubation programme and is in the onboarding phase. The programme has asked for two deliverables \u2014 a signed agreement and a monthly progress report \u2014 and both are waiting on the founder's action. The founder has not yet responded to either request.",
+    "rivals": [
+     "The founder has already sent both deliverables and the programme's mail is a routine reminder or duplicate.",
+     "The founder is blocked on signing the agreement by a legal or structural issue and needs help to resolve it.",
+     "The founder has deprioritized the programme and the requests are at risk of being missed."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "A check of the founder's outbox or a direct question to the founder about whether these have been sent.",
+     "proposition": "The founder has already signed the agreement and submitted the report, and the programme's mail is a routine reminder or the founder has not yet seen the requests."
+    },
+    {
+     "needs": "A direct question to the founder about the status of each deliverable and any blockers.",
+     "proposition": "The founder has the agreement but has not signed it, or has not yet prepared the monthly report."
+    },
+    {
+     "needs": "A check of the programme's own rules or the agreement (once signed) to see what happens if the report is late.",
+     "proposition": "The programme's deadline for the report is a hard deadline that will affect the founder's standing or funding if missed."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:6"
+     ],
+     "claim": "The programme has made two separate requests, each with its own deadline or submission requirement, and both are waiting on the founder's action."
+    },
+    {
+     "based_on": [
+      "fact:4",
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "The programme's silence since 2026-09-07 06:00 UTC is not a signal of disinterest but a normal administrative wait for the founder to deliver what was asked."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "pb:founder_office.pb.program_applications.documents_after_acceptance"
+     ],
+     "claim": "The file is in the 'in_programme' stage or approaching it, as the programme is asking for the agreement to activate the seat and a monthly report, suggesting the founder has been accepted and onboarding is underway."
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2"
+     ],
+     "claim": "The two asks are distinct obligations: one is a legal document (the agreement) and one is a reporting requirement (the monthly progress report), each with its own deadline."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": "loop:loop_#1, loop:loop_#2",
+    "by_when": "2026-09-09",
+    "for_whom": "the founder",
+    "guided_by": [
+     "pb:founder_office.pb.program_applications.documents_after_acceptance",
+     "cap:admin.executive_support.commitment_tracking#f1",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:6",
+     "inference:1",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "Check with the founder immediately whether the incubation agreement has been signed and sent to the programme, and whether the monthly progress report has been prepared and submitted on the portal. If either is pending, ask the founder what is blocking it and help unblock it. If both are complete, confirm this with the programme.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "When a programme asks for a signed agreement to activate a seat, the agreement is usually a standard form with a fixed deadline, and delay in signing delays the start of benefits or funding.",
+     "kind": "practice",
+     "why": "Programmes use agreements to establish legal terms and protect both parties; a seat cannot be activated until the terms are accepted in writing."
+    },
+    {
+     "claim": "Monthly progress reports to incubation programmes are often templated submissions on a portal, and missing the deadline can affect the startup's standing or the next instalment of support.",
+     "kind": "practice",
+     "why": "Programmes track cohort progress systematically and use reports to monitor milestones and allocate resources."
+    },
+    {
+     "claim": "A founder who has been accepted to a programme but has not yet signed the agreement or submitted the first report is in a vulnerable position: the offer can lapse, the seat can be given to another company, or the first instalment of funding can be delayed.",
+     "kind": "counter_pattern",
+     "why": "Programmes have fixed cohort sizes and timelines; a founder who does not complete onboarding on the programme's schedule loses the slot."
+    },
+    {
+     "claim": "The time between a programme's request for an agreement and the deadline for signing is usually short \u2014 often one to two weeks \u2014 because the programme needs to activate seats and begin the cohort.",
+     "kind": "base_rate",
+     "why": "Programmes run on fixed calendars and cannot hold seats open indefinitely."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.documents_after_acceptance"
+     ],
+     "claim": "Incubation programmes ask for signed agreements and regular reports as part of onboarding and ongoing participation.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3"
+     ],
+     "claim": "A programme's quiet after making a request is normal administrative process, not a signal to chase.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.documents_after_acceptance"
+     ],
+     "claim": "Government and incubation programmes typically require monthly or periodic progress updates from participating startups.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#15",
+     "file:kind"
+    ],
+    "kind": "program",
+    "why": "The file is explicitly marked as a programme application in the brief, and the mail shows the programme is asking for onboarding documents and progress reports, which are standard programme activities."
+   },
+   "scenarios": {
+    "act": "The founder signs the agreement immediately and submits the monthly progress report by the deadline. The seat is activated, the founder enters the programme on schedule, and the relationship with the programme remains strong.",
+    "best": "The founder has already signed the agreement and submitted the report, and the programme's mail is a routine reminder. The founder confirms this to the programme and the file closes as complete.",
+    "do_nothing": "The founder does not respond to the programme's requests. The agreement remains unsigned and the report unsubmitted. The programme may revoke the seat, delay the start of the cohort, or mark the founder as non-compliant. The founder loses the opportunity or falls behind in the programme.",
+    "signals_to_watch": [
+     "A reply from the founder confirming that the agreement has been signed and sent to the programme.",
+     "A reply from the founder confirming that the monthly progress report has been submitted on the portal.",
+     "A follow-up mail from the programme escalating the request or warning of consequences for non-compliance.",
+     "A mail from the programme confirming receipt of the agreement or report."
+    ],
+    "worst": "The founder has not signed the agreement and has not prepared the report. The deadline for the report is imminent (within days). The founder misses the deadline, the programme revokes the seat or marks the founder as non-compliant, and the founder loses the opportunity."
+   },
+   "unknowns": [
+    {
+     "question": "Has the founder already signed and sent the incubation agreement, or is it still pending?",
+     "relevance": "If it has been sent, the file's status is different and the next move is only to track the report. If it has not, the founder is at risk of losing the seat."
+    },
+    {
+     "question": "Has the founder already prepared and submitted the monthly progress report, or is it still pending?",
+     "relevance": "If it has been submitted, the file is on track. If it has not, the founder is at risk of missing the deadline and affecting their standing in the programme."
+    },
+    {
+     "question": "What is the exact deadline for the monthly progress report \u2014 is it 15 September 2026, and is that a hard deadline or a soft one?",
+     "relevance": "The playbook says a programme's deadline is the only fixed point; if this is a hard deadline and the founder has not submitted, the urgency is high."
+    },
+    {
+     "question": "What does the incubation agreement require, and are there any blockers to signing it (e.g., cap table issues, entity structure, legal review)?",
+     "relevance": "If there are blockers, the founder needs to address them before signing; if there are none, the founder should sign immediately."
+    },
+    {
+     "question": "Is the founder currently in the programme (onboarded) or still in the process of being activated?",
+     "relevance": "If the founder is not yet activated, the agreement is a gate to entry. If already activated, the report is a routine requirement."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The report deadline is imminent and the agreement is a gate to activation. Act today to confirm status and unblock any issues. Stop if the founder confirms both deliverables are complete and the programme has received them."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"An incubation programme wrote asking for a signed incubation agreement to activate the seat.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Please share the signed incubation agreement so we can activate your seat.\"\n    },\n    {\n      \"claim\": \"The same programme wrote asking for a monthly progress report due on a specific date.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Your monthly progress report is due on 15 Sep. Please submit it on the portal.\"\n    },\n    {\n      \"claim\": \"Both messages arrived within one hour on 2026-09-07, with the agreement request first.\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"evt_#1\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.5 days since the last message.\",\n      \"evidence\": [\n        \"file:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No promises were found in the programme's mail.\",\n      \"evidence\": [\n        \"none:promises\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as 'whose move: ours' with two open asks waiting on us.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\",\n        \"loop:loop_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The programme is listed in the watchlist as a programme the founder is in.\",\n      \"evidence\": [\n        \"brief:cbl_#13\",\n        \"brief:cbl_#15\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply times have been measured for either contact at the programme.\",\n      \"evidence\": [\n        \"num:their_reply_time:naveen@ditincubator.test\",\n        \"num:your_reply_time:naveen@ditincubator.test\",\n        \"num:their_reply_time:ritika@ditincubator.test\",\n        \"num:your_reply_time:ritika@ditincubator.test\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The programme has made two separate requests, each with its own deadline or submission requirement, and both are waiting on the founder's action.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:6\"\n      ]\n    },\n    {\n      \"claim\": \"The programme's silence since 2026-09-07 06:00 UTC is not a signal of disinterest but a normal administrative wait for the founder to deliver what was asked.\",\n      \"based_on\": [\n        \"fact:4\",\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"claim\": \"The file is in the 'in_programme' stage or approaching it, as the programme is asking for the agreement to activate the seat and a monthly report, suggesting the founder has been accepted and onboarding is underway.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"pb:founder_office.pb.program_applications.documents_after_acceptance\"\n      ]\n    },\n    {\n      \"claim\": \"The two asks are distinct obligations: one is a legal document (the agreement) and one is a reporting requirement (the monthly progress report), each with its own deadline.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Incubation programmes ask for signed agreements and regular reports as part of onboarding and ongoing participation.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.documents_after_acceptance\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme's quiet after making a request is normal administrative process, not a signal to chase.\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Government and incubation programmes typically require monthly or periodic progress updates from participating startups.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.documents_after_acceptance\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"When a programme asks for a signed agreement to activate a seat, the agreement is usually a standard form with a fixed deadline, and delay in signing delays the start of benefits or funding.\",\n      \"why\": \"Programmes use agreements to establish legal terms and protect both parties; a seat cannot be activated until the terms are accepted in writing.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Monthly progress reports to incubation programmes are often templated submissions on a portal, and missing the deadline can affect the startup's standing or the next instalment of support.\",\n      \"why\": \"Programmes track cohort progress systematically and use reports to monitor milestones and allocate resources.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who has been accepted to a programme but has not yet signed the agreement or submitted the first report is in a vulnerable position: the offer can lapse, the seat can be given to another company, or the first instalment of funding can be delayed.\",\n      \"why\": \"Programmes have fixed cohort sizes and timelines; a founder who does not complete onboarding on the programme's schedule loses the slot.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"The time between a programme's request for an agreement and the deadline for signing is usually short \u2014 often one to two weeks \u2014 because the programme needs to activate seats and begin the cohort.\",\n      \"why\": \"Programmes run on fixed calendars and cannot hold seats open indefinitely.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The founder has already signed the agreement and submitted the report, and the programme's mail is a routine reminder or the founder has not yet seen the requests.\",\n      \"needs\": \"A check of the founder's outbox or a direct question to the founder about whether these have been sent.\"\n    },\n    {\n      \"proposition\": \"The founder has the agreement but has not signed it, or has not yet prepared the monthly report.\",\n      \"needs\": \"A direct question to the founder about the status of each deliverable and any blockers.\"\n    },\n    {\n      \"proposition\": \"The programme's deadline for the report is a hard deadline that will affect the founder's standing or funding if missed.\",\n      \"needs\": \"A check of the programme's own rules or the agreement (once signed) to see what happens if the report is late.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the founder already signed and sent the incubation agreement, or is it still pending?\",\n      \"relevance\": \"If it has been sent, the file's status is different and the next move is only to track the report. If it has not, the founder is at risk of losing the seat.\"\n    },\n    {\n      \"question\": \"Has the founder already prepared and submitted the monthly progress report, or is it still pending?\",\n      \"relevance\": \"If it has been submitted, the file is on track. If it has not, the founder is at risk of missing the deadline and affecting their standing in the programme.\"\n    },\n    {\n      \"question\": \"What is the exact deadline for the monthly progress report \u2014 is it 15 September 2026, and is that a hard deadline or a soft one?\",\n      \"relevance\": \"The playbook says a programme's deadline is the only fixed point; if this is a hard deadline and the founder has not submitted, the urgency is high.\"\n    },\n    {\n      \"question\": \"What does the incubation agreement require, and are there any blockers to signing it (e.g., cap table issues, entity structure, legal review)?\",\n      \"relevance\": \"If there are blockers, the founder needs to address them before signing; if there are none, the founder should sign immediately.\"\n    },\n    {\n      \"question\": \"Is the founder currently in the programme (onboarded) or still in the process of being activated?\",\n      \"relevance\": \"If the founder is not yet activated, the agreement is a gate to entry. If already activated, the report is a routine requirement.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"The founder has been accepted to an incubation programme and is in the onboarding phase. The programme has asked for two deliverables \u2014 a signed agreement and a monthly progress report \u2014 and both are waiting on the founder's action. The founder has not yet responded to either request.\",\n    \"rivals\": [\n      \"The founder has already sent both deliverables and the programme's mail is a routine reminder or duplicate.\",\n      \"The founder is blocked on signing the agreement by a legal or structural issue and needs help to resolve it.\",\n      \"The founder has deprioritized the programme and the requests are at risk of being missed.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is explicitly marked as a programme application in the brief, and the mail shows the programme is asking for onboarding documents and progress reports, which are standard programme activities.\",\n    \"evidence\": [\n      \"brief:cbl_#15\",\n      \"file:kind\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"onboarding\",\n    \"expected\": \"The playbook expects that after acceptance, the programme will send its agreement or contract, the founder will sign it, and the founder will provide any documents the programme needs before the programme's first day. The playbook also expects that once in the programme, the founder will submit regular progress reports on the programme's schedule.\",\n    \"actual\": \"The programme has sent a request for the signed agreement and a request for the monthly progress report. The founder has not yet responded to either request, and both are waiting on the founder's action.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not respond to the programme's requests. The agreement remains unsigned and the report unsubmitted. The programme may revoke the seat, delay the start of the cohort, or mark the founder as non-compliant. The founder loses the opportunity or falls behind in the programme.\",\n    \"act\": \"The founder signs the agreement immediately and submits the monthly progress report by the deadline. The seat is activated, the founder enters the programme on schedule, and the relationship with the programme remains strong.\",\n    \"best\": \"The founder has already signed the agreement and submitted the report, and the programme's mail is a routine reminder. The founder confirms this to the programme and the file closes as complete.\",\n    \"worst\": \"The founder has not signed the agreement and has not prepared the report. The deadline for the report is imminent (within days). The founder misses the deadline, the programme revokes the seat or marks the founder as non-compliant, and the founder loses the opportunity.\",\n    \"signals_to_watch\": [\n      \"A reply from the founder confirming that the agreement has been signed and sent to the programme.\",\n      \"A reply from the founder confirming that the monthly progress report has been submitted on the portal.\",\n      \"A follow-up mail from the programme escalating the request or warning of consequences for non-compliance.\",\n      \"A mail from the programme confirming receipt of the agreement or report.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The founder has been accepted to a programme and the seat is conditional on signing the agreement and submitting the report.\",\n      \"The report has a stated deadline of 15 Sep, which is imminent.\",\n      \"If the founder misses the deadline or does not sign the agreement, the seat can be revoked and given to another company, and the founder loses the opportunity.\",\n      \"The playbook says that an offer can lapse if the agreement goes unsigned, and a rejection that came with a re-application date is filed as final.\",\n      \"The programme is on the watchlist, meaning it is a priority for the founder.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Check with the founder immediately whether the incubation agreement has been signed and sent to the programme, and whether the monthly progress report has been prepared and submitted on the portal. If either is pending, ask the founder what is blocking it and help unblock it. If both are complete, confirm this with the programme.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-09\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:6\",\n      \"inference:1\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"pb:founder_office.pb.program_applications.documents_after_acceptance\",\n      \"cap:admin.executive_support.commitment_tracking#f1\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": null,\n    \"answers\": \"loop:loop_#1, loop:loop_#2\"\n  },\n  \"alternative\": \"If the founder confirms that both deliverables are complete, send a brief mail to the programme confirming receipt of the requests and stating that the agreement has been signed and the report will be submitted by the deadline, to keep the relationship warm and show responsiveness.\",\n  \"wait_or_stop\": \"Do not wait. The report deadline is imminent and the agreement is a gate to activation. Act today to confirm status and unblock any issues. Stop if the founder confirms both deliverables are complete and the programme has received them.\",\n  \"done_when\": \"The founder confirms that the incubation agreement has been signed and sent to the programme, and that the monthly progress report has been submitted on the portal by the deadline. The programme confirms receipt of both.\",\n  \"draft\": null\n}",
+  "site": "expert"
+ },
+ "763b9acd10c431ed80d739c04879d41f5d7502619cf54a8e5ee8ac4535c21a8e": {
+  "framed": true,
+  "input_tokens": 13729,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 3986,
+  "parsed": {
+   "alternative": "If the founder confirms that the agreement has been signed, send it to the DIT Incubation Cell immediately. If the founder confirms that the report has been drafted, file it on the portal immediately. If the founder has not signed the agreement or drafted the report, ask when each will be done and by when.",
+   "appraisal": {
+    "reasons": [
+     "The agreement is a gate to activation; without it, the seat is not active and the founder is not in the programme",
+     "The report is due on 2026-09-15, which is 7 days away; missing it signals disengagement to the programme",
+     "A missed report or a missed agreement can result in removal from the cohort, which is costly to reverse",
+     "The programme is on the watchlist, which means it is a priority for the founder",
+     "The file has been quiet for 1.5 days, which is longer than any gap it has closed before, and the ball is in our court"
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "high",
+    "urgency": "high"
+   },
+   "done_when": "The incubation agreement has been sent to the DIT Incubation Cell and the programme has confirmed receipt. The monthly report has been filed on the portal by 2026-09-15. The programme has activated the seat and the founder is in good standing.",
+   "draft": "Hi Arjun \u2014 DIT Incubation Cell asked for the signed agreement and the monthly report (due 15 Sep). Do you have the agreement signed? And is the report ready to file? Let me know where each stands so I can move them today. \u2014 [Your name]",
+   "expected_vs_actual": {
+    "actual": "The founder has been asked for both the agreement and the report. The agreement was asked for on 2026-09-07 at 05:00 UTC with no date given; the report is due on 2026-09-15. The founder has not answered either ask. The file has been quiet for 1.5 days since the last ask.",
+    "expected": "The founder is in the programme and is expected to comply with its administrative calendar: sign the incubation agreement to activate the seat, and file a monthly progress report on the portal by the 15th of each month. The programme sends these asks on its own dates and expects them to be answered on time.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "The DIT Incubation Cell asked for a signed incubation agreement on 2026-09-07 at 05:00 UTC",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Please share the signed incubation agreement so we can activate your seat."
+    },
+    {
+     "claim": "The DIT Incubation Cell requested a monthly progress report due on 2026-09-15 on 2026-09-07 at 06:00 UTC",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "Your monthly progress report is due on 15 Sep. Please submit it on the portal."
+    },
+    {
+     "claim": "Both requests came from the DIT Incubation Cell within one hour of each other",
+     "evidence": [
+      "evt_#2",
+      "evt_#1",
+      "file:last_touch"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 1.5 days since the last touch on 2026-09-07 at 06:00 UTC",
+     "evidence": [
+      "num:days_quiet"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The ball is in our court: two open asks wait on us",
+     "evidence": [
+      "file:whose_move",
+      "loop:loop_#1",
+      "loop:loop_#2"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "This is a watched file \u2014 the brief names it as an active programme the founder is in",
+     "evidence": [
+      "file:role",
+      "brief:cbl_#15"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply times are measured for either contact at the DIT Incubation Cell",
+     "evidence": [
+      "num:their_reply_time:naveen@ditincubator.test",
+      "num:their_reply_time:ritika@ditincubator.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file's usual gap between touches is 0.04 days, and it has now been quiet 1.5 days",
+     "evidence": [
+      "num:usual_gap",
+      "num:days_quiet"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "The founder is in an active incubation programme and has been asked for two documents \u2014 a signed agreement and a monthly report. The agreement is a gate to activation; the report is a monthly compliance beat. Both are overdue by the programme's clock, and the founder has not answered either ask. The silence is ours, not the programme's.",
+    "rivals": [
+     "The founder has signed the agreement and drafted the report but has not sent them; this is a filing task, not a decision task.",
+     "The founder has decided not to take the seat and is waiting for the right moment to tell the programme; this is a conversation task, not a filing task.",
+     "The founder is blocked on the agreement by a legal or cap table issue and has not told the programme; this is a blocker resolution task, not a filing task."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Check whether the agreement is in the company's files, signed and dated; if so, send it now",
+     "proposition": "The incubation agreement has been signed but not sent to the programme"
+    },
+    {
+     "needs": "A conversation with the founder about what is blocking the signature",
+     "proposition": "The agreement is unsigned because of a legal or cap table issue"
+    },
+    {
+     "needs": "A conversation with the founder about the decision",
+     "proposition": "The founder has decided not to take the seat and has not told the programme"
+    },
+    {
+     "needs": "Check the portal to see whether the report has been filed; if not, ask the founder when it will be",
+     "proposition": "The monthly report is ready but not yet filed on the portal"
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "evt_#2"
+     ],
+     "claim": "The DIT Incubation Cell is signalling that activation of the seat is blocked on the signed agreement"
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "pb:founder_office.pb.program_applications.follow_an_application"
+     ],
+     "claim": "The monthly report deadline of 2026-09-15 is a hard date set by the programme, not a suggestion"
+    },
+    {
+     "based_on": [
+      "fact:5",
+      "file:whose_move"
+     ],
+     "claim": "The silence since 2026-09-07 06:00 UTC is not a programme silence \u2014 it is our silence; we have not answered either ask"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "evt_#2",
+      "evt_#1"
+     ],
+     "claim": "The programme expects both the agreement and the report; the agreement gates activation, and the report is a monthly cadence"
+    }
+   ],
+   "mode": "find_out",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-08",
+    "for_whom": "the founder",
+    "guided_by": [
+     "cap:admin.executive_support.commitment_tracking#q",
+     "own:1",
+     "own:2",
+     "own:3"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:5",
+     "inference:1",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": null,
+    "what": "ask the founder whether the incubation agreement has been signed, and if so, where it is; ask whether the monthly report has been drafted, and if so, when it will be filed on the portal",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "An incubation agreement is not a negotiable document; it is the programme's standard terms, and signing it is the price of the seat",
+     "kind": "practice",
+     "why": "Programmes use standard agreements to move fast and to treat all cohort members alike. Negotiating delays activation and signals to the programme that the founder is not ready to commit."
+    },
+    {
+     "claim": "A founder who does not sign an agreement within a week of being asked has usually hit a blocker \u2014 a legal review, a cap table issue, or a decision not to take the seat",
+     "kind": "base_rate",
+     "why": "Signing is a one-hour task if the founder is committed. Delay beyond a week usually means something is stuck, not that the founder is busy."
+    },
+    {
+     "claim": "A monthly report due on a fixed date is a compliance beat, not a conversation; it is filed on the portal, not sent by mail, and the programme reads it there",
+     "kind": "practice",
+     "why": "Programmes use portals to keep records and to avoid mail getting lost. A report filed late on the portal is still late, and the programme sees it when it checks the portal, not when it arrives in mail."
+    },
+    {
+     "claim": "A founder who misses the first monthly report often misses the second; the programme then escalates or removes the founder from the cohort",
+     "kind": "counter_pattern",
+     "why": "A missed report is read as disengagement. Programmes have limited seats and will replace a founder who is not engaged."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.follow_an_application",
+      "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides"
+     ],
+     "claim": "A programme in the in_programme stage sends administrative asks \u2014 documents, reports, compliance items \u2014 on its own calendar, not on the applicant's",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.documents_after_acceptance",
+      "evt_#2"
+     ],
+     "claim": "An incubation agreement is a gate: the programme will not activate the seat until it is signed",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.documents_after_acceptance",
+      "evt_#1"
+     ],
+     "claim": "A monthly report cadence, once started, is a recurring obligation; missing one signals disengagement to the programme",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "cap:admin.executive_support.commitment_tracking#f3",
+      "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+     ],
+     "claim": "A programme does not chase a founder for a document twice; silence after the first ask is read as a no",
+     "kind": "counter_pattern"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "brief:cbl_#15",
+     "file:kind",
+     "file:role"
+    ],
+    "kind": "program",
+    "why": "The file is an active incubation programme the founder is in, as named in the brief. The asks are administrative \u2014 a signed agreement and a monthly report \u2014 which are the programme's own compliance beats, not investor asks or partnership asks."
+   },
+   "scenarios": {
+    "act": "The founder sends the signed agreement today and files the monthly report on the portal by 2026-09-15. The programme activates the seat and receives the report on time. The founder stays in the programme and is in good standing.",
+    "best": "The agreement has already been signed and is in the company's files; the report has been drafted. The founder sends the agreement today and files the report by 2026-09-15. The programme activates the seat, receives the report on time, and the founder is in good standing.",
+    "do_nothing": "The founder does not send the agreement or file the report. The programme does not activate the seat. On 2026-09-15, the report is not filed, and the programme escalates or removes the founder from the cohort. The seat is lost, and the founder's standing in the programme is damaged.",
+    "signals_to_watch": [
+     "Whether the agreement is in the company's files, signed and dated",
+     "Whether the report has been drafted",
+     "Whether the founder has a blocker to signing the agreement",
+     "Whether the founder has decided not to take the seat",
+     "Whether the programme escalates on 2026-09-15 if the report is not filed"
+    ],
+    "worst": "The founder has decided not to take the seat and has not told the programme. The founder does not send the agreement or file the report. The programme escalates on 2026-09-15 and removes the founder from the cohort. The seat is lost, and the founder's standing in the programme is damaged. The founder then has to re-apply to a future cohort."
+   },
+   "unknowns": [
+    {
+     "question": "Has the incubation agreement been signed?",
+     "relevance": "If it has been signed, the next move is to send it; if not, the founder must decide whether to sign it, and if so, when. This is the gate to activation."
+    },
+    {
+     "question": "Is there a blocker to signing the agreement \u2014 a legal issue, a cap table problem, or a decision not to take the seat?",
+     "relevance": "If there is a blocker, it must be resolved before the agreement can be signed. If the founder has decided not to take the seat, the file should be closed."
+    },
+    {
+     "question": "Has the monthly report been drafted?",
+     "relevance": "If it has been drafted, the next move is to file it on the portal before 2026-09-15. If not, the founder must decide when to draft it."
+    },
+    {
+     "question": "What is the DIT Incubation Cell's rule for a missed report \u2014 does it escalate, or does it remove the founder from the cohort?",
+     "relevance": "If the programme removes founders for a missed report, the stakes are high. If it escalates, there is time to recover."
+    }
+   ],
+   "wait_or_stop": "Wait until the founder answers whether the agreement is signed and the report is drafted. If the founder says the agreement is signed, send it the same day. If the founder says the report is drafted, file it the same day. If the founder says either is blocked, ask what the blocker is and when it will be resolved. If the founder says they have decided not to take the seat, close the file with that reason. Do not wait past 2026-09-14 to file the report; if it is not filed by then, the programme will escalate on 2026-09-15."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"The DIT Incubation Cell asked for a signed incubation agreement on 2026-09-07 at 05:00 UTC\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Please share the signed incubation agreement so we can activate your seat.\"\n    },\n    {\n      \"claim\": \"The DIT Incubation Cell requested a monthly progress report due on 2026-09-15 on 2026-09-07 at 06:00 UTC\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"Your monthly progress report is due on 15 Sep. Please submit it on the portal.\"\n    },\n    {\n      \"claim\": \"Both requests came from the DIT Incubation Cell within one hour of each other\",\n      \"evidence\": [\n        \"evt_#2\",\n        \"evt_#1\",\n        \"file:last_touch\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 1.5 days since the last touch on 2026-09-07 at 06:00 UTC\",\n      \"evidence\": [\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The ball is in our court: two open asks wait on us\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"loop:loop_#1\",\n        \"loop:loop_#2\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"This is a watched file \u2014 the brief names it as an active programme the founder is in\",\n      \"evidence\": [\n        \"file:role\",\n        \"brief:cbl_#15\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply times are measured for either contact at the DIT Incubation Cell\",\n      \"evidence\": [\n        \"num:their_reply_time:naveen@ditincubator.test\",\n        \"num:their_reply_time:ritika@ditincubator.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file's usual gap between touches is 0.04 days, and it has now been quiet 1.5 days\",\n      \"evidence\": [\n        \"num:usual_gap\",\n        \"num:days_quiet\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The DIT Incubation Cell is signalling that activation of the seat is blocked on the signed agreement\",\n      \"based_on\": [\n        \"fact:1\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"claim\": \"The monthly report deadline of 2026-09-15 is a hard date set by the programme, not a suggestion\",\n      \"based_on\": [\n        \"fact:2\",\n        \"pb:founder_office.pb.program_applications.follow_an_application\"\n      ]\n    },\n    {\n      \"claim\": \"The silence since 2026-09-07 06:00 UTC is not a programme silence \u2014 it is our silence; we have not answered either ask\",\n      \"based_on\": [\n        \"fact:5\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"claim\": \"The programme expects both the agreement and the report; the agreement gates activation, and the report is a monthly cadence\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"evt_#2\",\n        \"evt_#1\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A programme in the in_programme stage sends administrative asks \u2014 documents, reports, compliance items \u2014 on its own calendar, not on the applicant's\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.follow_an_application\",\n        \"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"An incubation agreement is a gate: the programme will not activate the seat until it is signed\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.documents_after_acceptance\",\n        \"evt_#2\"\n      ]\n    },\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"A monthly report cadence, once started, is a recurring obligation; missing one signals disengagement to the programme\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.documents_after_acceptance\",\n        \"evt_#1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A programme does not chase a founder for a document twice; silence after the first ask is read as a no\",\n      \"based_on\": [\n        \"cap:admin.executive_support.commitment_tracking#f3\",\n        \"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"An incubation agreement is not a negotiable document; it is the programme's standard terms, and signing it is the price of the seat\",\n      \"why\": \"Programmes use standard agreements to move fast and to treat all cohort members alike. Negotiating delays activation and signals to the programme that the founder is not ready to commit.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"A founder who does not sign an agreement within a week of being asked has usually hit a blocker \u2014 a legal review, a cap table issue, or a decision not to take the seat\",\n      \"why\": \"Signing is a one-hour task if the founder is committed. Delay beyond a week usually means something is stuck, not that the founder is busy.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A monthly report due on a fixed date is a compliance beat, not a conversation; it is filed on the portal, not sent by mail, and the programme reads it there\",\n      \"why\": \"Programmes use portals to keep records and to avoid mail getting lost. A report filed late on the portal is still late, and the programme sees it when it checks the portal, not when it arrives in mail.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"A founder who misses the first monthly report often misses the second; the programme then escalates or removes the founder from the cohort\",\n      \"why\": \"A missed report is read as disengagement. Programmes have limited seats and will replace a founder who is not engaged.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The incubation agreement has been signed but not sent to the programme\",\n      \"needs\": \"Check whether the agreement is in the company's files, signed and dated; if so, send it now\"\n    },\n    {\n      \"proposition\": \"The agreement is unsigned because of a legal or cap table issue\",\n      \"needs\": \"A conversation with the founder about what is blocking the signature\"\n    },\n    {\n      \"proposition\": \"The founder has decided not to take the seat and has not told the programme\",\n      \"needs\": \"A conversation with the founder about the decision\"\n    },\n    {\n      \"proposition\": \"The monthly report is ready but not yet filed on the portal\",\n      \"needs\": \"Check the portal to see whether the report has been filed; if not, ask the founder when it will be\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the incubation agreement been signed?\",\n      \"relevance\": \"If it has been signed, the next move is to send it; if not, the founder must decide whether to sign it, and if so, when. This is the gate to activation.\"\n    },\n    {\n      \"question\": \"Is there a blocker to signing the agreement \u2014 a legal issue, a cap table problem, or a decision not to take the seat?\",\n      \"relevance\": \"If there is a blocker, it must be resolved before the agreement can be signed. If the founder has decided not to take the seat, the file should be closed.\"\n    },\n    {\n      \"question\": \"Has the monthly report been drafted?\",\n      \"relevance\": \"If it has been drafted, the next move is to file it on the portal before 2026-09-15. If not, the founder must decide when to draft it.\"\n    },\n    {\n      \"question\": \"What is the DIT Incubation Cell's rule for a missed report \u2014 does it escalate, or does it remove the founder from the cohort?\",\n      \"relevance\": \"If the programme removes founders for a missed report, the stakes are high. If it escalates, there is time to recover.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"The founder is in an active incubation programme and has been asked for two documents \u2014 a signed agreement and a monthly report. The agreement is a gate to activation; the report is a monthly compliance beat. Both are overdue by the programme's clock, and the founder has not answered either ask. The silence is ours, not the programme's.\",\n    \"rivals\": [\n      \"The founder has signed the agreement and drafted the report but has not sent them; this is a filing task, not a decision task.\",\n      \"The founder has decided not to take the seat and is waiting for the right moment to tell the programme; this is a conversation task, not a filing task.\",\n      \"The founder is blocked on the agreement by a legal or cap table issue and has not told the programme; this is a blocker resolution task, not a filing task.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is an active incubation programme the founder is in, as named in the brief. The asks are administrative \u2014 a signed agreement and a monthly report \u2014 which are the programme's own compliance beats, not investor asks or partnership asks.\",\n    \"evidence\": [\n      \"brief:cbl_#15\",\n      \"file:kind\",\n      \"file:role\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The founder is in the programme and is expected to comply with its administrative calendar: sign the incubation agreement to activate the seat, and file a monthly progress report on the portal by the 15th of each month. The programme sends these asks on its own dates and expects them to be answered on time.\",\n    \"actual\": \"The founder has been asked for both the agreement and the report. The agreement was asked for on 2026-09-07 at 05:00 UTC with no date given; the report is due on 2026-09-15. The founder has not answered either ask. The file has been quiet for 1.5 days since the last ask.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The founder does not send the agreement or file the report. The programme does not activate the seat. On 2026-09-15, the report is not filed, and the programme escalates or removes the founder from the cohort. The seat is lost, and the founder's standing in the programme is damaged.\",\n    \"act\": \"The founder sends the signed agreement today and files the monthly report on the portal by 2026-09-15. The programme activates the seat and receives the report on time. The founder stays in the programme and is in good standing.\",\n    \"best\": \"The agreement has already been signed and is in the company's files; the report has been drafted. The founder sends the agreement today and files the report by 2026-09-15. The programme activates the seat, receives the report on time, and the founder is in good standing.\",\n    \"worst\": \"The founder has decided not to take the seat and has not told the programme. The founder does not send the agreement or file the report. The programme escalates on 2026-09-15 and removes the founder from the cohort. The seat is lost, and the founder's standing in the programme is damaged. The founder then has to re-apply to a future cohort.\",\n    \"signals_to_watch\": [\n      \"Whether the agreement is in the company's files, signed and dated\",\n      \"Whether the report has been drafted\",\n      \"Whether the founder has a blocker to signing the agreement\",\n      \"Whether the founder has decided not to take the seat\",\n      \"Whether the programme escalates on 2026-09-15 if the report is not filed\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"high\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The agreement is a gate to activation; without it, the seat is not active and the founder is not in the programme\",\n      \"The report is due on 2026-09-15, which is 7 days away; missing it signals disengagement to the programme\",\n      \"A missed report or a missed agreement can result in removal from the cohort, which is costly to reverse\",\n      \"The programme is on the watchlist, which means it is a priority for the founder\",\n      \"The file has been quiet for 1.5 days, which is longer than any gap it has closed before, and the ball is in our court\"\n    ]\n  },\n  \"mode\": \"find_out\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"ask the founder whether the incubation agreement has been signed, and if so, where it is; ask whether the monthly report has been drafted, and if so, when it will be filed on the portal\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-08\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:5\",\n      \"inference:1\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"cap:admin.executive_support.commitment_tracking#q\",\n      \"own:1\",\n      \"own:2\",\n      \"own:3\"\n    ],\n    \"to\": null,\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder confirms that the agreement has been signed, send it to the DIT Incubation Cell immediately. If the founder confirms that the report has been drafted, file it on the portal immediately. If the founder has not signed the agreement or drafted the report, ask when each will be done and by when.\",\n  \"wait_or_stop\": \"Wait until the founder answers whether the agreement is signed and the report is drafted. If the founder says the agreement is signed, send it the same day. If the founder says the report is drafted, file it the same day. If the founder says either is blocked, ask what the blocker is and when it will be resolved. If the founder says they have decided not to take the seat, close the file with that reason. Do not wait past 2026-09-14 to file the report; if it is not filed by then, the programme will escalate on 2026-09-15.\",\n  \"done_when\": \"The incubation agreement has been sent to the DIT Incubation Cell and the programme has confirmed receipt. The monthly report has been filed on the portal by 2026-09-15. The programme has activated the seat and the founder is in good standing.\",\n  \"draft\": \"Hi Arjun \u2014 DIT Incubation Cell asked for the signed agreement and the monthly report (due 15 Sep). Do you have the agreement signed? And is the report ready to file? Let me know where each stands so I can move them today. \u2014 [Your name]\"\n}",
+  "site": "expert"
+ },
+ "8cda2641ec661f2c74af1162ae31ef8a7a93b6a0efab123464c78a6ad46f5113": {
+  "framed": true,
+  "input_tokens": 14077,
+  "model": "claude-haiku-4-5-20251001",
+  "output_tokens": 4178,
+  "parsed": {
+   "alternative": "If the founder cannot be reached by phone or chat, send a written summary of the three asks with their deadlines and ask for a response within 24 hours. Include a note that the billing deadline is six days away and the monthly report is overdue, and that non-compliance may result in loss of program benefits.",
+   "appraisal": {
+    "reasons": [
+     "The founder is in an active program with real benefits (co-working space, mentorship, network access) that can be suspended or revoked if compliance deadlines are missed.",
+     "The billing confirmation deadline is six days away (2026-09-30), creating a hard time constraint.",
+     "The monthly report is already overdue (due 2026-09-15, now 2026-09-24), and continued non-response may trigger escalation.",
+     "Non-compliance with a program can damage the founder's reputation with the program's network and affect future opportunities.",
+     "The unsigned agreement blocks activation of the seat, which may already be impacting the founder's ability to use program resources.",
+     "Losing standing in an active program is costly to reverse; re-entry or reputation repair takes time and effort."
+    ],
+    "reversibility": "costly_to_reverse",
+    "stakes": "medium",
+    "urgency": "high"
+   },
+   "done_when": "The founder has answered all three asks: (1) the signed incubation agreement has been returned to the program, (2) the monthly progress report has been submitted to the program portal, and (3) the billing name has been confirmed to the program. The program has confirmed receipt of all three items, or the founder has confirmed submission to the program portal. The file is updated with the dates of submission and confirmation.",
+   "draft": "Arjun \u2014 I've flagged three asks from DIT Incubation Cell that need your attention immediately. The billing confirmation is due Sep 30 (six days), the monthly report was due Sep 15 (now overdue), and the signed agreement is still pending. Can we talk today about what's blocking each one? I want to make sure we stay in good standing with the program. Let me know what you need from me to move these forward.",
+   "expected_vs_actual": {
+    "actual": "The founder has not answered three administrative asks in seventeen days. The first ask (signed agreement) has been open since 2026-09-07. The second ask (monthly report) was due 2026-09-15 and is now overdue. The third ask (billing confirmation) is due 2026-09-30 and is six days away. No responses are recorded in the file.",
+    "expected": "The founder is in an active program and should be responding to administrative asks within the program's stated timelines. The playbook expects the founder to submit required documents, reports, and confirmations on time to maintain good standing. Quiet at this stage means nothing about the application, which is settled; what matters is the program's own deadlines \u2014 assignments, reviews, co-working logistics \u2014 published to the cohort and fixed for all of it.",
+    "stage": "in_programme"
+   },
+   "facts": [
+    {
+     "claim": "The DIT Incubation Cell asked for a signed incubation agreement on 2026-09-07 at 05:00 UTC.",
+     "evidence": [
+      "evt_#3"
+     ],
+     "quote": "Please share the signed incubation agreement so we can activate your seat."
+    },
+    {
+     "claim": "The DIT Incubation Cell asked for a monthly progress report due 2026-09-15 on 2026-09-07 at 06:00 UTC.",
+     "evidence": [
+      "evt_#2"
+     ],
+     "quote": "Your monthly progress report is due on 15 Sep. Please submit it on the portal."
+    },
+    {
+     "claim": "The DIT Incubation Cell asked for confirmation of billing name for two co-working seats, with invoice due 2026-09-30, on 2026-09-24 at 09:00 UTC.",
+     "evidence": [
+      "evt_#1"
+     ],
+     "quote": "The invoice for your two co-working seats is due on 30 Sep. Could you confirm the billing name?"
+    },
+    {
+     "claim": "Three open asks remain on this file, all awaiting the founder's response.",
+     "evidence": [
+      "file:whose_move",
+      "file:open_asks"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file has been quiet for 0.38 days, within the median gap of 8.58 days that has closed before.",
+     "evidence": [
+      "num:days_quiet",
+      "num:usual_gap"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "No reply times have been measured for any contact at the incubation cell.",
+     "evidence": [
+      "num:their_reply_time:ekta@ditincubator.test",
+      "num:their_reply_time:naveen@ditincubator.test",
+      "num:their_reply_time:ritika@ditincubator.test"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "The file is marked as 'whose_move: ours', meaning the founder holds the ball.",
+     "evidence": [
+      "file:whose_move"
+     ],
+     "quote": null
+    },
+    {
+     "claim": "Nimbus Labs is in the Lakshya Accelerator active cohort and has applied to six other programs.",
+     "evidence": [
+      "brief:cbl_#13",
+      "brief:cbl_#14",
+      "brief:cbl_#15",
+      "brief:cbl_#16",
+      "brief:cbl_#17",
+      "brief:cbl_#18"
+     ],
+     "quote": null
+    }
+   ],
+   "frames": {
+    "primary": "The founder is in an active program with three overdue or near-overdue administrative asks. The most recent ask (billing confirmation) has a hard deadline in six days. The founder has not answered any of them in seventeen days, despite holding the ball. This is a compliance risk that could result in loss of program benefits or removal from the cohort.",
+    "rivals": [
+     "The founder has answered these asks but the program has not confirmed receipt, and the file is out of sync with reality.",
+     "The founder is waiting for clarification from the program on one or more of the asks and has not escalated the blocker.",
+     "The founder is deprioritizing program compliance because other work (fundraising, hiring) is more urgent, and this is a deliberate choice rather than an oversight."
+    ]
+   },
+   "hypotheses": [
+    {
+     "needs": "Confirmation that the emails reached the founder's inbox and were read.",
+     "proposition": "The founder is unaware of the asks or has not seen the emails."
+    },
+    {
+     "needs": "A direct conversation with the founder about what is blocking each response.",
+     "proposition": "The founder is waiting for clarification or has a blocker (e.g., unclear billing name, uncertainty about what to include in the report)."
+    },
+    {
+     "needs": "Understanding the founder's current priorities and capacity.",
+     "proposition": "The founder is deprioritizing program compliance in favor of other work (fundraising, hiring, product)."
+    },
+    {
+     "needs": "Checking the program portal or asking the program for confirmation of what has been received.",
+     "proposition": "The founder has already submitted some of these items (e.g., the report) but the program has not confirmed receipt."
+    }
+   ],
+   "inferences": [
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "file:first_touch",
+      "file:last_touch"
+     ],
+     "claim": "The founder has not answered any of the three asks from the incubation cell in the seventeen days since the first one arrived."
+    },
+    {
+     "based_on": [
+      "fact:3"
+     ],
+     "claim": "The most recent ask (billing name confirmation) is the most time-sensitive, with a hard deadline of 2026-09-30 for the invoice."
+    },
+    {
+     "based_on": [
+      "fact:2",
+      "file:last_touch"
+     ],
+     "claim": "The monthly progress report was due 2026-09-15, which has now passed without evidence of submission."
+    },
+    {
+     "based_on": [
+      "fact:1"
+     ],
+     "claim": "The incubation agreement remains unsigned, blocking the activation of the seat."
+    },
+    {
+     "based_on": [
+      "brief:cbl_#13",
+      "file:kind"
+     ],
+     "claim": "This is an active program relationship where the founder is already enrolled, not an application awaiting a decision."
+    }
+   ],
+   "mode": "act",
+   "next_move": {
+    "answers": null,
+    "by_when": "2026-09-24",
+    "for_whom": "the founder",
+    "guided_by": [
+     "rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball",
+     "cap:admin.executive_support.commitment_tracking#q",
+     "own:1",
+     "own:2"
+    ],
+    "rests_on": [
+     "fact:1",
+     "fact:2",
+     "fact:3",
+     "fact:7",
+     "inference:1",
+     "inference:2",
+     "inference:3"
+    ],
+    "to": "arjun@nimbuslabs.test",
+    "what": "Contact the founder immediately to surface the three overdue asks, understand what is blocking each response, and commit to a timeline for answering all three by 2026-09-28.",
+    "who": "you"
+   },
+   "own": [
+    {
+     "claim": "Administrative asks from programs should be answered within two business days to maintain good standing and avoid escalation.",
+     "kind": "practice",
+     "why": "Programs track compliance as a measure of founder seriousness; delays signal disorganization and can affect future opportunities with the same program or its network."
+    },
+    {
+     "claim": "When a founder is in an active program, program compliance takes priority over applications to other programs.",
+     "kind": "base_rate",
+     "why": "The active program is a confirmed commitment with real deadlines; applications are still uncertain. Losing standing in an active program damages credibility with the program's network."
+    },
+    {
+     "claim": "Founders often deprioritize administrative asks from programs in favor of fundraising or product work, treating them as low-urgency.",
+     "kind": "counter_pattern",
+     "why": "The asks feel like paperwork rather than business-critical work, but programs use compliance as a filter for founders who can execute."
+    },
+    {
+     "claim": "A signed agreement is a prerequisite for most program benefits; unsigned agreements block access to resources, mentorship, and co-working space.",
+     "kind": "practice",
+     "why": "Programs require legal clarity before they can provide services or liability coverage."
+    }
+   ],
+   "patterns": [
+    {
+     "based_on": [
+      "own:1"
+     ],
+     "claim": "Administrative asks from programs accumulate when unanswered, creating cascading compliance issues.",
+     "kind": "pattern"
+    },
+    {
+     "based_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3",
+      "file:whose_move"
+     ],
+     "claim": "The founder has not replied to any of three separate asks over seventeen days, despite the file being marked 'whose_move: ours'.",
+     "kind": "counter_pattern"
+    },
+    {
+     "based_on": [
+      "pb:founder_office.pb.program_applications.documents_after_acceptance"
+     ],
+     "claim": "Program compliance deadlines are fixed and non-negotiable; missing them can result in seat suspension or removal from the cohort.",
+     "kind": "base_rate"
+    }
+   ],
+   "proposed_kind": {
+    "evidence": [
+     "file:kind",
+     "brief:cbl_#13"
+    ],
+    "kind": "program",
+    "why": "The file is marked as 'program' in the brief, and the work is compliance and administration within an active accelerator cohort, not an application or a decision."
+   },
+   "scenarios": {
+    "act": "The founder is contacted immediately to surface the three asks and understand what is blocking each response. If the blocker is unclear requirements, the program is asked for clarification. If the blocker is missing information, it is provided. If the blocker is deprioritization, the founder resets priorities to ensure compliance. The founder answers all three asks by 2026-09-28, well before the 2026-09-30 deadline. The program confirms receipt and the founder remains in good standing.",
+    "best": "The founder has already submitted the monthly report to the program portal but the program has not confirmed receipt by email. The billing name is straightforward and the founder answers within one business day. The signed agreement is returned within two business days. All three asks are resolved by 2026-09-26, and the founder remains in good standing with the program.",
+    "do_nothing": "The billing confirmation deadline passes on 2026-09-30 without a response. The program may suspend or cancel the co-working seats, or escalate to the founder with a warning. The monthly report remains overdue. The incubation agreement remains unsigned, potentially blocking access to program resources or mentorship. The program may interpret the silence as disengagement and reduce support or remove the founder from the cohort. The founder loses credibility with the program and its network.",
+    "signals_to_watch": [
+     "Whether the founder responds to the initial outreach within one business day.",
+     "Whether the founder has already submitted the monthly report to the program portal.",
+     "Whether the founder identifies a specific blocker (unclear requirements, missing information) or deprioritization.",
+     "Whether the program has sent any escalation or warning emails after the deadlines passed.",
+     "Whether the founder's responses are complete and accurate, or partial and requiring follow-up."
+    ],
+    "worst": "The founder does not respond by 2026-09-30. The program suspends the co-working seats and escalates to the founder with a formal warning. The monthly report is marked as missing and the founder is flagged as non-compliant. The unsigned agreement blocks access to program resources. The founder is removed from the cohort or placed on probation. The program shares the non-compliance with other programs in its network, damaging the founder's reputation."
+   },
+   "unknowns": [
+    {
+     "question": "Has the founder seen these three emails, or have they been missed or filtered?",
+     "relevance": "If unseen, the next move is to surface them; if seen, the next move is to understand the blocker."
+    },
+    {
+     "question": "What is blocking the founder from answering each ask? Is it unclear requirements, missing information, or deprioritization?",
+     "relevance": "The blocker determines whether the move is to clarify, to provide information, or to reset priorities."
+    },
+    {
+     "question": "Has the monthly progress report already been submitted to the program portal, even if not confirmed by email?",
+     "relevance": "If submitted, the file's urgency drops; if not, it is now overdue and requires immediate action."
+    },
+    {
+     "question": "What is the program's escalation policy if these asks go unanswered past their deadlines?",
+     "relevance": "Understanding the consequences (seat suspension, removal from cohort, loss of benefits) would clarify the urgency."
+    },
+    {
+     "question": "Is the founder's billing name different from the company name, or is there ambiguity about which entity should be billed?",
+     "relevance": "If there is ambiguity, the founder may be waiting for guidance rather than avoiding the ask."
+    }
+   ],
+   "wait_or_stop": "Do not wait. The billing deadline is six days away and the monthly report is already overdue. Act today. If the founder does not respond within 24 hours, escalate by checking the program portal to see if the monthly report has been submitted, and by sending a follow-up message to the founder with a clear deadline for all three responses (2026-09-28). If the founder does not respond by 2026-09-28, the file should be escalated to the founder's attention as a critical compliance issue that could result in removal from the program."
+  },
+  "raw": "{\n  \"facts\": [\n    {\n      \"claim\": \"The DIT Incubation Cell asked for a signed incubation agreement on 2026-09-07 at 05:00 UTC.\",\n      \"evidence\": [\n        \"evt_#3\"\n      ],\n      \"quote\": \"Please share the signed incubation agreement so we can activate your seat.\"\n    },\n    {\n      \"claim\": \"The DIT Incubation Cell asked for a monthly progress report due 2026-09-15 on 2026-09-07 at 06:00 UTC.\",\n      \"evidence\": [\n        \"evt_#2\"\n      ],\n      \"quote\": \"Your monthly progress report is due on 15 Sep. Please submit it on the portal.\"\n    },\n    {\n      \"claim\": \"The DIT Incubation Cell asked for confirmation of billing name for two co-working seats, with invoice due 2026-09-30, on 2026-09-24 at 09:00 UTC.\",\n      \"evidence\": [\n        \"evt_#1\"\n      ],\n      \"quote\": \"The invoice for your two co-working seats is due on 30 Sep. Could you confirm the billing name?\"\n    },\n    {\n      \"claim\": \"Three open asks remain on this file, all awaiting the founder's response.\",\n      \"evidence\": [\n        \"file:whose_move\",\n        \"file:open_asks\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file has been quiet for 0.38 days, within the median gap of 8.58 days that has closed before.\",\n      \"evidence\": [\n        \"num:days_quiet\",\n        \"num:usual_gap\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"No reply times have been measured for any contact at the incubation cell.\",\n      \"evidence\": [\n        \"num:their_reply_time:ekta@ditincubator.test\",\n        \"num:their_reply_time:naveen@ditincubator.test\",\n        \"num:their_reply_time:ritika@ditincubator.test\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"The file is marked as 'whose_move: ours', meaning the founder holds the ball.\",\n      \"evidence\": [\n        \"file:whose_move\"\n      ],\n      \"quote\": null\n    },\n    {\n      \"claim\": \"Nimbus Labs is in the Lakshya Accelerator active cohort and has applied to six other programs.\",\n      \"evidence\": [\n        \"brief:cbl_#13\",\n        \"brief:cbl_#14\",\n        \"brief:cbl_#15\",\n        \"brief:cbl_#16\",\n        \"brief:cbl_#17\",\n        \"brief:cbl_#18\"\n      ],\n      \"quote\": null\n    }\n  ],\n  \"inferences\": [\n    {\n      \"claim\": \"The founder has not answered any of the three asks from the incubation cell in the seventeen days since the first one arrived.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\",\n        \"file:first_touch\",\n        \"file:last_touch\"\n      ]\n    },\n    {\n      \"claim\": \"The most recent ask (billing name confirmation) is the most time-sensitive, with a hard deadline of 2026-09-30 for the invoice.\",\n      \"based_on\": [\n        \"fact:3\"\n      ]\n    },\n    {\n      \"claim\": \"The monthly progress report was due 2026-09-15, which has now passed without evidence of submission.\",\n      \"based_on\": [\n        \"fact:2\",\n        \"file:last_touch\"\n      ]\n    },\n    {\n      \"claim\": \"The incubation agreement remains unsigned, blocking the activation of the seat.\",\n      \"based_on\": [\n        \"fact:1\"\n      ]\n    },\n    {\n      \"claim\": \"This is an active program relationship where the founder is already enrolled, not an application awaiting a decision.\",\n      \"based_on\": [\n        \"brief:cbl_#13\",\n        \"file:kind\"\n      ]\n    }\n  ],\n  \"patterns\": [\n    {\n      \"kind\": \"pattern\",\n      \"claim\": \"Administrative asks from programs accumulate when unanswered, creating cascading compliance issues.\",\n      \"based_on\": [\n        \"own:1\"\n      ]\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"The founder has not replied to any of three separate asks over seventeen days, despite the file being marked 'whose_move: ours'.\",\n      \"based_on\": [\n        \"fact:1\",\n        \"fact:2\",\n        \"fact:3\",\n        \"file:whose_move\"\n      ]\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"Program compliance deadlines are fixed and non-negotiable; missing them can result in seat suspension or removal from the cohort.\",\n      \"based_on\": [\n        \"pb:founder_office.pb.program_applications.documents_after_acceptance\"\n      ]\n    }\n  ],\n  \"own\": [\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"Administrative asks from programs should be answered within two business days to maintain good standing and avoid escalation.\",\n      \"why\": \"Programs track compliance as a measure of founder seriousness; delays signal disorganization and can affect future opportunities with the same program or its network.\"\n    },\n    {\n      \"kind\": \"base_rate\",\n      \"claim\": \"When a founder is in an active program, program compliance takes priority over applications to other programs.\",\n      \"why\": \"The active program is a confirmed commitment with real deadlines; applications are still uncertain. Losing standing in an active program damages credibility with the program's network.\"\n    },\n    {\n      \"kind\": \"counter_pattern\",\n      \"claim\": \"Founders often deprioritize administrative asks from programs in favor of fundraising or product work, treating them as low-urgency.\",\n      \"why\": \"The asks feel like paperwork rather than business-critical work, but programs use compliance as a filter for founders who can execute.\"\n    },\n    {\n      \"kind\": \"practice\",\n      \"claim\": \"A signed agreement is a prerequisite for most program benefits; unsigned agreements block access to resources, mentorship, and co-working space.\",\n      \"why\": \"Programs require legal clarity before they can provide services or liability coverage.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"proposition\": \"The founder is unaware of the asks or has not seen the emails.\",\n      \"needs\": \"Confirmation that the emails reached the founder's inbox and were read.\"\n    },\n    {\n      \"proposition\": \"The founder is waiting for clarification or has a blocker (e.g., unclear billing name, uncertainty about what to include in the report).\",\n      \"needs\": \"A direct conversation with the founder about what is blocking each response.\"\n    },\n    {\n      \"proposition\": \"The founder is deprioritizing program compliance in favor of other work (fundraising, hiring, product).\",\n      \"needs\": \"Understanding the founder's current priorities and capacity.\"\n    },\n    {\n      \"proposition\": \"The founder has already submitted some of these items (e.g., the report) but the program has not confirmed receipt.\",\n      \"needs\": \"Checking the program portal or asking the program for confirmation of what has been received.\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"question\": \"Has the founder seen these three emails, or have they been missed or filtered?\",\n      \"relevance\": \"If unseen, the next move is to surface them; if seen, the next move is to understand the blocker.\"\n    },\n    {\n      \"question\": \"What is blocking the founder from answering each ask? Is it unclear requirements, missing information, or deprioritization?\",\n      \"relevance\": \"The blocker determines whether the move is to clarify, to provide information, or to reset priorities.\"\n    },\n    {\n      \"question\": \"Has the monthly progress report already been submitted to the program portal, even if not confirmed by email?\",\n      \"relevance\": \"If submitted, the file's urgency drops; if not, it is now overdue and requires immediate action.\"\n    },\n    {\n      \"question\": \"What is the program's escalation policy if these asks go unanswered past their deadlines?\",\n      \"relevance\": \"Understanding the consequences (seat suspension, removal from cohort, loss of benefits) would clarify the urgency.\"\n    },\n    {\n      \"question\": \"Is the founder's billing name different from the company name, or is there ambiguity about which entity should be billed?\",\n      \"relevance\": \"If there is ambiguity, the founder may be waiting for guidance rather than avoiding the ask.\"\n    }\n  ],\n  \"frames\": {\n    \"primary\": \"The founder is in an active program with three overdue or near-overdue administrative asks. The most recent ask (billing confirmation) has a hard deadline in six days. The founder has not answered any of them in seventeen days, despite holding the ball. This is a compliance risk that could result in loss of program benefits or removal from the cohort.\",\n    \"rivals\": [\n      \"The founder has answered these asks but the program has not confirmed receipt, and the file is out of sync with reality.\",\n      \"The founder is waiting for clarification from the program on one or more of the asks and has not escalated the blocker.\",\n      \"The founder is deprioritizing program compliance because other work (fundraising, hiring) is more urgent, and this is a deliberate choice rather than an oversight.\"\n    ]\n  },\n  \"proposed_kind\": {\n    \"kind\": \"program\",\n    \"why\": \"The file is marked as 'program' in the brief, and the work is compliance and administration within an active accelerator cohort, not an application or a decision.\",\n    \"evidence\": [\n      \"file:kind\",\n      \"brief:cbl_#13\"\n    ]\n  },\n  \"expected_vs_actual\": {\n    \"stage\": \"in_programme\",\n    \"expected\": \"The founder is in an active program and should be responding to administrative asks within the program's stated timelines. The playbook expects the founder to submit required documents, reports, and confirmations on time to maintain good standing. Quiet at this stage means nothing about the application, which is settled; what matters is the program's own deadlines \u2014 assignments, reviews, co-working logistics \u2014 published to the cohort and fixed for all of it.\",\n    \"actual\": \"The founder has not answered three administrative asks in seventeen days. The first ask (signed agreement) has been open since 2026-09-07. The second ask (monthly report) was due 2026-09-15 and is now overdue. The third ask (billing confirmation) is due 2026-09-30 and is six days away. No responses are recorded in the file.\"\n  },\n  \"scenarios\": {\n    \"do_nothing\": \"The billing confirmation deadline passes on 2026-09-30 without a response. The program may suspend or cancel the co-working seats, or escalate to the founder with a warning. The monthly report remains overdue. The incubation agreement remains unsigned, potentially blocking access to program resources or mentorship. The program may interpret the silence as disengagement and reduce support or remove the founder from the cohort. The founder loses credibility with the program and its network.\",\n    \"act\": \"The founder is contacted immediately to surface the three asks and understand what is blocking each response. If the blocker is unclear requirements, the program is asked for clarification. If the blocker is missing information, it is provided. If the blocker is deprioritization, the founder resets priorities to ensure compliance. The founder answers all three asks by 2026-09-28, well before the 2026-09-30 deadline. The program confirms receipt and the founder remains in good standing.\",\n    \"best\": \"The founder has already submitted the monthly report to the program portal but the program has not confirmed receipt by email. The billing name is straightforward and the founder answers within one business day. The signed agreement is returned within two business days. All three asks are resolved by 2026-09-26, and the founder remains in good standing with the program.\",\n    \"worst\": \"The founder does not respond by 2026-09-30. The program suspends the co-working seats and escalates to the founder with a formal warning. The monthly report is marked as missing and the founder is flagged as non-compliant. The unsigned agreement blocks access to program resources. The founder is removed from the cohort or placed on probation. The program shares the non-compliance with other programs in its network, damaging the founder's reputation.\",\n    \"signals_to_watch\": [\n      \"Whether the founder responds to the initial outreach within one business day.\",\n      \"Whether the founder has already submitted the monthly report to the program portal.\",\n      \"Whether the founder identifies a specific blocker (unclear requirements, missing information) or deprioritization.\",\n      \"Whether the program has sent any escalation or warning emails after the deadlines passed.\",\n      \"Whether the founder's responses are complete and accurate, or partial and requiring follow-up.\"\n    ]\n  },\n  \"appraisal\": {\n    \"stakes\": \"medium\",\n    \"urgency\": \"high\",\n    \"reversibility\": \"costly_to_reverse\",\n    \"reasons\": [\n      \"The founder is in an active program with real benefits (co-working space, mentorship, network access) that can be suspended or revoked if compliance deadlines are missed.\",\n      \"The billing confirmation deadline is six days away (2026-09-30), creating a hard time constraint.\",\n      \"The monthly report is already overdue (due 2026-09-15, now 2026-09-24), and continued non-response may trigger escalation.\",\n      \"Non-compliance with a program can damage the founder's reputation with the program's network and affect future opportunities.\",\n      \"The unsigned agreement blocks activation of the seat, which may already be impacting the founder's ability to use program resources.\",\n      \"Losing standing in an active program is costly to reverse; re-entry or reputation repair takes time and effort.\"\n    ]\n  },\n  \"mode\": \"act\",\n  \"next_move\": {\n    \"who\": \"you\",\n    \"what\": \"Contact the founder immediately to surface the three overdue asks, understand what is blocking each response, and commit to a timeline for answering all three by 2026-09-28.\",\n    \"for_whom\": \"the founder\",\n    \"by_when\": \"2026-09-24\",\n    \"rests_on\": [\n      \"fact:1\",\n      \"fact:2\",\n      \"fact:3\",\n      \"fact:7\",\n      \"inference:1\",\n      \"inference:2\",\n      \"inference:3\"\n    ],\n    \"guided_by\": [\n      \"rule:admin.rule.commitment_tracking.no_chase_while_we_hold_the_ball\",\n      \"cap:admin.executive_support.commitment_tracking#q\",\n      \"own:1\",\n      \"own:2\"\n    ],\n    \"to\": \"arjun@nimbuslabs.test\",\n    \"answers\": null\n  },\n  \"alternative\": \"If the founder cannot be reached by phone or chat, send a written summary of the three asks with their deadlines and ask for a response within 24 hours. Include a note that the billing deadline is six days away and the monthly report is overdue, and that non-compliance may result in loss of program benefits.\",\n  \"wait_or_stop\": \"Do not wait. The billing deadline is six days away and the monthly report is already overdue. Act today. If the founder does not respond within 24 hours, escalate by checking the program portal to see if the monthly report has been submitted, and by sending a follow-up message to the founder with a clear deadline for all three responses (2026-09-28). If the founder does not respond by 2026-09-28, the file should be escalated to the founder's attention as a critical compliance issue that could result in removal from the program.\",\n  \"done_when\": \"The founder has answered all three asks: (1) the signed incubation agreement has been returned to the program, (2) the monthly progress report has been submitted to the program portal, and (3) the billing name has been confirmed to the program. The program has confirmed receipt of all three items, or the founder has confirmed submission to the program portal. The file is updated with the dates of submission and confirmation.\",\n  \"draft\": \"Arjun \u2014 I've flagged three asks from DIT Incubation Cell that need your attention immediately. The billing confirmation is due Sep 30 (six days), the monthly report was due Sep 15 (now overdue), and the signed agreement is still pending. Can we talk today about what's blocking each one? I want to make sure we stay in good standing with the program. Let me know what you need from me to move these forward.\"\n}",
+  "site": "expert"
+ }
+}
