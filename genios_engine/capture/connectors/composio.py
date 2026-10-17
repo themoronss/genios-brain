@@ -33,6 +33,7 @@ from genios_engine.capture.gate.relevance import DROP_BELOW_RELEVANCE
 from genios_engine.capture.gate.rules import is_a_delivery_report
 
 from .backfill import DEFAULT_BACKFILL_DAYS, BackfillWindow
+from .composio_base import raise_if_refused
 from .thread_position import thread_place_from_references
 from .base import RawObject, SourceBatch
 
@@ -294,7 +295,8 @@ class ComposioGmailConnector:
             args["page_token"] = page_token
         if self._account:
             args["connected_account_id"] = self._account
-        return self._execute("GMAIL_FETCH_EMAILS", args)
+        # The LIST call is the one whose failure would otherwise pass for an empty mailbox.
+        return raise_if_refused("GMAIL_FETCH_EMAILS", self._execute("GMAIL_FETCH_EMAILS", args))
 
     def validate_connection(self) -> bool:
         self._fetch(max_results=1)

@@ -853,6 +853,12 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                 # which is the opposite conclusion.
                 summary.cursor_exhausted = True
                 break
+        else:
+            # The page budget ran out with a live cursor: WE stopped, and the next run resumes
+            # from `next_cursor`. Said here rather than left as None, which reads as "not
+            # applicable" — a truncated poll is not a webhook.
+            summary.cursor_exhausted = False
+            summary.page_budget_spent = True
     finally:
         # A pending fetch after an early break is a read we no longer need; never let it hold the
         # process open. shutdown(wait=False) so a hung provider call cannot outlive the sync.
