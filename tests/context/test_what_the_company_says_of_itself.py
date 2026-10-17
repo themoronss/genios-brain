@@ -234,10 +234,12 @@ def test_the_read_keeps_our_kept_mail_and_reads_no_other(db):
 @pytest.mark.pg
 def test_the_read_counts_what_it_did_not_scan(db, monkeypatch):
     monkeypatch.setattr(R, "SCAN_LIMIT", 2)
+    # ⛔ `source_events.event_id` is the table's key across EVERY tenant: ids this test shares with another test's leftovers
+    # (`evt_1`) refused the insert in a whole-suite run. Its ids are its own.
     for i in range(5):
-        _mail(db, f"evt_{i}", FOUNDER, f"We crossed {10 + i} customers.", days_ago=i + 1)
+        _mail(db, f"evt_cr_scan_{i}", FOUNDER, f"We crossed {10 + i} customers.", days_ago=i + 1)
     record = R.read_company_record(db, ORG, now=NOW)
-    assert [line.event_id for line in record.lines] == ["evt_0", "evt_1"]
+    assert [line.event_id for line in record.lines] == ["evt_cr_scan_0", "evt_cr_scan_1"]
     assert record.unread == 3
 
 

@@ -28,7 +28,10 @@ import pytest
 from sqlalchemy import text
 
 URL = os.environ.get("GENIOS_TEST_DATABASE_URL")
-NOW = datetime(2026, 9, 20, 12, 0, tzinfo=timezone.utc)
+#: ⛔ A dated seed is a date bomb (14 Oct, 17 Oct): `top_spending_seats(days=30)` windows on the REAL clock, so a seed fixed at 20 Sep
+#: left the window on 17 Oct and its oldest day fell out (0.75 of 1.0). The seed is relative to the clock the view reads.
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 # ════════════════════════════════════════════════════════════════════════════════════════
@@ -269,7 +272,7 @@ def test_the_runaway_view_separates_a_heavy_month_from_a_heavy_day(engine):
     steady, spike = "seat_a", "seat_b"
     with engine.begin() as c:
         for day in range(4):
-            at = NOW - timedelta(days=day)
+            at = _now() - timedelta(days=day)
             c.execute(text(
                 "insert into llm_costs (org_id, model, purpose, input_tokens, output_tokens, "
                 "seat_id, created_at) values ('org_cost_a','claude-haiku-4-5','x',"
@@ -277,7 +280,7 @@ def test_the_runaway_view_separates_a_heavy_month_from_a_heavy_day(engine):
         c.execute(text(
             "insert into llm_costs (org_id, model, purpose, input_tokens, output_tokens, "
             "seat_id, created_at) values ('org_cost_a','claude-haiku-4-5','x',"
-            ":it,0,:s,:at)"), {"it": 1_000_000, "s": spike, "at": NOW})
+            ":it,0,:s,:at)"), {"it": 1_000_000, "s": spike, "at": _now()})
     assert store is not None
 
     original, A._graph = A._graph, store
