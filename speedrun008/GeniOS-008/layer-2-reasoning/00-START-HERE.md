@@ -38,7 +38,8 @@ Deterministic code only supports it. The output is a structured `ReasoningResult
 2. [`01-AS-IS.md`](01-AS-IS.md) — what the code has, judged against the spec.
 3. [`02-PLAN.md`](02-PLAN.md) — the plan.
 4. [`04-FOR-HARSH.md`](04-FOR-HARSH.md) — Harsh: start there.
-5. [`03-LOG.md`](03-LOG.md) — what was done, with proof.
+5. [`06-GAP-ANALYSIS.md`](06-GAP-ANALYSIS.md) — what exists vs what is new, component by component, and one run step by step.
+6. [`03-LOG.md`](03-LOG.md) — what was done, with proof.
 
 ## What Rohit decides before the build (asked once)
 
@@ -49,5 +50,6 @@ Deterministic code only supports it. The output is a structured `ReasoningResult
 | L2-Q3 | Should the judgment pass start from the STEP-12 expert pass, generalised from files to situations? | Yes |
 | L2-Q4 | The first situation type to switch | Awaiting reply / outreach (same as `../03-QUESTIONS.md` A3) |
 | L2-Q5 | Model and budget for the judgment pass | Sonnet-class, $2/day for your org (same as A6); the strongest class only where the golden set shows it pays |
+| L2-Q6 | The subject of one reasoning run (`06-GAP-ANALYSIS.md` §4) | The file when the bundle's counterparty has one, else the seed entity/thread from the bundle |
 
 Already asked in `../03-QUESTIONS.md`, not repeated here: A1, A2, A4, A5 (retire the LLM decider), E2 (budget for live evaluations).
