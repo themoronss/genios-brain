@@ -42,4 +42,4 @@ R1 spend ≈ $1 on the live pass · R2 bundles: read or retire · R3 a second ma
 
 ## Read order
 
-`01-AS-IS.md` → `02-PLAN.md` → `03-LOG.md`.
+`01-AS-IS.md` → `02-PLAN.md` → `03-LOG.md` → `04-FOR-HARSH.md` (Harsh: start there).

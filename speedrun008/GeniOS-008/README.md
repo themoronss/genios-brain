@@ -42,6 +42,7 @@ remembers, so we go in that order.
 | `01-AS-IS.md` | what was already there · what works · what does not — every line with its `file:line` |
 | `02-PLAN.md` | what must change, in order: each item's problem, the fix, why that fix, how we prove it |
 | `03-LOG.md` | what was done, when, with its commit and the command that proved it (append-only) |
+| `04-FOR-HARSH.md` | what production needs: what changed, what to run, in what order, what to watch |
 
 **Rules for every layer.**
 
